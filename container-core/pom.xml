@@ -144,6 +144,7 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>log4j</groupId>
