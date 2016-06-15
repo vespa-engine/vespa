@@ -1,0 +1,186 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <stdint.h>
+#include "identity.h"
+#include <vespa/slobrok/cfg.h>
+
+namespace mbus {
+
+/**
+ * To facilitate several configuration parameters to the {@link RPCNetwork} constructor, all parameters are
+ * held by this class. This class has reasonable default values for each parameter.
+ */
+class RPCNetworkParams {
+private:
+    Identity    _identity;
+    config::ConfigUri _slobrokConfig;
+    string      _oosServerPattern;
+    int         _listenPort;
+    uint32_t    _maxInputBufferSize;
+    uint32_t    _maxOutputBufferSize;
+    double      _connectionExpireSecs;
+
+public:
+    /**
+     * Constructs a new parameter object with default values.
+     */
+    RPCNetworkParams();
+
+    /**
+     * Returns the identity to use for the network.
+     *
+     * @return The identity.
+     */
+    const Identity &getIdentity() const {
+        return _identity;
+    }
+
+    /**
+     * Sets the identity to use for the network.
+     *
+     * @param identity The new identity.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setIdentity(const Identity &identity) {
+        _identity = identity;
+        return *this;
+    }
+
+    /**
+     * Sets the identity to use for the network.
+     *
+     * @param identity A string representation of the identity.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setIdentity(const string &identity) {
+        return setIdentity(Identity(identity));
+    }
+
+    /**
+     * Returns the config id of the slobrok config.
+     *
+     * @return The config id.
+     */
+    const config::ConfigUri & getSlobrokConfig() const {
+        return _slobrokConfig;
+    }
+
+    /**
+     * Sets of the slobrok config.
+     *
+     * @param slobrokConfigId The new config.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setSlobrokConfig(const config::ConfigUri & slobrokConfig) {
+        _slobrokConfig = slobrokConfig;
+        return *this;
+    }
+
+    /**
+     * Returns the config id pattern used to lookup OOS servers.
+     *
+     * @return The config id.
+     */
+    const string &getOOSServerPattern() const {
+        return _oosServerPattern;
+    }
+
+    /**
+     * Sets the config id pattern used to lookup OOS servers.
+     *
+     * @param oosServerPattern The server pattern.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setOOSServerPattern(const string &oosServerPattern) {
+        _oosServerPattern = oosServerPattern;
+        return *this;
+    }
+
+    /**
+     * Returns the port to listen to.
+     *
+     * @return The port.
+     */
+    int getListenPort() const {
+        return _listenPort;
+    }
+
+    /**
+     * Sets the port to listen to.
+     *
+     * @param listenPort The new port.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setListenPort(int listenPort) {
+        _listenPort = listenPort;
+        return *this;
+    }
+
+    /**
+     * Returns the number of seconds before an idle network connection expires.
+     *
+     * @return The number of seconds.
+     */
+    double getConnectionExpireSecs() const{
+        return _connectionExpireSecs;
+    }
+
+    /**
+     * Sets the number of seconds before an idle network connection expires.
+     *
+     * @param secs The number of seconds.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setConnectionExpireSecs(double secs) {
+        _connectionExpireSecs = secs;
+        return *this;
+    }
+
+    /**
+     * Returns the maximum input buffer size allowed for the underlying FNET connection.
+     *
+     * @return The maximum number of bytes.
+     */
+    uint32_t getMaxInputBufferSize() const {
+        return _maxInputBufferSize;
+    }
+
+    /**
+     * Sets the maximum input buffer size allowed for the underlying FNET connection. Using the value 0 means that there
+     * is no limit; the connection will not free any allocated memory until it is cleaned up. This might potentially
+     * save alot of allocation time.
+     *
+     * @param maxInputBufferSize The maximum number of bytes.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setMaxInputBufferSize(uint32_t maxInputBufferSize) {
+        _maxInputBufferSize = maxInputBufferSize;
+        return *this;
+    }
+
+    /**
+     * Returns the maximum output buffer size allowed for the underlying FNET connection.
+     *
+     * @return The maximum number of bytes.
+     */
+    uint32_t getMaxOutputBufferSize() const {
+        return _maxOutputBufferSize;
+    }
+
+    /**
+     * Sets the maximum output buffer size allowed for the underlying FNET connection. Using the value 0 means that there
+     * is no limit; the connection will not free any allocated memory until it is cleaned up. This might potentially
+     * save alot of allocation time.
+     *
+     * @param maxOutputBufferSize The maximum number of bytes.
+     * @return This, to allow chaining.
+     */
+    RPCNetworkParams &setMaxOutputBufferSize(uint32_t maxOutputBufferSize) {
+        _maxOutputBufferSize = maxOutputBufferSize;
+        return *this;
+    }
+};
+
+}
+

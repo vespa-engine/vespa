@@ -1,0 +1,21 @@
+<!-- services.xml snippet for the node repository. Included in config server services.xml if the package is installed-->
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<component id="com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner" bundle="node-repository" />
+<component id="NodeRepository" class="com.yahoo.vespa.hosted.provision.NodeRepository" bundle="node-repository"/>
+<component id="com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance" bundle="node-repository"/>
+<component id="com.yahoo.vespa.hosted.provision.monitoring.ProvisionMetrics" bundle="node-repository" />
+<component id="com.yahoo.vespa.hosted.provision.node.NodeFlavors" bundle="node-repository" />
+
+<rest-api path="hack" jersey2="true">
+    <components bundle="node-repository" />
+</rest-api>
+
+<handler id="com.yahoo.vespa.hosted.provision.restapi.v1.NodesApiHandler" bundle="node-repository">
+    <binding>http://*/nodes/v1/</binding>
+</handler>
+
+<handler id="com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler" bundle="node-repository">
+    <binding>http://*/nodes/v2/*</binding>
+</handler>
+
+<preprocess:include file="node-flavors.xml" required="false" />

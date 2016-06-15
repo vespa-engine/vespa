@@ -1,0 +1,177 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<refentry id="fsainfo">
+
+<refmeta>
+<refentrytitle>fsainfo</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>fsainfo</refname>
+<refpurpose>display information about finite state automata files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>fsainfo</command>
+  <arg>OPTIONS</arg>
+  <arg choice='plain'>fsa_file</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1><title>Description</title>
+<para>
+<command>fsainfo</command> displays information about fsa files,
+mainly based on the fsa header. In addition,
+<command>fsainfo</command> tries to load the fsa file and reports
+whether loading succeeded. The following information is presented:
+</para>
+<para>
+<variablelist>
+<varlistentry>
+<term>Header size</term>
+<listitem>
+<para>
+Size of the fsa header (usually 256 bytes).
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Magic</term>
+<listitem>
+<para>
+Magic number identifying fsa files (2038637673). Files with wrong
+magic will not be attempted to load.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Version</term>
+<listitem>
+<para>
+Version of the fsa library used for building the fsa file (e.g. 1.0.2).
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Serial number</term>
+<listitem>
+<para>
+Serial number of the fsa file.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Checksum</term>
+<listitem>
+<para>
+Checksum for verifying the integrity of the fsa file. If the checksum
+verification fails, the fsa file will refuse to load.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>FSA size</term>
+<listitem>
+<para>
+Size of the automaton (in number of cells and bytes).
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Start state</term>
+<listitem>
+<para>
+Index of the start state.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Data size</term>
+<listitem>
+<para>
+Size of data storage used for storing meta information for final states.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Data item type</term>
+<listitem>
+<para>
+Type of meta data items (fixed or variable size).
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Fixed item size</term>
+<listitem>
+<para>
+Size of meta data items, if fixed size.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Perfect hash</term>
+<listitem>
+<para>
+Indication whether the fsa was built with perfect hash (yes/no).
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Perfect hash size</term>
+<listitem>
+<para>
+Perfect hash size, if the fsa was built with perfect hash.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Total size</term>
+<listitem>
+<para>
+Full size of the fsa file (header + automaton + meta data + perfect hash).
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+<refsect2><title>Options</title>
+<para>
+<variablelist>
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+display usage help
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>
+display version number
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+</refsect2>
+</refsect1>
+
+<refsect1><title>See also</title>
+<para>
+makefsa, fsadump.
+</para>
+</refsect1>
+
+<refsect1><title>Author</title>
+<para>
+Written by Peter Boros.
+</para>
+</refsect1>
+
+</refentry>

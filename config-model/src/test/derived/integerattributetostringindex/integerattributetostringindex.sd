@@ -1,0 +1,28 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search integerattributetostringindex {
+  document integerattributetostringindex {
+  field attinx type int {
+  indexing: summary |  attribute | index
+  # index-to: attinx,default
+  }
+
+field artist type string {
+indexing: summary | attribute
+# index-to: artist, default
+}
+
+
+field title type string {
+indexing: summary | index
+# index-to: title, default
+}
+
+field year type int {
+indexing: summary | attribute
+# index-to:default
+attribute : fast-search
+}
+
+}
+
+}

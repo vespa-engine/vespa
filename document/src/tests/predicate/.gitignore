@@ -1,0 +1,7 @@
+*.So
+*_test
+.depend
+Makefile
+document_predicate_builder_test_app
+document_predicate_printer_test_app
+document_predicate_test_app

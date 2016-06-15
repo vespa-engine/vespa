@@ -1,0 +1,19 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Configuration of the rate limiting algorithm
+namespace=search.config
+
+# How much additional capacity to assign to a thread each time it has run out.
+# A higher number means less thread contention and less accuracy
+capacityIncrement double default=1000
+
+# The max capacity which will ever (and initially) be available to requesting threads on one node
+# A higher number means we'll be less sensitive to intermittent overlap
+# A good number may be capacityIncrement * 10
+maxAvailableCapacity double default=10000
+
+# The probability per request that we check for more quota when we have run out.
+# A higher number means less probability of rejecting a request unnecessarily
+# but also more thread contention.
+# A good number may be 1 / (maxAvailableCapacity * average-cost)
+recheckForCapacityProbability double default=0.001
+

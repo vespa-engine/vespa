@@ -1,0 +1,73 @@
+search sombrerowebdoc {
+
+  document sombrerowebdoc {
+    version : 0
+
+  struct sombreroattribute {
+    field attributetype type int {}
+    field intvalue      type int {}
+    field huffmanindex  type int {}
+    field lexicon       type string {}
+    field name          type string {}
+    field strvalue      type string {}
+  }
+
+  annotation sombreroTOKEN { }
+
+  annotation sombreroPHRASE {
+    field prefixused           type int {}
+    field suffixused           type int {}
+    field attributes           type array<sombreroattribute> {}
+    field annotationreferences type array<annotationreference<sombreroTOKEN>> {}
+  }
+
+  struct sombrerocontentfilter {
+    field id    type string {}
+    field value type string {}
+  }
+
+  struct sombrerorule {
+    field name           type string {}
+    field location       type string {}
+    field contentfilters type array<sombrerocontentfilter> {}
+  }
+
+  struct sombrerometrics {
+    field executiontime type double {}
+  }
+
+  struct sombreroextraction {
+    field adjuncts type string {}
+    field metrics  type sombrerometrics {}
+    field status   type string {}
+  }
+
+
+    field url type string {}
+
+    field raw_html type string {}
+
+    field decoded_html type string {}
+
+    field rules type array<sombrerorule> {}
+
+    field extraction type sombreroextraction {}
+
+    field content_language type string {}
+
+    field dupdetectshinglesketch type string {}
+
+    field mlprisma type string {}
+
+    field raw_bytes type raw {}
+
+    field charset_encoding type string {}
+
+    field meta_language type string {}
+
+    field language type string {}
+
+    field region type string {}
+
+  }
+}

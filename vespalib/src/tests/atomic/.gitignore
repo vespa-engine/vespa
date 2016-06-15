@@ -1,0 +1,6 @@
+.depend
+Makefile
+atomic_test
+/atomic_bench
+vespalib_atomic_test_app
+vespalib_atomic_bench_app

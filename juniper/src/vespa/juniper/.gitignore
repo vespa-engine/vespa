@@ -1,0 +1,8 @@
+*.So
+*.dsp
+*.ilk
+*.lib
+.depend
+Makefile
+juniper.tag
+libjuniper.so.5.1

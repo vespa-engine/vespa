@@ -1,0 +1,20 @@
+{
+  "url":"http://localhost:8080/nodes/v2/node/host11.yahoo.com",
+  "id":"host11.yahoo.com",
+  "state":"provisioned",
+  "hostname":"host11.yahoo.com",
+  "parentHostname":"parent.host.yahoo.com",
+  "openStackId":"host11.yahoo.com",
+  "flavor":"docker",
+  "minDiskAvailableGb":100.0,
+  "minMainMemoryAvailableGb":0.5,
+  "description":"Flavor-name-is-docker",
+  "minCpuCores":0.2,
+  "canonicalFlavor":"docker",
+  "environment":"docker",
+  "rebootGeneration":0,
+  "currentRebootGeneration":0,
+  "failCount":0,
+  "hardwareFailure":false,
+  "history":[]
+}

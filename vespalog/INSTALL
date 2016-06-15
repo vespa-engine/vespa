@@ -1,0 +1,17 @@
+1. Make and install fastos with the correct options.
+
+2. cd src
+
+3. ./configure --fastos-dir <fastos-install-dir> [options]
+  Additional optons:
+  --install-dir <val> [..]
+
+4. make
+
+5. make install
+
+This will install the following:
+
+bin/logctl
+include/log/log.h
+lib/liblog.a

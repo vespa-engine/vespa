@@ -1,0 +1,33 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+## Named lists of special tokens - string which should be
+## treated as words no matter what characters they consist of.
+## A special token can also optionally be replaced by another
+## token.
+## 
+## Special tokens are case sensitive, since queries and tokens
+## are lowercased they should normally be written in lower case.
+## 
+## The list named default is the only list which is used currently
+## 
+## Order matters in token lists. If one special token is a
+## prefix of another token, Vespa will prefer to return the first
+## matching token in the list when encountering the longest
+## special token.
+version=3
+namespace=vespa.configdefinition
+
+## Path to makefsa binary, needed to create specialtokens-dictionary
+## If the path is relative, vespa home is prepended
+makefsaPath string default="bin64/makefsa"
+
+## Use 'default' as the name of the list to use in regular
+## indexing and queries
+tokenlist[].name     string
+
+## Special tokens, any string is permitted
+tokenlist[].tokens[].token string
+
+## The token which should replace the special token
+## If no replace is set for a token, the word token
+## will be the special token string itself
+tokenlist[].tokens[].replace string default=""

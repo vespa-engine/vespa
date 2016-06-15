@@ -1,0 +1,15 @@
+.classpath
+.project
+archive
+bin
+build
+include
+javadoc
+javamake.pdb
+staging
+target
+testLogs
+vespalog.iml
+/pom.xml.build
+Makefile
+Testing

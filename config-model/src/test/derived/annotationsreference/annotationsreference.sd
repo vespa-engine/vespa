@@ -1,0 +1,26 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search annotationsreference {
+
+  document annotationsreference {
+
+  annotation banana {
+    field brand type string { }
+  }
+
+  annotation food {
+    field what type annotationreference<banana> { }
+  }
+
+  annotation cyclic {
+    field blah type annotationreference<cyclic> { }
+  }
+
+  annotation a {
+    field foo type annotationreference<b> { }
+  }
+
+  annotation b {
+  }
+
+  }
+}

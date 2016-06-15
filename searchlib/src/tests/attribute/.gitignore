@@ -1,0 +1,11 @@
+*.dat
+*.idx
+*.weight
+.depend
+Makefile
+attribute_test
+attributebenchmark
+searchlib_attribute_test_app
+searchlib_attributeguard_test_app
+searchlib_changevector_test_app
+searchlib_attributebenchmark_app

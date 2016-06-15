@@ -1,0 +1,66 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(juniper_mcandTest_app
+    SOURCES
+    mcandTest.cpp
+    mcandTestApp.cpp
+    testenv.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_mcandTest_app COMMAND juniper_mcandTest_app)
+vespa_add_executable(juniper_queryparserTest_app
+    SOURCES
+    queryparserTest.cpp
+    queryparserTestApp.cpp
+    fakerewriter.cpp
+    testenv.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_queryparserTest_app COMMAND juniper_queryparserTest_app)
+vespa_add_executable(juniper_matchobjectTest_app
+    SOURCES
+    matchobjectTest.cpp
+    matchobjectTestApp.cpp
+    testenv.cpp
+    fakerewriter.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_matchobjectTest_app COMMAND juniper_matchobjectTest_app)
+vespa_add_executable(juniper_appender_test_app
+    SOURCES
+    appender_test.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_appender_test_app COMMAND juniper_appender_test_app)
+vespa_add_executable(juniper_queryvisitor_test_app
+    SOURCES
+    queryvisitor_test.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_queryvisitor_test_app COMMAND juniper_queryvisitor_test_app)
+vespa_add_executable(juniper_auxTest_app
+    SOURCES
+    auxTest.cpp
+    auxTestApp.cpp
+    testenv.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_auxTest_app COMMAND juniper_auxTest_app)
+vespa_add_executable(juniper_SrcTestSuite_app
+    SOURCES
+    mcandTest.cpp
+    queryparserTest.cpp
+    fakerewriter.cpp
+    SrcTestSuite.cpp
+    matchobjectTest.cpp
+    auxTest.cpp
+    testenv.cpp
+    DEPENDS
+    juniper
+)
+vespa_add_test(NAME juniper_SrcTestSuite_app COMMAND juniper_SrcTestSuite_app)

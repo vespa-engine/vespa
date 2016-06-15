@@ -1,0 +1,41 @@
+Cupertino
+Foster City
+Los Altos
+Menlo Park
+Mountain View
+Palo Alto
+San Francisco
+San Jose
+Santa Clara
+Saratoga
+Sunnyvale
+apple
+apricot
+artichoke
+banana
+cabbage
+carrot
+cherry
+chili
+cucumber
+eggplant
+grapes
+lettuce
+onion
+paprika
+passion fruit
+pea
+peach
+pear
+pineapple
+plum
+potato
+pumpkin
+sour cherry
+squash
+tomato
+alpha
+beta
+gamma
+delta
+epsilon

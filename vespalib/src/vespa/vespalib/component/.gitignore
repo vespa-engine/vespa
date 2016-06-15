@@ -1,0 +1,4 @@
+*.So
+.depend
+Makefile
+getversion

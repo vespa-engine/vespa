@@ -1,0 +1,311 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".features.fieldmatchfeature");
+#include "fieldmatchfeature.h"
+#include "utils.h"
+
+#include <vespa/searchlib/features/fieldmatch/computer.h>
+#include <vespa/searchlib/features/fieldmatch/metrics.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+using namespace search::fef;
+
+namespace search {
+namespace features {
+
+FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
+                                       const FieldInfo & field,
+                                       const fieldmatch::Params & params) :
+    FeatureExecutor(),
+    _splitter(queryEnv, field.id()),
+    _field(field),
+    _params(params),
+    _cmp(vespalib::make_string("fieldMatch(%s)", _field.name().c_str()),
+         _splitter, field, params)
+{
+    // empty
+}
+
+void
+FieldMatchExecutor::execute(search::fef::MatchData & match)
+{
+    //LOG(info, "execute for field '%s' and docId(%u)", _field.name().c_str(), match.getDocId());
+
+    _splitter.update(match);
+    _cmp.reset(match);
+    //_cmp.setTracing(true);
+
+    const fieldmatch::SimpleMetrics & simple = _cmp.getSimpleMetrics();
+
+    // only run the computer if we have at least one match with position information
+    // and that the matches with position information have valid field lengths
+    bool runCmp = (simple.getMatches() > 0 &&
+                   simple.getMatchesWithPosOcc() > 0 &&
+                   !simple.getMatchWithInvalidFieldLength());
+
+    //LOG(info, "runCmp(%s), simpleMetrics(%s)", runCmp ? "true" : "false", simple.toString().c_str());
+
+    if (runCmp) {
+        _cmp.run();
+    }
+
+    const fieldmatch::Metrics & result = _cmp.getFinalMetrics();
+
+    *match.resolveFeature(outputs()[0]) = runCmp ? result.getMatch() : 0; // score
+    *match.resolveFeature(outputs()[1]) = runCmp ? result.getProximity() : 0; // proximity
+    *match.resolveFeature(outputs()[2]) = runCmp ? result.getCompleteness() : simple.getCompleteness(); // completeness
+    *match.resolveFeature(outputs()[3]) = runCmp ? result.getQueryCompleteness() : simple.getQueryCompleteness(); // queryCompleteness
+    *match.resolveFeature(outputs()[4]) = result.getFieldCompleteness(); // fieldCompleteness
+    *match.resolveFeature(outputs()[5]) = runCmp ? result.getOrderness() : 0; // orderness
+    *match.resolveFeature(outputs()[6]) = result.getRelatedness(); // relatedness
+    *match.resolveFeature(outputs()[7]) = result.getEarliness(); // earliness
+    *match.resolveFeature(outputs()[8]) = result.getLongestSequenceRatio(); // longestSequenceRatio
+    *match.resolveFeature(outputs()[9]) = result.getSegmentProximity(); // segmentProximity
+    *match.resolveFeature(outputs()[10]) = runCmp ? result.getUnweightedProximity() : 0; // unweightedProximity
+    *match.resolveFeature(outputs()[11]) = runCmp ? result.getAbsoluteProximity() : 0; // absoluteProximity
+    *match.resolveFeature(outputs()[12]) = result.getOccurrence(); // occurrence
+    *match.resolveFeature(outputs()[13]) = result.getAbsoluteOccurrence(); // absoluteOccurence
+    *match.resolveFeature(outputs()[14]) = result.getWeightedOccurrence(); // weightedOccurence
+    *match.resolveFeature(outputs()[15]) = result.getWeightedAbsoluteOccurrence(); // weightedAbsoluteOccurence
+    *match.resolveFeature(outputs()[16]) = result.getSignificantOccurrence(); // significantOccurence
+
+    *match.resolveFeature(outputs()[17]) = runCmp ? result.getWeight() : simple.getWeight(); // weight
+    *match.resolveFeature(outputs()[18]) = result.getSignificance(); // significance
+    *match.resolveFeature(outputs()[19]) = result.getImportance(); // importance
+
+    *match.resolveFeature(outputs()[20]) = result.getSegments(); // segments
+    *match.resolveFeature(outputs()[21]) = runCmp ? result.getMatches() : simple.getMatches(); // matches
+    *match.resolveFeature(outputs()[22]) = result.getOutOfOrder(); // outOfOrder
+    *match.resolveFeature(outputs()[23]) = result.getGaps(); // gaps
+    *match.resolveFeature(outputs()[24]) = result.getGapLength(); // gapLength
+    *match.resolveFeature(outputs()[25]) = runCmp ? result.getLongestSequence() : 0; // longestSequence
+    *match.resolveFeature(outputs()[26]) = runCmp ? result.getHead() : 0; // head
+    *match.resolveFeature(outputs()[27]) = runCmp ? result.getTail() : 0; // tail
+    *match.resolveFeature(outputs()[28]) = result.getSegmentDistance(); // segmentDistance
+    *match.resolveFeature(outputs()[29]) = simple.getDegradedMatches(); // degradedMatches
+}
+
+
+FieldMatchBlueprint::FieldMatchBlueprint() :
+    Blueprint("fieldMatch"),
+    _field(NULL),
+    _params()
+{
+    // empty
+}
+
+void
+FieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
+                                       IDumpFeatureVisitor & visitor) const
+{
+    for (uint32_t i = 0; i < env.getNumFields(); ++i) {
+        const search::fef::FieldInfo * field = env.getField(i);
+        if (field->type() == search::fef::FieldType::INDEX &&
+            field->collection() == search::fef::CollectionType::SINGLE)
+        {
+            FeatureNameBuilder fnb;
+            fnb.baseName(getBaseName()).parameter(field->name());
+            if (field->isFilter()) {
+                visitor.visitDumpFeature(fnb.buildName());
+                visitor.visitDumpFeature(fnb.output("completeness").buildName());
+                visitor.visitDumpFeature(fnb.output("queryCompleteness").buildName());
+                visitor.visitDumpFeature(fnb.output("weight").buildName());
+                visitor.visitDumpFeature(fnb.output("matches").buildName());
+                visitor.visitDumpFeature(fnb.output("degradedMatches").buildName());
+            } else {
+                visitor.visitDumpFeature(fnb.buildName());
+                visitor.visitDumpFeature(fnb.output("proximity").buildName());
+                visitor.visitDumpFeature(fnb.output("completeness").buildName());
+                visitor.visitDumpFeature(fnb.output("queryCompleteness").buildName());
+                visitor.visitDumpFeature(fnb.output("fieldCompleteness").buildName());
+                visitor.visitDumpFeature(fnb.output("orderness").buildName());
+                visitor.visitDumpFeature(fnb.output("relatedness").buildName());
+                visitor.visitDumpFeature(fnb.output("earliness").buildName());
+                visitor.visitDumpFeature(fnb.output("longestSequenceRatio").buildName());
+                visitor.visitDumpFeature(fnb.output("segmentProximity").buildName());
+                visitor.visitDumpFeature(fnb.output("unweightedProximity").buildName());
+                visitor.visitDumpFeature(fnb.output("absoluteProximity").buildName());
+                visitor.visitDumpFeature(fnb.output("occurrence").buildName());
+                visitor.visitDumpFeature(fnb.output("absoluteOccurrence").buildName());
+                visitor.visitDumpFeature(fnb.output("weightedOccurrence").buildName());
+                visitor.visitDumpFeature(fnb.output("weightedAbsoluteOccurrence").buildName());
+                visitor.visitDumpFeature(fnb.output("significantOccurrence").buildName());
+                visitor.visitDumpFeature(fnb.output("weight").buildName());
+                visitor.visitDumpFeature(fnb.output("significance").buildName());
+                visitor.visitDumpFeature(fnb.output("importance").buildName());
+                visitor.visitDumpFeature(fnb.output("segments").buildName());
+                visitor.visitDumpFeature(fnb.output("matches").buildName());
+                visitor.visitDumpFeature(fnb.output("outOfOrder").buildName());
+                visitor.visitDumpFeature(fnb.output("gaps").buildName());
+                visitor.visitDumpFeature(fnb.output("gapLength").buildName());
+                visitor.visitDumpFeature(fnb.output("longestSequence").buildName());
+                visitor.visitDumpFeature(fnb.output("head").buildName());
+                visitor.visitDumpFeature(fnb.output("tail").buildName());
+                visitor.visitDumpFeature(fnb.output("segmentDistance").buildName());
+                visitor.visitDumpFeature(fnb.output("degradedMatches").buildName());
+            }
+        }
+    }
+}
+
+Blueprint::UP
+FieldMatchBlueprint::createInstance() const
+{
+    return Blueprint::UP(new FieldMatchBlueprint());
+}
+
+bool
+FieldMatchBlueprint::setup(const IIndexEnvironment & env,
+                           const ParameterList & params)
+{
+    _field = params[0].asField();
+
+    const Properties & lst = env.getProperties();
+    Property obj;
+    obj = lst.lookup(getName(), "proximityLimit");
+    if (obj.found()) {
+        _params.setProximityLimit(atoi(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "maxAlternativeSegmentations");
+    if (obj.found()) {
+        _params.setMaxAlternativeSegmentations(atoi(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "maxOccurrences");
+    if (obj.found()) {
+        _params.setMaxOccurrences(atoi(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "proximityCompletenessImportance");
+    if (obj.found()) {
+        _params.setProximityCompletenessImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "relatednessImportance");
+    if (obj.found()) {
+        _params.setRelatednessImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "earlinessImportance");
+    if (obj.found()) {
+        _params.setEarlinessImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "segmentProximityImportance");
+    if (obj.found()) {
+        _params.setSegmentProximityImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "occurrenceImportance");
+    if (obj.found()) {
+        _params.setOccurrenceImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "fieldCompletenessImportance");
+    if (obj.found()) {
+        _params.setFieldCompletenessImportance(atof(obj.get().c_str()));
+    }
+    obj = lst.lookup(getName(), "proximityTable");
+    if (obj.found()) {
+        std::vector<feature_t> table;
+        for (uint32_t i = 0; i < obj.size(); ++i) {
+            table.push_back(atof(obj.getAt(i).c_str()));
+        }
+        _params.setProximityTable(table);
+    }
+    if (!_params.valid()) {
+        return false;
+    }
+
+    // normalized
+    describeOutput("score",
+                   "A normalized measure of the degree to which this query and field matched (default, the long name of this is match). Use "
+                   "this if you don't want to create your own combination function of more fine grained fieldmatch features.");
+    describeOutput("proximity",
+                   "Normalized proximity - a value which is close to 1 when matched terms are close inside each segment, and close to zero "
+                   "when they are far apart inside segments. Relatively more connected terms influence this value more. This is "
+                   "absoluteProximity/average connectedness for the query terms for this field.");
+    describeOutput("completeness",
+                   "The normalized total completeness, where field completeness is more important.");
+    describeOutput("queryCompleteness",
+                   "The normalized ratio of query tokens matched in the field.");
+    describeOutput("fieldCompleteness",
+                   "The normalized ratio of query tokens which was matched in the field.");
+    describeOutput("orderness",
+                   "A normalized metric of how well the order of the terms agrees in the chosen segments.");
+    describeOutput("relatedness",
+                   "A normalized measure of the degree to which different terms are related (occurring in the same segment).");
+    describeOutput("earliness",
+                   "A normalized measure of how early the first segment occurs in this field.");
+    describeOutput("longestSequenceRatio",
+                   "A normalized metric of the relative size of the longest sequence.");
+    describeOutput("segmentProximity",
+                   "A normalized metric of the closeness (inverse of spread) of segments in the field.");
+    describeOutput("unweightedProximity",
+                   "The normalized proximity of the matched terms, not taking term connectedness into account. This number is close to 1 if "
+                   "all the matched terms are following each other in sequence, and close to 0 if they are far from each other or out of "
+                   "order.");
+    describeOutput("absoluteProximity",
+                   "Returns the normalized proximity of the matched terms, weighted by the connectedness of the query terms. This number is "
+                   "0.1 if all the matched terms are and have default or lower connectedness, close to 1 if they are following in sequence "
+                   "and have a high connectedness, and close to 0 if they are far from each other in the segments or out of order.");
+    describeOutput("occurrence",
+                   "Returns a normalized measure of the number of occurrence of the terms of the query. This number is 1 if there are many "
+                   " occurrences of the query terms in absolute terms, or relative to the total content of the field, and 0 if there are "
+                   "none.");
+    describeOutput("absoluteOccurrence",
+                   "Returns a normalized measure of the number of occurrence of the terms of the query.");
+    describeOutput("weightedOccurrence",
+                   "Returns a normalized measure of the number of occurrence of the terms of the query, weighted by term weight. This number "
+                   "is close to 1 if there are many occurrences of highly weighted query terms, in absolute terms, or relative to the total "
+                   "content of the field, and 0 if there are none.");
+    describeOutput("weightedAbsoluteOccurrence",
+                   "Returns a normalized measure of the number of occurrence of the terms of the query, taking weights into account so that "
+                   "occurrences of higher weighted query terms has more impact than lower weighted terms.");
+    describeOutput("significantOccurrence",
+                   "Returns a normalized measure of the number of occurrence of the terms of the query in absolute terms, or relative to the "
+                   "total content of the field, weighted by term significance.");
+
+    // normalized and relative to the whole query
+    describeOutput("weight",
+                   "The normalized weight of this match relative to the whole query.");
+    describeOutput("significance",
+                   "Returns the normalized term significance (1-frequency) of the terms of this match relative to the whole query.");
+    describeOutput("importance",
+                   "Returns the average of significance and weight. This has the same properties as those metrics.");
+
+    // not normalized
+    describeOutput("segments",
+                   "The number of field text segments which are needed to match the query as completely as possible.");
+    describeOutput("matches",
+                   "The number of query terms which was matched in this field.");
+    describeOutput("outOfOrder",
+                   "The total number of out of order token sequences within matched field segments.");
+    describeOutput("gaps",
+                   "The total number of position jumps (backward or forward) within field segments.");
+    describeOutput("gapLength",
+                   "The summed length of all gaps within segments.");
+    describeOutput("longestSequence",
+                   "The size of the longest matched continuous, in-order sequence in the field.");
+    describeOutput("head",
+                   "The number of tokens in the field preceeding the start of the first matched segment.");
+    describeOutput("tail",
+                   "The number of tokens in the field following the end of the last matched segment.");
+    describeOutput("segmentDistance",
+                   "The sum of the distance between all segments making up a match to the query, measured as the sum of the number of token "
+                   "positions separating the start of each field adjacent segment.");
+    describeOutput("degradedMatches",
+                   "The number of degraded query terms (no position information available) which was matched in this field.");
+    env.hintFieldAccess(_field->id());
+    return true;
+}
+
+FeatureExecutor::LP
+FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+{
+    return FeatureExecutor::LP(new FieldMatchExecutor(env, *_field, _params));
+}
+
+
+} // namespace features
+} // namespace search

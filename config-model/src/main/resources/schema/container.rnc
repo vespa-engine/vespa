@@ -1,0 +1,41 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#Schema for common container options
+
+include "processing.rnc"
+
+Handler = element handler {
+   ComponentDefinition &
+   ServerBindings &
+   element clientBinding {text}*
+}
+
+Binding = element binding {text}
+ServerBindings = Binding*
+
+Client = element client {
+   ComponentDefinition &
+   element binding {text}* &
+   element serverBinding {text}*
+}
+
+Server = element server {
+   ComponentDefinition
+}
+
+HttpFilterChain =
+    HttpFilter* &
+    ChainBaseContent &
+    ServerBindings
+
+HttpFilter = element filter {
+   ComponentDefinition &
+   FilterConfig?
+}
+
+FilterConfig = element filter-config {
+   anyElement*
+}
+
+Renderer = element renderer {
+   ComponentDefinition
+}

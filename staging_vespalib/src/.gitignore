@@ -1,0 +1,6 @@
+*.dsp
+*.mak
+Makefile.ini
+config_command.sh
+project.dsw
+/module.conf

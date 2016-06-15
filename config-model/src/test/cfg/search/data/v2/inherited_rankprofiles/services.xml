@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+    <content version="1.0" id="inherit">
+        <redundancy>1</redundancy>
+        <documents>
+            <document type="left" mode="index" />
+            <document type="right" mode="index" />
+        </documents>
+        <engine>
+            <proton />
+        </engine>
+        <nodes>
+            <node hostalias="node0" distribution-key="0" />
+        </nodes>
+    </content>
+</services>

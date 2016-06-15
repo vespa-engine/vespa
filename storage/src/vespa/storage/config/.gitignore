@@ -1,0 +1,11 @@
+*.So
+*.lo
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+config-stor-*.cpp
+config-stor-*.h
+/config-rpc-provider.cpp
+/config-rpc-provider.h

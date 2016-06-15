@@ -1,0 +1,15 @@
+HIT --------------------------------------------------------------------
+uri            = '$uri'
+relevancy      = '$relevancy'
+hitno          = '$hitno'
+hit.typeString = '$hit.typeString'
+category       = '$category'
+bsumtitle      = '$bsumtitle'
+hit.siteId     = '$hit.siteId'
+hit.source     = '$hit.source'
+ 
+#foreach( $key in $hit.getPropertyKeySet() )
+'$key'='$hit.getProperty($key)'
+#end
+
+------------------------------------------------------------------------

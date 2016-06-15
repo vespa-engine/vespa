@@ -1,0 +1,4 @@
+.depend
+Makefile
+sendadapter_test
+messagebus_sendadapter_test_app

@@ -1,0 +1,26 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchsummary_docsummary OBJECT
+    SOURCES
+    resultclass.cpp
+    resultconfig.cpp
+    resultpacker.cpp
+    urlresult.cpp
+    getdocsumargs.cpp
+    docsumstate.cpp
+    docsumfieldwriter.cpp
+    docsumwriter.cpp
+    keywordextractor.cpp
+    attributedfw.cpp
+    dynamicteaserdfw.cpp
+    docsumconfig.cpp
+    rankfeaturesdfw.cpp
+    summaryfeaturesdfw.cpp
+    juniperproperties.cpp
+    textextractordfw.cpp
+    docsumformat.cpp
+    geoposdfw.cpp
+    tokenizer.cpp
+    positionsdfw.cpp
+    AFTER
+    searchsummary_config
+)

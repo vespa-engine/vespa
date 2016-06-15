@@ -1,0 +1,8 @@
+*.So
+*.so.*
+.depend
+Makefile
+logctl
+loglevelnames.cpp
+logtest
+logtest.logcontrol

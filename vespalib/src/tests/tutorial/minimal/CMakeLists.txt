@@ -1,0 +1,8 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(vespalib_minimal_test_app
+    SOURCES
+    minimal_test.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(NAME vespalib_minimal_test_app COMMAND vespalib_minimal_test_app)

@@ -1,0 +1,4 @@
+.depend
+Makefile
+component_test
+vespalib_component_test_app

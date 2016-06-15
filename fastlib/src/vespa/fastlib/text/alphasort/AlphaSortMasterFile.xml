@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE masterFile SYSTEM "SortMaster1_0.dtd">
+<masterFile>
+   <sortValueWidth> 8 </sortValueWidth>
+   <importFiles>
+      <importFile>Space.xml</importFile>
+      <importFile>Numbers.xml</importFile>
+      <importFile>Latin.xml</importFile>
+      <importFile>Arabic.xml</importFile>
+      <importFile>Hebrew.xml</importFile>
+      <importFile>Cyrillic.xml</importFile>
+      <importFile>Greek.xml</importFile>
+      <importFile>Kana.xml</importFile>
+   </importFiles>
+</masterFile>
+

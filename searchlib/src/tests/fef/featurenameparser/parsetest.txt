@@ -1,0 +1,55 @@
+# This file is used to test feature name parsing. The file format is
+# as follows: Empty lines and lines starting with '#' will be
+# ignored. Other lines must be on the form
+# "<input>'<=>'<expected_output>". The parser will be run on the
+# input, and the normalized feature name will be compared to the
+# expected output. If they match the test passes, if they don't match
+# the test fails. The normalized feature name in the case of a parse
+# error is the empty string. When parsing this file, no whitespace
+# skipping is allowed inside the input or the expected output. To
+# simplify things, the byte sequence '<=>' may not be used anywhere
+# else than as a separator between the input and the expected
+# output. Malformed lines will result in a failed test.
+
+# basic normalization
+ foo . out <=>foo.out
+ foo ( a , b ) . out <=>foo(a,b).out
+ foo ( a , b , "") . out <=>foo(a,b,).out
+ foo ( bar ( a ) , b , "") . out <=>foo(bar(a),b,).out
+
+# basic parse errors
+<=>
+   <=>
+foo(<=>
+foo(,<=>
+foo().<=>
+foo(a b)<=>
+foo(bar(a b))<=>
+foo . a . b<=>
+
+#quoting
+foo("a b")<=>foo("a b")
+foo(bar("a b"))<=>foo(bar("a b"))
+foo("\"bar\"")<=>foo("\"bar\"")
+foo( "bar(x)" )<=>foo(bar(x))
+foo( "bar( x )" )<=>foo("bar( x )")
+foo("xyz")<=>foo(xyz)
+foo("\\\t\n\r\f\x10")<=>foo("\\\t\n\r\f\x10")
+foo("\y")<=>
+foo("\x05")<=>foo("\x05")
+foo("\x00")<=>
+foo("\")<=>
+foo("abc<=>
+foo("\x5")<=>
+foo("\x31\x32\x33")<=>foo(123)
+
+# my current favorite pair :)
+foo("bar(\"x\")")<=>foo("bar(\"x\")")
+foo("bar(\"x \")")<=>foo(bar("x "))
+
+# might want to disallow non-printables inside quotes...
+foo("	")<=>foo("\t")
+
+#some more fancy normalization tests
+ foo ( a , b ) . out <=>foo(a,b).out
+ foo ( "", bar ( baz ( a, "" ) , "" ) , b , " ") . out <=>foo(,bar(baz(a,),),b," ").out

@@ -1,0 +1,20 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Use when a docproc works on a generic set of field names and the actual names
+# in input doc may be different
+version=1
+namespace=config.docproc
+
+# The chain this mapping applies to
+fieldmapping[].chain string
+
+# The class name of the docproc this mapping applies to
+fieldmapping[].docproc string
+
+#The doc type name this mapping applies to
+fieldmapping[].doctype string default=""
+
+# Field name in input doc
+fieldmapping[].indocument string
+
+# Field name a docproc uses
+fieldmapping[].inprocessor string

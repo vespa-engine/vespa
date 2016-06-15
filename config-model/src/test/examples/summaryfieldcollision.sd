@@ -1,0 +1,26 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search summaryfieldcollision {
+
+  document summaryfieldcollision {
+
+    field title type string {
+      indexing: summary | index
+    }
+
+    field description type string {
+      indexing: summary | index
+    }
+  }
+
+  document-summary sum1 {
+    summary f type string {
+      source: title
+    }
+  }
+
+  document-summary sum2 {
+    summary f type string {
+      source: description
+    }
+  }
+}

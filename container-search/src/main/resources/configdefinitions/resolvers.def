@@ -1,0 +1,17 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=2
+namespace=search.pagetemplates
+
+## A list of resolver components used by com.yahoo.search.PageTemplateSearcher
+
+## A component
+component[].id string
+## The component id used by this component to subscribe to its configs (if any)
+component[].configId reference default=":parent:"
+
+## The id of the class to instantiate for this component.
+component[].classId string default=""
+
+## The symbolic name of the Osgi bundle this component is located in.
+## Assumed to be the same as the classid if not set.
+component[].bundle string default=""

@@ -1,0 +1,50 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/filedistribution/rpc/fileprovider.h>
+#include <boost/thread/barrier.hpp>
+
+namespace filedistribution {
+
+class MockFileProvider : public FileProvider {
+    DownloadCompletedSignal _downloadCompleted;
+    DownloadFailedSignal _downloadFailed;
+public:
+    static const std::string _queueForeverFileReference;
+
+    boost::barrier _queueForeverBarrier;
+
+    boost::optional<boost::filesystem::path> getPath(const std::string& fileReference) {
+        if (fileReference == "dd") {
+            return boost::filesystem::path("direct/result/path");
+        } else {
+            return boost::optional<boost::filesystem::path>();
+        }
+    }
+
+    void downloadFile(const std::string& fileReference) {
+        if (fileReference == _queueForeverFileReference) {
+            _queueForeverBarrier.wait();
+            return;
+        }
+
+        sleep(1);
+        downloadCompleted()(fileReference, "downloaded/path/" + fileReference);
+    }
+
+    //Overrides
+    DownloadCompletedSignal& downloadCompleted() {
+        return _downloadCompleted;
+    }
+
+    DownloadFailedSignal& downloadFailed() {
+        return _downloadFailed;
+    }
+
+    MockFileProvider()
+        :_queueForeverBarrier(2)
+    {}
+};
+
+} //namespace filedistribution
+

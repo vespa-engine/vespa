@@ -1,0 +1,169 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+## Maximum number of ideal state operations scheduled by a distributor.
+maxpendingidealstateoperations int default=100
+
+## The total size of unique documents in a bucket before we split it due to
+## being too big. By default this is now 32 MB.
+splitsize int default=33544432
+        
+## The maximum amount of entries in a file before we should attempt to split it.
+## A meta data entry in a slotfile currently uses 40 bytes. It is probably
+## good to have the split size, such that all meta data entries are normally
+## read when you do the initial read. With the default of 1024, meta data will
+## take up around 40 kB, and the default initial read is 64 kB, allowing the
+## file to grow a bit above max and still all be read in initial read.
+splitcount int default=1024
+
+## The maximum size of unique documents that allows the system to reduce
+## the number of split bits on the bucket, or join two buckets together.
+## The size must be lower than this number, and the count must be lower than
+## joincount.
+joinsize int default=16000000
+
+## The maximum number of unique documents that allows for joining (see
+## joinsize).
+joincount int default=512
+
+## Minimum level of splitting for buckets
+minsplitcount int default=16
+
+## If non-empty, continuously delete all the documents matching this selection.
+garbagecollection.selectiontoremove string default=""
+
+## The interval with which each bucket is purged using the selection above.
+## If 0, no garbage collection is done.
+garbagecollection.interval int default=0
+
+## If false, dont do splits inline with feeding.
+inlinebucketsplitting bool default=true
+
+## List of state checkers (ideal state generators) that should be ignored in the cluster.
+## One or more of the following (case insensitive):
+##
+## SynchronizeAndMove
+## DeleteExtraCopies
+## JoinBuckets
+## SplitBucket
+## SplitInconsistentBuckets
+## SetBucketState
+## GarbageCollection
+blockedstatecheckers[] string restart
+
+## Whether or not distributor should issue reverts when operations partially
+## fail.
+enable_revert bool default=true
+
+## Maximum nodes involved in a merge operation. Currently, this can not be more
+## than 16 nodes due to protocol limitations. However, decreasing the max may
+## be useful if 16 node merges ends up too expensive.
+maximum_nodes_per_merge int default=16
+
+## For internal in process debugging, it may be useful to not start the
+## distributor thread to be able to call tick() manually and run single threaded
+start_distributor_thread bool default=true restart
+
+## The number of ticks calls done before a wait is done.  This can be
+## set higher than 1 for the distributor to improve speed of bucket iterations
+## while still keep CPU load low/moderate.
+ticks_before_wait int default=1
+
+## The sleep time between ticks if there are no more queed tasks.
+ticks_wait_time_ms int default=5
+
+## Max processing time used by deadlock detector.
+max_process_time_ms int default=5000
+
+## Allow overriding default priorities of certain maintenance operations.
+## This is an advanced feature, do not touch this unless you have a very good
+## reason to do so! Configuring these values wrongly may cause starvation of
+## important operations, leading to unpredictable behavior and/or data loss.
+##
+## Merge used to move data to ideal location
+priority_merge_move_to_ideal_node int default=165
+
+## Merge for copies that have gotten out of sync with each other
+priority_merge_out_of_sync_copies int default=120
+
+## Merge for restoring redundancy of copies
+priority_merge_too_few_copies int default=120
+
+## Copy activation when there are no other active copies (likely causing
+## lack of search coverage for that bucket)
+priority_activate_no_existing_active int default=100
+
+## Copy activation when there is already an active copy for the bucket.
+priority_activate_with_existing_active int default=100
+
+## Deletion of bucket copy. Cheap on VDS, not necessarily so on indexed search.
+priority_delete_bucket_copy int default=100
+
+## Joining caused by bucket siblings getting sufficiently small to fit into a
+## single bucket.
+priority_join_buckets int default=155
+
+## Splitting caused by system increasing its minimum distribution bit count.
+priority_split_distribution_bits int default=200
+
+## Splitting due to bucket exceeding max document count or byte size (see
+## splitcount and splitsize config values)
+priority_split_large_bucket int default=175
+
+## Splitting due to buckets being inconsistently split. Should be higher
+## priority than the vast majority of external load.
+priority_split_inconsistent_bucket int default=110
+
+## Background garbage collection. Should be lower priority than external load
+## and other ideal state operations (aside from perhaps minimum bit splitting).
+priority_garbage_collection int default=200
+
+## The distributor can send joins that "lift" a bucket without any siblings
+## higher up in the bucket tree hierarchy. The assumption is that if this
+## is done for all sibling-less buckets, they will all eventually reach a
+## level in the tree where they do in fact have a sibling and may (if their
+## sizes allow) be joined into a single bucket.
+enable_join_for_sibling_less_buckets bool default=false
+
+## There exists a distribution edge case where bucket siblings end up having
+## non-equal ideal locations. This will normally inhibit join operations, as
+## these are only allowed when all nodes have all source buckets involved in
+## the join operation. Setting this property to true means such buckets may
+## still be joined at the cost of transient inconsistencies for the buckets
+## being joined into.
+enable_inconsistent_join bool default=false
+
+## The distributor host info reporter may be disabled entirely, in which case
+## no per-node statistics for merges, latencies or bucket replication factors
+## will be reported back to the cluster controller. Disabling this may make
+## sense in large clusters that do not make use of these reports directly or
+## indirectly, as it causes potentially significant processing overhead on the
+## cluster controller.
+## This host reporter must never be disabled on a Hosted Vespa system, or
+## automatic upgrades will stall.
+enable_host_info_reporting bool default=true
+
+## For each available node, the distributor will report back to the cluster
+## controller a value which indicates the minimum replication factor for any
+## bucket contained on said node. This config exposes a way to alter how this
+## replication factor is computed.
+##
+## Valid enum values and their semantics:
+##
+## TRUSTED - only trusted replicas are counted.
+## ANY - any replica present is counted. This may return an overly optimistic
+##       view of the system. E.g. if there are 3 replicas, 1 having 1000 docs
+##       and 2 having 1 doc, all being out of sync, counting with ANY will still
+##       treat this as a minimum replication factor of 3. Conversely, with
+##       TRUSTED such a bucket would most likely have a factor of 0 (or 1 iff
+##       the trusted status for the replica with 1000 docs is known).
+minimum_replica_counting_mode enum { TRUSTED, ANY } default=TRUSTED
+
+## Bucket activation only makes sense for indexed search clusters, but Proton
+## may also be run in store-only or streaming mode, in which case it does not
+## actually require any activations. If the model infers that Proton is running
+## in such a mode, activation will be explicitly disabled.
+##
+## Activation is always disabled entirely for clusters using VDS as their
+## engine, regardless of the value of this setting.
+disable_bucket_activation bool default=false

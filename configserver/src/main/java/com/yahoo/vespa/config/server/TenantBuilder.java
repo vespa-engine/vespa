@@ -1,0 +1,201 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server;
+
+import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.path.Path;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.ZKApplicationRepo;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.session.*;
+import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
+import com.yahoo.vespa.defaults.Defaults;
+
+import java.io.File;
+import java.time.Clock;
+import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * Builder for helping out with tenant creation. Each of a tenants dependencies may be overridden for testing.
+ *
+ * @author lulf
+ * @since 5.1
+ */
+public class TenantBuilder {
+    private final Path tenantPath;
+    private final GlobalComponentRegistry componentRegistry;
+    private final TenantName tenant;
+    private final Path sessionsPath;
+    private RemoteSessionRepo remoteSessionRepo;
+    private LocalSessionRepo localSessionRepo;
+    private SessionFactory sessionFactory;
+    private LocalSessionLoader localSessionLoader;
+    private ApplicationRepo applicationRepo;
+    private SessionCounter sessionCounter;
+    private ReloadHandler reloadHandler;
+    private RequestHandler requestHandler;
+    private RemoteSessionFactory remoteSessionFactory;
+    private TenantFileSystemDirs tenantFileSystemDirs;
+    private HostValidator<ApplicationId> hostValidator;
+
+    private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
+        this.componentRegistry = componentRegistry;
+        this.tenantPath = zkPath;
+        this.tenant = tenant;
+        this.sessionsPath = tenantPath.append(Tenant.SESSIONS);
+    }
+
+    public static TenantBuilder create(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
+        return new TenantBuilder(componentRegistry, tenant, zkPath);
+    }
+
+    public TenantBuilder withSessionFactory(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+        return this;
+    }
+
+    public TenantBuilder withLocalSessionRepo(LocalSessionRepo localSessionRepo) {
+        this.localSessionRepo = localSessionRepo;
+        return this;
+    }
+
+    public TenantBuilder withRemoteSessionRepo(RemoteSessionRepo remoteSessionRepo) {
+        this.remoteSessionRepo = remoteSessionRepo;
+        return this;
+    }
+
+    public TenantBuilder withApplicationRepo(ApplicationRepo applicationRepo) {
+        this.applicationRepo = applicationRepo;
+        return this;
+    }
+
+    public TenantBuilder withRequestHandler(RequestHandler requestHandler) {
+        this.requestHandler = requestHandler;
+        return this;
+    }
+
+    public TenantBuilder withReloadHandler(ReloadHandler reloadHandler) {
+        this.reloadHandler = reloadHandler;
+        return this;
+    }
+
+    /**
+     * Create a real tenant from the properties given by this builder.
+     *
+     * @return a new {@link Tenant} instance.
+     * @throws Exception if building fails
+     */
+    public Tenant build() throws Exception {
+        createTenantRequestHandler();
+        createApplicationRepo();
+        createRemoteSessionFactory();
+        createRemoteSessionRepo();
+        createSessionCounter();
+        createServerDbDirs();
+        createSessionFactory();
+        createLocalSessionRepo();
+        return new Tenant(tenant,
+                tenantPath,
+                sessionFactory,
+                localSessionRepo,
+                remoteSessionRepo,
+                requestHandler,
+                reloadHandler,
+                applicationRepo,
+                componentRegistry.getCurator(),
+                tenantFileSystemDirs);
+    }
+
+	private void createLocalSessionRepo() {
+        if (localSessionRepo == null) {
+            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, applicationRepo, Clock.systemUTC(), componentRegistry.getConfigserverConfig().sessionLifetime());
+        }
+    }
+
+    private void createSessionFactory() {
+        if (sessionFactory == null || localSessionLoader == null) {
+            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, sessionCounter, sessionsPath, applicationRepo, tenantFileSystemDirs, hostValidator, tenant);
+            if (sessionFactory == null) {
+                sessionFactory = impl;
+            }
+            if (localSessionLoader == null) {
+                localSessionLoader = impl;
+            }
+        }
+    }
+
+    private void createApplicationRepo() {
+        if (applicationRepo == null) {
+            applicationRepo = ZKApplicationRepo.create(componentRegistry.getCurator(), tenantPath.append(Tenant.APPLICATIONS), reloadHandler, tenant);
+        }
+    }
+
+    private void createSessionCounter() {
+        if (sessionCounter == null) {
+            sessionCounter = new SessionCounter(componentRegistry.getCurator(), tenantPath, sessionsPath);
+        }
+    }
+
+    private void createTenantRequestHandler() {
+        if (requestHandler == null || reloadHandler == null) {
+            TenantRequestHandler impl = new TenantRequestHandler(componentRegistry.getMetrics(),
+                    tenant,
+                    Collections.singletonList(componentRegistry.getReloadListener()),
+                    ConfigResponseFactoryFactory.createFactory(componentRegistry.getConfigserverConfig()),
+                    componentRegistry.getHostRegistries());
+            if (hostValidator == null) {
+                this.hostValidator = impl;
+            }
+            if (requestHandler == null) {
+                requestHandler = impl;
+            }
+            if (reloadHandler == null) {
+                reloadHandler = impl;
+            }
+        }
+    }
+
+    private void createRemoteSessionFactory() {
+        if (remoteSessionFactory == null) {
+            remoteSessionFactory = new RemoteSessionFactory(
+                    componentRegistry,
+                    sessionsPath,
+                    tenant);
+        }
+    }
+
+    private void createRemoteSessionRepo() throws Exception {
+        if (remoteSessionRepo == null) {
+            remoteSessionRepo = RemoteSessionRepo.create(componentRegistry.getCurator(),
+                    remoteSessionFactory,
+                    reloadHandler,
+                    sessionsPath,
+                    applicationRepo,
+                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
+                    createSingleThreadedExecutorService(RemoteSessionRepo.class.getName()));
+        }
+    }
+
+    private ExecutorService createSingleThreadedExecutorService(String executorName) {
+        return Executors.newSingleThreadExecutor(ThreadFactoryFactory.getThreadFactory(executorName + "-" + tenant.value()));
+    }
+
+    private void createServerDbDirs() {
+        if (tenantFileSystemDirs == null) {
+            tenantFileSystemDirs = new TenantFileSystemDirs(new File(Defaults.getDefaults().underVespaHome(componentRegistry.getServerDB().getConfigserverConfig().configServerDBDir())), tenant);
+        }
+    }
+
+
+    public LocalSessionRepo getLocalSessionRepo() {
+        return localSessionRepo;
+    }
+
+    public ApplicationRepo getApplicationRepo() {
+        return applicationRepo;
+    }
+}

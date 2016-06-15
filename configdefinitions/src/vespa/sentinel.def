@@ -1,0 +1,50 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config
+
+## The port where sentinel should run its telnet interface
+port.telnet int default=19098
+
+## The port where sentinel should run its RPC interface
+port.rpc int default=19097
+
+## Meta info about the application running on this node. All values are
+## exported to child processes as $VESPA_APPLICATION_TENANT,
+## $VESPA_APPLICATION_NAME, $VESPA_APPLICATION_ENVIRONMENT, $VESPA_APPLICATION_REGION
+## and $VESPA_APPLICATION_INSTANCE
+application.tenant string default="default"
+application.name string default="default"
+application.environment string default="default"
+application.instance string default="default"
+application.region string default="default"
+
+## The command to run. This will be run by sh -c, and the following
+## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,
+## $VESPA_CONFIG_ID
+##
+## stdin points to /dev/null
+## stdout and stderr connected to sentinel via pipe on startup.
+service[].command string
+
+## The command to run before stopping service. The same properties as for
+## startup command holds.
+service[].preShutdownCommand string default=""
+
+## The service name for this service.  Exported in VESPA_SERVICE_NAME
+## environment variable.  All services must have unique names.
+## The service name is used by to start/stop services, and to list
+## them. It is also logged in the service field in every log message.
+service[].name string
+
+## Should the service be auto-started by configd as soon as it starts up,
+## or must it be started manually?  Almost always true.
+service[].autostart bool default=false
+
+## Should the service automatically be restarted if it exits?
+service[].autorestart bool default=true
+
+## Config reference to the service being started.
+## Exported in the VESPA_CONFIG_ID environment variable.
+service[].id reference
+
+## Affinity of this service towards a CPU socket
+service[].affinity.cpuSocket int default=-1

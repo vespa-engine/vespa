@@ -1,0 +1,5 @@
+*_test
+.depend
+Makefile
+log
+documentapi_policies_test_app

@@ -1,0 +1,31 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+include "common.rnc"
+include "admin.rnc"
+include "clients.rnc"
+include "content.rnc"
+include "docproc.rnc"
+include "storage.rnc"
+include "search.rnc"
+include "routing.rnc"
+include "containercluster.rnc"
+include "genericcluster.rnc"
+include "legacygenericcluster.rnc"
+
+start = element services {
+   attribute version { "1.0" }? &
+   attribute major-version { text }? &
+   LegacyGenericCluster* &
+   GenericCluster* &
+   GenericConfig* &
+   Admin? &
+   Clients? &
+   Content* &
+   ContainerCluster* &
+   Routing?
+}
+| GenericCluster
+| Admin
+| Clients
+| Content
+| ContainerCluster
+

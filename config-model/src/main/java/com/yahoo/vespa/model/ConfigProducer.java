@@ -1,0 +1,84 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Map;
+
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.ConfigInstance.Builder;
+import com.yahoo.config.model.producer.UserConfigRepo;
+
+/**
+ * Interface that should be implemented by all config producing modules
+ * in the vespa model.
+ *
+ * @author gjoranv
+ */
+public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer {
+
+    /**
+     * @return the configId of this ConfigProducer.
+     */
+    public String getConfigId();
+
+    /**
+     * @return  The one and only HostSystem of the root node
+     */
+    public HostSystem getHostSystem();
+
+    /** Returns the user configs of this */
+    public UserConfigRepo getUserConfigs();
+    
+    /**
+     * @return this ConfigProducer's children (only 1st level)
+     */
+    public Map<String,? extends ConfigProducer> getChildren();
+
+    /**
+     * @return a List of all Services that are descendants to this ConfigProducer
+     */
+    public List<Service> getDescendantServices();
+
+    /**
+     * Writes files that need to be written.  The files will usually
+     * only be written when the Vespa model is generated through the
+     * deploy-application script.
+     * gv: This is primarily intended for debugging.
+     * @param directory directory to write files to
+     * @throws java.io.IOException if writing fails
+     */
+    public void writeFiles(File directory) throws IOException;
+
+    /**
+     * Dump the three of config producers to the specified stream.
+     * @param out The stream to print to, e.g. System.out
+     */
+    public void dump(PrintStream out);
+
+    /**
+     * Build config from this and all parent ConfigProducers,
+     * such that the root node's config will be added first, and this
+     * ConfigProducer's config last in the returned builder.
+     *
+     * @param builder The builder implemented by the concrete ConfigInstance class
+     * @return true if a model config producer was found, so config was applied
+     */
+    boolean cascadeConfig(Builder builder);
+
+    /**
+     * Adds user config override from this ConfigProducer to the existing builder
+     *
+     * @param builder The ConfigBuilder to add user config overrides.
+     * @return true if overrides were added, false if not.
+     */
+    public boolean addUserConfig(ConfigInstance.Builder builder);
+
+    /**
+     * check constraints depending on the state of the vespamodel graph.
+     * When overriding, you must invoke super.
+     */
+    public void validate() throws Exception;
+}

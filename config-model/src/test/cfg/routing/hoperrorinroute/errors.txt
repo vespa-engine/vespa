@@ -1,0 +1,1 @@
+For hop 1 in route 'foo' in routing table 'document'; Unexpected token ']' in '[bar]] baz'

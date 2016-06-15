@@ -1,0 +1,38 @@
+.TH VESPASTAT 1 2008-08-29 "Vespa" "Vespa Documentation"
+.SH NAME
+vespastat \- Shows status of a given document in Vespa
+.SH SYNPOSIS
+.B vespastat
+[\fIOPTIONS\fR] <\fIDOCUMENT IDENTIFIER\fR]
+.SH DESCRIPTION
+.PP
+This utility makes it possible to check internal information about all
+instances of given document that still exist in Vespa. It is mostly used during
+debugging.
+.PP
+It tells you what storage nodes currently has instances of the document, and
+also informs about older instances of documents that still exist as the space
+has not yet been reclaimed.
+.PP
+The results shows a sorted list of all instances found. The list should be
+sorted by timestamps, with highest timestamp (newest in time) appearing on
+top of the list. Only the entries with the freshest timestamp should be
+used during normal operations. Though, if not all the nodes with copies has
+the newest instance (highest timestamp), the file the document is in is not
+in sync.
+.PP
+Mandatory arguments to long options are mandatory for short options too.
+Short options can not currently be concatenated together.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Shows a short syntax reminder.
+.TP
+\fB\-r\fR, \fB\-\-route\fR
+Send the stat to the following messagebus route. The default should be fine in
+most cases, but in cases where you have multiple storage clusters, you might
+want to send it to a specific cluster.
+
+.SH AUTHOR
+Written by Haakon Humberset.
+.SH "SEE ALSO"
+Full documentation for Vespa

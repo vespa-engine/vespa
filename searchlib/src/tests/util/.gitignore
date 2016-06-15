@@ -1,0 +1,4 @@
+.depend
+Makefile
+*_test
+searchlib_rawbuf_test_app

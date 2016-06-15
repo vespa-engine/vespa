@@ -1,0 +1,28 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Literals
+
+[case1pos1],[case1pos2] -> replaced;
+
+[case1pos1] :- (word1 word2 word3 word4), (word1 word2 word5 word6);
+
+[case1pos2] :- (word1 word2 word5 word7), (word1 word2 word5 word8);
+
+
+# References
+# This is rather artificial because this rule references contexts which are
+# conditionally present. Should we detect and make that illegal?
+
+[case2pos1],[case2pos2] -> ref:[ref1] ref:[ref2] ref:[ref5] ref:[ref8];
+
+[case2pos1] :- ([ref1] [ref2] [ref3] [ref4]), ([ref1] [ref2] [ref5] [ref6]);
+
+[case2pos2] :- ([ref1] [ref2] [ref5] [ref7]), ([ref1] [ref2] [ref5] [ref8]);
+
+[ref1] :- ref1;
+[ref2] :- ref2;
+[ref3] :- ref3;
+[ref4] :- ref4;
+[ref5] :- ref5;
+[ref6] :- ref6;
+[ref7] :- ref7;
+[ref8] :- ref8;

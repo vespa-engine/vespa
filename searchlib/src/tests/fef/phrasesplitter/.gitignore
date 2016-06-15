@@ -1,0 +1,6 @@
+.depend
+Makefile
+benchmark
+phrasesplitter_test
+searchlib_phrasesplitter_test_app
+searchlib_benchmark_app

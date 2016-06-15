@@ -1,0 +1,53 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.searchdefinition;
+
+import com.yahoo.document.DocumenttypesConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.searchdefinition.parser.ParseException;
+import org.junit.Test;
+import java.io.IOException;
+import static org.junit.Assert.fail;
+
+/**
+ * tests importing of document containing array type fields
+ *
+ * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ */
+public class StructTestCase extends SearchDefinitionTestCase {
+    @Test
+    public void testStruct() throws IOException, ParseException {
+        assertConfigFile("src/test/examples/structresult.cfg",
+                new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")).toString() + "\n");
+    }
+    @Test
+    public void testBadStruct() throws IOException {
+        try {
+            SearchBuilder.buildFromFile("src/test/examples/badstruct.sd");
+            fail("Should throw exception.");
+        } catch (ParseException e) {
+            //ok!
+            //e.printStackTrace();
+        }
+    }
+    @Test
+    public void testStructAndDocumentWithSameNames() throws IOException, ParseException {
+        try {
+            DocumenttypesConfig.Builder dt = Deriver.getDocumentTypesConfig("src/test/examples/structanddocumentwithsamenames.sd");
+        } catch (Exception e) {
+            fail("Should not have thrown exception " + e.toString());
+        }
+    }
+
+    /**
+     * Declaring a struct before a document will fail, no doc type to add it to. 
+     * @throws IOException
+     * @throws ParseException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testStructOutsideDocumentIllegal() throws IOException, ParseException {
+        SearchBuilder.buildFromFile("src/test/examples/structoutsideofdocument.sd");
+    }
+
+}
+

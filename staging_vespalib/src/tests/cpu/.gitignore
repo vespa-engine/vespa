@@ -1,0 +1,4 @@
+.depend
+Makefile
+cpu_test
+staging_vespalib_cpu_test_app

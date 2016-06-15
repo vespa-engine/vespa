@@ -1,0 +1,14 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="twitter_dd" inherits = "production">
+    <field name="hits">3</field>
+    <field name="displayGuideline">true</field>
+    <field name="ranking.profile">unranked</field>
+    <field name="qrdedup">user,cosine</field>
+    <field name="model.filter">+yst_tweet_adult_score:0</field>
+    <field name="blender.customer">twitter_dd</field>
+    <field name="reorder"></field>
+    <field name="ranking.sorting">-created_at</field>
+    <field name="filters.tweetAge">21600</field><!-- 21600 sec = 6 hours -->
+    <field name="resultgroupTag">true</field>
+    <field name="filters.userSpamScore">52</field>
+</query-profile>

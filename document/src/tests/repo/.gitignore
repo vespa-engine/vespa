@@ -1,0 +1,5 @@
+*.So
+*_test
+.depend
+Makefile
+document_documenttyperepo_test_app

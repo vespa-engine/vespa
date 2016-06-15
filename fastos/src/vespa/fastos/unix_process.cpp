@@ -1,0 +1,2001 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/autoconf.h>
+#include <vespa/fastos/process.h>
+#include <vespa/fastos/app.h>
+#include <vespa/fastos/unix_ipc.h>
+#include <vespa/fastos/time.h>
+#include <vector>
+
+#ifndef AF_LOCAL
+#define AF_LOCAL        AF_UNIX
+#endif
+
+
+extern "C"
+{
+extern char **environ;
+}
+
+
+#ifndef FASTOS_HAVE_ACCRIGHTSLEN
+
+#ifndef ALIGN
+#define ALIGN(x) (((x) + sizeof(int) - 1) & ~(sizeof(int) - 1))
+#endif
+
+#ifndef CMSG_SPACE
+#define CMSG_SPACE(l) (ALIGN(sizeof(struct cmsghdr)) + ALIGN(l))
+#endif
+
+#ifndef CMSG_LEN
+#define CMSG_LEN(l)(ALIGN(sizeof(struct cmsghdr)) + (l))
+#endif
+
+#endif
+
+static pid_t safe_fork (void)
+{
+    pid_t pid;
+    int retry = 1;
+    while((pid = fork()) == -1 && errno == EAGAIN) {
+        sleep(retry);
+        if (retry < 4) retry *= 2;
+    }
+    return pid;
+}
+
+static int
+normalizedWaitStatus(int status)
+{
+    if (WIFEXITED(status))
+        return WEXITSTATUS(status);
+    else
+        return (0x80000000 | status);
+}
+
+
+// The actual process launched in the proxy process
+class FastOS_UNIX_RealProcess
+{
+private:
+    FastOS_UNIX_RealProcess(const FastOS_UNIX_RealProcess&);
+    FastOS_UNIX_RealProcess& operator=(const FastOS_UNIX_RealProcess&);
+
+public:
+    enum
+    {
+        STREAM_STDIN  = (1 << 0),
+        STREAM_STDOUT = (1 << 1),
+        STREAM_STDERR = (1 << 2),
+        EXEC_SHELL    = (1 << 3)
+    };
+
+private:
+    pid_t _pid;
+    bool _died;
+    bool _terse;        // Set if using direct fork (bypassing proxy process)
+    int _streamMask;
+
+    int _stdinDes[2];
+    int _stdoutDes[2];
+    int _stderrDes[2];
+    int _ipcSockPair[2];
+    int _handshakeDes[2];
+    std::string _runDir;
+    std::string _stdoutRedirName;
+    std::string _stderrRedirName;
+    const char *_path;
+    std::vector<char> _pathProgBuf;
+
+    void CloseDescriptor(int fd);
+    void CloseAndResetDescriptor(int *fd);
+    void CloseDescriptors(void);
+
+public:
+    void SetRunDir(const char * runDir) { _runDir = runDir; }
+    int GetIPCDescriptor(void) const { return _ipcSockPair[0]; }
+    int GetStdinDescriptor(void) const { return _stdinDes[1]; }
+    int GetStdoutDescriptor(void) const { return _stdoutDes[0]; }
+    int GetStderrDescriptor(void) const { return _stderrDes[0]; }
+    int HandoverIPCDescriptor(void) {
+        int ret = _ipcSockPair[0];
+        _ipcSockPair[0] = -1;
+        return ret;
+    }
+
+    int HandoverStdinDescriptor(void) {
+        int ret = _stdinDes[1];
+        _stdinDes[1] = -1;
+        return ret;
+    }
+
+    int HandoverStdoutDescriptor(void) {
+        int ret = _stdoutDes[0];
+        _stdoutDes[0] = -1;
+        return ret;
+    }
+
+    int HandoverStderrDescriptor(void) {
+        int ret = _stderrDes[0];
+        _stderrDes[0] = -1;
+        return ret;
+    }
+
+    void CloseIPCDescriptor(void);
+    void CloseStdinDescriptor(void);
+    void CloseStdoutDescriptor(void);
+    void CloseStderrDescriptor(void);
+
+    FastOS_UNIX_RealProcess *_prev, *_next;
+
+    FastOS_UNIX_RealProcess (int streamMask);
+    ~FastOS_UNIX_RealProcess(void);
+    pid_t GetProcessID(void) const { return _pid; }
+
+    bool IsStdinPiped(void) const {
+        return (_streamMask & STREAM_STDIN ) != 0;
+    }
+
+    bool IsStdoutPiped(void) const {
+        return (_streamMask & STREAM_STDOUT) != 0;
+    }
+
+    bool IsStderrPiped(void) const {
+        return (_streamMask & STREAM_STDERR) != 0;
+    }
+
+    bool IsUsingShell(void) const {
+        return (_streamMask & EXEC_SHELL) != 0;
+    }
+
+    void SetStdoutRedirName(const char *stdoutRedirName) {
+        _stdoutRedirName = stdoutRedirName;
+    }
+
+    void SetStderrRedirName(const char *stderrRedirName) {
+        _stderrRedirName = stderrRedirName;
+    }
+
+    void PrepareExecVPE (const char *prog);
+
+    void
+    ExecVPE (const char *prog,
+             char *const args[],
+             char *const env[]);
+
+    static bool IsWhiteSpace (char c);
+
+    static const char *
+    NextArgument (const char *p,
+                  const char **endArg,
+                  int *length = NULL);
+
+    static int CountArguments (const char *commandLine);
+
+    void
+    RedirOut(const std::string & filename,
+             int targetfd,
+             int exitCodeOnFailure);
+
+    bool
+    ForkAndExec(const char *command,
+                char **environmentVariables,
+                FastOS_UNIX_Process *process,
+                FastOS_UNIX_ProcessStarter *processStarter);
+
+    bool Setup(void);
+    pid_t GetProcessId(void) const { return _pid; }
+    void SetTerse(void) { _terse = true; }
+    ssize_t HandshakeRead(void *buf, size_t len);
+    void HandshakeWrite(int val);
+};
+
+
+void
+FastOS_UNIX_RealProcess::CloseDescriptor(int fd)
+{
+    close(fd);
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseAndResetDescriptor(int *fd)
+{
+    if (*fd == -1)
+        return;
+    CloseDescriptor(*fd);
+    *fd = -1;
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseDescriptors(void)
+{
+    CloseAndResetDescriptor(&_stdinDes[0]);
+    CloseAndResetDescriptor(&_stdinDes[1]);
+    CloseAndResetDescriptor(&_stdoutDes[0]);
+    CloseAndResetDescriptor(&_stdoutDes[1]);
+    CloseAndResetDescriptor(&_stderrDes[0]);
+    CloseAndResetDescriptor(&_stderrDes[1]);
+    CloseAndResetDescriptor(&_ipcSockPair[0]);
+    CloseAndResetDescriptor(&_ipcSockPair[1]);
+    CloseAndResetDescriptor(&_handshakeDes[0]);
+    CloseAndResetDescriptor(&_handshakeDes[1]);
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseIPCDescriptor(void)
+{
+    CloseAndResetDescriptor(&_ipcSockPair[0]);
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseStdinDescriptor(void)
+{
+    CloseAndResetDescriptor(&_stdinDes[1]);
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseStdoutDescriptor(void)
+{
+    CloseAndResetDescriptor(&_stdoutDes[0]);
+}
+
+
+void
+FastOS_UNIX_RealProcess::CloseStderrDescriptor(void)
+{
+    CloseAndResetDescriptor(&_stderrDes[0]);
+}
+
+
+FastOS_UNIX_RealProcess::FastOS_UNIX_RealProcess(int streamMask)
+    : _pid(-1),
+      _died(false),
+      _terse(false),
+      _streamMask(streamMask),
+      _runDir(),
+      _stdoutRedirName(),
+      _stderrRedirName(),
+      _path(NULL),
+      _pathProgBuf(),
+      _prev(NULL),
+      _next(NULL)
+{
+    _stdinDes[0] = _stdinDes[1] = -1;
+    _stdoutDes[0] = _stdoutDes[1] = -1;
+    _stderrDes[0] = _stderrDes[1] = -1;
+    _ipcSockPair[0] = _ipcSockPair[1] = -1;
+    _handshakeDes[0] = _handshakeDes[1] = -1;
+}
+
+
+FastOS_UNIX_RealProcess::~FastOS_UNIX_RealProcess(void)
+{
+    CloseDescriptors();
+}
+
+
+void
+FastOS_UNIX_RealProcess::PrepareExecVPE(const char *prog)
+{
+    const char *path = NULL;
+
+    char defaultPath[] = ":/usr/ucb:/bin:/usr/bin";
+
+    if (strchr(prog, '/') != NULL) {
+        path = "";
+    } else {
+        path = getenv("PATH");
+        if (path == NULL) path = defaultPath;
+    }
+    _path = path;
+    _pathProgBuf.resize(strlen(prog) + 1 + strlen(path) + 1);
+}
+
+
+void
+FastOS_UNIX_RealProcess::ExecVPE (const char *prog,
+                                  char *const args[],
+                                  char *const env[])
+{
+
+    char *fullPath = &_pathProgBuf[0];
+    const char *path = _path;
+
+    for(;;)
+    {
+        char *p;
+        for (p = fullPath; (*path != '\0') && (*path != ':'); path++)
+            *p++ = *path;
+
+        if (p > fullPath) *p++ = '/';
+
+        strcpy(p, prog);
+        //         fprintf(stdout, "Attempting execve [%s]\n", fullPath);
+        //         fflush(stdout);
+        execve(fullPath, args, env);
+
+        if ((errno == ENOEXEC) ||
+            (errno == ENOMEM)  ||
+            (errno == E2BIG)   ||
+            (errno == ETXTBSY))
+            break;
+
+        if (*path == '\0') break;
+        path++;
+    }
+}
+
+
+bool
+FastOS_UNIX_RealProcess::IsWhiteSpace (char c)
+{
+    return (c == ' ' || c == '\t');
+}
+
+
+const char *
+FastOS_UNIX_RealProcess::NextArgument (const char *p,
+                                       const char **endArg,
+                                       int *length)
+{
+    while(*p != '\0')
+    {
+        if (!IsWhiteSpace(*p)) {
+            char quoteChar = '\0';
+            if ((*p == '\'') || (*p == '"')) {
+                quoteChar = *p;
+                p++;
+            }
+
+            const char *nextArg = p;
+
+            // Find the end of the argument.
+            for(;;)
+            {
+                if (*p == '\0') {
+                    if (length != NULL)
+                        *length = p - nextArg;
+                    break;
+                }
+
+                if (quoteChar != '\0') {
+                    if (*p == quoteChar) {
+                        if (length != NULL)
+                            *length = p - nextArg;
+                        p++;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (IsWhiteSpace(*p)) {
+                        if (length != NULL)
+                            *length = p - nextArg;
+                        break;
+                    }
+                }
+                p++;
+            }
+
+            *endArg = p;
+            return nextArg;
+        }
+        p++;
+    }
+    return NULL;
+}
+
+
+int
+FastOS_UNIX_RealProcess::CountArguments (const char *commandLine)
+{
+    int numArgs = 0;
+    const char *nextArg = commandLine;
+    while(NextArgument(nextArg, &nextArg))
+        numArgs++;
+
+    return numArgs;
+}
+
+
+void
+FastOS_UNIX_RealProcess::RedirOut(const std::string & filename,
+                                  int targetfd,
+                                  int exitCodeOnFailure)
+{
+    if (filename.empty() || filename[0] != '>')
+        return;
+
+    int newfd;
+    if (filename[1] == '>') {
+        newfd = open(&filename[2],
+                     O_WRONLY | O_CREAT | O_APPEND,
+                     0666);
+        if (newfd < 0) {
+            if (!_terse) {
+                fprintf(stderr,
+                        "ERROR: Could not open %s for append: %s\n",
+                        &filename[2],
+                        strerror(errno));
+                fflush(stderr);
+            }
+            _exit(exitCodeOnFailure);
+        }
+    } else {
+        newfd = open(&filename[1],
+                     O_WRONLY | O_CREAT | O_TRUNC,
+                     0666);
+        if (newfd < 0) {
+            if (!_terse) {
+                fprintf(stderr,
+                        "ERROR: Could not open %s for write: %s\n",
+                        &filename[1],
+                        strerror(errno));
+                fflush(stderr);
+            }
+            _exit(exitCodeOnFailure);
+        }
+    }
+    if (newfd != targetfd) {
+        dup2(newfd, targetfd);
+        CloseDescriptor(newfd);
+    }
+}
+
+
+bool
+FastOS_UNIX_RealProcess::
+ForkAndExec(const char *command,
+            char **environmentVariables,
+            FastOS_UNIX_Process *process,
+            FastOS_UNIX_ProcessStarter *processStarter)
+{
+    bool rc = false;
+
+    pid_t starterPid = getpid();
+    pid_t starterPPid = getppid();
+
+    sprintf(environmentVariables[0], "%s=%d,%d,%d",
+            "FASTOS_IPC_PARENT",
+            int(starterPid), int(starterPPid), _ipcSockPair[1]);
+
+
+    int numArguments = 0;
+    char **execArgs = NULL;
+
+    if (!IsUsingShell()) {
+        numArguments = CountArguments(command);
+        if (numArguments > 0) {
+            execArgs = new char *[numArguments + 1];
+            const char *nextArg = command;
+
+            for(int i=0; ; i++) {
+                int length;
+                const char *arg = NextArgument(nextArg, &nextArg,
+                                               &length);
+
+                if (arg == NULL) {
+                    // printf("ARG NULL\n");
+                    execArgs[i] = NULL;
+                    break;
+                }
+                // printf("argLen = %d\n", length);
+                execArgs[i] = new char[length + 1];
+                memcpy(execArgs[i], arg, length);
+                execArgs[i][length] = '\0';
+                // printf("arg %d: [%s]\n", i, execArgs[i]);
+            }
+            PrepareExecVPE(execArgs[0]);
+        }
+    }
+    if (process == NULL) {
+        processStarter->CloseProxyDescs(IsStdinPiped() ? _stdinDes[0] : -1,
+                                        IsStdoutPiped() ? _stdoutDes[1] : -1,
+                                        IsStderrPiped() ? _stderrDes[1] : -1,
+                                        _ipcSockPair[1],
+                                        _handshakeDes[0],
+                                        _handshakeDes[1]);
+    }
+    _pid = safe_fork();
+    if (_pid == static_cast<pid_t>(0)) {
+        // Fork success, child side.
+        if (IsStdinPiped() && _stdinDes[0] != STDIN_FILENO) {
+            dup2(_stdinDes[0], STDIN_FILENO);
+            CloseDescriptor(_stdinDes[0]);
+        }
+        _stdinDes[0] = -1;
+        if (IsStdoutPiped() && _stdoutDes[1] != STDOUT_FILENO) {
+            dup2(_stdoutDes[1], STDOUT_FILENO);
+            CloseDescriptor(_stdoutDes[1]);
+        }
+        _stdoutDes[1] = -1;
+        if (IsStderrPiped() && _stderrDes[1] != STDERR_FILENO) {
+            dup2(_stderrDes[1], STDERR_FILENO);
+            CloseDescriptor(_stderrDes[1]);
+        }
+        _stderrDes[1] = -1;
+        // FIX! Check error codes for dup2, and do _exit(127) if trouble
+
+        if ( ! _runDir.empty()) {
+            if (chdir(_runDir.c_str())) {
+                if (!_terse) {
+                    fprintf(stderr,
+                            "ERROR: Could not chdir to %s: %s\n",
+                            _runDir.c_str(),
+                            strerror(errno));
+                    fflush(stderr);
+                }
+                _exit(126);
+            }
+        }
+        RedirOut(_stdoutRedirName.c_str(), STDOUT_FILENO, 124);
+        RedirOut(_stderrRedirName.c_str(), STDERR_FILENO, 125);
+
+        CloseDescriptor(_handshakeDes[0]);
+        _handshakeDes[0] = -1;
+        if (process != NULL) {
+            if (!process->GetKeepOpenFilesIfDirectChild()) {
+                int fdlimit = sysconf(_SC_OPEN_MAX);
+                // Close everything else
+                //         printf("fdlimit = %d\n", fdlimit);
+                for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
+                {
+                    if (fd != _ipcSockPair[1] &&
+                        fd != _handshakeDes[1])
+                        CloseDescriptor(fd);
+                }
+            } else {
+                // Close only other endpoints of pipes.
+                process->CloseDescriptorsDirectChild();
+            }
+        } else {
+            processStarter->CloseProxiedChildDescs();
+        }
+        if (fcntl(_handshakeDes[1], F_SETFD, FD_CLOEXEC) != 0) _exit(127);
+
+        HandshakeWrite(0);
+
+        //         printf("exev(p)e [%s]\n", command);
+        if (IsUsingShell()) {
+            const char *shExecArgs[4];
+
+            shExecArgs[0] = "sh";
+            shExecArgs[1] = "-c";
+            shExecArgs[2] = command;
+            shExecArgs[3] = NULL;
+            execve("/bin/sh",
+                   const_cast<char *const *>
+                   (reinterpret_cast<const char *const *>
+                    (shExecArgs)),
+                   environmentVariables);
+            int error = errno;
+            if (!_terse) {
+                fprintf(stderr,
+                        "ERROR: Could not execv /bin/sh -c '%s': %s\n",
+                        command,
+                        strerror(error));
+                fflush(stderr);
+            }
+            HandshakeWrite(error);
+        }
+        else
+        {
+            if (numArguments > 0) {
+                // printf("Command: [%s]\n", execArgs[0]);
+                ExecVPE(execArgs[0],
+                        static_cast<char *const *>(execArgs),
+                        environmentVariables);
+                int error = errno;
+                if (!_terse) {
+                    fprintf(stderr,
+                            "ERROR: Could not execve %s with "
+                            "path search: %s\n",
+                            execArgs[0],
+                            strerror(error));
+                    fflush(stderr);
+                }
+                HandshakeWrite(error);
+            }
+        }
+        _exit(127);  // If execve fails, we'll get it here
+    }
+    else if(_pid != static_cast<pid_t>(-1))
+    {
+        /* Fork success, parent side */
+
+        // Close unused file descriptors
+        if (IsStdinPiped()) {
+            CloseAndResetDescriptor(&_stdinDes[0]);
+        }
+        if (IsStdoutPiped()) {
+            CloseAndResetDescriptor(&_stdoutDes[1]);
+        }
+        if (IsStderrPiped()) {
+            CloseAndResetDescriptor(&_stderrDes[1]);
+        }
+
+        CloseAndResetDescriptor(&_ipcSockPair[1]);
+
+        CloseAndResetDescriptor(&_handshakeDes[1]);
+
+        int flags = fcntl(_handshakeDes[0], F_GETFL, 0);
+        if (flags != -1) {
+            flags &= ~O_NONBLOCK;
+            fcntl(_handshakeDes[0], F_SETFL, flags);
+        }
+        int phase1res = 0;
+        ssize_t rgot = HandshakeRead(&phase1res, sizeof(int));
+        bool wasError = false;
+        int error = 0;
+        if (static_cast<size_t>(rgot) != sizeof(int)) wasError = true;
+        else if (phase1res != 0) {
+            wasError = true;
+            error = phase1res;
+        } else {
+            int phase2res = 0;
+            rgot = HandshakeRead(&phase2res, sizeof(int));
+            if (rgot >= 1) {
+                if (static_cast<size_t>(rgot) >= sizeof(int))
+                    error = phase2res;
+                wasError = true;
+            }
+        }
+
+        if (wasError) {
+            int status = 0;
+            CloseDescriptors();
+            pid_t wpid = waitpid(_pid, &status, 0);
+            if (wpid <= 0) {
+                fprintf(stderr, "ERROR: Could not start process %s\n", command);
+            } else if (WIFEXITED(status)) {
+                status = WEXITSTATUS(status);
+                switch (status) {
+                case 124:
+                    if ( ! _stdoutRedirName.empty() &&
+                        _stdoutRedirName[0] == '>') {
+                        if (_stdoutRedirName[1] == '>')
+                            fprintf(stderr, "ERROR: Could not open %s for append", &_stdoutRedirName[2]);
+                        else
+                            fprintf(stderr, "ERROR: Could not open %s for write", &_stdoutRedirName[1]);
+                    }
+                    break;
+                case 125:
+                    if ( ! _stderrRedirName.empty() &&
+                        _stderrRedirName[0] == '>') {
+                        if (_stderrRedirName[1] == '>')
+                            fprintf(stderr, "ERROR: Could not open %s for append", &_stderrRedirName[2]);
+                        else
+                            fprintf(stderr, "ERROR: Could not open %s for write", &_stderrRedirName[1]);
+                    }
+                    break;
+                case 126:
+                    if ( ! _runDir.empty()) {
+                        fprintf(stderr, "ERROR: Could not chdir to %s\n", _runDir.c_str());
+                    }
+                    break;
+                case 127:
+                    if (error != 0) {
+                        char errorBuf[100];
+                        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
+                        fprintf(stderr, "ERROR: Could not execve %s: %s\n", command, errorString);
+                    } else
+                        fprintf(stderr, "ERROR: Could not execve %s\n", command);
+                    break;
+                default:
+                    fprintf(stderr, "ERROR: Could not start process %s\n", command);
+                    break;
+                }
+            } else {
+                fprintf(stderr, "ERROR: Could not start process %s\n", command);
+            }
+            fflush(stderr);
+        } else {
+            rc = true;
+        }
+    }
+    if (execArgs != NULL) {
+        char **arg = execArgs;
+        while (*arg != NULL) {
+            delete [] *arg;
+            arg++;
+        }
+        delete [] execArgs;
+    }
+
+    return rc;
+}
+
+
+void
+FastOS_UNIX_RealProcess::HandshakeWrite(int val)
+{
+    if (_handshakeDes[1] == -1)
+        return;
+    const void *wbuf = &val;
+    size_t residue = sizeof(val);
+    for (;;) {
+        /*
+         * XXX: Might need to use syscall(SYS_write....) to avoid
+         * thread library interference.
+         */
+        ssize_t wgot = write(_handshakeDes[1], wbuf, residue);
+        if (wgot < 0 && errno == EINTR)
+            continue;
+        if (wgot <= 0)
+            break;
+        wbuf = static_cast<const char *>(wbuf) + wgot;
+        residue -= wgot;
+        if (residue == 0)
+            break;
+    }
+}
+
+
+ssize_t
+FastOS_UNIX_RealProcess::HandshakeRead(void *buf, size_t len)
+{
+    if (_handshakeDes[0] == -1)
+        return 0;
+    size_t residue = len;
+    ssize_t rgot = 0;
+    void *rbuf = buf;
+    for (;;) {
+        rgot = read(_handshakeDes[0], rbuf, residue);
+        if (rgot < 0 && errno == EINTR)
+            continue;
+        if (rgot <= 0)
+            break;
+        rbuf = static_cast<char *>(rbuf) + rgot;
+        residue -= rgot;
+        if (residue == 0)
+            break;
+    }
+    return (residue == len) ? rgot : len - residue;
+}
+
+
+bool
+FastOS_UNIX_RealProcess::Setup(void)
+{
+    bool rc = true;
+
+    if (IsStdinPiped())  rc = rc && (pipe(_stdinDes) == 0);
+    if (IsStdoutPiped()) rc = rc && (pipe(_stdoutDes) == 0);
+    if (IsStderrPiped()) rc = rc && (pipe(_stderrDes) == 0);
+    if (!IsUsingShell()) rc = rc && (socketpair(AF_LOCAL, SOCK_STREAM,
+                                                0, _ipcSockPair) == 0);
+    rc = rc && (pipe(_handshakeDes) == 0);
+    return rc;
+}
+
+
+FastOS_UNIX_Process::
+FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
+                     FastOS_ProcessRedirectListener *stdoutListener,
+                     FastOS_ProcessRedirectListener *stderrListener,
+                     int bufferSize) :
+    FastOS_ProcessInterface(cmdLine, pipeStdin, stdoutListener,
+                            stderrListener, bufferSize),
+    _pid(0),
+    _died(false),
+    _directChild(true),
+    _keepOpenFilesIfDirectChild(false),
+    _returnCode(-1),
+    _descriptor(),
+    _runDir(),
+    _stdoutRedirName(),
+    _stderrRedirName(),
+    _killed(false),
+    _closing(NULL)
+{
+    _descriptor[TYPE_IPC]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
+    _descriptor[TYPE_IPC]._writeBuffer.reset(new FastOS_RingBuffer(bufferSize));
+
+    if (stdoutListener != NULL)
+        _descriptor[TYPE_STDOUT]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
+    if (stderrListener != NULL)
+        _descriptor[TYPE_STDERR]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
+
+    _app->ProcessLock();
+    _app->AddChildProcess(this);
+    _app->ProcessUnlock();
+
+    // App::AddToIPCComm() is performed when the process is started
+}
+
+FastOS_UNIX_Process::~FastOS_UNIX_Process ()
+{
+    Kill();             // Kill if not dead or detached.
+
+    if ((GetDescriptorHandle(TYPE_IPC)._fd    != -1) ||
+        (GetDescriptorHandle(TYPE_STDOUT)._fd != -1) ||
+        (GetDescriptorHandle(TYPE_STDERR)._fd != -1))
+    {
+        // Let the IPC helper flush write queues and remove us from the
+        // process list before we disappear.
+        static_cast<FastOS_UNIX_Application *>(_app)->RemoveFromIPCComm(this);
+    } else {
+        // No IPC descriptor, do it ourselves
+        _app->ProcessLock();
+        _app->RemoveChildProcess(this);
+        _app->ProcessUnlock();
+    }
+
+    for(int i=0; i<int(TYPE_COUNT); i++) {
+        _descriptor[i]._readBuffer.reset();
+        _descriptor[i]._writeBuffer.reset();
+        CloseDescriptor(DescriptorType(i));
+    }
+
+    CloseListener(TYPE_STDOUT);
+    CloseListener(TYPE_STDERR);
+}
+
+
+void
+FastOS_UNIX_Process::SetRunDir(const char *runDir)
+{
+    _runDir = runDir ? runDir : "";
+}
+
+
+void
+FastOS_UNIX_Process::SetStdoutRedirName(const char *stdoutRedirName)
+{
+    _stdoutRedirName = stdoutRedirName ? stdoutRedirName : "";
+}
+
+
+void
+FastOS_UNIX_Process::SetStderrRedirName(const char *stderrRedirName) {
+    _stderrRedirName = stderrRedirName ? stderrRedirName : "";
+}
+
+
+bool FastOS_UNIX_Process::CreateInternal (bool useShell)
+{
+    return GetProcessStarter()->CreateProcess(this, useShell,
+                                              _pipeStdin,
+                                              _stdoutListener != NULL,
+                                              _stderrListener != NULL);
+}
+
+bool FastOS_UNIX_Process::WriteStdin (const void *data, size_t length)
+{
+    bool rc = false;
+    DescriptorHandle &desc = GetDescriptorHandle(TYPE_STDIN);
+
+    if (desc._fd != -1) {
+        if (data == NULL) {
+            CloseDescriptor(TYPE_STDIN);
+            rc = true;
+        }
+        else
+        {
+            int writerc = write(desc._fd, data, length);
+            if (writerc < int(length))
+                CloseDescriptor(TYPE_STDIN);
+            else
+                rc = true;
+        }
+    }
+
+    return rc;
+}
+
+bool FastOS_UNIX_Process::Signal(int sig)
+{
+    bool rc = false;
+    pid_t pid;
+
+    _app->ProcessLock();
+    pid = GetProcessId();
+    if (pid == 0) {
+        /* Do nothing */
+    } else if (GetDeathFlag()) {
+        rc = true;                    // The process is no longer around.
+    } else if (kill(pid, sig) == 0) {
+        if (sig == SIGKILL)
+            _killed = true;
+        rc = true;
+    }
+    _app->ProcessUnlock();
+    return rc;
+}
+
+bool FastOS_UNIX_Process::Kill ()
+{
+    return Signal(SIGKILL);
+}
+
+bool FastOS_UNIX_Process::WrapperKill ()
+{
+    return Signal(SIGTERM);
+}
+
+bool FastOS_UNIX_Process::InternalWait (int *returnCode,
+                                        int timeOutSeconds,
+                                        bool *pollStillRunning)
+{
+    bool rc = GetProcessStarter()->Wait(this, timeOutSeconds,
+                                        pollStillRunning);
+    if (rc) {
+        if (_killed)
+            *returnCode = KILL_EXITCODE;
+        else
+            *returnCode = _returnCode;
+    }
+
+    return rc;
+}
+
+bool FastOS_UNIX_Process::Wait (int *returnCode, int timeOutSeconds)
+{
+    return InternalWait(returnCode, timeOutSeconds, NULL);
+}
+
+bool FastOS_UNIX_Process::PollWait (int *returnCode, bool *stillRunning)
+{
+    return InternalWait(returnCode, -1, stillRunning);
+}
+
+
+bool FastOS_UNIX_Process::Detach(void)
+{
+    return GetProcessStarter()->Detach(this);
+}
+
+
+bool FastOS_UNIX_Process::SendIPCMessage (const void *data,
+                                          size_t length)
+{
+    if (_descriptor[TYPE_IPC]._fd != -1) {
+        return static_cast<FastOS_UNIX_Application *>
+            (_app)->SendIPCMessage(this, data, length);
+    }
+    return false;
+}
+
+int FastOS_UNIX_Process::BuildStreamMask (bool useShell)
+{
+    int streamMask = 0;
+
+    if (_pipeStdin)      streamMask |= FastOS_UNIX_RealProcess::STREAM_STDIN;
+    if (_stdoutListener) streamMask |= FastOS_UNIX_RealProcess::STREAM_STDOUT;
+    if (_stderrListener) streamMask |= FastOS_UNIX_RealProcess::STREAM_STDERR;
+    if (useShell)        streamMask |= FastOS_UNIX_RealProcess::EXEC_SHELL;
+
+    return streamMask;
+}
+
+void FastOS_UNIX_ProcessStarter::
+ReadBytes(int fd, void *buffer, int bytes)
+{
+
+    uint8_t *writePtr = static_cast<uint8_t *>(buffer);
+    int remaining = bytes;
+
+    while(remaining > 0)
+    {
+        int bytesRead;
+        do
+        {
+            bytesRead = read(fd, writePtr, remaining);
+        } while(bytesRead < 0 && (errno == EINTR));
+
+        if (bytesRead < 0) {
+            //perror("FATAL: FastOS_UNIX_ProcessStarter read");
+            exit(1);
+        }
+        else if(bytesRead == 0)
+        {
+            //fprintf(stderr, "FATAL: FastOS_UNIX_RealProcessStart read 0\n");
+            exit(1);
+        }
+
+        writePtr += bytesRead;
+        remaining -= bytesRead;
+    }
+}
+
+void FastOS_UNIX_ProcessStarter::
+WriteBytes(int fd, const void *buffer, int bytes, bool ignoreFailure)
+{
+    const uint8_t *readPtr = static_cast<const uint8_t *>(buffer);
+    int remaining = bytes;
+
+    while(remaining > 0)
+    {
+        int bytesWritten;
+        do {
+            bytesWritten = write(fd, readPtr, remaining);
+        } while (bytesWritten < 0 && (errno == EINTR));
+
+        if (bytesWritten < 0) {
+            if (ignoreFailure)
+                return;
+            //perror("FATAL: FastOS_UNIX_ProcessStarter write");
+            exit(1);
+        } else if (bytesWritten == 0) {
+            if (ignoreFailure)
+                return;
+            //fprintf(stderr, "FATAL: FastOS_UNIX_RealProcessStart write 0\n");
+            exit(1);
+        }
+
+        readPtr += bytesWritten;
+        remaining -= bytesWritten;
+    }
+}
+
+int FastOS_UNIX_ProcessStarter::ReadInt (int fd)
+{
+    int intStorage;
+    ReadBytes(fd, &intStorage, sizeof(int));
+    return intStorage;
+}
+
+void FastOS_UNIX_ProcessStarter::WriteInt (int fd, int integer,
+                                           bool ignoreFailure)
+{
+    int intStorage = integer;
+    WriteBytes(fd, &intStorage, sizeof(int), ignoreFailure);
+}
+
+void FastOS_UNIX_ProcessStarter::
+AddChildProcess (FastOS_UNIX_RealProcess *node)
+{
+    node->_prev = NULL;
+    node->_next = _processList;
+
+    if (_processList != NULL)
+        _processList->_prev = node;
+    _processList = node;
+}
+
+void FastOS_UNIX_ProcessStarter::
+RemoveChildProcess (FastOS_UNIX_RealProcess *node)
+{
+    if (node->_prev)
+        node->_prev->_next = node->_next;
+    else
+        _processList = node->_next;
+
+    if (node->_next) {
+        node->_next->_prev = node->_prev;
+        node->_next = NULL;
+    }
+
+    if (node->_prev != NULL)
+        node->_prev = NULL;
+}
+
+bool FastOS_UNIX_ProcessStarter::SendFileDescriptor (int fd)
+{
+    //   printf("SENDFILEDESCRIPTOR\n");
+    bool rc = false;
+
+    struct msghdr msg;
+    struct iovec iov;
+
+    memset(&msg, 0, sizeof(msg));
+    memset(&iov, 0, sizeof(iov));
+
+#ifndef FASTOS_HAVE_ACCRIGHTSLEN
+    union
+    {
+        struct cmsghdr cm;
+        char control[CMSG_SPACE(sizeof(int))];
+    } control_un;
+    struct cmsghdr *cmptr;
+
+    memset(&control_un, 0, sizeof(control_un));
+    msg.msg_control = control_un.control;
+    msg.msg_controllen = sizeof(control_un.control);
+
+    cmptr = CMSG_FIRSTHDR(&msg);
+    cmptr->cmsg_len = CMSG_LEN(sizeof(int));
+    cmptr->cmsg_level = SOL_SOCKET;
+    cmptr->cmsg_type = SCM_RIGHTS;
+    memcpy(CMSG_DATA(cmptr), &fd, sizeof(int));
+#else
+    msg.msg_accrights = static_cast<caddr_t>(&fd);
+    msg.msg_accrightslen = sizeof(int);
+#endif
+
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+
+    char dummyData = '\0';
+    iov.iov_base = &dummyData;
+    iov.iov_len = 1;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    int sendmsgrc = sendmsg(_starterSocketDescr, &msg, 0);
+    //   printf("sendmsg = %d\n", sendmsgrc);
+    if (sendmsgrc < 0)
+        perror("sendmsg");
+    else
+        rc = true;
+
+    return rc;
+}
+
+void FastOS_UNIX_ProcessStarter::StarterDoWait ()
+{
+    //            printf("WAIT FOR PROCESSES\n");
+
+    pid_t pid;
+    int status;
+
+    pid_t deadProcesses[MAX_PROCESSES_PER_WAIT];
+    int returnCodes[MAX_PROCESSES_PER_WAIT];
+    int numDeadProcesses = 0;
+
+    while((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        //               printf("Child %d has died\n", pid);
+        bool foundProcess = false;
+
+        FastOS_UNIX_RealProcess *process, *next;
+        for(process = FastOS_UNIX_ProcessStarter::_processList;
+            process != NULL; process = next)
+        {
+
+            // Need to do this here since we are deleting entries
+            next = process->_next;
+
+            if (process->GetProcessId() == pid) {
+                foundProcess = true;
+                RemoveChildProcess(process);
+                delete process;
+                break;
+            }
+        }
+
+        if (!foundProcess && !_hasDetachedProcess)
+            printf("*** Strange... We don't know about pid %d\n", int(pid));
+
+        if (!foundProcess)
+            continue;           /* Don't report death of detached processes */
+
+        deadProcesses[numDeadProcesses] = pid;
+
+        returnCodes[numDeadProcesses] = normalizedWaitStatus(status);
+
+        numDeadProcesses++;
+        if (numDeadProcesses == MAX_PROCESSES_PER_WAIT)
+            break;
+    }
+
+    WriteBytes(_starterSocket, &numDeadProcesses, sizeof(int));
+    for(int i=0; i<numDeadProcesses; i++)
+    {
+        WriteBytes(_starterSocket, &deadProcesses[i], sizeof(pid_t));
+        WriteBytes(_starterSocket, &returnCodes[i], sizeof(int));
+    }
+}
+
+void FastOS_UNIX_ProcessStarter::StarterDoDetachProcess ()
+{
+    //            printf("DETACH A PROCESS\n");
+
+    pid_t dpid;
+    pid_t pid;
+    int status;
+
+    int returnCode;
+
+    ReadBytes(_starterSocket, &dpid, sizeof(pid_t));
+
+    bool foundProcess = false;
+
+    pid = waitpid(dpid, &status, WNOHANG);
+
+    FastOS_UNIX_RealProcess *process, *next;
+    for(process = FastOS_UNIX_ProcessStarter::_processList;
+        process != NULL; process = next) {
+
+        // Need to do this here since we are deleting entries
+        next = process->_next;
+
+        if (process->GetProcessId() == dpid) {
+            foundProcess = true;
+            _hasDetachedProcess = true;
+            RemoveChildProcess(process);
+            delete process;
+            break;
+        }
+    }
+
+    if (foundProcess) {
+        if (pid == dpid) {
+            if (WIFEXITED(status))
+                returnCode = WEXITSTATUS(status);
+            else
+                returnCode = -1;
+        } else
+            returnCode = FastOS_ProcessInterface::DETACH_EXITCODE;
+    } else
+        returnCode = FastOS_ProcessInterface::NOTFOUND_EXITCODE;
+
+    WriteBytes(_starterSocket, &returnCode, sizeof(int));
+}
+
+void FastOS_UNIX_ProcessStarter::StarterDoCreateProcess ()
+{
+    int stringLength = ReadInt(_starterSocket);
+    char cmdLine[stringLength];
+
+    ReadBytes(_starterSocket, cmdLine, stringLength);
+    int streamMask = ReadInt(_starterSocket);
+    char **environmentVariables = ReceiveEnvironmentVariables();
+
+    FastOS_UNIX_RealProcess *process = new FastOS_UNIX_RealProcess(streamMask);
+
+    bool rc=false;
+
+    int runDirLength = ReadInt(_starterSocket);
+
+    if (runDirLength > 0) {
+        char runDir[runDirLength];
+        ReadBytes(_starterSocket, runDir, runDirLength);
+        process->SetRunDir(runDir);
+    }
+
+    int stdoutRedirNameLen = ReadInt(_starterSocket);
+    if (stdoutRedirNameLen > 0) {
+        char stdoutRedirName[stdoutRedirNameLen];
+        ReadBytes(_starterSocket, stdoutRedirName, stdoutRedirNameLen);
+        process->SetStdoutRedirName(stdoutRedirName);
+    }
+
+    int stderrRedirNameLen = ReadInt(_starterSocket);
+    if (stderrRedirNameLen > 0) {
+        char stderrRedirName[stderrRedirNameLen];
+        ReadBytes(_starterSocket, stderrRedirName, stderrRedirNameLen);
+        process->SetStderrRedirName(stderrRedirName);
+    }
+
+    if (process->Setup()) {
+        WriteInt(_starterSocket, CODE_SUCCESS);
+
+        // Send IPC descriptor if the shell is not used
+        if (process->IsUsingShell())
+            rc = true;
+        else {
+            if (SendFileDescriptor(process->GetIPCDescriptor())) {
+                process->CloseIPCDescriptor();
+                WriteInt(_starterSocket, CODE_SUCCESS);
+                if (ReadInt(_starterSocket) == CODE_SUCCESS)
+                    rc = true;
+            } else {
+                WriteInt(_starterSocket, CODE_FAILURE);
+            }
+        }
+
+        if (rc) {
+            rc = false;
+
+            if (!process->IsStdinPiped()) {
+                rc = true;
+            } else {
+                if (SendFileDescriptor(process->GetStdinDescriptor())) {
+                    process->CloseStdinDescriptor();
+                    WriteInt(_starterSocket, CODE_SUCCESS);
+                    if (ReadInt(_starterSocket) == CODE_SUCCESS)
+                        rc = true;
+                } else {
+                    WriteInt(_starterSocket, CODE_FAILURE);
+                }
+            }
+        }
+
+        if (rc) {
+            rc = false;
+
+            if (!process->IsStdoutPiped()) {
+                rc = true;
+            } else {
+                if (SendFileDescriptor(process->GetStdoutDescriptor())) {
+                    process->CloseStdoutDescriptor();
+                    WriteInt(_starterSocket, CODE_SUCCESS);
+                    if (ReadInt(_starterSocket) == CODE_SUCCESS) {
+                        rc = true;
+                    }
+                } else {
+                    WriteInt(_starterSocket, CODE_FAILURE);
+                }
+            }
+        }
+
+        if (rc) {
+            rc = false;
+
+            if (!process->IsStderrPiped()) {
+                rc = true;
+            } else {
+                if (SendFileDescriptor(process->GetStderrDescriptor())) {
+                    process->CloseStderrDescriptor();
+                    WriteInt(_starterSocket, CODE_SUCCESS);
+                    if (ReadInt(_starterSocket) == CODE_SUCCESS)
+                        rc = true;
+                } else {
+                    WriteInt(_starterSocket, CODE_FAILURE);
+                }
+            }
+        }
+
+        if (rc) {
+            rc = false;
+
+            pid_t processId = -1;
+            if (process->ForkAndExec(cmdLine,
+                                     environmentVariables,
+                                     NULL,
+                                     this))
+            {
+                processId = process->GetProcessID();
+                AddChildProcess(process);
+                rc = true;
+            }
+            WriteBytes(_starterSocket, &processId, sizeof(pid_t));
+        }
+    } else {
+        WriteInt(_starterSocket, CODE_FAILURE);
+    }
+
+
+    if (!rc) delete process;
+
+    char **pe = environmentVariables;
+    while(*pe != NULL) {
+        delete [] *pe++;
+    }
+    delete [] environmentVariables;
+}
+
+void FastOS_UNIX_ProcessStarter::Run ()
+{
+    for(;;)
+    {
+        // Receive commands from main process
+        int command = ReadInt(_starterSocket);
+
+        switch(command)
+        {
+        case CODE_WAIT:       StarterDoWait();           break;
+        case CODE_DETACH:     StarterDoDetachProcess();    break;
+        case CODE_NEWPROCESS: StarterDoCreateProcess();  break;
+        case CODE_EXIT:       _exit(2);
+        }
+    }
+}
+
+bool FastOS_UNIX_ProcessStarter::CreateSocketPairs ()
+{
+    bool rc = false;
+    int fileDescriptors[2];
+    if (socketpair(AF_LOCAL, SOCK_STREAM, 0, fileDescriptors) == 0) {
+        _starterSocket = fileDescriptors[0];
+        _mainSocket = fileDescriptors[1];
+
+        // We want to use a separate pair of sockets for passing
+        // file descriptors, as errors sending file descriptors
+        // shouldn't intefere with handshaking of the main <-> starter
+        // process protocol.
+        if (socketpair(AF_LOCAL, SOCK_STREAM, 0, fileDescriptors) == 0) {
+            _starterSocketDescr = fileDescriptors[0];
+            _mainSocketDescr = fileDescriptors[1];
+            rc = true;
+        } else {
+            char errorBuf[100];
+            int error = errno;
+            const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
+            fprintf(stderr, "socketpair() failed: %s\n", errorString);
+        }
+    } else {
+        char errorBuf[100];
+        int error = errno;
+        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
+        fprintf(stderr, "socketpair() failed: %s\n", errorString);
+    }
+    return rc;
+}
+
+bool FastOS_UNIX_ProcessStarter::Start ()
+{
+    bool rc = false;
+
+    if (CreateSocketPairs()) {
+        pid_t pid = safe_fork();
+        if (pid != -1) {
+            if (pid == 0) {  // Child
+                close(_mainSocket);       // Close unused end of pipes
+                close(_mainSocketDescr);
+                _mainSocket = -1;
+                _mainSocketDescr = -1;
+                Run(); // Never returns
+            } else {          // Parent
+                _pid = pid;
+                close(_starterSocket);    // Close unused end of pipes
+                close(_starterSocketDescr);
+                _starterSocket = -1;
+                _starterSocketDescr = -1;
+                rc = true;
+            }
+        } else {
+            char errorBuf[100];
+            int error = errno;
+            const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
+            fprintf(stderr, "could not fork(): %s\n", errorString);
+        }
+    } else {
+        char errorBuf[100];
+        int error = errno;
+        const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
+        fprintf(stderr, "could not CreateSocketPairs: %s\n",
+                errorString);
+    }
+    return rc;
+}
+
+void FastOS_UNIX_ProcessStarter::Stop ()
+{
+    // Ignore failure (if it already died of SIGINT, etc..)
+    WriteInt(_mainSocket, CODE_EXIT, true);
+
+    int result = -1;
+    waitpid(_pid, &result, 0);
+}
+
+int FastOS_UNIX_ProcessStarter::ReadFileDescriptor ()
+{
+    struct msghdr msg;
+    struct iovec iov;
+
+#ifndef FASTOS_HAVE_ACCRIGHTSLEN
+    union
+    {
+        struct cmsghdr cm;
+        char control[CMSG_SPACE(sizeof(int))];
+    } control_un;
+    struct cmsghdr *cmptr;
+
+    msg.msg_control = control_un.control;
+    msg.msg_controllen = sizeof(control_un.control);
+#else
+    int newfd;
+    msg.msg_accrights = static_cast<caddr_t>(&newfd);
+    msg.msg_accrightslen = sizeof(int);
+#endif
+
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+
+    char dummyData = '\0';
+    iov.iov_base = &dummyData;
+    iov.iov_len = 1;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    int recvmsgrc = recvmsg(_mainSocketDescr, &msg, 0);
+
+    if (recvmsgrc <= 0) {
+        perror("recvmsg");
+        return recvmsgrc;
+    }
+    //   printf("recvmsgrc = %d\n", recvmsgrc);
+
+#ifndef FASTOS_HAVE_ACCRIGHTSLEN
+    if ((cmptr = CMSG_FIRSTHDR(&msg)) != NULL &&
+        cmptr->cmsg_len == CMSG_LEN(sizeof(int)))
+    {
+        if (cmptr->cmsg_level != SOL_SOCKET)
+            perror("FastOS_UNIX_ProcessStarter: control level != SOL_SOCKET");
+        if (cmptr->cmsg_type != SCM_RIGHTS)
+            perror("FastOS_UNIX_ProcessStarter: control type != SCM_RIGHTS");
+        int fileDescriptor;
+        memcpy(&fileDescriptor, CMSG_DATA(cmptr), sizeof(int));
+        return fileDescriptor;
+    }
+    else
+        return -1;
+#else
+    if (msg.msg_accrightslen == sizeof(int))
+        return newfd;
+    else
+        return -1;
+#endif
+}
+
+bool FastOS_UNIX_ProcessStarter::
+ReceiveFileDescriptor (bool use, FastOS_UNIX_Process::DescriptorType type,
+                       FastOS_UNIX_Process *xproc)
+{
+    bool rc = false;
+    if (!use)
+        rc = true;
+    else {
+        int sendFileDescResult = ReadInt(_mainSocket);
+
+        if (sendFileDescResult == CODE_SUCCESS) {
+            int fd = ReadFileDescriptor();
+
+            //         printf("Got file descriptor %d, type %d\n", fd, type);
+
+            if (fd > 0) {
+                xproc->SetDescriptor(type, fd);
+                rc = true;
+                WriteInt(_mainSocket, CODE_SUCCESS);
+            }
+            else
+                WriteInt(_mainSocket, CODE_FAILURE);
+        }
+    }
+
+    return rc;
+}
+
+char ** FastOS_UNIX_ProcessStarter::ReceiveEnvironmentVariables ()
+{
+    int numEnvVars = ReadInt(_starterSocket);
+
+    //   printf("Receiving %d environment variables\n", numEnvVars);
+    char **myEnvironment = new char *[numEnvVars + 2];
+
+    // Reserve the first entry for the IPC parent variable
+    myEnvironment[0] = new char [1024];
+
+    int fillIndex=1;
+    for(int i=0; i<numEnvVars; i++)
+    {
+        int envBytes = ReadInt(_starterSocket);
+        myEnvironment[fillIndex] = new char [envBytes];
+        ReadBytes(_starterSocket, myEnvironment[fillIndex], envBytes);
+        //      printf("Received [%s]\n", myEnvironment[fillIndex]);
+
+        if (strlen(myEnvironment[fillIndex]) == 0 ||
+            strncmp(myEnvironment[fillIndex], "FASTOS_IPC_PARENT=", 18) == 0)
+            delete [] myEnvironment[fillIndex];
+        else
+            fillIndex++;
+    }
+    myEnvironment[fillIndex] = NULL;
+
+    return myEnvironment;
+}
+
+
+void FastOS_UNIX_ProcessStarter::SendEnvironmentVariables ()
+{
+    int numEnvVars = 0;
+    char **pe = environ;
+
+    while(*pe++ != NULL)
+        numEnvVars++;
+
+    WriteInt(_mainSocket, numEnvVars);
+
+    // In case someone deletes environment variables at the same time
+    bool gotNull = false;
+
+    pe = environ;
+    for(int i=0; i<numEnvVars; i++)
+    {
+        const char *envString = "";
+        if (!gotNull) {
+            envString = *pe++;
+            if (envString == NULL) {
+                envString = "";
+                gotNull = true;
+            }
+        }
+
+        int envBytes = strlen(envString) + 1;
+        WriteInt(_mainSocket, envBytes);
+        WriteBytes(_mainSocket, envString, envBytes);
+    }
+}
+
+
+void
+FastOS_UNIX_ProcessStarter::
+CloseProxiedChildDescs(void)
+{
+    if (_starterSocket >= 0)      close(_starterSocket);
+    if (_starterSocketDescr >= 0) close(_starterSocketDescr);
+}
+
+
+void
+FastOS_UNIX_ProcessStarter::
+CloseProxyDescs(int stdinPipedDes,
+                int stdoutPipedDes,
+                int stderrPipedDes,
+                int ipcDes,
+                int handshakeDes0,
+                int handshakeDes1)
+{
+    return;
+    if (_closedProxyProcessFiles)
+        return;
+    int fdlimit = sysconf(_SC_OPEN_MAX);
+    for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
+    {
+        if (fd != stdinPipedDes &&
+            fd != stdoutPipedDes &&
+            fd != stderrPipedDes &&
+            fd != ipcDes &&
+            fd != handshakeDes0 &&
+            fd != handshakeDes1 &&
+            fd != _starterSocket &&
+            fd != _starterSocketDescr)
+            close(fd);
+    }
+    _closedProxyProcessFiles = true;
+}
+
+char **
+FastOS_UNIX_ProcessStarter::
+CopyEnvironmentVariables(void)
+{
+    char **env = environ;
+    while (*env != NULL)
+        env++;
+    int numEnvVars = env - environ;
+    char **newEnv = new char *[numEnvVars + 2];
+    newEnv[0] = new char[1024];
+
+    int fillIdx = 1;
+    env = environ;
+    while (*env != NULL) {
+        size_t len = strlen(*env);
+        if (len > 0 &&
+            strncmp(*env, "FASTOS_IPC_PARENT=", 18) != 0) {
+            newEnv[fillIdx] = new char[len + 1];
+            memcpy(newEnv[fillIdx], *env, len + 1);
+            fillIdx++;
+        }
+        env++;
+    }
+    newEnv[fillIdx] = NULL;
+    return newEnv;
+}
+
+
+void
+FastOS_UNIX_ProcessStarter::
+FreeEnvironmentVariables(char **env)
+{
+    char **p = env;
+    while (*p != NULL) {
+        delete [] *p;
+        p++;
+    }
+    delete [] env;
+}
+
+
+bool
+FastOS_UNIX_ProcessStarter::
+CreateProcess (FastOS_UNIX_Process *process,
+               bool useShell,
+               bool pipeStdin,
+               bool pipeStdout,
+               bool pipeStderr)
+{
+    bool rc = false;
+
+    const char *cmdLine = process->GetCommandLine();
+
+    process->_app->ProcessLock();
+
+    if (process->GetDirectChild()) {
+        _hasDirectChildren = true;
+        FastOS_UNIX_RealProcess *rprocess =
+            new FastOS_UNIX_RealProcess(process->BuildStreamMask(useShell));
+        const char *runDir = process->GetRunDir();
+        if (runDir != NULL) {
+            rprocess->SetRunDir(runDir);            // Handover
+        }
+        const char *stdoutRedirName = process->GetStdoutRedirName();
+        if (stdoutRedirName != NULL) {
+            rprocess->SetStdoutRedirName(stdoutRedirName);
+        }
+        const char *stderrRedirName = process->GetStderrRedirName();
+        if (stderrRedirName != NULL) {
+            rprocess->SetStderrRedirName(stderrRedirName);
+        }
+        char **env = CopyEnvironmentVariables();
+        rprocess->SetTerse();
+        rprocess->Setup();
+        if (!useShell)
+            process->SetDescriptor(FastOS_UNIX_Process::TYPE_IPC,
+                                                         rprocess->HandoverIPCDescriptor());
+        if (pipeStdin)
+            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN,
+                                                         rprocess->HandoverStdinDescriptor());
+        if (pipeStdout)
+            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDOUT,
+                                                          rprocess->HandoverStdoutDescriptor());
+        if (pipeStderr)
+            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDERR,
+                                                          rprocess->HandoverStderrDescriptor());
+        pid_t processId = -1;
+        if (rprocess->ForkAndExec(cmdLine, env, process, this)) {
+            processId = rprocess->GetProcessID();
+        }
+        if (processId != -1) {
+            process->SetProcessId(static_cast<unsigned int>(processId));
+            if (!useShell || pipeStdout || pipeStderr)
+                static_cast<FastOS_UNIX_Application *>
+                    (_app)->AddToIPCComm(process);
+            rc = true;
+        } else {
+            fprintf(stderr,
+                    "Forkandexec %s failed\n",
+                    cmdLine);
+        }
+        process->_app->ProcessUnlock();
+        delete rprocess;
+        FreeEnvironmentVariables(env);
+        return rc;
+    }
+
+    _hasProxiedChildren = true;
+    int cmdLineLength = strlen(cmdLine) + 1;
+    WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_NEWPROCESS);
+    WriteInt(_mainSocket, cmdLineLength);
+    WriteBytes(_mainSocket, cmdLine, cmdLineLength);
+    WriteInt(_mainSocket, process->BuildStreamMask(useShell));
+
+    SendEnvironmentVariables();
+
+    const char *runDir = process->GetRunDir();
+    if (runDir != NULL) {
+        int runDirLength = strlen(runDir) + 1;
+        WriteInt(_mainSocket, runDirLength);
+        WriteBytes(_mainSocket, runDir, runDirLength);
+    } else
+        WriteInt(_mainSocket, 0);
+
+    const char *stdoutRedirName = process->GetStdoutRedirName();
+    if (stdoutRedirName != NULL) {
+        int stdoutRedirNameLength = strlen(stdoutRedirName) + 1;
+        WriteInt(_mainSocket, stdoutRedirNameLength);
+        WriteBytes(_mainSocket, stdoutRedirName, stdoutRedirNameLength);
+    } else
+        WriteInt(_mainSocket, 0);
+
+    const char *stderrRedirName = process->GetStderrRedirName();
+    if (stderrRedirName != NULL) {
+        int stderrRedirNameLength = strlen(stderrRedirName) + 1;
+        WriteInt(_mainSocket, stderrRedirNameLength);
+        WriteBytes(_mainSocket, stderrRedirName, stderrRedirNameLength);
+    } else
+        WriteInt(_mainSocket, 0);
+
+
+    // Check return code of process Setup
+    if (ReadInt(_mainSocket) == CODE_SUCCESS) {
+        if (ReceiveFileDescriptor(!useShell,
+                                  FastOS_UNIX_Process::TYPE_IPC,
+                                  process))
+        {
+            if (ReceiveFileDescriptor(pipeStdin,
+                                      FastOS_UNIX_Process::TYPE_STDIN,
+                                      process))
+            {
+                if (ReceiveFileDescriptor(pipeStdout,
+                                          FastOS_UNIX_Process::TYPE_STDOUT,
+                                          process))
+                {
+                    if (ReceiveFileDescriptor(pipeStderr,
+                                              FastOS_UNIX_Process::TYPE_STDERR,
+                                              process))
+                    {
+                        pid_t processId;
+                        ReadBytes(_mainSocket, &processId, sizeof(pid_t));
+                        //                  printf("Received pid = %d\n", int(processId));
+
+                        if (processId != -1) {
+                            process->
+                                SetProcessId(static_cast<unsigned int>(processId));
+
+                            if (!useShell || pipeStdout || pipeStderr)
+                                static_cast<FastOS_UNIX_Application *>
+                                    (_app)->AddToIPCComm(process);
+
+                            rc = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    process->_app->ProcessUnlock();
+
+    return rc;
+}
+
+
+void
+FastOS_UNIX_ProcessStarter::PollReapDirectChildren(void)
+{
+    int status;
+    pid_t pid;
+
+    for (;;) {
+        pid = waitpid(-1, &status, WNOHANG);
+        if (pid <= 0)
+            break;
+
+        FastOS_ProcessInterface *node;
+        for(node = _app->GetProcessList();
+            node != NULL; node = node->_next)
+        {
+            FastOS_UNIX_Process *xproc =
+                static_cast<FastOS_UNIX_Process *>(node);
+
+            if (xproc->GetProcessId() == static_cast<unsigned int>(pid))
+                xproc->DeathNotification(normalizedWaitStatus(status));
+        }
+    }
+}
+
+
+void
+FastOS_UNIX_ProcessStarter::PollReapProxiedChildren(void)
+{
+    // Ask our process starter to report dead processes
+    WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_WAIT);
+
+    int numDeadProcesses;
+    ReadBytes(_mainSocket, &numDeadProcesses, sizeof(int));
+
+    for(int i=0; i<numDeadProcesses; i++)
+    {
+        pid_t deadProcess;
+        int returnCode;
+
+        ReadBytes(_mainSocket, &deadProcess, sizeof(pid_t));
+        ReadBytes(_mainSocket, &returnCode, sizeof(int));
+
+        FastOS_ProcessInterface *node;
+        for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+        {
+            FastOS_UNIX_Process *xproc =
+                static_cast<FastOS_UNIX_Process *>(node);
+
+            if (xproc->GetProcessId() == static_cast<unsigned int>(deadProcess))
+            {
+                xproc->DeathNotification(returnCode);
+            }
+        }
+    }
+}
+
+
+bool
+FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
+                                 int timeOutSeconds,
+                                 bool *pollStillRunning)
+{
+    bool rc = true;
+
+    bool timeOutKillAttempted = false;
+
+    FastOS_Time startTime;
+    startTime.SetNow();
+
+    if (pollStillRunning != NULL)
+        *pollStillRunning = true;
+
+    for (;;) {
+        process->_app->ProcessLock();
+
+        if (_hasDirectChildren)  PollReapDirectChildren();
+
+        if (_hasProxiedChildren) PollReapProxiedChildren();
+
+        process->_app->ProcessUnlock();
+
+        if (process->GetDeathFlag()) {
+            if (pollStillRunning != NULL)
+                *pollStillRunning = false;
+            break;
+        }
+
+        //      printf("wasn't dead yet (%d), sleeping\n",
+        //             process->GetProcessId());
+
+        if (pollStillRunning != NULL)
+            break;
+
+        if ((timeOutSeconds != -1) && !timeOutKillAttempted) {
+            FastOS_Time waitTime;
+            waitTime.SetNow();
+
+            waitTime -= startTime;
+
+            if (waitTime.MilliSecs() >= (timeOutSeconds * 1000)) {
+                process->Kill();
+                timeOutKillAttempted = true;
+            }
+        }
+
+
+        // Sleep 100 ms
+        FastOS_Thread::Sleep(100);
+    }
+
+    return rc;
+}
+
+bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
+{
+    bool rc = true;
+    pid_t pid;
+
+    process->_app->ProcessLock();
+
+    pid = process->GetProcessId();
+
+    if (pid == 0) {
+        process->_app->ProcessUnlock();
+        return false;                   // Cannot detach nonstarted process.
+    }
+    if (process->GetDeathFlag()) {
+        process->_app->ProcessUnlock();
+        return true;
+    }
+
+    if (process->GetDirectChild()) {
+        int status = 0;
+        _hasDetachedProcess = true;
+        pid_t rpid = waitpid(pid, &status, WNOHANG);
+        if (rpid > 0) {
+            status = normalizedWaitStatus(status);
+        } else if (rpid < 0)
+            status = FastOS_ProcessInterface::NOTFOUND_EXITCODE;
+        else
+            status = FastOS_ProcessInterface::DETACH_EXITCODE;
+        process->DeathNotification(status);
+    } else {
+        // Ask our process starter to detach process
+        WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_DETACH);
+        WriteBytes(_mainSocket, &pid, sizeof(pid_t));
+
+        int returnCode;
+        ReadBytes(_mainSocket, &returnCode, sizeof(int));
+        process->DeathNotification(returnCode);
+    }
+    process->_app->ProcessUnlock();
+    return rc;
+}
+
+bool FastOS_UNIX_Process::SetPriority (Priority priority)
+{
+    int newPriority;
+
+    switch (priority)
+    {
+    case PRIORITY_LOWEST:        newPriority = 20;    break;
+    case PRIORITY_BELOW_NORMAL:  newPriority = 10;    break;
+    case PRIORITY_NORMAL:        newPriority = 0;    break;
+    case PRIORITY_ABOVE_NORMAL:  newPriority = -10;   break;
+    case PRIORITY_HIGHEST:       newPriority = -20;   break;
+    default:
+        newPriority = 0;
+    }
+
+    return (setpriority(PRIO_PROCESS, _pid, newPriority) == 0);
+
+}

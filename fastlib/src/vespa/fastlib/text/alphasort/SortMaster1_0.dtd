@@ -1,0 +1,10 @@
+<!--  (c) 2002 Fast Search & Transfer. All rights reserved.  -->
+<!--  Version 1.0 -->
+
+<!ELEMENT masterFile (sortValueWidth, importFiles)>
+<!ELEMENT importFiles (importFile+)>
+<!ELEMENT sortValueWidth (#PCDATA)>
+<!ELEMENT importFile (#PCDATA)>
+
+
+

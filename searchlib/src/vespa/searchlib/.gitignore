@@ -1,0 +1,4 @@
+.depend
+Makefile
+config.h
+/libsearchlib.so.5.1

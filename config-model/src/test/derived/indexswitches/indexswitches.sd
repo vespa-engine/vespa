@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search indexswitches {
+
+  document indexswitches {
+
+    field title type string {
+      indexing: summary | index
+    }
+
+    field descr type string {
+      indexing: summary | index
+    }
+
+    field source_src type string {
+
+    }
+  }
+  field source type string {
+      indexing {
+        input source_src |
+        switch {
+	    case "amg":    input source_src | summary;
+	    case "theweb": input source_src | summary | index;
+	    default:       input source_src . " partner" | summary | index;
+        };
+      }
+      stemming: none
+  }
+  fieldset default {
+    fields: title, descr
+  }
+}

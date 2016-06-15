@@ -1,0 +1,45 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="richerSerp" layout="column">
+    <include idref="header"/>
+    <section layout="mainAndRight">
+        <section layout="row" placement="main">
+            <section layout="column" description="left main pane">
+                <choice>
+                    <alternative>
+                        <section layout="row" max="5" description="Bar of images, from one of two possible sources">
+                            <choice>
+                                <source name="images"/>
+                                <alternative>
+                                    <source name="flickr">
+                                        <presentation name="mouseOverImage"/>
+                                    </source>
+                                    <source name="twitpic">
+                                        <choice>
+                                            <presentation name="mouseOverImage">
+                                                <parameter name="hovertime">5</parameter>
+                                                <parameter name="borderColor">#ff00ff</parameter>
+                                            </presentation>
+                                            <presentation name="regularImage"/>
+                                        </choice>
+                                        <parameter name="filter">origin=twitter</parameter>
+                                    </source>
+                                </alternative>
+                            </choice>
+                            <choice>
+                                <presentation name="regularImageBox"/>
+                                <presentation name="newImageBox"/>
+                            </choice>
+                        </section>
+                        <section max="1" source="local map video ticker weather" description="A single relevant graphically rich element"/>
+                    </alternative>
+                    <section blending="blend" max="10" source="web news" description="Various kinds of traditional search results"/>
+                </choice>
+            </section>
+            <section layout="column" blending="group" source="answers blogs twitter" description="right main pane, ugc stuff, grouped by source"/>
+        </section>
+        <section layout="column" source="ads" placement="right" order="relevance clickProbability">
+            <presentation name="newAdBox"/>
+        </section>
+    </section>
+    <include idref="footer"/>
+</page>

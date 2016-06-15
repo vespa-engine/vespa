@@ -1,0 +1,11 @@
+*.pid
+.depend
+Makefile
+logd.cfg
+dummylogger
+dummyserver
+logserver.port
+rotate_test
+vespa.log*
+logd_dummylogger_app
+logd_dummyserver_app

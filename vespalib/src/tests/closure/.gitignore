@@ -1,0 +1,6 @@
+.depend
+Makefile
+autoclosurecaller_test
+closure_test
+vespalib_autoclosurecaller_test_app
+vespalib_closure_test_app

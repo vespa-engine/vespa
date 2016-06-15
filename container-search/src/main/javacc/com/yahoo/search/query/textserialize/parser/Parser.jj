@@ -1,0 +1,205 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @author <a href="mailto:tonyv@yahoo-inc.com">tonyv</a>
+ */
+options {
+    LOOKAHEAD = 1;
+    STATIC = false;
+    UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(Parser)
+package com.yahoo.search.query.textserialize.parser;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
+public class Parser {
+    private DispatchFormHandler dispatchFormHandler;
+    private Object dispatchContext;
+
+    public Parser(java.io.Reader stream, DispatchFormHandler dispatchFormHandler, Object dispatchContext) {
+        this(stream);
+        this.dispatchFormHandler = dispatchFormHandler;
+        this.dispatchContext = dispatchContext;
+    }
+
+    private static String parseString(String in) {
+        return stripEnclosingQuotes(
+            in.replace("\\\\", "\\").replace("\\\"", "\""));
+    }
+
+    private static String stripEnclosingQuotes(String in) {
+        return in.substring(1, in.length() - 1);
+    }
+}
+
+PARSER_END(Parser)
+
+Object start():
+{
+    final Object result;
+}
+{
+    result = form()
+    <EOF>
+
+    { return result; }
+}
+
+Object form():
+{
+    final Object result;
+}
+{
+    (
+    result = dispatchForm() |
+    result = map() |
+    result = array() |
+    result = literal()
+    )
+
+    { return result; }
+}
+
+Object literal():
+{
+    final Object result;
+}
+{
+    (
+    result = string() |
+    result = number() |
+    result = bool() |
+    result = null_()
+    )
+
+    { return result; }
+}
+
+String string():
+{
+    Token t;
+}
+{
+    t = <STRING>
+    { return parseString(t.image); }
+}
+
+Double number():
+{
+    Token t;
+}
+{
+    t = <NUMBER>
+    { return Double.valueOf(t.image); }
+}
+
+Boolean bool():
+{
+    Token t;
+}
+{
+    t = <BOOLEAN>
+
+    {
+     if ("on".equals(t.image)) return true;
+     return Boolean.valueOf(t.image);
+    }
+}
+
+Object null_():
+{}
+{
+    <NULL>
+    { return null; }
+}
+
+Map<Object, Object> map():
+{
+    Object key, value;
+    Map<Object, Object> result = new LinkedHashMap<Object, Object>();
+}
+{
+    <OPEN_CURLY>
+    (
+       key = form()
+       value = form()
+
+       { result.put(key, value); }
+    )*
+    <CLOSE_CURLY>
+
+    { return result; }
+}
+
+Object dispatchForm():
+{
+    Token symbol;
+    List<Object> arguments;
+}
+{
+    <OPEN_PAREN>
+    symbol = <SYMBOL>
+    arguments = forms()
+    <CLOSE_PAREN>
+
+    { return dispatchFormHandler.dispatch(symbol.image, arguments, dispatchContext); }
+}
+
+List<Object> forms():
+{
+    Object value;
+    List<Object> results = new ArrayList<Object>();
+}
+{
+    (
+        value = form()
+        { results.add(value); }
+    )*
+
+    { return results; }
+}
+
+List<Object> array():
+{
+    List<Object> result;
+}
+{
+    <OPEN_SQUARE>
+    result = forms()
+    <CLOSE_SQUARE>
+
+    { return result; }
+}
+
+SKIP : { " " | "\n" | "\r" | "\t" | "\f" | "," }
+
+TOKEN : { < OPEN_PAREN: "(" > }
+TOKEN : { < CLOSE_PAREN: ")" > }
+TOKEN : { < OPEN_CURLY: "{" > }
+TOKEN : { < CLOSE_CURLY: "}" > }
+TOKEN : { < OPEN_SQUARE: "[" > }
+TOKEN : { < CLOSE_SQUARE: "]" > }
+
+TOKEN : { <BOOLEAN: "true" | "false" | "on" | "off" > }
+TOKEN : { <NULL: "null" > }
+
+TOKEN : { < STRING: <QUOTE> (<STRING_CHARACTER>)* <QUOTE> > }
+TOKEN : { < #STRING_CHARACTER: "\\\\" | "\\\"" | ~["\"", "\\"] > }
+TOKEN : { < #QUOTE: "\"" > }
+
+TOKEN : { < NUMBER: (<SIGN>)? (<DIGIT>)+ ("." (<DIGIT>)*)? (<EXPONENT>)? > }
+TOKEN : { < #EXPONENT: ["e", "E"] (<SIGN>)? (<DIGIT>)+ > }
+TOKEN : { < #SIGN: ["+", "-"] >}
+TOKEN : { < #DIGIT: ["0" - "9"] > }
+
+TOKEN : { < SYMBOL: <SYMBOL_FIRST> (<SYMBOL_REST>)* > }
+TOKEN : { < #SYMBOL_FIRST: ["a"-"z"] | ["A"-"Z"] |
+        "+" | "-" | "*" | "/" |
+        "!" | "?" |
+        "-" | "_" |
+        "=" | ">" | "<"  > }
+TOKEN : { < #SYMBOL_REST: <SYMBOL_FIRST> | ["0" - "9"] | "." > }

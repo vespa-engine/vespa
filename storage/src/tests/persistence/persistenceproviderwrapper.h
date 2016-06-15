@@ -1,0 +1,153 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::PersistenceProviderWrapper
+ *
+ * \brief Test utility class for intercepting all operations upon a
+ * persistence layer, injecting errors and performing logging.
+ *
+ * The PersistenceProviderWrapper class implements the basic SPI by
+ * logging all operations and then delegating handling the operation
+ * to the SPI instance given during construction. If an error result
+ * is specified and the operation invoked is tagged that it should be
+ * failed via setFailureMask(), the operation on the wrapped SPI will
+ * not be executed, but the given error result will be immediately
+ * returned instead (wrapped in the proper return type).
+ */
+#pragma once
+
+#include <vector>
+#include <string>
+#include <vespa/persistence/spi/abstractpersistenceprovider.h>
+
+namespace storage {
+
+class PersistenceProviderWrapper : public spi::AbstractPersistenceProvider
+{
+public:
+    enum OPERATION_FAILURE_FLAGS
+    {
+        FAIL_LIST_BUCKETS     = 1 << 0,
+        FAIL_BUCKET_INFO      = 1 << 1,
+        FAIL_GET              = 1 << 2,
+        FAIL_PUT              = 1 << 3,
+        FAIL_REMOVE           = 1 << 4,
+        FAIL_REMOVE_IF_FOUND  = 1 << 5,
+        FAIL_REPLACE_WITH_REMOVE = 1 << 6,
+        FAIL_UPDATE           = 1 << 7,
+        FAIL_REVERT           = 1 << 8,
+        FAIL_FLUSH            = 1 << 9,
+        FAIL_CREATE_ITERATOR  = 1 << 10,
+        FAIL_ITERATE          = 1 << 11,
+        FAIL_DESTROY_ITERATOR = 1 << 12,
+        FAIL_DELETE_BUCKET    = 1 << 13,
+        FAIL_SPLIT            = 1 << 14,
+        FAIL_JOIN             = 1 << 15,
+        FAIL_CREATE_BUCKET    = 1 << 16,
+        FAIL_BUCKET_PERSISTENCE = FAIL_PUT|FAIL_REMOVE|FAIL_UPDATE|FAIL_REVERT|FAIL_FLUSH,
+        FAIL_ALL_OPERATIONS   = 0xffff,
+        // TODO: add more as needed
+    };
+private:
+    spi::PersistenceProvider& _spi;
+    spi::Result _result;
+    mutable std::vector<std::string> _log;
+    uint32_t _failureMask;
+public:
+    PersistenceProviderWrapper(spi::PersistenceProvider& spi)
+        : _spi(spi),
+          _result(spi::Result(spi::Result::NONE, "")),
+          _log(),
+          _failureMask(0)
+    {
+    }
+
+    /**
+     * Explicitly set result to anything != NONE to have all operations
+     * return the given error without the wrapped SPI ever being invoked.
+     */
+    void setResult(const spi::Result& result) {
+        _result = result;
+    }
+    void clearResult() {
+        _result = spi::Result(spi::Result::NONE, "");
+    }
+    const spi::Result& getResult() const { return _result; }
+    /**
+     * Set a mask for operations to fail with _result
+     */
+    void setFailureMask(uint32_t mask) { _failureMask = mask; }
+    uint32_t getFailureMask() const { return _failureMask; }
+
+    /**
+     * Get a string representation of all the operations performed on the
+     * SPI with a newline separating each operation.
+     */
+    std::string toString() const;
+    /**
+     * Clear log of all operations performed.
+     */
+    void clearOperationLog() { _log.clear(); }
+    const std::vector<std::string>& getOperationLog() const { return _log; }
+
+    spi::Result createBucket(const spi::Bucket&, spi::Context&);
+
+    spi::PartitionStateListResult getPartitionStates() const;
+
+    spi::BucketIdListResult listBuckets(spi::PartitionId) const;
+
+    spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const;
+
+    spi::Result put(const spi::Bucket&, spi::Timestamp, const document::Document::SP&, spi::Context&);
+
+    spi::RemoveResult remove(const spi::Bucket&,
+                             spi::Timestamp,
+                             const spi::DocumentId&,
+                             spi::Context&);
+
+    spi::RemoveResult removeIfFound(const spi::Bucket&,
+                                    spi::Timestamp,
+                                    const spi::DocumentId&,
+                                    spi::Context&);
+
+    spi::UpdateResult update(const spi::Bucket&,
+                             spi::Timestamp,
+                             const document::DocumentUpdate::SP&,
+                             spi::Context&);
+
+    spi::GetResult get(const spi::Bucket&,
+                       const document::FieldSet&,
+                       const spi::DocumentId&,
+                       spi::Context&) const;
+
+    spi::Result flush(const spi::Bucket&, spi::Context&);
+
+    spi::CreateIteratorResult createIterator(const spi::Bucket&,
+                                             const document::FieldSet&,
+                                             const spi::Selection&,
+                                             spi::IncludedVersions versions,
+                                             spi::Context&);
+
+    spi::IterateResult iterate(spi::IteratorId,
+                               uint64_t maxByteSize, spi::Context&) const;
+
+    spi::Result destroyIterator(spi::IteratorId, spi::Context&);
+
+    spi::Result deleteBucket(const spi::Bucket&, spi::Context&);
+
+    spi::Result split(const spi::Bucket& source,
+                      const spi::Bucket& target1,
+                      const spi::Bucket& target2,
+                      spi::Context&);
+
+    spi::Result join(const spi::Bucket& source1,
+                     const spi::Bucket& source2,
+                     const spi::Bucket& target,
+                     spi::Context&);
+
+    spi::Result removeEntry(const spi::Bucket&,
+                            spi::Timestamp,
+                            spi::Context&);
+};
+
+} // storage
+

@@ -1,0 +1,57 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <boost/utility.hpp>
+#include <memory>
+#include <vespa/vespalib/util/referencecounter.h>
+
+namespace mbus {
+
+class RoutingNode;
+class RPCNetwork;
+
+/**
+ * This interface defines the necessary methods to process incoming and send
+ * outgoing RPC sends. The {@link RPCNetwork} maintains a list of supported RPC
+ * signatures, and dispatches sends to the corresponding adapter.
+ */
+class RPCSendAdapter : public boost::noncopyable
+{
+public:
+    /**
+     * Required for inheritance.
+     */
+    virtual ~RPCSendAdapter() { }
+
+    /**
+     * Attaches this adapter to the given network.
+     *
+     * @param net The network to attach to.
+     */
+    virtual void attach(RPCNetwork &net) = 0;
+
+    /**
+     * Performs the actual sending to the given recipient.
+     *
+     * @param recipient     The recipient to send to.
+     * @param version       The version for which the payload is serialized.
+     * @param payload       The already serialized payload of the message to send.
+     * @param timeRemaining The time remaining until the message expires.
+     */
+    virtual void send(RoutingNode &recipient, const vespalib::Version &version,
+                      BlobRef payload, uint64_t timeRemaining) = 0;
+
+    /**
+     * Performs the actual sending to the given recipient.
+     *
+     * @param recipient     The recipient to send to.
+     * @param version       The version for which the payload is serialized.
+     * @param payload       The already serialized payload of the message to send.
+     * @param timeRemaining The time remaining until the message expires.
+     */
+    virtual void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
+                      Blob payload, uint64_t timeRemaining) = 0;
+};
+
+} // namespace mbus
+

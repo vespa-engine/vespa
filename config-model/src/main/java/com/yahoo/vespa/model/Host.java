@@ -1,0 +1,121 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.logging.Level;
+import com.yahoo.cloud.config.SentinelConfig;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+
+/**
+ * A physical host, running a set of services.
+ * The identity of a host is its hostname. Hosts are comparable on their host name.
+ *
+ * @author gjoranv
+ */
+public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>> implements SentinelConfig.Producer, Comparable<Host> {
+
+    private ConfigSentinel configSentinel = null;
+    private final String hostname;
+    private final boolean multitenant;
+
+    /**
+     * Constructs a new Host instance.
+     *
+     * @param parent   parent AbstractConfigProducer in the config model.
+     * @param hostname hostname for this host.
+     */
+    public Host(AbstractConfigProducer parent, String hostname) {
+        this(parent, hostname, false);
+    }
+
+    private Host(AbstractConfigProducer parent, String hostname, boolean multitenant) {
+        super(parent, hostname);
+        Objects.requireNonNull(hostname, "The host name of a host cannot be null");
+        this.multitenant = multitenant;
+        this.hostname = hostname;
+        if (parent instanceof HostSystem) {            
+            checkName((HostSystem) parent, hostname);            
+        }
+    }
+
+    private void checkName(HostSystem parent, String hostname) {
+        // Give a warning if the host does not exist
+        if (! parent.getIp(hostname).equals("0.0.0.0")) {
+            // Host exists - warn if given hostname is not a fully qualified one.
+            String canonical=hostname;
+            try {
+                canonical = parent.getCanonicalHostname(hostname);
+            } catch (UnknownHostException e) {
+                deployLogger().log(Level.WARNING, "Unable to find canonical hostname of host: " + hostname);
+            }
+            if ((null != canonical) && (! hostname.equals(canonical))) {
+                deployLogger().log(Level.WARNING, "Host named '" + hostname + "' will not receive any config " +
+                     "since it does not match its canonical hostname: " + canonical);
+            }
+        }
+    }
+
+    public static Host createMultitenantHost(AbstractConfigProducer parent, String hostname) {
+        return new Host(parent, hostname, true);
+    }
+
+    // For testing
+    Host(AbstractConfigProducer parent) {
+        super(parent, "testhost");
+        hostname = "testhost";
+        configSentinel = null;
+        multitenant = false;
+    }
+
+    public String getHostName() {
+        return hostname;
+    }
+
+    public boolean isMultitenant() {
+        return multitenant;
+    }
+
+    /**
+     * Returns the string representation of this Host object.
+     * @return The string representation of this Host object.
+     */
+    public String toString() {
+        return "host '" + getHostName() + "'";
+    }
+
+    @Override
+    public void writeFiles(File directory) throws IOException {
+    }
+
+    @Override
+    public void getConfig(SentinelConfig.Builder builder) {
+        // TODO (MAJOR_RELEASE): This shouldn't really be here, but we need to make sure users can upgrade if we change sentinel to use hosts/<hostname>/sentinel instead of hosts/<hostname>
+        // as config id. We should probably wait for a major release
+        if (configSentinel != null) {
+            configSentinel.getConfig(builder);
+        }
+    }
+
+    public void setConfigSentinel(ConfigSentinel configSentinel) {
+        this.configSentinel = configSentinel;
+    }
+
+    @Override
+    public int hashCode() { return hostname.hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Host)) return false;
+        return ((Host)other).hostname.equals(hostname);
+    }
+
+    @Override
+    public int compareTo(Host other) {
+        return this.hostname.compareTo(other.hostname);
+    }
+
+}

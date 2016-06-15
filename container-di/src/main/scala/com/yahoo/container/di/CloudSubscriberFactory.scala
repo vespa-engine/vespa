@@ -1,0 +1,100 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.container.di
+
+import com.yahoo.config.{ConfigInstance}
+import CloudSubscriberFactory._
+import config.{Subscriber, SubscriberFactory}
+import scala.collection.JavaConversions._
+import com.yahoo.vespa.config.ConfigKey
+import scala.Some
+import com.yahoo.config.subscription.{ConfigHandle, ConfigSource, ConfigSourceSet, ConfigSubscriber}
+import java.lang.IllegalArgumentException
+import java.util.logging.Logger
+import com.yahoo.log.LogLevel
+
+
+/**
+ * @author tonytv
+ */
+
+class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory
+{
+  private var testGeneration: Option[Long] = None
+
+  private val activeSubscribers = new java.util.WeakHashMap[CloudSubscriber, Int]()
+
+  override def getSubscriber(configKeys: java.util.Set[_ <: ConfigKey[_]]): Subscriber = {
+    val subscriber = new CloudSubscriber(configKeys.toSet.asInstanceOf[Set[ConfigKeyT]], configSource)
+
+    testGeneration.foreach(subscriber.subscriber.reload(_)) //TODO: test specific code, remove
+    activeSubscribers.put(subscriber, 0)
+
+    subscriber
+  }
+
+  //TODO: test specific code, remove
+  override def reloadActiveSubscribers(generation: Long) {
+    testGeneration = Some(generation)
+
+    val l = activeSubscribers.keySet().toSet
+    l.foreach { _.subscriber.reload(generation) }
+  }
+}
+
+object CloudSubscriberFactory {
+  val log = Logger.getLogger(classOf[CloudSubscriberFactory].getName)
+
+  private class CloudSubscriber(keys: Set[ConfigKeyT], configSource: ConfigSource) extends Subscriber
+  {
+    private[CloudSubscriberFactory] val subscriber = new ConfigSubscriber(configSource)
+    private val handles: Map[ConfigKeyT, ConfigHandle[_ <: ConfigInstance]] = keys.map(subscribe).toMap
+
+
+    //if waitNextGeneration has not yet been called, -1 should be returned
+    var generation: Long = -1
+
+    private def subscribe(key: ConfigKeyT) = (key, subscriber.subscribe(key.getConfigClass, key.getConfigId))
+
+    override def configChanged = handles.values.exists(_.isChanged)
+
+    //mapValues returns a view,, so we need to force evaluation of it here to prevent deferred evaluation.
+    override def config = handles.mapValues(_.getConfig).toMap.view.force.
+      asInstanceOf[Map[ConfigKey[ConfigInstance], ConfigInstance]]
+
+    override def waitNextGeneration() = {
+      require(!handles.isEmpty)
+
+      /* Catch and ignore config exceptions due to missing config values for parameters that do
+       * not have a default value. These exceptions occur when the user has removed a component
+       * from services.xml, and the component takes a config that has parameters without a
+       * default value in the def-file. There is a new 'components' config underway, where the
+       * component is removed, so this old config generation will soon be replaced by a new one. */
+      var gotNextGen = false
+      var numExceptions = 0
+      while (!gotNextGen) {
+        try{
+          if (subscriber.nextGeneration())
+            gotNextGen = true
+        } catch {
+          case e: IllegalArgumentException =>
+            numExceptions += 1
+            log.log(LogLevel.DEBUG, "Ignoring exception from the config library: " + e.getMessage + "\n" + e.getStackTrace)
+            if (numExceptions >= 5)
+              throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
+        }
+      }
+
+      generation = subscriber.getGeneration
+      generation
+    }
+
+    override def close() {
+      subscriber.close()
+    }
+  }
+
+
+  class Provider extends com.google.inject.Provider[SubscriberFactory] {
+    override def get() =  new CloudSubscriberFactory(ConfigSourceSet.createDefault())
+  }
+}

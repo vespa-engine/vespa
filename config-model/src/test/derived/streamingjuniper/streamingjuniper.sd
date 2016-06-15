@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search streamingjuniper {
+  document streamingjuniper {
+    field f1 type string {
+      indexing: index | summary
+      header
+      bolding: on
+    }
+    field f2 type string {
+      indexing: index | summary
+      header
+      summary: dynamic
+    }
+  }
+}

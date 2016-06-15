@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!--
+    - Different numeric operations
+
+    - different variants of assign
+    - some fields in this documenttype are assigned invalid values
+-->
+<vespafeed>
+    <update documenttype="news" documentid="doc:news:http://news7a">
+        <alter field="last_downloaded">
+            <increment by="2" />
+            <decrement by="3" />
+            <multiply by="4" />
+            <divide by="5" />
+        </alter>
+
+        <increment field="weightedsetint" by="6">
+            <key>7</key>
+        </increment>
+
+        <decrement field="weightedsetint" by="8">
+            <key>9</key>
+        </decrement>
+        
+        <multiply field="intarr" by="10">
+            <key>11</key>
+        </multiply> 
+
+        <multiply field="floatarr" by="12">
+            <key>13</key>
+        </multiply> 
+        
+        <divide field="floatarr" by="14">
+            <key>15</key>
+        </divide> 
+    </update>
+    
+    <update documenttype="news" documentid="doc:news:http://news7b">
+        <alter field="title">
+            <increment by="2" />
+            <decrement by="3" />
+            <multiply by="4" />
+            <divide by="5" />
+        </alter>
+    </update>
+    
+    <update documenttype="news" documentid="doc:news:http://news7c">
+        <increment field="weightedsetint" by="five">
+            <key>1</key>
+        </increment> 
+    </update>
+    
+    <update documenttype="news" documentid="doc:news:http://news7d">
+        <decrement field="weightedsetint" by="2">
+            <key></key>
+        </decrement> 
+    </update>
+    
+    <update documenttype="news" documentid="doc:news:http://news7e">
+        <multiply field="floatarr">
+            <key>3</key>
+        </multiply> 
+    </update>
+    
+    <update documenttype="news" documentid="doc:news:http://news7f">
+        <divide field="floatarr" by="3">
+            <key>four</key>
+        </divide> 
+    </update>
+    
+</vespafeed>

@@ -1,0 +1,29 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(fnet
+    SOURCES
+    channel.cpp
+    channellookup.cpp
+    config.cpp
+    connect_thread.cpp
+    connection.cpp
+    connector.cpp
+    controlpacket.cpp
+    databuffer.cpp
+    dummypacket.cpp
+    fdselector.cpp
+    info.cpp
+    iocomponent.cpp
+    packet.cpp
+    packetqueue.cpp
+    scheduler.cpp
+    signalshutdown.cpp
+    simplepacketstreamer.cpp
+    stats.cpp
+    task.cpp
+    transport.cpp
+    transport_thread.cpp
+    vtag.cpp
+    $<TARGET_OBJECTS:fnet_frt>
+    INSTALL lib64
+    DEPENDS
+)

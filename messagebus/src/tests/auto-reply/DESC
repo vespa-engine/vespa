@@ -1,0 +1,2 @@
+Test that a deleted Message or Reply with a non-empty call-stack will
+generate an automatic Reply.

@@ -1,0 +1,16 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search whatever {
+
+  document whatever {
+    struct pair {
+      field key type string {}
+      field value type string {}
+    }
+
+    field f1 type pair {
+      indexing: summary
+      body
+    }
+  }
+
+}

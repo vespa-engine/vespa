@@ -1,0 +1,13 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<nodes>
+    <node hostalias="node0" distribution-key="0" />
+</nodes>
+<nodes deploy:environment="prod">
+    <node hostalias="node0" distribution-key="0" />
+    <node hostalias="node1" distribution-key="1" />
+</nodes>
+<nodes deploy:environment="prod" deploy:region="us-west">
+    <node hostalias="node0" distribution-key="0" />
+    <node hostalias="node1" distribution-key="1" />
+    <node hostalias="node2" distribution-key="2" />
+</nodes>

@@ -1,0 +1,10 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchcore_verify_ranksetup_app
+    SOURCES
+    verify_ranksetup.cpp
+    OUTPUT_NAME verify_ranksetup-bin
+    INSTALL bin
+    DEPENDS
+    searchcore_matching
+    searchcore_documentmetastore
+)

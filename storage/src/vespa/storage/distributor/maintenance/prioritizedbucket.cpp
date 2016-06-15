@@ -1,0 +1,19 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <iostream>
+#include <vespa/storage/distributor/maintenance/prioritizedbucket.h>
+
+namespace storage {
+namespace distributor {
+
+const PrioritizedBucket PrioritizedBucket::INVALID = PrioritizedBucket();
+
+std::ostream&
+operator<<(std::ostream& os, const PrioritizedBucket& bucket)
+{
+    os << bucket.toString();
+    return os;
+}
+
+}
+}

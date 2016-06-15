@@ -1,0 +1,7 @@
+.depend
+Makefile
+config-slobroks.cpp
+config-slobroks.h
+sbcmd
+slobrok
+tstdst

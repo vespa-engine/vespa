@@ -1,0 +1,5 @@
+Makefile
+.depend
+*_test
+searchcorespi_factoryregistry_test_app
+searchcorespi_plugin_test_app

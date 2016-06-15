@@ -1,0 +1,16 @@
+Vespa Config Generation
+=======================
+
+The configgen module is used to generate config-classes from .def files.
+
+Userguide
+---------
+
+Usually you will want to use this module through the config-class-plugin
+maven plugin - see the documentation for that module.
+
+This module can be used stand-alone by building the jar file (mvn package)
+and then calling MakeConfig from that file:
+
+java -Dconfig.spec=<def-file_1,def-file_2,...> -Dconfig.dest=<dest-dir> -jar target/configgen.jar
+

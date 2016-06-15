@@ -1,0 +1,105 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.searchdefinition.derived;
+
+import com.yahoo.document.DataTypeName;
+import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.Search;
+
+import java.util.*;
+
+/**
+ * <p>A class which can reorder a list of search definitions such that any supertype
+ * always preceed any subtype. Subject to this condition the given order
+ * is preserved (the minimal reordering is done).</p>
+ *
+ * <p>This class is <b>not</b> multithread safe. Only one ordering must be done
+ * at the time in any instance.</p>
+ *
+ * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ */
+public class SearchOrderer {
+
+    /** A map from DataTypeName to the Search defining them */
+    private Map<DataTypeName, Search> documentNameToSearch=new java.util.HashMap<>();
+
+    /**
+     * Reorders the given list of search definitions such that any supertype
+     * always preceed any subtype. Subject to this condition the given order
+     * is preserved (the minimal reordering is done).
+     *
+     * @return a new list containing the same search instances in the right order
+     */
+    public List<Search> order(List<Search> unordered) {
+        Collections.sort(unordered, new Comparator<Search>() {
+            @Override
+            public int compare(Search lhs, Search rhs) {
+                return lhs.getName().compareTo(rhs.getName());
+            }
+        });
+
+        // No, this is not a fast algorithm...
+        indexOnDocumentName(unordered);
+        List<Search> ordered=new java.util.ArrayList<>(unordered.size());
+        List<Search> moveOutwards=new java.util.ArrayList<>();
+        for (Search search: unordered) {
+            if (containsInherited(ordered,search)) {
+                addOrdered(ordered,search,moveOutwards);
+            }
+            else {
+                moveOutwards.add(search);
+            }
+        }
+
+        // Any leftovers means we have search definitions with undefined inheritants.
+        // This is warned about elsewhere.
+        ordered.addAll(moveOutwards);
+
+        documentNameToSearch.clear();
+        return ordered;
+    }
+
+    private void addOrdered(List<Search> ordered,Search search,List<Search> moveOutwards) {
+        ordered.add(search);
+        Search eligibleMove;
+        do {
+            eligibleMove=removeFirstEligibleMoveOutwards(moveOutwards,ordered);
+            if (eligibleMove!=null)
+                ordered.add(eligibleMove);
+        } while (eligibleMove!=null);
+    }
+
+    /** Removes and returns the first search from the move list which can now be added, or null if none */
+    private Search removeFirstEligibleMoveOutwards(List<Search> moveOutwards,List<Search> ordered) {
+        for (Search move : moveOutwards) {
+            if (containsInherited(ordered,move)) {
+                moveOutwards.remove(move);
+                return move;
+            }
+        }
+        return null;
+    }
+
+    private boolean containsInherited(List<Search> list,Search search) {
+        if (search.getDocument() == null) {
+            return true;
+        }
+        for (SDDocumentType sdoc : search.getDocument().getInheritedTypes() ) {
+            DataTypeName inheritedName=sdoc.getDocumentName();
+            if ("document".equals(inheritedName.getName())) continue;
+            Search inheritedSearch=documentNameToSearch.get(inheritedName);
+            if (!list.contains(inheritedSearch))
+                return false;
+        }
+        return true;
+    }
+
+    private void indexOnDocumentName(List<Search> searches) {
+        documentNameToSearch.clear();
+        for (Search search : searches) {
+            if (search.getDocument() != null) {
+                documentNameToSearch.put(search.getDocument().getDocumentName(),search);
+            }
+        }
+    }
+
+}

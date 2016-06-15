@@ -1,0 +1,213 @@
+SLIME (Schema-Less Interface/Model/Exchange)
+============================================
+
+
+Introduction
+------------
+
+Slime is a binary format used to exchange JSON-like data structures
+combined with a reference-implementation that outlines how these data
+structures should be manipulated by the application.
+
+Design Goals:
+  - schema-less yet strictly typed
+  - simple yet efficient binary format
+  - simple application interaction while enabling internal optimizations
+
+Intended Usage:
+  - Interface: RPC/Packet/Message
+  - Model:     Status/Metrics/Config/Schema
+  - Exchange:  Documents/Records
+
+
+Data Model
+----------
+
+Slime:        Symbol Table, Value
+Symbol Table: Symbol Name*
+Symbol Name:  <string>
+Value:        NIX | BOOL | LONG | DOUBLE | STRING | DATA | ARRAY | OBJECT
+NIX:          // this datatype has no possible values
+BOOL:         <bool>
+LONG:         <signed integer>
+DOUBLE:       <double>
+STRING:       <string>
+DATA:         <raw bytes>
+ARRAY:        Value*
+OBJECT:       (Symbol Id, Value)*
+Symbol Id:    <unsigned integer>
+
+A slime data structure consists of two things; a symbol table and a
+value. The symbol table contains all unique field names that are used
+by the value. This separation is done in order to save space when
+dealing with nested or repeating structures, which are common in
+network interfaces used in distributed systems.
+
+Interaction with a Slime structure is done through a cursor interface
+where the cursor is used to move around and access the data stored in
+the Slime structure. This enables us to make slime structures feel
+more dynamic in C++ and to employ internal object storage
+optimizations in Java.
+
+Encoding and decoding is separated from the data model and use the
+public interfaces to build and inspect Slime structures. Encoding and
+decoding is performed on complete slime structures. This makes it
+easier to integrate with other formats and keeps the implementation
+more decoupled.
+
+Slime corresponds well with JSON, and encoding to a JSON string has
+been added to the reference C++ implementation. When encoding, you can
+select whether the output should be compact or readable, which enables
+the JSON encoder to also act as a tool to dump Slime structures in
+human readable format.
+
+A field has a name, its value has a type. This is an important
+difference from many schema-based approaches, where field names and
+types are closely tied together. The Slime approach enables us to
+encode values in a more uniform way across objects and arrays.
+
+Symbol ids are only valid within a single Slime structure. When
+operating on multiple Slime structures, field names must be used to
+identify equivalent fields in objects from different Slime structures.
+
+
+Binary Format
+-------------
+
+The binary format is the heart of Slime. It is intended to be a good
+mix of simple and efficient. Simple means it should be simple to
+understand and simple to implement. Efficient means it should be
+compact and fast to encode and decode.
+
+Slime defines 8 types and assigns them numbers according to increasing
+complexity: NIX(0), BOOL(1), LONG(2), DOUBLE(3), STRING(4), DATA(5),
+ARRAY(6), OBJECT(7).
+
+Binary encoding is performed by combining a few primary constructs in
+various ways:
+
+- type and meta byte (type_meta)
+
+  A single byte used to store a value type (0-7) and associated
+  meta-data (0-31). The 5 most significant bits are used for meta-data
+  while the 3 least significant bits are used for the type.
+
+  MSB     LSB
+  +-----+---+
+  |76543|210|
+  +-----+---+
+   meta  type
+
+- byte-compressed unsigned integer (cmpr_ulong)
+
+  A self-contained variable-length unsigned integer value where the
+  most significant bit of each byte is used as a continuation bit. The
+  sequence is terminated by a byte where the continuation bit is
+  0. Each byte contains 7 bits of the total value. The first byte
+  contains the 7 least significant bits and so on (little endian).
+
+- unsigned integer (ulong)
+
+  An externally limited (length is stored elsewhere) variable length
+  unsigned integer value. Each byte contains 8 bits of the total
+  value. The first byte contains the 8 least significant bits and so
+  on (little endian).
+
+A complete Slime structure is encoded as a symbol table followed by a
+single value.
+
+symbol_table:
+  <cmpr_ulong> -> N,
+  (<cmpr_ulong> -> length, <byte> x length -> symbol_name) x N -> symbol_table
+
+The symbol table starts with a <cmpr_ulong> indicating the number of
+symbols in the symbol table followed by the symbols themselves. Each
+symbol is encoded as a <cmpr_ulong> indicating the byte size of the
+symbol name followed by the actual symbol name. The symbols are
+implicitly numbered according to order, starting from 0. These numbers
+will be used by objects to refer to symbols used as field identifiers.
+
+size(meta):
+  meta == 0: <cmpr_ulong> -> size
+  meta != 0: (meta - 1) -> size
+
+Many value types use the meta value stored together with the type to
+represent the size of something. However, the size may be larger than
+what can be stored in the meta value alone. A meta value of 0
+indicates that the size is stored in a separate <cmpr_ulong> directly
+after the <type_meta> byte. A meta value of 1-31 indicate that the
+size is stored in the meta value itself. In this case, the actual size
+is (meta - 1). This gives us a size range of [0..30] that can be
+stored directly as a meta value.
+
+value:
+  <type_meta> -> type, meta
+  type == NIX    : <> -> nix_value
+  type == BOOL   : meta -> bool_value
+  type == LONG   : meta -> N, <ulong(N)> -> zigzag_decode -> long_value
+  type == DOUBLE : meta -> N, <ulong(N)> -> reverse_bytes -> double_value
+  type == STRING : <size(meta)> -> N, <byte> x N -> string_value
+  type == DATA   : <size(meta)> -> N, <byte> x N -> data_value
+  type == ARRAY  : <size(meta)> -> N, <value> x N -> array_value
+  type == OBJECT : <size(meta)> -> N,
+                   (<cmpr_ulong> -> symbol_id, <value>) x N -> object_value
+
+The actual value has different binary format depending on the value
+type. However, all values always start with a <type_meta> byte
+containing the type and its attached meta value.
+
+A NIX value has no additional data, as there are no possible values
+for this type. The meta value will be ignored, but should be set to 0.
+
+A BOOL value has its value stored directly in the meta value; 0 means
+false, 1-31 means true.
+
+A LONG value is made unsigned by applying the zigzag transform
+first. Then, all non-null bytes are stored in little endian, and the
+number of stored bytes are stored as the meta value. This allows for
+up to 248-bit values, but the reference implementation only supports
+64-bit values for now.
+
+A DOUBLE value is first transformed to an unsigned 64-bit value
+representing its bit-pattern according to IEEE 754 (double). Then its
+bytes are reversed to get the most interesting data in the least
+significant bytes. Then, all non-null bytes are stored in little
+endian, and the number of stored bytes are stored as the meta value
+(same as for LONG values).
+
+Note that LONG and DOUBLE values of 0 and 0.0 will have 0 as meta
+value and take no additional space.
+
+STRING, DATA, ARRAY and OBJECT types all have a size that can be
+stored either directly (although incremented) as the meta value or as
+a <cmpr_ulong> directly following the <type_meta> byte (which is 0 in
+this case) as described above.
+
+For STRING and DATA values, the size indicate the number of bytes
+making up the value, and the value itself is simply those bytes
+verbatim.
+
+For ARRAY values, the size indicates the number of elements in the
+array. Each element is encoded directly after one another as a
+<value>. Arrays are dense and start with index 0. Note that array
+elements do not need to all be of the same type.
+
+For OBJECT values, the size indicates the number of fields in the
+object. Each field is encoded as a <cmpr_ulong> followed by a
+<value>. The number preceding the value is the symbol id of the field
+and must reference a valid entry in the symbol table.
+
+All structures are encoded by prepending local sizes. There is no need
+to precalculate the byte size of substructures up front when
+encoding. This avoids the need to traverse the structure twice. It
+also avoids the complexity of calculating the size of compressed data,
+as the space needed to store the size of a substructure depends on the
+size to be stored. On the other hand, this prevents skipping in the
+data while decoding. If an application really needs skipping, it can
+store encoded slime structures as DATA values. Another advantage of
+prepended sizes is that decoding becomes very simple as there is no
+need to look for record end markers or the like.
+
+When decoding, it is safe to pad with 0 bytes if there is a buffer
+underflow. This is utilized in the reference implementation to
+simplify error checking during decoding.

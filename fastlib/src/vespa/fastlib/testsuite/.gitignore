@@ -1,0 +1,14 @@
+*.So
+*.a
+*.elc
+*.ilk
+*.lib
+*.o
+*.obj
+*.pdb
+.cvsignore
+.depend
+.pure
+Debug
+Makefile
+SunWS_cache

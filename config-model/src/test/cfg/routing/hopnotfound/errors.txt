@@ -1,0 +1,1 @@
+Hop 1 in route 'foo' in routing table 'document' references 'bar' which is neither a service, a route nor another hop.

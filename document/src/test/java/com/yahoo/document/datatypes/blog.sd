@@ -1,0 +1,49 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search blog {
+
+  document blog {
+
+    field title type string {
+	    header
+        indexing: summary | index
+	    # index-to: default
+    }
+
+    field author type string {
+	    header
+	    indexing: summary | index
+	    # index-to: default
+    }
+
+    field body type string {
+        header
+	    indexing: summary | index
+    }
+
+    field url type uri {
+        header
+	    indexing: index | summary
+	    # index-to: default
+    }
+  }
+
+  annotation industry {
+    field vertical type string {}
+  }
+
+  annotation company inherits industry {
+    field name type string {}
+	field ceo type string {}	
+	field lat type long {}
+	field lon type long {}
+  }
+
+  annotation person {
+	field name type string {}
+  }
+
+  annotation location {
+  	field name type string {}
+  }
+}
+

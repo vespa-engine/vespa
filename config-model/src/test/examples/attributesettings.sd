@@ -1,0 +1,71 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search attributesettings {
+
+  document attributesettings {
+
+    field f1 type long {
+      indexing: attribute
+      attribute: huge
+    }
+
+    field f2 type long {
+      indexing: attribute
+      attribute {
+        fast-search
+        alias: f2alias
+      }
+    }
+
+    field f3 type long {
+      indexing: attribute f3
+      attribute {
+        alias f3: f3alias
+      }
+    }
+
+    field f4 type weightedset<string> {
+      weightedset: remove-if-zero
+      weightedset: create-if-nonexistent
+      indexing: attribute
+    }
+
+    field f5 type weightedset<string> {
+      indexing: attribute
+      weightedset: remove-if-zero
+      weightedset: create-if-nonexistent
+    }
+
+    field f6 type weightedset<string> {
+      weightedset: remove-if-zero
+      indexing: attribute
+      weightedset: create-if-nonexistent
+    }
+
+    field f7 type weightedset<string> {
+      indexing: attribute
+      weightedset: create-if-nonexistent
+    }
+
+    field f8 type weightedset<string> {
+      weightedset: create-if-nonexistent
+      indexing: attribute
+    }
+
+    field f9 type weightedset<string> {
+      indexing: attribute
+      weightedset: remove-if-zero
+    }
+
+    field f10 type weightedset<string> {
+      weightedset: remove-if-zero
+      indexing: attribute
+    }
+
+    field fast_access type int {
+      indexing: attribute
+      attribute: fast-access
+    }
+
+  }
+
+}

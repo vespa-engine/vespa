@@ -1,0 +1,67 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include "wand_parts.h"
+#include <vespa/vespalib/util/priority_queue.h>
+#include <vespa/vespalib/util/sync.h>
+
+namespace search {
+namespace queryeval {
+    
+/**
+ * An interface used to insert scores into an underlying heap (or similar data structure)
+ * that can be shared between multiple search iterators.
+ * An implementation of this interface must keep the best N scores and
+ * provide the threshold score (lowest score among the best N).
+ */
+class WeakAndHeap {
+public:
+    typedef wand::score_t score_t;
+    WeakAndHeap(uint32_t scoresToTrack) :
+       _minScore((scoresToTrack == 0)
+                    ? std::numeric_limits<score_t>::max()
+                    : 0),
+       _scoresToTrack(scoresToTrack)
+    { }
+    virtual ~WeakAndHeap() {}
+    /**
+     * Consider the given scores for insertion into the underlying structure.
+     * The implementation may change the given score array to speed up execution.
+     */
+    virtual void adjust(score_t *begin, score_t *end) = 0;
+
+    /**
+     * The number of scores this heap is tracking.
+     **/
+    uint32_t getScoresToTrack() const { return _scoresToTrack; }
+
+    score_t getMinScore() const { return _minScore; }
+protected:
+    void setMinScore(score_t minScore) { _minScore = minScore; }
+private:
+    score_t        _minScore;
+    const uint32_t _scoresToTrack;
+};
+
+/**
+ * An implementation using an underlying priority queue to keep track of the N
+ * best hits that can be shared among multiple search iterators.
+ */
+class SharedWeakAndPriorityQueue : public WeakAndHeap
+{
+private:
+    typedef vespalib::PriorityQueue<score_t> Scores;
+    Scores         _bestScores;
+    vespalib::Lock _lock;
+
+    bool is_full() const { return (_bestScores.size() >= getScoresToTrack()); }
+
+public:
+    SharedWeakAndPriorityQueue(uint32_t scoresToTrack);
+    Scores &getScores() { return _bestScores; }
+    void adjust(score_t *begin, score_t *end) override;
+};
+
+} // namespace queryeval
+} // namespace search
+

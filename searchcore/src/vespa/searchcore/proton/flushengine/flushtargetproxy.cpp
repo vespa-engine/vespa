@@ -1,0 +1,85 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.flushengine.flushtargetproxy");
+
+#include "flushtargetproxy.h"
+
+namespace proton {
+
+using searchcorespi::IFlushTarget;
+using searchcorespi::FlushStats;
+
+FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target)
+    : IFlushTarget(target->getName(), target->getType(),
+                   target->getComponent()),
+      _target(target)
+{
+}
+
+FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target,
+                                   const vespalib::string & prefix)
+    : IFlushTarget(prefix + "." + target->getName(), target->getType(),
+                   target->getComponent()),
+      _target(target)
+{
+}
+
+
+IFlushTarget::MemoryGain
+FlushTargetProxy::getApproxMemoryGain() const
+{
+    return _target->getApproxMemoryGain();
+}
+
+
+IFlushTarget::DiskGain
+FlushTargetProxy::getApproxDiskGain() const
+{
+    return _target->getApproxDiskGain();
+}
+
+
+IFlushTarget::SerialNum
+FlushTargetProxy::getFlushedSerialNum() const
+{
+    return _target->getFlushedSerialNum();
+}
+
+
+IFlushTarget::Time
+FlushTargetProxy::getLastFlushTime() const
+{
+    return _target->getLastFlushTime();
+}
+
+
+bool
+FlushTargetProxy::needUrgentFlush() const
+{
+    return _target->needUrgentFlush();
+}
+
+
+IFlushTarget::Task::UP
+FlushTargetProxy::initFlush(SerialNum currentSerial)
+{
+    return _target->initFlush(currentSerial);
+}
+
+
+FlushStats
+FlushTargetProxy::getLastFlushStats() const
+{
+    return _target->getLastFlushStats();
+}
+
+
+uint64_t
+FlushTargetProxy::getApproxBytesToWriteToDisk() const
+{
+    return _target->getApproxBytesToWriteToDisk();
+}
+
+
+} // namespace proton

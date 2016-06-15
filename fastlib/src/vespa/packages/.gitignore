@@ -1,0 +1,5 @@
+*.a
+*.lib
+*.so.*
+.depend
+Makefile

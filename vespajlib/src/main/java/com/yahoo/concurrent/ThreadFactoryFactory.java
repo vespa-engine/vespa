@@ -1,0 +1,72 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.concurrent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: balder
+ * Date: 24.04.13
+ * Time: 19:00
+ * To change this template use File | Settings | File Templates.
+ */
+public class ThreadFactoryFactory {
+    static public synchronized ThreadFactory getThreadFactory(String name) {
+        PooledFactory p = factory.get(name);
+        if (p == null) {
+            p = new PooledFactory(name);
+            factory.put(name, p);
+        }
+        return p.getFactory(false);
+    }
+    static public synchronized ThreadFactory getDaemonThreadFactory(String name) {
+        PooledFactory p = factory.get(name);
+        if (p == null) {
+            p = new PooledFactory(name);
+            factory.put(name, p);
+        }
+        return p.getFactory(true);
+    }
+    private static class PooledFactory {
+        private static class Factory implements ThreadFactory {
+            final ThreadGroup group;
+            final AtomicInteger threadNumber = new AtomicInteger(1);
+            final String namePrefix;
+            final boolean isDaemon;
+
+            Factory(final String name, boolean isDaemon) {
+                this.isDaemon = isDaemon;
+                final SecurityManager s = System.getSecurityManager();
+                group = (s != null)
+                        ? s.getThreadGroup()
+                        : Thread.currentThread().getThreadGroup();
+                namePrefix = name;
+            }
+
+            @Override
+            public Thread newThread(final Runnable r) {
+                final Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+                if (t.isDaemon() != isDaemon) {
+                    t.setDaemon(isDaemon);
+                }
+                if (t.getPriority() != Thread.NORM_PRIORITY) {
+                    t.setPriority(Thread.NORM_PRIORITY);
+                }
+                return t;
+            }
+        }
+        PooledFactory(String name) {
+            this.name = name;
+        }
+        ThreadFactory getFactory(boolean isDaemon) {
+            return new Factory(name + "-" + poolId.getAndIncrement() + "-thread-", isDaemon);
+
+        }
+        private final String name;
+        private final AtomicInteger poolId = new AtomicInteger(1);
+    }
+    static private Map<String, PooledFactory> factory = new HashMap<>();
+}

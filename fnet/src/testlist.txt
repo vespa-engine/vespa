@@ -1,0 +1,17 @@
+tests/connect_thread
+tests/connection_spread
+tests/databuffer
+tests/examples
+tests/fdselector
+tests/frt/memorytub
+tests/frt/method_pt
+tests/frt/parallel_rpc
+tests/frt/rpc
+tests/frt/values
+tests/info
+tests/locking
+tests/printstuff
+tests/scheduling
+tests/sync_execute
+tests/thread_selection
+tests/time

@@ -1,0 +1,2 @@
+This package contains the api for config models to the config server.
+No incompatible changes whatsoever may be made to this API as that will break hosted Vespa.

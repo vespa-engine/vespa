@@ -1,0 +1,3 @@
+Makefile
+.depend
+lib*.so*

@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(memfilepersistence_mapper OBJECT
+    SOURCES
+    buffer.cpp
+    memfilemapper.cpp
+    memfile_v1_serializer.cpp
+    memfile_v1_verifier.cpp
+    locationreadplanner.cpp
+    simplememfileiobuffer.cpp
+    fileinfo.cpp
+    locationreadplanner.cpp
+    bufferedfilewriter.cpp
+    bucketdirectorymapper.cpp
+    DEPENDS
+)

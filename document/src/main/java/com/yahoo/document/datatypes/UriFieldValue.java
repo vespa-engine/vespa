@@ -1,0 +1,49 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.document.datatypes;
+
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.serialization.FieldReader;
+import com.yahoo.net.Url;
+
+import java.net.URI;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: magnarn
+ * Date: 11/2/12
+ * Time: 2:37 PM
+ */
+public class UriFieldValue extends StringFieldValue {
+    public static class Factory extends PrimitiveDataType.Factory {
+        public FieldValue create() {
+            return new UriFieldValue();
+        }
+    }
+    public UriFieldValue() { super(); }
+
+    public UriFieldValue(String value) {
+        super(value);
+        Url.fromString(value);  // Throws if value is invalid.
+    }
+
+    @Override
+    public void assign(Object obj) {
+        if (obj instanceof URI) {
+            obj = obj.toString();
+        }
+        super.assign(obj);
+    }
+
+    @Override
+    public DataType getDataType() {
+        return DataType.URI;
+    }
+
+    @Override
+    public void deserialize(Field field, FieldReader reader) {
+        super.deserialize(field, reader);
+        Url.fromString(toString());  // Throws if value is invalid.
+    }
+}

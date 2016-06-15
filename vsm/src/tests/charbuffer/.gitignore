@@ -1,0 +1,4 @@
+.depend
+Makefile
+charbuffer_test
+vsm_charbuffer_test_app

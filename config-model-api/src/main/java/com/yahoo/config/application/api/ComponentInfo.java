@@ -1,0 +1,21 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.config.application.api;
+
+
+/**
+ * Describes a component residing in the components directory.
+ * <p>TODO: add support for component versions.</p>
+ * @author tonytv
+ */
+public class ComponentInfo {
+    final String pathRelativeToAppDir;
+
+    public ComponentInfo(String pathRelativeToAppDir) {
+        this.pathRelativeToAppDir = pathRelativeToAppDir;
+    }
+
+    //get path relative to app dir
+    public String getPathRelativeToAppDir() {
+        return pathRelativeToAppDir;
+    }
+}

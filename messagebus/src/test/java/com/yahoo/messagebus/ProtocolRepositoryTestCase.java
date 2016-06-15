@@ -1,0 +1,103 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.messagebus;
+
+import com.yahoo.messagebus.routing.RoutingContext;
+import com.yahoo.messagebus.routing.RoutingPolicy;
+import com.yahoo.messagebus.test.SimpleProtocol;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+public class ProtocolRepositoryTestCase {
+
+    @Test
+    public void requireThatPolicyCanBeNull() {
+        ProtocolRepository repo = new ProtocolRepository();
+        SimpleProtocol protocol = new SimpleProtocol();
+        repo.putProtocol(protocol);
+        assertNull(repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null));
+    }
+
+    @Test
+    public void requireThatPolicyCanBeCreated() {
+        ProtocolRepository repo = new ProtocolRepository();
+        SimpleProtocol protocol = new SimpleProtocol();
+        protocol.addPolicyFactory("Custom", new MyFactory());
+        repo.putProtocol(protocol);
+        assertNotNull(repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null));
+    }
+
+    @Test
+    public void requireThatPolicyIsCached() {
+        ProtocolRepository repo = new ProtocolRepository();
+        SimpleProtocol protocol = new SimpleProtocol();
+        protocol.addPolicyFactory("Custom", new MyFactory());
+        repo.putProtocol(protocol);
+
+        RoutingPolicy prev = repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null);
+        assertNotNull(prev);
+
+        RoutingPolicy next = repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null);
+        assertNotNull(next);
+        assertSame(prev, next);
+    }
+
+    @Test
+    public void requireThatPolicyParamIsPartOfCacheKey() {
+        ProtocolRepository repo = new ProtocolRepository();
+        SimpleProtocol protocol = new SimpleProtocol();
+        protocol.addPolicyFactory("Custom", new MyFactory());
+        repo.putProtocol(protocol);
+
+        RoutingPolicy prev = repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", "foo");
+        assertNotNull(prev);
+
+        RoutingPolicy next = repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", "bar");
+        assertNotNull(next);
+        assertNotSame(prev, next);
+    }
+
+    @Test
+    public void requireThatCreatePolicyExceptionIsCaught() {
+        ProtocolRepository repo = new ProtocolRepository();
+        SimpleProtocol protocol = new SimpleProtocol();
+        protocol.addPolicyFactory("Custom", new SimpleProtocol.PolicyFactory() {
+
+            @Override
+            public RoutingPolicy create(String param) {
+                throw new RuntimeException();
+            }
+        });
+        repo.putProtocol(protocol);
+        assertNull(repo.getRoutingPolicy(SimpleProtocol.NAME, "Custom", null));
+    }
+
+    private static class MyFactory implements SimpleProtocol.PolicyFactory {
+
+        @Override
+        public RoutingPolicy create(String param) {
+            return new MyPolicy();
+        }
+    }
+
+    private static class MyPolicy implements RoutingPolicy {
+
+        @Override
+        public void select(RoutingContext context) {
+
+        }
+
+        @Override
+        public void merge(RoutingContext context) {
+
+        }
+
+        @Override
+        public void destroy() {
+
+        }
+    }
+}

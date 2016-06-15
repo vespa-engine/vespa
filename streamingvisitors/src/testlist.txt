@@ -1,0 +1,3 @@
+tests/hitcollector
+tests/querywrapper
+tests/searchvisitor

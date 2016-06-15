@@ -1,0 +1,75 @@
+B tree view:
+
+  Leaf Nodes: segments of docid delta list
+  Interior Nodes: Segments of skip info lists
+
+  Interior Nodes 1 level above leaf nodes: L1 skip info
+  Interior Nodes 2 level above leaf nodes: L2 skip info
+
+Example posting list, with stride 4 for L1 skip and L2 skip:
+
+DocIdPos:    0  1  2  3| 4  5  6  7| 8   9  10  11| 12  13  14  15| 16  17  18
+DocId:       1 11 21 31|41 51 61 71|81  91 101 111|121 131 141 151|161 171 181
+
+(Assume continued with every 10. docid present)
+
+Old L1 skip info, pointing to start of leaf nodes, with first docid in
+leaf node pre-decoded (i.e. containing copy of first docid entry in leaf node):
+
+L1Pos:     0  1   2   3|  4   5   6   7|  8   9  10  11| 12  13  14  15| 16 
+DocId:    41 81 121 161|201 241 281 321|361 401 441 481|521 561 601 641|681 
+DocIdPos:  5  9  13  17| 21  25  29  33| 37  41  45  49| 53  57  61  65| 69
+
+Old L2 skip info, pointing to start of interior nodes 1 level above leaf nodes
+and containing copies of previous L1 skip entry:
+
+L2Pos:      0   1   2   3
+DocId:    161 321 481 641
+DocIdPos:  17  33  49  65
+L1Pos:      4   8  12  16
+
+Reason for change of skip info view: Avoiding null skips, simplifying code.
+
+Skip from docId 1 to docId 115 first skips to DocId 81 before ending
+up at DocId 121.  If next seek is to below 161, a null skip to docid
+121 is performed since docId delta unpacking caught up with supposedly
+next L1 skip docid.  With L1 skip stride being N, 1/N of longer seeks
+will unpack N extra docids, eating up the advantage of first docid in
+leaf node being pre-decoded.
+
+If a seek to docId 115 is followed by a seek to docId 121, an unpack
+of docId 121 and a sek to a higher docid, this causes, with the old L1
+skip info, features for docId 81, 91 101, 111 to be decoded with the
+result ignored before the features for docId 121 is decoded.  For the
+next seek, the null skip of DocId is also associated with a backwards
+skip for features, so if the next feature to be decoded was for docId
+141 then features for docId 121 will be decoded again and ignored.
+
+New L1 skip info, pointing to start of leaf nodes, without first docid
+in leaf node pre-decoded (i.e. containing copy of last docid entry in
+previous leaf node):
+
+L1Pos:     0  1   2   3|  4   5   6   7|  8   9  10  11| 12  13  14  15| 16 
+DocId:    31 71 111 151|191 231 271 311|351 391 431 471|511 551 591 631|671 
+DocIdPos:  4  8  12  16| 20  24  28  32| 36  40  44  48| 52  56  60  64| 68
+
+New L2 skip info, pointing to start of interior nodes 1 level above leaf nodes
+and containing copies of previous L1 skip entry:
+
+L2Pos:      0   1   2   3
+DocId:    151 311 471 631
+DocIdPos:  16  32  48  64
+L1Pos:      4   8  12  16
+
+1 DocId delta is unpacked when using L1 or L2 skip, to get first docid
+in leaf node.  With old skip info, this wasn't needed.
+
+With new skip info, docid delta unpacking should never catch up with
+next L1 skip docid (can become equal, but that's no longer sufficient
+for triggering a skip).
+
+For each level upwards in skip info, one extra number is needed per element in
+the skip info.
+
+For feature position (split docid/features), one extra number is needed per
+element in the skip info.

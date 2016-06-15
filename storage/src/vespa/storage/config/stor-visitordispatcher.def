@@ -1,0 +1,13 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+maxvisitorspernodeperclientvisitor int default=4
+minbucketspervisitor int default=5
+maxbucketspervisitor int default=100
+minpendingperstoragevisitor int default=2
+minsuperbucketsactive int default=50
+minsubbucketsactive int default=10000
+storagenetworklatency int default=2
+progresstimeout int default=180000
+highprioritylimit int default=600000
+veryhighprioritylimit int default=60000

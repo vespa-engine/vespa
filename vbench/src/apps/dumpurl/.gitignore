@@ -1,0 +1,5 @@
+/.depend
+/Makefile
+/dumpurl
+/out.*
+vbench_dumpurl_app

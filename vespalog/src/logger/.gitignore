@@ -1,0 +1,5 @@
+.depend
+Makefile
+vespa-runserver
+vlogconv
+vlogreplay

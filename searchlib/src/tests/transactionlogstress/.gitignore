@@ -1,0 +1,4 @@
+.depend
+Makefile
+server
+translogstress

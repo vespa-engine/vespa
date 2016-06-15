@@ -1,0 +1,35 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.document.serialization;
+
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.io.GrowableByteBuffer;
+
+/**
+ * Factory for creating document de-serializers tied to a document format.
+ *
+ * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ */
+public class DocumentDeserializerFactory {
+
+    /**
+     * Creates a de-serializer for the current head document format.
+     * This format is an extension of the 4.2 format.
+     */
+    public static DocumentDeserializer createHead(DocumentTypeManager manager, GrowableByteBuffer buf) {
+        return new VespaDocumentDeserializerHead(manager, buf);
+    }
+
+    /**
+     * Creates a de-serializer for the document format that was created on Vespa 4.2.
+     */
+    public static DocumentDeserializer create42(DocumentTypeManager manager, GrowableByteBuffer buf) {
+        return new VespaDocumentDeserializer42(manager, buf);
+    }
+
+    /**
+     * Creates a de-serializer for the document format that was created on Vespa 4.2.
+     */
+    public static DocumentDeserializer create42(DocumentTypeManager manager, GrowableByteBuffer buf, GrowableByteBuffer body) {
+        return new VespaDocumentDeserializer42(manager, buf, body);
+    }
+}

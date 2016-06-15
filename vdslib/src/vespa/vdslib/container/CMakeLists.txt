@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(vdslib_container OBJECT
+    SOURCES
+    dummycppfile.cpp
+    documentlist.cpp
+    mutabledocumentlist.cpp
+    writabledocumentlist.cpp
+    parameters.cpp
+    searchresult.cpp
+    documentsummary.cpp
+    operationlist.cpp
+    visitorstatistics.cpp
+    visitorordering.cpp
+    DEPENDS
+)

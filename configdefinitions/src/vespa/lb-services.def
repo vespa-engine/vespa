@@ -1,0 +1,20 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Config for load balancer that needs to know about all services for
+# all tenants and applications in a config server cluster
+
+namespace=cloud.config
+
+# Active rotation given as flag 'active' for a prod region in deployment.xml
+# Default true for now (since code in config-model to set it is not ready yet), should have no default value
+tenants{}.applications{}.activeRotation                         bool default=true
+
+tenants{}.applications{}.hosts{}.hostname                       string default="(unknownhostname)"
+tenants{}.applications{}.hosts{}.services{}.type                string default="(noservicetype)"
+tenants{}.applications{}.hosts{}.services{}.clustertype         string default="(unknownclustertype)"
+tenants{}.applications{}.hosts{}.services{}.clustername         string default="(unknownclustername)"
+tenants{}.applications{}.hosts{}.services{}.configId            string
+tenants{}.applications{}.hosts{}.services{}.index               int default=0
+tenants{}.applications{}.hosts{}.services{}.ports[].number      int default=-1
+tenants{}.applications{}.hosts{}.services{}.ports[].tags        string default="(notags)"
+tenants{}.applications{}.hosts{}.services{}.servicealiases[]    string
+tenants{}.applications{}.hosts{}.services{}.endpointaliases[]   string

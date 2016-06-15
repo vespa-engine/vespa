@@ -1,0 +1,4 @@
+.depend
+Makefile
+testatomic
+vespamalloc_testatomic_app

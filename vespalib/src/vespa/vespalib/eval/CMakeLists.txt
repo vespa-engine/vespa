@@ -1,0 +1,29 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(vespalib_vespalib_eval OBJECT
+    SOURCES
+    basic_nodes.cpp
+    call_nodes.cpp
+    compile_cache.cpp
+    compiled_function.cpp
+    deinline_forest.cpp
+    delete_node.cpp
+    eval_spec.cpp
+    function.cpp
+    gbdt.cpp
+    interpreted_function.cpp
+    key_gen.cpp
+    llvm_wrapper.cpp
+    node_types.cpp
+    operation.cpp
+    operator_nodes.cpp
+    simple_tensor.cpp
+    simple_tensor_engine.cpp
+    tensor_engine.cpp
+    tensor_nodes.cpp
+    tensor_spec.cpp
+    value.cpp
+    value_type.cpp
+    value_type_spec.cpp
+    vm_forest.cpp
+    DEPENDS
+)

@@ -1,0 +1,5 @@
+.depend
+Makefile
+registerapi_test
+slobrok.out
+slobrok_registerapi_test_app

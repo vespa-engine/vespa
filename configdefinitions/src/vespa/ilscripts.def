@@ -1,0 +1,10 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=5
+namespace=vespa.configdefinition
+
+## The maximum number of occurrences of a given term to index per field
+maxtermoccurrences int default=100
+
+ilscript[].doctype    string
+ilscript[].docfield[] string
+ilscript[].content[]  string

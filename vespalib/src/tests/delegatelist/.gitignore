@@ -1,0 +1,4 @@
+.depend
+Makefile
+delegatelist_test
+vespalib_delegatelist_test_app

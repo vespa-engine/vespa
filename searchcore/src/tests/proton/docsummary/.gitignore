@@ -1,0 +1,6 @@
+.depend
+Makefile
+docsummary_test
+
+searchcore_docsummary_test_app
+searchcore_summaryfieldconverter_test_app

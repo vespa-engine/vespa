@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<config name="function-test">
+  <bool_val>false</bool_val>
+  <int_val>5</int_val>
+  <long_val>1234567890123</long_val>
+  <double_val>41.23</double_val>
+  <string_val>foo</string_val>
+  <enum_val>FOOBAR</enum_val>
+  <refval>:parent:</refval>
+  <fileVal>vespa.log</fileVal>
+
+  <boolarr index="0">false</boolarr>
+  <doublearr index="0">2344</doublearr>
+  <doublearr index="1">123</doublearr>
+  <stringarr index="0">bar</stringarr>
+  <enumarr index="0">VALUES</enumarr>
+
+  <basicStruct>
+    <bar>3</bar>
+    <intArr index="0">10</intArr>
+  </basicStruct>
+
+  <rootStruct>
+    <inner0>
+      <index>11</index>
+    </inner0>
+    <inner1>
+      <index>12</index>
+    </inner1>
+    <innerArr index="0">
+      <stringVal>deep</stringVal>
+    </innerArr>
+  </rootStruct>
+
+  <myarray index="0">
+    <stringval index="0">baah</stringval>
+    <stringval index="1">yikes</stringval>
+    <refval>:parent:</refval>
+    <fileVal>command.com</fileVal>
+    <anotherarray index="0">
+      <foo>7</foo>
+    </anotherarray>
+    <myStruct>
+      <a>1</a>
+    </myStruct>
+  </myarray>
+  <myarray index="1">
+    <refval>:parent:</refval>
+    <fileVal>display.sys</fileVal>
+    <anotherarray index="0">
+      <foo>1</foo>
+    </anotherarray>
+    <anotherarray index="1">
+      <foo>2</foo>
+    </anotherarray>
+    <myStruct>
+      <a>-1</a>
+    </myStruct>
+  </myarray>
+
+</config>

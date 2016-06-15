@@ -1,0 +1,10 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(vespamalloc_thread_test_app
+    SOURCES
+    thread.cpp
+)
+vespa_add_test(NAME vespamalloc_thread_test_app NO_VALGRIND COMMAND sh thread_test.sh)
+vespa_add_executable(vespamalloc_racemanythreads_test_app
+    SOURCES
+    racemanythreads.cpp
+)

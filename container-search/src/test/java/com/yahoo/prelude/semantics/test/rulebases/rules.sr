@@ -1,0 +1,71 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Local use case
+
+[listing] [preposition] [place] -> listing:[listing]
+                                   place:[place];
+
+[listing] :- restaurant, shop, cafe, hotel;
+
+[preposition] :- in, at, near;
+
+[place] :- [street] [city], [street], [city], [state];
+
+[street] :- geary street, geary;
+[city] :- san francisco, paris;
+[state] :- texas;
+
+# Shopping use case
+
+[brand] -> brand:[brand];
+[category] -> category:[category];
+
+[brand] :- sony, dell;                       # Refer to automata later
+[category] :- digital camera, camera, phone; # Ditto
+
+# Travel use case, note how explicit reference name overrides named condition as reference name
+
+from/[place] to to/[place] -> from:[from] to:[to];
+
+# Adding rule using the default query mode (and/or)
+
+[foobar] +> foobar:[foobar];
+
+[foobar] :- foo, bar;
+
+# Adding rank rule
+
+[word] +> $foobar:[word];
+
+[word] :- aardwark, word;
+
+# Literal production
+
+lotr -> lord of the rings;
+
+# Adding a negative
+
+java +> -coffee;
+
+# Adding an or term
+something +> ?somethingelse;
+
+# Adding another negative
+# TODO: Term types in conditions
+# java -coffee +> -island
+
+# "Stopwords" removal
+
+be -> ;
+the -> ;
+
+[stopword] -> ;
+
+[stopword] :- to,
+              or,
+              not;
+
+# Changing term type
+
+[typechange] -> $default:[typechange] ;
+
+[typechange] :- typechange;

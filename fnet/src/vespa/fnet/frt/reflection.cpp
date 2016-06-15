@@ -1,0 +1,198 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/fnet/frt/frt.h>
+
+
+FRT_ReflectionManager::FRT_ReflectionManager()
+    : _numMethods(0),
+      _methods(NULL),
+      _methodHash()
+{
+    Reset();
+}
+
+
+FRT_ReflectionManager::~FRT_ReflectionManager()
+{
+    Reset();
+}
+
+
+void
+FRT_ReflectionManager::Reset()
+{
+    _numMethods = 0;
+    while (_methods != NULL) {
+        FRT_Method *method = _methods;
+        _methods = method->GetNext();
+        delete(method);
+    }
+
+    for (uint32_t i = 0; i < METHOD_HASH_SIZE; i++)
+        _methodHash[i] = NULL;
+}
+
+
+void
+FRT_ReflectionManager::AddMethod(FRT_Method *method)
+{
+    uint32_t hash = HashStr(method->GetName(), METHOD_HASH_SIZE);
+    method->_hashNext = _methodHash[hash];
+    _methodHash[hash] = method;
+    method->_listNext = _methods;
+    _methods = method;
+    _numMethods++;
+}
+
+
+FRT_Method *
+FRT_ReflectionManager::LookupMethod(const char *name)
+{
+    if (name == NULL) {
+        return NULL;
+    }
+    uint32_t hash = HashStr(name, METHOD_HASH_SIZE);
+    FRT_Method *ret = _methodHash[hash];
+    while (ret != NULL && strcmp(name, ret->GetName()) != 0)
+        ret = ret->_hashNext;
+    return ret;
+}
+
+
+void
+FRT_ReflectionManager::DumpMethodList(FRT_Values *target)
+{
+    FRT_StringValue *names = target->AddStringArray(_numMethods);
+    FRT_StringValue *args  = target->AddStringArray(_numMethods);
+    FRT_StringValue *ret   = target->AddStringArray(_numMethods);
+    uint32_t         idx   = 0;
+    for (FRT_Method *method = _methods; method != NULL;
+         method = method->GetNext(), idx++) {
+        target->SetString(&names[idx], method->GetName());
+        target->SetString(&args[idx], method->GetParamSpec());
+        target->SetString(&ret[idx], method->GetReturnSpec());
+    }
+    assert(idx == _numMethods);
+}
+
+//------------------------------------------------------------------------
+
+void
+FRT_ReflectionBuilder::Flush()
+{
+    if (_method == NULL)
+        return;
+
+    for (; _curArg < _argCnt; _curArg++) {
+        _values->SetString(&_arg_name[_curArg], "?");
+        _values->SetString(&_arg_desc[_curArg], "???");
+    }
+    for (; _curRet < _retCnt; _curRet++) {
+        _values->SetString(&_ret_name[_curRet], "?");
+        _values->SetString(&_ret_desc[_curRet], "???");
+    }
+
+    _method->SetDocumentation(_values);
+    _method = NULL;
+    _req->Reset();
+}
+
+
+FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor *supervisor)
+    : _supervisor(supervisor),
+      _lookup(supervisor->GetReflectionManager()),
+      _method(NULL),
+      _req(supervisor->AllocRPCRequest()),
+      _values(_req->GetReturn()),
+      _argCnt(0),
+      _retCnt(0),
+      _curArg(0),
+      _curRet(0),
+      _arg_name(NULL),
+      _arg_desc(NULL),
+      _ret_name(NULL),
+      _ret_desc(NULL)
+{
+}
+
+
+FRT_ReflectionBuilder::~FRT_ReflectionBuilder()
+{
+    Flush();
+    _req->SubRef();
+}
+
+
+void
+FRT_ReflectionBuilder::DefineMethod(const char    *name,
+                                    const char    *paramSpec,
+                                    const char    *returnSpec,
+                                    bool           instant,
+                                    FRT_METHOD_PT  method,
+                                    FRT_Invokable *handler)
+{
+    if (handler == NULL)
+        return;
+
+    Flush();
+    _method = new FRT_Method(name,
+                             paramSpec,
+                             returnSpec,
+                             instant,
+                             method,
+                             handler);
+    _lookup->AddMethod(_method);
+
+    _argCnt   = strlen(paramSpec);
+    _retCnt   = strlen(returnSpec);
+    _curArg   = 0;
+    _curRet   = 0;
+    _values->AddString("???"); // method desc
+    _values->AddString(paramSpec);
+    _values->AddString(returnSpec);
+    _arg_name = _values->AddStringArray(_argCnt);
+    _arg_desc = _values->AddStringArray(_argCnt);
+    _ret_name = _values->AddStringArray(_retCnt);
+    _ret_desc = _values->AddStringArray(_retCnt);
+}
+
+
+void
+FRT_ReflectionBuilder::MethodDesc(const char *desc)
+{
+    if (_method == NULL)
+        return;
+
+    _values->SetString(&_values->GetValue(0)._string, desc);
+}
+
+
+void
+FRT_ReflectionBuilder::ParamDesc(const char *name, const char *desc)
+{
+    if (_method == NULL)
+        return;
+
+    if (_curArg >= _argCnt)
+        return;
+
+    _values->SetString(&_arg_name[_curArg], name);
+    _values->SetString(&_arg_desc[_curArg], desc);
+    _curArg++;
+}
+
+
+void
+FRT_ReflectionBuilder::ReturnDesc(const char *name, const char *desc)
+{
+    if (_method == NULL)
+        return;
+
+    if (_curRet >= _retCnt)
+        return;
+
+    _values->SetString(&_ret_name[_curRet], name);
+    _values->SetString(&_ret_desc[_curRet], desc);
+    _curRet++;
+}

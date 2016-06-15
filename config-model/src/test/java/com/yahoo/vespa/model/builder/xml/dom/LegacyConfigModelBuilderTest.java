@@ -1,0 +1,67 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.builder.xml.dom;
+
+import com.yahoo.config.model.ConfigModel;
+import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.text.XML;
+import org.junit.Test;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+/**
+ * @author lulf
+ * @since 5.1
+ */
+public class LegacyConfigModelBuilderTest {
+    @Test
+    public void testThatProducerIsInserted() {
+        String services = "<foo><config name=\"bar\"><key>value</key></config></foo>";
+        ModelBuilder builder = new ModelBuilder();
+        Model model = builder.build(DeployState.createTestState(new MockApplicationPackage.Builder().withServices(services).build()),
+                                    null, new MockRoot(), XML.getDocument(services).getDocumentElement());
+        assertThat(model.getContext().getParentProducer().getUserConfigs().size(), is(1));
+    }
+
+    public static class Model extends ConfigModel {
+
+        private final ConfigModelContext context;
+
+        /**
+         * Constructs a new config model given a context.
+         *
+         * @param modelContext The model context.
+         */
+        public Model(ConfigModelContext modelContext) {
+            super(modelContext);
+            this.context = modelContext;
+        }
+
+        public ConfigModelContext getContext() {
+            return context;
+        }
+    }
+    private static class ModelBuilder extends LegacyConfigModelBuilder<Model> {
+
+        public ModelBuilder() {
+            super(Model.class);
+        }
+
+        @Override
+        public void doBuild(Model model, Element element, ConfigModelContext modelContext) {
+        }
+
+        @Override
+        public List<ConfigModelId> handlesElements() {
+            return Arrays.asList(ConfigModelId.fromName("foo"));
+        }
+    }
+}

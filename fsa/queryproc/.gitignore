@@ -1,0 +1,9 @@
+.deps
+.libs
+Makefile
+Makefile.in
+count_plain_grams
+count_sorted_grams
+p2s_ratio
+permute_query
+sort_grams

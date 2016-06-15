@@ -1,0 +1,9 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+@default
+[title] -> ?title:"software engineer";
+
+[title] :- java engineer,software engineer,it engineer;
+[title] -> title:[title];
+
+# lotr +> date:656288040!0;
+lotr +> ?"lord of the rings";

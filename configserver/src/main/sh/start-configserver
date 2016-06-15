@@ -1,0 +1,119 @@
+#!/bin/sh
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# BEGIN environment bootstrap section
+# Do not edit between here and END as this section should stay identical in all scripts
+
+findpath () {
+    myname=${0}
+    mypath=${myname%/*}
+    myname=${myname##*/}
+    if [ "$mypath" ] && [ -d "$mypath" ]; then
+        return
+    fi
+    mypath=$(pwd)
+    if [ -f "${mypath}/${myname}" ]; then
+        return
+    fi
+    echo "FATAL: Could not figure out the path where $myname lives from $0"
+    exit 1
+}
+
+COMMON_ENV=libexec/vespa/common-env.sh
+
+source_common_env () {
+    if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
+        # ensure it ends with "/" :
+        VESPA_HOME=${VESPA_HOME%/}/
+        export VESPA_HOME
+        common_env=$VESPA_HOME/$COMMON_ENV
+        if [ -f "$common_env" ]; then
+            . $common_env
+            return
+        fi
+    fi
+    return 1
+}
+
+findroot () {
+    source_common_env && return
+    if [ "$VESPA_HOME" ]; then
+        echo "FATAL: bad VESPA_HOME value '$VESPA_HOME'"
+        exit 1
+    fi
+    if [ "$ROOT" ] && [ -d "$ROOT" ]; then
+        VESPA_HOME="$ROOT"
+        source_common_env && return
+    fi
+    findpath
+    while [ "$mypath" ]; do
+        VESPA_HOME=${mypath}
+        source_common_env && return
+        mypath=${mypath%/*}
+    done
+    echo "FATAL: missing VESPA_HOME environment variable"
+    echo "Could not locate $COMMON_ENV anywhere"
+    exit 1
+}
+
+findroot
+
+# END environment bootstrap section
+
+ROOT=$VESPA_HOME
+export ROOT
+cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
+
+# get common PATH etc:
+. $ROOT/libexec/vespa/common-env.sh
+
+if [ -f $ROOT/conf/zookeeper/zookeeper.cfg ]; then
+    chown yahoo $ROOT/conf/zookeeper/zookeeper.cfg
+    chmod 644 $ROOT/conf/zookeeper/zookeeper.cfg
+fi
+
+if [ -f $ROOT/var/zookeeper/myid ]; then
+    chown yahoo $ROOT/var/zookeeper/myid
+    chmod 644 $ROOT/var/zookeeper/myid
+fi
+
+$ROOT/libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
+if [ "$?" != "0" ] ; then
+    echo "Not able to start config server, host `hostname` is not part of 'services.addr_configserver'"
+    exit 1;
+fi
+
+fixlimits
+checkjava
+
+ZOOKEEPER_DATA_PATH="$VESPA_HOME/var/zookeeper/version-2"
+if [ ! -d "$ZOOKEEPER_DATA_PATH" ]; then
+    echo "Creating data directory $ZOOKEEPER_DATA_PATH"
+    mkdir -p $ZOOKEEPER_DATA_PATH
+    chown yahoo:users $ZOOKEEPER_DATA_PATH
+fi
+
+ZOOKEEPER_LOG_FILE="$VESPA_HOME/logs/vespa/zookeeper.configserver.log"
+rm -f $ZOOKEEPER_LOG_FILE*lck
+
+baseuserargs=$vespa_base__jvmargs_configserver
+serveruserargs="$cloudconfig_server__jvmargs"
+
+# TODO: Move this stuff to package when fully working
+APP=$VESPA_HOME/conf/configserver-app
+VESPA_SERVICE_NAME=configserver
+LOGFILE="${ROOT}/logs/vespa/vespa.log"
+VESPA_LOG_TARGET="file:${LOGFILE}"
+PID_FILE="${ROOT}/var/run/configserver.pid"
+VESPA_LOG_CONTROL_DIR="$ROOT/var/db/vespa/logcontrol"
+VESPA_LOG_CONTROL_FILE="$ROOT/var/db/vespa/logcontrol/configserver.logcontrol"
+jvmargs="-Dzookeeperlogfile=$ZOOKEEPER_LOG_FILE $baseuserargs $serveruserargs"
+standalone_jdisc_container__deployment_profile="configserver"
+MAXRESTARTS=100000
+export UNPRIVILEGED=1
+export MALLOC_ARENA_MAX=1 #Does not need fast allocation
+export VESPA_SERVICE_NAME VESPA_LOG_TARGET PID_FILE VESPA_LOG_CONTROL_DIR JAVA_OPTS VESPA_LOG_CONTROL_FILE standalone_jdisc_container__deployment_profile MAXRESTARTS
+run-as-yahoo ${ROOT}/bin/jdisc_container_start $APP $jvmargs
+
+run-as-yahoo $ROOT/libexec/vespa/start-filedistribution
+run-as-yahoo $ROOT/libexec/vespa/start-logd

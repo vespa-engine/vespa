@@ -1,0 +1,9 @@
+.depend
+Makefile
+fileutil_test
+mydir
+myfile
+myotherdir
+targetfile
+/linkeddir
+vespalib_fileutil_test_app

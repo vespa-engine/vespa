@@ -1,0 +1,206 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fakefilterocc");
+#include <vespa/searchlib/queryeval/iterators.h>
+#include "fakefilterocc.h"
+#include "fpfactory.h"
+
+using search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchDataPosition;
+
+namespace search
+{
+
+namespace fakedata
+{
+
+static FPFactoryInit
+init(std::make_pair("FilterOcc",
+                    makeFPFactory<FPFactoryT<FakeFilterOcc> >));
+
+FakeFilterOcc::FakeFilterOcc(const FakeWord &fw)
+    : FakePosting(fw.getName() + ".filterocc"),
+      _uncompressed(),
+      _docIdLimit(0),
+      _hitDocs(0)
+{
+    std::vector<uint32_t> fake;
+
+    typedef FakeWord FW;
+    typedef FW::DocWordFeatureList DWFL;
+
+    DWFL::const_iterator d(fw._postings.begin());
+    DWFL::const_iterator de(fw._postings.end());
+
+    while (d != de) {
+        fake.push_back(d->_docId);
+        ++d;
+    }
+    std::swap(_uncompressed, fake);
+    _docIdLimit = fw._docIdLimit;
+    _hitDocs = fw._postings.size();
+}
+
+
+FakeFilterOcc::~FakeFilterOcc(void)
+{
+}
+
+
+void
+FakeFilterOcc::forceLink(void)
+{
+}
+
+
+size_t
+FakeFilterOcc::bitSize(void) const
+{
+    return 32 * _uncompressed.size();
+}
+
+
+bool
+FakeFilterOcc::hasWordPositions(void) const
+{
+    return false;
+}
+
+
+int
+FakeFilterOcc::lowLevelSinglePostingScan(void) const
+{
+    return 0;
+}
+
+
+int
+FakeFilterOcc::lowLevelSinglePostingScanUnpack(void) const
+{
+    return 0;
+}
+
+
+int
+FakeFilterOcc::
+lowLevelAndPairPostingScan(const FakePosting &rhs) const
+{
+    (void) rhs;
+    return 0;
+}
+
+
+int
+FakeFilterOcc::
+lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const
+{
+    (void) rhs;
+    return 0;
+}
+
+
+class FakeFilterOccArrayIterator: public queryeval::RankedSearchIteratorBase
+{
+private:
+    FakeFilterOccArrayIterator(const FakeFilterOccArrayIterator &other);
+
+    FakeFilterOccArrayIterator& operator=(const FakeFilterOccArrayIterator &);
+
+public:
+    const uint32_t *_arr;
+    const uint32_t *_arrEnd;
+
+    FakeFilterOccArrayIterator(const uint32_t *arr,
+                               const uint32_t *arrEnd,
+                               const fef::TermFieldMatchDataArray &matchData);
+
+    ~FakeFilterOccArrayIterator(void);
+
+    void doUnpack(uint32_t docId) override;
+    void doSeek(uint32_t docId) override;
+    void initRange(uint32_t begin, uint32_t end) override;
+    Trinary is_strict() const override { return Trinary::True; }
+};
+
+
+void
+FakeFilterOccArrayIterator::doSeek(uint32_t docId)
+{
+    const uint32_t *oarr = _arr;
+    const uint32_t *oarrEnd = _arrEnd;
+
+    if (getUnpacked())
+        clearUnpacked();
+    if (oarr >= oarrEnd)
+        goto doneuncompressed;
+    for (;;) {
+        if ((int) *oarr >= (int) docId)
+            goto found;
+        if (++oarr >= oarrEnd)
+            goto doneuncompressed;
+    }
+ found:
+    _arr = oarr;
+    setDocId(*oarr);
+    return;            // Still data
+ doneuncompressed:
+    _arr = oarr;
+    setAtEnd();       // Mark end of data
+    return;            // Ran off end
+}
+
+
+FakeFilterOccArrayIterator::
+FakeFilterOccArrayIterator(const uint32_t *arr,
+                           const uint32_t *arrEnd,
+                           const fef::TermFieldMatchDataArray &matchData)
+    : queryeval::RankedSearchIteratorBase(matchData),
+      _arr(arr),
+      _arrEnd(arrEnd)
+{
+    clearUnpacked();
+}
+
+void
+FakeFilterOccArrayIterator::initRange(uint32_t begin, uint32_t end)
+{
+    queryeval::RankedSearchIteratorBase::initRange(begin, end);
+    if (_arr < _arrEnd) {
+        setDocId(*_arr);
+    } else {
+        setAtEnd();
+    }
+}
+
+
+FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator(void)
+{
+}
+
+
+void
+FakeFilterOccArrayIterator::doUnpack(uint32_t docId)
+{
+    if (_matchData.size() != 1 || getUnpacked()) {
+        return;
+    }
+    assert(docId == getDocId());
+    _matchData[0]->reset(docId);
+    setUnpacked();
+}
+
+
+search::queryeval::SearchIterator *
+FakeFilterOcc::
+createIterator(const fef::TermFieldMatchDataArray &matchData) const
+{
+    return new FakeFilterOccArrayIterator(&*_uncompressed.begin(),
+            &*_uncompressed.end(),
+            matchData);
+}
+
+} // namespace fakedata
+
+} // namespace search

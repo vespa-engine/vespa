@@ -1,0 +1,15 @@
+.depend
+Makefile
+asciistream_test
+string_test
+lookup_benchmark
+hash_test
+hashtable_test
+uniq_by_sort_map_hash
+vespalib_asciistream_test_app
+vespalib_hash_test_app
+vespalib_hashtable_test_app
+vespalib_string_test_app
+vespalib_vector_map_test_app
+vespalib_lookup_benchmark_app
+vespalib_uniq_by_sort_map_hash_app

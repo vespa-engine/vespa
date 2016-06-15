@@ -1,0 +1,11 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=1
+namespace=configtest
+
+greeting string default="Hello, world."
+arbitrary double
+
+values[].marker int
+values[].operations[].type enum { NALLE, BAMSE, BRAKAR }
+values[].operations[].arguments[].key   string
+values[].operations[].arguments[].value string

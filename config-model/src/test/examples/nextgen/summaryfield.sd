@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search summaryfield {
+    document summaryfield {
+        field foo type string {
+            indexing: index | summary
+            summary bar: full
+        }
+    }
+    document-summary baz {
+        summary cox type string {
+            source: bar
+        }
+    }
+}
+

@@ -1,0 +1,7 @@
+*.dat
+.depend
+Makefile
+aggregator_test
+perdocexpr_test
+searchlib_attr_test_app
+searchlib_perdocexpr_test_app

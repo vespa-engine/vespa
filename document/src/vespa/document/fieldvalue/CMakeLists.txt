@@ -1,0 +1,29 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(document_fieldvalues OBJECT
+    SOURCES
+    annotationreferencefieldvalue.cpp
+    arrayfieldvalue.cpp
+    bytefieldvalue.cpp
+    collectionfieldvalue.cpp
+    document.cpp
+    doublefieldvalue.cpp
+    fieldvalue.cpp
+    floatfieldvalue.cpp
+    intfieldvalue.cpp
+    literalfieldvalue.cpp
+    longfieldvalue.cpp
+    mapfieldvalue.cpp
+    numericfieldvalue.cpp
+    predicatefieldvalue.cpp
+    rawfieldvalue.cpp
+    serializablearray.cpp
+    shortfieldvalue.cpp
+    stringfieldvalue.cpp
+    structfieldvalue.cpp
+    structuredfieldvalue.cpp
+    tensorfieldvalue.cpp
+    weightedsetfieldvalue.cpp
+    DEPENDS
+    AFTER
+    document_documentconfig
+)

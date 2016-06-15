@@ -1,0 +1,59 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.fs4;
+
+import com.yahoo.text.Utf8;
+
+import java.nio.ByteBuffer;
+
+public class FS4Properties {
+    private String name;
+
+    static public class Entry {
+        public final String key;
+        public final String val;
+        public Entry(byte[] k, byte[] v) {
+            key = Utf8.toString(k);
+            val = Utf8.toString(v);
+        }
+    };
+
+    private Entry[] entries;
+
+    void decode(ByteBuffer buffer) {
+        int nameLen = buffer.getInt();
+        byte[] utf8name = new byte[nameLen];
+        buffer.get(utf8name);
+        this.setName(Utf8.toString(utf8name));
+
+        int n = buffer.getInt();
+        setEntries(new Entry[n]);
+        for (int j = 0; j < n; j++) {
+            int keyLen = buffer.getInt();
+            byte[] key = new byte[keyLen];
+            buffer.get(key);
+
+            int valLen = buffer.getInt();
+            byte[] value = new byte[valLen];
+            buffer.get(value);
+
+            getEntries()[j] = new Entry(key, value);
+        }
+    }
+
+    public Entry[] getEntries() {
+        return entries;
+    }
+
+    public void setEntries(Entry[] entries) {
+        this.entries = entries;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+}

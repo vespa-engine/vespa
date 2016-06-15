@@ -1,0 +1,49 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc;
+
+import com.google.inject.AbstractModule;
+import com.yahoo.jdisc.service.BindingSetNotFoundException;
+import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Test;
+
+import java.net.URI;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+public class ContainerTestCase {
+
+    @Test
+    public void requireThatNewRequestsReferenceSameSnapshot() throws Exception {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        driver.activateContainer(driver.newContainerBuilder());
+        Request foo = new Request(driver, URI.create("http://foo"));
+        Request bar = new Request(foo, URI.create("http://bar"));
+        assertNotNull(foo.container());
+        assertSame(foo.container(), bar.container());
+        foo.release();
+        bar.release();
+        driver.close();
+    }
+
+    @Test
+    public void requireThatInjectionWorks() throws BindingSetNotFoundException {
+        final Object foo = new Object();
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
+
+            @Override
+            protected void configure() {
+                bind(Object.class).toInstance(foo);
+            }
+        });
+        driver.activateContainer(driver.newContainerBuilder());
+        Request request = new Request(driver, URI.create("http://host/path"));
+        assertSame(foo, request.container().getInstance(Object.class));
+        request.release();
+        driver.close();
+    }
+}

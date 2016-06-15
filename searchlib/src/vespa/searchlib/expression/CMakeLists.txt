@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchlib_expression OBJECT
+    SOURCES
+    perdocexpression.cpp
+    expressiontree.cpp
+    timestamp.cpp
+    bucketresultnode.cpp
+    integerbucketresultnode.cpp
+    floatbucketresultnode.cpp
+    stringbucketresultnode.cpp
+    rawbucketresultnode.cpp
+    fixedwidthbucketfunctionnode.cpp
+    rangebucketpredef.cpp
+    resultvector.cpp
+    catserializer.cpp
+    strcatserializer.cpp
+    documentfieldnode.cpp
+    attributenode.cpp
+    zcurve.cpp
+    ucafunctionnode.cpp
+    debugwaitfunctionnode.cpp
+    mathfunctionnode.cpp
+    numericfunctionnode.cpp
+    resultnode.cpp
+    interpolatedlookupfunctionnode.cpp
+    functionnodes.cpp
+    resultnodes.cpp
+    arrayatlookupfunctionnode.cpp
+    arrayoperationnode.cpp
+    aggregationrefnode.cpp
+    DEPENDS
+)

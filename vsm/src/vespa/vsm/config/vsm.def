@@ -1,0 +1,13 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.vsm
+
+## The document model for the documents used as input for the VSM
+doctype reference
+
+## Configuration for storage client used by VSM
+storagecfg reference
+
+## Config defining what search method should be applied to different
+## fields in the documents. It also contains a mapping from index name
+## to a set of fields making up that index.
+vsmfields reference

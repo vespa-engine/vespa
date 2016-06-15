@@ -1,0 +1,23 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Contains meta info about one deployed application
+
+version=4
+namespace=container.core
+
+# The name of the directory that contained the application package
+name string default=""
+
+# The user name that deployed the application
+user string default=""
+
+# The directory the application was deployed from
+path string default=""
+
+# The application timestamp in ms
+timestamp long default=0
+
+# The md5 hash of the application package contents
+checksum string default=""
+
+# The application generation number
+generation long default=0

@@ -1,0 +1,1 @@
+Route 'foo' in routing table 'document' is defined 2 times.

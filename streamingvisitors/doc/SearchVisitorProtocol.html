@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.3  (Unix)">
+	<META NAME="AUTHOR" CONTENT="Henning Baldersheim">
+	<META NAME="CREATED" CONTENT="20080312;9103800">
+	<META NAME="CHANGEDBY" CONTENT="Henning Baldersheim">
+	<META NAME="CHANGED" CONTENT="20080314;8394700">
+	<META NAME="CHANGEDBY" CONTENT="Henning Baldersheim">
+	<META NAME="CHANGEDBY" CONTENT="Henning Baldersheim">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { size: 8.5in 11in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H1 { margin-bottom: 0.08in }
+		H1.western { font-family: "Helvetica"; font-size: 16pt }
+		H1.cjk { font-family: "AR PL ShanHeiSun Uni"; font-size: 16pt }
+		H1.ctl { font-family: "Tahoma"; font-size: 16pt }
+		H2 { margin-bottom: 0.08in }
+		H2.western { font-family: "Helvetica"; font-size: 14pt; font-style: italic }
+		H2.cjk { font-family: "AR PL ShanHeiSun Uni"; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Arial Unicode MS"; font-size: 14pt; font-style: italic }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<H1 CLASS="western">SearchVisitor design</H1>
+<P>The SearchVisitor is a visitor plugin running in the storaged
+binary. It processes queries and docsum requests and returns
+SearchResult and DocumentSummary objects to the client. It uses Vespa
+Streaming Matcher (VSM) to generate the search results and document
+summaries.</P>
+<P>Since the distributors in VDS do not have fdispatch capability,
+that is implemented in the QRS(client). It must collect all messages
+received, merge them and present them to its liking.</P>
+<H2 CLASS="western">Initiation</H2>
+<P>The client sends down a createVisitor command with the following
+parameters set:</P>
+<P>Timeout : This is the query timeout.</P>
+<P>VisitorLibrary: &quot;SearchVisitor&quot;. Tells the framework to
+use the SearchVisitor visitor plugin, rather than the default
+DumpVisitor.</P>
+<P>VisitorParameters: Containing the following arguments for the
+SearchVisitor:</P>
+<UL>
+	<LI><P>&quot;query&quot;: The raw encoded query stack from QRS. It
+	has the same format as the query parameter in the QueryPacket sent
+	to indexed search.</P>
+	<LI><P>&quot;searchcluster&quot;: This identifies which
+	searchcluster is queried. The visitor uses this to choose the
+	correct config.</P>
+	<LI><P>&quot;summaryclass&quot;: Which summaryclass is wanted.</P>
+	<LI><P>&quot;summarycount&quot;: The number of summaries wanted.</P>
+	<LI><P>&quot;aggregation&quot;: The aggregation specification as specified
+	by the fs4 protocol. The aggregation options are the same as for
+	indexed search. 
+	</P>
+	<LI><P>&quot;sort&quot;: The sort specification as specified by the fs4
+	protocol.</P>
+	<LI><P>&quot;unique&quot;: The field to do duplicate removal on.
+	</P>
+	<LI><P>&quot;rankprofile&quot;: Which rank profile to use. The default is 0.</P>
+	<LI><P>&quot;rankproperties&quot;: A set of properties to use in ranking for the backend.</P>
+</UL>
+<P>The backend will return all hits, but only the requested number of
+summaries. It is the client's responsibility to handle &quot;hits&quot;
+and &quot;offset&quot; query parameters.</P>
+<P>Only singlephase has been implemented as all the data are
+available anyway.</P>
+<P>&quot;aggregate&quot;, &quot;sort&quot; and &quot;unique&quot; are not limited to
+attributes as they are in indexed search. Every field has attribute
+semantics in streamed search.</P>
+<H2 CLASS="western">SearchResult</H2>
+<P>This is the message returned to the client after the search has
+been conducted.</P>
+<P>It contains a list of Hits each containing the documentid as known
+by VDS, and a rank identifying the relevance of the document with
+respect to the query. The list is sorted on descending rank.</P>
+<H2 CLASS="western">DocumentSummary</H2>
+<P>This is the message returned to the client after all the document
+summaries have been generated.</P>
+<P>It contains a list of Summary objects, each containing the
+documentId as known by VDS and the summary blob. The list is sorted
+on ascending docid. The summary blob is encoded as specified by the
+fastserver4 protocol.</P>
+<H2 CLASS="western">AggregationResult</H2>
+<P>This is the message returned containing the aggregation data. They
+follow the format of the aggregation packet used in the fs4 protocol.</P>
+</BODY>
+</HTML>

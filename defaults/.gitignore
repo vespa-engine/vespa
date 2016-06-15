@@ -1,0 +1,13 @@
+.classpath
+.project
+.settings
+archive
+build
+log
+target
+*.iml
+*.ipr
+*.iws
+/pom.xml.build
+Makefile
+Testing

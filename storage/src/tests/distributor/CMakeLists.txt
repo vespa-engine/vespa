@@ -1,0 +1,44 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(storage_testdistributor
+    SOURCES
+    mergelimitertest.cpp
+    bucketdatabasetest.cpp
+    messagesenderstub.cpp
+    externaloperationhandlertest.cpp
+    getoperationtest.cpp
+    idealstatemanagertest.cpp
+    putoperationtest.cpp
+    removeoperationtest.cpp
+    removebucketoperationtest.cpp
+    mergeoperationtest.cpp
+    splitbuckettest.cpp
+    joinbuckettest.cpp
+    visitoroperationtest.cpp
+    twophaseupdateoperationtest.cpp
+    removelocationtest.cpp
+    bucketdbupdatertest.cpp
+    statoperationtest.cpp
+    pendingmessagetrackertest.cpp
+    distributortestutil.cpp
+    simplebucketprioritydatabasetest.cpp
+    simplemaintenancescannertest.cpp
+    maintenanceschedulertest.cpp
+    throttlingoperationstartertest.cpp
+    blockingoperationstartertest.cpp
+    nodeinfotest.cpp
+    updateoperationtest.cpp
+    bucketstateoperationtest.cpp
+    distributortest.cpp
+    mapbucketdatabasetest.cpp
+    operationtargetresolvertest.cpp
+    garbagecollectiontest.cpp
+    statecheckerstest.cpp
+    statusreporterdelegatetest.cpp
+    bucketdbmetricupdatertest.cpp
+    bucketgctimecalculatortest.cpp
+    nodemaintenancestatstrackertest.cpp
+    distributor_host_info_reporter_test.cpp
+    DEPENDS
+    AFTER
+    storage_storageconfig
+)

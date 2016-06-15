@@ -1,0 +1,21 @@
+<HTML>
+<HEAD>
+<TITLE>Search results</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+
+<form action=$result.query.path name="search">
+<input TYPE="text" SIZE="35" NAME="query" VALUE="">
+<input TYPE=submit VALUE="Search">
+</form>
+
+<script>
+<!--
+function setfocus() { document.search.query.focus(); } setfocus();
+// -->
+</script>
+
+<H3>Search for "$result.query.rawQueryHTMLEncoded"</H3>
+$result.totalHitCount hits
+<BR><HR><BR>
+<!--<A HREF="/">Home</A><BR><BR>-->

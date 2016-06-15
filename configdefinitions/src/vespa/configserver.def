@@ -1,0 +1,34 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config
+rpcport int default=19070
+httpport int default=19071
+numthreads int default=16
+zookeepercfg string default="conf/zookeeper/zookeeper.cfg"
+zookeeperserver[].hostname string
+zookeeperserver[].port int default=2181
+# in seconds
+zookeeper.barrierTimeout long default=120
+configModelPluginDir[] string
+configServerDBDir string default="var/db/vespa/config_server/serverdb/"
+maxgetconfigclients int default=1000000
+maxoutputbuffersize int default=65536
+# in seconds
+sessionLifetime long default=3600
+applicationDirectory string default="conf/configserver-app"
+masterGeneration long default=0
+multitenant bool default=false
+numDelayedResponseThreads int default=1
+payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
+serverId string default="localhost"
+hostedVespa bool default=false
+numParallelTenantLoaders int default=1
+
+# Zone information
+environment string default="prod"
+region string default="default"
+defaultFlavor string default="default"
+defaultAdminFlavor string default="default"
+defaultContainerFlavor string default="default"
+defaultContentFlavor string default="default"
+
+useVespaVersionInRequest bool default=false

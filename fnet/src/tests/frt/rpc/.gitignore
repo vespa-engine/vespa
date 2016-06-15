@@ -1,0 +1,12 @@
+*.core
+.depend
+Makefile
+core
+detach_return_invoke_test
+invoke_test
+session_test
+sharedblob_test
+fnet_detach_return_invoke_test_app
+fnet_invoke_test_app
+fnet_session_test_app
+fnet_sharedblob_test_app

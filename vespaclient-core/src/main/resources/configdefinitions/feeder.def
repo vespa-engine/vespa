@@ -1,0 +1,46 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=16
+namespace=vespaclient.config
+
+## Whether or not to abort if there are document-related errors.
+## Value 'false' will skip bad documents, but still abort on other errors.
+abortondocumenterror bool default=true
+
+## Whether or not to abort if there are errors sending messages to Vespa
+abortonsenderror bool default=true
+
+## Prefix each document id with this string.
+idprefix string default=""
+
+## Max number of pending operations.
+maxpendingdocs int default=0
+
+## Max number of bytes in pending operations.
+maxpendingbytes int default=0
+
+## Max number of operations to perform per second (0 == no max)
+maxfeedrate double default=0.0
+
+## Whether or not retrying is enabled.
+retryenabled bool default=true
+
+## Delay between retries.
+retrydelay double default=1
+
+## Timeout for messagebus operations.
+timeout double default=180
+
+## Route to feed documents on
+route string default="default"
+
+## Trace level for messages
+tracelevel int default=0
+
+## Messagebus port to start source session on
+mbusport int default=-1
+
+## Default docproc chain to run
+docprocchain string default=""
+
+## Whether or not to set create-if-non-existent flag on all document updates handled by a feeder.
+createifnonexistent bool default=false

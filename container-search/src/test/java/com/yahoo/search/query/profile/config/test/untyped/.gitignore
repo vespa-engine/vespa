@@ -1,0 +1,10 @@
+bundles.cfg
+container-mbus.cfg
+diagnostics.cfg
+documentdb-info.cfg
+documentmanager.cfg
+int.cfg
+qr-templates.cfg
+renderers.cfg
+schemamapping.cfg
+string.cfg

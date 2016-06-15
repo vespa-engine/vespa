@@ -1,0 +1,7 @@
+*.core
+.depend
+Makefile
+core
+core.*
+testurl
+searchlib_testurl_app

@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search arrays {
+
+  document arrays {
+
+    field tags type array<string> {
+      indexing: summary | index
+    }
+
+    field ratings type int[] {
+      indexing: summary | index
+    }
+
+    field a type string {
+      indexing: index
+    }
+
+    field b type array<string> {
+      indexing: index  | attribute
+    }
+
+    field c type weightedset<string> {
+      indexing: summary | index
+    }
+
+  }
+
+  fieldset default {
+      fields: a, b, c
+  }
+
+}

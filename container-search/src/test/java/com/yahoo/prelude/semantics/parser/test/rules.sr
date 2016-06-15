@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+@default
+@automata(src/test/java/com/yahoo/prelude/semantics/parser/test/semantics.fsa)
+
+# Local use case
+
+[listing] [preposition] [place] -> listing:[listing] place:[place]!150;
+
+[listing] :- restaurant, shop, cafe, hotel;
+
+[preposition] :- in, at, near;
+
+[place] :- geary;
+
+# Just to see additive rules working
+[listing] [place] +> place:[place];
+
+# Shopping use case
+
+[brand] -> brand:[brand];
+[category] -> category:[category];
+
+digital camera -> digicamera;
+
+[brand] :- sony, dell;
+[category] :- digital camera, camera, phone;
+
+# Answers use case
+
+# why is [noun] ... [adjective] +> ?about:[noun]
+
+parameter.ranking='cat', parameter.ranking='cat0' -> one;

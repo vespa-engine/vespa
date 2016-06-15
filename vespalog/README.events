@@ -1,0 +1,158 @@
+Quick Specification for VESPA Log Events
+========================================
+
+Events are a machine-readable form of log messages, intended for
+automated monitoring.
+
+Each event has an event type, a version and an optional payload.
+
+In the log format, event types are expressed as a single word,
+versions as a simple integer, and the payload as a set of key=value
+pairs.
+
+The event payload is backslash-quoted just like log messages are in
+general.  This means that events may be double-quoted during
+transport.  Double-quote delimiters are not supported.
+
+These are the supported event types and their usage.  You can find
+more details about each of the event types further below.
+
+  Event Type     Description
+============================================================================
+  starting       Sent by a process starting another process
+  started        Sent by a process when it has started
+  stopping       Sent by a process that will exit
+  stopped        Sent by the calling process when a sub-process has exited
+  reloading      Sent when some form of reloading starts
+  reloaded       Sent when the reload is complete
+  crash          Sent by the calling process when a sub-process crashes
+  progress       For tracking any type of progress
+  count          For tracking any type of counter (queries served etc)
+  value          For tracking any type of value (qps, queue-length, etc..)
+  collection     For tracking events related to collections (collection out of sync etc)
+
+Event: starting
+---------------
+Payload: name=<name>
+
+This event is sent by processes when they are about to start another
+process.  Typical for, but not limited to, shell scripts.  This event
+is not required to track processes, but is useful in cases where a
+sub-process may fail during startup.
+
+Example:
+starting name=fdispatch
+
+
+Event: started
+--------------
+Payload: name=<name>
+The "started" event is sent by a process that just started up.
+
+Example:
+started name=fdispatch
+
+
+Event: stopping
+---------------
+Payload: name=<name> why=<why>
+The "stopping" event is sent by a process that is about to exit.
+
+Example:
+stopping name=fdispatch why="clean exit"
+
+
+Event: stopped
+--------------
+Payload: name=<name> pid=<pid> exitcode=<exitcode>
+
+This event is sent by a process monitoring when a sub-process exits.
+
+Example:
+stopped name=fdispatch pid=76512
+
+
+Event: reloading
+----------------
+Payload: name=<name>
+
+This event is used to signal that a process is about to start some
+kind of reloading operation.
+
+The "name" payload attribute says what kind of reload operation that
+is being done, and is specific for each library/application.  The
+"reloading" event is optional for reloads, for a simple reload that
+doesn't fail, you can use "reloaded" directly.
+
+Example:
+reloading name=partitions
+
+
+Event: reloaded
+---------------
+The "reloaded" event is sent after the reload is complete (and
+successful).  Any "reloading" event must have a matching "reloaded" event
+
+Example:
+
+reloaded name=crawler.configfile:$VESPA_HOME/var/mms/docproccfg.xml
+
+
+Event: crash
+------------
+Payload: name=<appname> pid=<pid> signal=<signal>
+
+Submitted by a process monitoring a sub-process when the sub-process
+crashes (dumps core etc.)
+
+Example:
+
+crash name=fastcrawler pid=12345 signal=11
+
+
+Event: progress
+---------------
+Payload: name=<name> value=<value> [total=<total>]
+
+Somewhat general event for tracking progress.  The <name> is specific
+to each library/application.
+
+Example:
+progress name=indexing.autoindex value=17 total=90
+
+
+Event: count
+------------
+Payload: name=<name> value=<value>
+
+Somewhat general event for counting stuff.  As with "progress", the
+<name> is specific to each library/application. Counters are asssumed
+to increase with time, counting the number of events since the program
+was started for example.
+
+
+Event: value
+------------
+Payload: name=<name> value=<value>
+
+General event for values. "Value is for values that cannot be counts"
+Typical values are queue lengths, transaction frequencies and so on.
+
+
+Examples:
+count name=queue-length value=2346235
+
+Event: collection
+-----------------
+
+Payload: collectionid=<id> name=<name> <params>
+
+Represents events related to collections. The name describes what
+happened to the collection ("syncrows", "created", etc). params
+is a string on the form param1=... param2=... that holds various
+parameters for the event. For "syncrows", the parameters are:
+column, badrow, goodrow.
+
+Examples:
+collection collectionid=1111111111 name=syncrows column=1 badrow=0 goodrow=1
+

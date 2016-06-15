@@ -1,0 +1,30 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host3.yahoo.com",
+  "id": "host3.yahoo.com",
+  "state": "active",
+  "hostname": "host3.yahoo.com",
+  "openStackId": "node3",
+  "flavor":"expensive",
+  "description":"Flavor-name-is-expensive",
+  "canonicalFlavor":"default",
+  "cost":200,
+  "owner": {
+    "tenant": "tenant2",
+    "application": "application2",
+    "instance": "instance2"
+  },
+  "membership": {
+    "clustertype": "content",
+    "clusterid": "id2",
+    "group": "0",
+    "index": 1,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure" : false,
+  "history":[{"event":"readied","at":123},{"event":"reserved","at":123},{"event":"activated","at":123}]
+}

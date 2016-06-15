@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+searchlib_termmatchdatamerger_test_app

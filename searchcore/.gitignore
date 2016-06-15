@@ -1,0 +1,15 @@
+include
+bin
+etc
+conf
+public_html
+.Build_completed
+.Dist_completed
+.Install_completed
+.PreBuild_completed
+update.log
+
+/target
+/pom.xml.build
+Makefile
+Testing

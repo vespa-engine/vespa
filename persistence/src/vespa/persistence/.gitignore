@@ -1,0 +1,5 @@
+/.depend
+/Makefile
+/features.h
+/libpersistence.so.5.1
+/libpersistence_conformancetest.so.5.1

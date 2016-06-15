@@ -1,0 +1,36 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="includer" description="Demonstrates the various include cases">
+    <section id="case1" description="No choices">
+        <include idref="header"/>
+        <include idref="footer"/>
+    </section>
+    <section id="case2" description="Include as implicit alternatives">
+        <choice>
+            <include idref="header"/>
+            <include idref="footer"/>
+        </choice>
+    </section>
+    <section id="case3" description="Include as explicit alternatives - same result as above">
+        <choice>
+            <alternative><include idref="header"/></alternative>
+            <alternative><include idref="footer"/></alternative>
+        </choice>
+    </section>
+    <section id="case4" description="Mixed with un-included">
+        <choice>
+            <section id="first" source="music"/>
+            <alternative><include idref="header"/></alternative>
+            <section id="middle" source="video"/>
+            <alternative><include idref="footer"/></alternative>
+            <section id="last" source="books"/>
+        </choice>
+    </section>
+    <section id="case5" description="Including two alternatives">
+        <include idref="choiceHeader"/>
+    </section>
+    <section id="case6" description="Including one choice">
+        <choice>
+            <include idref="choiceFooter"/>
+        </choice>
+    </section>
+</page>

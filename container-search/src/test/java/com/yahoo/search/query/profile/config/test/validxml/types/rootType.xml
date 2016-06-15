@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<query-profile-type id="rootType" inherits="native">
+
+    <strict/>
+    <match path="true"/>
+
+    <field name="time" type="long" mandatory="true"/>
+    <field name="user" type="query-profile:user"/>
+
+</query-profile-type>

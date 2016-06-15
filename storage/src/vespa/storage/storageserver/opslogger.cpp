@@ -1,0 +1,142 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/storage/storageserver/opslogger.h>
+
+#include <vespa/log/log.h>
+#include <vespa/storageapi/message/persistence.h>
+
+LOG_SETUP(".operationslogger");
+
+namespace storage {
+
+OpsLogger::OpsLogger(StorageComponentRegister& compReg,
+                     const config::ConfigUri & configUri)
+    : StorageLink("Operations logger"),
+      _lock(),
+      _fileName(),
+      _targetFile(0),
+      _component(compReg, "opslogger"),
+      _configFetcher(configUri.getContext())
+{
+    _configFetcher.subscribe<vespa::config::content::core::StorOpsloggerConfig>(configUri.getConfigId(), this);
+    _configFetcher.start();
+}
+
+OpsLogger::~OpsLogger()
+{
+    closeNextLink();
+    LOG(debug, "Deleting link %s.", toString().c_str());
+
+    if (_targetFile) {
+        fclose(_targetFile);
+    }
+}
+
+void
+OpsLogger::onClose()
+{
+        // Avoid getting config during shutdown
+    _configFetcher.close();
+}
+
+void
+OpsLogger::configure(std::unique_ptr<vespa::config::content::core::StorOpsloggerConfig> config)
+{
+    vespalib::LockGuard lock(_lock);
+        // If no change in state, ignore
+    if (config->targetfile == _fileName) return;
+        // If a change we need to close old handle if open
+    if (_targetFile != 0) {
+        fclose(_targetFile);
+        _targetFile = 0;
+    }
+        // Set up the new operations log file
+    _fileName = config->targetfile;
+    if (_fileName.length() > 0) {
+        _targetFile = fopen(_fileName.c_str(), "a+b");
+
+        if (!_targetFile) {
+            LOG(warning, "Could not open file %s for operations logging",
+                _fileName.c_str());
+        }
+    }
+}
+
+void
+OpsLogger::print(std::ostream& out, bool verbose,
+                 const std::string& indent) const
+{
+    (void) verbose; (void) indent;
+    out << "OpsLogger()";
+}
+
+bool
+OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
+{
+    if (_targetFile == 0) return false;
+    std::ostringstream ost;
+    ost << _component.getClock().getTimeInSeconds().getTime()
+        << "\tPUT\t" << msg->getDocumentId() << "\t"
+        << msg->getResult().toString() << "\n";
+    {
+        vespalib::LockGuard lock(_lock);
+        if (_targetFile == 0) return false;
+        fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
+        fflush(_targetFile);
+    }
+    return false;
+}
+
+bool
+OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
+{
+    if (_targetFile == 0) return false;
+    std::ostringstream ost;
+    ost << _component.getClock().getTimeInSeconds().getTime()
+        << "\tUPDATE\t" << msg->getDocumentId() << "\t"
+        << msg->getResult().toString() << "\n";
+    {
+        vespalib::LockGuard lock(_lock);
+        if (_targetFile == 0) return false;
+        fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
+        fflush(_targetFile);
+    }
+    return false;
+}
+
+bool
+OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
+{
+    if (_targetFile == 0) return false;
+    std::ostringstream ost;
+    ost << _component.getClock().getTimeInSeconds().getTime()
+        << "\tREMOVE\t" << msg->getDocumentId() << "\t"
+        << msg->getResult().toString() << "\n";
+    {
+        vespalib::LockGuard lock(_lock);
+        if (_targetFile == 0) return false;
+        fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
+        fflush(_targetFile);
+    }
+    return false;
+}
+
+bool
+OpsLogger::onGetReply(const std::shared_ptr<api::GetReply>& msg)
+{
+    if (_targetFile == 0) return false;
+    std::ostringstream ost;
+    ost << _component.getClock().getTimeInSeconds().getTime()
+        << "\tGET\t" << msg->getDocumentId() << "\t"
+        << msg->getResult().toString() << "\n";
+    {
+        vespalib::LockGuard lock(_lock);
+        if (_targetFile == 0) return false;
+        fwrite(ost.str().c_str(), ost.str().length(), 1, _targetFile);
+        fflush(_targetFile);
+    }
+    return false;
+}
+
+} // storage

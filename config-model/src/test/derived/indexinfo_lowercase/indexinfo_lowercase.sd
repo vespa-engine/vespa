@@ -1,0 +1,120 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search indexinfo_lowercase {
+
+    document indexinfo_lowercase {
+        field lc_attribute_src type string {
+
+        }
+        field lc_index_src type string {
+
+        }
+        field lc_summary_src type string {
+
+        }
+
+        # these fields do not lower case any input, and should not lower case query
+        field nc_attribute type string {
+            indexing: attribute
+        }
+        field nc_index type string {
+            indexing: index
+        }
+        field nc_summary type string {
+            indexing: summary
+        }
+    }
+
+    # these fields lower case all input, and should lower case query
+    field lc_attribute type string {
+        indexing: input lc_attribute_src | lowercase | attribute
+    }
+    field lc_index type string {
+        indexing: input lc_index_src | lowercase | index
+    }
+    field lc_summary type string {
+        indexing: input lc_summary_src | lowercase | summary
+    }
+
+    # these field sets contain only lower cased fields, and should lower case query
+    fieldset lc_set1 {
+        fields: lc_attribute
+    }
+    fieldset lc_set2 {
+        fields: lc_index
+    }
+    fieldset lc_set3 {
+        fields: lc_summary
+    }
+    fieldset lc_set4 {
+        fields: lc_attribute, lc_index
+    }
+    fieldset lc_set5 {
+        fields: lc_attribute, lc_summary
+    }
+    fieldset lc_set6 {
+        fields: lc_index, lc_summary
+    }
+    fieldset lc_set7 {
+        fields: lc_attribute, lc_index, lc_summary
+    }
+
+    # these field sets contain at least one non-lower cased field, and should not lower case query
+    fieldset nc_set1 {
+        fields: nc_attribute
+    }
+    fieldset nc_set2 {
+        fields: nc_index
+    }
+    fieldset nc_set3 {
+        fields: nc_summary
+    }
+    fieldset nc_set4 {
+        fields: nc_attribute, nc_index
+    }
+    fieldset nc_set5 {
+        fields: nc_attribute, nc_summary
+    }
+    fieldset nc_set6 {
+        fields: nc_index, nc_summary
+    }
+    fieldset nc_set7 {
+        fields: nc_attribute, nc_index, nc_summary
+    }
+    fieldset nc_set8 {
+        fields: lc_attribute, nc_index
+    }
+    fieldset nc_set9 {
+        fields: nc_attribute, lc_index
+    }
+    fieldset nc_set10 {
+        fields: lc_attribute, nc_summary
+    }
+    fieldset nc_set11 {
+        fields: nc_attribute, lc_summary
+    }
+    fieldset nc_set12 {
+        fields: lc_index, nc_summary
+    }
+    fieldset nc_set13 {
+        fields: nc_index, lc_summary
+    }
+    fieldset nc_set14 {
+        fields: lc_attribute, nc_index, nc_summary
+    }
+    fieldset nc_set15 {
+        fields: lc_attribute, lc_index, nc_summary
+    }
+    fieldset nc_set16 {
+        fields: lc_attribute, nc_index, lc_summary
+    }
+    fieldset nc_set17 {
+        fields: nc_attribute, lc_index, nc_summary
+    }
+    fieldset nc_set18 {
+        fields: nc_attribute, lc_index, lc_summary
+    }
+    fieldset nc_set19 {
+        fields: nc_attribute, nc_index, lc_summary
+    }
+
+}

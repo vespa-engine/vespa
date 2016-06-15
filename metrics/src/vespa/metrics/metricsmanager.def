@@ -1,0 +1,64 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=4
+namespace=metrics
+
+# If any snapshot periods is set, these override all the default ones.
+# The array sets the snapshot periods in number of seconds. Note that when
+# sorted in rising time length order, it is required that the snapshot length of
+# the next snapshot is a multiplum of the previous snapshot.
+## restart flag was added automatically and needs to be verified.
+snapshot.periods[] int restart
+
+# The name of the consumer that should include the given metrics specified.
+## restart flag was added automatically and needs to be verified.
+consumer[].name string restart
+
+# Include metrics that match the given tags.
+#
+# A tag specification either adds a single tag by given the full tag name, or
+# any tag, by specifying an asterix as wildcard ('*'). An asterix will not match
+# metrics without any tags set, but you can match these by specifying an empty
+# string.
+#
+# A metric set matched by tags, will also include every metric contained in it
+# regardless of tags.
+## restart flag was added automatically and needs to be verified.
+consumer[].tags[] string restart
+
+# Do not include metrics that match the specific tags. This has higher
+# presedence than the adding of tags, but lower presedence than name patterns.
+#
+# Removed tags are specified as added tags, with a small exception. Removing
+# wildcard or untagged metrics does not make sense, as metrics are not added by 
+# default. If you don not want to include these metrics, just not specify them
+# as tags to be added. Thus, these are not allowed in remove tags spec.
+#
+# A metric set matched by remove tag will remove all metrics below that tag.
+## restart flag was added automatically and needs to be verified.
+consumer[].removedtags[] string restart
+
+# Include all metrics that matches the names given here.
+# Metrics added here have presedence above tag specifications.
+#
+# Names are specified as a complete dot separated path to metric. Asterix can
+# be used to match any part. An asterix will only match a complete name without
+# a dot. So if you have an average metric called 'queuesize' in your top level
+# metric set called 'myapp', you can add this metric with the spec
+# 'myapp.queuesize'. You can also add non-default average metric entries by
+# specifying which, such as 'myapp.queuesize.last' or 'myapp.queuesize.max'.
+# Patterns can be used, to for instance specify '*.queuesize', 'myapp.*', '*.*',
+# 'myapp.*.max' or similar.
+#
+# A metric set added with specific name will add all metrics within it.
+## restart flag was added automatically and needs to be verified.
+consumer[].addedmetrics[] string restart
+
+# Do not include metrics with the below names.
+# This has highest presedence. Metrics removed like this will override any
+# specification otherwise that would include them.
+#
+# The remove metrics are specified exactly the same as the added metrics.
+#
+# A metric set removed with specific name will remove all metrics within it.
+## restart flag was added automatically and needs to be verified.
+consumer[].removedmetrics[] string restart

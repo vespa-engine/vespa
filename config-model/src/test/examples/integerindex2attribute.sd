@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search integerindex2attribute {
+  document integerindex2attribute {
+
+    field s1 type string {
+      indexing: index
+    }
+    field s2 type string {
+      indexing: index | attribute
+    }
+    field as1 type array<string> {
+      indexing: index
+    }
+    field as2 type array<string> {
+      indexing: index | attribute
+    }
+
+    field i1 type int {
+      indexing: index
+    }
+    field i2 type int {
+      indexing: index | attribute
+    }
+    field ai1 type array<int> {
+      indexing: index
+    }
+    field ai2 type array<int> {
+      indexing: index | attribute
+    }
+
+  }
+}

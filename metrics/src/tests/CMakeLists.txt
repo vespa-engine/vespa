@@ -1,0 +1,18 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(metrics_testrunner_app
+    SOURCES
+    testrunner.cpp
+    countmetrictest.cpp
+    valuemetrictest.cpp
+    metricsettest.cpp
+    summetrictest.cpp
+    metricmanagertest.cpp
+    loadmetrictest.cpp
+    snapshottest.cpp
+    stresstest.cpp
+    metrictest.cpp
+    DEPENDS
+    metrics
+    vdstestlib
+)
+vespa_add_test(NAME metrics_testrunner_app COMMAND metrics_testrunner_app)

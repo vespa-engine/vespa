@@ -1,0 +1,27 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".index.postinglisthandle");
+#include "postinglisthandle.h"
+#include <vespa/searchlib/index/postinglistfile.h>
+
+namespace search
+{
+
+namespace index
+{
+
+search::queryeval::SearchIterator *
+PostingListHandle::createIterator(const PostingListCounts &counts,
+                                  const search::fef::TermFieldMatchDataArray &matchData,
+                                  bool useBitVector) const
+{
+    (void) useBitVector;
+    return _file->createIterator(counts, *this, matchData, useBitVector);
+}
+
+
+} // namespace index
+
+} // namespace search

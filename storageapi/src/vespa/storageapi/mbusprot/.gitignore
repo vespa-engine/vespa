@@ -1,0 +1,7 @@
+*.lo
+.*.swp
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile

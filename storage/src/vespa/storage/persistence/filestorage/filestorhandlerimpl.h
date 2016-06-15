@@ -1,0 +1,362 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::FileStorHandlerImpl
+ * \ingroup storage
+ *
+ * \brief Common resource for filestor threads.
+ *
+ * This class implements all locking related stuff between filestor threads.
+ * It keeps the various filestor thread queues, and implement thread safe
+ * functions for inserting, removing and moving stuff in the queues. In addition
+ * it makes it possible to lock buckets, by keeping track of current operation
+ * for various threads, and not allowing them to get another operation of a
+ * locked bucket until unlocked.
+ */
+
+#pragma once
+
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/metrics/metrics.h>
+#include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/storage/persistence/filestorage/filestorhandler.h>
+#include <vespa/storage/persistence/filestorage/mergestatus.h>
+#include <vespa/storageframework/storageframework.h>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
+
+namespace storage {
+
+class FileStorDiskMetrics;
+class StorBucketDatabase;
+class AbortBucketOperationsCommand;
+
+class FileStorHandlerImpl : private framework::MetricUpdateHook,
+                            private ResumeGuard::Callback,
+                            public MessageSender {
+public:
+    typedef FileStorHandler::DiskState DiskState;
+    typedef FileStorHandler::RemapInfo RemapInfo;
+
+    struct MessageEntry {
+        std::shared_ptr<api::StorageMessage> _command;
+        metrics::MetricTimer _timer;
+        document::BucketId _bucketId;
+        uint8_t _priority;
+
+        MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
+                     const document::BucketId& bId)
+            : _command(cmd),
+              _bucketId(bId),
+              _priority(cmd->getPriority())
+        {}
+
+        MessageEntry(const MessageEntry& entry)
+            : _command(entry._command),
+              _timer(entry._timer),
+              _bucketId(entry._bucketId),
+              _priority(entry._priority)
+        {
+        }
+
+        bool operator<(const MessageEntry& entry) const {
+            return (_priority < entry._priority);
+        }
+    };
+
+    typedef boost::multi_index::ordered_non_unique<
+        boost::multi_index::identity<MessageEntry> > PriorityOrder;
+
+    typedef boost::multi_index::ordered_non_unique<
+        boost::multi_index::member<MessageEntry,
+                                   document::BucketId,
+                                   &MessageEntry::_bucketId> > BucketOrder;
+
+    typedef boost::multi_index::multi_index_container<
+        MessageEntry,
+        boost::multi_index::indexed_by<
+            boost::multi_index::sequenced<>,
+            PriorityOrder,
+            BucketOrder
+            >
+        > PriorityQueue;
+
+    typedef boost::multi_index::nth_index<PriorityQueue, 1>::type PriorityIdx;
+    typedef boost::multi_index::nth_index<PriorityQueue, 2>::type BucketIdx;
+
+    struct Disk {
+        vespalib::Monitor lock;
+        PriorityQueue queue;
+
+        struct LockEntry {
+            uint32_t timestamp;
+            uint8_t priority;
+            vespalib::string statusString;
+
+            LockEntry()
+                : timestamp(0), priority(0), statusString()
+            {
+            }
+
+            LockEntry(uint8_t priority_,
+                      vespalib::stringref status)
+                : timestamp(time(NULL)),
+                  priority(priority_),
+                  statusString(status)
+            {
+            }
+        };
+
+        typedef vespalib::hash_map<
+            document::BucketId,
+            LockEntry,
+            document::BucketId::hash
+        > LockedBuckets;
+        LockedBuckets lockedBuckets;
+        FileStorDiskMetrics* metrics;
+
+        /**
+         * No assumption on memory ordering around disk state reads should
+         * be made by callers.
+         */
+        DiskState getState() const noexcept {
+            return state.load(std::memory_order_relaxed);
+        }
+        /**
+         * No assumption on memory ordering around disk state writes should
+         * be made by callers.
+         */
+        void setState(DiskState s) noexcept {
+            state.store(s, std::memory_order_relaxed);
+        }
+
+        Disk();
+
+        bool isLocked(const document::BucketId&) const noexcept;
+        uint32_t getQueueSize() const noexcept;
+    private:
+        std::atomic<DiskState> state;
+    };
+
+    class BucketLock : public FileStorHandler::BucketLockInterface {
+    public:
+        BucketLock(Disk& disk,
+                   const document::BucketId& id,
+                   uint8_t priority,
+                   const vespalib::stringref & statusString);
+        ~BucketLock();
+
+        const document::BucketId& getBucketId() const {
+            return _id;
+        }
+
+    private:
+        Disk& _disk;
+        document::BucketId _id;
+    };
+
+    FileStorHandlerImpl(MessageSender&,
+                        FileStorMetrics&,
+                        const spi::PartitionStateList&,
+                        ServiceLayerComponentRegister&,
+                        uint8_t maxPriorityToBlock,
+                        uint8_t minPriorityToBeBlocking);
+
+    ~FileStorHandlerImpl();
+    void setGetNextMessageTimeout(uint32_t timeout)
+        { _getNextMessageTimeout = timeout; }
+
+    void flush(bool killPendingMerges);
+    void setDiskState(uint16_t disk, DiskState state);
+    DiskState getDiskState(uint16_t disk) const;
+    void close();
+    bool schedule(const std::shared_ptr<api::StorageMessage>&,
+                  uint16_t disk);
+
+    void pause(uint16_t disk, uint8_t priority) const;
+
+    FileStorHandler::LockedMessage getNextMessage(uint16_t disk,
+                                                  uint8_t lowestPriority);
+
+    FileStorHandler::LockedMessage & getNextMessage(uint16_t disk,
+                                                  FileStorHandler::LockedMessage& lock,
+                                                  uint8_t lowestPriority);
+
+    enum Operation { MOVE, SPLIT, JOIN };
+    void remapQueue(
+            const RemapInfo& source,
+            RemapInfo& target,
+            Operation op);
+
+    void remapQueue(const RemapInfo& source,
+                    RemapInfo& target1,
+                    RemapInfo& target2,
+                    Operation op);
+
+    void failOperations(const document::BucketId&, uint16_t fromDisk,
+                        const api::ReturnCode&);
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&);
+    void sendReply(const std::shared_ptr<api::StorageReply>&);
+
+    void getStatus(std::ostream& out, const framework::HttpUrlPath& path) const;
+
+    uint32_t getQueueSize() const;
+    uint32_t getQueueSize(uint16_t disk) const;
+
+    std::shared_ptr<FileStorHandler::BucketLockInterface>
+    lock(const document::BucketId&, uint16_t disk);
+
+    void addMergeStatus(const document::BucketId&, MergeStatus::SP);
+    MergeStatus& editMergeStatus(const document::BucketId&);
+
+    bool isMerging(const document::BucketId&) const;
+
+    uint32_t getNumActiveMerges() const;
+
+    void clearMergeStatus(const document::BucketId&, const api::ReturnCode*);
+
+    std::string dumpQueue(uint16_t disk) const;
+
+    ResumeGuard pause();
+
+    void resume();
+
+    void abortQueuedOperations(const AbortBucketOperationsCommand& cmd);
+
+private:
+    const spi::PartitionStateList& _partitions;
+    ServiceLayerComponent _component;
+    std::vector<Disk> _diskInfo;
+    MessageSender& _messageSender;
+    const document::BucketIdFactory& _bucketIdFactory;
+
+    vespalib::Lock _mergeStatesLock;
+
+    std::map<document::BucketId, MergeStatus::SP> _mergeStates;
+
+    uint8_t _maxPriorityToBlock;
+    uint8_t _minPriorityToBeBlocking;
+    uint32_t _getNextMessageTimeout;
+
+    vespalib::Monitor _pauseMonitor;
+    std::atomic<bool> _paused;
+
+    void reply(api::StorageMessage&, DiskState state) const;
+    static document::BucketId getBucketId(const api::StorageMessage&);
+
+    // Returns the index in the targets array we are sending to, or -1 if none of them match.
+    int calculateTargetBasedOnDocId(
+            const api::StorageMessage& msg,
+            std::vector<RemapInfo*>& targets);
+
+    /**
+     * If FileStor layer is explicitly paused, try to wait a single time, then
+     * recheck pause status. Returns true if filestor isn't paused at the time
+     * of the first check or after the wait, false if it's still paused.
+     */
+    bool tryHandlePause(uint16_t disk) const;
+
+    /**
+     * Checks whether the entire filestor layer is paused.
+     * Since there should be no data or synchronization dependencies on
+     * _paused, use relaxed atomics.
+     */
+    bool isPaused() const { return _paused.load(std::memory_order_relaxed); }
+
+    /**
+     * Return whether a disk has been shut down by the system (IO failure is
+     * the most likely candidate here) and should not serve any more requests.
+     */
+    bool diskIsClosed(uint16_t disk) const;
+
+    /**
+     * Return whether msg has sufficiently high priority that a thread with
+     * a configured priority threshold of maxPriority can even run in.
+     * Often, operations such as streaming searches will have dedicated threads
+     * that refuse lower priority operations such as Puts etc.
+     */
+    bool operationHasHighEnoughPriorityToBeRun(
+            const api::StorageMessage& msg,
+            uint8_t maxPriority) const;
+
+    /**
+     * Return whether an already running high priority operation pre-empts
+     * (blocks) the operation in msg from even starting in the current thread.
+     */
+    bool operationBlockedByHigherPriorityThread(
+            const api::StorageMessage& msg,
+            const Disk& disk) const;
+
+    /**
+     * Return whether msg has timed out based on waitTime and the message's
+     * specified timeout.
+     */
+    bool messageTimedOutInQueue(const api::StorageMessage& msg,
+                                uint64_t waitTime) const;
+
+    /**
+     * Assume ownership of lock for a given bucket on a given disk.
+     * Disk lock MUST have been taken prior to calling this function.
+     */
+    std::unique_ptr<FileStorHandler::BucketLockInterface>
+    takeDiskBucketLockOwnership(Disk& disk,
+                                const document::BucketId& id,
+                                const api::StorageMessage& msg);
+
+    /**
+     * Creates and returns a reply with api::TIMEOUT return code for msg.
+     * Swaps (invalidates) context from msg into reply.
+     */
+    std::unique_ptr<api::StorageReply>
+    makeQueueTimeoutReply(api::StorageMessage& msg) const;
+
+    bool bucketIsLockedOnDisk(const document::BucketId&,
+                              const Disk&) const;
+
+    bool messageMayBeAborted(const api::StorageMessage& msg) const;
+
+    bool hasBlockingOperations(const Disk& t) const;
+
+    void abortQueuedCommandsForBuckets(
+            Disk& disk,
+            const AbortBucketOperationsCommand& cmd);
+
+    bool diskHasActiveOperationForAbortedBucket(
+            const Disk& disk,
+            const AbortBucketOperationsCommand& cmd) const;
+
+    void waitUntilNoActiveOperationsForAbortedBuckets(
+            Disk& disk,
+            const AbortBucketOperationsCommand& cmd);
+
+    // Update hook
+    void updateMetrics(const MetricLockGuard &) override;
+
+    document::BucketId remapMessage(api::StorageMessage& msg,
+                                    const document::BucketId& source,
+                                    Operation op,
+                                    std::vector<RemapInfo*>& targets,
+                                    uint16_t& targetDisk,
+                                    api::ReturnCode& returnCode);
+
+    void remapQueueNoLock(
+            Disk& from,
+            const RemapInfo& source,
+            std::vector<RemapInfo*>& targets,
+            Operation op);
+
+    /**
+     * Waits until the queue has no pending operations (i.e. no locks are
+     * being held.
+     */
+    void waitUntilNoLocks();
+};
+
+} // storage
+

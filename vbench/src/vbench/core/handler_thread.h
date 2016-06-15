@@ -1,0 +1,46 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/arrayqueue.hpp>
+#include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/runnable.h>
+#include <vespa/vespalib/util/joinable.h>
+
+#include "handler.h"
+
+namespace vbench {
+
+/**
+ * A Handler that will forward incoming objects to another handler in
+ * a separate thread. All objects are forwarded using the same thread,
+ * reducing the need for synchronization in the handler forwarded
+ * to. A call to join will wait until all queued object have been
+ * forwarded. Object obtained after join is invoked will be discarded.
+ **/
+template <typename T>
+class HandlerThread : public Handler<T>,
+                      public vespalib::Runnable,
+                      public vespalib::Joinable
+{
+private:
+    vespalib::Monitor                          _monitor;
+    vespalib::ArrayQueue<std::unique_ptr<T> >  _queue;
+    Handler<T>                                &_next;
+    vespalib::Thread                           _thread;
+    bool                                       _done;
+
+    virtual void run();
+
+public:
+    HandlerThread(Handler<T> &next);
+    virtual ~HandlerThread();
+    virtual void handle(std::unique_ptr<T> obj);
+    virtual void join();
+};
+
+} // namespace vbench
+
+#include "handler_thread.hpp"
+

@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search annotationsinheritance2 {
+
+  document annotationsinheritance2 {
+  
+  annotation g {
+    field gfoo type string { }
+  }
+
+  annotation f {
+  }
+
+  annotation e inherits d {
+  }
+
+
+  annotation d inherits c {
+  }
+
+  annotation c {
+    field cfoo type int { }
+  }
+
+  annotation b inherits a {
+  }
+
+  annotation a {
+  }
+
+  }
+
+}

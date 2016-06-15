@@ -1,0 +1,931 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE sortOrder SYSTEM "AlphaSort1_0.dtd">
+<sortOrder>  
+   <sortValue>
+      <unicode>
+         <hex> 0041 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0061 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C0 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C1 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C2 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C3 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C4 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C5 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C6 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E0 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E1 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E2 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E3 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E4 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E5 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E6 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0100 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0101 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0102 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0103 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0104 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0105 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF21 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF41 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0042 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0062 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF22 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF42 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0043 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0063 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C7 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E7 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0106 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0107 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0108 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0109 </hex>
+      </unicode>
+      <unicode>
+         <hex> 010A </hex>
+      </unicode>
+      <unicode>
+         <hex> 010B </hex>
+      </unicode>
+      <unicode>
+         <hex> 010C </hex>
+      </unicode>
+      <unicode>
+         <hex> 010D </hex>
+      </unicode>
+      <unicode>
+         <hex> FF23 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF43 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0044 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0064 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D0 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F0 </hex>
+      </unicode>
+      <unicode>
+         <hex> 010E </hex>
+      </unicode>
+      <unicode>
+         <hex> 010F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0110 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0111 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF24 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF44 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0045 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0065 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C8 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00C9 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CA </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CB </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E8 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00E9 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00EA </hex>
+      </unicode>
+      <unicode>
+         <hex> 00EB </hex>
+      </unicode>
+      <unicode>
+         <hex> 0112 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0113 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0114 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0115 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0116 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0117 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0118 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0119 </hex>
+      </unicode>
+      <unicode>
+         <hex> 011A </hex>
+      </unicode>
+      <unicode>
+         <hex> 011B </hex>
+      </unicode>
+      <unicode>
+         <hex> FF25 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF45 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0046 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0066 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF26 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF46 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0047 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0067 </hex>
+      </unicode>
+      <unicode>
+         <hex> 011C </hex>
+      </unicode>
+      <unicode>
+         <hex> 011D </hex>
+      </unicode>
+      <unicode>
+         <hex> 011E </hex>
+      </unicode>
+      <unicode>
+         <hex> 011F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0120 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0121 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0122 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0123 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF27 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF47 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0048 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0068 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0124 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0125 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0126 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0127 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF28 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF48 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0049 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0069 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CC </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CD </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CE </hex>
+      </unicode>
+      <unicode>
+         <hex> 00CF </hex>
+      </unicode>
+      <unicode>
+         <hex> 00EC </hex>
+      </unicode>
+      <unicode>
+         <hex> 00ED </hex>
+      </unicode>
+      <unicode>
+         <hex> 00EE </hex>
+      </unicode>
+      <unicode>
+         <hex> 00EF </hex>
+      </unicode>
+      <unicode>
+         <hex> 0128 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0129 </hex>
+      </unicode>
+      <unicode>
+         <hex> 012A </hex>
+      </unicode>
+      <unicode>
+         <hex> 012B </hex>
+      </unicode>
+      <unicode>
+         <hex> 012C </hex>
+      </unicode>
+      <unicode>
+         <hex> 012D </hex>
+      </unicode>
+      <unicode>
+         <hex> 012E </hex>
+      </unicode>
+      <unicode>
+         <hex> 012F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0130 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0131 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0132 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0133 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF29 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF49 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004A </hex>
+      </unicode>
+      <unicode>
+         <hex> 006A </hex>
+      </unicode>
+      <unicode>
+         <hex> 0134 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0135 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2A </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004B </hex>
+      </unicode>
+      <unicode>
+         <hex> 006B </hex>
+      </unicode>
+      <unicode>
+         <hex> 0136 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0137 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0138 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2B </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004C </hex>
+      </unicode>
+      <unicode>
+         <hex> 006C </hex>
+      </unicode>
+      <unicode>
+         <hex> 0139 </hex>
+      </unicode>
+      <unicode>
+         <hex> 013A </hex>
+      </unicode>
+      <unicode>
+         <hex> 013B </hex>
+      </unicode>
+      <unicode>
+         <hex> 013C </hex>
+      </unicode>
+      <unicode>
+         <hex> 013D </hex>
+      </unicode>
+      <unicode>
+         <hex> 013E </hex>
+      </unicode>
+      <unicode>
+         <hex> 013F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0140 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0141 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0142 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2C </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004D </hex>
+      </unicode>
+      <unicode>
+         <hex> 006D </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2D </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004E </hex>
+      </unicode>
+      <unicode>
+         <hex> 006E </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D1 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F1 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0143 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0144 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0145 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0146 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0147 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0148 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0149 </hex>
+      </unicode>
+      <unicode>
+         <hex> 014A </hex>
+      </unicode>
+      <unicode>
+         <hex> 014B </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2E </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 004F </hex>
+      </unicode>
+      <unicode>
+         <hex> 006F </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D2 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D3 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D4 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D5 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D6 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F2 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F3 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F4 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F5 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F6 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F8 </hex>
+      </unicode>
+      <unicode>
+         <hex> 014C </hex>
+      </unicode>
+      <unicode>
+         <hex> 014D </hex>
+      </unicode>
+      <unicode>
+         <hex> 014E </hex>
+      </unicode>
+      <unicode>
+         <hex> 014F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0150 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0151 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0152 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0153 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF2F </hex>
+      </unicode>
+      <unicode>
+         <hex> FF4F </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0050 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0070 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF30 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF50 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0051 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0071 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF31 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF51 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0052 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0072 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0154 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0155 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0156 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0157 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0158 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0159 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF32 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF52 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0053 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0073 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00DF </hex>
+      </unicode>
+      <unicode>
+         <hex> 015A </hex>
+      </unicode>
+      <unicode>
+         <hex> 015B </hex>
+      </unicode>
+      <unicode>
+         <hex> 015C </hex>
+      </unicode>
+      <unicode>
+         <hex> 015D </hex>
+      </unicode>
+      <unicode>
+         <hex> 015E </hex>
+      </unicode>
+      <unicode>
+         <hex> 015F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0160 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0161 </hex>
+      </unicode>
+      <unicode>
+         <hex> 017F </hex>
+      </unicode>
+      <unicode>
+         <hex> FF33 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF53 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0054 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0074 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0162 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0163 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0164 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0165 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0166 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0167 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF34 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF54 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0055 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0075 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00D9 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00DA </hex>
+      </unicode>
+      <unicode>
+         <hex> 00DB </hex>
+      </unicode>
+      <unicode>
+         <hex> 00DC </hex>
+      </unicode>
+      <unicode>
+         <hex> 00F9 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00FA </hex>
+      </unicode>
+      <unicode>
+         <hex> 00FB </hex>
+      </unicode>
+      <unicode>
+         <hex> 00FC </hex>
+      </unicode>
+      <unicode>
+         <hex> 0168 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0169 </hex>
+      </unicode>
+      <unicode>
+         <hex> 016A </hex>
+      </unicode>
+      <unicode>
+         <hex> 016B </hex>
+      </unicode>
+      <unicode>
+         <hex> 016C </hex>
+      </unicode>
+      <unicode>
+         <hex> 016D </hex>
+      </unicode>
+      <unicode>
+         <hex> 016E </hex>
+      </unicode>
+      <unicode>
+         <hex> 016F </hex>
+      </unicode>
+      <unicode>
+         <hex> 0170 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0171 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0172 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0173 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF35 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF55 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0056 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0076 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF36 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF56 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0057 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0077 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0174 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0175 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF37 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF57 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0058 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0078 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF38 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF58 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0059 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0079 </hex>
+      </unicode>
+      <unicode>
+         <hex> 00DD </hex>
+      </unicode>
+      <unicode>
+         <hex> 00FD </hex>
+      </unicode>
+      <unicode>
+         <hex> 00FF </hex>
+      </unicode>
+      <unicode>
+         <hex> 0176 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0177 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0178 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF39 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF59 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 005A </hex>
+      </unicode>
+      <unicode>
+         <hex> 007A </hex>
+      </unicode>
+      <unicode>
+         <hex> 0179 </hex>
+      </unicode>
+      <unicode>
+         <hex> 017A </hex>
+      </unicode>
+      <unicode>
+         <hex> 017B </hex>
+      </unicode>
+      <unicode>
+         <hex> 017C </hex>
+      </unicode>
+      <unicode>
+         <hex> 017D </hex>
+      </unicode>
+      <unicode>
+         <hex> 017E </hex>
+      </unicode>
+      <unicode>
+         <hex> FF3A </hex>
+      </unicode>
+      <unicode>
+         <hex> FF5A </hex>
+      </unicode>
+   </sortValue>
+</sortOrder>  
+

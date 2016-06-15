@@ -1,0 +1,16 @@
+.classpath
+.git
+.project
+archive
+build
+classes
+javamake.pdb
+log
+logarchive
+logserver.iws
+plugins
+staging
+target
+testLogs
+vespatest_dump
+/pom.xml.build

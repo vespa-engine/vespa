@@ -1,0 +1,103 @@
+{
+    "bool_val": false,
+    "bool_with_def": true,
+    "int_val": 5,
+    "int_with_def": -14,
+    "long_val": 12345678901,
+    "long_with_def": -9876543210,
+    "double_val": 41.23,
+    "double_with_def": -12,
+    "string_val": "foo",
+    "stringwithdef": "bar",
+    "enum_val": "FOOBAR",
+    "enumwithdef": "BAR2",
+    "refval": ":parent:",
+    "refwithdef": ":parent:",
+    "fileVal": "etc",
+    "boolarr": [
+        false
+    ],
+    "intarr": [],
+    "longarr": [
+        9223372036854775807,
+        -9223372036854775808
+    ],
+    "doublearr": [
+        2344,
+        123
+    ],
+    "stringarr": [
+        "bar"
+    ],
+    "enumarr": [
+        "VALUES"
+    ],
+    "refarr": [
+        ":parent:",
+        ":parent:",
+        ":parent:"
+    ],
+    "fileArr": [
+        "bin"
+    ],
+    "basicStruct": {
+        "foo": "basicFoo",
+        "bar": 3,
+        "intArr": [
+            310
+        ]
+    },
+    "rootStruct": {
+        "inner0": {
+            "index": 11
+        },
+        "inner1": {
+            "index": 12
+        },
+        "innerArr": [
+            {
+                "boolVal": true,
+                "stringVal": "deep"
+            }
+        ]
+    },
+    "myarray": [
+        {
+            "intval": -5,
+            "stringval": [
+                "baah",
+                "yikes"
+            ],
+            "enumval": "INNER",
+            "refval": ":parent:",
+            "fileVal": "file0",
+            "anotherarray": [
+                {
+                    "foo": 7
+                }
+            ],
+            "myStruct": {
+                "a": 1,
+                "b": 2
+            }
+        },
+        {
+            "intval": 5,
+            "enumval": "INNER",
+            "refval": ":parent:",
+            "fileVal": "file1",
+            "anotherarray": [
+                {
+                    "foo": 1
+                },
+                {
+                    "foo": 2
+                }
+            ],
+            "myStruct": {
+                "a": -1,
+                "b": -2
+            }
+        }
+    ]
+}

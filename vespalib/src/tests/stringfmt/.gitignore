@@ -1,0 +1,4 @@
+.depend
+Makefile
+stringfmt_test
+vespalib_stringfmt_test_app

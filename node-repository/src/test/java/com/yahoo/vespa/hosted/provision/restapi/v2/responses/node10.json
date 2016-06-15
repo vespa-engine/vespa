@@ -1,0 +1,38 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host10.yahoo.com",
+  "id": "host10.yahoo.com",
+  "state": "reserved",
+  "hostname": "host10.yahoo.com",
+  "parentHostname": "parent.yahoo.com",
+  "openStackId": "node10",
+  "flavor": "default",
+  "minDiskAvailableGb":400.0,
+  "minMainMemoryAvailableGb":16.0,
+  "description":"Flavor-name-is-default",
+  "minCpuCores":2.0,
+  "canonicalFlavor": "default",
+  "environment":"env",
+  "owner": {
+    "tenant": "tenant1",
+    "application": "application1",
+    "instance": "instance1"
+  },
+  "membership": {
+    "clustertype": "container",
+    "clusterid": "id1",
+    "group": "0",
+    "index": 1,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage":"image-123",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "vespaVersion": "5.104.142",
+  "hostedVersion": "2.1.2408",
+  "convergedStateVersion": "5.104.142-2.1.2408",
+  "failCount": 0,
+  "hardwareFailure" : false,
+  "history":[{"event":"readied","at":123},{"event":"reserved","at":123}]
+}

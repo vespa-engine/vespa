@@ -1,0 +1,362 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * A best-effort treenet parser.
+ *
+ * @author  <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @version $Id: TreeNetParser.jj,v 1.1 2009-02-24 10:06:32 arnej Exp $
+ */
+options {
+    CACHE_TOKENS  = true;
+    STATIC = false;
+    DEBUG_PARSER = false;
+    IGNORE_CASE = true;
+
+    // Flip for higher performance
+    ERROR_REPORTING = true;
+}
+
+PARSER_BEGIN(TreeNetParser)
+
+package com.yahoo.searchlib.treenet.parser;
+
+import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
+import com.yahoo.searchlib.treenet.rule.*;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class TreeNetParser {
+
+    void verifyCategoricalVar(String expected, String actual) throws ParseException {
+        if (!expected.equals(actual)) {
+            throw new ParseException("Expected variable '" + expected + "', got '" + actual + "'.");
+        }
+    }
+
+    ComparisonCondition resolveCategoricalCondition(String var, Integer valA, Integer valB, String lblA, String lblB) {
+        if (valA < valB)
+            return new ComparisonCondition(var, valA + (valB - valA) / 2.0, lblA, lblB);
+        else
+            return new ComparisonCondition(var, valB + (valA - valB) / 2.0, lblB, lblA);
+    }
+
+}
+
+PARSER_END(TreeNetParser)
+
+SKIP : 
+{
+    <[" ","\r","\t"]> |
+    <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> |
+    <"#" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> |
+    <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+TOKEN : 
+{
+    <INTEGER: (["+","-"])? <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
+        <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
+        <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
+        <#OCTAL: "0" (["0"-"7"])*> |
+    <FLOAT: (["+","-"])? (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])? | "." (["0"-"9"])+ 
+        (<EXPONENT>)? (["f","F","d","D"])? | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])? | (["0"-"9"])+ 
+        (<EXPONENT>)? ["f","F","d","D"]> |
+        <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+> |
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
+             ("'" (~["'"] | "\\'")* "'")>
+}
+
+TOKEN :
+{
+    <ADD: "+"> |
+    <BEGIN: "modelbegin"> |
+    <COLON: ":"> |
+    <ELSE: "else"> |
+    <COMMA: ","> |
+    <DOT: "."> |
+    <SEMICOLON: ";"> |
+    <EQ: "="> |
+    <GOTO: "goto"> |
+    <IF: "if"> |
+    <IN: "in"> |
+    <LINK: "link"> |
+    <LT: "<"> |
+    <NL: "\n"> |
+    <PRED: "pred"> |
+    <LBRACE: "("> |
+    <RBRACE: ")"> |
+    <LCURLY: "{"> |
+    <RCURLY: "}"> |
+    <RESPONSE: "response"> |
+    <RETURN: "return"> |
+    <THEN: "then"> |
+    <TNSCORE: "tnscore"> |
+    <IDENTIFIER: ["A"-"Z","a"-"z","_"](["A"-"Z","a"-"z","0"-"9","_","$"])*>
+}
+
+TreeNet treeNet() :
+{
+    String begin, label;
+    Tree tree;
+    Map<String,Tree> trees = new HashMap<String,Tree>();
+}
+{
+    ( ( ignoredCpp() )*
+      <BEGIN> <COLON> nl()
+      <LINK> <IDENTIFIER> { begin = token.image; } eol()
+      <PRED> <EQ> <TNSCORE> eol()
+      <RETURN> eol()
+
+      ( tree = tree() { trees.put(tree.getName(), tree); } )*
+
+      <RETURN> <SEMICOLON>
+      ( ignoredCpp() )*
+      <EOF>
+    )
+    { return new TreeNet(begin, trees); }
+}
+
+/** C++ code outside the model which we can ignore */
+void ignoredCpp() :
+{
+}
+{
+    <RETURN> | <IDENTIFIER> | <FLOAT> | <INTEGER> | <STRING> | <EQ> | <COMMA> | <LBRACE> | <RBRACE> | <LCURLY> | <RCURLY> | <SEMICOLON> | <NL>
+}
+
+Tree tree() :
+{
+    String name;
+    String begin = null, label;
+    Double value = null;
+
+    TreeNode node;
+    Map<String,TreeNode> nodes = new HashMap<String,TreeNode>();
+}
+{
+    (
+      (
+        ( value = tnScore() name = label() ) |
+        ( name = label() value = tnScore() )
+      )
+      (
+      LOOKAHEAD(label() (condition() | response()))
+        label = label() { if (begin == null) { begin = label; } }
+        ( node = condition() { nodes.put(label, node); } |
+          node = response()  { nodes.put(label, node); } ) )* )
+    { return new Tree(name, value, begin, nodes); }
+}
+
+Double tnScore() :
+{
+    Double value = null;
+}
+{
+    <TNSCORE> <EQ> ( value = floatVal() | ( <TNSCORE> <ADD> <RESPONSE> ) ) eol()
+    { return value; }
+}
+
+Condition condition() :
+{
+    String var;
+    Condition ret;
+}
+{
+    ( <IF> var = feature() ( ret = continuousCondition(var) |
+                             LOOKAHEAD(8) ret = singleValueCategoricalCondition(var) |
+                             ret = setMembershipCondition(var) ) )
+    { return ret; }
+}
+
+ComparisonCondition continuousCondition(String left) :
+{
+    Double right;
+    String ift, iff;
+}
+{
+    ( <LT> right = floatVal() <THEN> ift = jump() eol()
+      <ELSE> iff = jump() eol())
+    { return new ComparisonCondition(left, right, ift, iff); }
+}
+
+// Handle single-value IN expression as a regular comparison.
+// This special case may be removed when IN support is implemented in ranking expressions in both C++ and Java
+ComparisonCondition singleValueCategoricalCondition(String varA) :
+{
+    Integer valA, valB;
+    String lblA, lblB, varB;
+}
+{
+    ( <IN> <LBRACE> valA = intVal() nl() <RBRACE> <THEN> lblA = jump() eol()
+      <ELSE> <IF> varB = feature() { verifyCategoricalVar(varA, varB); }
+      <IN> <LBRACE> valB = intVal() nl() <RBRACE> <THEN> lblB = jump() eol() )
+    { return resolveCategoricalCondition(varA, valA, valB, lblA, lblB); }
+}
+
+SetMembershipCondition setMembershipCondition(String testValue) :
+{
+    List<Object> setValues;
+    String trueLabel, falseLabel;
+}
+{
+    ( <IN> <LBRACE> setValues = valueList() <RBRACE> <THEN> trueLabel = jump() eol()
+      <ELSE> falseLabel = jump() eol() )
+    { return new SetMembershipCondition(testValue, setValues, trueLabel, falseLabel); }
+}
+
+Response response() :
+{
+    Double val;
+    String lbl;
+}
+{
+    ( <RESPONSE> <EQ> val = floatVal() eol()
+      lbl = jump() eol() )
+    { return new Response(val, lbl); }
+}
+
+String feature() :
+{
+    String name;
+    String arguments = null;
+    String output = null;
+}
+{
+    ( name = identifier() [ <LBRACE> arguments = featureArguments() <RBRACE> ] [ <DOT> output = featureOutputs() ] )
+    { return name + (arguments != null ? "(" + arguments + ")" : "") + (output !=null ? "." + output : ""); }
+}
+
+String featureArguments() :
+{
+    String argument;
+    StringBuilder arguments = new StringBuilder();
+}
+{
+    ( argument = featureArgument() { arguments.append(argument); }
+    ( <COMMA> argument = featureArgument() { arguments.append(",").append(argument); } )* )
+    { return arguments.toString(); }
+}
+
+String featureArgument() :
+{
+    String argument;
+}
+{
+    ( argument = string() | argument = floatImage() | argument = feature() )
+    { return argument; }
+}
+
+String featureOutputs() :
+{
+    StringBuilder outputs = new StringBuilder();
+    String output;
+}
+{
+    output = featureOutput() { outputs.append(output); }
+    ( <DOT> output = featureOutput() { outputs.append(output); } ) *
+    { return outputs.toString(); }
+}
+
+String featureOutput() :
+{
+    String name;
+}
+{
+    <INTEGER>            { return token.image;    } |
+    <FLOAT>              { return token.image;    } |
+    name = identifier()  { return name; }
+}
+
+String label() :
+{ 
+    String ret;
+}
+{
+    ( ret = identifier() <COLON> nl() )
+    { return ret; }
+}
+
+void eol() : { }
+{
+    <SEMICOLON> nl()
+}
+
+void nl() : { }
+{
+    ( <NL> )+
+}
+
+String jump() : { }
+{
+    <GOTO> <IDENTIFIER> { return token.image; }
+}
+
+String identifier() : { }
+{
+    ( /*<BEGIN> |
+      <ELSE> |
+      <GOTO> |
+      <IF> |
+      <IN> |
+      <LINK> |
+      <PRED> |
+      <RESPONSE> |
+      <RETURN> |
+      <THEN> |
+      <TNSCORE> |*/
+      <IDENTIFIER> )
+    { return token.image; }
+}
+
+String spaceSeparatedIdentifiers() :
+{
+    StringBuilder identifiers = new StringBuilder();
+    String identifier;
+}
+{
+    identifier = identifier() { identifiers.append(identifier); }
+    ( identifier = identifier() { identifiers.append(identifier); } ) *
+    { return identifiers.toString(); }
+}
+
+List<Object> valueList() :
+{
+    List<Object> values = new ArrayList<Object>();
+    Object value;
+}
+{
+    value = value() { values.add(value); }
+    ( <COMMA> value = value() { values.add(value); } ) *
+    { return values; }
+}
+
+Object value() :
+{
+    Object value;
+}
+{
+    ( value = spaceSeparatedIdentifiers() | value = intVal() | value = string() )
+    { return value; }
+}
+
+String string() : { }
+{
+    <STRING> { return token.image; }
+}
+
+Integer intVal() : { }
+{
+    <INTEGER> { return Integer.valueOf(token.image); }
+}
+
+Double floatVal() : { }
+{
+    ( <INTEGER> | <FLOAT> ) { return Double.valueOf(token.image); }
+}
+
+String floatImage() : { }
+{
+    ( <INTEGER> | <FLOAT> ) { return token.image; }
+}

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<!--
+    Document   : testXML06.xml
+    Created on : July 26, 2007, 11:18 AM
+    Author     : alimf
+    Description:
+        Several Documents that will fail/be skipped, except the last one.
+-->
+
+<vespafeed>
+    
+    <document documenttype="news" documentid="doc:news:http://news6a"> 
+        <value_long>txt</value_long>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6b"> 
+        <stringarr>
+            <item>stringarrItem1</item>
+            <item></item>
+        </stringarr>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6c"> 
+        <intarr>
+            <item>1</item>
+            <item>txt</item>
+        </intarr>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6d"> 
+        <longarr>
+            <item>1</item>
+            <item>    </item>
+        </longarr>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6e"> 
+        <bytearr>
+            <item>1</item>
+            <item>128</item>
+        </bytearr>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6f"> 
+        <floatarr>
+            <item>1.0</item>
+            <item>two</item>
+        </floatarr>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6g"> 
+        <weightedsetint>
+            <item>1</item>
+            <item weight="12">txt</item>
+        </weightedsetint>
+    </document>
+
+    <document documenttype="news" documentid="doc:news:http://news6h"> 
+        <weightedsetint>
+            <item weight="1">2</item>
+            <item weight="three">4</item>
+        </weightedsetint>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6i"> 
+        <weightedsetstring>
+            <item weight="txt">aString</item>
+        </weightedsetstring>
+    </document>
+    
+    <document documenttype="news" documentid="doc:news:http://news6j"> 
+        <title>myTitle</title>
+    </document>
+    
+</vespafeed>

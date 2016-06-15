@@ -1,0 +1,4 @@
+.depend
+Makefile
+crc_test
+staging_vespalib_crc_test_app

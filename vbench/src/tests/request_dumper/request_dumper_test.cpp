@@ -1,0 +1,11 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vbench/test/all.h>
+
+using namespace vbench;
+
+TEST_FF("dump request", RequestSink(), RequestDumper(f1)) {
+    f2.handle(Request::UP(new Request()));
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }

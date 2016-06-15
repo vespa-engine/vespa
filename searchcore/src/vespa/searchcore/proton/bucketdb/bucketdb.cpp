@@ -1,0 +1,257 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore.bucketdb");
+#include "bucketdb.h"
+
+using document::GlobalId;
+using storage::spi::BucketChecksum;
+
+namespace proton
+{
+
+
+BucketDB::BucketDB(void)
+    : _map(),
+      _cachedBucketId(),
+      _cachedBucketState()
+{
+}
+
+
+BucketDB::~BucketDB(void)
+{
+    checkEmpty();
+    clear();
+}
+
+
+bucketdb::BucketState *
+BucketDB::getBucketStatePtr(const BucketId &bucket)
+{
+    MapIterator it(_map.find(bucket));
+    if (it != _map.end()) {
+        return &it->second;
+    }
+    return nullptr;
+}
+
+
+void
+BucketDB::unloadBucket(const BucketId &bucket, const BucketState &delta)
+{
+    BucketState *state = getBucketStatePtr(bucket);
+    assert(state);
+    *state -= delta;
+}
+
+
+const bucketdb::BucketState &
+BucketDB::add(const GlobalId &gid,
+              const BucketId &bucketId,
+              const Timestamp &timestamp,
+              SubDbType subDbType)
+{
+    BucketState &state = _map[bucketId];
+    state.add(gid, timestamp, subDbType);
+    return state;
+}
+
+void
+BucketDB::remove(const GlobalId &gid,
+                 const BucketId &bucketId,
+                 const Timestamp &timestamp,
+                 SubDbType subDbType)
+{
+    BucketState &state = _map[bucketId];
+    state.remove(gid, timestamp, subDbType);
+}
+
+
+void
+BucketDB::modify(const GlobalId &gid,
+                 const BucketId &oldBucketId,
+                 const Timestamp &oldTimestamp,
+                 const BucketId &newBucketId,
+                 const Timestamp &newTimestamp,
+                 SubDbType subDbType)
+{
+    if (oldBucketId == newBucketId) {
+        BucketState &state = _map[oldBucketId];
+        state.modify(oldTimestamp, newTimestamp, subDbType);
+    } else {
+        remove(gid, oldBucketId, oldTimestamp, subDbType);
+        add(gid, newBucketId, newTimestamp, subDbType);
+    }
+}
+
+
+bucketdb::BucketState
+BucketDB::get(const BucketId &bucketId) const
+{
+    Map::const_iterator itr = _map.find(bucketId);
+    if (itr != _map.end()) {
+        return itr->second;
+    }
+    return BucketState();
+}
+
+void
+BucketDB::cacheBucket(const BucketId &bucketId)
+{
+    _cachedBucketId = bucketId;
+    _cachedBucketState = get(bucketId);
+}
+
+void
+BucketDB::uncacheBucket()
+{
+    _cachedBucketId = BucketId();
+    _cachedBucketState = BucketState();
+}
+
+bool
+BucketDB::isCachedBucket(const BucketId &bucketId) const
+{
+    return _cachedBucketId == bucketId;
+}
+
+bucketdb::BucketState
+BucketDB::cachedGet(const BucketId &bucketId) const
+{
+    if (isCachedBucket(bucketId)) {
+        return _cachedBucketState;
+    }
+    return get(bucketId);
+}
+
+bool
+BucketDB::hasBucket(const BucketId &bucketId) const
+{
+    Map::const_iterator itr = _map.find(bucketId);
+    if (itr != _map.end()) {
+        return true;
+    }
+    return false;
+}
+
+
+bool
+BucketDB::isActiveBucket(const BucketId &bucketId) const
+{
+    Map::const_iterator itr = _map.find(bucketId);
+    if (itr != _map.end()) {
+        return itr->second.isActive();
+    }
+    return false;
+}
+
+void
+BucketDB::getBuckets(BucketId::List &buckets) const
+{
+    buckets.reserve(_map.size());
+    for (const auto & entry : _map) {
+        buckets.push_back(entry.first);
+    }
+}
+
+bool
+BucketDB::empty(void) const
+{
+    return _map.empty();
+}
+
+void
+BucketDB::clear(void)
+{
+    _map.clear();
+}
+
+
+void
+BucketDB::checkEmpty(void) const
+{
+    for (auto &entry : _map) {
+        const BucketState &state = entry.second;
+        assert(state.empty());
+    }
+}
+
+
+void
+BucketDB::setBucketState(const BucketId &bucketId, bool active)
+{
+    BucketState &state = _map[bucketId];
+    state.setActive(active);
+}
+
+
+void
+BucketDB::createBucket(const BucketId &bucketId)
+{
+    BucketState &state = _map[bucketId];
+    (void) state;
+}
+
+
+void
+BucketDB::deleteEmptyBucket(const BucketId &bucketId)
+{
+    Map::iterator itr = _map.find(bucketId);
+    if (itr == _map.end()) {
+        return;
+    }
+    const BucketState &state = itr->second;
+    if (state.empty()) {
+        _map.erase(itr);
+    }
+}
+
+
+void
+BucketDB::getActiveBuckets(BucketId::List &buckets) const
+{
+    for (const auto & entry : _map) {
+        if (entry.second.isActive()) {
+            buckets.push_back(entry.first);
+        }
+    }
+}
+
+
+void
+BucketDB::populateActiveBuckets(const BucketId::List &buckets,
+                                BucketId::List &fixupBuckets)
+{
+    typedef BucketId::List BIV;
+    BIV sorted(buckets);
+    BIV toAdd;
+    std::sort(sorted.begin(), sorted.end());
+    BIV::const_iterator si(sorted.begin());
+    BIV::const_iterator se(sorted.end());
+    for (const auto & entry : _map) {
+        for (; si != se && !(entry.first < *si); ++si) {
+            if (*si < entry.first) {
+                toAdd.push_back(*si);
+            } else if (!entry.second.isActive()) {
+                fixupBuckets.push_back(*si);
+                setBucketState(*si, true);
+            }
+        }
+    }
+    for (; si != se; ++si) {
+        toAdd.push_back(*si);
+    }
+    BIV::const_iterator ai(toAdd.begin());
+    BIV::const_iterator ae(toAdd.end());
+    BucketState activeState;
+    activeState.setActive(true);
+    for (; ai != ae; ++ai) {
+        InsertResult ins(_map.insert(std::make_pair(*ai, activeState)));
+        assert(ins.second);
+    }
+}
+
+
+}

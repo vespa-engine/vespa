@@ -1,0 +1,17 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search simple {
+    document simple {
+        field doc_field type string {
+            indexing: index | summary
+            summary doc_field_summary: full
+        }
+    }
+    document-summary explicit_summary {
+        summary summary_field type string {
+            source: doc_field_summary
+        }
+    }
+    field extern_field type string {
+        indexing: input doc_field | index
+    }
+}

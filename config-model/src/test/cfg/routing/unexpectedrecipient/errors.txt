@@ -1,0 +1,1 @@
+Hop 'foo' in routing table 'document' has recipients but no policy directive.

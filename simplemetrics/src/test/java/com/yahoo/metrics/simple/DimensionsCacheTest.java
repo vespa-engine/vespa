@@ -1,0 +1,110 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.metrics.simple;
+
+import static org.junit.Assert.*;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
+
+/**
+ * Functional test for point persistence layer.
+ *
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ */
+public class DimensionsCacheTest {
+    private static final int POINTS_TO_KEEP = 3;
+    DimensionCache cache;
+
+    @Before
+    public void setUp() throws Exception {
+        cache = new DimensionCache(POINTS_TO_KEEP);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        cache = null;
+    }
+
+    @Test
+    public final void smokeTest() {
+        String metricName = "testMetric";
+        Bucket first = new Bucket();
+        for (int i = 0; i < 4; ++i) {
+            populateSingleValue(metricName, first, i);
+        }
+        cache.updateDimensionPersistence(null, first);
+        Bucket second = new Bucket();
+        final int newest = 42;
+        populateSingleValue(metricName, second, newest);
+        cache.updateDimensionPersistence(first, second);
+        assertEquals(POINTS_TO_KEEP, second.getValuesForMetric(metricName).size());
+        boolean newestFound = false;
+        for (Entry<Point, UntypedMetric> x : second.getValuesForMetric(metricName)) {
+            if (x.getValue().getLast() == newest) {
+                newestFound = true;
+            }
+        }
+        assertTrue("Did not keep newest measurement when padding points.", newestFound);
+    }
+
+    @Test
+    public final void testNoBoomWithEmptyBuckets() {
+        Bucket check = new Bucket();
+        cache.updateDimensionPersistence(null, new Bucket());
+        cache.updateDimensionPersistence(null, new Bucket());
+        cache.updateDimensionPersistence(new Bucket(), check);
+        assertEquals(0, check.entrySet().size());
+    }
+
+    @Test
+    public final void testUpdateWithNullThenDataThenData() {
+        Bucket first = new Bucket();
+        populateDimensionLessValue("one", first, 2);
+        cache.updateDimensionPersistence(null, first);
+        Bucket second = new Bucket();
+        populateDimensionLessValue("other", second, 3);
+        cache.updateDimensionPersistence(first, second);
+        Collection<String> names = second.getAllMetricNames();
+        assertEquals(2, names.size());
+        assertTrue(names.contains("one"));
+        assertTrue(names.contains("other"));
+    }
+
+    @Test
+    public final void testUpdateWithNullThenDataThenNoDataThenData() {
+        Bucket first = new Bucket();
+        Bucket second = new Bucket();
+        populateDimensionLessValue("first", first, 1.0d);
+        populateDimensionLessValue("second", second, 2.0d);
+        cache.updateDimensionPersistence(null, first);
+        cache.updateDimensionPersistence(first, new Bucket());
+        cache.updateDimensionPersistence(new Bucket(), second);
+        assertEquals(2, second.entrySet().size());
+        assertTrue(second.getAllMetricNames().contains("first"));
+        assertTrue(second.getAllMetricNames().contains("second"));
+    }
+
+    private void populateDimensionLessValue(String metricName, Bucket bucket, double x) {
+        Identifier id = new Identifier(metricName, null);
+        Sample wrappedX = new Sample(new Measurement(Double.valueOf(x)), id, AssumedType.GAUGE);
+        bucket.put(wrappedX);
+    }
+
+    private void populateSingleValue(String metricName, Bucket bucket, int i) {
+        Map<String, Integer> m = new TreeMap<>();
+        m.put(String.valueOf(i), Integer.valueOf(i));
+        Point p = new Point(m);
+        Identifier id = new Identifier(metricName, p);
+        Sample x = new Sample(new Measurement(Double.valueOf(i)), id, AssumedType.GAUGE);
+        bucket.put(x);
+    }
+
+}

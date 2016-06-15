@@ -1,0 +1,90 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/searchlib/common/featureset.h>
+
+namespace search {
+
+FeatureSet::FeatureSet()
+    : _names(),
+      _docIds(),
+      _values()
+{
+}
+
+FeatureSet::FeatureSet(const StringVector &names,
+                                 uint32_t expectDocs)
+    : _names(names),
+      _docIds(),
+      _values()
+{
+    _docIds.reserve(expectDocs);
+    _values.reserve(expectDocs * names.size());
+}
+
+bool
+FeatureSet::equals(const FeatureSet &rhs) const
+{
+    return ((_docIds == rhs._docIds) &&
+            (_values == rhs._values) &&
+            (_names == rhs._names)); // do names last, as they are most likely to match
+}
+
+uint32_t
+FeatureSet::addDocId(uint32_t docId)
+{
+    _docIds.push_back(docId);
+    _values.resize(_names.size() * _docIds.size());
+    return (_docIds.size() - 1);
+}
+
+bool
+FeatureSet::contains(const std::vector<uint32_t> &docIds) const
+{
+    typedef std::vector<uint32_t>::const_iterator ITR;
+    ITR myPos = _docIds.begin();
+    ITR myEnd = _docIds.end();
+    ITR pos = docIds.begin();
+    ITR end = docIds.end();
+
+    for (; pos != end; ++pos) {
+        while (myPos != myEnd && *myPos < *pos) {
+            ++myPos;
+        }
+        if (myPos == myEnd || *myPos != *pos) {
+            return false;
+        }
+        ++myPos;
+    }
+    return true;
+}
+
+feature_t *
+FeatureSet::getFeaturesByIndex(uint32_t idx)
+{
+    if (idx >= _docIds.size()) {
+        return 0;
+    }
+    return &(_values[idx * _names.size()]);
+}
+
+const feature_t *
+FeatureSet::getFeaturesByDocId(uint32_t docId) const
+{
+    uint32_t low = 0;
+    uint32_t hi = _docIds.size();
+    while (low < hi) {
+        uint32_t pos = (low + hi) >> 1;
+        uint32_t val = _docIds[pos];
+        if (val < docId) {
+            low = pos + 1;
+        } else if (val > docId) {
+            hi = pos;
+        } else {
+            return &(_values[pos * _names.size()]);
+        }
+    }
+    return 0;
+}
+
+} // namespace search

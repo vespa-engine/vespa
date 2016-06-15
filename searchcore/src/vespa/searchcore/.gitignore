@@ -1,0 +1,5 @@
+*.lib
+.depend
+Makefile
+config.h
+lib*.a

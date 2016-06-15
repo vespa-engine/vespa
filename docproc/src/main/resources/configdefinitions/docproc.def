@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=12
+namespace=config.docproc
+
+# Queue size (in milliseconds) for this node
+# Positive size gives a ThroughPutLimitQueue. ### Experimental.
+# 0 Gives a PriorityQueue
+# Negative values gives a ordinary LinkedBlockingQueue. This is fastest and most efficient.
+maxqueuetimems int default=-1
+
+#The number of threads in the DocprocHandler worker thread pool
+numthreads int default=-1

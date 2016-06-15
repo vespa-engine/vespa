@@ -1,0 +1,4 @@
+0.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Starting up, using logfile bufferedlogtest.log
+200.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 0
+100000.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	This should cause buffered log flush
+100000.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 0 (Repeated 99 times since 200.000000)

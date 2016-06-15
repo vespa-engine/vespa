@@ -1,0 +1,35 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(documentapi_documentapimessages OBJECT
+    SOURCES
+    documentmessage.cpp
+    documentreply.cpp
+    documentstate.cpp
+    documentsummarymessage.cpp
+    emptybucketsmessage.cpp
+    feedanswer.cpp
+    feedmessage.cpp
+    feedreply.cpp
+    getbucketlistmessage.cpp
+    getbucketlistreply.cpp
+    getbucketstatemessage.cpp
+    getbucketstatereply.cpp
+    getdocumentmessage.cpp
+    getdocumentreply.cpp
+    multioperationmessage.cpp
+    putdocumentmessage.cpp
+    queryresultmessage.cpp
+    removedocumentmessage.cpp
+    removedocumentreply.cpp
+    removelocationmessage.cpp
+    searchresultmessage.cpp
+    statbucketmessage.cpp
+    statbucketreply.cpp
+    updatedocumentmessage.cpp
+    visitor.cpp
+    wrongdistributionreply.cpp
+    updatedocumentreply.cpp
+    batchdocumentupdatemessage.cpp
+    batchdocumentupdatereply.cpp
+    documentignoredreply.cpp
+    DEPENDS
+)

@@ -1,0 +1,53 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(storage_getidealstate_app
+    SOURCES
+    getidealstate.cpp
+    INSTALL bin
+    DEPENDS
+    storage
+    AFTER
+    storage_storageconfig
+)
+vespa_add_executable(storage_generatedistributionbits_app
+    SOURCES
+    generatedistributionbits.cpp
+    INSTALL bin
+    DEPENDS
+    storage
+    AFTER
+    storage_storageconfig
+)
+vespa_add_executable(storage_analyzedistribution_app
+    SOURCES
+    analyzedistribution.cpp
+    INSTALL bin
+    DEPENDS
+    storage
+    AFTER
+    storage_storageconfig
+)
+vespa_add_executable(storage_storage-cmd_app
+    SOURCES
+    storage-cmd.cpp
+    OUTPUT_NAME storage-cmd
+    INSTALL bin
+    DEPENDS
+    AFTER
+    storage_storageconfig
+)
+vespa_add_executable(storage_throttlingsim_app
+    SOURCES
+    throttlingsim.cpp
+    INSTALL bin
+    DEPENDS
+    AFTER
+    storage_storageconfig
+)
+vespa_add_executable(storage_statfs_app
+    SOURCES
+    statfs.cpp
+    INSTALL bin
+    DEPENDS
+    AFTER
+    storage_storageconfig
+)

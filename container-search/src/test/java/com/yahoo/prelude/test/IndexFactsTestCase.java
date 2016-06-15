@@ -1,0 +1,277 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.prelude.test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.IndexInfoConfig.Indexinfo;
+import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
+import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Command;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.search.Query;
+import com.yahoo.search.searchchain.Execution;
+
+/**
+ * Tests using synthetic index names for IndexFacts class.
+ *
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ */
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class IndexFactsTestCase extends junit.framework.TestCase {
+
+    private static final String INDEXFACTS_TESTING = "file:src/test/java/com/yahoo/prelude/test/indexfactstesting.cfg";
+
+    public IndexFactsTestCase(String name) {
+        super(name);
+    }
+
+    private IndexFacts createIndexFacts() {
+        ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
+        IndexInfoConfig config = getter.getConfig(INDEXFACTS_TESTING);
+
+        List<String> clusterOne = new ArrayList<>();
+        List<String> clusterTwo = new ArrayList<>();
+        clusterOne.addAll(Arrays.asList("one", "two"));
+        clusterTwo.addAll(Arrays.asList("one", "three"));
+        Map<String, List<String>> clusters = new HashMap<>();
+        clusters.put("clusterOne", clusterOne);
+        clusters.put("clusterTwo", clusterTwo);
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, clusters));
+
+        return indexFacts;
+    }
+
+    public void testBasicCases() {
+        // First check default behavior
+        IndexFacts indexFacts = createIndexFacts();
+        Query q = newQuery("?query=a:b", indexFacts);
+        assertEquals("a:b",  q.getModel().getQueryTree().getRoot().toString());
+        q = newQuery("?query=notarealindex:b", indexFacts);
+        assertEquals("\"notarealindex b\"",  q.getModel().getQueryTree().getRoot().toString());
+
+        // Add an index to an SD which also happens to be the default
+        indexFacts.addIndex("one", "yetanothersynthetic");
+        q = newQuery("?query=yetanothersynthetic:b", indexFacts);
+        assertEquals("yetanothersynthetic:b",  q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    public void testDefaultPosition() {
+        Index a = new Index("a");
+        assertFalse(a.isDefaultPosition());
+        a.addCommand("any");
+        assertFalse(a.isDefaultPosition());
+        a.addCommand("default-position");
+        assertTrue(a.isDefaultPosition());
+
+        SearchDefinition sd = new SearchDefinition("sd");
+        sd.addCommand("b", "any");
+        assertNull(sd.getDefaultPosition());
+        sd.addCommand("c", "default-position");
+        assertTrue(sd.getDefaultPosition().equals("c"));
+
+        SearchDefinition sd2 = new SearchDefinition("sd");
+        sd2.addIndex(new Index("b").addCommand("any"));
+        assertNull(sd2.getDefaultPosition());
+        sd2.addIndex(a);
+        assertTrue(sd2.getDefaultPosition().equals("a"));
+
+        Map<String,SearchDefinition> m = new TreeMap<>();
+        m.put(sd.getName(), sd);
+        IndexFacts indexFacts = createIndexFacts();
+        indexFacts.setSearchDefinitions(m,sd2);
+        assertTrue(indexFacts.getDefaultPosition(null).equals("a"));
+        assertTrue(indexFacts.getDefaultPosition("sd").equals("c"));
+    }
+
+    public void testIndicesInAnyConfigurationAreIndicesInDefault() {
+        IndexFacts.Session indexFacts = createIndexFacts().newSession(new Query());
+        assertTrue(indexFacts.isIndex("a"));
+        assertTrue(indexFacts.isIndex("b"));
+        assertTrue(indexFacts.isIndex("c"));
+        assertTrue(indexFacts.isIndex("d"));
+        assertFalse(indexFacts.isIndex("anythingelse"));
+    }
+
+    public void testDefaultIsUnionHostIndex() {
+        IndexFacts.Session session = createIndexFacts().newSession(new Query());
+        assertTrue(session.getIndex("c").isHostIndex());
+        assertFalse(session.getIndex("a").isHostIndex());
+    }
+
+    public void testDefaultIsUnionUriIndex() {
+        IndexFacts indexFacts = createIndexFacts();
+        assertTrue(indexFacts.newSession(new Query()).getIndex("d").isUriIndex());
+        assertFalse(indexFacts.newSession(new Query()).getIndex("a").isUriIndex());
+    }
+
+    public void testDefaultIsUnionStemMode() {
+        IndexFacts.Session session = createIndexFacts().newSession(new Query());
+        assertEquals(StemMode.NONE, session.getIndex("a").getStemMode());
+        assertEquals(StemMode.NONE, session.getIndex("b").getStemMode());
+    }
+
+    private void assertExactIsWorking(String indexName) {
+        Index index=new Index(indexName);
+        index.setExact(true,"^^^");
+        IndexFacts indexFacts = createIndexFacts();
+        indexFacts.addIndex("artist",index);
+        Query query = new Query();
+        query.getModel().getSources().add("artist");
+        assertTrue(indexFacts.newSession(query).getIndex(indexName).isExact());
+        Query q = newQuery("?query=" + indexName + ":foo...&search=artist", indexFacts);
+        assertEquals(indexName + ":foo...", q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    public void testExactMatching() {
+        assertExactIsWorking("test");
+        assertExactIsWorking("artist_name_ft_norm1");
+
+        List search=new ArrayList();
+        search.add("three");
+        Query query = new Query();
+        query.getModel().getSources().add("three");
+        IndexFacts.Session threeSession = createIndexFacts().newSession(query);
+        IndexFacts.Session nullSession = createIndexFacts().newSession(new Query());
+
+        Index d3 = threeSession.getIndex("d");
+        assertTrue(d3.isExact());
+        assertEquals(" ", d3.getExactTerminator());
+
+        Index e = nullSession.getIndex("e");
+        assertTrue(e.isExact());
+        assertEquals("kj(/&",e.getExactTerminator());
+
+        Index a = nullSession.getIndex("a");
+        assertFalse(a.isExact());
+        assertNull(a.getExactTerminator());
+
+        Index wem = threeSession.getIndex("twewm");
+        assertTrue(wem.isExact());
+        assertNull(wem.getExactTerminator());
+    }
+
+    public void testComplexExactMatching() {
+        IndexFacts indexFacts = createIndexFacts();
+        String u_name = "foo_bar";
+        Index u_index = new Index(u_name);
+        u_index.setExact(true, "^^^");
+        Index b_index = new Index("bar");
+        indexFacts.addIndex("foobar", u_index);
+        indexFacts.addIndex("foobar", b_index);
+        Query query = new Query();
+        query.getModel().getSources().add("foobar");
+        IndexFacts.Session session = indexFacts.newSession(query);
+        assertFalse(session.getIndex("bar").isExact());
+        assertTrue(session.getIndex(u_name).isExact());
+        Query q = newQuery("?query=" + u_name + ":foo...&search=foobar", indexFacts);
+        assertEquals(u_name + ":foo...", q.getModel().getQueryTree().getRoot().toString());
+    }
+
+    // This is also backed by a system test on cause of complex config
+    public void testRestrictLists1() {
+        Query query = new Query();
+        query.getModel().getSources().add("nalle");
+        query.getModel().getSources().add("one");
+        query.getModel().getRestrict().add("two");
+
+        IndexFacts.Session indexFacts = createIndexFacts().newSession(Collections.singleton("clusterOne"), Collections.emptyList());
+        assertTrue(indexFacts.isIndex("a"));
+        assertFalse(indexFacts.isIndex("b"));
+        assertTrue(indexFacts.isIndex("d"));
+    }
+
+    public void testRestrictLists2() {
+        Query query = new Query();
+        query.getModel().getSources().add("clusterTwo");
+        query.getModel().getRestrict().add("three");
+        IndexFacts indexFacts = createIndexFacts();
+        IndexFacts.Session session = indexFacts.newSession(query);
+        assertFalse(session.getIndex("c").isNull());
+        assertTrue(session.getIndex("e").isNull());
+        assertEquals("c", session.getCanonicName("C"));
+        assertTrue(session.getIndex("c").isHostIndex());
+        assertFalse(session.getIndex("a").isNull());
+        assertFalse(session.getIndex("a").isHostIndex());
+        assertEquals(StemMode.SHORTEST, session.getIndex("a").getStemMode());
+        assertFalse(session.getIndex("b").isNull());
+        assertFalse(session.getIndex("b").isUriIndex());
+        assertFalse(session.getIndex("b").isHostIndex());
+        assertEquals(StemMode.NONE, session.getIndex("b").getStemMode());
+    }
+
+    public void testRestrictLists3() {
+        Query query = new Query();
+        query.getModel().getSources().add("clusterOne");
+        query.getModel().getRestrict().add("two");
+        IndexFacts indexFacts = createIndexFacts();
+        IndexFacts.Session session = indexFacts.newSession(query);
+        assertTrue(session.getIndex("a").isNull());
+        assertFalse(session.getIndex("d").isNull());
+        assertTrue(session.getIndex("d").isUriIndex());
+        assertTrue(session.getIndex("e").isExact());
+    }
+
+    public void testOverlappingAliases() {
+        IndexInfoConfig cfg = new IndexInfoConfig(new IndexInfoConfig.Builder()
+                .indexinfo(
+                        new Indexinfo.Builder()
+                                .name("music2")
+                                .command(
+                                        new Command.Builder().indexname(
+                                                "btitle").command("index"))
+                                .alias(new Alias.Builder().alias("title")
+                                        .indexname("btitle"))).indexinfo(
+                        new Indexinfo.Builder().name("music").command(
+                                new Command.Builder().indexname("title")
+                                        .command("index"))));
+        IndexModel m = new IndexModel(cfg, (QrSearchersConfig)null);
+        assertNotNull(m.getSearchDefinitions().get("music").getIndex("title"));
+        assertNull(m.getSearchDefinitions().get("music").getIndex("btitle"));
+        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("btitle"));
+        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("title"));
+        assertSame(m.getSearchDefinitions().get("music2").getIndex("btitle"),
+                   m.getSearchDefinitions().get("music2").getIndex("title"));
+        assertNotSame(m.getSearchDefinitions().get("music").getIndex("title"),
+                      m.getSearchDefinitions().get("music2").getIndex("title"));
+    }
+
+    private Query newQuery(String queryString, IndexFacts indexFacts) {
+        Query query = new Query(queryString);
+        query.getModel().setExecution(new Execution(new Execution.Context(null, indexFacts, null, null, null)));
+        return query;
+    }
+
+    public void testPredicateBounds() {
+        Index index = new Index("a");
+        assertEquals(Long.MIN_VALUE, index.getPredicateLowerBound());
+        assertEquals(Long.MAX_VALUE, index.getPredicateUpperBound());
+        index.addCommand("predicate-bounds [2..300]");
+        assertEquals(2L, index.getPredicateLowerBound());
+        assertEquals(300L, index.getPredicateUpperBound());
+        index.addCommand("predicate-bounds [-20000..30000]");
+        assertEquals(-20_000L, index.getPredicateLowerBound());
+        assertEquals(30_000L, index.getPredicateUpperBound());
+        index.addCommand("predicate-bounds [-40000000000..-300]");
+        assertEquals(-40_000_000_000L, index.getPredicateLowerBound());
+        assertEquals(-300L, index.getPredicateUpperBound());
+        index.addCommand("predicate-bounds [..300]");
+        assertEquals(Long.MIN_VALUE, index.getPredicateLowerBound());
+        assertEquals(300L, index.getPredicateUpperBound());
+        index.addCommand("predicate-bounds [2..]");
+        assertEquals(2L, index.getPredicateLowerBound());
+        assertEquals(Long.MAX_VALUE, index.getPredicateUpperBound());
+    }
+}

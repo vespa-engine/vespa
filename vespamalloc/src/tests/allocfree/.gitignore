@@ -1,0 +1,14 @@
+.depend
+Makefile
+allocfree_shared_test
+allocfree_static_test
+allocfree_static_testd
+allocfree_test
+linklist_test
+realloc_test
+realloc_testd
+/creatingmanythreads_test
+vespamalloc_allocfree_shared_test_app
+vespamalloc_creatingmanythreads_test_app
+vespamalloc_linklist_test_app
+vespamalloc_realloc_test_app

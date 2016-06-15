@@ -1,0 +1,24 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+## Config specifying cluster global parameters for a storage cluster.
+
+## Set to true when there exist nodes of previous major version in cluster.
+## This will enable major version backward compability mode in the cluster.
+upgrading_major_to bool default=false
+
+## Set to true when there exist nodes of the next major version in the
+## cluster. This will usually not be needed, unless specified in the upgrade
+## docs. Sometimes though, it may be easier to let old version be forward
+## compatable than having new version backwards compatable.
+upgrading_major_from bool default=false
+
+## Set to true when there exist nodes of previous minor version in cluster.
+## This should not be needed, but settings exist in case we end up having
+## no other choice than to have a compatability mode between minor versions.
+upgrading_minor_to bool default=false
+
+## Set to true when there exist nodes of next minor version in cluster.
+## This should not be needed, but settings exist in case we end up having
+## no other choice than to have a compatability mode between minor versions.
+upgrading_minor_from bool default=false

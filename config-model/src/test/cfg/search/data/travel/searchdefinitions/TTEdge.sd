@@ -1,0 +1,10 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+document TTEdge {
+
+# This field will contain a colon separate map for travel times per transport mode
+    field TransportMode type array<string> {
+        indexing: summary | index
+        header
+    }
+}
+

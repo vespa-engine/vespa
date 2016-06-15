@@ -1,0 +1,4 @@
+.depend
+Makefile
+test
+vespamalloc_test_app

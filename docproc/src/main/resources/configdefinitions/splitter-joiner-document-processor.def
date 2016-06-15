@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=2
+namespace=config.docproc
+
+# The name of the enclosing (outer) document type
+documentTypeName string
+
+# The name of the field of type array of document
+arrayFieldName string
+
+# The name of the context variable used by Processing.getVariable()
+contextFieldName string default="docproc@splitter@joiner@outer@document"

@@ -1,0 +1,8 @@
+/.depend
+/Makefile
+/biglog_test
+/btreestress_test
+/memoryindexstress_test
+searchlib_biglog_test_app
+searchlib_btreestress_test_app
+searchlib_memoryindexstress_test_app

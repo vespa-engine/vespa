@@ -1,0 +1,13 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.documentapi;
+
+/**
+ * Superclass of the classes which contains the parameters for creating or opening a session. This is currently empty,
+ * but keeping this parameter hierarchy in place means that we can later add parameters with default values that all
+ * clients will be able to use with no code changes.
+ *
+ * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ */
+public class Parameters {
+    // empty
+}

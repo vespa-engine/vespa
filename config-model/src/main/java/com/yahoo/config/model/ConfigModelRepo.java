@@ -1,0 +1,256 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.config.model;
+
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
+import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.graph.ModelGraphBuilder;
+import com.yahoo.config.model.graph.ModelNode;
+import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
+import com.yahoo.text.XML;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.builder.VespaModelBuilder;
+import com.yahoo.vespa.model.clients.Clients;
+import com.yahoo.vespa.model.content.Content;
+import com.yahoo.vespa.model.routing.Routing;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.util.*;
+import java.util.logging.Logger;
+
+/**
+ * A collection of config model instances owned by a system model
+ *
+ * @author gjoranv
+ */
+public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iterable<ConfigModel> {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final Logger log = Logger.getLogger(ConfigModelRepo.class.getPackage().toString());
+
+    private final Map<String,ConfigModel> configModelMap = new TreeMap<>();
+    private final List<ConfigModel> configModels = new ArrayList<>();
+
+    /**
+     * Returns a config model for a given id
+     *
+     * @param id the id of the model to return
+     * @return the model, or none if a model with this id is not present in this
+     */
+    public ConfigModel get(String id) {
+        return configModelMap.get(id);
+    }
+
+    /** Adds a new config model instance in this */
+    @Override
+    public void add(ConfigModel model) {
+        configModelMap.put(model.getId(), model);
+        configModels.add(model);
+    }
+
+    /** Returns the models in this as an iterator */
+    public Iterator<ConfigModel> iterator() {
+        return configModels.iterator();
+    }
+
+    /** Returns a read-only view of the config model instances of this */
+    public Map<String,ConfigModel> asMap() { return Collections.unmodifiableMap(configModelMap); }
+
+    /** Initialize part 1.: Reads the config models used in the application package. */
+    public void readConfigModels(DeployState deployState, VespaModelBuilder builder,
+                                 ApplicationConfigProducerRoot root, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+        Element userServicesElement = getServicesFromApp(deployState.getApplicationPackage());
+        readConfigModels(root, userServicesElement, deployState, configModelRegistry);
+        builder.postProc(root, this);
+    }
+
+    private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException, SAXException {
+        try (Reader servicesFile = applicationPackage.getServices()) {
+            return getServicesFromReader(servicesFile);
+        }
+    }
+
+    /**
+     * If the top level is &lt;services&gt;, it contains a list of services elements,
+     * otherwise, the top level tag is a single service.
+     */
+    private List<Element> getServiceElements(Element servicesRoot) {
+        if (servicesRoot.getTagName().equals("services"))
+            return XML.getChildren(servicesRoot);
+
+        List<Element> singleServiceList = new ArrayList<>(1);
+        singleServiceList.add(servicesRoot);
+        return singleServiceList;
+    }
+
+    /**
+     * Creates all the config models specified in the given XML element and
+     * passes their respective XML node as parameter.
+     *
+     * @param root The Root to set as parent for all plugins
+     * @param servicesRoot XML root node of the services file
+     */
+    private void readConfigModels(ApplicationConfigProducerRoot root, Element servicesRoot, DeployState deployState, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+        final Map<ConfigModelBuilder, List<Element>> model2Element = new LinkedHashMap<>();
+        ModelGraphBuilder graphBuilder = new ModelGraphBuilder();
+
+        final List<Element> children = getServiceElements(servicesRoot);
+
+        if (XML.getChild(servicesRoot, "admin") == null)
+            children.add(getImplicitAdmin(deployState));
+
+        children.addAll(getPermanentServices(deployState));
+
+        for (Element servicesElement : children) {
+            String tagName = servicesElement.getTagName();
+            if (tagName.equals("config")) continue;  // TODO: Remove on Vespa 6
+            if (tagName.equals("cluster")) continue; // TODO: Remove on Vespa 6
+            if ((tagName.equals("clients")) && deployState.isHostedVespa())
+                throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
+
+            String tagVersion = servicesElement.getAttribute("version");
+            ConfigModelId xmlId = ConfigModelId.fromNameAndVersion(tagName, tagVersion);
+
+            Collection<ConfigModelBuilder> builders = configModelRegistry.resolve(xmlId);
+
+            if (builders.isEmpty())
+                throw new RuntimeException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
+
+            for (ConfigModelBuilder builder : builders) {
+                if ( ! model2Element.containsKey(builder)) {
+                    model2Element.put(builder, new ArrayList<>());
+                    graphBuilder.addBuilder(builder);
+                }
+                model2Element.get(builder).add(servicesElement);
+            }
+        }
+
+        for (ModelNode node : graphBuilder.build().topologicalSort())
+            buildModels(node, deployState, root, model2Element.get(node.builder));
+        for (ConfigModel model : configModels)
+            model.initialize(ConfigModelRepo.this);
+    }
+
+    private Collection<Element> getPermanentServices(DeployState deployState) throws IOException, SAXException {
+        List<Element> permanentServices = new ArrayList<>();
+        Optional<ApplicationPackage> applicationPackage = deployState.getPermanentApplicationPackage();
+        if (applicationPackage.isPresent()) {
+            ApplicationFile file = applicationPackage.get().getFile(Path.fromString(ApplicationPackage.PERMANENT_SERVICES));
+            if (file.exists()) {
+                try (Reader reader = file.createReader()) {
+                    Element permanentServicesRoot = getServicesFromReader(reader);
+                    permanentServices.addAll(getServiceElements(permanentServicesRoot));
+                }
+            }
+        }
+        return permanentServices;
+    }
+
+    private Element getServicesFromReader(Reader reader) throws IOException, SAXException {
+        Document doc = XmlHelper.getDocumentBuilder().parse(new InputSource(reader));
+        return doc.getDocumentElement();
+    }
+
+    private void buildModels(ModelNode node, DeployState deployState, AbstractConfigProducer parent, List<Element> elements) {
+        for (Element servicesElement : elements) {
+            ConfigModel model = buildModel(node, deployState, parent, servicesElement);
+            if (model.isServing())
+                add(model);
+        }
+    }
+
+    private ConfigModel buildModel(ModelNode node, DeployState deployState, AbstractConfigProducer parent, Element servicesElement) {
+        ConfigModelBuilder builder = node.builder;
+        ConfigModelContext context = ConfigModelContext.create(deployState, this, parent, getIdString(servicesElement));
+        return builder.build(node, servicesElement, context);
+    }
+
+    private static String getIdString(Element spec) {
+        String idString = XmlHelper.getIdString(spec);
+        if (idString == null || idString.isEmpty()) {
+            idString = spec.getTagName();
+        }
+        return idString;
+    }
+
+    /**
+     * Initialize part 2.:
+     * Prepare all config models for starting. Must be called after plugins are loaded and frozen.
+     */
+    public void prepareConfigModels() {
+        for (ConfigModel model : configModels) {
+            model.prepare(ConfigModelRepo.this);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends ConfigModel> List<T> getModels(Class<T> modelClass) {
+        List<T> modelsOfModelClass = new ArrayList<>();
+
+        for (ConfigModel model : asMap().values()) {
+            if (modelClass.isInstance(model))
+                modelsOfModelClass.add((T)model);
+        }
+        return modelsOfModelClass;
+    }
+
+    public Clients getClients() {
+        for (ConfigModel m : configModels) {
+            if (m instanceof Clients) {
+                return (Clients)m;
+            }
+        }
+        return null;
+    }
+
+    public Routing getRouting() {
+        for (ConfigModel m : configModels) {
+            if (m instanceof Routing) {
+                return (Routing)m;
+            }
+        }
+        return null;
+    }
+
+    public Content getContent() {
+        for (ConfigModel m : configModels) {
+            if (m instanceof Content) {
+                return (Content)m;
+            }
+        }
+        return null;
+    }
+
+    // TODO: Doctoring on the XML is the wrong level for this. We should be able to mark a model as default instead   -Jon
+    private static Element getImplicitAdmin(DeployState deployState) throws IOException, SAXException {
+        final boolean hostedVespa = deployState.isHostedVespa();
+        String defaultAdminElement = hostedVespa ? getImplicitAdminV4() : getImplicitAdminV2();
+        log.log(LogLevel.DEBUG, "No <admin> defined, using " + defaultAdminElement);
+        return XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(defaultAdminElement))).getDocumentElement();
+    }
+
+    private static String getImplicitAdminV2() {
+        return "<admin version='2.0'>\n" +
+               "  <adminserver hostalias='" + HostsXmlProvisioner.IMPLICIT_ADMIN_HOSTALIAS + "'/>\n" +
+               "</admin>\n";
+    }
+
+    private static String getImplicitAdminV4() {
+        return "<admin version='4.0'>\n" +
+                "  <nodes count='1' />\n" +
+                "</admin>\n";
+    }
+}

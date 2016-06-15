@@ -1,0 +1,274 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/bitcompression/compression.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
+
+namespace search {
+
+namespace memoryindex {
+
+class FeatureStore
+{
+public:
+    typedef btree::DataStoreT<btree::AlignedEntryRefT<22, 2> > DataStoreType;
+    typedef DataStoreType::RefType RefType;
+    typedef bitcompression::EG2PosOccEncodeContext<true> EncodeContext;
+    typedef bitcompression::EG2PosOccDecodeContextCooked<true>
+    DecodeContextCooked;
+    typedef vespalib::GenerationHandler::generation_t generation_t;
+
+private:
+    typedef index::Schema Schema;
+    typedef index::DocIdAndFeatures DocIdAndFeatures;
+    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+
+    static const uint32_t DECODE_SAFETY = 16;
+
+    DataStoreType _store;
+
+    // Feature Encoder
+    EncodeContext _f;
+    // Buffer for compressed features.
+    ComprFileWriteContext _fctx;
+
+    // Feature Decoder
+    DecodeContextCooked _d;
+
+    // Coding parameters for fields and field collections, derived
+    // from schema.
+    std::vector<PosOccFieldsParams> _fieldsParams;
+
+    const Schema &_schema;
+
+    btree::BufferType<uint8_t> _type;
+    const uint32_t      _typeId;
+
+    /**
+     * Writes the given features to the underlying encode context.
+     *
+     * @param packedIndex the field or field collection owning features
+     * @param features the features to be encoded
+     * @return the encode offset before writing
+     */
+    uint64_t
+    writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
+
+    /**
+     * Adds the features from the given buffer to the data store.
+     *
+     * @param src buffer with features
+     * @param byteLen the byte length of the buffer
+     * @return the entry ref for the added features
+     */
+    btree::EntryRef
+    addFeatures(const uint8_t * src, uint64_t byteLen);
+
+    /**
+     * Adds the features currently in the underlying encode context to the data store.
+     *
+     * @param beginOffset the begin offset into the encode context
+     * @param endOffset the end offset into the encode context
+     * @return the entry ref and bit length of the features
+     */
+    std::pair<btree::EntryRef, uint64_t>
+    addFeatures(uint64_t beginOffset, uint64_t endOffset);
+
+    /**
+     * Moves features to new location, as part of compaction.
+     *
+     * @param ref old reference to stored features
+     * @param bitLen bit length of features to move
+     * @return new reference to stored features
+     */
+    btree::EntryRef moveFeatures(btree::EntryRef ref, uint64_t bitLen);
+
+public:
+
+    /**
+     * Constructor for feature store.
+     *
+     * @param schema		The schema describing fields and field
+     *				collections available, used to derive
+     *				coding parameters.
+     */
+    FeatureStore(const Schema &schema);
+
+    ~FeatureStore(void);
+
+    /**
+     * Add features to feature store
+     *
+     * @param packedIndex	The field or field collection owning features
+     * @param features		The features to be encoded
+     * @return			pair with reference to stored features and
+     *				size of encoded features in bits
+     */
+    std::pair<btree::EntryRef, uint64_t>
+    addFeatures(uint32_t packedIndex,
+                const DocIdAndFeatures &features);
+
+
+    /**
+     * Get features from feature store.  Method signature is not
+     * const since feature decoder is written to during calculation.
+     *
+     * @param packedIndex	The field or field collection owning features
+     * @param ref		Reference to stored features
+     * @param features		The features to be decoded
+     */
+    void
+    getFeatures(uint32_t packedIndex,
+                btree::EntryRef ref,
+                DocIdAndFeatures &features);
+
+
+    /**
+     * Setup the given decoder to be used for the given field or field
+     * collection.
+     *
+     * @param packedIndex The field or field collection owning features
+     * @param decoder     The feature decoder
+     */
+    void
+    setupForField(uint32_t packedIndex, DecodeContextCooked &decoder) const
+    {
+        decoder._fieldsParams = &_fieldsParams[packedIndex];
+    }
+
+    /**
+     * Setup the given decoder to later use readFeatures() to decode
+     * the stored features.
+     *
+     * @param ref      Reference to stored features
+     * @param decoder  The feature decoder
+     */
+    void
+    setupForReadFeatures(btree::EntryRef ref, DecodeContextCooked &decoder) const
+    {
+        const uint8_t * bits = getBits(ref);
+        decoder.setByteCompr(bits);
+        uint32_t bufferId = RefType(ref).bufferId();
+        const btree::BufferState &state = _store.getBufferState(bufferId);
+        decoder.setEnd(
+                ((_store.getBufferEntry<uint8_t>(bufferId, state.size()) -
+                  bits) + 7) / 8,
+                false);
+    }
+
+    /**
+     * Setup the given decoder to later use unpackFeatures() to decode
+     * the stored features.
+     *
+     * @param ref      Reference to stored features
+     * @param decoder  The feature decoder
+     */
+    void
+    setupForUnpackFeatures(btree::EntryRef ref, DecodeContextCooked &decoder) const
+    {
+        decoder.setByteCompr(getBits(ref));
+    }
+
+    /**
+     * Calculate size of encoded features.  Method signature is not
+     * const since feature decoder is written to during calculation.
+     *
+     * @param packedIndex	The field or field collection owning features
+     * @param ref		Reference to stored features
+     * @return			size of features in bits
+     */
+    size_t
+    bitSize(uint32_t packedIndex, btree::EntryRef ref);
+
+    /**
+     * Get byte address of stored features
+     *
+     * @param ref		Referennce to stored features
+     * @return			byte address of stored features
+     */
+    const uint8_t *
+    getBits(btree::EntryRef ref) const
+    {
+        RefType iRef(ref);
+        return _store.getBufferEntry<uint8_t>(iRef.bufferId(), iRef.offset());
+    }
+
+    /**
+     * Move features to new location, as part of compaction.
+     *
+     * @param packedIndex	The field or field collection owning features
+     * @param ref		Old reference to stored features
+     * @return			New reference to stored features
+     */
+    btree::EntryRef
+    moveFeatures(uint32_t packedIndex,
+                 btree::EntryRef ref);
+
+    /**
+     * Return a const view of the fields params used by this feature store.
+     *
+     * @return const view of fields params.
+     */
+    const std::vector<PosOccFieldsParams> &
+    getFieldsParams() const
+    {
+        return _fieldsParams;
+    }
+
+    // Inherit doc from DataStoreBase
+    void
+    trimHoldLists(generation_t usedGen)
+    {
+        _store.trimHoldLists(usedGen);
+    }
+
+    // Inherit doc from DataStoreBase
+    void
+    transferHoldLists(generation_t generation)
+    {
+        _store.transferHoldLists(generation);
+    }
+
+    void
+    clearHoldLists(void)
+    {
+        _store.clearHoldLists();
+    }
+
+    // Inherit doc from DataStoreBase
+    std::vector<uint32_t>
+    startCompact()
+    {
+        return _store.startCompact(_typeId);
+    }
+
+    // Inherit doc from DataStoreBase
+    void
+    finishCompact(const std::vector<uint32_t> & toHold)
+    {
+        _store.finishCompact(toHold);
+    }
+
+    // Inherit doc from DataStoreBase
+    MemoryUsage
+    getMemoryUsage() const
+    {
+        return _store.getMemoryUsage();
+    }
+
+    // Inherit doc from DataStoreBase
+    btree::DataStoreBase::MemStats
+    getMemStats() const
+    {
+        return _store.getMemStats();
+    }
+};
+
+
+} // namespace search::memoryindex
+} // namespace search
+
+

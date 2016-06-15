@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+    <simple version="1.0">
+        <simpleservice hostalias="host2">
+            <metric-consumers>
+                <consumer name="yamas">
+                    <metric name="onlyMine" output-name="user"/>
+                </consumer>
+            </metric-consumers>
+        </simpleservice>
+
+        <simpleservice hostalias="host2">
+            <metric-consumers>
+                <consumer name="yamas">
+                    <metric name="test" output-name="user"/>
+                </consumer>
+            </metric-consumers>
+        </simpleservice>
+    </simple>
+</services>

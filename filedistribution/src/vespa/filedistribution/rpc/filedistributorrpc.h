@@ -1,0 +1,30 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <memory>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/noncopyable.hpp>
+
+#include "fileprovider.h"
+
+namespace filedistribution {
+
+class FileDistributorRPC : boost::noncopyable,
+                           public boost::enable_shared_from_this<FileDistributorRPC>
+{
+    class Server;
+public:
+    FileDistributorRPC(const std::string& connectSpec,
+                       const boost::shared_ptr<FileProvider>& provider);
+
+    void start();
+
+    static int get_port(const std::string &spec);
+
+    ~FileDistributorRPC();
+private:
+    std::unique_ptr<Server> _server;
+};
+
+} //namespace filedistribution
+

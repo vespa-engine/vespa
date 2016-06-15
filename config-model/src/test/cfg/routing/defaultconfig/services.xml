@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+    <admin version="2.0">
+         <adminserver hostalias="node1" />
+    </admin>
+
+    <routing version="1.0">
+        <routingtable protocol="document" verify="false">
+            <route name="aliasme" hops="docproc/cluster.music.indexing/*/chain.music.indexing search/search.music" />
+        </routingtable>
+    </routing>
+</services>

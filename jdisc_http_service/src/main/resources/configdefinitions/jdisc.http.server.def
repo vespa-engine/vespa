@@ -1,0 +1,23 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=jdisc.http
+
+# Whether to enable developer mode, where stack traces etc are visible in response bodies.
+developerMode                         bool   default=false
+
+# The gzip compression level to use, if compression is enabled in a request.
+responseCompressionLevel              int    default=6
+
+# Whether to enable HTTP keep-alive for requests that support this.
+httpKeepAliveEnabled                  bool   default=true
+
+# Whether the request body of POSTed forms should be removed (form parameters are available as request parameters).
+removeRawPostBodyForWwwUrlEncodedPost bool   default=false
+
+# The component ID of a filter
+filter[].id string
+
+# The binding of a filter
+filter[].binding string
+
+# Max number of threads in pool
+maxWorkerThreads                      int    default = 200

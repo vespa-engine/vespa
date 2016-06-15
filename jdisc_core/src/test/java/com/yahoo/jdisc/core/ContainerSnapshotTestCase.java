@@ -1,0 +1,211 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc.core;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
+import com.yahoo.jdisc.AbstractResource;
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.handler.CompletionHandler;
+import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Test;
+
+import java.net.URI;
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+public class ContainerSnapshotTestCase {
+
+    @Test
+    public void requireThatServerHandlerCanBeResolved() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ContainerBuilder builder = driver.newContainerBuilder();
+        builder.serverBindings().bind("http://foo/*", MyRequestHandler.newInstance());
+        driver.activateContainer(builder);
+
+        Request request = new Request(driver, URI.create("http://foo/"));
+        assertNotNull(request.container().resolveHandler(request));
+        assertNotNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://foo/"));
+        request.setServerRequest(false);
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://bar/"));
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://bar/"));
+        request.setServerRequest(false);
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatClientHandlerCanBeResolved() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ContainerBuilder builder = driver.newContainerBuilder();
+        builder.clientBindings().bind("http://foo/*", MyRequestHandler.newInstance());
+        driver.activateContainer(builder);
+
+        Request request = new Request(driver, URI.create("http://foo/"));
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://foo/"));
+        request.setServerRequest(false);
+        assertNotNull(request.container().resolveHandler(request));
+        assertNotNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://bar/"));
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        request = new Request(driver, URI.create("http://bar/"));
+        request.setServerRequest(false);
+        assertNull(request.container().resolveHandler(request));
+        assertNull(request.getBindingMatch());
+        request.release();
+
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatClientBindingsAreUsed() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ContainerBuilder builder = driver.newContainerBuilder();
+        builder.clientBindings().bind("http://host/path", MyRequestHandler.newInstance());
+        driver.activateContainer(builder);
+        Request request = new Request(driver, URI.create("http://host/path"));
+        assertNull(request.container().resolveHandler(request));
+        request.setServerRequest(false);
+        assertNotNull(request.container().resolveHandler(request));
+        request.release();
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatBindingMatchIsSetByResolveHandler() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ContainerBuilder builder = driver.newContainerBuilder();
+        builder.serverBindings().bind("http://*/*", MyRequestHandler.newInstance());
+        driver.activateContainer(builder);
+
+        Request request = new Request(driver, URI.create("http://localhost:69/status.html"));
+        assertNotNull(request.container().resolveHandler(request));
+        BindingMatch<RequestHandler> match = request.getBindingMatch();
+        assertNotNull(match);
+        assertEquals(3, match.groupCount());
+        assertEquals("localhost", match.group(0));
+        assertEquals("69", match.group(1));
+        assertEquals("status.html", match.group(2));
+        request.release();
+
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatNewRequestHasSameSnapshot() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        driver.activateContainer(driver.newContainerBuilder());
+        Request foo = new Request(driver, URI.create("http://host/foo"));
+        Request bar = new Request(foo, URI.create("http://host/bar"));
+        assertSame(foo.container(), bar.container());
+        foo.release();
+        bar.release();
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatActiveInjectorIsUsed() {
+        final Object obj = new Object();
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
+
+            @Override
+            protected void configure() {
+                bind(Object.class).toInstance(obj);
+                bind(String.class).annotatedWith(Names.named("foo")).toInstance("foo");
+            }
+        });
+        ActiveContainer active = new ActiveContainer(driver.newContainerBuilder());
+        ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null);
+        assertSame(obj, snapshot.getInstance(Object.class));
+        assertEquals("foo", snapshot.getInstance(Key.get(String.class, Names.named("foo"))));
+        snapshot.release();
+        assertTrue(driver.close());
+    }
+
+    private static class MyContent implements ContentChannel {
+
+        CompletionHandler writeCompletion = null;
+        CompletionHandler closeCompletion = null;
+        ByteBuffer writeBuf = null;
+        boolean closed = false;
+
+        @Override
+        public void write(ByteBuffer buf, CompletionHandler handler) {
+            writeBuf = buf;
+            writeCompletion = handler;
+        }
+
+        @Override
+        public void close(CompletionHandler handler) {
+            closed = true;
+            closeCompletion = handler;
+        }
+    }
+
+    private static class MyRequestHandler extends AbstractResource implements RequestHandler {
+
+        final MyContent content = new MyContent();
+        Request request = null;
+        ResponseHandler handler = null;
+        boolean timeout = false;
+        boolean destroyed = false;
+
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            this.request = request;
+            this.handler = handler;
+            return content;
+        }
+
+        @Override
+        public void handleTimeout(Request request, ResponseHandler handler) {
+            timeout = true;
+        }
+
+        @Override
+        public void destroy() {
+            destroyed = true;
+        }
+
+        static MyRequestHandler newInstance() {
+            return new MyRequestHandler();
+        }
+    }
+}

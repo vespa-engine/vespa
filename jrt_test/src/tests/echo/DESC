@@ -1,0 +1,3 @@
+Invoke a method that returns the parameters using all different value
+types. The server is written in Java while the client is written in
+C++.

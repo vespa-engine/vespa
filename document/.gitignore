@@ -1,0 +1,14 @@
+.classpath
+.project
+bin
+document-lib.iml
+document.iml
+document.ipr
+document.iws
+include
+lib
+libexec
+target
+/pom.xml.build
+Makefile
+Testing

@@ -1,0 +1,25 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/buffer.h>
+
+namespace search {
+
+class IBucketizer
+{
+public:
+    typedef std::shared_ptr<IBucketizer> SP;
+    virtual ~IBucketizer() { }
+    virtual uint64_t getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const = 0;
+    virtual vespalib::GenerationHandler::Guard getGuard() const = 0;
+};
+
+class IBufferVisitor {
+public:
+    virtual ~IBufferVisitor() { }
+    virtual void visit(uint32_t lid, vespalib::ConstBufferRef buffer) = 0;
+};
+
+}

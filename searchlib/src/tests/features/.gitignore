@@ -1,0 +1,11 @@
+.depend
+Makefile
+beta_features_test
+featurebenchmark
+nativerank_test
+prod_features_test
+vlog1.txt
+vlog2.txt
+vlog3.txt
+searchlib_prod_features_test_app
+searchlib_featurebenchmark_app

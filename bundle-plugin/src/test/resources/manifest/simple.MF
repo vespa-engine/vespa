@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven
+Built-By: root
+Build-Jdk: 1.6.0_17
+Bundle-ManifestVersion: 2
+Bundle-Name: com.yahoo.sample.bundle.name
+Bundle-SymbolicName: com.yahoo.sample.symboli.name
+Bundle-Version: 1
+Bundle-Vendor: Yahoo!
+Export-Package: com.yahoo.sample.exported.package;version="1.2.3.sample"

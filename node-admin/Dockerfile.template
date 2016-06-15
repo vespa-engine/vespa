@@ -1,0 +1,36 @@
+# NOTE: Whenever the vespa-base version changes, review pom.xml. A fixed version of vespa-base contains components
+# built from a certain vespa revision, while the docker image you will build with this Dockerfile contains components
+# (i.e. the node-admin jar file) built from HEAD. Since dependencies change over time, there may be mismatches.
+# Therefore, one of the following may be necessary for one or more dependencies in pom.xml:
+# a) Hard-coding a version override.
+# b) Changing a hard-coded version override.
+# c) Removing a hard-coded version override.
+#
+# See build.sh for the meaning of $NODE_ADMIN_FROM_IMAGE.
+FROM $NODE_ADMIN_FROM_IMAGE
+
+# Be aware that this Dockerfile is not being used in any pipelines and has no relation to production environments etc.
+# It is here for developers' convenience - it allows building and experimenting with node-admin locally.
+
+# Things for convenience.
+RUN yum install -y tcpdump
+ADD include/root-bashrc /root/.bashrc
+
+# Override what's in the base image with local versions:
+ADD target/node-admin-jar-with-dependencies.jar $VESPA_HOME/lib/jars/node-admin-jar-with-dependencies.jar
+ADD src/main/application/services.xml $VESPA_HOME/conf/node-admin-app/services.xml
+ADD scripts/configure-container-networking.py $VESPA_HOME/libexec/vespa/node-admin/configure-container-networking.py
+
+# For deploying sample application.
+ADD include/deploy-music-app.sh /usr/local/bin/deploy-music-app.sh
+ADD include/music-on-docker-services.xml $VESPA_HOME/share/vespa/sampleapps/search/music/services.xml
+
+# Entrypoint for running config server in a container.
+ADD include/start-config-server.sh /usr/local/bin/start-config-server.sh
+
+# Included in base image, but here overridden with local modifications.
+# TODO: Update the source instead.
+ADD include/start-services.sh /usr/local/bin/start-services.sh
+
+# Make config-server aware of node flavor 'docker'.
+ADD include/node-flavors.xml $VESPA_HOME/conf/configserver-app/node-flavors.xml

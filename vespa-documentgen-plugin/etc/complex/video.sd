@@ -1,0 +1,49 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search video {
+   document video inherits common {
+      field director type string {
+         bolding: on
+         indexing: index|summary
+      }
+      field disp_actor type string {
+         bolding: on
+         indexing: index|summary
+      }
+      field actor type string {
+         bolding: on
+         indexing: index|summary
+      }
+      field fmt type string {
+         indexing: index|summary
+      }
+      field isbn type string {
+         bolding: on
+         indexing: index|summary
+      }
+      field year type int {
+         indexing: attribute|index|summary
+      }
+   }
+
+   field sw1 type float {
+      indexing {
+        input weight * 6 + input w1 + input w2 | summary;
+      }
+   }
+
+   field didinteger type array<int> {
+      indexing: input did | split " " | for_each { to_int } | attribute
+   }
+
+   rank-profile default {
+      first-phase {
+         expression: nativeRank
+      }
+   }
+   rank-profile rp1 inherits default {
+      #static-rank: weight1
+   }
+   rank-profile rp2 inherits default {
+      #static-rank: weight2
+   }
+}

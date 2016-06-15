@@ -1,0 +1,83 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+
+#include <vespa/fastos/fastos.h>
+#include "request_scheduler.h"
+
+#include <vbench/core/timer.h>
+
+namespace vbench {
+
+void
+RequestScheduler::run()
+{
+    double sleepTime;
+    std::vector<Request::UP> list;
+    vespalib::Thread &thread = vespalib::Thread::currentThread();
+    while (_queue.extract(_timer.sample(), list, sleepTime)) {
+        for (size_t i = 0; i < list.size(); ++i) {
+            Request::UP request = Request::UP(list[i].release());
+            _dispatcher.handle(std::move(request));
+        }
+        list.clear();
+        thread.slumber(sleepTime);
+    }
+}
+
+RequestScheduler::RequestScheduler(Handler<Request> &next, size_t numWorkers)
+    : _timer(),
+      _proxy(next),
+      _queue(10.0, 0.020),
+      _droppedTagger(_proxy),
+      _dispatcher(_droppedTagger),
+      _thread(*this),
+      _connectionPool(_timer),
+      _workers()
+{
+    for (size_t i = 0; i < numWorkers; ++i) {
+        _workers.push_back(std::unique_ptr<Worker>(new Worker(_dispatcher, _proxy, _connectionPool, _timer)));
+    }
+    _dispatcher.waitForThreads(numWorkers, 256);
+}
+
+void
+RequestScheduler::abort()
+{
+    _queue.close();
+    _queue.discard();
+    _thread.stop();
+}
+
+void
+RequestScheduler::handle(Request::UP request)
+{
+    _queue.insert(std::move(request), request->scheduledTime());
+}
+
+void
+RequestScheduler::start()
+{
+    _timer.reset();
+    _thread.start();
+}
+
+RequestScheduler &
+RequestScheduler::stop()
+{
+    _queue.close();
+    _thread.stop();
+    return *this;
+}
+
+void
+RequestScheduler::join()
+{
+    _thread.join();
+    _dispatcher.close();
+    for (size_t i = 0; i < _workers.size(); ++i) {
+        _workers[i]->join();
+    }
+    _proxy.join();
+}
+
+} // namespace vbench

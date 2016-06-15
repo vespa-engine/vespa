@@ -1,0 +1,22 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="MapSourcesToSections" layout="column" description="4 sources are assigned to a section each">
+
+    <section layout="row" description="row 1">
+        <section id="box1"><placeholder id="box1source"/></section>
+        <section id="box2"><placeholder id="box2source"/></section>
+    </section>
+    <section layout="row" description="row 2">
+        <section id="box3"><placeholder id="box3source"/></section>
+        <section id="box4"><placeholder id="box4source"/></section>
+    </section>
+
+    <choice method="myMethod">
+        <map to="box1source box2source box3source box4source">
+            <source name="source1"/>
+            <source name="source2"/>
+            <source name="source3"/>
+            <source name="source4"/>
+        </map>
+    </choice>
+
+</page>

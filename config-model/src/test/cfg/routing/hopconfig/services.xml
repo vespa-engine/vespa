@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+    <admin version="2.0">
+         <adminserver hostalias="node1" />
+    </admin>
+
+    <routing version="1.0">
+        <routingtable protocol="document" verify="false">
+            <hop name="backdoor" selector=
+                    "search/cluster.music/[SearchRow:1]/[SearchColumn:1]/feed-destination">
+                <recipient session="search/cluster.music/r0/c0/feed-destination" />
+                <recipient session="search/cluster.music/r0/c1/feed-destination" />
+                <recipient session="search/cluster.music/r1/c0/feed-destination" />
+                <recipient session="search/cluster.music/r1/c1/feed-destination" />
+                <recipient session="search/cluster.music/r0/c0/feed-destination" />
+                <recipient session="search/cluster.music/r0/c1/feed-destination" />
+                <recipient session="search/cluster.music/r1/c0/feed-destination" />
+                <recipient session="search/cluster.music/r1/c1/feed-destination" />
+            </hop>
+            <hop name="foo" selector="bar" ignore-result="true" />
+        </routingtable>
+    </routing>
+</services>

@@ -1,0 +1,9 @@
+*_benchmark
+*_test
+.depend
+Makefile
+vespalib_slime_binary_format_test_app
+vespalib_slime_inject_test_app
+vespalib_slime_json_format_test_app
+vespalib_slime_test_app
+vespalib_json_slime_benchmark_app

@@ -1,0 +1,11 @@
+#!/bin/sh
+unset VESPA_LOG_TARGET
+CLASSPATH=@PROJECT_BINARY_DIR@/jrt/target/jrt.jar
+CLASSPATH=$CLASSPATH:@PROJECT_BINARY_DIR@/vespajlib/target/vespajlib.jar 
+CLASSPATH=$CLASSPATH:@CMAKE_CURRENT_SOURCE_DIR@/../java/classes
+CLASSPATH=$CLASSPATH:.
+if [ $# -lt 1 ]; then
+  echo "usage: compilejava file ..."
+  exit 1
+fi
+exec javac -classpath $CLASSPATH "$@"

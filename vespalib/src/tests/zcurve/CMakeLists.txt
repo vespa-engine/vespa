@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(vespalib_zcurve_test_app
+    SOURCES
+    zcurve_test.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(NAME vespalib_zcurve_test_app COMMAND vespalib_zcurve_test_app)
+vespa_add_executable(vespalib_zcurve_ranges_test_app
+    SOURCES
+    zcurve_ranges_test.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(NAME vespalib_zcurve_ranges_test_app COMMAND vespalib_zcurve_ranges_test_app)

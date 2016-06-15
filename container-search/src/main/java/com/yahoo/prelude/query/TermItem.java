@@ -1,0 +1,138 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.prelude.query;
+
+
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
+
+import java.nio.ByteBuffer;
+
+
+/**
+ * <p>A query term, that is, not only a term in the query language
+ * (an <i>item</i>), but also a term to be found in (or excluded from)
+ * the search index.</p>
+ *
+ * <p>Optionally, a TermItem may also specify the name of an
+ * index backend to search.</p>
+ *
+ * @author bratseth
+ * @author havardpe
+ */
+public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
+
+    /** Whether the term is from the raw query or is synthetic. */
+    private final boolean isFromQuery;
+
+    /** Whether accent dropping should be performed */
+    private boolean normalizable = true;
+
+    /** The substring which is the raw form of the source of this token, or null if none. */
+    private Substring origin;
+
+    private SegmentingRule segmentingRule = SegmentingRule.LANGUAGE_DEFAULT;
+
+    public TermItem() {
+        this("");
+    }
+
+    public TermItem(String indexName) {
+        this(indexName, false);
+    }
+
+    public TermItem(String indexName, boolean isFromQuery) {
+        this(indexName, isFromQuery, null);
+    }
+
+    protected TermItem(String indexName, boolean isFromQuery, Substring origin) {
+        setIndexName(indexName);
+        this.isFromQuery = isFromQuery;
+        this.origin = origin;
+    }
+
+    final public int encode(ByteBuffer buffer) {
+        encodeThis(buffer);
+        return 1;
+    }
+
+    /** Appends the index prefix if necessary and delegates to the subclass */
+    protected final void appendBodyString(StringBuilder buffer) {
+        appendIndexString(buffer);
+        buffer.append(stringValue());
+    }
+
+    /**
+     * Sets the value of this item from a string.
+     *
+     * @throws UnsupportedOperationException if this is not supported on this kind of item
+     */
+    public abstract void setValue(String value);
+
+    /** Returns the raw form of the text leading to this term, exactly as received, including original casing */
+    public abstract String getRawWord();
+
+    /**
+     * Returns the substring which is the raw form of the text leading to this token. This substring also contains
+     * the superstring this substring was a part of, e.g the whole query string.
+     * If this did not originate directly from a user string, this is null.
+     */
+    public Substring getOrigin() { return origin; }
+
+    /**
+     * Whether this term is from the query or has been added by a searcher.
+     * Only terms from the user should be modified by query rewriters which attempts to improve the
+     * precision or recall of the user's query.
+     */
+    public boolean isFromQuery() { return isFromQuery; }
+
+    public abstract boolean isWords();
+
+    /** Sets the origin of this */
+    public void setOrigin(Substring origin) {
+        this.origin = origin;
+    }
+
+    @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        discloser.addProperty("origin", origin);
+        discloser.setValue(stringValue());
+    }
+
+    @Override
+    public int getTermCount() { return 1; }
+
+    /**
+     * This refers to whether accent removal is a meaningful and possible
+     * operation for this word. It should be named "isTransformable" or similar,
+     * but for historical reasons that is not the case. This method has nothing
+     * to do with Unicode normalization.
+     *
+     * @return true if accent removal can/should be performed
+     */
+    public boolean isNormalizable() {
+        return normalizable;
+    }
+
+    /**
+     * This refers to whether accent removal is a meaningful and possible
+     * operation for this word. It should be named "isTransformable" or similar,
+     * but for historical reasons that is not the case. This method has nothing
+     * to do with Unicode normalization.
+     *
+     * @param normalizable
+     *            set to true if accent removal can/should be performed
+     */
+    public void setNormalizable(boolean normalizable) {
+        this.normalizable = normalizable;
+    }
+
+    @Override
+    public SegmentingRule getSegmentingRule() {
+        return segmentingRule;
+    }
+
+    public void setSegmentingRule(SegmentingRule segmentingRule) {
+        this.segmentingRule = segmentingRule;
+    }
+
+}

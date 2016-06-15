@@ -1,0 +1,145 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/searchlib/attribute/multinumericenumattribute.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/loadednumericvalue.h>
+
+namespace search {
+
+template <typename B, typename M>
+MultiValueNumericEnumAttribute<B, M>::
+MultiValueNumericEnumAttribute(const vespalib::string & baseFileName,
+                               const AttributeVector::Config & cfg)
+    : MultiValueEnumAttribute<B, M>(baseFileName, cfg)
+{
+}
+
+template <typename B, typename M>
+void
+MultiValueNumericEnumAttribute<B, M>::loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues)
+{
+    LoadedVectorR loaded(numValues);
+
+    bool hasWeight(attrReader.hasWeight());
+    for (uint32_t docIdx(0), valueIdx(0); docIdx < numDocs; ++docIdx) {
+        const uint32_t currValueCount = attrReader.getNextValueCount();
+        for (uint32_t subIdx = 0; subIdx < currValueCount; ++subIdx) {
+            loaded[valueIdx]._docId = docIdx;
+            loaded[valueIdx]._idx = subIdx;
+            loaded[valueIdx].setValue(attrReader.getNextData());
+            loaded[valueIdx].setWeight(hasWeight ? attrReader.getNextWeight() : 1);
+            valueIdx++;
+        }
+    }
+
+    attribute::sortLoadedByValue(loaded);
+    this->fillPostings(loaded);
+    loaded.rewind();
+    this->fillEnum(loaded);
+    attribute::sortLoadedByDocId(loaded);
+
+    loaded.rewind();
+    this->fillValues(loaded);
+}
+
+template <typename B, typename M>
+bool
+MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
+                                                       attrReader)
+{
+    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+
+    uint32_t numDocs = attrReader.getNumIdx() - 1;
+    uint64_t numValues = attrReader.getNumValues();
+    uint64_t enumCount = attrReader.getEnumCount();
+    assert(numValues == enumCount);
+    (void) enumCount;
+
+    EnumIndexVector eidxs;
+    this->fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
+    this->setNumDocs(numDocs);
+    this->setCommittedDocIdLimit(numDocs);
+    LoadedEnumAttributeVector loaded;
+    EnumVector enumHist;
+    if (this->hasPostings()) {
+        loaded.reserve(numValues);
+        this->fillEnumIdx(attrReader,
+                          numValues,
+                          eidxs,
+                          loaded);
+    } else {
+        EnumVector(eidxs.size(), 0).swap(enumHist);
+        this->fillEnumIdx(attrReader,
+                          numValues,
+                          eidxs,
+                          enumHist);
+    }
+    EnumIndexVector().swap(eidxs);
+    if (this->hasPostings()) {
+        if (numDocs > 0) {
+            this->onAddDoc(numDocs - 1);
+        }
+        attribute::sortLoadedByEnum(loaded);
+        this->fillPostingsFixupEnum(loaded);
+    } else {
+        this->fixupEnumRefCounts(enumHist);
+    }
+    return true;
+}
+
+
+template <typename B, typename M>
+bool
+MultiValueNumericEnumAttribute<B, M>::onLoad()
+{
+    AttributeReader attrReader(*this);
+    bool ok(attrReader.getHasLoadData());
+
+    if (!ok)
+        return false;
+
+    this->setCreateSerialNum(attrReader.getCreateSerialNum());
+
+    if (attrReader.getEnumerated())
+        return onLoadEnumerated(attrReader);
+    
+    size_t numDocs = attrReader.getNumIdx() - 1;
+    uint32_t numValues = attrReader.getNumValues();
+
+    this->setNumDocs(numDocs);
+    this->setCommittedDocIdLimit(numDocs);
+    if (numDocs > 0) {
+        this->onAddDoc(numDocs - 1);
+    }
+    loadAllAtOnce(attrReader, numDocs, numValues);
+
+    return true;
+}
+
+template <typename B, typename M>
+AttributeVector::SearchContext::UP
+MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
+                                                const AttributeVector::SearchContext::Params & params) const
+{
+    (void) params;
+    QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
+    if (this->hasArrayType()) {
+        if (res.isEqual()) {
+            return AttributeVector::SearchContext::UP(new ArraySearchContext(std::move(qTerm), *this));
+        } else {
+            return AttributeVector::SearchContext::UP(new ArraySearchContext(std::move(qTerm), *this));
+        }
+    } else {
+        if (res.isEqual()) {
+            return AttributeVector::SearchContext::UP(new SetSearchContext(std::move(qTerm), *this));
+        } else {
+            return AttributeVector::SearchContext::UP(new SetSearchContext(std::move(qTerm), *this));
+        }
+    }
+}
+
+
+} // namespace search
+

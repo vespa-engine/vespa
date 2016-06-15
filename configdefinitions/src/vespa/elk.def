@@ -1,0 +1,24 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config
+
+# elasticsearch: for future use
+elasticsearch[].host string
+
+# Port 0 (default) means use the Defaults web service port
+elasticsearch[].port int default=0
+
+# logstash forwarder
+logstash.network.servers[].host string
+logstash.network.servers[].port int default=5043
+logstash.network.timeout int default=15
+logstash.files[].paths[] string
+logstash.files[].fields{} string
+
+# A relative path will be prepended by vespa home.
+# An absolute path will be used as-is.
+logstash.config_file string default="conf/logstash-forwarder/config.json"
+
+logstash.source_field string default="index_source"
+logstash.spool_size int default=100
+# Note: verbose=true actually means "not noisy" in the forwarder
+logstash.forwarder_command_line_params string default = "-verbose=true"

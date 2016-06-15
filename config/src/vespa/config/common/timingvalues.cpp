@@ -1,0 +1,54 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @author  Gunnar Gauslaa Bergem
+ * @date    2008-05-22
+ * @version $Id: timingvalues.cpp 119439 2011-04-19 09:32:27Z arnej $
+ */
+
+#include <vespa/fastos/fastos.h>
+#include "timingvalues.h"
+
+namespace config {
+
+TimingValues::TimingValues()
+    : successTimeout(600000),
+      errorTimeout(25000),
+      initialTimeout(15000),
+      subscribeTimeout(DEFAULT_SUBSCRIBE_TIMEOUT),
+      fixedDelay(5000),
+      successDelay(250),
+      unconfiguredDelay(1000),
+      configuredErrorDelay(15000),
+      maxDelayMultiplier(10),
+      transientDelay(10000),
+      fatalDelay(60000)
+{
+}
+
+
+TimingValues::TimingValues(uint64_t initSuccessTimeout,
+                           uint64_t initErrorTimeout,
+                           uint64_t initInitialTimeout,
+                           uint64_t initSubscribeTimeout,
+                           uint64_t initFixedDelay,
+                           uint64_t initSuccessDelay,
+                           uint64_t initUnconfiguredDelay,
+                           uint64_t initConfiguredErrorDelay,
+                           unsigned int initMaxDelayMultiplier,
+                           uint64_t initTransientDelay,
+                           uint64_t initFatalDelay)
+    : successTimeout(initSuccessTimeout),
+      errorTimeout(initErrorTimeout),
+      initialTimeout(initInitialTimeout),
+      subscribeTimeout(initSubscribeTimeout),
+      fixedDelay(initFixedDelay),
+      successDelay(initSuccessDelay),
+      unconfiguredDelay(initUnconfiguredDelay),
+      configuredErrorDelay(initConfiguredErrorDelay),
+      maxDelayMultiplier(initMaxDelayMultiplier),
+      transientDelay(initTransientDelay),
+      fatalDelay(initFatalDelay)
+{
+}
+
+}

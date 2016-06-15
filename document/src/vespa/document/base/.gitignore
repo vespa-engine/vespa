@@ -1,0 +1,8 @@
+*.So
+.*.swp
+.depend
+Makefile
+config-documentmanager.cpp
+config-documentmanager.h
+config-documentselectconfig.cpp
+config-documentselectconfig.h

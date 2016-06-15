@@ -1,0 +1,47 @@
+{
+  "states": {
+    "provisioned": {
+      "url": "http://localhost:8080/nodes/v2/state/provisioned",
+      "nodes": [
+        @include(node7.json)
+      ]
+    },
+    "ready": {
+      "url": "http://localhost:8080/nodes/v2/state/ready",
+      "nodes": [
+      ]
+    },
+    "reserved": {
+      "url": "http://localhost:8080/nodes/v2/state/reserved",
+      "nodes": [
+        @include(node10.json),
+        @include(node4.json)
+      ]
+    },
+    "active": {
+      "url": "http://localhost:8080/nodes/v2/state/active",
+      "nodes": [
+        @include(node6.json),
+        @include(node3.json),
+        @include(node2.json),
+        @include(node1.json)
+      ]
+    },
+    "inactive": {
+      "url": "http://localhost:8080/nodes/v2/state/inactive",
+      "nodes": [
+      ]
+    },
+    "dirty": {
+      "url": "http://localhost:8080/nodes/v2/state/dirty",
+      "nodes": [
+      ]
+    },
+    "failed": {
+      "url": "http://localhost:8080/nodes/v2/state/failed",
+      "nodes": [
+        @include(node5.json)
+      ]
+    }
+  }
+}

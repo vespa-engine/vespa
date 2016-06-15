@@ -1,0 +1,1 @@
+Selector 'bar/[baz]/cox' does not match recipient 'cox/0/bar' in hop 'foo' in routing table 'document'.

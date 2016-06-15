@@ -1,0 +1,40 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Do update the qrs-start script with the new version if you update this.
+namespace=search.config
+
+## Server or client VM
+jvm.server bool default=true restart
+
+## Debug logging of Garbage Collection
+jvm.verbosegc bool default=false restart
+
+## Garbage Collection tuning parameters
+jvm.gcopts string default="" restart
+
+## Heap size (in megabytes) for the Java VM
+jvm.heapsize int default=1536 restart
+
+## Stack size (in kilobytes)
+jvm.stacksize int default=512 restart
+
+## Base value of maximum direct memory size (in megabytes)
+jvm.baseMaxDirectMemorySize int default=75 restart
+
+## Amount of direct memory used for caching. (in megabytes)
+jvm.directMemorySizeCache int default=0 restart
+
+## Set heap size as this percentage of available RAM, instead of absolute
+## value above. Setting outside [1, 99] disables this setting.
+jvm.heapSizeAsPercentageOfPhysicalMemory int default=0 restart
+
+## Extra environment variables
+qrs.env string default="YELL_MA_EURO=INXIGHT" restart
+
+## Set ulimit -v in start script? this is mainly a safeguard against JNI stuff leaking memory.
+ulimitv string default="" restart
+
+## Extra class path entries, forwarded to jdisc_start. Overrides the corresponding env setting.
+jdisc.classpath_extra string default="" restart
+
+## Extra export packages entries, forwarded to jdisc_start. Overrides the corresponding env setting.
+jdisc.export_packages string default="" restart

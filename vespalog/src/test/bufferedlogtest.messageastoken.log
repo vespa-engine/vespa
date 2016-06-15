@@ -1,0 +1,21 @@
+0.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Starting up, using logfile bufferedlogtest.log
+200.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 0
+200.000002	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 1
+200.000004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 2
+200.000006	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 3
+200.000008	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 4
+200.000010	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 5
+200.000012	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 6
+200.000014	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 7
+200.000016	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 8
+200.000018	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 9
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 0 (Repeated 19 times since 200.000000)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 1 (Repeated 19 times since 200.000002)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 2 (Repeated 19 times since 200.000004)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 3 (Repeated 19 times since 200.000006)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 4 (Repeated 19 times since 200.000008)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 5 (Repeated 19 times since 200.000010)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 6 (Repeated 19 times since 200.000012)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 7 (Repeated 19 times since 200.000014)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 8 (Repeated 19 times since 200.000016)
+200.000200	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 9 (Repeated 19 times since 200.000018)

@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(vespamalloc_doubledelete_test_app
+    SOURCES
+    doubledelete.cpp
+    DEPENDS
+)
+vespa_add_test(NAME vespamalloc_doubledelete_test_app NO_VALGRIND COMMAND sh doubledelete_test.sh)
+vespa_add_executable(vespamalloc_expectsignal_app
+    SOURCES
+    expectsignal.cpp
+    DEPENDS
+)

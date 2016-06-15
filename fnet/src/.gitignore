@@ -1,0 +1,10 @@
+*.dsp
+Makefile.ini
+config_command.sh
+fnet.mak
+project.dsw
+xsync.log
+/gen
+/app_base.info
+/app_test.info
+/app_total.info

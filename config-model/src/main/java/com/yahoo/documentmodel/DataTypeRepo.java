@@ -1,0 +1,58 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.documentmodel;
+
+import com.yahoo.document.DataType;
+
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ */
+public class DataTypeRepo implements DataTypeCollection {
+    Map<Integer, DataType> typeById = new LinkedHashMap<>();
+    Map<String, DataType> typeByName = new LinkedHashMap<>();
+
+    public DataType getDataType(String name) {
+        return typeByName.get(name);
+    }
+
+    public DataType getDataType(int id) {
+        return typeById.get(id);
+    }
+
+    public Collection<DataType> getTypes() { return typeById.values(); }
+
+    public DataTypeRepo add(DataType type) {
+        if (typeByName.containsKey(type.getName()) ||
+            typeById.containsKey(type.getId()))
+        {
+            throw new IllegalStateException("Data type '" + type.getName() + "', id '" + type.getId() + "' is already registered.");
+        }
+        typeByName.put(type.getName(), type);
+        typeById.put(type.getId(), type);
+        return this;
+    }
+
+    public DataTypeRepo addAll(DataTypeCollection repo) {
+        for (DataType dataType : repo.getTypes()) {
+            add(dataType);
+        }
+        return this;
+    }
+
+    public DataTypeRepo replace(DataType type) {
+        if (!typeByName.containsKey(type.getName()) ||
+            !typeById.containsKey(type.getId()))
+        {
+            throw new IllegalStateException("Data type '" + type.getName() + "' is not registered.");
+        }
+        typeByName.remove(type.getName());
+        typeByName.put(type.getName(), type);
+        typeById.remove(type.getId());
+        typeById.put(type.getId(), type);
+        return this;
+    }
+
+}

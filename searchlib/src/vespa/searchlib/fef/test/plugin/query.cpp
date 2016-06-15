@@ -1,0 +1,46 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.query");
+
+#include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <sstream>
+#include "query.h"
+
+namespace search {
+namespace fef {
+namespace test {
+
+QueryBlueprint::QueryBlueprint() :
+    Blueprint("test_query"),
+    _key()
+{
+    // empty
+}
+
+bool
+QueryBlueprint::setup(const IIndexEnvironment &indexEnv, const StringVector &params)
+{
+    (void) indexEnv;
+    if (params.size() != 1) {
+        return false;
+    }
+    _key = params[0];
+    describeOutput("value", "the parameter looked up in the rank properties and converted to a float");
+    return true;
+}
+
+FeatureExecutor::LP
+QueryBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+{
+    std::vector<feature_t> values;
+    std::string val = queryEnv.getProperties().lookup(_key).get("0.0");
+    values.push_back(strtod(val.data(), NULL));
+    return FeatureExecutor::LP(new search::features::ValueExecutor(values));
+}
+
+} // namespace test
+} // namespace fef
+} // namespace search

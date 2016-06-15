@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search ngram {
+
+  document ngram {
+
+    field gram_1 type string {
+      indexing: index | summary
+      summary: dynamic
+      match {
+        gram
+        gram-size:1
+      }
+    }
+
+    field gram_2 type string {
+      indexing: index
+      match: gram     # gram-size 2 is default
+      # index-to: gram_2, default
+    }
+
+    field gram_3 type string {
+      indexing: index
+      match {
+        gram
+        gram-size: 3
+      }
+      # index-to: gram_3, default
+    }
+
+  }
+
+}

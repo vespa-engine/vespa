@@ -1,0 +1,11 @@
+*.So
+*.core
+*.so
+.*.swp
+.config.log
+.depend
+Makefile
+test.vlog
+testrunner
+/mbusprot.4.2.serialization.HEAD
+/mbusprot.5.0.serialization.5.1

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+  <jdisc version="1.0">
+
+    <search>
+      <chain id="default" inherits="vespa"/>
+      <provider id="bar" type="local" cluster="foo">
+          <searcher id="MockResultSearcher" class="com.yahoo.application.MockResultSearcher"/>
+      </provider>
+    </search>
+
+      <!-- TODO ..
+      <document-processing>
+          <chain id="default">
+              <documentprocessor id="TestDocProc" class="com.yahoo.application.TestDocProc">
+                  <config name="foo.something">
+                      <variable>value</variable>
+                  </config>
+              </documentprocessor>
+          </chain>
+      </document-processing>
+      -->
+
+  </jdisc>
+
+  <content version="1.0" id="foo">
+    <redundancy>2</redundancy>
+    <documents>
+      <document type="mydoc" mode="index"/>
+    </documents>
+    <nodes>
+      <node hostalias="node1" distribution-key="1"/>
+    </nodes>
+  </content>
+
+</services>

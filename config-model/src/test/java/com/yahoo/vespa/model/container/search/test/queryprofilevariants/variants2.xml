@@ -1,0 +1,11 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="variants2">
+    <dimensions>x</dimensions>
+    <field name="c">c-df</field>
+    <query-profile for="x1">
+        <field name="c">x1.c</field>
+    </query-profile>
+    <query-profile for="x2">
+        <field name="c">x2.c</field>
+    </query-profile>
+</query-profile>

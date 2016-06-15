@@ -1,0 +1,1 @@
+../../../vespalib/src/vespa/vespalib/testkit/testrun.sh

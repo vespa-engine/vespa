@@ -1,0 +1,57 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/util/linkedptr.h>
+#include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/fnet/fnet.h>
+
+namespace vespalib {
+
+class TimerTask;
+
+/**
+ * Timer is a class capable of running Tasks at a regular
+ * interval. The timer can be reset to clear all tasks currently being
+ * scheduled.
+ */
+class Timer
+{
+private:
+    typedef std::unique_ptr<TimerTask> TimerTaskPtr;
+    typedef std::vector<TimerTaskPtr> TaskList;
+    FastOS_ThreadPool _threadPool;
+    std::unique_ptr<FNET_Transport> _transport;
+    vespalib::Lock _lock;
+    TaskList _taskList;
+
+public:
+    /**
+     * Create a new timer, capable of scheduling tasks at fixed intervals.
+     */
+    Timer();
+
+    /**
+     * Destroys this timer, finishing the current task executing and then
+     * finishing.
+     */
+    ~Timer();
+
+    /**
+     * Schedule new task to be executed at specified intervals.
+     *
+     * @param task The task to schedule.
+     * @param delay The delay to wait before first execution.
+     * @param interval The interval in seconds.
+     */
+    void scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, double interval);
+
+    /**
+     * Reset timer, clearing the list of task to execute.
+     */
+    void reset();
+};
+
+}
+

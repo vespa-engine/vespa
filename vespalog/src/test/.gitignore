@@ -1,0 +1,14 @@
+.depend
+Makefile
+bufferedlogskiptest
+bufferedlogskiptest.log
+bufferedlogtest
+bufferedlogtest.log
+empty.*
+logtest
+testthreads
+vespa.log
+/rejectfiltertest
+vespalog_bufferedlogskiptest_app
+vespalog_bufferedlogtest_app
+vespalog_rejectfiltertest_app

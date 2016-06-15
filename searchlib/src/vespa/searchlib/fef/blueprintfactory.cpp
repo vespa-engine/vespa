@@ -1,0 +1,49 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.blueprintfactory");
+#include "blueprintfactory.h"
+
+namespace search {
+namespace fef {
+
+BlueprintFactory::BlueprintFactory()
+    : _blueprintMap()
+{
+}
+
+void
+BlueprintFactory::addPrototype(Blueprint::SP proto)
+{
+    vespalib::string name = proto->getBaseName();
+    if (_blueprintMap.find(name) != _blueprintMap.end()) {
+        LOG(warning, "Blueprint prototype overwritten: %s", name.c_str());
+    }
+    _blueprintMap[name] = proto;
+}
+
+void
+BlueprintFactory::visitDumpFeatures(const IIndexEnvironment &indexEnv,
+                                    IDumpFeatureVisitor &visitor) const
+{
+    BlueprintMap::const_iterator itr = _blueprintMap.begin();
+    BlueprintMap::const_iterator end = _blueprintMap.end();
+    for (; itr != end; ++itr) {
+        itr->second->visitDumpFeatures(indexEnv, visitor);
+    }
+}
+
+Blueprint::SP
+BlueprintFactory::createBlueprint(const vespalib::string &name) const
+{
+    BlueprintMap::const_iterator itr = _blueprintMap.find(name);
+    if (itr == _blueprintMap.end()) {
+        return Blueprint::SP();
+    }
+    Blueprint::UP bp = itr->second->createInstance();
+    return Blueprint::SP(bp.release());
+}
+
+} // namespace fef
+} // namespace search

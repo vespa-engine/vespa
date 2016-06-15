@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+  <com.yahoo.vespa.model.test.SimplePlugin version="1.0">
+    <simpleservice hostalias="host1" />
+    <simpleservice hostalias="host1" />
+    <simpleservice hostalias="host1" baseport="9000" />
+
+    <!-- Conflicts with the previous service -->
+    <simpleservice hostalias="host1" baseport="9000" />
+
+    <!-- Conflicts with the first service, because of getWantedPort() -->
+    <simpleservice hostalias="host1" baseport="10000" />
+
+    <!-- Above the dynamic port range -->
+    <simpleservice hostalias="host1" baseport="20000" />
+
+  </com.yahoo.vespa.model.test.SimplePlugin>
+</services>

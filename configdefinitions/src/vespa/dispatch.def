@@ -1,0 +1,14 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Configuration of dispatch from container nodes to search clusters
+
+namespace=vespa.config.search
+
+# The unique key of a search node
+node[].key int
+
+# The host name of this search node
+node[].host string
+
+# The port of this search node
+node[].port int
+

@@ -1,0 +1,7 @@
+/.depend
+/Makefile
+/rpc-method-list
+/rpc_info
+/tstdst
+slobrok_rpc_info_app
+slobrok_tstdst_app

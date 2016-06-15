@@ -1,0 +1,3 @@
+Makefile
+.depend
+libfsa*.so.*

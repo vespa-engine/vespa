@@ -1,0 +1,16 @@
+*.So
+*.core
+.*.swp
+.config.log
+.depend
+Makefile
+cpp-globalids.txt
+indexdir
+mmapbuffertestfile.txt
+mmapq_test
+mytestfile
+mytestfile_clear
+test.vlog
+testrunner
+*_test
+document_testrunner_app

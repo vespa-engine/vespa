@@ -1,0 +1,27 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search gemini {
+
+    document gemini {
+    }
+
+    rank-profile test {
+
+        macro wrapper2(x) {
+            expression: x
+        }
+
+		macro wrapper1(x) {
+			expression: wrapper2(x)
+		}
+
+        macro toplevel() {
+            expression: wrapper1(attribute(right))
+        }
+
+        macro interfering() {
+            expression: wrapper1(attribute(wrong))
+        }
+
+    }
+
+}

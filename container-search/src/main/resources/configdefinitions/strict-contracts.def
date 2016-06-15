@@ -1,0 +1,22 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=2
+namespace=search.federation
+
+## A config to control whether to activate strict adherence to public contracts
+## in the container. Usually, the container tries to do a best effort of hiding
+## some undesirable effects of the the public contracts. Modifying this config
+## signals the basic contract is sufficient, and allows the container to
+## activate optimizations based on this knowledge.
+
+## Strict contracts for search chains, do not clone the query if it at all
+## can be construed to be unnecessary.
+searchchains bool default=false
+
+# WARNING: Beta feature, might be removed soon.
+# Propagate source.(sourceName).{QueryProperties.PER_SOURCE_QUERY_PROPERTIES} and
+#           provider.(providerName).{QueryProperties.PER_SOURCE_QUERY_PROPERTIES}
+# to the outgoing query.
+# All means all in QueryProperties.PER_SOURCE_QUERY_PROPERTIES
+# OFFSET_HITS means  {Query.HITS, Query.OFFSET}
+# NONE means {}
+propagateSourceProperties enum {ALL, OFFSET_HITS, NONE} default=ALL

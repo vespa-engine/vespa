@@ -1,0 +1,7 @@
+*.So
+*_test
+*_benchmark
+.depend
+Makefile
+document_documentid_test_app
+document_documentid_benchmark_app

@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Project-name: @PROJECT_NAME@
+Version: @VERSION@
+Creation-time: @NOW@
+

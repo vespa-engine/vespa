@@ -1,0 +1,5 @@
+*_test
+*_app
+.depend
+Makefile
+log

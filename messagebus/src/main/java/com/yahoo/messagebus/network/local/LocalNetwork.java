@@ -1,0 +1,198 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.messagebus.network.local;
+
+import com.yahoo.component.Vtag;
+import com.yahoo.jrt.slobrok.api.IMirror;
+import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.Routable;
+import com.yahoo.messagebus.TraceNode;
+import com.yahoo.messagebus.network.Network;
+import com.yahoo.messagebus.network.NetworkOwner;
+import com.yahoo.messagebus.network.ServiceAddress;
+import com.yahoo.messagebus.routing.RoutingNode;
+import com.yahoo.text.Utf8String;
+
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import static com.yahoo.messagebus.ErrorCode.NO_ADDRESS_FOR_SERVICE;
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ */
+public class LocalNetwork implements Network {
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final LocalWire wire;
+    private final String hostId;
+    private volatile NetworkOwner owner;
+
+    public LocalNetwork(final LocalWire wire) {
+        this.wire = wire;
+        this.hostId = wire.newHostId();
+    }
+
+    @Override
+    public boolean waitUntilReady(final double seconds) {
+        return true;
+    }
+
+    @Override
+    public void attach(final NetworkOwner owner) {
+        this.owner = owner;
+    }
+
+    @Override
+    public void registerSession(final String session) {
+        wire.registerService(hostId + "/" + session, this);
+    }
+
+    @Override
+    public void unregisterSession(final String session) {
+        wire.unregisterService(hostId + "/" + session);
+    }
+
+    @Override
+    public boolean allocServiceAddress(final RoutingNode recipient) {
+        final String service = recipient.getRoute().getHop(0).getServiceName();
+        final ServiceAddress address = wire.resolveServiceAddress(service);
+        if (address == null) {
+            recipient.setError(new Error(NO_ADDRESS_FOR_SERVICE, "No address for service '" + service + "'."));
+            return false;
+        }
+        recipient.setServiceAddress(address);
+        return true;
+    }
+
+    @Override
+    public void freeServiceAddress(final RoutingNode recipient) {
+        recipient.setServiceAddress(null);
+    }
+
+    @Override
+    public void send(final Message msg, final List<RoutingNode> recipients) {
+        for (final RoutingNode recipient : recipients) {
+            new MessageEnvelope(this, msg, recipient).send();
+        }
+    }
+
+    private void receiveLater(final MessageEnvelope envelope) {
+        final byte[] payload = envelope.sender.encode(envelope.msg.getProtocol(), envelope.msg);
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                final Message msg = decode(envelope.msg.getProtocol(), payload, Message.class);
+                msg.getTrace().setLevel(envelope.msg.getTrace().getLevel());
+                msg.setRoute(envelope.msg.getRoute()).getRoute().removeHop(0);
+                msg.setRetryEnabled(envelope.msg.getRetryEnabled());
+                msg.setRetry(envelope.msg.getRetry());
+                msg.setTimeRemaining(envelope.msg.getTimeRemainingNow());
+                msg.pushHandler(new ReplyHandler() {
+
+                    @Override
+                    public void handleReply(final Reply reply) {
+                        new ReplyEnvelope(LocalNetwork.this, envelope, reply).send();
+                    }
+                });
+                owner.deliverMessage(msg, LocalServiceAddress.class.cast(envelope.recipient.getServiceAddress())
+                                                                   .getSessionName());
+            }
+        });
+    }
+
+    private void receiveLater(final ReplyEnvelope envelope) {
+        final byte[] payload = envelope.sender.encode(envelope.reply.getProtocol(), envelope.reply);
+        executor.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                final Reply reply = decode(envelope.reply.getProtocol(), payload, Reply.class);
+                reply.setRetryDelay(envelope.reply.getRetryDelay());
+                reply.getTrace().getRoot().addChild(TraceNode.decode(envelope.reply.getTrace().getRoot().encode()));
+                for (int i = 0, len = envelope.reply.getNumErrors(); i < len; ++i) {
+                    final Error error = envelope.reply.getError(i);
+                    reply.addError(new Error(error.getCode(),
+                                             error.getMessage(),
+                                             error.getService() != null ? error.getService() : envelope.sender.hostId));
+                }
+                owner.deliverReply(reply, envelope.parent.recipient);
+            }
+        });
+    }
+
+    private byte[] encode(final Utf8String protocolName, final Routable toEncode) {
+        if (toEncode.getType() == 0) {
+            return new byte[0];
+        }
+        return owner.getProtocol(protocolName).encode(Vtag.currentVersion, toEncode);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Routable> T decode(final Utf8String protocolName, final byte[] toDecode, final Class<T> clazz) {
+        if (toDecode.length == 0) {
+            return clazz.cast(new EmptyReply());
+        }
+        return clazz.cast(owner.getProtocol(protocolName).decode(Vtag.currentVersion, toDecode));
+    }
+
+    @Override
+    public void sync() {
+
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
+
+    @Override
+    public String getConnectionSpec() {
+        return hostId;
+    }
+
+    @Override
+    public IMirror getMirror() {
+        return wire;
+    }
+
+    private static class MessageEnvelope {
+
+        final LocalNetwork sender;
+        final Message msg;
+        final RoutingNode recipient;
+
+        MessageEnvelope(final LocalNetwork sender, final Message msg, final RoutingNode recipient) {
+            this.sender = sender;
+            this.msg = msg;
+            this.recipient = recipient;
+        }
+
+        void send() {
+            LocalServiceAddress.class.cast(recipient.getServiceAddress())
+                                     .getNetwork().receiveLater(this);
+        }
+    }
+
+    private static class ReplyEnvelope {
+
+        final LocalNetwork sender;
+        final MessageEnvelope parent;
+        final Reply reply;
+
+        ReplyEnvelope(final LocalNetwork sender, final MessageEnvelope parent, final Reply reply) {
+            this.sender = sender;
+            this.parent = parent;
+            this.reply = reply;
+        }
+
+        void send() {
+            parent.sender.receiveLater(this);
+        }
+    }
+}

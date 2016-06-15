@@ -1,0 +1,4 @@
+.depend
+Makefile
+memory_test
+vespalib_memory_test_app

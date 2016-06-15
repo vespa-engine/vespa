@@ -1,0 +1,58 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+service.attlist &= attribute hostalias { xsd:NCName }
+service.attlist &= attribute baseport { xsd:unsignedShort }?
+service.attlist &= attribute jvmargs { text }?
+# preload is for internal use only
+service.attlist &= attribute preload { text }?
+
+anyElement = element * {
+   (attribute * { text }
+    | text
+    | anyElement)*
+}
+
+# Valid qualified java class name. See http://docs.oracle.com/javase/specs/jls/se8/html/jls-3.html#jls-3.8
+JavaId = xsd:string { pattern = "([a-zA-Z_$][a-zA-Z\d_$]*\.)*[a-zA-Z_$][a-zA-Z\d_$]*" }
+
+Nodes = element nodes {
+    attribute count { xsd:positiveInteger } &
+    attribute flavor { xsd:string }? &
+    attribute docker-image { xsd:string }?
+}
+
+OptionalDedicatedNodes = element nodes {
+    attribute count { xsd:positiveInteger } &
+    attribute flavor { xsd:string }? &
+    attribute docker-image { xsd:string }? &
+    attribute dedicated { xsd:boolean }?
+}
+
+GenericConfig = element config {
+    attribute name { text },
+    attribute namespace { text }?,
+    attribute version { text }?,
+    anyElement +
+}
+
+ComponentSpec =
+    ( attribute id { xsd:Name | JavaId } | attribute idref { xsd:Name } | attribute ident { xsd:Name } )
+
+ComponentId =
+    ComponentSpec
+
+BundleSpec =
+    attribute class { xsd:Name | JavaId }? &
+    attribute bundle { xsd:Name }?
+
+Component = element component {
+   ComponentDefinition
+}
+
+ComponentDefinition =
+   ComponentId &
+   BundleSpec &
+   GenericConfig* &
+   Component*
+
+
+

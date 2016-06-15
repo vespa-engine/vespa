@@ -1,0 +1,6 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+. primetime notime . -> primetime in no time;
+. primetime . -> primetime in no time;
+. prime time in no time . -> primetime in no time;
+. prime time . -> primetime in no time;
+. pint . -> primetime in no time;

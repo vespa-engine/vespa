@@ -1,0 +1,2 @@
+tests/hello-world
+tests/lowercasing

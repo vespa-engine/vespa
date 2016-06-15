@@ -1,0 +1,227 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.document;
+
+import com.yahoo.compress.CompressionType;
+import com.yahoo.document.annotation.AbstractTypesTest;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.serialization.*;
+import com.yahoo.io.GrowableByteBuffer;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Tests serialization of all versions.
+ * <p/>
+ * This test tests serialization and deserialization of documents of all
+ * supported types.
+ * <p/>
+ * Serialization is only supported in newest format. Deserialization should work
+ * for all formats supported, but only the part that makes sense in the new
+ * format. Thus, if new format deprecates a datatype, that datatype, when
+ * serializing old versions, must either just be dropped or converted.
+ * <p/>
+ * Thus, we create document type programmatically, because all old versions need
+ * to make sense with current config.
+ * <p/>
+ * When we create a document programmatically. This is serialized into current
+ * version files. When altering the format, after the alteration, copy the
+ * current version files to a specific version file and add those to list of
+ * files this test checks.
+ * <p/>
+ * When adding new fields to the documents, use the version tagged with each
+ * file to ignore these field for old types.
+ *
+ * @author arnej27959
+ */
+public class DocumentSerializationTestCase extends AbstractTypesTest {
+
+    @Test
+    public void testSerializationAllVersions() throws IOException {
+
+        DocumentType docInDocType = new DocumentType("docindoc");
+        docInDocType.addField(new Field("stringindocfield", DataType.STRING, false));
+
+        DocumentType docType = new DocumentType("serializetest");
+        docType.addField(new Field("floatfield", DataType.FLOAT, true));
+        docType.addField(new Field("stringfield", DataType.STRING, true));
+        docType.addField(new Field("longfield", DataType.LONG, true));
+        docType.addField(new Field("urifield", DataType.URI, true));
+        docType.addField(new Field("intfield", DataType.INT, false));
+        docType.addField(new Field("rawfield", DataType.RAW, false));
+        docType.addField(new Field("doublefield", DataType.DOUBLE, false));
+        docType.addField(new Field("bytefield", DataType.BYTE, false));
+        DataType arrayOfFloatDataType = new ArrayDataType(DataType.FLOAT);
+        docType.addField(new Field("arrayoffloatfield", arrayOfFloatDataType, false));
+        DataType arrayOfArrayOfFloatDataType = new ArrayDataType(arrayOfFloatDataType);
+        docType.addField(new Field("arrayofarrayoffloatfield", arrayOfArrayOfFloatDataType, false));
+        docType.addField(new Field("docfield", DataType.DOCUMENT, false));
+        DataType weightedSetDataType = DataType.getWeightedSet(DataType.STRING, false, false);
+        docType.addField(new Field("wsfield", weightedSetDataType, false));
+
+        DocumentTypeManager docMan = new DocumentTypeManager();
+        docMan.register(docInDocType);
+        docMan.register(docType);
+
+        String path = "src/test/serializeddocuments/";
+
+        {
+            Document doc = new Document(docType, "doc:serializetest:http://test.doc.id/");
+            doc.setFieldValue("intfield", 5);
+            doc.setFieldValue("floatfield", -9.23);
+            doc.setFieldValue("stringfield", "This is a string.");
+            doc.setFieldValue("longfield", new LongFieldValue(398420092938472983l));
+            doc.setFieldValue("doublefield", new DoubleFieldValue(98374532.398820));
+            doc.setFieldValue("bytefield", new ByteFieldValue(254));
+            byte[] rawData = "RAW DATA".getBytes();
+            assertEquals(8, rawData.length);
+            doc.setFieldValue(docType.getField("rawfield"),new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
+            Document docInDoc = new Document(docInDocType, "doc:serializetest:http://doc.in.doc/");
+            docInDoc.setFieldValue("stringindocfield", "Elvis is dead");
+            doc.setFieldValue(docType.getField("docfield"), docInDoc);
+            Array<FloatFieldValue> floatArray = new Array<>(arrayOfFloatDataType);
+            floatArray.add(new FloatFieldValue(1.0f));
+            floatArray.add(new FloatFieldValue(2.0f));
+            doc.setFieldValue("arrayoffloatfield", floatArray);
+            WeightedSet<StringFieldValue> weightedSet = new WeightedSet<>(weightedSetDataType);
+            weightedSet.put(new StringFieldValue("Weighted 0"), 50);
+            weightedSet.put(new StringFieldValue("Weighted 1"), 199);
+            doc.setFieldValue("wsfield", weightedSet);
+
+            CompressionConfig noncomp = new CompressionConfig();
+            CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
+            {
+                doc.getDataType().getHeaderType().setCompressionConfig(noncomp);
+                doc.getDataType().getBodyType().setCompressionConfig(noncomp);
+                FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-uncompressed.dat", false);
+                doc.serialize(fout);
+                fout.close();
+            }
+            {
+                doc.getDataType().getHeaderType().setCompressionConfig(lz4comp);
+                doc.getDataType().getBodyType().setCompressionConfig(lz4comp);
+                FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-lz4-9.dat", false);
+                doc.serialize(fout);
+                doc.getDataType().getHeaderType().setCompressionConfig(noncomp);
+                doc.getDataType().getBodyType().setCompressionConfig(noncomp);
+                fout.close();
+            }
+        }
+
+        class TestDoc {
+
+            String testFile;
+            int version;
+
+            TestDoc(String testFile, int version) {
+                this.testFile = testFile;
+                this.version = version;
+            }
+        }
+
+        String cpppath = "src/tests/data/";
+
+        List<TestDoc> tests = new ArrayList<>();
+        tests.add(new TestDoc(path + "document-java-currentversion-uncompressed.dat",
+                              Document.SERIALIZED_VERSION));
+        tests.add(new TestDoc(path + "document-java-currentversion-lz4-9.dat",
+                              Document.SERIALIZED_VERSION));
+        tests.add(new TestDoc(path + "document-java-v8-uncompressed.dat", 8));
+        tests.add(new TestDoc(cpppath + "document-cpp-currentversion-uncompressed.dat", 7));
+        tests.add(new TestDoc(cpppath + "document-cpp-currentversion-lz4-9.dat", 7));
+        tests.add(new TestDoc(cpppath + "document-cpp-v8-uncompressed.dat", 7));
+        tests.add(new TestDoc(cpppath + "document-cpp-v7-uncompressed.dat", 7));
+        tests.add(new TestDoc(cpppath + "serializev6.dat", 6));
+        for (TestDoc test : tests) {
+            File f = new File(test.testFile);
+            FileInputStream fin = new FileInputStream(f);
+            byte[] buffer = new byte[(int)f.length()];
+            int pos = 0;
+            int remaining = buffer.length;
+            while (remaining > 0) {
+                int read = fin.read(buffer, pos, remaining);
+                assertFalse(read == -1);
+                pos += read;
+                remaining -= read;
+            }
+            System.err.println("Checking doc from file " + test.testFile);
+
+            Document doc = new Document(DocumentDeserializerFactory.create42(docMan, GrowableByteBuffer.wrap(buffer)));
+
+            System.err.println("Id: " + doc.getId());
+
+            assertEquals(new IntegerFieldValue(5), doc.getFieldValue("intfield"));
+            assertEquals(-9.23, ((FloatFieldValue)doc.getFieldValue("floatfield")).getFloat(), 1E-6);
+            assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
+            assertEquals(new LongFieldValue(398420092938472983l), doc.getFieldValue("longfield"));
+            assertEquals(98374532.398820, ((DoubleFieldValue)doc.getFieldValue("doublefield")).getDouble(), 1E-6);
+            assertEquals(new ByteFieldValue((byte)254),
+                         doc.getFieldValue("bytefield"));
+            ByteBuffer bbuffer = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer();
+            if (!Arrays.equals("RAW DATA".getBytes(), bbuffer.array())) {
+                System.err.println("Expected 'RAW DATA' but got '"
+                                   + new String(bbuffer.array()) + "'.");
+                assertTrue(false);
+            }
+            if (test.version > 6) {
+                Document docInDoc = (Document)doc.getFieldValue("docfield");
+                assertTrue(docInDoc != null);
+                assertEquals(new StringFieldValue("Elvis is dead"),
+                             docInDoc.getFieldValue("stringindocfield"));
+            }
+            Array array = (Array)doc.getFieldValue("arrayoffloatfield");
+            assertTrue(array != null);
+            assertEquals(1.0f, ((FloatFieldValue)array.get(0)).getFloat(), 1E-6);
+            assertEquals(2.0f, ((FloatFieldValue)array.get(1)).getFloat(), 1E-6);
+            WeightedSet wset = (WeightedSet)doc.getFieldValue("wsfield");
+            assertTrue(wset != null);
+            assertEquals(Integer.valueOf(50), wset.get(new StringFieldValue("Weighted 0")));
+            assertEquals(Integer.valueOf(199), wset.get(new StringFieldValue("Weighted 1")));
+        }
+    }
+
+    @Test
+    public void testSerializeDeserializeWithAnnotations() throws IOException {
+        Document doc = new Document(docType, "doc:foo:bar");
+
+        doc.setFieldValue("age", (byte)123);
+        doc.setFieldValue("story", getAnnotatedString());
+        doc.setFieldValue("date", 13829297);
+        doc.setFieldValue("friend", 2384L);
+
+        GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
+        DocumentSerializer serializer = DocumentSerializerFactory.create42(buffer);
+        serializer.write(doc);
+        buffer.flip();
+
+        FileOutputStream fos = new FileOutputStream("src/tests/data/serializejavawithannotations.dat");
+        fos.write(buffer.array(), 0, buffer.limit());
+        fos.close();
+
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+        Document doc2 = new Document(deserializer);
+
+        assertEquals(doc, doc2);
+        assertNotSame(doc, doc2);
+    }
+}

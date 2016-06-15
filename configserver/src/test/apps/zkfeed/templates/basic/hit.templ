@@ -1,0 +1,5 @@
+<hit relevancy="$relevancy">
+#foreach( $key in $hit.getPropertyKeySet() )
+  <field name='$key'>$hit.getPropertyXML($key)</field>
+#end
+</hit>

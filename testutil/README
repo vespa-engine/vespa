@@ -1,0 +1,1 @@
+Module for shared Java test utilities that require a compile scope dependency on Junit.

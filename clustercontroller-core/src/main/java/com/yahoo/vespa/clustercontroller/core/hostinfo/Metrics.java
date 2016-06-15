@@ -1,0 +1,59 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.clustercontroller.core.hostinfo;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Keeper for Metrics for HostInfo.
+ * @author dybdahl
+ */
+public class Metrics {
+
+    public List<Metric> getValues() { return Collections.unmodifiableList(metricsList); }
+
+    public static class Metric {
+        private final String name;
+        private final Value value;
+
+        public Metric(
+                @JsonProperty("name") String name,
+                @JsonProperty("values") Value value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getName() { return name; }
+        public Value getValue() { return value; }
+    }
+
+    public static class Value {
+
+        private final Long last;
+        private final Double average;
+        private final Long count;
+
+        public Value(
+                @JsonProperty("average") Double average,
+                @JsonProperty("count") Long count,
+                @JsonProperty("rate") Double rate,
+                @JsonProperty("min") Long min,
+                @JsonProperty("max") Long max,
+                @JsonProperty("last") Long last) {
+            this.last = last;
+            this.average = average;
+            this.count = count;
+        }
+
+        public Long getLast() { return last; }
+        public Double getAverage() { return average; }
+        public Long getCount() { return count; }
+    }
+
+    // We initialize it in case the metrics is missing in the JSON.
+    @JsonProperty("values")
+    private ArrayList<Metric> metricsList = new ArrayList<>();
+}

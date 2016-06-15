@@ -1,0 +1,16 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="variants1">
+    <dimensions>x,y</dimensions>
+    <field name="a">a-deflt</field>
+    <query-profile for="x1,y1" inherits="variants2 wparent2">
+        <field name="a">x1.y1.a</field>
+        <field name="b">x1.y1.b</field>
+    </query-profile>
+    <query-profile for="x1">
+        <field name="a">x1.y?.a</field>
+    </query-profile>
+    <query-profile for="*,y1">
+        <field name="a">x?.y1.a</field>
+        <field name="toVariants2"><ref>variants2</ref></field>
+    </query-profile>    
+</query-profile>

@@ -1,0 +1,3 @@
+tests/config_status
+tests/model_inspect
+tests/tags

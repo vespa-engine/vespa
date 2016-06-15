@@ -1,0 +1,16 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="SourceParameters">
+    <source name="source1">
+        <parameter name="p1">source1p1Value</parameter>
+        <parameter name="p2">source1p2Value</parameter>
+    </source>
+    <choice>
+        <source name="source2">
+            <parameter name="p1">source2p1Value</parameter>
+            <parameter name="p3">source2p3Value</parameter>
+        </source>
+        <source name="source3">
+            <parameter name="p1">source3p1Value</parameter>
+        </source>
+    </choice>
+</page>

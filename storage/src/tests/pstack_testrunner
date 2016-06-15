@@ -1,0 +1,14 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my @pids = `ps auxww | grep "./testrunner" | grep -v grep`;
+foreach (@pids) {
+    s/^\S+\s+(\d+)\s+.*$/$1/;
+    chomp;
+}
+
+foreach my $pid (@pids) {
+    my $cmd = "pstack $pid";
+    system($cmd) == 0 or die "Failed to run '$cmd'";
+}

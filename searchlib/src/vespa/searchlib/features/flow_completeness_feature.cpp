@@ -1,0 +1,309 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".features.flowcompleteness");
+#include "flow_completeness_feature.h"
+#include <vespa/vespalib/stllike/hash_map.h>
+
+namespace search {
+namespace features {
+
+//-----------------------------------------------------------------------------
+
+FlowCompletenessExecutor::FlowCompletenessExecutor(const search::fef::IQueryEnvironment &env,
+                                                   const FlowCompletenessParams &params)
+    : _params(params),
+      _terms(),
+      _queue(),
+      _sumTermWeight(0)
+{
+    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
+        LOG(spam, "consider term %u", i);
+        const search::fef::ITermData *termData = env.getTerm(i);
+        LOG(spam, "term %u weight %u", i, termData->getWeight().percent());
+        if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
+            typedef search::fef::ITermFieldRangeAdapter FRA;
+            uint32_t j = 0;
+            for (FRA iter(*termData); iter.valid(); iter.next()) {
+                const search::fef::ITermFieldData &tfd = iter.get();
+                LOG(spam, "term %u field data %u for field id %u (my field id %u)",
+                    i, j++, tfd.getFieldId(), _params.fieldId);
+                if (tfd.getFieldId() == _params.fieldId) {
+                    int termWeight = termData->getWeight().percent();
+                    _sumTermWeight += termWeight;
+                    _terms.push_back(Term(tfd.getHandle(), termWeight));
+                }
+            }
+        }
+    }
+    LOG(spam, "added %zu terms", _terms.size());
+}
+
+typedef std::vector<uint32_t> TermIdxList;
+typedef std::vector<uint32_t> PosList;
+
+typedef vespalib::hash_map<uint32_t, uint32_t> TermIdxMap;
+
+struct State {
+    int       elementWeight;
+    uint32_t  elementLength;
+    uint32_t  matchedTerms;
+    int       sumTermWeight;
+
+    std::vector<PosList> positionsForTerm;
+    uint32_t             posLimit;
+    PosList              matchedPosForTerm;
+    TermIdxMap           matchedTermForPos; // maps pos -> term
+
+    double    score;
+    double    flow;
+    feature_t completeness;
+    feature_t fieldCompleteness;
+    feature_t queryCompleteness;
+
+    State(int weight, uint32_t length)
+        : elementWeight(weight), elementLength(length),
+          matchedTerms(0), sumTermWeight(0),
+          posLimit(0),
+          score(0.0), flow(0.0),
+          completeness(0.0), fieldCompleteness(0.0), queryCompleteness(0.0) {}
+
+    void addMatch(int termWeight) {
+        ++matchedTerms;
+        sumTermWeight += termWeight;
+    }
+
+    struct Path {
+        std::vector<uint32_t> path;
+        bool operator< (const Path& other) const {
+            return path.size() < other.path.size();
+        }
+    };
+
+    Path bfs(vespalib::PriorityQueue<Path> &queue)
+    {
+        TermIdxList seen(matchedTerms, 0);
+        while (!queue.empty()) {
+            Path firstP = queue.front();
+            queue.pop_front();
+            uint32_t startTerm = firstP.path.back();
+            seen[startTerm] = 1;
+            PosList &edges = positionsForTerm[startTerm];
+            for (size_t j = 0; j < edges.size(); ++j) {
+                Path nextP = firstP;
+                uint32_t pos = edges[j];
+                nextP.path.push_back(pos);
+                TermIdxMap::const_iterator it = matchedTermForPos.find(pos);
+                if (it == matchedTermForPos.end()) {
+                    return nextP;
+                } else {
+                    uint32_t nextTerm = it->second;
+                    if (seen[nextTerm] == 0) {
+                        seen[nextTerm] = 1;
+                        nextP.path.push_back(nextTerm);
+                        queue.push(nextP);
+                    }
+                }
+            }
+        }
+        return Path();
+    }
+
+    int findMatches() {
+        vespalib::PriorityQueue<Path> q;
+
+        for (size_t i = 0; i < matchedTerms; ++i) {
+            if (matchedPosForTerm[i] == IllegalPosId) {
+                Path p;
+                p.path.push_back(i);
+                q.push(p);
+            }
+        }
+        if (q.empty()) {
+            return 0;
+        }
+        Path p = bfs(q);
+        if (p.path.size() == 0) {
+            return 0;
+        }
+        while (p.path.size() > 1) {
+            uint32_t pos = p.path.back();
+            assert(pos < posLimit);
+            p.path.pop_back();
+            uint32_t tix = p.path.back();
+            assert(tix < matchedTerms);
+            p.path.pop_back();
+            matchedTermForPos[pos] = tix;
+            matchedPosForTerm[tix] = pos;
+        }
+        assert(p.path.size() == 0);
+        return 1;
+    }
+
+    int findSimpleMatches() {
+        int found = 0;
+        for (size_t tix = 0; tix < matchedTerms; ++tix) {
+            assert(matchedPosForTerm[tix] == IllegalPosId);
+            assert(positionsForTerm[tix].size() > 0);
+            uint32_t pos = positionsForTerm[tix][0];
+            assert(pos < posLimit);
+
+            TermIdxMap::const_iterator it = matchedTermForPos.find(pos);
+            if (it == matchedTermForPos.end()) {
+                ++found;
+                matchedTermForPos[pos] = tix;
+                matchedPosForTerm[tix] = pos;
+            }
+        }
+        return found;
+    }
+
+    void calculateScore(uint32_t queryTerms, double factor) {
+        matchedPosForTerm.resize(matchedTerms, IllegalPosId);
+        int more = findSimpleMatches();
+        flow += more;
+        while ((more = findMatches()) > 0) {
+            flow += more;
+        }
+        queryCompleteness = (flow / (double)queryTerms);
+        fieldCompleteness = (flow / (double)elementLength);
+        completeness = (fieldCompleteness * factor) +
+                       (queryCompleteness * (1 - factor));
+        score = completeness * (double)sumTermWeight;
+    }
+};
+
+
+void
+FlowCompletenessExecutor::execute(search::fef::MatchData &data)
+{
+    assert(_queue.empty());
+    for (size_t i = 0; i < _terms.size(); ++i) {
+        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms[i].termHandle);
+        Item item(i, tfmd->begin(), tfmd->end());
+        LOG(spam, "found tfmd item with %zu positions", (item.end - item.pos));
+        if (item.pos != item.end) {
+            _queue.push(item);
+        }
+    }
+    State best(0, 0);
+    while (!_queue.empty()) {
+        Item &start = _queue.front();
+        uint32_t elementId = start.elemId;
+        LOG_ASSERT(start.pos != start.end);
+        State state(start.pos->getElementWeight(), start.pos->getElementLen());
+
+        while (!_queue.empty() && _queue.front().elemId == elementId) {
+            Item &item = _queue.front();
+
+            // update state
+            state.positionsForTerm.push_back(PosList());
+            while (item.pos != item.end && item.pos->getElementId() == elementId) {
+                uint32_t pos = item.pos->getPosition();
+                state.positionsForTerm.back().push_back(pos);
+                state.posLimit = std::max(state.posLimit, pos + 1);
+                ++item.pos;
+            }
+            state.addMatch(_terms[item.termIdx].termWeight);
+
+            // adjust item and its place in queue
+            if (item.pos == item.end) {
+                _queue.pop_front();
+            } else {
+                item.elemId = item.pos->getElementId();
+                _queue.adjust();
+            }
+        }
+        state.calculateScore(_terms.size(), _params.fieldCompletenessImportance);
+        if (state.score > best.score) {
+            best = state;
+        }
+    }
+    *data.resolveFeature(outputs()[0]) = best.completeness;
+    *data.resolveFeature(outputs()[1]) = best.fieldCompleteness;
+    *data.resolveFeature(outputs()[2]) = best.queryCompleteness;
+    *data.resolveFeature(outputs()[3]) = best.elementWeight;
+    *data.resolveFeature(outputs()[4]) = _params.fieldWeight;
+    *data.resolveFeature(outputs()[5]) = best.flow;
+
+}
+
+//-----------------------------------------------------------------------------
+
+FlowCompletenessBlueprint::FlowCompletenessBlueprint()
+    : Blueprint("flowCompleteness"),
+      _output(),
+      _params()
+{
+    _output.push_back("completeness");
+    _output.push_back("fieldCompleteness");
+    _output.push_back("queryCompleteness");
+    _output.push_back("elementWeight");
+    _output.push_back("weight");
+    _output.push_back("flow");
+}
+
+void
+FlowCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
+                                             search::fef::IDumpFeatureVisitor &visitor) const
+{
+#ifdef notyet
+    for (uint32_t i = 0; i < env.getNumFields(); ++i) {
+        const search::fef::FieldInfo &field = *env.getField(i);
+        if (field.type() == search::fef::FieldType::INDEX) {
+            if (!field.isFilter()) {
+                search::fef::FeatureNameBuilder fnb;
+                fnb.baseName(getBaseName()).parameter(field.name());
+                for (size_t out = 0; out < _output.size(); ++out) {
+                    visitor.visitDumpFeature(fnb.output(_output[out]).buildName());
+                }
+            }
+        }
+    }
+#else
+    (void)env;
+    (void)visitor;
+#endif
+}
+
+search::fef::Blueprint::UP
+FlowCompletenessBlueprint::createInstance() const
+{
+    return Blueprint::UP(new FlowCompletenessBlueprint());
+}
+
+bool
+FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
+                                 const search::fef::ParameterList &params)
+{
+    const search::fef::FieldInfo *field = params[0].asField();
+
+    _params.fieldId = field->id();
+    const search::fef::Properties &lst = env.getProperties();
+    search::fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
+    if (obj.found()) {
+        _params.fieldCompletenessImportance = atof(obj.get().c_str());
+    }
+    _params.fieldWeight = search::fef::indexproperties::FieldWeight::lookup(lst, field->name());
+
+    describeOutput(_output[0], "combined completeness for best scored element");
+    describeOutput(_output[1], "best scored element completeness");
+    describeOutput(_output[2], "query completeness for best scored element");
+    describeOutput(_output[3], "element weight of best scored element");
+    describeOutput(_output[4], "field weight");
+    describeOutput(_output[5], "query terms matching in best element (measured by flow)");
+    env.hintFieldAccess(field->id());
+    return true;
+}
+
+search::fef::FeatureExecutor::LP
+FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+{
+    return search::fef::FeatureExecutor::LP(new FlowCompletenessExecutor(env, _params));
+}
+
+//-----------------------------------------------------------------------------
+
+} // namespace features
+} // namespace search

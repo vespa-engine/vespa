@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+searchlib_equiv_test_app

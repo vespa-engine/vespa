@@ -1,0 +1,38 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <iosfwd>
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/storageapi/buckets/bucketinfo.h>
+#include <vespa/storageapi/messageapi/returncode.h>
+#include <vespa/storageapi/defs.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/vespalib/stllike/string.h>
+
+namespace storage {
+
+struct Types {
+    typedef document::BucketId BucketId;
+    typedef document::Document Document;
+    typedef vespalib::LinkedPtr<Document> DocLP;
+    typedef document::DocumentId DocumentId;
+    typedef document::GlobalId GlobalId;
+    typedef framework::MicroSecTime Timestamp;
+    typedef Timestamp RevertToken;
+    typedef vespalib::string String;
+    typedef api::BucketInfo BucketInfo;
+    typedef api::ReturnCode ReturnCode;
+    typedef StorBucketDatabase::WrappedEntry BucketDBEntry;
+
+    static const framework::MicroSecTime MAX_TIMESTAMP;
+    static const framework::MicroSecTime UNSET_TIMESTAMP;
+
+protected:
+    ~Types() {} // Noone should refer to objects as Types objects
+};
+
+} // storage
+

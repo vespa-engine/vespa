@@ -1,0 +1,69 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_define_module(
+    DEPENDS
+    vespadefaults
+    storageapi
+    fastos
+    fastlib_fast
+    metrics
+    config_cloudconfig
+    configdefinitions
+    vespalog
+    messagebus
+    documentapi
+    document
+    vespalib
+    vdslib
+    persistence
+    storageframework
+
+    EXTERNAL_DEPENDS
+    Judy
+
+    LIBS
+    src/vespa/storage
+    src/vespa/storage/bucketdb
+    src/vespa/storage/bucketmover
+    src/vespa/storage/common
+    src/vespa/storage/common/hostreporter
+    src/vespa/storage/config
+    src/vespa/storage/distributor
+    src/vespa/storage/distributor/bucketdb
+    src/vespa/storage/distributor/maintenance
+    src/vespa/storage/distributor/operations
+    src/vespa/storage/distributor/operations/external
+    src/vespa/storage/distributor/operations/idealstate
+    src/vespa/storage/frameworkimpl/component
+    src/vespa/storage/frameworkimpl/memory
+    src/vespa/storage/frameworkimpl/status
+    src/vespa/storage/frameworkimpl/thread
+    src/vespa/storage/persistence
+    src/vespa/storage/persistence/filestorage
+    src/vespa/storage/storageserver
+    src/vespa/storage/storageutil
+    src/vespa/storage/tools
+    src/vespa/storage/visiting
+
+    TEST_DEPENDS
+    messagebus_messagebus-test
+    vdstestlib
+    atomic
+
+    TEST_EXTERNAL_DEPENDS
+    cppunit
+
+    TESTS
+    src/tests
+    src/tests/bucketdb
+    src/tests/bucketmover
+    src/tests/common
+    src/tests/common/hostreporter
+    src/tests/distributor
+    src/tests/frameworkimpl/memory
+    src/tests/frameworkimpl/status
+    src/tests/persistence
+    src/tests/persistence/filestorage
+    src/tests/storageserver
+    src/tests/storageutil
+    src/tests/visiting
+)

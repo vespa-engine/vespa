@@ -1,0 +1,20 @@
+vbench is a flexible framework used to benchmark HTTP server
+performance.
+
+TODO
+
+* support multiple request dimensions with separate analyze chains.
+
+* log information for different dimensions to different files.
+
+* save failed requests to disk.
+
+* enable/disable keep-alive per request.
+
+* save selected responses to disk.
+
+* support 'real-time' query log replay (need format).
+
+* tag all components in model with unique names.
+
+* support external get/set of selected values.

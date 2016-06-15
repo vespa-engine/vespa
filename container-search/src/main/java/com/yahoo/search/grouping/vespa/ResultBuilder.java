@@ -1,0 +1,353 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.grouping.vespa;
+
+import com.yahoo.search.grouping.Continuation;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.result.*;
+import com.yahoo.search.grouping.result.Group;
+import com.yahoo.search.result.Relevance;
+import com.yahoo.searchlib.aggregation.*;
+import com.yahoo.searchlib.expression.*;
+
+import java.util.*;
+
+/**
+ * This class implements the necessary logic to build a {@link RootGroup} from a list of {@link Grouping} objects. It is
+ * used by the {@link GroupingExecutor}.
+ *
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+class ResultBuilder {
+
+    private final CompositeContinuation continuation = new CompositeContinuation();
+    private RootGroup root;
+    private GroupListBuilder rootBuilder;
+    private HitConverter hitConverter;
+    private GroupingTransform transform;
+
+    /**
+     * Sets the id of the {@link GroupingRequest} that this builder is creating the result for.
+     *
+     * @param requestId The id of the corresponding GroupingRequest.
+     * @return This, to allow chaining.
+     */
+    public ResultBuilder setRequestId(int requestId) {
+        root = new RootGroup(requestId, continuation);
+        rootBuilder = new GroupListBuilder(ResultId.valueOf(requestId), 0, true, true);
+        return this;
+    }
+
+    /**
+     * Sets the transform that details how the result should be built.
+     *
+     * @param transform The transform to set.
+     * @return This, to allow chaining.
+     */
+    public ResultBuilder setTransform(GroupingTransform transform) {
+        this.transform = transform;
+        return this;
+    }
+
+    /**
+     * Sets the converts that details how hits are converted.
+     *
+     * @param hitConverter The converter to set.
+     * @return This, to allow chaining.
+     */
+    public ResultBuilder setHitConverter(HitConverter hitConverter) {
+        this.hitConverter = hitConverter;
+        return this;
+    }
+
+    /**
+     * Adds a grouping result to this transform. This method will recurse through the given object and retrieve all the
+     * information it needs to produce the desired result when calling {@link #build()}.
+     *
+     * @param executionResult The grouping result to process.
+     */
+    public void addGroupingResult(Grouping executionResult) {
+        executionResult.unifyNull();
+        rootBuilder.addGroup(executionResult.getRoot());
+    }
+
+    /**
+     * Returns the root {@link RootGroup} that was created when {@link #build()} was called.
+     *
+     * @return The root that was built.
+     */
+    public RootGroup getRoot() {
+        return root;
+    }
+
+    /**
+     * Returns the {@link Continuation} that would recreate the exact same result as this. It is not complete until
+     * {@link #build()} has been called.
+     *
+     * @return The continuation of this result.
+     */
+    public Continuation getContinuation() {
+        return continuation;
+    }
+
+    /**
+     * Constructs the grouping result tree that corresponds to the parameters given to this builder. This method might
+     * fail due to unsupported constructs in the results, in which case an exception is thrown.
+     *
+     * @throws UnsupportedOperationException Thrown if the grouping result contains unsupported constructs.
+     */
+    public void build() {
+        int numChildren = rootBuilder.childGroups.size();
+        if (numChildren != 1) {
+            throw new UnsupportedOperationException("Expected 1 group, got " + numChildren + ".");
+        }
+        rootBuilder.childGroups.get(0).fill(root);
+    }
+
+    private class GroupBuilder {
+
+        boolean [] results = new boolean[8];
+        GroupListBuilder [] childLists = new GroupListBuilder[8];
+        int childCount = 0;
+        final ResultId resultId;
+        final com.yahoo.searchlib.aggregation.Group group;
+        final boolean stable;
+
+        GroupBuilder(ResultId resultId, com.yahoo.searchlib.aggregation.Group group, boolean stable) {
+            this.resultId = resultId;
+            this.group = group;
+            this.stable = stable;
+        }
+
+        Group build(double relevance) {
+            return fill(new Group(newGroupId(group), new Relevance(relevance)));
+        }
+
+        Group fill(Group group) {
+            for (AggregationResult res : this.group.getAggregationResults()) {
+                int tag = res.getTag();
+                if (res instanceof HitsAggregationResult) {
+                    group.add(newHitList(group.size(), tag, (HitsAggregationResult)res));
+                } else {
+                    String label = transform.getLabel(res.getTag());
+                    if (label != null) {
+                        group.setField(label, newResult(res, tag));
+                    }
+                }
+            }
+            for (GroupListBuilder child : childLists) {
+                if (child != null) {
+                    group.add(child.build());
+                }
+            }
+            return group;
+        }
+
+        GroupListBuilder getOrCreateChildList(int tag, boolean ranked) {
+            int index = tag + 1; // Add 1 to avoid the dreaded -1 default value.
+            if (index >= childLists.length) {
+                childLists = Arrays.copyOf(childLists, tag + 8);
+            }
+            GroupListBuilder ret = childLists[index];
+            if (ret == null) {
+                ret = new GroupListBuilder(resultId.newChildId(childCount), tag, stable, ranked);
+                childLists[index] = ret;
+                childCount++;
+            }
+            return ret;
+        }
+
+        void merge(com.yahoo.searchlib.aggregation.Group group) {
+            for (AggregationResult res : group.getAggregationResults()) {
+                int tag = res.getTag() + 1; // Add 1 due to dreaded -1 initialization as default.
+                if (tag >= results.length) {
+                    results = Arrays.copyOf(results, tag+8);
+                }
+                if ( ! results[tag] ) {
+                    this.group.getAggregationResults().add(res);
+                    results[tag] = true;
+                }
+            }
+        }
+
+        GroupId newGroupId(com.yahoo.searchlib.aggregation.Group execGroup) {
+            ResultNode res = execGroup.getId();
+            if (res instanceof FloatResultNode) {
+                return new DoubleId(res.getFloat());
+            } else if (res instanceof IntegerResultNode) {
+                return new LongId(res.getInteger());
+            } else if (res instanceof NullResultNode) {
+                return new NullId();
+            } else if (res instanceof RawResultNode) {
+                return new RawId(res.getRaw());
+            } else if (res instanceof StringResultNode) {
+                return new StringId(res.getString());
+            } else if (res instanceof FloatBucketResultNode) {
+                FloatBucketResultNode bucketId = (FloatBucketResultNode)res;
+                return new DoubleBucketId(bucketId.getFrom(), bucketId.getTo());
+            } else if (res instanceof IntegerBucketResultNode) {
+                IntegerBucketResultNode bucketId = (IntegerBucketResultNode)res;
+                return new LongBucketId(bucketId.getFrom(), bucketId.getTo());
+            } else if (res instanceof StringBucketResultNode) {
+                StringBucketResultNode bucketId = (StringBucketResultNode)res;
+                return new StringBucketId(bucketId.getFrom(), bucketId.getTo());
+            } else if (res instanceof RawBucketResultNode) {
+                RawBucketResultNode bucketId = (RawBucketResultNode)res;
+                return new RawBucketId(bucketId.getFrom(), bucketId.getTo());
+            } else {
+                throw new UnsupportedOperationException(res.getClass().getName());
+            }
+        }
+
+        Object newResult(ExpressionNode execResult, int tag) {
+            if (execResult instanceof AverageAggregationResult) {
+                return ((AverageAggregationResult)execResult).getAverage().getNumber();
+            } else if (execResult instanceof CountAggregationResult) {
+                return ((CountAggregationResult)execResult).getCount();
+            } else if (execResult instanceof ExpressionCountAggregationResult) {
+                long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
+                return correctExpressionCountEstimate(count, tag);
+            } else if (execResult instanceof MaxAggregationResult) {
+                return ((MaxAggregationResult)execResult).getMax().getValue();
+            } else if (execResult instanceof MinAggregationResult) {
+                return ((MinAggregationResult)execResult).getMin().getValue();
+            } else if (execResult instanceof SumAggregationResult) {
+                return ((SumAggregationResult)execResult).getSum().getValue();
+            } else if (execResult instanceof XorAggregationResult) {
+                return ((XorAggregationResult)execResult).getXor();
+            } else {
+                throw new UnsupportedOperationException(execResult.getClass().getName());
+            }
+        }
+
+        private long correctExpressionCountEstimate(long count, int tag) {
+            int actualGroupCount = group.getChildren().size();
+            // Use actual group count if estimate differ. If max is present, only use actual group count if less than max.
+            // NOTE: If the actual group count is 0, estimate is also 0.
+            if (actualGroupCount > 0 && count != actualGroupCount) {
+                if (transform.getMax(tag + 1) == 0 || transform.getMax(tag + 1) > actualGroupCount) {
+                    return actualGroupCount;
+                }
+            }
+            return count;
+        }
+
+
+        HitList newHitList(int listIdx, int tag, HitsAggregationResult execResult) {
+            HitList hitList = new HitList(transform.getLabel(tag));
+            List<Hit> hits = execResult.getHits();
+            PageInfo page = new PageInfo(resultId.newChildId(listIdx), tag, stable, hits.size());
+            for (int i = page.firstEntry; i < page.lastEntry; ++i) {
+                hitList.add(hitConverter.toSearchHit(execResult.getSummaryClass(), hits.get(i)));
+            }
+            page.putContinuations(hitList.continuations());
+            return hitList;
+        }
+    }
+
+    private class GroupListBuilder {
+
+        final Map<ResultNode, GroupBuilder> childResultGroups = new HashMap<>();
+        final List<GroupBuilder> childGroups = new ArrayList<>();
+        final ResultId resultId;
+        final int tag;
+        final boolean stable;
+        final boolean stableChildren;
+        final boolean ranked;
+
+        GroupListBuilder(ResultId resultId, int tag, boolean stable, boolean ranked) {
+            this.resultId = resultId;
+            this.tag = tag;
+            this.stable = stable;
+            this.stableChildren = stable && transform.isStable(resultId);
+            this.ranked = ranked;
+        }
+
+        GroupList build() {
+            PageInfo page = new PageInfo(resultId, tag, stable, childGroups.size());
+            GroupList groupList = new GroupList(transform.getLabel(tag));
+            for (int i = page.firstEntry; i < page.lastEntry; ++i) {
+                GroupBuilder child = childGroups.get(i);
+                groupList.add(child.build(ranked ? child.group.getRank() :
+                                          (double)(page.lastEntry - i) / (page.lastEntry - page.firstEntry)));
+            }
+            page.putContinuations(groupList.continuations());
+            return groupList;
+        }
+
+        void addGroup(com.yahoo.searchlib.aggregation.Group execGroup) {
+            GroupBuilder groupBuilder = getOrCreateGroup(execGroup);
+            if (!execGroup.getChildren().isEmpty()) {
+                boolean ranked = execGroup.getChildren().get(0).isRankedByRelevance();
+                execGroup.sortChildrenByRank();
+                for (com.yahoo.searchlib.aggregation.Group childGroup : execGroup.getChildren()) {
+                    GroupListBuilder childList = groupBuilder.getOrCreateChildList(childGroup.getTag(), ranked);
+                    childList.addGroup(childGroup);
+                }
+            }
+        }
+
+        GroupBuilder getOrCreateGroup(com.yahoo.searchlib.aggregation.Group execGroup) {
+            ResultNode res = execGroup.getId();
+            GroupBuilder ret = childResultGroups.get(res);
+            if (ret != null) {
+                ret.merge(execGroup);
+            } else {
+                ret = new GroupBuilder(resultId.newChildId(childResultGroups.size()), execGroup, stableChildren);
+                childResultGroups.put(res, ret);
+                childGroups.add(ret);
+            }
+            return ret;
+        }
+    }
+
+    private class PageInfo {
+
+        final ResultId resultId;
+        final int tag;
+        final int max;
+        final int numEntries;
+        final int firstEntry;
+        final int lastEntry;
+
+        PageInfo(ResultId resultId, int tag, boolean stable, int numEntries) {
+            this.resultId = resultId;
+            this.tag = tag;
+            this.numEntries = numEntries;
+            max = transform.getMax(tag);
+            if (max > 0) {
+                firstEntry = stable ? transform.getOffset(resultId) : 0;
+                lastEntry = Math.min(numEntries, firstEntry + max);
+            } else {
+                firstEntry = 0;
+                lastEntry = numEntries;
+            }
+        }
+
+        void putContinuations(Map<String, Continuation> out) {
+            if (max > 0) {
+                if (firstEntry > 0) {
+                    continuation.add(new OffsetContinuation(resultId, tag, firstEntry, 0));
+
+                    int prevPage = Math.max(0, Math.min(firstEntry, lastEntry) - max);
+                    out.put(Continuation.PREV_PAGE, new OffsetContinuation(resultId, tag, prevPage,
+                                                                           OffsetContinuation.FLAG_UNSTABLE));
+                }
+                if (lastEntry < numEntries) {
+                    out.put(Continuation.NEXT_PAGE, new OffsetContinuation(resultId, tag, lastEntry,
+                                                                           OffsetContinuation.FLAG_UNSTABLE));
+                }
+            }
+        }
+    }
+
+    /**
+     * Defines a helper interface to convert Vespa style grouping hits into corresponding instances of {@link Hit}. It
+     * is an interface to simplify testing.
+     *
+     * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+     */
+    public interface HitConverter {
+
+        public com.yahoo.search.result.Hit toSearchHit(String summaryClass, com.yahoo.searchlib.aggregation.Hit hit);
+    }
+}

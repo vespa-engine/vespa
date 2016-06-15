@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+searchlib_simple_phrase_test_app

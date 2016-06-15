@@ -1,0 +1,9 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <config name="config.simpletypes">
+        <intval>1337</intval>
+    </config>
+    <admin version="2.0">
+        <adminserver hostalias="node0" />
+    </admin>
+</services>

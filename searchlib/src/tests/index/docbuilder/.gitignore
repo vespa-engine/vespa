@@ -1,0 +1,5 @@
+*_test
+.depend
+Makefile
+docbuilder_test
+searchlib_docbuilder_test_app

@@ -1,0 +1,186 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.prelude.query.parser;
+
+import com.yahoo.prelude.query.*;
+import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.parser.ParserEnvironment;
+
+import java.util.Iterator;
+
+import static com.yahoo.prelude.query.parser.Token.Kind.MINUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
+
+/**
+ * Parser for queries of type all.
+ *
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ */
+public class AllParser extends SimpleParser {
+
+    public AllParser(ParserEnvironment environment) {
+        super(environment);
+    }
+
+    protected Item parseItems() {
+        int position = tokens.getPosition();
+        try {
+            return parseItemsBody();
+        } finally {
+            tokens.setPosition(position);
+        }
+    }
+
+    protected Item parseItemsBody() {
+        // Algorithm: Collect positive, negative, and and'ed items, then combine.
+        AndItem and=null;
+        NotItem not=null; // Store negatives here as we go
+        Item current;
+
+        // Find all items
+        do {
+            current=negativeItem();
+            if (current!=null) {
+                not=addNot(current,not);
+                continue;
+            }
+
+            current=positiveItem();
+            if (current==null)
+                current = indexableItem();
+            if (current == null)
+                current = compositeItem();
+
+            if (current!=null)
+                and=addAnd(current,and);
+
+            if (current == null)
+                tokens.skip();
+        } while (tokens.hasNext());
+
+        // Combine the items
+        Item topLevel=and;
+
+        if (not!=null && topLevel!=null) {
+            not.setPositiveItem(topLevel);
+            topLevel=not;
+        }
+
+        return simplifyUnnecessaryComposites(topLevel);
+    }
+
+    // Simplify if there are unnecessary composites due to single elements
+    protected final Item simplifyUnnecessaryComposites(Item item) {
+        if (item == null) return null;
+
+        QueryTree root = new QueryTree(item);
+        QueryCanonicalizer.canonicalize(root);
+
+        return root.getRoot() instanceof NullItem ? null : root.getRoot();
+    }
+
+    protected AndItem addAnd(Item item,AndItem and) {
+        if (and==null)
+            and=new AndItem();
+        and.addItem(item);
+        return and;
+    }
+
+    protected OrItem addOr(Item item,OrItem or) {
+        if (or==null)
+            or=new OrItem();
+        or.addItem(item);
+        return or;
+    }
+
+    protected NotItem addNot(Item item,NotItem not) {
+        if (not==null)
+            not=new NotItem();
+        not.addNegativeItem(item);
+        return not;
+    }
+
+    protected Item negativeItem() {
+        int position = tokens.getPosition();
+        Item item = null;
+        try {
+            if (!tokens.skipMultiple(MINUS)) return null;
+
+            if (tokens.currentIsNoIgnore(SPACE)) return null;
+
+            item = indexableItem();
+            if (item == null) {
+                item = compositeItem();
+
+                if (item != null) {
+                    if (item instanceof OrItem) { // Turn into And
+                        AndItem and = new AndItem();
+
+                        for (Iterator<Item> i = ((OrItem) item).getItemIterator(); i.hasNext();) {
+                            and.addItem(i.next());
+                        }
+                        item = and;
+                    }
+                }
+            }
+            if (item!=null)
+                item.setProtected(true);
+            return item;
+        } finally {
+            if (item == null) {
+                tokens.setPosition(position);
+            }
+        }
+    }
+
+    /**
+     * Returns the top level item resulting from combining the given top
+     * level item and the new item. This implements most of the weird transformation
+     * rules of the parser.
+     */
+    protected Item combineItems(Item topLevelItem, Item item) {
+        if (topLevelItem == null) {
+            return item;
+        } else if (topLevelItem instanceof OrItem && item instanceof OrItem) {
+            OrItem newTopOr = new OrItem();
+
+            newTopOr.addItem(topLevelItem);
+            newTopOr.addItem(item);
+            return newTopOr;
+        } else if (item instanceof OrItem && topLevelItem instanceof RankItem) {
+            for (Iterator<Item> i = ((RankItem) topLevelItem).getItemIterator(); i.hasNext();) {
+                ((OrItem) item).addItem(0, i.next());
+            }
+            return item;
+        } else if (item instanceof OrItem && topLevelItem instanceof PhraseItem) {
+            OrItem newTopOr = new OrItem();
+
+            newTopOr.addItem(topLevelItem);
+            newTopOr.addItem(item);
+            return newTopOr;
+        } else if (!(topLevelItem instanceof RankItem)) {
+            RankItem rank = new RankItem();
+
+            if (topLevelItem instanceof NotItem) { // Strange rule, but that's how it is
+                rank.addItem(topLevelItem);
+                rank.addItem(item);
+            } else {
+                rank.addItem(item);
+                rank.addItem(topLevelItem);
+            }
+            return rank;
+        } else if ((item instanceof RankItem) && (((RankItem)item).getItem(0) instanceof OrItem)) {
+            RankItem itemAsRank = (RankItem) item;
+            OrItem or = (OrItem) itemAsRank.getItem(0);
+
+            ((RankItem) topLevelItem).addItem(0, or);
+            for (int i = 1; i < itemAsRank.getItemCount(); i++) {
+                or.addItem(0, itemAsRank.getItem(i));
+            }
+            return topLevelItem;
+        } else {
+            ((RankItem) topLevelItem).addItem(0, item);
+            return topLevelItem;
+        }
+    }
+
+}

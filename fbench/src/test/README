@@ -1,0 +1,4 @@
+Before making the tests you should do a 'make bootstrap' in the
+'../src' directory. This is to ensure that all needed files are
+present (testing of classes in program directories require direct
+linking with the object files).

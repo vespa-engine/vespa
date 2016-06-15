@@ -1,0 +1,11 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(config_unittest_test_app
+    SOURCES
+    unittest.cpp
+    DEPENDS
+    config_cloudconfig
+)
+vespa_add_test(NAME config_unittest_test_app COMMAND config_unittest_test_app)
+vespa_generate_config(config_unittest_test_app ../../test/resources/configdefinitions/my.def)
+vespa_generate_config(config_unittest_test_app ../../test/resources/configdefinitions/foo.def)
+vespa_generate_config(config_unittest_test_app ../../test/resources/configdefinitions/bar.def)

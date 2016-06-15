@@ -1,0 +1,110 @@
+10.000004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Starting up, using logfile bufferedlogtest.log
+100.000004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	message
+100.000005	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED
+100.000024	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED
+110.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 0
+120.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 1
+130.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 2
+140.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 3
+150.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 4
+160.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 5
+170.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 6
+180.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 7
+190.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 8
+200.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 9
+210.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 10
+220.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 11
+220.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED (Repeated 899 times since 100.000005)
+220.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED (Repeated 99 times since 100.000024)
+230.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 12
+240.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 13
+250.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 14
+260.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 15
+270.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 16
+280.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 17
+290.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 18
+300.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 19
+310.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 20
+320.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 21
+330.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 22
+340.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 23
+350.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 24
+360.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 25
+370.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 26
+380.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 27
+390.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 28
+400.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 29
+410.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 30
+420.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 31
+430.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 32
+440.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 33
+450.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 34
+460.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 35
+470.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 36
+480.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 37
+490.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 38
+500.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 39
+510.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 40
+520.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 41
+530.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 42
+540.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 43
+550.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 44
+560.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 45
+570.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 46
+580.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 47
+590.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 48
+600.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 49
+610.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 50
+620.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 51
+630.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 52
+640.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 53
+650.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 54
+660.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 55
+670.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 56
+680.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 57
+690.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 58
+700.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 59
+710.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 60
+720.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 61
+730.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 62
+740.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 63
+750.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 64
+760.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 65
+770.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 66
+780.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 67
+790.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 68
+800.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 69
+810.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 70
+820.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 71
+830.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 72
+840.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 73
+850.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 74
+860.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 75
+870.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 76
+880.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 77
+890.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 78
+900.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 79
+910.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 80
+920.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 81
+930.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 82
+940.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 83
+950.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 84
+960.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 85
+970.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 86
+980.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 87
+990.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 88
+1000.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 89
+1010.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 90
+1020.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 91
+1030.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 92
+1040.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 93
+1050.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 94
+1060.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 95
+1070.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 96
+1080.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 97
+1090.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 98
+1100.002004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Message 99
+1100.002005	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED
+1100.002024	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED
+1100.004004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED (Repeated 899 times since 1100.002005)
+1100.004004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED (Repeated 99 times since 1100.002024)

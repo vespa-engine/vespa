@@ -1,0 +1,176 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 1999-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".query");
+#include <vespa/searchcore/util/log.h>
+#include <vespa/searchcore/fdispatch/search/query.h>
+#include <vespa/searchlib/common/transport.h>
+#include <vespa/searchlib/parsequery/simplequerystack.h>
+
+
+/** Marks as empty
+ */
+FastS_query::FastS_query(void)
+    : _dataset(0),
+      _flags(0),
+      _stackDump(),
+      _sortSpec(NULL),
+      _groupSpec(),
+      _location(NULL),
+      _rankProperties(),
+      _featureOverrides()
+{
+};
+
+FastS_query::FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs)
+    : _dataset(0),                        // not known
+      _flags(docsumArgs.GetQueryFlags()),
+      _stackDump(docsumArgs.getStackDump()),
+      _sortSpec(NULL),                    // not known
+      _groupSpec(),                   // not known
+      _location(NULL),
+      _rankProperties(docsumArgs.rankProperties()),
+      _featureOverrides(docsumArgs.featureOverrides())
+{
+    // _query = search::SimpleQueryStack::StackbufToString(docsumArgs.getStackDump());
+    if (docsumArgs.getLocation().size() > 0) {
+        _location = strdup(docsumArgs.getLocation().c_str());
+    }
+}
+
+
+void
+FastS_query::SetStackDump(const vespalib::stringref &stackRef)
+{
+    _stackDump = stackRef;
+}
+
+const char *
+FastS_query::getPrintableQuery()
+{
+    if (_printableQuery.empty()) {
+        _printableQuery = search::SimpleQueryStack::StackbufToString(_stackDump);
+    }
+    return  _printableQuery.c_str();
+}
+
+FastS_query::~FastS_query(void)
+{
+}
+
+
+void
+FastS_query::SetDataSet(uint32_t dataset)
+{
+    _dataset = dataset;
+}
+
+unsigned int
+FastS_query::StackDumpHashKey() const
+{
+    unsigned int res = 0;
+    const unsigned char *p;
+    const unsigned char *e;
+    p = (const unsigned char *) _stackDump.begin();
+    e = (const unsigned char *) _stackDump.end();
+    while (p != e) {
+        res = (res << 7) + (res >> 25) + *p;
+        p++;
+    }
+    return res;
+}
+
+unsigned int
+FastS_query::HashKey(void) const
+{
+    unsigned int res;
+
+    res = StackDumpHashKey();
+    res += hash_str_check((const unsigned char *) _location.c_str());
+    res += _rankProperties.hashCode();
+    res += _featureOverrides.hashCode();
+    res += (_flags & search::fs4transport::QFLAG_CACHE_MASK);
+    return res;
+}
+
+
+bool
+FastS_query::Similar(const FastS_query &other) const
+{
+    if (((_flags ^ other._flags) &
+         search::fs4transport::QFLAG_CACHE_MASK) != 0 ||
+        _stackDump.size() != other._stackDump.size() ||
+        !cmp_str_ref(_stackDump, other._stackDump) ||
+        !(_location == other._location) ||
+        !(_rankProperties == other._rankProperties) ||
+        !(_featureOverrides == other._featureOverrides))
+        return false;
+    return true;
+}
+
+bool
+FastS_query::Equal(const FastS_query &other) const
+{
+    if (_dataset != other._dataset ||
+        ((_flags ^ other._flags) &
+         search::fs4transport::QFLAG_CACHE_MASK) != 0 ||
+        _stackDump.size() != other._stackDump.size() ||
+        !cmp_str_ref(_stackDump, other._stackDump) ||
+        !(_sortSpec == other._sortSpec) ||
+        _groupSpec != other._groupSpec ||
+        !(_location == other._location) ||
+        !(_rankProperties == other._rankProperties) ||
+        !(_featureOverrides == other._featureOverrides))
+        return false;
+    return true;
+}
+
+
+namespace
+{
+
+// This is ugly, somebody please find a better way.
+
+class SizeCollector : public search::fef::IPropertiesVisitor
+{
+    static const size_t _stringFuzz = 15; // Compensate for malloc() waste
+    static const size_t _vectorFuzz = 15;
+    static const size_t _mapFuzz = 15;
+    size_t _size;
+public:
+    SizeCollector(void)
+        : _size(0)
+    {
+    }
+
+    virtual void
+    visitProperty(const search::fef::Property::Value &key,
+                  const search::fef::Property &values)
+    {
+        // Account for std::map element size
+        _size += _mapFuzz;
+        // Account for key string size
+        _size += key.size() + _stringFuzz;
+        size_t numValues = values.size();
+        // Account for value vector size
+        if (numValues > 0) {
+            _size += numValues * sizeof(search::fef::Property::Value) + _vectorFuzz;
+            for (size_t i = 0; i < numValues; ++i) {
+                // Account for string sizes in value vector
+                const search::fef::Property::Value &str = values.getAt(i);
+                _size += str.size() + _stringFuzz;
+            }
+        }
+    }
+
+    size_t
+    getSize(void) const
+    {
+        return _size;
+    }
+};
+
+}

@@ -1,0 +1,28 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 2005 Overture Services Norway AS
+
+#pragma once
+
+struct FastS_QueryPerf
+{
+    uint32_t queueLen;
+    uint32_t activeCnt;
+    uint32_t queryCnt;
+    double   queryTime;
+    uint32_t dropCnt;
+    uint32_t timeoutCnt;
+
+    FastS_QueryPerf();
+
+    /**
+     * reset all values except the cached 'old' values. This will
+     * prepare the object for reuse logging wise.
+     **/
+    void reset();
+    void log();
+
+private:
+    uint32_t _lastQueryCnt;
+    double   _lastQueryTime;
+};
+

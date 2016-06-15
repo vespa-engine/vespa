@@ -1,0 +1,6 @@
+.depend
+Makefile
+filedesc.txt
+filept.txt
+guard_test
+vespalib_guard_test_app

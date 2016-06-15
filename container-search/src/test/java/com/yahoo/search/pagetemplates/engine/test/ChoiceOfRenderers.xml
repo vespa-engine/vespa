@@ -1,0 +1,17 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="ChoiceOfRenderers" source="source1 source2">
+
+    <choice>
+        <renderer name="sectionLook1"/>
+        <renderer name="sectionLook2"/>
+    </choice>
+    <choice>
+        <renderer name="source1Look1" for="source1"/>
+        <renderer name="source1Look2" for="source1"/>
+        <renderer name="source1Look3" for="source1">
+            <parameter name="color">#ff00ff</parameter>
+            <parameter name="blink">true</parameter>
+        </renderer>
+    </choice>
+
+</page>

@@ -1,0 +1,5 @@
+.depend
+Makefile
+*_test
+*_bench
+searchlib_queryeval_test_app

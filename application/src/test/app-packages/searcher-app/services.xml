@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<container version='1.0'>
+  <search>
+    <chain id="default">
+      <searcher id='com.yahoo.vespatest.ExtraHitSearcher' bundle='com.yahoo.vespatest.ExtraHitSearcher:1.2'>
+        <config name='vespatest.extra-hit'>
+          <exampleString>Heal the </exampleString>
+          <enumVal>World</enumVal>
+        </config>
+      </searcher>
+
+    </chain>
+  </search>
+</container>

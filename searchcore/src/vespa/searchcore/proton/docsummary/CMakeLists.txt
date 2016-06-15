@@ -1,0 +1,17 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchcore_docsummary STATIC
+    SOURCES
+    docsumcontext.cpp
+    document_store_explorer.cpp
+    documentstoreadapter.cpp
+    fieldcache.cpp
+    fieldcacherepo.cpp
+    linguisticsannotation.cpp
+    searchdatatype.cpp
+    summarycompacttarget.cpp
+    summaryfieldconverter.cpp
+    summaryflushtarget.cpp
+    summarymanager.cpp
+    summarymanagerinitializer.cpp
+    DEPENDS
+)

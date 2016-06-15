@@ -1,0 +1,29 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchlib_grouping_test_app
+    SOURCES
+    grouping_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_grouping_test_app COMMAND searchlib_grouping_test_app)
+vespa_add_executable(searchlib_hyperloglog_test_app
+    SOURCES
+    hyperloglog_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_hyperloglog_test_app COMMAND searchlib_hyperloglog_test_app)
+vespa_add_executable(searchlib_sketch_test_app
+    SOURCES
+    sketch_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_sketch_test_app COMMAND searchlib_sketch_test_app)
+vespa_add_executable(searchlib_grouping_serialization_test_app
+    SOURCES
+    grouping_serialization_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_grouping_serialization_test_app COMMAND searchlib_grouping_serialization_test_app)

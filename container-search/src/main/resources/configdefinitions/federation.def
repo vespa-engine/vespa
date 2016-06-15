@@ -1,0 +1,18 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=7
+namespace=search.federation
+
+target[].id string
+target[].useByDefault bool default=false
+
+#the component id of the chain used for federation.
+target[].searchChain[].searchChainId string
+target[].searchChain[].timeoutMillis int default=-1
+target[].searchChain[].requestTimeoutMillis int default=-1
+target[].searchChain[].optional bool default=false
+target[].searchChain[].useByDefault bool default=false
+#if non-empty, this is a provider for the source target[].name
+target[].searchChain[].providerId string default=""
+target[].searchChain[].documentTypes[] string
+
+targetSelector string default=""

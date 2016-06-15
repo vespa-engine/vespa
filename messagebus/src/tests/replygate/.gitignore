@@ -1,0 +1,4 @@
+.depend
+Makefile
+replygate_test
+messagebus_replygate_test_app

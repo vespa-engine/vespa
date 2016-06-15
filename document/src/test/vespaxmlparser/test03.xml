@@ -1,0 +1,47 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!--
+    NOTE: see documentmanager.cfg for document type during test
+    
+    A document update including:
+    
+    - different variants of assign
+    - all fields in this documenttype are assigned new values
+-->
+
+<vespafeed>
+    <update documenttype="news" documentid="doc:news:http://news3"> 
+        <assign field="url">assignUrl</assign>
+        <assign field="title">assignTitle</assign>
+        <assign field="last_downloaded">1</assign>
+        <assign field="value_long">2</assign>
+        <assign field="value_content">assignContent</assign>
+        <assign field="stringarr">
+            <item>assignString1</item>
+            <item>assignString2</item>
+        </assign>
+        <assign field="intarr">
+            <item>3</item>
+            <item>4</item>
+        </assign>
+        <assign field="longarr">
+            <item>5</item>
+            <item>6</item>
+        </assign>
+        <assign field="bytearr">
+            <item>7</item>
+            <item>8</item>
+        </assign>
+        <assign field="floatarr">
+            <item>9</item>
+            <item>10</item>
+        </assign>
+        <assign field="weightedsetint">
+            <item weight="11">11</item>
+            <item weight="12">12</item>
+        </assign>
+        <assign field="weightedsetstring">
+            <item weight="13">assign13</item>
+            <item weight="14">assign14</item>
+        </assign>
+    </update>
+</vespafeed>

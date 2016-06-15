@@ -1,0 +1,161 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search indexschema {
+
+  field searchfield1 type string {}
+  field searchfield2 type int {}
+
+  document indexschema {
+    struct part {
+        field text type string {}
+        field name type string {}
+    }
+
+    # string fields
+    field sa type string {
+      indexing: index
+      summary: dynamic
+    }
+    field sb type string {
+      indexing: index
+    }
+    field sc type string {
+      indexing: index
+    }
+    field sd type string {
+      indexing: index
+      rank:literal
+    }
+    field pos type position {
+      indexing: attribute
+    }
+    field se type string {
+      indexing: attribute
+    }
+    field sf type array<string> {
+      indexing: index
+    }
+    field sg type weightedset<string> {
+      indexing: index
+    }
+    field sh type uri {
+      indexing: index
+    }
+    field si type string {
+      indexing: index
+      index {
+        prefix
+      }
+    }
+    field exact1 type string {
+      indexing: index
+      match: exact
+    }
+    field exact2 type string {
+      indexing: index
+      match {
+        exact
+      }
+    }
+
+    # integer fields
+    field ia type int {
+      indexing: index
+    }
+    field ib type int {
+      indexing: index
+    }
+    field ic type int {
+      indexing: attribute
+    }
+    
+    field nostemstring1 type string {
+      indexing: index | summary
+      index {
+        stemming: none
+      }
+    }
+
+    field nostemstring2 type string {
+      indexing: index | summary
+      index {
+        stemming: none
+      }
+    }
+
+    field nostemstring3 type string {
+      indexing: index | summary
+      stemming: none
+    }
+
+    field nostemstring4 type string {
+      indexing: index | summary
+      stemming: none
+    }
+
+    field fs9 type string {
+      indexing:index|summary
+    }
+
+    field f10 type array<part> {
+      struct-field text {
+        indexing: index|summary
+      }
+    }
+    
+  }
+  fieldset fs9 {
+    fields:se
+  }
+  fieldset fs1 {
+    fields: se, sf, sg
+  }
+  fieldset fs2 {
+    fields: si
+  }
+  fieldset fs3 {
+    fields: ib, ic
+  }
+  fieldset fs4 {
+    fields: sa, sb
+  }
+  fieldset onlyattrib {
+    fields: se
+  }
+  fieldset exactfields {
+    fields: exact1, exact2
+  }
+
+  fieldset exactexplicit {
+    fields:sa, sb
+    query-command: "exact ARNOLD"
+    query-command: dynteaser
+  }
+  
+  fieldset exactexplicit2 {
+    fields:sc, sd
+    match {
+      exact
+      exact-terminator: "Arnold"
+    }
+  }
+
+  fieldset gram {
+    fields: sc, sd
+    match: gram
+  }
+
+  fieldset nostem1 {
+    fields: nostemstring1, nostemstring2
+  }
+
+  fieldset nostem2 {
+    fields: nostemstring3, nostemstring4
+  }
+
+  fieldset default {
+    fields: sb, sc
+  }
+
+
+}
+

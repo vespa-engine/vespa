@@ -1,0 +1,18 @@
+
+Statistics:
+
+  Empty or single term:       6815022    5.6768%
+  Too long:                    864794    0.7204%
+  Length  2 (grams   1):     27184017   22.6438%
+  Length  3 (grams   4):     32461067   27.0395%
+  Length  4 (grams  11):     24369083   20.2990%
+  Length  5 (grams  26):     14157811   11.7932%
+  Length  6 (grams  57):      7269208    6.0551%
+  Length  7 (grams 119):      3612039    3.0088%
+  Length  8 (grams 238):      1822986    1.5185%
+  Length  9 (grams 456):       962163    0.8015%
+  Length 10 (grams 837):       532530    0.4436%
+  Total:                    120050720
+
+Average number of grams per query: 24.62
+

@@ -1,0 +1,45 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!--
+    NOTE: see documentmanager.cfg for document type during test
+    a new document, adding all possible fields available to this documenttype 
+-->
+
+<vespafeed>
+    
+    <document documenttype="news" documentid="doc:news:http://news1"> 
+        <url>testUrl</url>
+        <title>testTitle</title>
+        <last_downloaded>1</last_downloaded>
+        <value_long>2</value_long>
+        <value_content>testValueContent</value_content>
+        <stringarr>
+            <item>stringarrItem1</item>
+            <item>stringarrItem2</item>
+        </stringarr>
+        <intarr>
+            <item>3</item>
+            <item>4</item>
+        </intarr>
+        <longarr>
+            <item>5</item>
+            <item>6</item>
+        </longarr>
+        <bytearr>
+            <item>7</item>
+            <item>8</item>
+        </bytearr>
+        <floatarr>
+            <item>9</item>
+            <item>10</item>
+        </floatarr>
+        <weightedsetint>
+            <item weight="11">11</item>
+            <item weight="12">12</item>
+        </weightedsetint>
+        <weightedsetstring>
+            <item weight="13">string13</item>
+            <item weight="14">string14</item>
+        </weightedsetstring>
+    </document>
+    
+</vespafeed>

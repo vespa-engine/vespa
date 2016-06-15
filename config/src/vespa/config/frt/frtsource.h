@@ -1,0 +1,48 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/config/common/source.h>
+#include "connectionfactory.h"
+#include "frtconfigagent.h"
+#include <vespa/config/common/configkey.h>
+#include <vespa/config/common/configrequest.h>
+#include "frtconfigrequestfactory.h"
+
+#include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/util/sync.h>
+
+namespace config {
+
+/**
+ * Class for sending and receiving config requests via FRT.
+ */
+class FRTSource : public Source,
+                  public FRT_IRequestWait
+{
+public:
+    FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTConfigRequestFactory & requestFactory, ConfigAgent::UP agent, const ConfigKey & key);
+    ~FRTSource();
+
+    void RequestDone(FRT_RPCRequest * request);
+    void close();
+    void reload(int64_t generation);
+    void getConfig();
+
+    const FRTConfigRequest & getCurrentRequest() const;
+
+private:
+    void scheduleNextGetConfig();
+
+    ConnectionFactory::SP _connectionFactory;
+    const FRTConfigRequestFactory & _requestFactory;
+    ConfigAgent::UP _agent;
+    FRTConfigRequest::UP _currentRequest;
+    const ConfigKey _key;
+
+    std::unique_ptr<FNET_Task> _task;
+    vespalib::Lock _lock; // Protects _task and _closed
+    bool _closed;
+};
+
+} // namespace config
+

@@ -1,0 +1,12 @@
+{
+    "name": "${artifactId}",
+    "version": "${version}",
+    "dependencies": {
+        "connect": ">=0.2.4"
+    },
+    "yahoo": {
+        "dist-package" : {
+            "tag-name-with-userid" : true
+        }
+    }
+}

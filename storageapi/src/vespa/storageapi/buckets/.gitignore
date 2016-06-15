@@ -1,0 +1,9 @@
+*.lo
+.*.swp
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+config-stor-bucketidgen.cpp
+config-stor-bucketidgen.h

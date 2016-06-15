@@ -1,0 +1,88 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::ComponentRegisterImpl
+ * \ingroup component
+ *
+ * \brief Application server uses this class to manage components.
+ *
+ * This class implements set functions for the various implementations needed.
+ * It will set these implementations in all components already registered, and
+ * in components registered after that. Simplifies login in application server
+ * as it can just instantiate components in some order and set implementations
+ * as soon as they exist.
+ *
+ * It is possibly to subclass this implementation. That is useful if you also
+ * subclass component class to provide extra functionality. Then you can handle
+ * that extra functionality in the subclass.
+ */
+#pragma once
+
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/storageframework/generic/component/componentregister.h>
+#include <vespa/storageframework/generic/component/managedcomponent.h>
+#include <vespa/storageframework/generic/metric/metricregistrator.h>
+#include <vespa/storageframework/generic/status/statusreportermap.h>
+#include <vespa/vespalib/util/sync.h>
+
+namespace storage {
+namespace framework {
+namespace defaultimplementation {
+
+struct ShutdownListener {
+    virtual ~ShutdownListener() {}
+    virtual void requestShutdown(vespalib::stringref reason) = 0;
+};
+
+class ComponentRegisterImpl : public virtual ComponentRegister,
+                              public StatusReporterMap,
+                              public MetricRegistrator
+{
+    vespalib::Lock _componentLock;
+    std::vector<ManagedComponent*> _components;
+
+    metrics::MetricSet _topMetricSet;
+    std::vector<metrics::MetricManager::UpdateHook::LP> _hooks;
+    metrics::MetricManager* _metricManager;
+    MemoryManagerInterface* _memoryManager;
+    Clock* _clock;
+    ThreadPool* _threadPool;
+    UpgradeFlags _upgradeFlag;
+    ShutdownListener* _shutdownListener;
+
+public:
+    typedef std::unique_ptr<ComponentRegisterImpl> UP;
+
+    ComponentRegisterImpl();
+
+    bool hasMetricManager() const { return (_metricManager != 0); }
+    metrics::MetricManager& getMetricManager() {
+        assert(_metricManager != 0);
+        return *_metricManager;
+    }
+
+    virtual void registerComponent(ManagedComponent&);
+    virtual void requestShutdown(vespalib::stringref reason);
+
+    void setMetricManager(metrics::MetricManager&);
+    void setMemoryManager(MemoryManagerInterface&);
+    void setClock(Clock&);
+    void setThreadPool(ThreadPool&);
+    void setUpgradeFlag(UpgradeFlags flag);
+
+    const StatusReporter* getStatusReporter(vespalib::stringref id);
+    std::vector<const StatusReporter*> getStatusReporters();
+
+    void registerMetric(metrics::Metric&);
+    void registerUpdateHook(vespalib::stringref name,
+                            MetricUpdateHook& hook,
+                            SecondTime period);
+    metrics::MetricLockGuard getMetricManagerLock() override;
+    void registerShutdownListener(ShutdownListener&);
+
+};
+
+} // defaultimplementation
+} // framework
+} // storage
+
+

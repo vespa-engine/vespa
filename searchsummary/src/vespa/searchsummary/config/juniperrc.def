@@ -1,0 +1,78 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.summary
+
+## Set the length (in #characters) of the dynamically generated 
+## summaries. This is a hint to the module that generates the 
+## dynamic summary. The result may be slightly longer or shorter 
+## depending on the structure of the available document text and 
+## the submitted query.
+length                      int default=256
+
+## The number of (possibly partial) set of keywords
+## matching the query, to attempt to include in the summary. The larger this
+## value compared is set relative to the length parameter, the more
+## dense the keywords may appear in the summary.
+max_matches                 int default=3
+
+## Minimal desired length of the generated summary in
+## bytes. This is the shortest summary length for which the number of
+## matches will be respected. Eg. if
+## a summary appear to become shorter than min_length bytes with
+## max_matches matches, then additional matches will be used if available.
+min_length                  int default=128
+
+## Make sure the prefix (length controlled by 'juniper.dynsum.length') 
+## of all fields with summary: dynamic are returned in the dynamic 
+## summary if a query does not hit in those fields
+prefix                      bool default=true
+
+## The maximal number of bytes of context to prepend and append to
+## each of the selected query keyword hits. This parameter defines the
+## max size a summary would become if there are few keyword hits
+## (max_matches set low or document contained few matches of the keywords).
+surround_max                int default=128
+
+## The size of the sliding window used to determine if
+## multiple query terms occur together. The larger the value, the more
+## likely the system will find (and present in dynamic summary) complete
+## matches containing all the search terms. The downside is a potential
+## performance overhead of keeping candidates for matches longer during
+## matching, and consequently updating more candidates that eventually
+## gets thrown.
+winsize int default=200
+
+## This value multiplied with the winsize gives the size of a fallback 
+## window used to break out when searching for phrase term matches. 
+winsize_fallback_multiplier double default=10.0
+
+## This value specifies the maximum number of match candidates that are
+## managed for a non-leaf query node when matching the query against the
+## input text.
+max_match_candidates int default=1000
+
+## The minimal number of bytes in a query keyword for
+## it to be subject to the simple Juniper stemming algorithm. Keywords
+## that are shorter than or equal to this limit will only yield exact
+## matches in the dynamic summaries.
+stem_min_length             int default=5
+
+## The maximal number of bytes that a word in the document
+## can be longer than the keyword itself to yield a match. Eg. for
+## the default values, if the keyword is 7 bytes long, it will match any
+## word with length less than or equal to 10 for which the keyword is a prefix.
+stem_max_extend             int default=3
+
+
+## The parameters above may also be overriden on a per-field basis 
+## using the following array.
+override[].fieldname        string
+override[].length           int default=256
+override[].max_matches      int default=3
+override[].min_length       int default=128
+override[].prefix           bool default=true
+override[].surround_max     int default=128
+override[].winsize          int default=200
+override[].winsize_fallback_multiplier     double default=10.0
+override[].max_match_candidates int default=1000
+override[].stem_min_length  int default=5
+override[].stem_max_extend  int default=3

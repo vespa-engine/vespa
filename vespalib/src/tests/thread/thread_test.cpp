@@ -1,0 +1,54 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/thread.h>
+
+using namespace vespalib;
+
+struct Agent : public Runnable {
+    bool started;
+    int loopCnt;
+    Agent() : started(false), loopCnt(0) {}
+    virtual void run() {
+        started = true;
+        Thread &thread = Thread::currentThread();
+        while (thread.slumber(60.0)) {
+            ++loopCnt;
+        }
+    }
+};
+
+TEST("thread never started") {
+    Agent agent;
+    {
+        Thread thread(agent);
+    }
+    EXPECT_TRUE(!agent.started);
+    EXPECT_EQUAL(0, agent.loopCnt);
+}
+
+TEST("normal operation") {
+    Agent agent;
+    {
+        Thread thread(agent);
+        thread.start();
+        FastOS_Thread::Sleep(20);
+        thread.stop().join();
+    }
+    EXPECT_TRUE(agent.started);
+    EXPECT_EQUAL(0, agent.loopCnt);
+}
+
+TEST("stop before start") {
+    Agent agent;
+    {
+        Thread thread(agent);
+        thread.stop();
+        thread.start();
+        thread.join();
+    }
+    EXPECT_TRUE(agent.started);
+    EXPECT_EQUAL(0, agent.loopCnt);
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }

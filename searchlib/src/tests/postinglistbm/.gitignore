@@ -1,0 +1,10 @@
+*.core
+*.ilk
+*.pdb
+.depend
+Makefile
+core
+core.*
+postinglistbm
+postinglistbm.exe
+searchlib_postinglistbm_app

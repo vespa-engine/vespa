@@ -1,0 +1,32 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.container.docproc.model;
+
+import com.yahoo.collections.Pair;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.component.chain.dependencies.Dependencies;
+import com.yahoo.component.chain.model.ChainedComponentModel;
+import net.jcip.annotations.Immutable;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ */
+@Immutable
+public class DocumentProcessorModel extends ChainedComponentModel {
+    private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
+
+    public DocumentProcessorModel(BundleInstantiationSpecification bundleInstantiationSpec, Dependencies dependencies, Map<Pair<String, String>, String> fieldNameSchemaMap) {
+        super(bundleInstantiationSpec, dependencies);
+        this.fieldNameSchemaMap.putAll(fieldNameSchemaMap);
+    }
+
+    /**
+     * The field name schema map that applies to this docproc
+     * @return doctype,from → to
+     */
+    public Map<Pair<String,String>,String> fieldNameSchemaMap() {
+        return fieldNameSchemaMap;
+    }
+}

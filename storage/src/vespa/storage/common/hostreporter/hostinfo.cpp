@@ -1,0 +1,29 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+
+#include "hostinfo.h"
+#include "hostreporter.h"
+
+namespace storage {
+
+HostInfo::HostInfo() {
+    registerReporter(&cpuReporter);
+    registerReporter(&diskReporter);
+    registerReporter(&memReporter);
+    registerReporter(&networkReporter);
+    registerReporter(&versionReporter);
+}
+
+HostInfo::~HostInfo() {
+}
+
+void HostInfo::printReport(vespalib::JsonStream& report) {
+    for (HostReporter* reporter : customReporters) {
+        reporter->report(report);
+    }
+}
+
+void HostInfo::registerReporter(HostReporter *reporter) {
+    customReporters.push_back(reporter);
+}
+} /* namespace storage */

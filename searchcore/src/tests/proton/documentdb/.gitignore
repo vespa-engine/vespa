@@ -1,0 +1,6 @@
+Makefile
+.depend
+documentdb_test
+tmp
+
+searchcore_documentdb_test_app

@@ -1,0 +1,9 @@
+*.core
+.*.swp
+.config.log
+.depend
+Makefile
+docstorage
+test.vlog
+testrunner
+storageapi_testrunner_app

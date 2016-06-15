@@ -1,0 +1,32 @@
+1220016833.684527	example.yahoo.com	15527	-	bufferedlogskiptest.log	debug	log.cpp:111 (1.77): prefix was set to 'bufferedlogskiptest'
+0.000000	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Starting up, using logfile bufferedlogskiptest.log
+200.000000	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000001	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000002	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000003	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000004	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000005	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000006	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000007	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000008	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000009	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000010	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000011	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000012	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000013	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000014	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000015	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000016	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000017	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000018	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000019	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000020	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000021	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000022	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000023	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000024	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000025	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000026	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000027	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000028	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message
+200.000029	example.yahoo.com	-1/-1	-	bufferedlogskiptest	info	Message

@@ -1,0 +1,5 @@
+.depend
+Makefile
+ptrholder_test
+sharedptr_test
+vespalib_ptrholder_test_app

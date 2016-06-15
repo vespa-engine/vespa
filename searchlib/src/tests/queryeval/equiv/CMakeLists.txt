@@ -1,0 +1,8 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchlib_equiv_test_app
+    SOURCES
+    equiv_test.cpp
+    DEPENDS
+    searchlib
+)
+vespa_add_test(NAME searchlib_equiv_test_app COMMAND searchlib_equiv_test_app)

@@ -1,0 +1,23 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Semantic production rules
+version=2
+namespace=prelude.semantics
+
+# Whether we should use these rule bases in pre-Vespa 2.2 compatibility mode
+compatibility bool default=false
+
+# The name of a rule base
+rulebase[].name string
+
+# Whether this rule base is the default, to be used on all queries
+# not specifying rules
+rulebase[].isdefault bool default=false
+
+# The automata file to use to look up condition references
+# not defined in the rule base. The automata file must be present
+# on all nodes getting this configuration
+rulebase[].automata string default=""
+
+# The rules
+rulebase[].rules string
+

@@ -1,0 +1,112 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/searchcommon/config/subscriptionproxyng.h>
+#include <vespa/vespalib/util/vstringfmt.h>
+#include "juniperproperties.h"
+
+using vespa::config::search::summary::JuniperrcConfig;
+
+namespace search {
+namespace docsummary {
+
+JuniperProperties::JuniperProperties() :
+    _properties()
+{
+    reset();
+}
+
+JuniperProperties::JuniperProperties(const JuniperrcConfig &cfg) :
+     _properties()
+{
+    reset();
+    configure(cfg);
+}
+
+JuniperProperties::~JuniperProperties() {
+    // empty
+}
+
+void
+JuniperProperties::reset()
+{
+    _properties.clear();
+    //_properties["juniper.debug_mask"]                         = "0";
+    //_properties["juniper.dynsum.connectors"]                  = "\x1F\x1D";
+    _properties["juniper.dynsum.continuation"]                  = "\x1E";
+    _properties["juniper.dynsum.escape_markup"]                 = "off";
+    _properties["juniper.dynsum.fallback"]                      = "prefix";
+    _properties["juniper.dynsum.highlight_off"]                 = "\x1F";
+    _properties["juniper.dynsum.highlight_on"]                  = "\x1F";
+    _properties["juniper.dynsum.preserve_white_space"]          = "on";
+    //_properties["juniper.dynsum.length"]                      = "256";
+    //_properties["juniper.dynsum.max_matches"]                 = "3";
+    //_properties["juniper.dynsum.min_length"]                  = "128";
+    //_properties["juniper.dynsum.separators"]                  = "\x1F\x1D";
+    //_properties["juniper.dynsum.surround_max"]                = "128";
+    _properties["juniper.matcher.winsize"]                      = "200";
+    _properties["juniper.matcher.winsize_fallback_multiplier"]  = "10.0";
+    _properties["juniper.matcher.max_match_candidates"]         = "1000";
+    //_properties["juniper.proximity.factor"]                   = "0.25";
+    //_properties["juniper.stem.max_extend"]                    = "3";
+    //_properties["juniper.stem.min_length"]                    = "5";
+}
+
+void
+JuniperProperties::configure(const JuniperrcConfig &cfg)
+{
+    reset();
+    _properties["juniper.dynsum.fallback"]      = cfg.prefix ? "prefix" : "none";
+    _properties["juniper.dynsum.length"]        = vespalib::make_vespa_string("%d", cfg.length);
+    _properties["juniper.dynsum.max_matches"]   = vespalib::make_vespa_string("%d", cfg.maxMatches);
+    _properties["juniper.dynsum.min_length"]    = vespalib::make_vespa_string("%d", cfg.minLength);
+    _properties["juniper.dynsum.surround_max"]  = vespalib::make_vespa_string("%d", cfg.surroundMax);
+    _properties["juniper.matcher.winsize"]  = vespalib::make_vespa_string("%d", cfg.winsize);
+    _properties["juniper.matcher.winsize_fallback_multiplier"]  = vespalib::make_vespa_string("%f", cfg.winsizeFallbackMultiplier);
+    _properties["juniper.matcher.max_match_candidates"]  = vespalib::make_vespa_string("%d", cfg.maxMatchCandidates);
+    _properties["juniper.stem.min_length"]  = vespalib::make_vespa_string("%d", cfg.stemMinLength);
+    _properties["juniper.stem.max_extend"]  = vespalib::make_vespa_string("%d", cfg.stemMaxExtend);
+
+    for (uint32_t i = 0; i < cfg.override.size(); ++i) {
+        const JuniperrcConfig::Override &override = cfg.override[i];
+        const vespalib::string keyDynsum = vespalib::make_vespa_string("%s.dynsum.", override.fieldname.c_str());
+        const vespalib::string keyMatcher = vespalib::make_vespa_string("%s.matcher.", override.fieldname.c_str());
+        const vespalib::string keyStem = vespalib::make_vespa_string("%s.stem.", override.fieldname.c_str());
+
+        _properties[keyDynsum + "fallback"]           = override.prefix ? "prefix" : "none";
+        _properties[keyDynsum + "length"]             = vespalib::make_vespa_string("%d", override.length);
+        _properties[keyDynsum + "max_matches"]        = vespalib::make_vespa_string("%d", override.maxMatches);
+        _properties[keyDynsum + "min_length"]         = vespalib::make_vespa_string("%d", override.minLength);
+        _properties[keyDynsum + "surround_max"]       = vespalib::make_vespa_string("%d", override.surroundMax);
+
+        _properties[keyMatcher + "winsize"]                     = vespalib::make_vespa_string("%d", override.winsize);
+        _properties[keyMatcher + "winsize_fallback_multiplier"] = vespalib::make_vespa_string("%f", override.winsizeFallbackMultiplier);
+        _properties[keyMatcher + "max_match_candidates"] = vespalib::make_vespa_string("%d", override.maxMatchCandidates);
+
+        _properties[keyStem + "min_length"] = vespalib::make_vespa_string("%d", override.stemMinLength);
+        _properties[keyStem + "max_extend"] = vespalib::make_vespa_string("%d", override.stemMaxExtend);
+    }
+}
+
+void
+JuniperProperties::subscribe(const char *configId)
+{
+    SubscriptionProxyNg<JuniperProperties, JuniperrcConfig> subscriber(*this, &JuniperProperties::configure);
+    subscriber.subscribe(configId);
+}
+
+const char *
+JuniperProperties::GetProperty(const char *name, const char *def)
+{
+    std::map<vespalib::string, vespalib::string>::const_iterator it = _properties.find(name);
+    return it != _properties.end() ? it->second.c_str() : def;
+}
+
+void
+JuniperProperties::SetProperty(const vespalib::string &key, const vespalib::string &val)
+{
+    _properties[key] = val;
+}
+
+} // namespace docsummary
+} // namespace search
+

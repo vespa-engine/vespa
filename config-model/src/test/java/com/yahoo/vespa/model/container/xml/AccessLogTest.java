@@ -1,0 +1,90 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.container.xml;
+
+import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.container.logging.VespaAccessLog;
+import com.yahoo.container.logging.YApacheAccessLog;
+import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
+import org.junit.Test;
+import org.w3c.dom.Element;
+
+import static com.yahoo.text.StringUtilities.quote;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+
+/**
+ * @author gjoranv
+ * @since 5.5
+ */
+public class AccessLogTest extends ContainerModelBuilderTestBase {
+
+    @Test
+    public void default_access_log_is_only_added_when_search_is_present() throws Exception {
+        Element cluster1Elem = DomBuilderTest.parse(
+                "<jdisc id='cluster1' version='1.0'>",
+                "<search />",
+                nodesXml,
+                "</jdisc>");
+        Element cluster2Elem = DomBuilderTest.parse(
+                "<jdisc id='cluster2' version='1.0'>",
+                "  <nodes>",
+                "    <node hostalias='mockhost' baseport='1234' />",
+                "  </nodes>",
+                "</jdisc>" );
+
+        createModel(root, cluster1Elem, cluster2Elem);
+
+        assertNotNull(getVespaAccessLog("cluster1"));
+        assertNull(   getVespaAccessLog("cluster2"));
+    }
+
+    @Test
+    public void default_search_access_log_can_be_disabled() throws Exception {
+        final String jdiscClusterId = "jdisc-cluster";
+
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id=" + quote(jdiscClusterId) + " version='1.0'>" +
+                        "  <search />" +
+                        "  <accesslog type='disabled' />" +
+                        "</jdisc>" );
+
+        createModel(root, clusterElem);
+        assertNull(getVespaAccessLog(jdiscClusterId));
+    }
+
+    private Component<?, ?> getVespaAccessLog(String clusterName) {
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
+        return cluster.getComponentsMap().get(ComponentId.fromString((VespaAccessLog.class.getName())));
+
+    }
+
+    @Test
+    public void access_log_can_be_configured() throws Exception {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id='default' version='1.0'>",
+                "  <accesslog type='yapache' ",
+                "             fileNamePattern='pattern' rotationInterval='interval'",
+                "             rotationScheme='date' />",
+                nodesXml,
+                "</jdisc>" );
+
+        createModel(root, clusterElem);
+
+        Component<?, ?> accessLogComponent = getContainerComponent("default", YApacheAccessLog.class.getName());
+        assertNotNull(accessLogComponent);
+        assertThat(accessLogComponent.getClassId().getName(), is(YApacheAccessLog.class.getName()));
+
+        AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.YApacheAccessLog");
+        AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
+        assertThat(fileHandlerConfig.pattern(), is("pattern"));
+        assertThat(fileHandlerConfig.rotation(), is("interval"));
+        assertThat(fileHandlerConfig.rotateScheme(), is(AccessLogConfig.FileHandler.RotateScheme.DATE));
+
+    }
+
+}

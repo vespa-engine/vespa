@@ -1,0 +1,138 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <errno.h>
+
+namespace vespalib {
+
+VESPA_IMPLEMENT_EXCEPTION(UnsupportedOperationException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(IllegalArgumentException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(IllegalStateException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(OverflowException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(UnderflowException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(TimeoutException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(FatalException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(NetworkSetupFailureException, IllegalStateException);
+VESPA_IMPLEMENT_EXCEPTION_SPINE(PortListenException);
+VESPA_IMPLEMENT_EXCEPTION_SPINE(IoException);
+
+//-----------------------------------------------------------------------------
+
+vespalib::string
+PortListenException::make_message(int port, const vespalib::stringref &protocol,
+                                  const vespalib::stringref &msg)
+{
+    return make_string("failed to listen on port %d with protocol %s%s%s",
+                       port, protocol.c_str(), msg.empty() ? "" : ": ", msg.c_str());
+}
+
+PortListenException::PortListenException(int port, const vespalib::stringref &protocol,
+                                         const vespalib::stringref &msg,
+                                         const vespalib::stringref &location, int skipStack)
+    : Exception(make_message(port, protocol, msg), location, skipStack + 1),
+      _port(port),
+      _protocol(protocol)
+{
+}
+
+PortListenException::PortListenException(int port, const vespalib::stringref &protocol,
+                                         const Exception &cause,
+                                         const vespalib::stringref &msg,
+                                         const vespalib::stringref &location, int skipStack)
+    : Exception(make_message(port, protocol, msg), cause, location, skipStack + 1),
+      _port(port),
+      _protocol(protocol)
+{
+}
+
+//-----------------------------------------------------------------------------
+
+IoException::IoException(const stringref & msg, Type type,
+                         const stringref & location, int skipStack)
+    : Exception(createMessage(msg, type), location, skipStack+1),
+      _type(type)
+{
+}
+
+IoException::IoException(const stringref & msg, Type type,
+                         const Exception& cause, const stringref & location,
+                         int skipStack)
+    : Exception(createMessage(msg, type), cause, location, skipStack+1),
+      _type(type)
+{
+}
+
+string
+IoException::createMessage(const stringref & msg, Type type)
+{
+    vespalib::asciistream ost;
+    switch (type) {
+        case UNSPECIFIED:            break;
+        case ILLEGAL_PATH:           ost << "ILLEGAL PATH: "; break;
+        case NO_PERMISSION:          ost << "NO PERMISSION: "; break;
+        case DISK_PROBLEM:           ost << "DISK PROBLEM: "; break;
+        case INTERNAL_FAILURE:       ost << "INTERNAL FAILURE: "; break;
+        case NO_SPACE:               ost << "NO SPACE: "; break;
+        case NOT_FOUND:              ost << "NOT FOUND: "; break;
+        case CORRUPT_DATA:           ost << "CORRUPT DATA: "; break;
+        case TOO_MANY_OPEN_FILES:    ost << "TOO MANY OPEN FILES: "; break;
+        case DIRECTORY_HAVE_CONTENT: ost << "DIRECTORY HAVE CONTENT: "; break;
+        case FILE_FULL:              ost << "FILE_FULL: "; break;
+        case ALREADY_EXISTS:         ost << "ALREADY EXISTS: "; break;
+        default:
+            ost << "Unknown type(" << type << "): ";
+    }
+    ost << msg;
+    return ost.str();
+}
+
+IoException::Type
+IoException::getErrorType(int error) {
+    switch (error) {
+        case ENOENT:
+            return IoException::NOT_FOUND;
+            // These should be handled elsewhere and not get here..
+        case EAGAIN:      // Non-block operation with no data
+        case EINTR:       // Interrupted operation with no data
+            return IoException::INTERNAL_FAILURE;
+        case ENOTDIR:
+        case ENAMETOOLONG:
+        case ELOOP:
+        case EISDIR:
+        case EMLINK:
+        case ENXIO:
+            return IoException::ILLEGAL_PATH;
+        case EACCES:
+        case EPERM:
+        case EROFS:
+            return IoException::NO_PERMISSION;
+        case EIO:             // An IO error occured
+            return IoException::DISK_PROBLEM;
+        case ENOSPC:          // No free space
+        case EDQUOT:          // Quota filled
+            return IoException::NO_SPACE;
+        case EMFILE:
+            return IoException::TOO_MANY_OPEN_FILES;
+        case ENOTEMPTY:
+            return IoException::DIRECTORY_HAVE_CONTENT;
+        case EEXIST:          // File or directory already exists
+            return IoException::ALREADY_EXISTS;
+        case EBADF:           // File descriptor invalid
+        case EOVERFLOW:       // Can't fit info in structure
+        case EFBIG:           // Attempt to write beyond maximum size or
+                              // file position is beyond end of file.
+        case EPIPE:           // Write to pipe which doesn't lead anywhere.
+        case ERANGE:          // Transfer request size out of stream range
+        case EFAULT:
+        case EINVAL:
+        case ENOBUFS:         // Too few system resources
+        default:
+            return IoException::INTERNAL_FAILURE;
+    }
+}
+
+} // vespalib

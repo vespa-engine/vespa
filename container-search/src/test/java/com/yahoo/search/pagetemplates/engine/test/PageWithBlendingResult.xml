@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page version="1.0">
+
+  <renderer name="two-column"/>
+
+  <section region="left">
+    <source url="http://carmot.yahoo.com:4080/resource/[news article id]"/>
+    <renderer name="articleBodyRenderer">
+      <parameter name="color">blue</parameter>
+    </renderer>
+  </section>
+
+  <section region="right">
+    <renderer name="multi-item-column">
+      <parameter name="items">3</parameter>
+    </renderer>
+    <section region="1">
+      <renderer for="newsImage" name="newsImageRenderer"/>
+      <renderer for="news" name="articleRenderer"/>
+      <renderer for="image" name="imageRenderer"/>
+      <content>
+        <hit relevance="1.0" source="news">
+          <id>news-1</id>
+        </hit>
+        <hit relevance="0.5" source="news">
+          <id>news-2</id>
+        </hit>
+      </content>
+    </section>
+    <section region="2">
+      <source url="http://vitality.yahoo.com:4080/consumption-widget"/>
+      <renderer name="identityRenderer"/>
+    </section>
+    <section region="3">
+      <renderer name="htmlRenderer"/>
+      <content>
+        <hit relevance="1.0" source="htmlSource">
+          <id>htmlSource-1</id>
+        </hit>
+      </content>
+    </section>
+  </section>
+
+</page>

@@ -1,0 +1,73 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/common/indexmetainfo.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+
+namespace search {
+
+/**
+ * You use the attribute manager to get access to attributes. You must specify what kind
+ * of access you want to have.
+ **/
+class AttributeManager : public IAttributeManager
+{
+private:
+    typedef attribute::Config Config;
+public:
+    typedef std::vector<string> StringVector;
+    typedef search::IndexMetaInfo::Snapshot Snapshot;
+    typedef std::vector<AttributeGuard> AttributeList;
+    typedef AttributeVector::SP VectorHolder;
+    AttributeManager();
+    AttributeManager(const string & base);
+    ~AttributeManager(void);
+
+    /**
+     * This will give you a handle to an attributevector. It
+     * guarantees that backed attribute is valid.  But no guarantees
+     * about the content of the attribute. If that is required some of
+     * the other getAttributeXX methods must be used.
+     **/
+    const VectorHolder * getAttributeRef(const string & name) const;
+
+    // Implements IAttributeManager
+    virtual AttributeGuard::UP getAttribute(const string & name) const;
+
+    // Implements IAttributeManager
+    virtual AttributeGuard::UP getAttributeStableEnum(const string & name) const;
+    /**
+     * This will load attributes in the most memory economical way by loading largest first.
+     */
+    bool addVector(const string & name, const Config & config);
+
+    bool add(const VectorHolder & vector);
+
+    // Implements IAttributeManager
+    virtual void getAttributeList(AttributeList & list) const;
+
+    // Implements IAttributeManager
+    virtual attribute::IAttributeContext::UP createContext() const;
+
+    const Snapshot & getSnapshot()         const { return _snapShot; }
+    const string & getBaseDir()       const { return _baseDir; }
+    void setSnapshot(const Snapshot &snap)       { _snapShot = snap; }
+    void setBaseDir(const string & base);
+    bool hasReaders(void) const;
+    uint64_t getMemoryFootprint() const;
+protected:
+    typedef vespalib::hash_map<string, VectorHolder> AttributeMap;
+    AttributeMap   _attributes;
+    vespalib::Lock _loadLock;
+private:
+    const VectorHolder * findAndLoadAttribute(const string & name) const;
+    string createBaseFileName(const string & name, bool useSnapshot) const;
+    string    _baseDir;
+    Snapshot  _snapShot;
+    std::shared_ptr<attribute::Interlock> _interlock;
+};
+
+}
+

@@ -1,0 +1,40 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.config.model.test;
+
+import com.yahoo.collections.CollectionUtil;
+import com.yahoo.config.model.builder.xml.XmlHelper;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * @author lulf
+ * @since 5.1
+ */
+public class ConfigModelTestUtil {
+    /**
+     * @param xmlLines XML with " replaced with '
+     */
+    public static Element parse(String... xmlLines) {
+        List<String> lines = new ArrayList<>();
+        lines.add("<?xml version='1.0' encoding='utf-8' ?>");
+        lines.addAll(Arrays.asList(xmlLines));
+
+        try {
+            return XmlHelper.getDocumentBuilder().parse(
+                    inputSource((CollectionUtil.mkString(lines, "\n").replace("'", "\""))))
+                    .getDocumentElement();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static InputSource inputSource(String str) {
+        return new InputSource(new StringReader(str));
+    }
+
+}

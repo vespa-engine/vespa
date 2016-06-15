@@ -1,0 +1,199 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search multiplesummaries {
+
+  document multiplesummaries {
+
+    field a type string {
+      indexing: summary | attribute
+      summary-to: default, second
+      match {
+        token
+      }
+    }
+
+    field adynamic type string {
+      indexing: summary | attribute
+      summary-to: default, second
+      summary adynamic: dynamic
+      match {
+        token
+      }
+    }
+
+    field abolded type string {
+      indexing: summary | attribute
+      bolding: on
+      match {
+        token
+      }
+    }
+
+    field b type string {
+      indexing: summary
+      bolding: off
+    }
+
+    field c type string {
+      indexing: summary | attribute
+      summary-to: second
+      match {
+        token
+      }
+    }
+
+    field d type string {
+      indexing: summary
+      bolding: on
+    }
+
+    field e type string {
+      indexing: summary
+      summary dynamice: dynamic
+    }
+
+    field f type array<string> {
+      indexing: summary
+      summary-to: second
+    }
+
+    field g type array<int> {
+      indexing: summary
+    }
+
+    field h type weightedset<string> {
+      indexing: summary
+    }
+
+    field loc type string {
+
+    }
+  }
+
+  field loc_pos type position {
+    indexing: input loc | to_pos | attribute | summary
+  }
+
+  document-summary third {
+
+    summary a type string {
+    }
+
+    summary adynamic type string {
+    }
+
+    summary d type string {
+    }
+
+    summary e type string {
+    }
+
+    summary f type array<string> {
+    }
+
+    summary g type array<int> {
+    }
+
+    summary h type weightedset<string> {
+    }
+
+  }
+
+  document-summary attributesonly1 {
+
+    summary a type string {
+    }
+
+    summary c type string {
+    }
+
+  }
+
+  # Since a here is a dynamic summary field, it will be fetched from disk
+  document-summary notattributesonly1 {
+
+    summary adynamic type string { # Should still be dynamic here
+    }
+
+    summary c type string {
+    }
+
+  }
+
+  # Since a here is a dynamic summary, it will be fetched from disk
+  document-summary notattributesonly2 {
+
+    summary adynamic2 type string { # Should still be dynamic here
+        source: a
+        dynamic
+    }
+
+    summary c type string {
+    }
+
+  }
+
+  # Not attributes only because d is bolded
+  document-summary notattributesonly3 {
+
+    summary a type string {
+    }
+
+    summary d type string {
+    }
+
+  }
+
+  document-summary attributesonly2 {
+
+    summary anotdynamic type string { # Should not be dynamic here
+        source: adynamic
+    }
+
+    summary c type string {
+    }
+
+    summary loc_position type long {
+    }
+
+  }
+
+  document-summary attributesonly3 {
+
+    summary a type string {
+    }
+
+    summary anotbolded type string {
+        source: a
+    }
+
+    summary loc_position type long {
+    }
+
+  }
+
+  document-summary notattributesonly4 {
+
+    summary abolded2 type string {
+        source: a
+        bolding: on
+    }
+
+    summary c type string {
+    }
+
+  }
+
+  document-summary notattributesonly5 {
+
+    summary aboldeddynamic type string {
+        source: a
+        dynamic
+        bolding: on
+    }
+
+    summary c type string {
+    }
+
+  }
+
+}

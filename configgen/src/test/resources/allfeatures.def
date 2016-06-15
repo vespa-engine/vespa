@@ -1,0 +1,77 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# This def file should test most aspects of def files that makes a difference
+# for the generated config classes. The goal is to trigger all blocks of
+# code in the code generators. This includes:
+#
+# - Use all legal special characters in the def file name, to ensure that those
+#   that needs to be replaced in type names are actually replaced.
+# - Use the same enum type twice to verify that we dont declare or define it
+#   twice.
+# - Use the same struct type twice for the same reason.
+# - Include arrays of primitives and structs.
+# - Include enum primitives and array of enums. Arrays of enums must be handled
+#   specially by the C++ code.
+# - Include enums both with and without default values.
+# - Include primitive string, numbers & doubles both with and without default
+#   values.
+# - Have an array within a struct, to verify that we correctly recurse.
+# - Reuse type name further within to ensure that this works.
+
+version=11
+namespace=configgen
+# Some random bool without a default value. These comments exist to check
+ # that comment parsing works.e
+boolVal bool
+ ## A bool with a default value set.
+bool_with_def bool default=false
+intVal int
+intWithDef int default=-545
+longVal long
+longWithDef long default=1234567890123
+doubleVal double
+double_with_def double default=-6.43
+# Another comment
+stringVal string
+stringwithdef string default="foobar#notacomment"
+enumVal enum { FOO, BAR, FOOBAR }
+enumwithdef enum { FOO2, BAR2, FOOBAR2 } default=BAR2
+refVal reference
+refwithdef reference default=":parent:"
+fileVal file
+pathVal path
+
+boolarr[] bool
+intarr[] int
+longarr[] long
+doublearr[] double
+stringarr[] string
+enumarr[] enum { ARRAY, VALUES }
+refarr[] reference
+filearr[] file
+pathArr[] path
+
+intMap{} int
+pathMap{} file
+
+# A basic struct
+basic_struct.foo string default="foo"
+basic_struct.bar int default=0
+
+# A struct of struct
+struct_of_struct.inner0.name string default="inner0"
+struct_of_struct.inner0.index int default=0
+struct_of_struct.inner1.name string default="inner1"
+struct_of_struct.inner1.index int default=1
+
+myArray[].intVal int default=14
+myArray[].stringVal[] string
+myArray[].enumVal enum { INNER, ENUM, TYPE } default=TYPE
+myArray[].refVal reference # Value in array without default
+myArray[].anotherArray[].foo int default=-4
+
+myMap{}.intVal int default=15
+myMap{}.stringVal[] string
+myMap{}.enumVal enum { INNER, ENUM, TYPE } default=ENUM
+myMap{}.refVal reference # Value in map without default
+myMap{}.anotherArray[].foo int default=-5

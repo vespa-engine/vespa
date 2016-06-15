@@ -1,0 +1,14 @@
+.depend
+Makefile
+matching_test
+query_test
+querynodes_test
+resolveviewvisitor_test
+termdataextractor_test
+searchcore_matching_stats_test_app
+searchcore_matching_test_app
+searchcore_query_test_app
+searchcore_querynodes_test_app
+searchcore_resolveviewvisitor_test_app
+searchcore_sessionmanager_test_app
+searchcore_termdataextractor_test_app

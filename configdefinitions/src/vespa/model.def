@@ -1,0 +1,13 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config
+
+vespaVersion                       string default="unknown"
+hosts[].name                       string default="(unknownhostname)"
+hosts[].services[].name            string default="(noservicename)"
+hosts[].services[].type            string default="(noservicetype)"
+hosts[].services[].configid        string default="(noconfigid)"
+hosts[].services[].clustertype     string default="(unknownclustertype)"
+hosts[].services[].clustername     string default="(unknownclustername)"
+hosts[].services[].index           int default=0
+hosts[].services[].ports[].number  int default=-1
+hosts[].services[].ports[].tags    string default="(notags)"

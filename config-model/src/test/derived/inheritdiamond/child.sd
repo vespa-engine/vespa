@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search child {
+    document child inherits mother, father {
+        struct child_struct {
+            field child_field type string { }
+        }
+        field foo type grandparent_struct { }
+        field bar type mother_struct { }
+        field baz type father_struct { }
+        field cox type child_struct { }
+    }
+}

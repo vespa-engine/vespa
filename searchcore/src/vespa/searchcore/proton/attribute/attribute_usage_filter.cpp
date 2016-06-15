@@ -1,0 +1,148 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include "attribute_usage_filter.h"
+#include <sstream>
+
+namespace proton {
+
+namespace
+{
+
+void makeAddressSpaceMessage(std::ostream &os,
+                              const AddressSpaceUsageStats &usage)
+{
+    os << "{ used: " <<
+        usage.getUsage().used() << ", limit: " <<
+        usage.getUsage().limit() << "}, attributeName: \"" <<
+        usage.getAttributeName() << "\", subdb: \"" <<
+        usage.getSubDbName() << "\"}";
+}
+
+void makeEnumStoreMessage(std::ostream &os,
+                          double used, double limit,
+                          const AddressSpaceUsageStats &usage)
+{
+    os << "enumStoreLimitReached: { "
+        "action: \""
+        "add more content nodes"
+        "\", "
+        "reason: \""
+        "enum store address space used (" << used << ") > "
+        "limit (" << limit << ")"
+        "\", enumStore: ";
+    makeAddressSpaceMessage(os, usage);
+}
+
+void makeMultiValueMessage(std::ostream &os,
+                           double used, double limit,
+                           const AddressSpaceUsageStats &usage)
+{
+    os << "multiValueLimitReached: { "
+        "action: \""
+        "use 'huge' setting on attribute field or add more content nodes"
+        "\", "
+        "reason: \""
+        "multiValue address space used (" << used << ") > "
+        "limit (" << limit << ")"
+        "\", multiValue: ";
+    makeAddressSpaceMessage(os, usage);
+}
+
+}
+
+void
+AttributeUsageFilter::recalcState(const Guard &guard)
+{
+    (void) guard;
+    bool hasMessage = false;
+    std::ostringstream message;
+    const AddressSpaceUsageStats &enumStoreUsage =
+        _attributeStats.enumStoreUsage();
+    double enumStoreUsed = enumStoreUsage.getUsage().usage();
+    if (enumStoreUsed > _config._enumStoreLimit) {
+        hasMessage = true;
+        makeEnumStoreMessage(message, enumStoreUsed, _config._enumStoreLimit,
+                             enumStoreUsage);
+    }
+    const AddressSpaceUsageStats &multiValueUsage =
+        _attributeStats.multiValueUsage();
+    double multiValueUsed = multiValueUsage.getUsage().usage();
+    if (multiValueUsed > _config._multiValueLimit) {
+        if (hasMessage) {
+            message << ", ";
+        }
+        hasMessage = true;
+        makeMultiValueMessage(message, multiValueUsed, _config._multiValueLimit,
+                              multiValueUsage);
+    }
+    if (hasMessage) {
+        _state = State(false, message.str());
+        _acceptWrite = false;
+    } else {
+        _state = State();
+        _acceptWrite = true;
+    }
+}
+
+AttributeUsageFilter::AttributeUsageFilter()
+    : _lock(),
+      _attributeStats(),
+      _config(),
+      _state(),
+      _acceptWrite(true)
+{
+}
+
+
+void
+AttributeUsageFilter::setAttributeStats(AttributeUsageStats attributeStats_in)
+{
+    Guard guard(_lock);
+    _attributeStats = attributeStats_in;
+    recalcState(guard);
+}
+
+AttributeUsageStats
+AttributeUsageFilter::getAttributeUsageStats() const
+{
+    Guard guard(_lock);
+    return _attributeStats;
+}
+
+void
+AttributeUsageFilter::setConfig(Config config_in)
+{
+    Guard guard(_lock);
+    _config = config_in;
+    recalcState(guard);
+}
+
+double
+AttributeUsageFilter::getEnumStoreUsedRatio() const
+{
+    Guard guard(_lock);
+    return _attributeStats.enumStoreUsage().getUsage().usage();
+}
+
+double
+AttributeUsageFilter::getMultiValueUsedRatio() const
+{
+    Guard guard(_lock);
+    return _attributeStats.multiValueUsage().getUsage().usage();
+}
+
+bool
+AttributeUsageFilter::acceptWriteOperation() const
+{
+    return _acceptWrite;
+}
+
+AttributeUsageFilter::State
+AttributeUsageFilter::getAcceptState() const
+{
+    Guard guard(_lock);
+    return _state;
+}
+
+} // namespace proton

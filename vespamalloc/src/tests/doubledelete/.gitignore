@@ -1,0 +1,7 @@
+.depend
+Makefile
+doubledelete_test
+doubledelete_testd
+expectsignal
+vespamalloc_doubledelete_test_app
+vespamalloc_expectsignal_app

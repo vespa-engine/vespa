@@ -1,0 +1,227 @@
+/**********************************************************
+ * The following C source code was automatically generated
+ * by the new DTREE version: 1.x  
+ **********************************************************/
+
+#include <string.h>  /* for strcmp() */
+
+/*******************************************
+ * APPLICATION DEPENDENT MISSING VALUE CODES
+ *******************************************/
+
+const double DBL_MISSING_VALUE = 0.0;
+const int    INT_MISSING_VALUE = 0;
+
+/************
+ * PREDICTORS
+ ************/
+double CT$, QPSCOREFOR_KG PEOPLE, SDSF_LOCAL, SDSF_WEB;
+
+/***************************************************************
+ * Here come the trees in the treenet.  A shell for calling them
+ * appears at the end of this source file.
+ ***************************************************************/
+/* Data Dictionary, Number Of Variables = 4*/
+/*    Name = CT$, Type = categorical. */
+/*    Name = QPSCOREFOR_KG PEOPLE, Type = continuous. */
+/*    Name = SDSF_LOCAL, Type = continuous. */
+/*    Name = SDSF_WEB, Type = continuous. */
+
+MODELBEGIN:
+
+  /* N trees: 5 */
+
+link TN0;
+pred = tnscore; /* predicted value for GRADE */
+
+/*********************/
+/* Model is complete */
+/*********************/
+
+return;
+
+
+tnscore = 0.0;
+
+TN0:
+
+  /* Tree 1 of 5 */
+N0_1: 
+  if CT$ in (Wiki, Web, Image, Video, Finance) then goto N0_2;
+ else goto T0_4;
+
+N0_2: 
+  if SDSF_LOCAL < 0.6359952986 then goto N0_3;
+ else goto T0_3;
+
+N0_3: 
+  if CT$ in (Image, Video) then goto T0_1;
+ else goto T0_2;
+
+T0_1: 
+  response = -0.1846455351;
+ goto D0;
+
+T0_2: 
+  response = -0.0057844764;
+ goto D0;
+
+T0_3: 
+  response = -0.4039473684;
+ goto D0;
+
+T0_4: 
+  response = 0.2900655347;
+ goto D0;
+
+D0:
+
+tnscore = tnscore + response;
+
+  /* Tree 2 of 5 */
+N1_1: 
+  if CT$ in (Wiki, Web, Image, Video, KG Movie, Finance, Timezone) then goto T1_1;
+ else goto N1_2;
+
+T1_1: 
+  response = -0.0790797330;
+ goto D1;
+
+N1_2: 
+  if CT$ in (Local, Q2A) then goto N1_3;
+ else goto T1_4;
+
+N1_3: 
+  if SDSF_LOCAL < 0.5348491371 then goto T1_2;
+ else goto T1_3;
+
+T1_2: 
+  response = -0.0304336373;
+ goto D1;
+
+T1_3: 
+  response = 0.2401947405;
+ goto D1;
+
+T1_4: 
+  response = 0.3739991530;
+ goto D1;
+
+D1:
+
+tnscore = tnscore + response;
+
+  /* Tree 3 of 5 */
+N2_1: 
+  if CT$ in (Web, Image, Video, Timezone) then goto T2_1;
+ else goto N2_2;
+
+T2_1: 
+  response = -0.0572267897;
+ goto D2;
+
+N2_2: 
+  if CT$ in (Wiki, Local, KG Movie) then goto N2_3;
+ else goto T2_4;
+
+N2_3: 
+  if SDSF_LOCAL < 0.4078139514 then goto T2_2;
+ else goto T2_3;
+
+T2_2: 
+  response = -0.0295648159;
+ goto D2;
+
+T2_3: 
+  response = 0.1601345785;
+ goto D2;
+
+T2_4: 
+  response = 0.2612064355;
+ goto D2;
+
+D2:
+
+tnscore = tnscore + response;
+
+  /* Tree 4 of 5 */
+N3_1: 
+  if CT$ in (Image, Video, Timezone) then goto T3_1;
+ else goto N3_2;
+
+T3_1: 
+  response = -0.1103244788;
+ goto D3;
+
+N3_2: 
+  if CT$ in (Wiki, Web, Local, KG Movie) then goto N3_3;
+ else goto T3_4;
+
+N3_3: 
+  if QPSCOREFOR_KG_PEOPLE < 0.9930000007 then goto T3_2;
+ else goto T3_3;
+
+T3_2: 
+  response = 0.0194079789;
+ goto D3;
+
+T3_3: 
+  response = -0.2056829336;
+ goto D3;
+
+T3_4: 
+  response = 0.1987635246;
+ goto D3;
+
+D3:
+
+tnscore = tnscore + response;
+
+  /* Tree 5 of 5 */
+N4_1: 
+  if CT$ in (Image, Video, Event, Timezone) then goto N4_2;
+ else goto N4_3;
+
+N4_2: 
+  if SDSF_WEB < 0.3725785315 then goto T4_1;
+ else goto T4_2;
+
+T4_1: 
+  response = -0.0680975953;
+ goto D4;
+
+T4_2: 
+  response = -0.2264832978;
+ goto D4;
+
+N4_3: 
+  if CT$ in (Wiki, Web, Local, Q2A) then goto T4_3;
+ else goto T4_4;
+
+T4_3: 
+  response = 0.0105928220;
+ goto D4;
+
+T4_4: 
+  response = 0.1366891795;
+ goto D4;
+
+D4:
+
+tnscore = tnscore + response;
+
+return;
+/******************************
+ * CALL EACH TREENET EXPLICITLY
+ ******************************/
+
+void grove(void)
+{
+  int terminal_node_number;
+
+
+  return;
+}
+
+			___FINISHED___
+

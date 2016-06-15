@@ -1,0 +1,28 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.feedhandler;
+
+import com.yahoo.jdisc.Metric;
+import java.util.Map;
+
+/**
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @since 5.1.20
+ */
+public final class NullFeedMetric implements Metric {
+    @Override
+    public void set(String key, Number val, Context ctx) {
+    }
+
+    @Override
+    public void add(String key, Number val, Context ctx) {
+    }
+
+    @Override
+    public Context createContext(Map<String, ?> properties) {
+        return NullFeedContext.INSTANCE;
+    }
+
+    private static class NullFeedContext implements Context {
+        private static final NullFeedContext INSTANCE = new NullFeedContext();
+    }
+}

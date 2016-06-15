@@ -1,0 +1,476 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.diskindex");
+#include "diskindex.h"
+#include "disktermblueprint.h"
+#include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
+#include <vespa/searchlib/queryeval/split_float.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/termasstring.h>
+#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
+#include "pagedict4randread.h"
+#include "fileheader.h"
+#include "bitvectorkeyscope.h"
+
+using namespace search::index;
+using namespace search::query;
+using namespace search::queryeval;
+
+namespace search
+{
+
+namespace diskindex
+{
+
+void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
+{
+    a.swap(b);
+}
+
+DiskIndex::LookupResult::LookupResult()
+    : indexId(0u),
+      wordNum(0),
+      counts(),
+      bitOffset(0)
+{
+}
+
+DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
+    : _indexDir(indexDir),
+      _cacheSize(cacheSize),
+      _schema(),
+      _postingFiles(),
+      _bitVectorDicts(),
+      _dicts(),
+      _tuneFileSearch(),
+      _cache(*this, cacheSize)
+{
+}
+
+bool
+DiskIndex::loadSchema(void)
+{
+    vespalib::string schemaName = _indexDir + "/schema.txt";
+    if (!_schema.loadFromFile(schemaName)) {
+        LOG(error,
+            "Could not open schema '%s'",
+            schemaName.c_str());
+        return false;
+    }
+    if (!SchemaUtil::validateSchema(_schema)) {
+        LOG(error,
+            "Could not validate schema loaded from '%s'",
+            schemaName.c_str());
+        return false;
+    }
+    return true;
+}
+
+
+bool
+DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
+{
+    for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
+        vespalib::string dictName =
+            _indexDir + "/" + itr.getName() + "/dictionary";
+        auto dict = std::make_unique<PageDict4RandRead>();
+        if (!dict->open(dictName, tuneFileSearch._read)) {
+            LOG(warning, "Could not open disk dictionary '%s'",
+                dictName.c_str());
+            _dicts.clear();
+            return false;
+        }
+        _dicts.push_back(std::move(dict));
+    }
+    return true;
+}
+
+
+bool
+DiskIndex::openField(const vespalib::string &fieldDir,
+                     const TuneFileSearch &tuneFileSearch)
+{
+    vespalib::string postingName = fieldDir + "posocc.dat.compressed";
+
+    DiskPostingFile::SP pFile;
+    BitVectorDictionary::SP bDict;
+    FileHeader fileHeader;
+    bool dynamicK = false;
+    if (fileHeader.taste(postingName, tuneFileSearch._read)) {
+        if (fileHeader.getVersion() == 1 &&
+            fileHeader.getBigEndian() &&
+            fileHeader.getFormats().size() == 2 &&
+            fileHeader.getFormats()[0] ==
+            DiskPostingFileDynamicKReal::getIdentifier() &&
+            fileHeader.getFormats()[1] ==
+            DiskPostingFileDynamicKReal::getSubIdentifier()) {
+            dynamicK = true;
+        } else if (fileHeader.getVersion() == 1 &&
+                   fileHeader.getBigEndian() &&
+                   fileHeader.getFormats().size() == 2 &&
+                   fileHeader.getFormats()[0] ==
+                   DiskPostingFileReal::getIdentifier() &&
+                   fileHeader.getFormats()[1] ==
+                   DiskPostingFileReal::getSubIdentifier()) {
+            dynamicK = false;
+        } else {
+            LOG(warning,
+                "Could not detect format for posocc file read %s",
+                postingName.c_str());
+        }
+    }
+    pFile.reset(dynamicK ?
+                new DiskPostingFileDynamicKReal() :
+                new DiskPostingFileReal());
+    if (!pFile->open(postingName, tuneFileSearch._read)) {
+        LOG(warning,
+            "Could not open posting list file '%s'",
+            postingName.c_str());
+        return false;
+    }
+
+    bDict.reset(new BitVectorDictionary());
+    if (!bDict->open(fieldDir, tuneFileSearch._read,
+                     BitVectorKeyScope::PERFIELD_WORDS)) {
+        LOG(warning,
+            "Could not open bit vector dictionary in '%s'",
+            fieldDir.c_str());
+        return false;
+    }
+    _postingFiles.push_back(pFile);
+    _bitVectorDicts.push_back(bDict);
+    return true;
+}
+
+
+bool
+DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
+{
+    if (!loadSchema() || !openDictionaries(tuneFileSearch))
+        return false;
+    for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
+        vespalib::string fieldDir =
+            _indexDir + "/" + itr.getName() + "/";
+        if (!openField(fieldDir, tuneFileSearch))
+            return false;
+    }
+    _tuneFileSearch = tuneFileSearch;
+    return true;
+}
+
+
+bool
+DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
+                 const DiskIndex &old)
+{
+    if (tuneFileSearch != old._tuneFileSearch)
+        return setup(tuneFileSearch);
+    if (!loadSchema() || !openDictionaries(tuneFileSearch))
+        return false;
+    const Schema &oldSchema = old._schema;
+    for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
+        vespalib::string fieldDir =
+            _indexDir + "/" + itr.getName() + "/";
+        SchemaUtil::IndexSettings settings = itr.getIndexSettings();
+        if (settings.hasError())
+            return false;
+        bool hasPhraseOcc = settings.hasPhrases();
+        SchemaUtil::IndexIterator oItr(oldSchema, itr);
+        if (!itr.hasMatchingOldFields(oldSchema, hasPhraseOcc) ||
+            !oItr.isValid()) {
+            if (!openField(fieldDir, tuneFileSearch))
+                return false;
+        } else {
+            uint32_t oldPacked = oItr.getIndex();
+            _postingFiles.push_back(old._postingFiles[oldPacked]);
+            _bitVectorDicts.push_back(old._bitVectorDicts[oldPacked]);
+        }
+    }
+    _tuneFileSearch = tuneFileSearch;
+    return true;
+}
+
+DiskIndex::LookupResult::UP
+DiskIndex::lookup(uint32_t index, const vespalib::stringref & word)
+{
+    /** Only used for testing */
+    IndexList indexes;
+    indexes.push_back(index);
+    Key key(indexes, word);
+    LookupResultVector resultV(indexes.size());
+    LookupResult::UP result;
+    if ( read(key, resultV)) {
+        result.reset(new LookupResult());
+        result->swap(resultV[0]);
+    }
+    return result;
+}
+
+namespace {
+
+bool
+containsAll(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector & result)
+{
+    for (uint32_t index : indexes) {
+        bool found(false);
+        for (size_t i(0); !found && (i < result.size()); i++) {
+            found = index == result[i].indexId;
+        }
+        if ( ! found ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+DiskIndex::IndexList
+unite(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector & result)
+{
+    vespalib::hash_set<uint32_t> all;
+    for (uint32_t index : indexes) {
+        all.insert(index);
+    }
+    for (const DiskIndex::LookupResult & lr : result) {
+        all.insert(lr.indexId);
+    }
+    DiskIndex::IndexList v;
+    v.reserve(all.size());
+    for (uint32_t indexId : all) {
+        v.push_back(indexId);
+    }
+    return v;
+}
+
+}
+
+DiskIndex::LookupResultVector
+DiskIndex::lookup(const std::vector<uint32_t> & indexes, const vespalib::stringref & word)
+{
+    Key key(indexes, word);
+    LookupResultVector result;
+    if (_cacheSize > 0) {
+        result = _cache.read(key);
+        if (!containsAll(indexes, result)) {
+            key = Key(unite(indexes, result), word);
+            _cache.invalidate(key);
+            result = _cache.read(key);
+        }
+    } else {
+        read(key, result);
+    }
+    return result;
+}
+
+bool
+DiskIndex::read(const Key & key, LookupResultVector & result)
+{
+    uint64_t wordNum(0);
+    const IndexList & indexes(key.getIndexes());
+    result.resize(indexes.size());
+    for (size_t i(0); i < result.size(); i++) {
+        LookupResult & lr(result[i]);
+        lr.indexId = indexes[i];
+        PostingListOffsetAndCounts offsetAndCounts;
+        wordNum = 0;
+        SchemaUtil::IndexIterator it(_schema, lr.indexId);
+        uint32_t fieldId = it.getIndex();
+        if (fieldId < _dicts.size()) {
+            (void) _dicts[fieldId]->lookup(key.getWord(), wordNum,
+                                           offsetAndCounts);
+        }
+        lr.wordNum = wordNum;
+        lr.counts.swap(offsetAndCounts._counts);
+        lr.bitOffset = offsetAndCounts._offset;
+    }
+    return true;
+}
+
+index::PostingListHandle::UP
+DiskIndex::readPostingList(const LookupResult &lookupRes) const
+{
+    PostingListHandle::UP handle(new PostingListHandle());
+    handle->_bitOffset = lookupRes.bitOffset;
+    handle->_bitLength = lookupRes.counts._bitLength;
+    SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
+    handle->_file = _postingFiles[it.getIndex()].get();
+    if (handle->_file == NULL) {
+        return PostingListHandle::UP();
+    }
+    const uint32_t firstSegment = 0;
+    const uint32_t numSegments = 0; // means all segments
+    handle->_file->readPostingList(lookupRes.counts,
+                                   firstSegment,
+                                   numSegments,
+                                   *handle);
+    return handle;
+}
+
+
+BitVector::UP
+DiskIndex::readBitVector(const LookupResult &lookupRes) const
+{
+    SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
+    BitVectorDictionary * dict = _bitVectorDicts[it.getIndex()].get();
+    if (dict == NULL) {
+        return BitVector::UP();
+    }
+    return dict->lookup(lookupRes.wordNum);
+}
+
+
+uint64_t
+DiskIndex::getSize() const
+{
+    search::DirectoryTraverse dirt(_indexDir.c_str());
+    return dirt.GetTreeSize();
+}
+
+
+namespace
+{
+
+DiskIndex::LookupResult _G_nothing;
+
+class LookupCache
+{
+public:
+    LookupCache(DiskIndex & diskIndex, const std::vector<uint32_t> & fieldIds) :
+        _diskIndex(diskIndex),
+        _fieldIds(fieldIds),
+        _cache()
+    {
+    }
+    const DiskIndex::LookupResult &
+    lookup(const vespalib::string & word, uint32_t fieldId) {
+        Cache::const_iterator it = _cache.find(word);
+        if (it == _cache.end()) {
+            _cache[word] = _diskIndex.lookup(_fieldIds, word);
+            it = _cache.find(word);
+        }
+        for (size_t i(0); i < it->second.size(); i++) {
+            if (it->second[i].indexId == fieldId) {
+                return it->second[i];
+            }
+        }
+        return _G_nothing;
+    }
+private:
+    typedef vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector> Cache;
+    DiskIndex &                   _diskIndex;
+    const std::vector<uint32_t> & _fieldIds;
+    Cache                         _cache;
+};
+
+class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
+{
+private:
+    LookupCache      &_cache;
+    DiskIndex        &_diskIndex;
+    const FieldSpec  &_field;
+    const uint32_t    _fieldId;
+
+public:
+    CreateBlueprintVisitor(LookupCache & cache, DiskIndex &diskIndex,
+                           const IRequestContext & requestContext,
+                           const FieldSpec &field,
+                           uint32_t fieldId)
+        : CreateBlueprintVisitorHelper(diskIndex, field, requestContext),
+          _cache(cache),
+          _diskIndex(diskIndex),
+          _field(field),
+          _fieldId(fieldId)
+    {
+    }
+
+    template <class TermNode>
+    void
+    visitTerm(TermNode &n)
+    {
+        const vespalib::string termStr = termAsString(n);
+        const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
+        if (lookupRes.valid()) {
+            bool useBitVector = _field.isFilter();
+            DiskIndex::LookupResult::UP copy(new DiskIndex::LookupResult(lookupRes));
+            setResult(make_UP(new DiskTermBlueprint(_field, _diskIndex, std::move(copy), useBitVector)));
+        } else {
+            setResult(make_UP(new EmptyBlueprint(_field)));
+        }
+    }
+
+    virtual void visit(NumberTerm &n) {
+        handleNumberTermAsText(n);
+    }
+
+    virtual void visit(LocationTerm &n)  { visitTerm(n); }
+    virtual void visit(PrefixTerm &n)    { visitTerm(n); }
+    virtual void visit(RangeTerm &n)     { visitTerm(n); }
+    virtual void visit(StringTerm &n)    { visitTerm(n); }
+    virtual void visit(SubstringTerm &n) { visitTerm(n); }
+    virtual void visit(SuffixTerm &n)    { visitTerm(n); }
+    virtual void visit(RegExpTerm &n)    { visitTerm(n); }
+    virtual void visit(PredicateQuery &) { }
+};
+
+
+Blueprint::UP
+createBlueprintHelper(LookupCache & cache, DiskIndex & diskIndex, const IRequestContext & requestContext,
+                      const FieldSpec &field, uint32_t fieldId, const Node &term)
+{
+    if (fieldId != Schema::UNKNOWN_FIELD_ID) {
+        CreateBlueprintVisitor visitor(cache, diskIndex, requestContext, field, fieldId);
+        const_cast<Node &>(term).accept(visitor);
+        return visitor.getResult();
+    }
+    return Blueprint::UP(new EmptyBlueprint(field));
+}
+
+} // namespace <unnamed>
+
+Blueprint::UP
+DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term)
+{
+    std::vector<uint32_t> fieldIds;
+    fieldIds.push_back(_schema.getIndexFieldId(field.getName()));
+    LookupCache cache(*this, fieldIds);
+    return createBlueprintHelper(cache, *this, requestContext, field, fieldIds[0], term);
+}
+
+
+Blueprint::UP
+DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term)
+{
+    if (fields.empty()) {
+        return Blueprint::UP(new EmptyBlueprint());
+    }
+
+    std::vector<uint32_t> fieldIds;
+    fieldIds.reserve(fields.size());
+    for (size_t i(0); i< fields.size(); i++) {
+        const FieldSpec & field = fields[i];
+        uint32_t fieldId = _schema.getIndexFieldId(field.getName());
+        if (fieldId != Schema::UNKNOWN_FIELD_ID) {
+            fieldIds.push_back(_schema.getIndexFieldId(field.getName()));
+        }
+    }
+    Blueprint::UP result(new OrBlueprint());
+    OrBlueprint & orbp(static_cast<OrBlueprint &>(*result));
+    LookupCache cache(*this, fieldIds);
+    for (size_t i(0); i< fields.size(); i++) {
+        const FieldSpec & field = fields[i];
+        orbp.addChild(createBlueprintHelper(cache, *this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
+    }
+    if (orbp.childCnt() == 1) {
+        return orbp.removeChild(0);
+    } else {
+        return result;
+    }
+}
+
+
+} // namespace diskindex
+
+} // namespace search

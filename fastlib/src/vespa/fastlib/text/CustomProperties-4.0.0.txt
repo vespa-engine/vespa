@@ -1,0 +1,34 @@
+# CustomProperties-4.0.0.txt
+# Date: 2003-07-04, 15:40:00
+#
+# Unicode Character Database: Custom Properties
+# Manually generated on the same format as Unicode
+# Property files, to be included as a basis for unicode
+# library support for properties.
+# This file allows the notion of WordCharacters to be
+# modified without altering the original Unicode files.
+# ================================================
+
+# ================================================
+
+# Custom Property: Custom_Word_Char
+#  Includes: Parenthesized and Circled CJK characters,
+#            some telegraph symbols, some private use
+
+3200..321C    ; Custom_Word_Char # So  [29] PARENTHESIZED HANGUL KIYEOK..PARENTHESIZED HANGUL CIEUC U
+3220..3229    ; Custom_Word_Char # No  [10] PARENTHESIZED IDEOGRAPH ONE..PARENTHESIZED IDEOGRAPH TEN
+322A..3243    ; Custom_Word_Char # So  [26] PARENTHESIZED IDEOGRAPH MOON..PARENTHESIZED IDEOGRAPH REACH
+3260..327B    ; Custom_Word_Char # So  [28] CIRCLED HANGUL NIEUN..CIRCLED HANGUL HIEUH A
+327F          ; Custom_Word_Char # So       KOREAN STANDARD SYMBOL
+3280..3289    ; Custom_Word_Char # No  [10] CIRCLED IDEOGRAPH ONE..CIRCLED IDEOGRAPH TEN
+328A..32B0    ; Custom_Word_Char # So  [49] CIRCLED IDEOGRAPH MOON..CIRCLED IDEOGRAPH NIGHT
+32C0..32CB    ; Custom_Word_Char # So  [12] IDEOGRAPHIC TELEGRAPH SYMBOL FOR JANUARY..IDEOGRAPHIC TELEGRAPH SYMBOL FOR DECEMBER
+32D0..32FE    ; Custom_Word_Char # So  [47] CIRCLED KATAKANA A..CIRCLED KATAKANA WO
+E000..F8FF    ; Custom_Word_Char # Co  [6400] Private Use, First..Private Use,
+Last
+
+# Custom Property: Custom_Non_Word_Char
+#  Includes character that should not be interpreted as word characters: 
+
+005E          ; Custom_Non_Word_Char # Sk       CIRCUMFLEX ACCENT
+0060          ; Custom_Non_Word_Char # Sk       GRAVE ACCENT

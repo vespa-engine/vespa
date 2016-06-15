@@ -1,0 +1,31 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/eval/tensor_engine.h>
+
+namespace vespalib {
+namespace tensor {
+
+/**
+ * This is a tensor engine implementation wrapping the default tensor
+ * implementations (dense/sparse).
+ **/
+class DefaultTensorEngine : public eval::TensorEngine
+{
+private:
+    DefaultTensorEngine() {}
+    static const DefaultTensorEngine _engine;
+public:
+    static const TensorEngine &ref() { return _engine; };
+    ValueType type_of(const Tensor &tensor) const override;
+    std::unique_ptr<Tensor> create(const TensorSpec &spec) const override;
+    bool equal(const Tensor &a, const Tensor &b) const override;
+    const Value &reduce(const Tensor &tensor, const BinaryOperation &op, Stash &stash) const override;
+    const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;
+    const Value &perform(const UnaryOperation &op, const Tensor &a, Stash &stash) const override;
+    const Value &perform(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const override;
+};
+
+} // namespace vespalib::tensor
+} // namespace vespalib

@@ -1,0 +1,50 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.document.serialization;
+
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
+import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.io.GrowableByteBuffer;
+
+/**
+ * Class used for de-serializing documents on the current head document format.
+ *
+ * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ */
+public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
+
+    public VespaDocumentDeserializerHead(DocumentTypeManager manager, GrowableByteBuffer buffer) {
+        super(manager, buffer);
+    }
+
+    @Override
+    public void read(DocumentUpdate update) {
+        update.setId(new DocumentId(this));
+        update.setDocumentType(readDocumentType());
+
+        int size = getInt(null);
+
+        for (int i = 0; i < size; i++) {
+            // TODO: Should use checked method, but doesn't work according to test now.
+            update.addFieldUpdateNoCheck(new FieldUpdate(this, update.getDocumentType(), 8));
+        }
+
+        try {
+            int sizeAndFlags = getInt(null);
+            update.setCreateIfNonExistent(DocumentUpdateFlags.extractFlags(sizeAndFlags).getCreateIfNonExistent());
+            size = DocumentUpdateFlags.extractValue(sizeAndFlags);
+
+            for (int i = 0; i < size; i++) {
+                int type = getByte(null);
+                update.addFieldPathUpdate(FieldPathUpdate.create(FieldPathUpdate.Type.valueOf(type),
+                        update.getDocumentType(), this));
+            }
+        } catch (ParseException e) {
+            throw new DeserializationException(e);
+        }
+    }
+
+}

@@ -1,0 +1,121 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search attributes {
+
+  document attributes {
+
+    # Summary value taken from attribute
+    field a1 type string {
+      indexing: attribute | summary
+      match {
+        token
+      }
+    }
+
+    # Summary value taken from summary
+    field a2 type string {
+      indexing: attribute | summary
+      match {
+        token
+      }
+    }
+
+    # Summary value taken from summary
+    field a3 type string {
+      indexing: attribute | summary
+      match {
+        token
+      }
+    }
+
+    # No attribute
+    field a4 type string {
+      indexing: summary
+    }
+
+    # Unique only - not searchable. No match-group since the attribute is not to be used for searching
+    field a5 type string {
+      indexing: attribute | summary | index
+    }
+
+    # Not searchable
+    field a6 type string {
+      indexing: attribute | summary | index
+    }
+
+    # Multivalued; summary override
+    field a7 type string {
+      indexing: summary
+    }
+
+    # Multivalued; summary override
+    field a8 type string {
+      indexing: summary
+    }
+
+    field b1 type string {
+      indexing: attribute | summary
+    }
+
+    field b2 type string {
+      indexing: attribute | summary | index
+    }
+
+    field b3 type string {
+      indexing: attribute | summary | index
+      alias: date
+    }
+
+    field b4 type int {
+      indexing: attribute | summary
+    }
+
+    # integers (should not trigger exact-match query parsing)
+    field b5 type int {
+      indexing: summary | attribute
+    }
+    field b6 type array<long> {
+      indexing: summary | attribute
+    }
+    field b7 type weightedset<double> {
+      indexing: summary | attribute
+    }
+
+    field a9 type int {
+      indexing: attribute
+      attribute: enable-bit-vectors
+    }
+  
+    field a10 type array<int> {
+      indexing: attribute
+      attribute {
+        fast-search
+        enable-only-bit-vector
+        enable-bit-vectors
+      }
+    }
+
+    field a11 type int {
+      indexing: attribute
+      attribute: fast-access
+    }
+
+    field a12 type int {
+      indexing: attribute
+      rank: filter
+    }
+
+  }
+
+  field a7_arr type array<string> {
+    indexing: input a7 | split ";" | attribute
+  }
+
+  field a8_arr type array<string> {
+    indexing: input a8 | split ";" | attribute
+  }
+
+  fieldset default {
+    fields: a5, a6
+  }
+
+}

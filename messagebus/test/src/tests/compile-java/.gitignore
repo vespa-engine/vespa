@@ -1,0 +1,4 @@
+*.class
+.depend
+Makefile
+compile-java_test

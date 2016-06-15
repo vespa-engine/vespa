@@ -1,0 +1,7 @@
+*.dsp
+*.mak
+Makefile.ini
+config_command.sh
+html
+latex
+project.dsw

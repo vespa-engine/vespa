@@ -1,0 +1,344 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search
+## name of this rank profile. maps to table index for internal use.
+rankprofile[].name string
+
+## the name of a generic property available to the feature execution framework and feature plugins
+rankprofile[].fef.property[].name string
+
+## the value of a generic property available to feature plugins
+rankprofile[].fef.property[].value string
+
+## the catalog name overrides apply to
+rankprofile[].catalog[].name string
+
+## Boost value for AND queries in this catalog.
+rankprofile[].catalog[].andboost int default=0
+
+## Boost value for OR queries in this catalog.
+rankprofile[].catalog[].orboost int default=0
+
+## Boost value for ANY queries in this catalog.
+rankprofile[].catalog[].anyboost int default=0
+
+## Boost value for NEAR queries in catalog.
+rankprofile[].catalog[].nearboost int default=0
+
+## Boost value for ORDEREDNEAR queries in this catalog.
+rankprofile[].catalog[].orderednearboost int default=0
+
+## Boost value for phrase queries in this catalog.
+rankprofile[].catalog[].phraseboost int default=0
+
+## Boost value for all queries in catalog.
+rankprofile[].catalog[].rankboost int default=0
+
+## If true, the context boost is the max value of
+## the individual contextboosts.
+## When false, the context boost when a term is in
+## several contexts is the sum of the individual contextboosts.
+rankprofile[].catalog[].bestcontextboostonly bool default=false
+
+
+## If true, then use extnumoccboost only when calculating rank values.
+## Also, do not normalize the extnumoccboost value with
+## global term frequency. Default value is false.
+rankprofile[].catalog[].extnumoccboostonly bool default=false
+
+## If yes, then use extnumoccboost only when calculating rank values.
+## Also, do not normalize the extnumoccboost value with
+## global term frequency. Default value is no.
+rankprofile[].catalog[].numoccandextnumoccboostonly bool default=false
+
+## If yes, then use bitvectors when possible.
+## Default value is false.
+rankprofile[].catalog[].preferbitvector bool default=false
+
+## Load extnumoccboost for this catalog from the named file.
+## extnumoccboost specifies boost values due to the number of
+## occurences of a term that are external to the document. If
+## "NULL" is given as file name, then all extnumoccboost values
+## will be set to 0.
+rankprofile[].catalog[].extnumoccboost.table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load numoccboost for this catalog from the named file.
+## numoccboost specifies boost values due to the number of occurences in
+## a document. If "NULL" is given as file name, then all numoccboost
+## values will be set to 0.
+rankprofile[].catalog[].numoccboost.table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load firstoccboost for catalog from the file named.
+## firstoccboost specifies boost values due to the position of the
+## first occurence in a document. If "NULL" is given as file name,
+## then all firstoccboost values will be set to 0.
+rankprofile[].catalog[].firstoccboost.table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+
+## Load firstoccproximityboost for this catalog from the file named.
+## firstoccproximity boost specifies boost values due to the correlation between
+## positions of the first occurence in a document for two and two words.
+##
+## If "NULL" is given as file name, then all
+## firstoccproximityboost values will be set to 0. If otherwise set,
+## should be the name of a file to load into the table. The file
+## should have 256 lines each containing a single integer.
+##
+## There are 256 elements in the table, handling forward distances from 1.
+## The corresponding firstoccrevproximityboost table is used
+## to handle closeness in reverse order.
+##
+## The last array index specifies the proximity table set. During
+## evaluation, the bigram proximity weight supplied by the query segmenter
+## specifies which proximity table set to use, with a fallback to set 0
+## when no information is available.
+rankprofile[].catalog[].firstoccproximityboost[].table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load firstoccrevproximityboost table for this catalog from the named file.
+## Specifies boost values due to the correlation between positions
+## of the first occurence in a document for two and two words when
+## the second word in the query comes first in the document.
+## See also firstoccproximityboost above.
+rankprofile[].catalog[].firstoccrevproximityboost[].table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load proximityboost for this catalog from the named file.
+## proximity boost specifies boost values due to the correlation between
+## positions of the occurences in a document for two and two words.
+## See also firstoccproximityboost above.
+rankprofile[].catalog[].proximityboost[].table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load revproximityboost for this catalog from the named file.
+## revproximity boost specifies boost values due to the correlation between
+## positions of the occurences in a document for two and two words.
+## See also firstoccproximityboost above.
+rankprofile[].catalog[].revproximityboost[].table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## Load divtable for this catalog from the named file.
+## Rank values for a query term are divided by the entry
+## in divtable indexed by log2 of term frequence.
+## The file should contain ?? lines each with a single integer.
+rankprofile[].catalog[].divtable string default=""
+
+## The name of a context in this catalog to specify boosts for.
+rankprofile[].catalog[].context[].name string
+
+## Boost occurrences in this context with the given value.
+## XXX -1 uses default (???) from somewhere(TM).
+rankprofile[].catalog[].context[].contextboost int default=0
+
+## Boost pair of occurrences in this context with
+## the given value when evaluating 2 words from same catalog in
+## parallell.
+## XXX -1 uses default (???) from somewhere(TM).
+rankprofile[].catalog[].context[].commoncontextboost.pair int default=0
+
+## Boost triple of occurrences in this context with
+## the given value when evaluating 3 words from same catalog in
+## parallell.
+## XXX -1 uses default (???) from somewhere(TM).
+rankprofile[].catalog[].context[].commoncontextboost.triple int default=0
+
+## Boost quad of occurrences in this context with
+## the given value when evaluating 4 words from same catalog in
+## parallell.
+## XXX -1 uses default (???) from somewhere(TM).
+rankprofile[].catalog[].context[].commoncontextboost.quad int default=0
+
+
+## The name of the attribute
+rankprofile[].attribute[].name string
+
+## Boost value for queries that hit in this attribute
+rankprofile[].attribute[].attributecontextboost int default=0
+
+## Load weightboost for this attribute from the named file.
+## weightboost specifies boost values due to the weight (weighted set)
+## or number of occurences (single, array) in an attribute.
+## If "NULL" is given as file name, then all weightboost values will be set to 0.
+rankprofile[].attribute[].weightboost.table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+
+## Load static rank values from the given staticrank docattr vector.
+## Must be specified in index.cf as a staticrankfile.
+rankprofile[].staticrankfile string default=""
+
+## Multiply static rank values with given value when calculating total
+## rank value.
+rankprofile[].staticcoefficient int default=1
+
+## If false then use only static ranking when sorting result hits.
+## Default is true.
+rankprofile[].dynamicranking bool default=true
+
+## If dynamic ranking is turned off, then ascending will sort the
+## result hits with lowest static rank values first, while
+## descending will sort with highest static rank values
+## first. Default is descending. This keyword has no effect if
+## dynamic ranking is on.
+rankprofile[].staticranksortorder string default="descending"
+
+## Load static rank mapping from the file named table. The static
+## rank mapping maps each 8-bit static rank value into a 32-bit static
+## rank value. This option may only be used with 8-bit static rank files.
+rankprofile[].staticrankmap string default=""
+
+## If set to "true", total rank will be reduced when dynamic rank is less than
+## 25% of static rank, to suppress irrelevant hits from popular sites.
+## If set to "false", total rank is not reduced.
+rankprofile[].clampstaticrank bool default=false
+
+## Load document datetime values used for freshness boost calculation from
+## this file. The values must be coded as minutes since
+## 1900-01-01T00:00Z. The value 0 has the special meaning
+## "no datetime value exists".
+rankprofile[].freshnessboost.file string default=""
+
+## Load freshnessboost lookup-table values from the file named
+## table instead of using built-in default values. The file must
+## contain 32 white-space separated non-negative integers.
+rankprofile[].freshnessboost.table string default="/home/vespa/conf/vespa/search/ranktables/constant-0000"
+
+## When calculating the freshness boost value multiply difference between
+## current datetime and document datetime with timeoffset before taking
+## the base-2 logarithm. Default value is 1. Max value is 31.
+rankprofile[].freshnessboost.timeoffset int default=1
+
+## If a document has datetime value 0, then use defaultboostvalue
+## as freshness boost value instead of doing table lookup. The default
+## default value is 0 (no boost).
+rankprofile[].freshnessboost.defaultboostvalue int default=0
+
+## Multiply freshness boost value with coefficient when calculating
+## total freshness boost value. If coefficient 0 is used, no freshness
+## boost value will be computed or added. Default value is 0.
+rankprofile[].freshnessboost.coefficient int default=0
+
+## boost table files for distance ranking, 1 dimension.
+## The tables have 465 elements each, where slots 0..15 represents
+## distances 0..15 while the remaining slots represents distance
+## (16 + (slot & 15)) << ((slot >> 4) - 1).  Linear interpolation is
+## used for distances "between" table slots.
+##
+## If "NULL" is given as the file name then all 1D distance boost values
+## for that table will be set to 0.
+rankprofile[].distance1dboosttable[].table string
+
+## boost table files for distance ranking, 2 dimensions.
+## The tables have 977 elements each, where slots 0..15 represents
+## square of distance being 0..15 while the remaining slots represents
+## square of distance distance being
+## (16 + (slot & 15)) << ((slot >> 4) - 1). Linear interpolation is
+## used for distances "between" table slots.
+##
+## If "NULL" is given as the file name then all 2D distance boost values
+## for that table will be set to 0.
+rankprofile[].distance2dboosttable[].table string
+
+## The lowest possible size of a ranked result. This is the lower ramp
+## of the percentage specified in the binsize variable. The default is
+## specified in fsearchrc.
+rankprofile[].binlow int default=-1
+
+## The high limit of the ranked result bin. If the percentage of the
+## resultset specified in binsize is higher than this limit, this will be
+## the max size. The default is specified in fsearchrc.
+rankprofile[].binhigh int default=-1
+
+## The size of the ranked results as a percentage of the total result
+## set size. The percentage can be ramped off with the binlow and binhigh
+## variables. The default is specified in fsearchrc.
+rankprofile[].binsize double default=-1
+
+## Minimum value for maximum value of number of 'posocc' entries for a word.
+## The default is specified in fsearchrc.
+rankprofile[].posbinlow int default=-1
+
+## Maximum value for maximum value of number of 'posocc' entries for a word.
+## The default is specified in fsearchrc.
+rankprofile[].posbinhigh int default=-1
+
+## The maximum value for number of 'posocc' entries for a word, specified
+## as a percentage of the number of documents in the index.  If more
+## entries are needed for evaluation, posocc entries are not used for that
+## word and evaluation will be performed without full proximity support.
+## The percentage can be ramped off with the posbinlow and posbinhigh
+## variables. The default is specified in fsearchrc.
+rankprofile[].posbinsize int default=-1
+
+## Boost value that is added to the relevance score of hits from superior
+## searches (searches where recall is sacrificed for better
+## precision). The rank cutoff feature will not be affected by this
+## feature (rank cutoff is applied before the superior boost).
+rankprofile[].superiorboost int default=0
+
+## Name of rank profile to be used when running superior searches
+## (searches where recall is sacrificed for better precision). If not
+## set, the current ranking profile will be used.
+##
+## If a profile for a superior search has this set then a superior^2
+## search exist (with more recall sacrificed than for superior searches)
+## and search behavior is slightly changed:
+##
+## If the search node has been asked to perform a superior search then an
+## internal double fallthrough with (superior, superior^2) search is
+## performed.  If the search node has been asked to perform an internal
+## double fallthrough then a triple fallthrough with (normal, superior,
+## superior^2) is performed.
+rankprofile[].superiorname string default=""
+
+## After all other rank calculations, the rank value is tuned according
+## to the tunefactor and tunebias values. The rank value is modified
+## as follows: new_rank = old_rank * tunefactor + tunebias.
+rankprofile[].tunefactor double default=1.0
+
+## After all other rank calculations, the rank value is tuned according
+## to the tunefactor and tunebias values. The rank value is modified
+## as follows: new_rank = old_rank * tunefactor + tunebias.
+rankprofile[].tunebias int default=0
+
+## A lower limit for the rankvalue of the results returned from the
+## search node.  If rankcutoff.advanced is set to "true", determines
+## the constant value used in the internal advanced rank cutoff
+## calculations.  This roughly reflects the expected rank contribution
+## of one good term.
+## The rankcutoff.val value and the rankcutoff.advanced parameter
+## may be used if you only want hits with a minimum relevancy to show
+## up in the resultset.
+## A value below zero means no rankcutoff is done.
+rankprofile[].rankcutoff.val int default=-1
+
+## When rankcutoff.val is in use, this flag controls whether to use
+## an internal calculation is used for determining the rank cutoff
+## value. If "false", use rankcutoff.val as a direct lower limit.
+rankprofile[].rankcutoff.advanced bool default=false
+
+## If set to "ON", use of posocc files is enabled, except when
+## "forceemptyposoccs" is set in fsearchrc or posocc files doesn't exist.
+## If set to "OFF", use of posocc files is disabled.
+## If "NOTSET" the fsearchrc "proximity" parameter is used instead.
+rankprofile[].proximity.full.enable enum { OFF, ON, NOTSET } default=NOTSET
+
+## If set to "ON", use of firstoccproximity is enabled.
+## If set to "OFF", use of firstoccproximity is disabled.
+## When NOTSET use the firstoccproximity value in fsearchrc configuration.
+rankprofile[].proximity.firstocc.enable enum { OFF, ON, NOTSET } default=NOTSET
+
+## If set to "ON", use of proximity (cf. proximity and firstoccproximity)
+## will affect phrases in addition to single words.
+## If set to "OFF", proximity is never used for phrases.
+## When NOTSET use the phraseproximity value in fsearchrc configuration.
+rankprofile[].proximity.phrase.enable enum { OFF, ON, NOTSET } default=NOTSET
+
+## Selects behavior when proximity can be used for two words but not three
+## words while firstoccproximity can be used for three words.
+## If set to "ON", then use proximity for two words.
+## If set to "OFF", then use firstoccproximity for three words.
+## When NOTSET use the proximitypairbeforefirstoccproximitytriple value
+## in fsearchrc configuration.
+rankprofile[].proximity.pairbeforefirstocctriple.enable enum { OFF, ON, NOTSET } default=NOTSET
+
+## Selects behavior when proximity can be used for three words but not four
+## words while firstoccproximity can be used for four words.
+## If set to "ON", then use proximity for three words.
+## If set to "OFF", then use firstoccproximity for four words.
+## When NOTSET use the proximitytriplebeforefirstoccproximityquad value
+rankprofile[].proximity.triplebeforefirstoccquad.enable enum { OFF, ON, NOTSET } default=NOTSET

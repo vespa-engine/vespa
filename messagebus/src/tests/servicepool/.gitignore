@@ -1,0 +1,4 @@
+.depend
+Makefile
+servicepool_test
+messagebus_servicepool_test_app

@@ -1,0 +1,38 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @class storage::MessageSink
+ * @ingroup storageserver
+ *
+ * @brief This class grabs persistence messages, and answers them without doing anything.
+ *
+ * @version $Id$
+ */
+
+#pragma once
+
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/storage/common/storagelink.h>
+
+namespace storage {
+
+class MessageSink : public StorageLink {
+private:
+    MessageSink(const MessageSink &);
+    MessageSink& operator=(const MessageSink &);
+
+public:
+    explicit MessageSink();
+    ~MessageSink();
+
+    virtual void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const;
+
+private:
+    DEF_MSG_COMMAND_H(Get);
+    DEF_MSG_COMMAND_H(Put);
+    DEF_MSG_COMMAND_H(Remove);
+    DEF_MSG_COMMAND_H(Revert);
+};
+
+}
+

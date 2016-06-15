@@ -1,0 +1,456 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 1999-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
+#pragma once
+
+#include <vespa/fastos/fastos.h>
+#include <utility>
+#include <vespa/searchlib/util/filealign.h>
+#include <vespa/searchlib/util/comprbuffer.h>
+
+namespace vespalib
+{
+
+class nbostream;
+
+}
+
+
+namespace search {
+
+class ComprFileWriteContext;
+
+class ComprFileDecodeContext
+{
+public:
+    virtual
+    ~ComprFileDecodeContext(void)
+    {
+    }
+
+    /**
+     *
+     * Check if the chunk referenced by the decode context was the
+     * last chunk in the file (e.g. _valE > _realValE)
+     */
+    virtual bool
+    lastChunk(void) const = 0;
+
+    /**
+     * Check if we're at the end of the current chunk (e.g. _valI >= _valE)
+     */
+    virtual bool
+    endOfChunk(void) const = 0;
+
+    /**
+     * Get remaining units in buffer (e.g. _realValE - _valI)
+     */
+
+    virtual int32_t
+    remainingUnits(void) const = 0;
+
+    /**
+     * Get unit ptr (e.g. _valI) from decode context.
+     */
+    virtual const void *
+    getUnitPtr(void) const = 0;
+
+    /**
+     * Setup unit buffer in decode context after read.
+     */
+    virtual void
+    afterRead(const void *start,
+              size_t bufferUnits,
+              uint64_t bufferEndFilePos,
+              bool isMore) = 0;
+
+    /**
+     * Setup for bitwise reading.
+     */
+    virtual void
+    setupBits(int bitOffset) = 0;
+
+    virtual uint64_t
+    getBitPos(int bitOffset,
+              uint64_t bufferEndFilePos) const = 0;
+
+    virtual uint64_t
+    getBitPosV(void) const = 0;
+
+    virtual
+    void skipBits(int bits) = 0;
+
+    virtual void
+    adjUnitPtr(int newRemainingUnits) = 0;
+
+    virtual void
+    emptyBuffer(uint64_t newBitPosition) = 0;
+
+    /**
+     * Get size of each unit (typically 4 or 8)
+     */
+    virtual uint32_t
+    getUnitByteSize(void) const = 0;
+
+    /**
+     * Checkpoint write.  Used at semi-regular intervals during indexing
+     * to allow for continued indexing after an interrupt. Caller must
+     * save position.
+     */
+    virtual void
+    checkPointWrite(vespalib::nbostream &out) = 0;
+
+    /**
+     * Checkpoint read.  Used when resuming indexing after an interrupt.
+     * Caller must restore position.
+     */
+    virtual void
+    checkPointRead(vespalib::nbostream &in) = 0;
+};
+
+class ComprFileReadBase
+{
+public:
+    static void ReadComprBuffer(uint64_t stopOffset,
+                                bool readAll,
+                                ComprFileDecodeContext &decodeContext,
+                                int &bitOffset,
+                                FastOS_FileInterface &file,
+                                uint64_t &fileReadByteOffset,
+                                uint64_t fileSize,
+                                ComprBuffer &cbuf);
+    static void SetPosition(uint64_t newPosition,
+                            uint64_t stopOffset,
+                            bool readAll,
+                            ComprFileDecodeContext &decodeContext,
+                            int &bitOffset,
+                            FastOS_FileInterface &file,
+                            uint64_t &fileReadByteOffset,
+                            uint64_t fileSize,
+                            ComprBuffer &cbuf);
+
+protected:
+    virtual ~ComprFileReadBase(void) { }
+};
+
+
+class ComprFileReadContext : public ComprBuffer
+{
+private:
+    ComprFileDecodeContext *_decodeContext;
+    uint64_t _fileSize;
+    uint64_t _fileReadByteOffset;
+    int _bitOffset;
+    uint64_t _stopOffset;
+    bool _readAll;
+    bool _checkPointOffsetValid;	// Set only if checkpoint has been read
+    FastOS_FileInterface *_file;
+    uint64_t _checkPointOffset;	// bit offset saved by checkPointRead
+
+public:
+    ComprFileReadContext(ComprFileDecodeContext &decodeContext);
+
+    ComprFileReadContext(uint32_t unitSize);
+
+    ~ComprFileReadContext(void);
+
+    void
+    readComprBuffer(uint64_t stopOffset, bool readAll);
+
+    void
+    readComprBuffer(void);
+
+    void
+    setPosition(uint64_t newPosition,
+                uint64_t stopOffset,
+                bool readAll);
+
+    void
+    setPosition(uint64_t newPosition);
+
+    void
+    allocComprBuf(unsigned int comprBufSize,
+                  size_t preferredFileAlignment);
+
+    void
+    setDecodeContext(ComprFileDecodeContext *decodeContext)
+    {
+        _decodeContext = decodeContext;
+    }
+
+    ComprFileDecodeContext *
+    getDecodeContext(void) const
+    {
+        return _decodeContext;
+    }
+
+    void
+    setFile(FastOS_FileInterface *file)
+    {
+        _file = file;
+    }
+
+    FastOS_FileInterface *
+    getFile(void) const
+    {
+        return _file;
+    }
+
+    /**
+     * Get file offset for end of compressed buffer.
+     */
+    uint64_t
+    getBufferEndFilePos(void) const
+    {
+        return _fileReadByteOffset;
+    }
+
+    /**
+     * Set file offset for end of compressed byffer.
+     */
+    void
+    setBufferEndFilePos(uint64_t bufferEndFilePos)
+    {
+        _fileReadByteOffset = bufferEndFilePos;
+    }
+
+    void
+    setBitOffset(int bitOffset)
+    {
+        _bitOffset = bitOffset;
+    }
+
+    void
+    setFileSize(uint64_t fileSize)
+    {
+        _fileSize = fileSize;
+    }
+
+    /*
+     * Set stop offset for sequential read.
+     */
+    void
+    setStopOffset(uint64_t stopOffset, bool readAll)
+    {
+        _stopOffset = stopOffset;
+        _readAll = readAll;
+    }
+
+    /*
+     * For unit testing only. Reference data owned by rhs, only works as
+     * long as rhs is live and unchanged.
+     */
+    void
+    referenceReadContext(const ComprFileReadContext &rhs);
+
+    /*
+     * For unit testing only. Copy data owned by rhs.
+     */
+    void
+    copyReadContext(const ComprFileReadContext &rhs);
+
+    /*
+     * For unit testing only. Reference data owned by rhs, only works as
+     * long as rhs is live and unchanged.
+     */
+    void
+    referenceWriteContext(const ComprFileWriteContext &rhs);
+
+    /*
+     * For unit testing only. Copy data owned by rhs.
+     */
+    void
+    copyWriteContext(const ComprFileWriteContext &rhs);
+
+    /**
+     * Checkpoint write.  Used at semi-regular intervals during indexing
+     * to allow for continued indexing after an interrupt.
+     */
+    void
+    checkPointWrite(vespalib::nbostream &out);
+
+    /**
+     * Checkpoint read.  Used when resuming indexing after an interrupt.
+     */
+    void
+    checkPointRead(vespalib::nbostream &in);
+
+    bool
+    getCheckPointOffsetValid(void) const
+    {
+        return _checkPointOffsetValid;
+    }
+
+    uint64_t
+    getCheckPointOffset(void) const
+    {
+        return _checkPointOffset;
+    }
+};
+
+
+class ComprFileEncodeContext
+{
+public:
+    virtual
+    ~ComprFileEncodeContext(void)
+    {
+    }
+
+    /**
+     * Get number of used units (e.g. _valI - start)
+     */
+    virtual int
+    getUsedUnits(void *start) = 0;
+
+    /**
+     * Get normal full buffer size (e.g. _valE - start)
+     */
+    virtual int
+    getNormalMaxUnits(void *start) = 0;
+
+    /**
+     * Adjust buffer after write (e.g. _valI, _fileWriteBias)
+     */
+    virtual void
+    afterWrite(ComprBuffer &cbuf,
+               uint32_t remainingUnits,
+               uint64_t bufferStartFilePos) = 0;
+
+
+    /**
+     * Adjust buffer size to align end of buffer.
+     */
+    virtual void
+    adjustBufSize(ComprBuffer &cbuf) = 0;
+
+    /**
+     * Get size of each unit (typically 4 or 8)
+     */
+    virtual uint32_t
+    getUnitByteSize(void) const = 0;
+
+    /**
+     * Checkpoint write.  Used at semi-regular intervals during indexing
+     * to allow for continued indexing after an interrupt. Caller must
+     * save position, although partial unit is saved.
+     */
+    virtual void
+    checkPointWrite(vespalib::nbostream &out) = 0;
+
+    /**
+     * Checkpoint read.  Used when resuming indexing after an interrupt.
+     * Caller must restore positon, although partial unit is restored.
+     */
+    virtual void
+    checkPointRead(vespalib::nbostream &in) = 0;
+
+    virtual uint64_t
+    getBitPosV(void) const = 0;
+};
+
+class ComprFileWriteBase
+{
+public:
+    static void WriteComprBuffer(ComprFileEncodeContext &encodeContext,
+                                 ComprBuffer &cbuf,
+                                 FastOS_FileInterface &file,
+                                 uint64_t &fileWriteByteOffset,
+                                 bool flushSlack);
+
+protected:
+    virtual ~ComprFileWriteBase(void) { }
+};
+
+
+class ComprFileWriteContext : public ComprBuffer
+{
+private:
+    ComprFileEncodeContext *_encodeContext;
+    FastOS_FileInterface *_file;
+    uint64_t _fileWriteByteOffset; // XXX: Migrating from encode context
+
+public:
+    ComprFileWriteContext(ComprFileEncodeContext &encodeContext);
+
+    ComprFileWriteContext(uint32_t unitSize);
+
+    ~ComprFileWriteContext(void);
+
+    void
+    writeComprBuffer(bool flushSlack);
+
+    void
+    allocComprBuf(unsigned int comprBufSize,
+                  size_t preferredFileAlignment);
+
+    void
+    allocComprBuf(void);
+
+    void
+    setEncodeContext(ComprFileEncodeContext *encodeContext)
+    {
+        _encodeContext = encodeContext;
+    }
+
+    ComprFileEncodeContext *
+    getEncodeContext(void) const
+    {
+        return _encodeContext;
+    }
+
+    void
+    setFile(FastOS_FileInterface *file)
+    {
+        _file = file;
+    }
+
+    FastOS_FileInterface *
+    getFile(void) const
+    {
+        return _file;
+    }
+
+    /**
+     * Get file offset for start of compressed buffer.
+     */
+    uint64_t
+    getBufferStartFilePos(void) const
+    {
+        return _fileWriteByteOffset;
+    }
+
+    /**
+     * Set file offset for start of compressed byffer.
+     */
+    void
+    setBufferStartFilePos(uint64_t bufferStartFilePos)
+    {
+        _fileWriteByteOffset = bufferStartFilePos;
+    }
+
+    /**
+     * Grab compressed buffer from write context.  This is only legal when
+     * no file is attached.
+     */
+    std::pair<void *, size_t>
+    grabComprBuffer(void *&comprBufMalloc);
+
+    /**
+     * Checkpoint write.  Used at semi-regular intervals during indexing
+     * to allow for continued indexing after an interrupt.
+     */
+    void
+    checkPointWrite(vespalib::nbostream &out);
+
+    /**
+     * Checkpoint read.  Used when resuming indexing after an interrupt.
+     */
+    void
+    checkPointRead(vespalib::nbostream &in);
+};
+
+
+}
+

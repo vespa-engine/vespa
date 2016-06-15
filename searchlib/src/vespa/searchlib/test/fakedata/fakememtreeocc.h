@@ -1,0 +1,287 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include "fakeword.h"
+#include "fakeposting.h"
+#include "fpfactory.h"
+#include <vespa/searchlib/memoryindex/dictionary.h>
+#include <vespa/searchlib/memoryindex/featurestore.h>
+#include <vespa/searchlib/bitcompression/compression.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
+
+namespace search
+{
+
+namespace fakedata
+{
+
+class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter
+{
+public:
+    typedef memoryindex::Dictionary::PostingList Tree;
+    typedef Tree::NodeAllocatorType NodeAllocator;
+    typedef memoryindex::FeatureStore FeatureStore;
+    typedef btree::EntryRef EntryRef;
+    typedef index::Schema Schema;
+    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+
+    vespalib::GenerationHandler _generationHandler;
+    NodeAllocator _allocator;
+
+    std::map<const FakeWord *, uint32_t> _fw2WordIdx;
+    class PostingIdx
+    {
+    public:
+        Tree _tree;
+        Tree::Iterator _iterator;
+
+        PostingIdx(NodeAllocator &allocator)
+            : _tree(),
+              _iterator(_tree.getRoot(), allocator)
+        {
+        }
+
+        void
+        clear(void)
+        {
+            _tree.clear(_iterator.getAllocator());
+            _iterator = _tree.begin(_iterator.getAllocator());
+        }
+    };
+
+    class PendingOp
+    {
+        uint32_t _wordIdx;
+        uint32_t _docId;
+        EntryRef _features;
+        bool     _removal;
+        uint32_t _seq;
+
+    public:
+        PendingOp(uint32_t wordIdx, uint32_t docId)
+            : _wordIdx(wordIdx),
+              _docId(docId),
+              _features(),
+              _removal(true),
+              _seq(0)
+        {
+        }
+
+        PendingOp(uint32_t wordIdx, uint32_t docId, EntryRef features)
+            : _wordIdx(wordIdx),
+              _docId(docId),
+              _features(features),
+              _removal(false),
+              _seq(0)
+        {
+        }
+
+        void
+        setSeq(uint32_t seq)
+        {
+            _seq = seq;
+        }
+
+        uint32_t
+        getWordIdx(void) const
+        {
+            return _wordIdx;
+        }
+
+        uint32_t
+        getDocId(void) const
+        {
+            return _docId;
+        }
+
+        EntryRef
+        getFeatureRef(void) const
+        {
+            return _features;
+        }
+
+        bool
+        getRemove(void) const
+        {
+            return _removal;
+        }
+
+        bool
+        operator<(const PendingOp &rhs) const
+        {
+            if (_wordIdx != rhs._wordIdx)
+                return _wordIdx < rhs._wordIdx;
+            if (_docId != rhs._docId)
+                return _docId < rhs._docId;
+            return _seq < rhs._seq;
+        } 
+    };
+ 
+    std::vector<std::shared_ptr<PostingIdx> > _postingIdxs;
+    std::vector<const FakeWord *> _fakeWords;
+    std::vector<uint64_t> _featureSizes;
+    std::vector<PendingOp> _unflushed;
+
+    FeatureStore _featureStore;
+
+    FakeMemTreeOccMgr(const Schema &schema);
+
+    virtual
+    ~FakeMemTreeOccMgr(void);
+
+    void
+    freeze(void);
+
+    void
+    transferHoldLists(void);
+
+    void
+    incGeneration(void);
+
+    void
+    trimHoldLists(void);
+
+    void
+    sync(void);
+
+    virtual void
+    add(uint32_t wordIdx, index::DocIdAndFeatures &features);
+
+    virtual void
+    remove(uint32_t wordIdx, uint32_t docId);
+
+    void
+    sortUnflushed(void);
+
+    void
+    flush(void);
+
+    void
+    compactTrees(void);
+
+    void
+    finalize(void);
+};
+
+
+class FakeMemTreeOccFactory : public FPFactory
+{
+public:
+    typedef FakeMemTreeOccMgr::Tree Tree;
+    typedef FakeMemTreeOccMgr::NodeAllocator NodeAllocator;
+    typedef index::Schema Schema;
+
+    FakeMemTreeOccMgr _mgr;
+
+    FakeMemTreeOccFactory(const Schema &schema);
+
+    virtual
+    ~FakeMemTreeOccFactory(void);
+
+    virtual FakePosting::SP
+    make(const FakeWord &fw);
+
+    virtual void
+    setup(const std::vector<const FakeWord *> &fws);
+};
+
+class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory
+{
+public:
+    FakeMemTreeOcc2Factory(const Schema &schema);
+
+    virtual
+    ~FakeMemTreeOcc2Factory(void);
+
+    virtual FakePosting::SP
+    make(const FakeWord &fw);
+
+    virtual void
+    setup(const std::vector<const FakeWord *> &fws);
+};
+
+
+/*
+ * Updateable memory tree format.
+ */
+class FakeMemTreeOcc : public FakePosting
+{
+public:
+    typedef FakeMemTreeOccMgr::Tree Tree;
+    typedef FakeMemTreeOccMgr::NodeAllocator NodeAllocator;
+    typedef FakeMemTreeOccMgr::PosOccFieldsParams PosOccFieldsParams;
+
+
+private:
+    NodeAllocator &_allocator;
+    Tree &_tree;
+    const PosOccFieldsParams &_fieldsParams;
+    uint32_t _packedIndex;
+    uint64_t _featureBitSize;
+    const FakeMemTreeOccMgr &_mgr;
+    unsigned int _docIdLimit;
+    unsigned int _hitDocs;
+public:
+    FakeMemTreeOcc(const FakeWord &fakeword,
+                   NodeAllocator &allocator,
+                   Tree &tree,
+                   uint64_t featureBitSize,
+                   const FakeMemTreeOccMgr &mgr);
+
+    FakeMemTreeOcc(const FakeWord &fakeword,
+                   NodeAllocator &allocator,
+                   Tree &tree,
+                   uint64_t featureBitSize,
+                   const FakeMemTreeOccMgr &mgr,
+                   const char *suffix);
+
+    ~FakeMemTreeOcc(void);
+
+    static void
+    forceLink(void);
+
+    /*
+     * Size of posting list, in bits.
+     */
+    size_t
+    bitSize(void) const;
+
+    virtual bool
+    hasWordPositions(void) const;
+
+    /*
+     * Single posting list performance, without feature unpack.
+     */
+    virtual int
+    lowLevelSinglePostingScan(void) const;
+
+    /*
+     * Single posting list performance, with feature unpack.
+     */
+    virtual int
+    lowLevelSinglePostingScanUnpack(void) const;
+
+    /*
+     * Two posting lists performance (same format) without feature unpack.
+     */
+    virtual int
+    lowLevelAndPairPostingScan(const FakePosting &rhs) const;
+
+    /*
+     * Two posting lists performance (same format) with feature unpack.
+     */
+    virtual int
+    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const;
+
+
+    /*
+     * Iterator factory, for current query evaluation framework.
+     */
+    virtual search::queryeval::SearchIterator *
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const;
+};
+
+} // namespace fakedata
+
+} // namespace search
+

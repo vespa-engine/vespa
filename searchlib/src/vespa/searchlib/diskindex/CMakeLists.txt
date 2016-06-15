@@ -1,0 +1,28 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchlib_searchlib_diskindex OBJECT
+    SOURCES
+    bitvectordictionary.cpp
+    bitvectorfile.cpp
+    bitvectoridxfile.cpp
+    bitvectorkeyscope.cpp
+    checkpointfile.cpp
+    dictionarywordreader.cpp
+    diskindex.cpp
+    disktermblueprint.cpp
+    docidmapper.cpp
+    extposocc.cpp
+    fieldreader.cpp
+    fieldwriter.cpp
+    fileheader.cpp
+    fusion.cpp
+    indexbuilder.cpp
+    pagedict4file.cpp
+    pagedict4randread.cpp
+    wordnummapper.cpp
+    zcposocc.cpp
+    zcposocciterators.cpp
+    zcposoccrandread.cpp
+    zcposting.cpp
+    zcpostingiterators.cpp
+    DEPENDS
+)

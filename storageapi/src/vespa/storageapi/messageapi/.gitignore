@@ -1,0 +1,6 @@
+*.lo
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile

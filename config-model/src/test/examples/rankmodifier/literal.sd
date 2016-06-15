@@ -1,0 +1,33 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music {
+  document music {
+
+    field title type string {
+      indexing: summary | index
+      rank {
+        literal
+      }
+    }
+
+    field artist type string {
+      indexing: summary | index
+    }
+
+    field genre type string  {
+      indexing: summary | index
+      rank: literal
+    }    
+
+    field publisher type string  {
+      indexing: summary | index
+      rank: literal
+    }
+
+    field drummer type string  {
+      indexing: summary | index
+      rank { 
+        literal
+      }
+    }
+  }
+}

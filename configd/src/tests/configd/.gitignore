@@ -1,0 +1,4 @@
+.depend*
+Makefile
+configd_test
+/tmp.log

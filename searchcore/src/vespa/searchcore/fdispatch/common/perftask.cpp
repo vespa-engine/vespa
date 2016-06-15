@@ -1,0 +1,40 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 2005 Overture Services Norway AS
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".perftask");
+#include <vespa/fnet/fnet.h>
+#include <vespa/searchcore/fdispatch/common/perftask.h>
+#include <vespa/searchcore/fdispatch/common/appcontext.h>
+
+
+FastS_PerfTask::FastS_PerfTask(FastS_AppContext &ctx, double delay)
+    : FNET_Task(ctx.GetFNETScheduler()),
+      _ctx(ctx),
+      _delay(delay),
+      _valid(ctx.GetFNETScheduler() != NULL)
+{
+    if (_valid) {
+        ScheduleNow();
+    } else {
+        LOG(warning, "Performance monitoring disabled; "
+            "no scheduler found in application context");
+    }
+}
+
+
+FastS_PerfTask::~FastS_PerfTask()
+{
+    if (_valid) {
+        Kill();
+    }
+}
+
+
+void
+FastS_PerfTask::PerformTask()
+{
+    Schedule(_delay);
+    _ctx.logPerformance();
+}

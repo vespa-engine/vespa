@@ -1,0 +1,76 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/iindexenvironment.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/tablemanager.h>
+#include <vespa/searchcommon/common/schema.h>
+
+namespace proton {
+namespace matching {
+
+/**
+ * Index environment implementation for the proton matching pipeline.
+ **/
+class IndexEnvironment : public search::fef::IIndexEnvironment
+{
+private:
+    typedef std::map<string, uint32_t> FieldNameMap;
+    search::fef::TableManager           _tableManager;
+    search::fef::Properties             _properties;
+    FieldNameMap                        _fieldNames;
+    std::vector<search::fef::FieldInfo> _fields;
+    mutable FeatureMotivation           _motivation;
+
+    /**
+     * Extract field information from the given schema and populate
+     * this index environment.
+     **/
+    void extractFields(const search::index::Schema &schema);
+
+public:
+    /**
+     * Sets up this index environment based on the given schema and
+     * properties.
+     *
+     * @param schema the index schema
+     * @param props config
+     **/
+    IndexEnvironment(const search::index::Schema &schema,
+                     const search::fef::Properties &props);
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual const search::fef::Properties &getProperties() const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual uint32_t getNumFields() const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual const search::fef::FieldInfo *getField(uint32_t id) const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual const search::fef::FieldInfo *
+    getFieldByName(const string &name) const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual const search::fef::ITableManager &getTableManager() const;
+
+    virtual FeatureMotivation getFeatureMotivation() const override;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual void hintFeatureMotivation(FeatureMotivation motivation) const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual void hintFieldAccess(uint32_t fieldId) const;
+
+    // inherited from search::fef::IIndexEnvironment
+    virtual void hintAttributeAccess(const string &name) const;
+
+    virtual ~IndexEnvironment();
+};
+
+} // namespace matching
+} // namespace proton
+

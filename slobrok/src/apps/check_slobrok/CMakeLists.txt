@@ -1,0 +1,7 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(slobrok_check_slobrok_app
+    SOURCES
+    check_slobrok.cpp
+    INSTALL bin
+    DEPENDS
+)

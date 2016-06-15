@@ -1,0 +1,19 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Use unicode equivalents in java source:
+#
+#   佳:\u4f73
+#   能:\u80fd
+#   索:\u7d22
+#   尼:\u5c3c
+#   惠:\u60e0
+#   普:\u666e
+
+@default
+
+a索 -> 索a;
+
+[brand] -> brand:[brand];
+
+土豆 -> 马铃薯;
+
+[brand] :- 索尼,惠普,佳能;

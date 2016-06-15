@@ -1,0 +1,44 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/storageserver/app/rpcservicelayerprocess.h>
+
+#include <vespa/log/log.h>
+
+LOG_SETUP(".process.servicelayer");
+
+namespace storage {
+
+// RpcServiceLayerProcess implementation
+
+RpcServiceLayerProcess::RpcServiceLayerProcess(const config::ConfigUri & configUri)
+    : ServiceLayerProcess(configUri)
+{
+}
+
+void
+RpcServiceLayerProcess::shutdown()
+{
+    ServiceLayerProcess::shutdown();
+    _provider.reset(0);
+}
+
+void
+RpcServiceLayerProcess::setupProvider()
+{
+    std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig =
+        config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(_configUri.getConfigId(), _configUri.getContext());
+
+    _provider.reset(new spi::ProviderProxy(
+            serverConfig->persistenceProvider.rpc.connectspec, *getTypeRepo()));
+}
+
+void
+RpcServiceLayerProcess::updateConfig()
+{
+    ServiceLayerProcess::updateConfig();
+    LOG(info, "Config updated. Sending new config to RPC proxy provider");
+    _provider->setRepo(*getTypeRepo());
+}
+
+} // storage

@@ -1,0 +1,97 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/stllike/string.h>
+#include "node.h"
+#include "valuenode.h"
+#include "operator.h"
+#include <vespa/document/bucket/bucketidfactory.h>
+
+namespace document {
+
+namespace select {
+
+namespace simple {
+
+class Parser {
+public:
+    virtual ~Parser() { }
+    virtual bool parse(const vespalib::stringref & s) = 0;
+    const vespalib::stringref & getRemaining() const { return _remaining; }
+protected:
+    void setRemaining(const vespalib::stringref & s) { _remaining = s; }
+private:
+    vespalib::stringref _remaining;
+};
+
+class NodeResult {
+public:
+    Node::UP getNode() { return std::move(_node); }
+protected:
+    void setNode(Node::UP node) { _node = std::move(node); }
+private:
+    Node::UP            _node;
+};
+
+class ValueResult {
+public:
+    ValueNode::UP stealValue() { return std::move(_value); }
+    const ValueNode & getValue() const { return *_value; }
+protected:
+    void setValue(ValueNode::UP node) { _value = std::move(node); }
+private:
+    ValueNode::UP            _value;
+};
+
+class IdSpecParser : public Parser, public ValueResult
+{
+public:
+    IdSpecParser(const BucketIdFactory& bucketIdFactory) :
+        _bucketIdFactory(bucketIdFactory)
+    {}
+    virtual bool parse(const vespalib::stringref & s);
+    const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
+    bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
+private:
+    const BucketIdFactory & _bucketIdFactory;
+};
+
+class OperatorParser : public Parser
+{
+public:
+    virtual bool parse(const vespalib::stringref & s);
+    const Operator * getOperator() const { return _operator; }
+private:
+    const Operator *_operator;
+};
+
+class StringParser : public Parser, public ValueResult
+{
+public:
+    virtual bool parse(const vespalib::stringref & s);
+};
+
+class IntegerParser : public Parser, public ValueResult
+{
+public:
+    virtual bool parse(const vespalib::stringref & s);
+};
+
+class SelectionParser : public Parser, public NodeResult
+{
+public:
+    SelectionParser(const BucketIdFactory& bucketIdFactory) :
+        _bucketIdFactory(bucketIdFactory)
+    {}
+    virtual bool parse(const vespalib::stringref & s);
+private:
+    const BucketIdFactory & _bucketIdFactory;
+};
+
+
+
+} // simple
+} // select
+} // parser
+

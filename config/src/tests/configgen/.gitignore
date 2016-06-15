@@ -1,0 +1,6 @@
+/config-motd.cpp
+/config-motd.h
+config_configgen_test_app
+config_map_inserter_test_app
+config_value_converter_test_app
+config_vector_inserter_test_app

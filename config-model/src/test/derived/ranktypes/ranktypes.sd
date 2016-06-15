@@ -1,0 +1,32 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search ranktypes {
+
+  document ranktypes {
+
+    field title type string {
+      indexing: summary | index
+      rank-type: identity
+    }
+
+    field descr type string {
+      indexing: summary | index
+      rank-type: about
+    }
+
+    field keywords type string {
+      indexing: index
+      rank-type: tags
+    }
+
+    field identity type string {
+      indexing: index
+      rank: literal
+    }
+
+  }
+
+  rank-profile override inherits default  {
+    rank-type descr: identity
+  }
+
+}

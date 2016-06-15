@@ -1,0 +1,69 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html>
+<head>
+<title>fsa file format</title>
+</head>
+<body>
+<h2>fsa file format</h2>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><td>header</td><td>256 bytes</td></tr>
+<tr><td>symbol table</td><td><em>size</em> bytes</td></tr>
+<tr><td>state table</td><td><em>size</em>*4 bytes</td></tr>
+<tr><td>data table</td><td><em>data_size</em> bytes</td></tr>
+<tr><td>perfect hahs table (optional)</td><td><em>size</em>*4 bytes</td></tr>
+</table>
+
+<h3>header</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+<tr><th>field</th><th>offset</th><th>size</th><th>descrption</th></tr>
+<tr><td>magic</td><td>0</td><td>4 (uint32)</td><td>Magic number (0x79832469)</td></tr>
+<tr><td>version</td><td>4</td><td>4 (uint32)</td><td>Version number of
+the fsa library used for building this fsa</td></tr>
+<tr><td>checksum</td><td>8</td><td>4 (uint32)</td><td>Checksum</td></tr>
+<tr><td>size</td><td>12</td><td>4 (uint32)</td><td>Size of fsa (cells)</td></tr>
+<tr><td>start</td><td>16</td><td>4 (uint32)</td><td>Start state</td></tr>
+<tr><td>data_size</td><td>20</td><td>4 (uint32)</td><td>Size of data (bytes)</td></tr>
+<tr><td>data_type</td><td>24</td><td>4 (uint32)</td><td>Type of data
+items (0=variable size, 1=fixed size)</td></tr>
+<tr><td>fixed_data_size</td><td>28</td><td>4 (uint32)</td><td>Data item size if fixed</td></tr>
+<tr><td>has_perfect_hash</td><td>32</td><td>4
+(uint32)</td><td>Indicator for perfect hash (0=no, 1=yes)</td></tr>
+<tr><td>serial</td><td>36</td><td>4 (uint32)</td><td>Serial number</td></tr>
+<tr><td>reserved</td><td>40</td><td>216 (54*uint32)</td><td>Reserved (pads size to 256 bytes)</td></tr>
+</table>
+
+<h3>symbol table and state table</h3>
+The symbol table and state table contain the transitions of the
+automaton, each 1-byte entry in the symbol table corresponds to an
+uint32 entry in the state table. For each state, a list of at most 254
+transistions is stored, as the symbol set is 8-bit characters, with
+0x00 and 0xff reserved. Each state id is in fact an offset into these
+tables. For a given state <em>state</em>, there exists a valid
+transition for symbol <em>sym</em> if the symbol table contains
+<em>sym</em> at offset <em>state</em>+<em>sym</em>. 0x00 means the
+cell is empty, 0xff is a special symbol meaning that the given state
+is a final state, anything else means invalid transition (i.e. the
+cell is in use by some other state). For valid transitions, the
+corresponding entry in the state table yields the next state. For 0xff
+transitions, the state table entry contains the offset of the date
+item within the data store.
+
+<h3>data store</h3>
+The data store contains the data items for the final states. The 'new
+state' entry of a final state transition in the state table (corresponding to the
+special final state symbol 0xff) contains the data store offset of the data item
+corresponding to that final state. If fixed size items are used, each
+item takes fixed_data_size bytes as defined in the header. Variable
+size items take 4 bytes (uint32 item_size) plus <em>item_size</em>
+bytes. The size of the data store is given in the header.
+
+<h3>perfect hash table</h3>
+The perfect hash table has one uint32 entry for each transition in the
+symbol/state table, thus the size of the perfect hash table equals the
+size of the state table. The perfect hash value for a final state is
+calculated by adding all values in this table for the transitions
+along the path from the start state to the final state. 
+
+</body>
+</html>
+

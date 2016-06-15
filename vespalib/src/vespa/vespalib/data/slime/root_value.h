@@ -1,0 +1,49 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "nix_value.h"
+#include "object_value.h"
+#include "value_factory.h"
+
+namespace vespalib {
+namespace slime {
+
+class RootValue
+{
+private:
+    Value *_value;
+    Stash *_stash;
+
+public:
+    RootValue(Stash * stash) : _value(NixValue::instance()), _stash(stash) {}
+    RootValue(RootValue && rhs) : _value(rhs._value), _stash(rhs._stash) {
+        rhs._value = NixValue::instance();
+        rhs._stash = nullptr;
+    }
+    RootValue(const RootValue &) = delete;
+    RootValue &operator=(const RootValue &) = delete;
+    RootValue &operator=(RootValue && rhs) {
+        _value = rhs._value;
+        _stash = rhs._stash;
+        rhs._value = NixValue::instance();
+        rhs._stash = nullptr;
+        return *this;
+    }
+    Cursor &get() const { return *_value; }
+    Cursor &set(const ValueFactory &input) {
+        Value *value = input.create(*_stash);
+        _value = value;
+        return *value;
+    }
+    Value *wrap(SymbolTable &table, SymbolInserter &symbol) {
+        Value *value = & _stash->create<ObjectValue>(table, *_stash, symbol, _value);
+        _value = value;
+        return _value;
+    }
+    ~RootValue() { }
+};
+
+} // namespace vespalib::slime
+} // namespace vespalib
+

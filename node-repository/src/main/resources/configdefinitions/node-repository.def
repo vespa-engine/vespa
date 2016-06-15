@@ -1,0 +1,34 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Configuration of the node repository
+namespace=vespa.config.nodes
+
+# A node flavor which (may) be available in this zone.
+# This is to allow configuration per flavor.
+# If a certain flavor has no config it is not necessary to list it here to use it.
+flavor[].name string
+
+# Names of other flavors (whether mentioned in this config or not) which this flavor
+# is a replacement for: If one of these flavor names are requested, this flavor may
+# be assigned instead.
+# Replacements are transitive: If flavor a replaces b replaces c, then a request for flavor
+# c may be satisfied by assigning nodes of flavor a.
+flavor[].replaces[].name string
+
+# The monthly Total Cost of Ownership (TCO) in USD. Typically calculated as TCO divered by
+# the expected lifetime of the node (usually three years).
+flavor[].cost int default=0
+
+# The type of node (e.g. bare metal, docker..).
+flavor[].environment string default="undefined"
+
+# The minimum number of CPU cores available.
+flavor[].minCpuCores double default=0.0
+
+# The minimum amount of main memory available.
+flavor[].minMainMemoryAvailableGb double default=0.0
+
+# The minimum amount of disk available.
+flavor[].minDiskAvailableGb double default=0.0
+
+# Human readable free text for description of node.
+flavor[].description string default=""

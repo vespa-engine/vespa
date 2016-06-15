@@ -1,0 +1,2 @@
+Ensure that the method pointer magic used by FRT works with the
+current compiler.

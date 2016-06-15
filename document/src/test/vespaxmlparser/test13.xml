@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <document documenttype="alltypes" documentid="doc:foobar:http://all.types">
+        <stringval>Banana</stringval>
+        <intval1>2146983647</intval1>
+        <intval2>4294967291</intval2>
+        <intval3>-5</intval3>
+        <longval1>9223372036354454243</longval1>
+        <longval2>18446744073709551029</longval2>
+        <longval3>-587</longval3>
+        <byteval1>126</byteval1>
+        <byteval2>135</byteval2>
+        <byteval3>-121</byteval3>
+        <floatval>4.73</floatval>
+        <doubleval>-9.11</doubleval>
+        <rawval1>ABCDEFGHIJKL</rawval1>
+        <rawval2 binaryencoding="baSe64">RG9uYWxkRHVjawo=</rawval2>
+        <urival>http://www.vespa.vespa/boo/baa#frag</urival>
+        <contentval1 contenttype="text/plain" encoding="utf-8" language="no">This is a test</contentval1>
+        <contentval2 contenttype="text/plain" encoding="utf-8" language="no" binaryencoding="baSE64">VGhpcyBpcyBhIHRlc3QK</contentval2>
+        <arrayofstringval>
+            <item>Boobaa</item>
+            <item>Bibiii</item>
+        </arrayofstringval>
+        <weightedsetofstringval>
+            <item weight="5">Baahabhh</item>
+            <item weight="10">bkasj</item>
+            <item>asdkfjas</item>
+        </weightedsetofstringval>
+        <tagval>
+            <item weight="5">Baahabhh</item>
+            <item weight="10">bkasj</item>
+            <item>asdkfjas</item>
+        </tagval>
+    </document>
+</vespafeed>

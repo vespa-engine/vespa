@@ -1,0 +1,37 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class document::ByteFieldValue
+ * \ingroup fieldvalue
+ *
+ * \brief Wrapper for field values of datatype BYTE.
+ */
+#pragma once
+
+#include <vespa/document/datatype/numericdatatype.h>
+#include <vespa/document/fieldvalue/numericfieldvalue.h>
+
+namespace document {
+
+class ByteFieldValue : public NumericFieldValue<int8_t> {
+public:
+    typedef std::unique_ptr<ByteFieldValue> UP;
+    typedef int8_t Number;
+
+    ByteFieldValue(Number value = 0)
+        : NumericFieldValue<Number>(value) {}
+
+    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+
+    virtual const DataType *getDataType() const { return DataType::BYTE; }
+
+    virtual ByteFieldValue* clone() const { return new ByteFieldValue(*this); }
+
+    using NumericFieldValue<Number>::operator=;
+
+    DECLARE_IDENTIFIABLE(ByteFieldValue);
+
+};
+
+} // document
+

@@ -1,0 +1,58 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_define_module(
+    DEPENDS
+    fastos
+    vespalib
+    staging_vespalib
+    vespalog
+    fnet
+
+    EXTERNAL_DEPENDS
+    lz4
+
+    LIBS
+    src/apps/configproxy-cmd
+    src/apps/getvespaconfig
+    src/apps/pingproxy
+    src/vespa/config
+    src/vespa/config/common
+    src/vespa/config/configgen
+    src/vespa/config/file
+    src/vespa/config/frt
+    src/vespa/config/helper
+    src/vespa/config/print
+    src/vespa/config/raw
+    src/vespa/config/retriever
+    src/vespa/config/set
+    src/vespa/config/subscription
+
+    APPS
+    src/tests/configfetcher
+    src/tests/print
+    src/tests/payload_converter
+    src/tests/api
+    src/tests/configholder
+    src/tests/unittest
+    src/tests/frtconnectionpool
+    src/tests/file_subscription
+    src/tests/legacysubscriber
+    src/tests/subscriber
+    src/tests/configagent
+    src/tests/getconfig
+    src/tests/configgen
+    src/tests/configmanager
+    src/tests/raw_subscription
+    src/tests/trace
+    src/tests/misc
+    src/tests/configformat
+    src/tests/frt
+    src/tests/configretriever
+    src/tests/functiontest
+    src/tests/configuri
+    src/tests/failover
+    src/tests/subscription
+    src/tests/configparser
+)
+
+vespa_install_script(src/apps/activate-application/activate-application.sh activate-application bin)
+vespa_install_script(src/apps/vespa-config/vespa-config.pl libexec/vespa)

@@ -1,0 +1,16 @@
+.depend
+Makefile
+echo_client
+echo_server
+rpc_callback_client
+rpc_callback_server
+rpc_client
+rpc_info
+rpc_invoke
+rpc_proxy
+rpc_server
+fnet_echo_client_app
+fnet_rpc_callback_client_app
+fnet_rpc_callback_server_app
+fnet_rpc_client_app
+fnet_rpc_server_app

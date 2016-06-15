@@ -1,0 +1,10 @@
+/.depend
+/CasingVariants.class
+/Makefile
+/casingvariants_fastlib
+/casingvariants_vespalib
+/out.txt
+/out.fastlib.txt
+/out.vespalib.txt
+lowercasing_test_casingvariants_fastlib_app
+lowercasing_test_casingvariants_vespalib_app

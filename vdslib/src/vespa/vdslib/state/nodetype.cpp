@@ -1,0 +1,36 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/vdslib/state/nodetype.h>
+
+#include <vespa/vespalib/util/exceptions.h>
+
+namespace storage {
+namespace lib {
+
+// WARNING: Because static initialization happen in random order, the State
+// class use these enum values directly during static initialization since
+// these objects may yet not exist. Update in State if you change this.
+const NodeType NodeType::STORAGE("storage", 0);
+const NodeType NodeType::DISTRIBUTOR("distributor", 1);
+
+const NodeType&
+NodeType::get(const vespalib::stringref & serialized)
+{
+    if (serialized == STORAGE._name) {
+        return STORAGE;
+    }
+    if (serialized == DISTRIBUTOR._name) {
+        return DISTRIBUTOR;
+    }
+    throw vespalib::IllegalArgumentException(
+            "Unknown node type " + serialized + " given.", VESPA_STRLOC);
+}
+
+NodeType::NodeType(const vespalib::stringref & name, uint16_t enumValue)
+    : _enumValue(enumValue), _name(name)
+{
+}
+
+} // lib
+} // storage

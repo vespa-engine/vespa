@@ -1,0 +1,47 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
+namespace config {
+
+/**
+ * Converts slime payload to cfg format.
+ * XXX: Maps are not supported by this converter.
+ */
+class PayloadConverter : public vespalib::slime::ObjectTraverser, public vespalib::slime::ArrayTraverser {
+public:
+    PayloadConverter(const vespalib::slime::Inspector & inspector);
+    const std::vector<vespalib::string> & convert();
+    void field(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & inspector);
+    void entry(size_t idx, const vespalib::slime::Inspector & inspector);
+private:
+    void printPrefix();
+    void encode(const vespalib::slime::Inspector & inspector);
+    void encode(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & inspector);
+    void encodeObject(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & object);
+    void encodeArray(const vespalib::slime::Memory & symbol, const vespalib::slime::Inspector & object);
+    void encodeValue(const vespalib::slime::Inspector & value);
+    void encodeString(const vespalib::string & value);
+    void encodeQuotedString(const vespalib::string & value);
+    void encodeLong(long value);
+    void encodeDouble(double value);
+    void encodeBool(bool value);
+    struct Node {
+        vespalib::string name;
+        int arrayIndex;
+        Node(const vespalib::string & nm, int idx) : name(nm), arrayIndex(idx) {}
+        Node(int idx) : name(""), arrayIndex(idx) {}
+        Node(const vespalib::string & nm) : name(nm), arrayIndex(-1) {}
+    };
+    const vespalib::slime::Inspector & _inspector;
+    std::vector<vespalib::string> _lines;
+    typedef std::vector<Node> NodeStack;
+    NodeStack _nodeStack;
+    vespalib::asciistream _buf;
+};
+
+} // namespace config
+

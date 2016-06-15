@@ -1,0 +1,30 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/searchlib/expression/integerresultnode.h>
+
+namespace search {
+namespace expression {
+
+class EnumResultNode : public IntegerResultNodeT<int64_t>
+{
+private:
+    typedef IntegerResultNodeT<int64_t> Base;
+public:
+    DECLARE_RESULTNODE(EnumResultNode);
+
+    EnumResultNode(int64_t v=0) : Base(v) { }
+    virtual void set(const ResultNode & rhs) { setValue(rhs.getEnum()); }
+
+private:
+    virtual int64_t onGetEnum(size_t index) const { (void) index; return getValue(); }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
+        (void) index;
+        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%" PRId64, getValue()))));
+        return ConstBufferRef(buf.str(), numWritten);
+    }
+};
+
+}
+}
+

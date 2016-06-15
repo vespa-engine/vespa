@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+  <admin version="2.0">
+    <adminserver hostalias="node0"/>
+    <logserver hostalias="node0"/>
+    <yamas interval="60"/>
+  </admin>
+
+  <content version="1.0">
+    <redundancy>2</redundancy>
+
+    <documents>
+      <document type="music" mode="index"/>
+    </documents>
+
+    <tuning>
+      <cluster-controller>
+        <transition-time>5</transition-time>
+        <init-progress-time>2</init-progress-time>
+        <max-premature-crashes>3</max-premature-crashes>
+        <stable-state-period>240</stable-state-period>
+        <min-distributor-up-ratio>0.0</min-distributor-up-ratio>
+        <min-storage-up-ratio>0.7</min-storage-up-ratio>
+      </cluster-controller>
+    </tuning>
+
+    <group name="mycluster">
+      <node hostalias="node0" distribution-key="0"/>
+      <node hostalias="node1" distribution-key="1"/>
+      <node hostalias="node2" distribution-key="2"/>
+    </group>
+
+  </content>
+
+</services>

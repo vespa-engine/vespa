@@ -1,0 +1,4 @@
+.depend
+Makefile
+regex_test
+vespalib_regex_test_app

@@ -1,0 +1,47 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".annotationreferencedatatype");
+
+#include "annotationreferencedatatype.h"
+#include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
+
+using std::unique_ptr;
+using std::ostream;
+
+namespace document {
+
+IMPLEMENT_IDENTIFIABLE(AnnotationReferenceDataType, DataType);
+
+AnnotationReferenceDataType::AnnotationReferenceDataType(
+        const AnnotationType &type, int id)
+    : DataType("annotationreference<" + type.getName() + ">", id),
+      _type(&type) {
+}
+
+const AnnotationType &AnnotationReferenceDataType::getAnnotationType() const {
+    assert(_type);
+    return *_type;
+}
+
+void
+AnnotationReferenceDataType::print(ostream &out, bool, const std::string &) const {
+    out << "AnnotationReferenceDataType("
+        << getName() << ", " << getId() << ")";
+}
+
+AnnotationReferenceDataType *AnnotationReferenceDataType::clone() const {
+    return new AnnotationReferenceDataType(*this);
+}
+
+unique_ptr<FieldValue> AnnotationReferenceDataType::createFieldValue() const {
+    return FieldValue::UP(new AnnotationReferenceFieldValue(*this, 0));
+}
+
+unique_ptr<FieldPath> AnnotationReferenceDataType::onBuildFieldPath( const vespalib::stringref &) const {
+    return unique_ptr<FieldPath>(new FieldPath);
+}
+
+
+}  // namespace document

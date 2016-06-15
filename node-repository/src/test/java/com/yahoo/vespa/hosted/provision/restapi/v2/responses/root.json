@@ -1,0 +1,13 @@
+{
+  "resources": [
+    {
+      "url": "http://localhost:8080/nodes/v2/state/"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/node/"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/command/"
+    }
+  ]
+}

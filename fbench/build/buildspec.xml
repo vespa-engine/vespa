@@ -1,0 +1,41 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<BuildSpecification>
+  <Owner>
+    <OwnerName>Haavard Pettersen</OwnerName>
+    <OwnerEmail>Havard.Pettersen@fast.no</OwnerEmail>
+  </Owner>
+
+  <Dependencies>
+    <dep package="common/fastos" version="1.5.5.1" />
+  </Dependencies>
+
+  <PreBuild>
+    <configure path="src">
+      <parameter value="--fastos-dir ${fbuild_install_dir}/fastos" />
+      <parameter value="--install-dir ${fbuild_install_dir}/fbench" />
+    </configure>
+  </PreBuild>
+
+  <Build>
+    <make path="src" target="bootstrap"/>
+  </Build>
+
+  <PostBuild>
+  </PostBuild>
+
+  <Test>
+  </Test>
+
+  <Install>
+    <make path="src" target="install" />
+  </Install>
+
+  <Dist>
+    <tar target="${fbuild_dist_dir}/${fbuild_build_title}-${fbuild_arch}-${fbuild_os}-${fbuild_os_version}"
+         basepath="${fbuild_install_dir}" compress="yes">
+      <addfile path="fbench" />
+    </tar>
+
+  </Dist>
+
+</BuildSpecification>

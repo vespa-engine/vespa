@@ -1,0 +1,51 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/tree/querybuilder.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <limits>
+
+using namespace search;
+using namespace search::query;
+
+namespace {
+
+void setMaxStackSize(rlim_t maxStackSize)
+{
+    struct rlimit limit;
+    getrlimit(RLIMIT_STACK, &limit);
+    limit.rlim_cur = maxStackSize;
+    setrlimit(RLIMIT_STACK, &limit);
+}
+
+}
+
+
+// NOTE: This test explicitly sets thread stack size and will fail due to
+// a stack overflow if the stack usage increases.
+TEST("testveryLongQueryResultingInBug6850778") {
+    const uint32_t NUMITEMS=20000;
+    setMaxStackSize(4 * 1024 * 1024);
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    for (uint32_t i=0; i <= NUMITEMS; i++) {
+        builder.addAnd(2);
+        builder.addStringTerm("a", "", 0, Weight(0));
+        if (i < NUMITEMS) {
+        } else {
+            builder.addStringTerm("b", "", 0, Weight(0));
+        }
+    }
+    Node::UP node = builder.build();
+    vespalib::string stackDump = StackDumpCreator::create(*node);
+
+    EmptyQueryNodeResult empty;
+    Query q(empty, stackDump);
+    QueryTermList terms;
+    QueryNodeRefList phrases;
+    q.getLeafs(terms);
+    ASSERT_EQUAL(NUMITEMS + 2, terms.size());
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,0 +1,163 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fnet");
+#include <vespa/fnet/fnet.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
+#include <chrono>
+
+namespace {
+
+struct HashState {
+    using clock = std::chrono::high_resolution_clock;
+
+    const void       *self;
+    clock::time_point now;
+    uint64_t          key_hash;
+    HashState(const void *key, size_t key_len)
+        : self(this),
+          now(clock::now()),
+          key_hash(XXH64(key, key_len, 0)) {}
+};
+
+} // namespace <unnamed>
+
+FNET_Transport::FNET_Transport(size_t num_threads)
+    : _threads(),
+      _connect_thread()
+{
+    assert(num_threads >= 1);
+    for (size_t i = 0; i < num_threads; ++i) {
+        _threads.emplace_back(new FNET_TransportThread(*this));
+    }
+}
+
+FNET_TransportThread *
+FNET_Transport::select_thread(const void *key, size_t key_len) const
+{
+    HashState hash_state(key, key_len);
+    size_t hash_value = XXH64(&hash_state, sizeof(hash_state), 0);
+    size_t thread_id = (hash_value % _threads.size());
+    return _threads[thread_id].get();
+}
+
+FNET_Connector *
+FNET_Transport::Listen(const char *spec, FNET_IPacketStreamer *streamer,
+                       FNET_IServerAdapter *serverAdapter)
+{
+    return select_thread(spec, strlen(spec))->Listen(spec, streamer, serverAdapter);
+}
+
+FNET_Connection *
+FNET_Transport::Connect(const char *spec, FNET_IPacketStreamer *streamer,
+                        FNET_IPacketHandler *adminHandler,
+                        FNET_Context adminContext,
+                        FNET_IServerAdapter *serverAdapter,
+                        FNET_Context connContext)
+{
+    return select_thread(spec, strlen(spec))->Connect(spec, streamer, adminHandler, adminContext, serverAdapter, connContext);
+}
+
+uint32_t
+FNET_Transport::GetNumIOComponents()
+{
+    uint32_t result = 0;
+    for (const auto &thread: _threads) {
+        result += thread->GetNumIOComponents();
+    }
+    return result;
+}
+
+void
+FNET_Transport::SetIOCTimeOut(uint32_t ms)
+{
+    for (const auto &thread: _threads) {
+        thread->SetIOCTimeOut(ms);
+    }
+}
+
+void
+FNET_Transport::SetMaxInputBufferSize(uint32_t bytes)
+{
+    for (const auto &thread: _threads) {
+        thread->SetMaxInputBufferSize(bytes);
+    }
+}
+
+void
+FNET_Transport::SetMaxOutputBufferSize(uint32_t bytes)
+{
+    for (const auto &thread: _threads) {
+        thread->SetMaxOutputBufferSize(bytes);
+    }
+}
+
+void
+FNET_Transport::SetDirectWrite(bool directWrite)
+{
+    for (const auto &thread: _threads) {
+        thread->SetDirectWrite(directWrite);
+    }
+}
+
+void
+FNET_Transport::SetTCPNoDelay(bool noDelay)
+{
+    for (const auto &thread: _threads) {
+        thread->SetTCPNoDelay(noDelay);
+    }
+}
+
+void
+FNET_Transport::SetLogStats(bool logStats)
+{
+    for (const auto &thread: _threads) {
+        thread->SetLogStats(logStats);
+    }
+}
+
+void
+FNET_Transport::sync()
+{
+    for (const auto &thread: _threads) {
+        thread->sync();
+    }
+}
+
+FNET_Scheduler *
+FNET_Transport::GetScheduler()
+{
+    return select_thread(nullptr, 0)->GetScheduler();
+}
+
+bool
+FNET_Transport::execute(FNET_IExecutable *exe)
+{
+    return select_thread(nullptr, 0)->execute(exe);
+}
+
+void
+FNET_Transport::ShutDown(bool waitFinished)
+{
+    for (const auto &thread: _threads) {
+        thread->ShutDown(waitFinished);
+    }
+}
+
+void
+FNET_Transport::WaitFinished()
+{
+    for (const auto &thread: _threads) {
+        thread->WaitFinished();
+    }
+}
+
+bool
+FNET_Transport::Start(FastOS_ThreadPool *pool)
+{
+    bool result = true;
+    for (const auto &thread: _threads) {
+        result &= thread->Start(pool);
+    }
+    return result;
+}

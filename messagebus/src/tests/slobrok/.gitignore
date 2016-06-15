@@ -1,0 +1,4 @@
+.depend
+Makefile
+slobrok_test
+messagebus_slobrok_test_app

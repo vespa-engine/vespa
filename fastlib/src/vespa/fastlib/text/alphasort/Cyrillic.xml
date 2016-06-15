@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE sortOrder SYSTEM "AlphaSort1_0.dtd">
+<sortOrder>  
+   <sortValue>
+      <unicode>
+         <hex> 0410 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0430 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0411 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0431 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0412 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0432 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0413 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0433 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0414 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0434 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0415 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0435 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0416 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0436 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0417 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0437 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0418 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0438 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0419 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0439 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041A </hex>
+      </unicode>
+      <unicode>
+         <hex> 043A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041B </hex>
+      </unicode>
+      <unicode>
+         <hex> 043B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041C </hex>
+      </unicode>
+      <unicode>
+         <hex> 043C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041D </hex>
+      </unicode>
+      <unicode>
+         <hex> 043D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041E </hex>
+      </unicode>
+      <unicode>
+         <hex> 043E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 041F </hex>
+      </unicode>
+      <unicode>
+         <hex> 043F </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0420 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0440 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0421 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0441 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0422 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0442 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0423 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0443 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0424 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0444 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0425 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0445 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0426 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0446 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0427 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0447 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0428 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0448 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 0429 </hex>
+      </unicode>
+      <unicode>
+         <hex> 0449 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042A </hex>
+      </unicode>
+      <unicode>
+         <hex> 044A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042B </hex>
+      </unicode>
+      <unicode>
+         <hex> 044B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042C </hex>
+      </unicode>
+      <unicode>
+         <hex> 044C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042D </hex>
+      </unicode>
+      <unicode>
+         <hex> 044D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042E </hex>
+      </unicode>
+      <unicode>
+         <hex> 044E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 042F </hex>
+      </unicode>
+      <unicode>
+         <hex> 044F </hex>
+      </unicode>
+   </sortValue>
+</sortOrder>  
+

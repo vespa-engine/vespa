@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<MlrFunction name="CHANGE THIS NUMBER" featuredef="mlrfeaturedefs.xml" version="1.0">
+
+  <!-- ADD SCORE STANDARDIZATION OR CALIBRATION HERE -->
+
+    <DecisionTree loss="regression">
+
+    <!-- ADD EARLY EXIT HERE -->
+
+        <Forest>
+            <Tree id="0" shrinkage="1">
+                 <Node feature="F4" value="0.6972222" id="N0_1" nSamples="16934" response="0.325971" gain="3400.38" reg="8.11091">
+                     <Node feature="F1" value="0.7928572" id="N0_2" nSamples="15850" response="0.208644" gain="794.718" reg="5.04115">
+                         <Node feature="F54" value="0.9166666" id="N0_3" nSamples="15380" response="0.169376" gain="380.772" reg="1.21184">
+                             <Response value="0.1145211" id="T0_1" nSamples="13718" gain="196.603" reg="1.44895"/>
+                             <Node feature="F111" value="1105.0000000" id="N0_4" nSamples="1662" response="0.622142" gain="540.33" reg="4.36127">
+                                 <Response value="0.3115265" id="T0_2" nSamples="1284" gain="89.0326" reg="1.40341"/>
+                                 <Response value="1.6772487" id="T0_3" nSamples="378" gain="366.668" reg="7.19705"/>
+                             </Node>
+                         </Node>
+                         <Response value="1.4936170" id="T0_4" nSamples="470" gain="245.945" reg="4.73472"/>
+                     </Node>
+                     <Node feature="F111" value="85.5000000" id="N0_5" nSamples="1084" response="2.04151" gain="464.844" reg="4.1662">
+                         <Response value="1.1202186" id="T0_5" nSamples="366" gain="46.188" reg="2.94919"/>
+                         <Response value="2.5111421" id="T0_6" nSamples="718" gain="303.427" reg="4.00159"/>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="1" shrinkage="1">
+                 <Node feature="F1" value="0.8875000" id="N1_1" nSamples="16934" response="1.66526e-14" gain="290.877" reg="2.1699">
+                     <Node feature="F1" value="0.0634921" id="N1_2" nSamples="16398" response="-0.0237835" gain="191.337" reg="1.30842">
+                         <Response value="0.4755052" id="T1_1" nSamples="738" gain="50.8552" reg="1.41831"/>
+                         <Node feature="F111" value="8765.0000000" id="N1_3" nSamples="15660" response="-0.0473132" gain="89.9259" reg="1.60382">
+                             <Response value="-0.0572274" id="T1_2" nSamples="15401" gain="104.393" reg="1.01145"/>
+                             <Response value="0.5422220" id="T1_3" nSamples="259" gain="44.8483" reg="2.05604"/>
+                         </Node>
+                     </Node>
+                     <Node feature="F114" value="55.0000000" id="N1_4" nSamples="536" response="0.727615" gain="132.057" reg="3.78796">
+                         <Response value="-0.2409815" id="T1_4" nSamples="114" gain="18.8198" reg="2.07042"/>
+                         <Node feature="F54" value="0.5500000" id="N1_5" nSamples="422" response="0.989273" gain="101.767" reg="3.02428">
+                             <Response value="0.2211539" id="T1_5" nSamples="125" gain="27.8663" reg="4.24205"/>
+                             <Response value="1.3125561" id="T1_6" nSamples="297" gain="51.2473" reg="7.68835"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="2" shrinkage="1">
+                 <Node feature="F4" value="0.6972222" id="N2_1" nSamples="16934" response="1.54893e-15" gain="108.114" reg="0.714474">
+                     <Node feature="F3" value="0.9285715" id="N2_2" nSamples="15850" response="0.0209649" gain="119.238" reg="1.32652">
+                         <Node feature="F8" value="0.0540936" id="N2_3" nSamples="15398" response="0.00602205" gain="65.8719" reg="0.729996">
+                             <Response value="-0.0076290" id="T2_1" nSamples="14762" gain="40.047" reg="0.938362"/>
+                             <Response value="0.3228730" id="T2_2" nSamples="636" gain="29.0566" reg="1.61032"/>
+                         </Node>
+                         <Node feature="F1" value="0.8166667" id="N2_4" nSamples="452" response="0.530013" gain="58.4604" reg="1.72187">
+                             <Response value="0.8435790" id="T2_3" nSamples="260" gain="19.8011" reg="1.54592"/>
+                             <Response value="0.1053924" id="T2_4" nSamples="192" gain="34.1021" reg="2.12077"/>
+                         </Node>
+                     </Node>
+                     <Node feature="F4" value="0.7619048" id="N2_5" nSamples="1084" response="-0.306544" gain="86.884" reg="1.26721">
+                         <Response value="-0.5500016" id="T2_5" nSamples="627" gain="36.2072" reg="1.06408"/>
+                         <Response value="0.0274784" id="T2_6" nSamples="457" gain="33.0332" reg="1.18481"/>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="3" shrinkage="1">
+                 <Node feature="F74" value="0.8750000" id="N3_1" nSamples="16934" response="5.72141e-15" gain="61.8637" reg="0.467865">
+                     <Node feature="F54" value="0.8452381" id="N3_2" nSamples="15666" response="0.0172606" gain="78.5182" reg="0.556383">
+                         <Response value="-0.0031926" id="T3_1" nSamples="14467" gain="19.9349" reg="0.881707"/>
+                         <Node feature="F111" value="141.5000000" id="N3_3" nSamples="1199" response="0.264046" gain="173.465" reg="1.79504">
+                             <Response value="-0.1402742" id="T3_2" nSamples="566" gain="25.2057" reg="1.55658"/>
+                             <Node feature="F4" value="0.5871212" id="N3_4" nSamples="633" response="0.62557" gain="142.99" reg="2.61286">
+                                 <Response value="1.2691849" id="T3_3" nSamples="226" gain="14.003" reg="6.26018"/>
+                                 <Response value="0.2681826" id="T3_4" nSamples="407" gain="36.74" reg="1.35318"/>
+                             </Node>
+                         </Node>
+                     </Node>
+                     <Node feature="F111" value="1105.0000000" id="N3_5" nSamples="1268" response="-0.213252" gain="99.4561" reg="1.62725">
+                         <Response value="-0.0588169" id="T3_5" nSamples="976" gain="31.0582" reg="0.806895"/>
+                         <Response value="-0.7294473" id="T3_6" nSamples="292" gain="23.201" reg="2.37482"/>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="4" shrinkage="1">
+                 <Node feature="F1" value="0.7619048" id="N4_1" nSamples="16934" response="-5.46253e-15" gain="21.0627" reg="0.287539">
+                     <Response value="0.0089472" id="T4_1" nSamples="15923" gain="19.015" reg="0.147787"/>
+                     <Node feature="F3" value="0.9285715" id="N4_2" nSamples="1011" response="-0.140916" gain="39.0598" reg="0.83888">
+                         <Node feature="F114" value="36.5000000" id="N4_3" nSamples="391" response="-0.391072" gain="57.2061" reg="2.63101">
+                             <Response value="-1.1389426" id="T4_2" nSamples="84" gain="0.787752" reg="0.464762"/>
+                             <Node feature="F97" value="0.0468557" id="N4_4" nSamples="307" response="-0.186443" gain="41.6641" reg="2.24799">
+                                 <Node feature="F6" value="0.5357143" id="N4_5" nSamples="228" response="0.0361799" gain="28.332" reg="1.89184">
+                                     <Response value="0.5614127" id="T4_3" nSamples="74" gain="8.47267" reg="4.30523"/>
+                                     <Response value="-0.2162048" id="T4_4" nSamples="154" gain="15.6327" reg="2.44277"/>
+                                 </Node>
+                                 <Response value="-0.8289478" id="T4_5" nSamples="79" gain="10.0783" reg="4.35689"/>
+                             </Node>
+                         </Node>
+                         <Response value="0.0168442" id="T4_6" nSamples="620" gain="27.2567" reg="1.42134"/>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="5" shrinkage="1">
+                 <Node feature="F1" value="0.6583333" id="N5_1" nSamples="16934" response="-1.18724e-14" gain="15.8033" reg="0.121385">
+                     <Response value="-0.0187975" id="T5_1" nSamples="12309" gain="8.07967" reg="0.419129"/>
+                     <Node feature="F74" value="0.2104235" id="N5_2" nSamples="4625" response="0.0500277" gain="14.0121" reg="0.318388">
+                         <Response value="0.1951745" id="T5_2" nSamples="593" gain="19.6837" reg="1.436"/>
+                         <Node feature="F68" value="0.8158333" id="N5_3" nSamples="4032" response="0.0286805" gain="20.4058" reg="0.799386">
+                             <Node feature="F68" value="0.7616667" id="N5_4" nSamples="175" response="-0.31178" gain="59.9989" reg="7.53081">
+                                 <Response value="-0.0701389" id="T5_3" nSamples="152" gain="9.57811" reg="1.19009"/>
+                                 <Response value="-1.9087110" id="T5_4" nSamples="23" gain="8.7892" reg="5.88041"/>
+                             </Node>
+                             <Node feature="F91" value="0.9516667" id="N5_5" nSamples="3857" response="0.0441279" gain="21.9203" reg="0.555284">
+                                 <Response value="0.2880719" id="T5_5" nSamples="344" gain="13.4963" reg="1.14124"/>
+                                 <Response value="0.0202404" id="T5_6" nSamples="3513" gain="6.85785" reg="0.207486"/>
+                             </Node>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="6" shrinkage="1">
+                 <Node feature="F97" value="0.0104738" id="N6_1" nSamples="16934" response="-1.18431e-14" gain="15.1028" reg="0.507954">
+                     <Node feature="F4" value="0.6833333" id="N6_2" nSamples="269" response="-0.238978" gain="15.3919" reg="1.49284">
+                         <Response value="-0.1119661" id="T6_1" nSamples="214" gain="6.1687" reg="0.93026"/>
+                         <Response value="-0.7331711" id="T6_2" nSamples="55" gain="2.18312" reg="1.22751"/>
+                     </Node>
+                     <Node feature="F111" value="1.5000000" id="N6_3" nSamples="16665" response="0.00385749" gain="12.0175" reg="0.117568">
+                         <Response value="-0.0487729" id="T6_3" nSamples="3469" gain="4.92313" reg="0.182471"/>
+                         <Node feature="F54" value="0.0294118" id="N6_4" nSamples="13196" response="0.0176931" gain="19.9028" reg="0.279545">
+                             <Node feature="F6" value="0.2250000" id="N6_5" nSamples="1017" response="0.153028" gain="20.5404" reg="0.562946">
+                                 <Response value="0.3140816" id="T6_4" nSamples="452" gain="19.4676" reg="2.06914"/>
+                                 <Response value="0.0241852" id="T6_5" nSamples="565" gain="13.4265" reg="3.16515"/>
+                             </Node>
+                             <Response value="0.0063921" id="T6_6" nSamples="12179" gain="13.2817" reg="0.260959"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="7" shrinkage="1">
+                 <Node feature="F8" value="0.0488095" id="N7_1" nSamples="16934" response="-2.39427e-15" gain="10.855" reg="0.215065">
+                     <Node feature="F97" value="0.0196587" id="N7_2" nSamples="16052" response="0.00599328" gain="9.7203" reg="0.100778">
+                         <Response value="-0.0373170" id="T7_1" nSamples="3948" gain="9.68833" reg="0.846037"/>
+                         <Node feature="F4" value="0.5527778" id="N7_3" nSamples="12104" response="0.0201199" gain="10.2801" reg="0.154998">
+                             <Response value="0.0085123" id="T7_2" nSamples="10468" gain="23.4724" reg="1.54228"/>
+                             <Node feature="F111" value="4064.5000000" id="N7_4" nSamples="1636" response="0.0943918" gain="25.4176" reg="0.859279">
+                                 <Node feature="F111" value="109.5000000" id="N7_5" nSamples="1438" response="0.0473647" gain="50.7234" reg="0.785363">
+                                     <Response value="0.2020749" id="T7_3" nSamples="862" gain="33.8131" reg="0.904055"/>
+                                     <Response value="-0.1841633" id="T7_4" nSamples="576" gain="30.0832" reg="1.48082"/>
+                                 </Node>
+                                 <Response value="0.4359319" id="T7_5" nSamples="198" gain="7.05975" reg="0.81405"/>
+                             </Node>
+                         </Node>
+                     </Node>
+                     <Response value="-0.1090751" id="T7_6" nSamples="882" gain="9.46835" reg="0.412835"/>
+                 </Node>
+            </Tree>
+            <Tree id="8" shrinkage="1">
+                 <Node feature="F111" value="7801.5000000" id="N8_1" nSamples="16934" response="2.53029e-16" gain="20.228" reg="0.496475">
+                     <Response value="0.0052430" id="T8_1" nSamples="16562" gain="8.78442" reg="0.509431"/>
+                     <Node feature="F4" value="0.5444444" id="N8_2" nSamples="372" response="-0.233425" gain="14.0777" reg="0.814657">
+                         <Response value="-0.4434354" id="T8_2" nSamples="177" gain="5.5993" reg="0.886644"/>
+                         <Node feature="F4" value="0.7250000" id="N8_3" nSamples="195" response="-0.0427999" gain="11.9581" reg="1.1046">
+                             <Node feature="F111" value="86382.5000000" id="N8_4" nSamples="94" response="0.225484" gain="11.99" reg="8.76417">
+                                 <Node feature="F77" value="0.0250039" id="N8_5" nSamples="88" response="0.348178" gain="10.4609" reg="2.12667">
+                                     <Response value="0.9485625" id="T8_3" nSamples="25" gain="3.76835" reg="5.05517"/>
+                                     <Response value="0.1099304" id="T8_4" nSamples="63" gain="7.71866" reg="4.5633"/>
+                                 </Node>
+                                 <Response value="-1.5740248" id="T8_5" nSamples="6" gain="0" reg="0"/>
+                             </Node>
+                             <Response value="-0.2924902" id="T8_6" nSamples="101" gain="5.49883" reg="1.23572"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="9" shrinkage="1">
+                 <Node feature="F4" value="0.9270834" id="N9_1" nSamples="16934" response="-2.33411e-14" gain="8.63368" reg="0.442739">
+                     <Node feature="F1" value="0.8166667" id="N9_2" nSamples="16737" response="-0.00251172" gain="11.5881" reg="0.238416">
+                         <Response value="0.0033574" id="T9_1" nSamples="15959" gain="8.64667" reg="0.243896"/>
+                         <Node feature="F4" value="0.7071428" id="N9_3" nSamples="778" response="-0.122905" gain="15.9527" reg="0.575741">
+                             <Response value="-0.2470163" id="T9_2" nSamples="451" gain="12.678" reg="0.973375"/>
+                             <Response value="0.0482702" id="T9_3" nSamples="327" gain="31.7349" reg="2.28499"/>
+                         </Node>
+                     </Node>
+                     <Node feature="F54" value="0.5833334" id="N9_4" nSamples="197" response="0.213395" gain="16.1909" reg="1.92764">
+                         <Response value="0.8142192" id="T9_4" nSamples="40" gain="7.39547" reg="3.12529"/>
+                         <Node feature="F1" value="0.9500000" id="N9_5" nSamples="157" response="0.0603181" gain="13.0832" reg="4.4261">
+                             <Response value="1.2211719" id="T9_5" nSamples="12" gain="0" reg="0"/>
+                             <Response value="-0.0357525" id="T9_6" nSamples="145" gain="9.9023" reg="1.48019"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="10" shrinkage="1">
+                 <Node feature="F113" value="37.5050011" id="N10_1" nSamples="16934" response="2.09292e-14" gain="9.56962" reg="1.59045">
+                     <Node feature="F111" value="252.5000000" id="N10_2" nSamples="16902" response="0.00111702" gain="8.25835" reg="0.0924086">
+                         <Response value="-0.0110506" id="T10_1" nSamples="13005" gain="10.0378" reg="0.228437"/>
+                         <Node feature="F4" value="0.6937500" id="N10_3" nSamples="3897" response="0.0417224" gain="19.189" reg="0.389404">
+                             <Node feature="F5" value="0.9000000" id="N10_4" nSamples="3323" response="0.0711812" gain="23.5288" reg="0.77517">
+                                 <Response value="0.0488562" id="T10_2" nSamples="3111" gain="20.1009" reg="0.430781"/>
+                                 <Response value="0.3987899" id="T10_3" nSamples="212" gain="19.0266" reg="1.75955"/>
+                             </Node>
+                             <Node feature="F74" value="0.7500000" id="N10_5" nSamples="574" response="-0.12882" gain="22.6731" reg="1.45348">
+                                 <Response value="-0.2113237" id="T10_4" nSamples="494" gain="17.8518" reg="0.946744"/>
+                                 <Response value="0.3806402" id="T10_5" nSamples="80" gain="8.97513" reg="1.8265"/>
+                             </Node>
+                         </Node>
+                     </Node>
+                     <Response value="-0.5899943" id="T10_6" nSamples="32" gain="3.25699" reg="1.90709"/>
+                 </Node>
+            </Tree>
+            <Tree id="11" shrinkage="1">
+                 <Node feature="F3" value="0.4365079" id="N11_1" nSamples="16934" response="2.1823e-15" gain="10.3536" reg="0.0892519">
+                     <Response value="-0.0192181" id="T11_1" nSamples="10591" gain="5.39159" reg="0.134103"/>
+                     <Node feature="F77" value="0.1715686" id="N11_2" nSamples="6343" response="0.0320887" gain="10.6477" reg="2.13695">
+                         <Node feature="F111" value="1187.5000000" id="N11_3" nSamples="6319" response="0.0293219" gain="8.87468" reg="0.227924">
+                             <Response value="0.0161420" id="T11_2" nSamples="5639" gain="8.60436" reg="0.206594"/>
+                             <Node feature="F112" value="467.5000000" id="N11_4" nSamples="680" response="0.138618" gain="12.1983" reg="0.554692">
+                                 <Node feature="F68" value="0.8550000" id="N11_5" nSamples="249" response="0.318791" gain="13.0127" reg="2.04041">
+                                     <Response value="0.9831077" id="T11_3" nSamples="30" gain="5.2409" reg="2.63663"/>
+                                     <Response value="0.2277890" id="T11_4" nSamples="219" gain="7.42359" reg="0.873513"/>
+                                 </Node>
+                                 <Response value="0.0345274" id="T11_5" nSamples="431" gain="4.9666" reg="2.03851"/>
+                             </Node>
+                         </Node>
+                         <Response value="0.7605657" id="T11_6" nSamples="24" gain="8.10877" reg="4.57014"/>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="12" shrinkage="1">
+                 <Node feature="F5" value="0.6125000" id="N12_1" nSamples="16934" response="1.30276e-14" gain="6.79558" reg="0.109105">
+                     <Node feature="F4" value="0.7928572" id="N12_2" nSamples="14850" response="0.00756446" gain="23.3851" reg="7.61205">
+                         <Response value="0.0063205" id="T12_1" nSamples="14839" gain="5.62744" reg="0.7077"/>
+                         <Response value="1.6856100" id="T12_2" nSamples="11" gain="5.61032" reg="8.07894"/>
+                     </Node>
+                     <Node feature="F113" value="1.6900001" id="N12_3" nSamples="2084" response="-0.0539022" gain="9.88859" reg="0.345626">
+                         <Node feature="F113" value="1.6350000" id="N12_4" nSamples="1702" response="-0.0207028" gain="9.3609" reg="4.28011">
+                             <Response value="-0.0275853" id="T12_3" nSamples="1692" gain="5.95979" reg="0.487675"/>
+                             <Response value="1.1438084" id="T12_4" nSamples="10" gain="1.70629" reg="5.68187"/>
+                         </Node>
+                         <Node feature="F97" value="0.0363399" id="N12_5" nSamples="382" response="-0.201822" gain="6.00279" reg="0.503405">
+                             <Response value="-0.0843354" id="T12_5" nSamples="211" gain="7.1092" reg="3.50362"/>
+                             <Response value="-0.3467910" id="T12_6" nSamples="171" gain="6.76865" reg="0.887804"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="13" shrinkage="1">
+                 <Node feature="F8" value="0.1396104" id="N13_1" nSamples="16934" response="3.23757e-14" gain="3.72465" reg="0.481389">
+                     <Response value="-0.0010790" id="T13_1" nSamples="16855" gain="2.96631" reg="0.0462446"/>
+                     <Node feature="F54" value="0.5500000" id="N13_2" nSamples="79" response="0.230201" gain="7.54681" reg="1.54017">
+                         <Node feature="F111" value="513.5000000" id="N13_3" nSamples="38" response="0.582488" gain="9.03315" reg="4.50984">
+                             <Node feature="F77" value="0.0380987" id="N13_4" nSamples="29" response="0.249914" gain="4.40913" reg="2.7969">
+                                 <Response value="-0.1117221" id="T13_2" nSamples="19" gain="0.0309543" reg="2.26759"/>
+                                 <Response value="0.9370234" id="T13_3" nSamples="10" gain="3.44156" reg="7.77767"/>
+                             </Node>
+                             <Response value="1.6541140" id="T13_4" nSamples="9" gain="0.911121" reg="5.10972"/>
+                         </Node>
+                         <Node feature="F113" value="1.0700001" id="N13_5" nSamples="41" response="-0.0963084" gain="4.49083" reg="3.73645">
+                             <Response value="0.1069487" id="T13_5" nSamples="34" gain="1.03851" reg="1.04634"/>
+                             <Response value="-1.0835573" id="T13_6" nSamples="7" gain="0" reg="0"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+            <Tree id="14" shrinkage="1">
+                 <Node feature="F6" value="0.7321429" id="N14_1" nSamples="16934" response="8.23453e-15" gain="3.2952" reg="0.113837">
+                     <Response value="0.0033418" id="T14_1" nSamples="16044" gain="3.59967" reg="0.101123"/>
+                     <Node feature="F111" value="74.5000000" id="N14_2" nSamples="890" response="-0.0602418" gain="11.1643" reg="0.431465">
+                         <Node feature="F4" value="0.6708333" id="N14_3" nSamples="422" response="0.0599632" gain="31.2494" reg="1.33569">
+                             <Node feature="F1" value="0.5435606" id="N14_4" nSamples="138" response="-0.33867" gain="10.5062" reg="2.9291">
+                                 <Response value="0.5229282" id="T14_2" nSamples="16" gain="1.32068" reg="2.50445"/>
+                                 <Response value="-0.4516660" id="T14_3" nSamples="122" gain="4.40994" reg="1.48527"/>
+                             </Node>
+                             <Response value="0.2536650" id="T14_4" nSamples="284" gain="9.82795" reg="1.11729"/>
+                         </Node>
+                         <Node feature="F113" value="2.4700000" id="N14_5" nSamples="468" response="-0.168632" gain="10.4781" reg="1.13687">
+                             <Response value="-0.2267124" id="T14_5" nSamples="412" gain="8.73493" reg="0.640413"/>
+                             <Response value="0.2586769" id="T14_6" nSamples="56" gain="7.37561" reg="2.42814"/>
+                         </Node>
+                     </Node>
+                 </Node>
+            </Tree>
+        </Forest>
+    </DecisionTree>
+</MlrFunction>

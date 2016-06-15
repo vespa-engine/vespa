@@ -1,0 +1,1 @@
+This package provides the vespa-gbdt-converter tool to convert a gradient boost decision tree output from the GBDT tool into a Vespa ranking expression.

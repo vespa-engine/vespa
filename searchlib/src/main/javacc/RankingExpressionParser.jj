@@ -1,0 +1,479 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * When this file is changed, do "mvn generate-sources" to rebuild the parser.
+ *
+ * @author  bratseth
+ */
+options {
+    CACHE_TOKENS       = true;
+    STATIC             = false;
+    DEBUG_PARSER       = false;
+    USER_TOKEN_MANAGER = false;
+    ERROR_REPORTING    = true;
+    USER_CHAR_STREAM   = false;
+}
+
+PARSER_BEGIN(RankingExpressionParser)
+
+package com.yahoo.searchlib.rankingexpression.parser;
+
+import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.TensorAddress;
+import java.util.Collections;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class RankingExpressionParser {
+
+}
+
+PARSER_END(RankingExpressionParser)
+
+SKIP :
+{
+    <[" ","\n","\r","\t"]>
+}
+
+TOKEN :
+{
+    <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
+        <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
+        <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
+        <#OCTAL: "0" (["0"-"7"])*> |
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |
+        <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
+}
+
+TOKEN :
+{
+    <LBRACE: "("> |
+    <RBRACE: ")"> |
+    <LSQUARE: "["> |
+    <RSQUARE: "]"> |
+    <LCURLY: "{"> |
+    <RCURLY: "}"> |
+    <ADD: "+"> |
+    <SUB: "-"> |
+    <DIV: "/"> |
+    <MUL: "*"> |
+    <DOT: "."> |
+    <DOLLAR: "$"> |
+    <COMMA: ","> |
+    <COLON: ":"> |
+    <LE: "<="> |
+    <LT: "<"> |
+    <EQ: "=="> |
+    <AQ: "~="> |
+    <GE: ">="> |
+    <GT: ">"> |
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
+             ("'" (~["'"] | "\\'")* "'")> |
+    <IF: "if"> |
+    <COSH: "cosh"> |
+    <SINH: "sinh"> |
+    <TANH: "tanh"> |
+    <COS: "cos"> |
+    <SIN: "sin"> |
+    <TAN: "tan"> |
+    <ACOS: "acos"> |
+    <ASIN: "asin"> |
+    <ATAN2: "atan2"> |
+    <ATAN: "atan"> |
+    <EXP: "exp"> |
+    <LDEXP: "ldexp"> |
+    <LOG10: "log10"> |
+    <LOG: "log"> |
+    <POW: "pow"> |
+    <SQRT: "sqrt"> |
+    <CEIL: "ceil"> |
+    <FABS: "fabs"> |
+    <FLOOR: "floor"> |
+    <FMOD: "fmod"> |
+    <MIN: "min"> |
+    <MAX: "max"> |
+    <ISNAN: "isNan"> |
+    <IN: "in"> |
+    <SUM: "sum"> |
+    <MATCH: "match"> |
+    <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
+}
+
+// Declare a special skip token for comments.
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
+}
+
+List<ReferenceNode> featureList() :
+{
+    List<ReferenceNode> ret = new ArrayList<ReferenceNode>();
+    ReferenceNode exp;
+}
+{
+    ( ( exp = feature() { ret.add(exp); } )+ <EOF> )
+    { return ret; }
+}
+
+ExpressionNode rankingExpression() :
+{
+    ExpressionNode ret;
+}
+{
+    ( ret = expression() <EOF> )
+    { return ret; }
+}
+
+ExpressionNode expression() :
+{
+    ExpressionNode left, right;
+    List<ExpressionNode> rightList;
+    TruthOperator      comparatorOp;
+}
+{
+    ( left = arithmeticExpression()
+      (
+          ( comparatorOp = comparator() right = arithmeticExpression() { left = new ComparisonNode(left, comparatorOp, right); } ) |
+          ( <IN>           rightList = expressionList() { left =  new SetMembershipNode(left, rightList); }           )
+      ) *
+    )
+    { return left; }
+}
+
+ExpressionNode arithmeticExpression() :
+{
+    ExpressionNode left, right = null;
+    ArithmeticOperator arithmeticOp;
+}
+{
+    ( left = value()
+      ( arithmeticOp = arithmetic() right = value() { left = ArithmeticNode.resolve(left, arithmeticOp, right); } ) *
+    )
+    { return left; }
+}
+
+ArithmeticOperator arithmetic() : { }
+{
+    ( <ADD> { return ArithmeticOperator.PLUS;     } |
+      <SUB> { return ArithmeticOperator.MINUS;    } |
+      <DIV> { return ArithmeticOperator.DIVIDE;   } |
+      <MUL> { return ArithmeticOperator.MULTIPLY; } )
+    { return null; }
+}
+
+TruthOperator comparator() : { }
+{
+     ( <LE> { return TruthOperator.SMALLEREQUAL; } |
+       <LT> { return TruthOperator.SMALLER;      } |
+       <EQ> { return TruthOperator.EQUAL;        } |
+       <AQ> { return TruthOperator.APPROX_EQUAL; } |
+       <GE> { return TruthOperator.LARGEREQUAL;  } |
+       <GT> { return TruthOperator.LARGER;       } )
+     { return null; }
+}
+
+ExpressionNode value() :
+{
+    ExpressionNode ret;
+    boolean neg = false;
+}
+{
+    ( [ LOOKAHEAD(2) <SUB>                                  { neg = true;     }   ]
+      (            ret = constantPrimitive()                                      |
+                   ret = constantTensor()                                         |
+                   LOOKAHEAD(2) ret = ifExpression()                              |
+                   LOOKAHEAD(2) ret = function()                                  |
+                   ret = feature()                                                |
+                   ret = queryFeature()                                           |
+        ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )
+    { return neg ? new NegativeNode(ret) : ret; }
+}
+
+IfNode ifExpression() :
+{
+    ExpressionNode condition, ifTrue, ifFalse;
+    Double trueProbability = null;
+}
+{
+    ( <IF> <LBRACE> ( condition =  expression() )
+      <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = number() )? <RBRACE> )
+    {
+        return new IfNode(condition, ifTrue, ifFalse, trueProbability);
+    }
+}
+
+ReferenceNode queryFeature() :
+{
+    String name;
+}
+{
+    ( <DOLLAR> name = identifier() )
+    { return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null); }
+}
+
+ReferenceNode feature() :
+{
+    List<ExpressionNode> args = null;
+    String name, out = null;
+}
+{
+    ( name = identifier() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
+    { return new ReferenceNode(name, args, out); }
+}
+
+String outs() :
+{
+    StringBuilder ret = new StringBuilder();
+    String str;
+}
+{
+    (   str = out() { ret.append(str);         }
+      ( <DOT>       { ret.append(token.image); }
+        str = out() { ret.append(str);         } )* )
+    { return ret.toString(); }
+}
+
+String out() :
+{
+    Function fnc;
+    String name;
+}
+{
+    ( <INTEGER>                  { return token.image;    } |
+      <FLOAT>                    { return token.image;    } |
+      name = identifier()        { return name; }           )
+    { return null; }
+}
+
+List<ExpressionNode> args() :
+{
+    List<ExpressionNode> arguments = new ArrayList<ExpressionNode>();
+    ExpressionNode argument;
+}
+{
+    ( argument = arg() { arguments.add(argument); } ( <COMMA> argument = arg() { arguments.add(argument); } )* )
+    { return arguments; }
+}
+
+// TODO: Replace use of this for macro arguments with value()
+// For that to work with the current search execution framework
+// we need to generate another macro for the argument such that we can replace
+// instances of the argument with the reference to that macro in the same way
+// as we replace by constants/names today (this can make for some fun combinatorial explosion).
+// Simon also points out that we should stop doing macro expansion in the toString of a macro.
+// - Jon 2014-05-02
+ExpressionNode arg() :
+{
+    ExpressionNode ret;
+    String name;
+    Function fnc;
+}
+{
+    ( ret = constantPrimitive()                                          |
+      ret = constantTensor()                                             |
+      LOOKAHEAD(2) ret = feature()                                       |
+      name = identifier()            { ret = new NameNode(name);       } )
+    { return ret; }
+}
+
+ExpressionNode function() :
+{
+    ExpressionNode function;
+}
+{
+    ( function = scalarFunction() | function = tensorFunction() )
+    { return function; }
+}
+
+FunctionNode scalarFunction() :
+{
+    Function function;
+    ExpressionNode arg1, arg2;
+}
+{
+    (
+      ( function = unaryFunctionName() <LBRACE> arg1 = expression() <RBRACE> )
+      { return new FunctionNode(function, arg1); }
+    ) |
+    (
+      ( function = binaryFunctionName() <LBRACE> arg1 = expression() <COMMA> arg2 = expression() <RBRACE> )
+      { return new FunctionNode(function, arg1, arg2); }
+    )
+}
+
+ExpressionNode tensorFunction() :
+{
+    ExpressionNode tensor1, tensor2;
+    String dimension = null;
+    TensorAddress address = null;
+}
+{
+    (
+        <SUM> <LBRACE> tensor1 = expression() ( <COMMA> dimension = identifier() )? <RBRACE>
+        { return new TensorSumNode(tensor1, Optional.ofNullable(dimension)); }
+    ) |
+    (
+        <MATCH> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <RBRACE>
+        { return new TensorMatchNode(tensor1, tensor2); }
+    )
+}
+
+// This is needed not to parse tensor functions but for the "reserved names as literals" workaround cludge
+String tensorFunctionName() :
+{
+}
+{
+    ( <SUM> | <MATCH> )
+    { return token.image; }
+}
+
+Function unaryFunctionName() : { }
+{
+    <COS>   { return Function.cos;   } |
+    <SIN>   { return Function.sin;   } |
+    <TAN>   { return Function.tan;   } |
+    <COSH>  { return Function.cosh;  } |
+    <SINH>  { return Function.sinh;  } |
+    <TANH>  { return Function.tanh;  } |
+    <ACOS>  { return Function.acos;  } |
+    <ASIN>  { return Function.asin;  } |
+    <ATAN>  { return Function.atan;  } |
+    <EXP>   { return Function.exp;   } |
+    <LOG10> { return Function.log10; } |
+    <LOG>   { return Function.log;   } |
+    <SQRT>  { return Function.sqrt;  } |
+    <CEIL>  { return Function.ceil;  } |
+    <FABS>  { return Function.fabs;  } |
+    <FLOOR> { return Function.floor; } |
+    <ISNAN> { return Function.isNan; }
+}
+
+Function binaryFunctionName() : { }
+{
+    <ATAN2> { return Function.atan2; } |
+    <LDEXP> { return Function.ldexp; } |
+    <POW>   { return Function.pow;   } |
+    <FMOD>  { return Function.fmod;  } |
+    <MIN>   { return Function.min;   } |
+    <MAX>   { return Function.max;   }
+}
+
+List<ExpressionNode> expressionList() :
+{
+    List<ExpressionNode> list = new ArrayList<ExpressionNode>();
+    ExpressionNode expression;
+}
+{
+    <LSQUARE>
+    expression=expression() { list.add(expression); }
+    ( LOOKAHEAD(2) <COMMA> expression=expression() { list.add(expression); } ) *
+    <RSQUARE>
+    { return list; }
+}
+
+double number() :
+{
+    String sign = "";
+}
+{
+    ( <SUB> { sign = "-";} )? ( <FLOAT> | <INTEGER> )
+    { return Double.parseDouble(sign + token.image); }
+}
+
+String identifier() :
+{
+    String name;
+    Function func;
+}
+{
+    name = tensorFunctionName() { return name; }            |
+    func = unaryFunctionName()  { return func.toString(); } |
+    func = binaryFunctionName() { return func.toString(); } |
+    <IF>                        { return token.image; }     |
+    <IN>                        { return token.image; }     |
+    <IDENTIFIER>                { return token.image; }
+}
+
+// An identifier or integer
+String tag() :
+{
+    String name;
+}
+{
+    name = identifier() { return name; } |
+    <INTEGER> { return token.image; }
+}
+
+ConstantNode constantPrimitive() :
+{
+    String sign = "";
+}
+{
+    ( <SUB> { sign = "-";} ) ?
+    ( <INTEGER> | <FLOAT> | <STRING> )
+    { return new ConstantNode(Value.parse(sign + token.image),sign + token.image); }
+}
+
+Value primitiveValue() :
+{
+    String sign = "";
+}
+{
+    ( <SUB> { sign = "-";} ) ?
+    ( <INTEGER> | <FLOAT> | <STRING> )
+    { return Value.parse(sign + token.image); }
+}
+
+ConstantNode constantTensor() :
+{
+    Value constantValue;
+}
+{
+    <LCURLY> constantValue = tensorContent() <RCURLY>
+    { return new ConstantNode(constantValue); }
+}
+
+TensorValue tensorContent() :
+{
+    Map<TensorAddress, Double> cells = new LinkedHashMap<TensorAddress, Double>();
+    TensorAddress address;
+    Double value;
+}
+{
+    ( address = tensorAddress() <COLON> value = number() { cells.put(address, value); } ) ?
+    ( <COMMA> address = tensorAddress() <COLON> value = number() { cells.put(address, value); } ) *
+    { return new TensorValue(new MapTensor(cells)); }
+}
+
+TensorAddress tensorAddress() :
+{
+    List<TensorAddress.Element> elements = new ArrayList<TensorAddress.Element>();
+    String dimension;
+    String label;
+}
+{
+    <LCURLY>
+    ( dimension = tag() <COLON> label = label() { elements.add(new TensorAddress.Element(dimension, label)); } ) ?
+    ( <COMMA> dimension = tag() <COLON> label = label() { elements.add(new TensorAddress.Element(dimension, label)); } ) *
+    <RCURLY>
+    { return TensorAddress.fromUnsorted(elements); }
+}
+
+String label() :
+{
+    String label;
+
+}
+{
+    ( label = tag() |
+      ( "-" { label = "-"; } ) )
+    { return label; }
+}
+

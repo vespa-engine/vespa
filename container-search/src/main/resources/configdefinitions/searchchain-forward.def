@@ -1,0 +1,9 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=2
+namespace=search.federation
+
+## A searcher forwarding the incoming query to a single search chain and
+## returning the result.
+
+## The component specification of the search chain to forward requests to.
+target string

@@ -1,0 +1,15 @@
+*.class
+.depend
+Makefile
+cpp-client
+cpp-server
+error_test
+out.*
+pid.*
+routing.cfg
+slobrok.cfg
+/cpp-client-error
+/cpp-server-error
+messagebus_test_error_test_app
+messagebus_test_cpp-client-error_app
+messagebus_test_cpp-server-error_app

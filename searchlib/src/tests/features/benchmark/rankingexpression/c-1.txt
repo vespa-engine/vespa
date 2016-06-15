@@ -1,0 +1,4 @@
+case=rankingExpression
+feature=rankingExpression
+numruns=1000000
+rankingExpression.rankingScript=1

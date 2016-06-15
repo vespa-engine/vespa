@@ -1,0 +1,6 @@
+.depend
+Makefile
+matchengine_test
+query_test
+queryenvbuilder_test
+searchcore_matchengine_test_app

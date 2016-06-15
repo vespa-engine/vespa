@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+    <admin version="2.0">
+        <adminserver hostalias="node1" />
+        <logserver hostalias="node1" />
+        <slobroks>
+            <slobrok hostalias="node1" />
+        </slobroks>
+    </admin>
+    <content version="1.0" id="music">
+        <redundancy>1</redundancy>
+        <nodes>
+            <node hostalias="node1" distribution-key="0"/>
+        </nodes>
+        <documents>
+            <document type="music" mode="index"/>
+        </documents>
+    </content>
+    <routing version="1.0">
+        <routingtable protocol="document">
+            <route name="default" hops="foo" />
+        </routingtable>
+        <services protocol="document">
+            <service name="foo" />
+        </services>
+    </routing>
+</services>

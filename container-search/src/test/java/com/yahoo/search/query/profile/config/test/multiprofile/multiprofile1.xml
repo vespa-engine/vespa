@@ -1,0 +1,30 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="multiprofile1" inherits="multiprofileDimensions"> <!-- A regular profile may define "virtual" children within itself -->
+
+    <!-- Values may be set in the profile itself as usual, this becomes the default values given no matching
+         virtual variant provides a value for the property -->
+    <field name="a">general-a</field>
+
+    <!-- The "for" attribute in a child profile supplies values in order for each of the dimensions -->
+    <query-profile for="us,nok ia,test1">
+        <field name="a">us-nokia-test1-a</field>
+    </query-profile>
+
+    <!-- Same as [us,*,*]  - trailing "*"'s may be omitted -->
+    <query-profile for="us">
+        <field name="a">us-a</field>
+        <field name="b">us-b</field>
+    </query-profile>
+
+    <!-- Given a request which matches both the below, the one which specifies concrete values to the left
+         gets precedence over those specifying concrete values to the right (i.e the first one gets precedence here) -->
+    <query-profile for="us,nok ia,*" inherits="parent1 parent2">
+        <field name="a">us-nokia-a</field>
+        <field name="b">us-nokia-b</field>
+    </query-profile>
+    <query-profile for="us,*,test1">
+        <field name="a">us-test1-a</field>
+        <field name="b">us-test1-b</field>
+    </query-profile>
+
+</query-profile>

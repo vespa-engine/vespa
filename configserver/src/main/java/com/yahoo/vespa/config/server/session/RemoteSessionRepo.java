@@ -1,0 +1,226 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.session;
+
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.yolean.Exceptions;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.*;
+
+/**
+ * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper, set for example
+ * by the prepare HTTP handler on another configserver. The zookeeper state watched in this class is shared
+ * between all configservers, so it should not modify any global state, because the operation will be performed
+ * on all servers. The repo can be regarded as read only from the POV of the configserver.
+ *
+ * @author vegardh
+ * @author lulf
+ * @since 5.1
+ */
+public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements NodeCacheListener, PathChildrenCacheListener {
+
+    private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
+    private final Curator curator;
+    private final Path sessionsPath;
+    private final RemoteSessionFactory remoteSessionFactory;
+    private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
+    private final ReloadHandler reloadHandler;
+    private final MetricUpdater metrics;
+    private final Curator.DirectoryCache directoryCache;
+    private final ApplicationRepo applicationRepo;
+
+    public static RemoteSessionRepo create(Curator curator,
+                                           RemoteSessionFactory remoteSessionFactory,
+                                           ReloadHandler reloadHandler,
+                                           Path sessionsPath,
+                                           ApplicationRepo applicationRepo,
+                                           MetricUpdater metrics,
+                                           ExecutorService executorService) throws Exception {
+        return new RemoteSessionRepo(curator, remoteSessionFactory, reloadHandler, sessionsPath, applicationRepo, metrics, executorService);
+    }
+
+    /**
+     * Used when the RemoteSessionRepo is set up programmatically from a Tenant, i.e. config v2
+     * @param curator              a {@link Curator} instance.
+     * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
+     * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
+     * @param sessionsPath         a {@link com.yahoo.path.Path} to the sessions dir.
+     * @param applicationRepo      an {@link com.yahoo.vespa.config.server.application.ApplicationRepo} object.
+     * @param executorService      an {@link ExecutorService} to run callbacks from ZooKeeper.
+     * @throws java.lang.Exception if creating the repo fails
+     */
+    private RemoteSessionRepo(Curator curator,
+                              RemoteSessionFactory remoteSessionFactory,
+                              ReloadHandler reloadHandler,
+                              Path sessionsPath,
+                              ApplicationRepo applicationRepo,
+                              MetricUpdater metricUpdater,
+                              ExecutorService executorService) throws Exception {
+        this.curator = curator;
+        this.sessionsPath = sessionsPath;
+        this.applicationRepo = applicationRepo;
+        this.remoteSessionFactory = remoteSessionFactory;
+        this.reloadHandler = reloadHandler;
+        this.metrics = metricUpdater;
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, executorService);
+        this.directoryCache.start();
+        this.directoryCache.addListener(this);
+        sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+    }
+
+    private void loadActiveSession(RemoteSession session) {
+        tryReload(session.ensureApplicationLoaded(), session.logPre());
+    }
+
+    private void tryReload(ApplicationSet applicationSet, String logPre) {
+        try {
+            reloadHandler.reloadConfig(applicationSet);
+            log.log(LogLevel.INFO, logPre+"Application activated successfully: " + applicationSet.getId());
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, logPre+"Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
+        }
+    }
+
+    // For testing only
+    public RemoteSessionRepo() {
+        this.curator = null;
+        this.remoteSessionFactory = null;
+        this.reloadHandler = null;
+        this.sessionsPath = Path.createRoot();
+        this.metrics = null;
+        this.directoryCache = null;
+        this.applicationRepo = null;
+    }
+
+    private List<Long> getSessionList(List<ChildData> children) {
+        List<Long> sessions = new ArrayList<>();
+        for (ChildData data : children) {
+            sessions.add(Long.parseLong(Path.fromString(data.getPath()).getName()));
+        }
+        return sessions;
+    }
+
+    synchronized void sessionsChanged(List<Long> sessions) throws NumberFormatException {
+        checkForRemovedSessions(sessions);
+        checkForAddedSessions(sessions);
+    }
+
+    private void checkForRemovedSessions(List<Long> sessions) {
+        for (RemoteSession session : listSessions()) {
+            if (!sessions.contains(session.getSessionId())) {
+                SessionStateWatcher watcher = sessionStateWatchers.remove(session.getSessionId());
+                watcher.close();
+                removeSession(session.getSessionId());
+                metrics.incRemovedSessions();
+            }
+        }
+    }
+
+    private void checkForAddedSessions(List<Long> sessions) {
+        for (Long sessionId : sessions) {
+            if (getSession(sessionId) == null) {
+                log.log(LogLevel.DEBUG, "Loading session id " + sessionId);
+                newSession(sessionId);
+                metrics.incAddedSessions();
+            }
+        }
+    }
+
+    /**
+     * A session for which we don't have a watcher, i.e. hitherto unknown to us.
+     *
+     * @param sessionId session id for the new session
+     */
+    private void newSession(long sessionId) {
+        try {
+            log.log(LogLevel.DEBUG, "Adding session to RemoteSessionRepo: " + sessionId);
+            RemoteSession session = remoteSessionFactory.createSession(sessionId);
+            Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
+            Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+            fileCache.addListener(this);
+            loadSessionIfActive(session);
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, reloadHandler, session, metrics));
+            addSession(session);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed loading session " + sessionId + " (no config for this session can be served) : " + Exceptions.toMessageString(e));
+        }
+    }
+
+    private void loadSessionIfActive(RemoteSession session) {
+        for (ApplicationId applicationId : applicationRepo.listApplications()) {
+            try {
+                if (applicationRepo.getSessionIdForApplication(applicationId) == session.getSessionId()) {
+                    log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
+                    loadActiveSession(session);
+                    break;
+                }
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, session.logPre() + " error reading session id for " + applicationId);
+            }
+        }
+    }
+
+    public synchronized void close() {
+        try {
+            if (directoryCache != null) {
+                directoryCache.close();
+            }
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Exception when closing path cache", e);
+        } finally {
+            checkForRemovedSessions(new ArrayList<>());
+        }
+    }
+
+    @Override
+    public void nodeChanged() throws Exception {
+        Multiset<Session.Status> sessionMetrics = HashMultiset.create();
+        for (RemoteSession session : listSessions()) {
+            sessionMetrics.add(session.getStatus());
+        }
+        metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
+        metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
+        metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
+        metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+    }
+
+    @Override
+    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) throws Exception {
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, "Got child event: " + event);
+        }
+        switch (event.getType()) {
+            case CHILD_ADDED:
+                sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+                synchronizeOnNew(getSessionList(Collections.singletonList(event.getData())));
+                break;
+            case CHILD_REMOVED:
+                sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+                break;
+        }
+    }
+
+    private void synchronizeOnNew(List<Long> sessionList) {
+        for (long sessionId : sessionList) {
+            RemoteSession session = getSession(sessionId);
+            log.log(LogLevel.DEBUG, session.logPre() + "Confirming upload for session " + sessionId);
+            session.confirmUpload();
+
+        }
+    }
+}

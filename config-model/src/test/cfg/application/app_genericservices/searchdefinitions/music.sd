@@ -1,0 +1,44 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# A basic search definition - called music, should be saved to music.sd
+search music {
+
+  # It contains one document type only - called music as well
+  document music {
+
+    field title type string {
+      indexing: summary | index   # How this field should be indexed
+      # index-to: title, default    # Create two indexes
+      rank-type: about            # Type of ranking settings to apply
+      header
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+      # index-to: artist, default
+      rank-type:about
+      header
+    }
+
+    field year type int {
+      indexing: summary | attribute
+      header
+    }
+
+    # Increase rank score of popular documents regardless of query
+    field popularity type int {
+      indexing: summary | attribute
+      body
+    }
+
+    field url type uri {
+      indexing: summary | index
+      header
+    }
+
+    field cover type raw {
+      body
+    }
+
+  }
+
+}

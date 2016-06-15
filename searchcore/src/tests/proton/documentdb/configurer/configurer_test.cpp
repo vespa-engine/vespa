@@ -1,0 +1,611 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("configurer_test");
+#include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/docsummary/summarymanager.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/metrics/feed_metrics.h>
+#include <vespa/searchcore/proton/index/index_writer.h>
+#include <vespa/searchcore/proton/index/indexmanager.h>
+#include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
+#include <vespa/searchcore/proton/server/attributeadapterfactory.h>
+#include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/searchable_feed_view.h>
+#include <vespa/searchcore/proton/server/matchers.h>
+#include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/vespalib/io/fileutil.h>
+
+using namespace config;
+using namespace document;
+using namespace proton;
+using namespace search::grouping;
+using namespace search::index;
+using namespace search::queryeval;
+using namespace search;
+using namespace vespa::config::search::core;
+using namespace vespa::config::search::summary;
+using namespace vespa::config::search;
+using namespace vespalib;
+
+using document::DocumenttypesConfig;
+using fastos::TimeStamp;
+using proton::matching::SessionManager;
+using searchcorespi::IndexSearchable;
+using searchcorespi::index::IThreadingService;
+
+
+typedef DocumentDBConfig::ComparisonResult ConfigComparisonResult;
+typedef SearchableDocSubDBConfigurer Configurer;
+typedef std::unique_ptr<SearchableDocSubDBConfigurer> ConfigurerUP;
+typedef SummaryManager::SummarySetup SummarySetup;
+typedef proton::DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
+
+const vespalib::string BASE_DIR("baseDir");
+const vespalib::string DOC_TYPE("invalid");
+
+class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
+{
+    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) {
+        bool ret = true;
+        if (closure.get() != NULL)
+            ret = closure->call(); // Perform index manager reconfiguration now
+        return ret;
+    }
+};
+
+DocumentTypeRepo::SP
+createRepo()
+{
+    DocumentType docType(DOC_TYPE, 0);
+    return DocumentTypeRepo::SP(new DocumentTypeRepo(docType));
+}
+
+struct ViewPtrs
+{
+    SearchView::SP sv;
+    SearchableFeedView::SP fv;
+};
+
+struct ViewSet
+{
+    IndexManagerDummyReconfigurer _reconfigurer;
+    DummyFileHeaderContext _fileHeaderContext;
+    ExecutorThreadingService _writeService;
+    SearchableFeedView::SerialNum serialNum;
+    DocumentTypeRepo::SP repo;
+    DocTypeName _docTypeName;
+    DocIdLimit _docIdLimit;
+    search::transactionlog::NoSyncProxy _noTlSyncer;
+    ISummaryManager::SP _summaryMgr;
+    IDocumentMetaStoreContext::SP _dmsc;
+    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
+    CommitTimeTracker _commitTimeTracker;
+    VarHolder<SearchView::SP> searchView;
+    VarHolder<SearchableFeedView::SP> feedView;
+    ViewSet()
+        : _reconfigurer(),
+          _fileHeaderContext(),
+          _writeService(),
+          serialNum(1),
+          repo(createRepo()),
+          _docTypeName(DOC_TYPE),
+          _docIdLimit(0u),
+          _noTlSyncer(),
+          _summaryMgr(),
+          _dmsc(),
+          _lidReuseDelayer(),
+          _commitTimeTracker(TimeStamp()),
+          searchView(),
+          feedView()
+    {
+    }
+
+    ViewPtrs getViewPtrs() {
+        ViewPtrs ptrs;
+        ptrs.sv = searchView.get();
+        ptrs.fv = feedView.get();
+        return ptrs;
+    }
+};
+
+struct Fixture
+{
+    vespalib::Clock _clock;
+    matching::QueryLimiter _queryLimiter;
+    vespalib::ThreadStackExecutor _summaryExecutor;
+    ViewSet _views;
+    ConfigurerUP _configurer;
+    Fixture()
+        : _clock(),
+          _queryLimiter(),
+          _summaryExecutor(8, 128*1024),
+          _views(),
+          _configurer()
+    {
+        vespalib::mkdir(BASE_DIR);
+        initViewSet(_views);
+        _configurer.reset(new Configurer(_views._summaryMgr,
+                                         _views.searchView,
+                                         _views.feedView,
+                                         _queryLimiter,
+                                         _clock,
+                                         "test",
+                                         0));
+    }
+    ~Fixture() {
+        vespalib::rmdir(BASE_DIR, true);
+    }
+    void initViewSet(ViewSet &views);
+};
+
+void
+Fixture::initViewSet(ViewSet &views)
+{
+    Matchers::SP matchers(new Matchers(_clock, _queryLimiter));
+    IndexManager::SP indexMgr(new IndexManager(BASE_DIR,
+                                      0.0, 2, 0, Schema(), Schema(), views._reconfigurer,
+                                      views._writeService, _summaryExecutor, TuneFileIndexManager(),
+                                      TuneFileAttributes(), views._fileHeaderContext));
+    AttributeManager::SP attrMgr(new AttributeManager(BASE_DIR,
+                                                      "test.subdb",
+                                                      TuneFileAttributes(),
+                                                      views._fileHeaderContext,
+                                                      views._writeService.
+                                                      attributeFieldWriter()));
+    ProtonConfig protonCfg;
+    SummaryManager::SP summaryMgr(
+            new SummaryManager(_summaryExecutor, ProtonConfig::Summary(),
+                               GrowStrategy(), BASE_DIR, views._docTypeName,
+                               TuneFileSummary(), views._fileHeaderContext,
+                               views._noTlSyncer, search::IBucketizer::SP()));
+    SessionManager::SP sesMgr(
+            new SessionManager(protonCfg.grouping.sessionmanager.maxentries));
+    DocumentMetaStoreContext::SP metaStore(
+            new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>()));
+    IIndexWriter::SP indexWriter(new IndexWriter(indexMgr));
+    AttributeWriter::SP attrWriter(new AttributeWriter(attrMgr));
+    ISummaryAdapter::SP summaryAdapter(new SummaryAdapter(summaryMgr));
+    Schema::SP schema(new Schema());
+    views._summaryMgr = summaryMgr;
+    views._dmsc = metaStore;
+    views._lidReuseDelayer.reset(
+            new documentmetastore::LidReuseDelayer(views._writeService,
+                                                   metaStore->get()));
+    IndexSearchable::SP indexSearchable;
+    MatchView::SP matchView(new MatchView(matchers, indexSearchable, attrMgr,
+                                          sesMgr, metaStore, views._docIdLimit));
+    views.searchView.set(
+            SearchView::SP(
+                    new SearchView(
+                            summaryMgr->createSummarySetup(SummaryConfig(),
+                                    SummarymapConfig(),
+                                    JuniperrcConfig(),
+                                    views.repo,
+                                    attrMgr),
+                            matchView)));
+    PerDocTypeFeedMetrics metrics(0);
+    views.feedView.set(
+            SearchableFeedView::SP(
+                    new SearchableFeedView(StoreOnlyFeedView::Context(summaryAdapter,
+                            schema,
+                            views.searchView.get()->getDocumentMetaStore(),
+                            views.repo,
+                            views._writeService,
+                            *views._lidReuseDelayer,
+                            views._commitTimeTracker),
+                            SearchableFeedView::PersistentParams(
+                                    views.serialNum,
+                                    views.serialNum,
+                                    views._docTypeName,
+                                    metrics,
+                                    0u /* subDbId */,
+                                    SubDbType::READY),
+                            FastAccessFeedView::Context(attrWriter, views._docIdLimit),
+                            SearchableFeedView::Context(indexWriter))));
+}
+
+
+struct MySummaryAdapter : public ISummaryAdapter
+{
+    virtual void put(search::SerialNum, const document::Document &, const search::DocumentIdT) {}
+    virtual void remove(search::SerialNum, const search::DocumentIdT) {}
+    virtual void update(search::SerialNum, const document::DocumentUpdate &,
+            const search::DocumentIdT, const document::DocumentTypeRepo &) {}
+    virtual void heartBeat(search::SerialNum) {}
+    virtual const search::IDocumentStore &getDocumentStore() const {
+        const search::IDocumentStore *store = NULL;
+        return *store;
+    }
+    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT,
+            const document::DocumentTypeRepo &) {
+        return std::unique_ptr<document::Document>();
+    }
+};
+
+struct MyFastAccessFeedView
+{
+    PerDocTypeFeedMetrics _metrics;
+    DummyFileHeaderContext _fileHeaderContext;
+    DocIdLimit _docIdLimit;
+    IThreadingService &_writeService;
+    IDocumentMetaStoreContext::SP _dmsc;
+    std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
+    CommitTimeTracker                 _commitTimeTracker;
+    VarHolder<FastAccessFeedView::SP> _feedView;
+
+    MyFastAccessFeedView(IThreadingService &writeService)
+        : _metrics(0),
+          _fileHeaderContext(),
+          _docIdLimit(0),
+          _writeService(writeService),
+          _dmsc(),
+          _lidReuseDelayer(),
+          _commitTimeTracker(TimeStamp()),
+          _feedView()
+    {
+        init();
+    }
+    void init() {
+        ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
+        Schema::SP schema(new Schema());
+        DocumentMetaStoreContext::SP docMetaCtx(
+                new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>()));
+        _dmsc = docMetaCtx;
+        _lidReuseDelayer.reset(
+                new documentmetastore::LidReuseDelayer(_writeService,
+                                                       docMetaCtx->get()));
+        DocumentTypeRepo::SP repo = createRepo();
+        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, docMetaCtx, repo, _writeService, *_lidReuseDelayer, _commitTimeTracker);
+        StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), _metrics, 0, SubDbType::NOTREADY);
+        AttributeManager::SP mgr(new AttributeManager(BASE_DIR, "test.subdb",
+                                                      TuneFileAttributes(),
+                                                      _fileHeaderContext,
+                                                      _writeService.
+                                                      attributeFieldWriter()));
+        IAttributeWriter::SP writer(new AttributeWriter(mgr));
+        FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
+        _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(storeOnlyCtx,
+                params, fastUpdateCtx)));;
+    }
+};
+
+struct FastAccessFixture
+{
+    ExecutorThreadingService _writeService;
+    MyFastAccessFeedView _view;
+    FastAccessDocSubDBConfigurer _configurer;
+    FastAccessFixture()
+        : _writeService(),
+          _view(_writeService),
+          _configurer(_view._feedView,
+                  IAttributeAdapterFactory::UP(new AttributeAdapterFactory), "test")
+    {
+        vespalib::mkdir(BASE_DIR);
+    }
+    ~FastAccessFixture() {
+        _writeService.sync();
+        vespalib::rmdir(BASE_DIR, true);
+    }
+};
+
+
+DocumentDBConfig::SP
+createConfig()
+{
+    DocumentDBConfig::SP config
+        (new DocumentDBConfig(
+                0,
+                DocumentDBConfig::RankProfilesConfigSP(
+                        new RankProfilesConfig()),
+                DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
+                DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
+                DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),
+                DocumentDBConfig::SummarymapConfigSP(new SummarymapConfig()),
+                DocumentDBConfig::JuniperrcConfigSP(new JuniperrcConfig()),
+                DocumenttypesConfigSP(new DocumenttypesConfig()),
+                DocumentTypeRepo::SP(createRepo()),
+                TuneFileDocumentDB::SP(new TuneFileDocumentDB),
+                Schema::SP(new Schema),
+                DocumentDBMaintenanceConfig::SP(
+                        new DocumentDBMaintenanceConfig),
+                "client", DOC_TYPE));
+    return config;
+}
+
+DocumentDBConfig::SP
+createConfig(const Schema::SP &schema)
+{
+    DocumentDBConfig::SP config
+        (new DocumentDBConfig(
+                0,
+                DocumentDBConfig::RankProfilesConfigSP(new RankProfilesConfig()),
+                DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
+                DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
+                DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),
+                DocumentDBConfig::SummarymapConfigSP(new SummarymapConfig()),
+                DocumentDBConfig::JuniperrcConfigSP(new JuniperrcConfig()),
+                DocumenttypesConfigSP(new DocumenttypesConfig()),
+                DocumentTypeRepo::SP(createRepo()),
+                TuneFileDocumentDB::SP(new TuneFileDocumentDB),
+                schema,
+                DocumentDBMaintenanceConfig::SP(
+                        new DocumentDBMaintenanceConfig),
+                "client", DOC_TYPE));
+    return config;
+}
+
+struct SearchViewComparer
+{
+    SearchView::SP _old;
+    SearchView::SP _new;
+    SearchViewComparer(SearchView::SP old, SearchView::SP new_) : _old(old), _new(new_) {}
+    void expect_equal() {
+        EXPECT_EQUAL(_old.get(), _new.get());
+    }
+    void expect_not_equal() {
+        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+    }
+    void expect_equal_summary_setup() {
+        EXPECT_EQUAL(_old->getSummarySetup().get(), _new->getSummarySetup().get());
+    }
+    void expect_not_equal_summary_setup() {
+        EXPECT_NOT_EQUAL(_old->getSummarySetup().get(), _new->getSummarySetup().get());
+    }
+    void expect_equal_match_view() {
+        EXPECT_EQUAL(_old->getMatchView().get(), _new->getMatchView().get());
+    }
+    void expect_not_equal_match_view() {
+        EXPECT_NOT_EQUAL(_old->getMatchView().get(), _new->getMatchView().get());
+    }
+    void expect_equal_matchers() {
+        EXPECT_EQUAL(_old->getMatchers().get(), _new->getMatchers().get());
+    }
+    void expect_not_equal_matchers() {
+        EXPECT_NOT_EQUAL(_old->getMatchers().get(), _new->getMatchers().get());
+    }
+    void expect_equal_index_searchable() {
+        EXPECT_EQUAL(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
+    }
+    void expect_not_equal_index_searchable() {
+        EXPECT_NOT_EQUAL(_old->getIndexSearchable().get(), _new->getIndexSearchable().get());
+    }
+    void expect_equal_attribute_manager() {
+        EXPECT_EQUAL(_old->getAttributeManager().get(), _new->getAttributeManager().get());
+    }
+    void expect_not_equal_attribute_manager() {
+        EXPECT_NOT_EQUAL(_old->getAttributeManager().get(), _new->getAttributeManager().get());
+    }
+    void expect_equal_session_manager() {
+        EXPECT_EQUAL(_old->getSessionManager().get(), _new->getSessionManager().get());
+    }
+    void expect_equal_document_meta_store() {
+        EXPECT_EQUAL(_old->getDocumentMetaStore().get(), _new->getDocumentMetaStore().get());
+    }
+};
+
+struct FeedViewComparer
+{
+    SearchableFeedView::SP _old;
+    SearchableFeedView::SP _new;
+    FeedViewComparer(SearchableFeedView::SP old, SearchableFeedView::SP new_) : _old(old), _new(new_) {}
+    void expect_equal() {
+        EXPECT_EQUAL(_old.get(), _new.get());
+    }
+    void expect_not_equal() {
+        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+    }
+    void expect_equal_index_adapter() {
+        EXPECT_EQUAL(_old->getIndexWriter().get(), _new->getIndexWriter().get());
+    }
+    void expect_equal_attribute_adapter() {
+        EXPECT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
+    }
+    void expect_not_equal_attribute_adapter() {
+        EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
+    }
+    void expect_equal_summary_adapter() {
+        EXPECT_EQUAL(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
+    }
+    void expect_equal_schema() {
+        EXPECT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
+    }
+    void expect_not_equal_schema() {
+        EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
+    }
+};
+
+struct FastAccessFeedViewComparer
+{
+    FastAccessFeedView::SP _old;
+    FastAccessFeedView::SP _new;
+    FastAccessFeedViewComparer(FastAccessFeedView::SP old, FastAccessFeedView::SP new_)
+        : _old(old), _new(new_)
+    {}
+    void expect_not_equal() {
+        EXPECT_NOT_EQUAL(_old.get(), _new.get());
+    }
+    void expect_not_equal_attribute_adapter() {
+        EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
+    }
+    void expect_equal_summary_adapter() {
+        EXPECT_EQUAL(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
+    }
+    void expect_not_equal_schema() {
+        EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
+    }
+};
+
+TEST_F("require that we can reconfigure index searchable", Fixture)
+{
+    ViewPtrs o = f._views.getViewPtrs();
+    f._configurer->reconfigureIndexSearchable();
+
+    ViewPtrs n = f._views.getViewPtrs();
+    { // verify search view
+        SearchViewComparer cmp(o.sv, n.sv);
+        cmp.expect_not_equal();
+        cmp.expect_equal_summary_setup();
+        cmp.expect_not_equal_match_view();
+        cmp.expect_equal_matchers();
+        cmp.expect_not_equal_index_searchable();
+        cmp.expect_equal_attribute_manager();
+        cmp.expect_equal_session_manager();
+        cmp.expect_equal_document_meta_store();
+    }
+    { // verify feed view
+        FeedViewComparer cmp(o.fv, n.fv);
+        cmp.expect_not_equal();
+        cmp.expect_equal_index_adapter();
+        cmp.expect_equal_attribute_adapter();
+        cmp.expect_equal_summary_adapter();
+        cmp.expect_equal_schema();
+    }
+}
+
+TEST_F("require that we can reconfigure attribute manager", Fixture)
+{
+    ViewPtrs o = f._views.getViewPtrs();
+    ConfigComparisonResult cmpres;
+    cmpres.attributesChanged = true;
+    cmpres._schemaChanged = true;
+    AttributeCollectionSpec::AttributeList specList;
+    AttributeCollectionSpec spec(specList, 1, 0);
+    ReconfigParams params(cmpres);
+    // Use new config snapshot == old config snapshot (only relevant for reprocessing)
+    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params);
+
+    ViewPtrs n = f._views.getViewPtrs();
+    { // verify search view
+        SearchViewComparer cmp(o.sv, n.sv);
+        cmp.expect_not_equal();
+        cmp.expect_not_equal_summary_setup();
+        cmp.expect_not_equal_match_view();
+        cmp.expect_not_equal_matchers();
+        cmp.expect_equal_index_searchable();
+        cmp.expect_not_equal_attribute_manager();
+        cmp.expect_equal_session_manager();
+        cmp.expect_equal_document_meta_store();
+    }
+    { // verify feed view
+        FeedViewComparer cmp(o.fv, n.fv);
+        cmp.expect_not_equal();
+        cmp.expect_equal_index_adapter();
+        cmp.expect_not_equal_attribute_adapter();
+        cmp.expect_equal_summary_adapter();
+        cmp.expect_not_equal_schema();
+    }
+}
+
+TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)
+{
+    ConfigComparisonResult cmpres;
+    cmpres.attributesChanged = true;
+    cmpres._schemaChanged = true;
+    AttributeCollectionSpec::AttributeList specList;
+    AttributeCollectionSpec spec(specList, 1, 0);
+    ReconfigParams params(cmpres);
+    IReprocessingInitializer::UP init =
+            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params);
+
+    EXPECT_TRUE(init.get() != nullptr);
+    EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
+    EXPECT_FALSE(init->hasReprocessors());
+}
+
+TEST_F("require that we can reconfigure attribute adapter", FastAccessFixture)
+{
+    AttributeCollectionSpec::AttributeList specList;
+    AttributeCollectionSpec spec(specList, 1, 0);
+    FastAccessFeedView::SP o = f._view._feedView.get();
+    f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
+    FastAccessFeedView::SP n = f._view._feedView.get();
+
+    FastAccessFeedViewComparer cmp(o, n);
+    cmp.expect_not_equal();
+    cmp.expect_not_equal_attribute_adapter();
+    cmp.expect_equal_summary_adapter();
+    cmp.expect_not_equal_schema();
+}
+
+TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFixture)
+{
+    AttributeCollectionSpec::AttributeList specList;
+    AttributeCollectionSpec spec(specList, 1, 0);
+    IReprocessingInitializer::UP init =
+            f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
+
+    EXPECT_TRUE(init.get() != nullptr);
+    EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
+    EXPECT_FALSE(init->hasReprocessors());
+}
+
+TEST_F("require that we can reconfigure summary manager", Fixture)
+{
+    ViewPtrs o = f._views.getViewPtrs();
+    ConfigComparisonResult cmpres;
+    cmpres.summarymapChanged = true;
+    ReconfigParams params(cmpres);
+    // Use new config snapshot == old config snapshot (only relevant for reprocessing)
+    f._configurer->reconfigure(*createConfig(), *createConfig(), params);
+
+    ViewPtrs n = f._views.getViewPtrs();
+    { // verify search view
+        SearchViewComparer cmp(o.sv, n.sv);
+        cmp.expect_not_equal();
+        cmp.expect_not_equal_summary_setup();
+        cmp.expect_equal_match_view();
+    }
+    { // verify feed view
+        FeedViewComparer cmp(o.fv, n.fv);
+        cmp.expect_equal();
+    }
+}
+
+TEST_F("require that we can reconfigure matchers", Fixture)
+{
+    ViewPtrs o = f._views.getViewPtrs();
+    ConfigComparisonResult cmpres;
+    cmpres.rankProfilesChanged = true;
+    // Use new config snapshot == old config snapshot (only relevant for reprocessing)
+    f._configurer->reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
+            ReconfigParams(cmpres));
+
+    ViewPtrs n = f._views.getViewPtrs();
+    { // verify search view
+        SearchViewComparer cmp(o.sv, n.sv);
+        cmp.expect_not_equal();
+        cmp.expect_equal_summary_setup();
+        cmp.expect_not_equal_match_view();
+        cmp.expect_not_equal_matchers();
+        cmp.expect_equal_index_searchable();
+        cmp.expect_equal_attribute_manager();
+        cmp.expect_equal_session_manager();
+        cmp.expect_equal_document_meta_store();
+    }
+    { // verify feed view
+        FeedViewComparer cmp(o.fv, n.fv);
+        cmp.expect_not_equal();
+        cmp.expect_equal_index_adapter();
+        cmp.expect_equal_attribute_adapter();
+        cmp.expect_equal_summary_adapter();
+        cmp.expect_equal_schema();
+    }
+}
+
+TEST_MAIN()
+{
+    TEST_RUN_ALL();
+}

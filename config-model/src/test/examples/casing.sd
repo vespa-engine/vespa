@@ -1,0 +1,64 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music {
+  document music {
+
+    field Color type string {
+       indexing: index
+       # index-to: color
+       alias color: Colour
+       match {
+         exact
+       }
+    }
+
+    field artist type string {
+      indexing: attribute
+    }
+
+    field Drummer type string {
+       indexing: attribute
+    }
+
+    field guitarist type string {
+       indexing: attribute
+       match {
+         token
+       }
+    }
+
+    field title type string {
+      indexing: index  | attribute
+    }
+
+    field Genre type string {
+      indexing: index
+      # index-to: Foo
+      alias Foo: sjanger
+    }
+
+    field Price type string {
+      indexing: index
+      alias: Cost    
+    }
+
+    field Trumpetist type string {
+      indexing: attribute | index
+    }
+
+    field Saxophonist type string {
+      indexing: summary | attribute Saxophonist
+    }
+    
+    field TenorSaxophonist type array<string> {
+      indexing: summary | attribute
+    }
+
+    field Flutist type string {
+      indexing: attribute | index Flutist
+      match {
+        token
+      }
+    }
+
+  }
+}

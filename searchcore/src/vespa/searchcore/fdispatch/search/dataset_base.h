@@ -1,0 +1,236 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 1998-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
+#pragma once
+
+#include <vespa/fastos/fastos.h>
+#include "child_info.h"
+#include <vespa/searchcore/fdispatch/common/timestat.h>
+#include <vespa/searchcore/util/log.h>
+#include <atomic>
+
+class FastS_TimeKeeper;
+
+class FastS_DataSetDesc;
+class FastS_EngineDesc;
+class FastS_DataSetCollection;
+class FastS_ISearch;
+class FastS_QueryResult;
+class FastS_QueryCache;
+class FastS_PlainDataSet;
+class FastS_DataSetInfo;
+class FastS_FNET_DataSet;
+class FastS_AppContext;
+class FastS_QueryPerf;
+class FNET_Task;
+
+//---------------------------------------------------------------------------
+
+class FastS_DataSetBase
+{
+    friend class FastS_DataSetCollection;
+private:
+    FastS_DataSetBase(const FastS_DataSetBase &);
+    FastS_DataSetBase& operator=(const FastS_DataSetBase &);
+
+public:
+
+    //----------------------------------------------------------------
+    // total query stats
+    //----------------------------------------------------------------
+
+    class total_t
+    {
+    public:
+        enum {
+            _timestatslots = 100
+        };
+        std::atomic<uint32_t> _estimates;
+        std::atomic<uint32_t> _nTimedOut;
+        uint32_t _nOverload;
+        uint32_t _timestats[_timestatslots];
+        FastS_TimeStatHistory _normalTimeStat;
+        total_t();
+    };
+
+    //----------------------------------------------------------------
+    // parameters used by query queue
+    //----------------------------------------------------------------
+
+    class overload_t
+    {
+    public:
+        double   _drainRate;       // Queue drain rate
+        double   _drainMax;	       // Max queue drain at once
+        uint32_t _minouractive;    // minimum active requests from us
+        uint32_t _maxouractive;    // maximum active requests from us (queue)
+        uint32_t _cutoffouractive; // cutoff active requests
+        uint32_t _minestactive;    // minimum estimated requests before queueing
+        uint32_t _maxestactive;    // maximum estimated requests (start earlydrop)
+        uint32_t _cutoffestactive; // cutoff estimated requests  (end earlydrop)
+
+        overload_t(FastS_DataSetDesc *desc);
+    };
+
+    //----------------------------------------------------------------
+    // class used to wait for a query queue
+    //----------------------------------------------------------------
+
+    class queryQueue_t;
+    class queryQueued_t
+    {
+        friend class queryQueue_t;
+    private:
+        queryQueued_t(const queryQueued_t &);
+        queryQueued_t& operator=(const queryQueued_t &);
+
+        FastOS_Cond _queueCond;
+        queryQueued_t *_next;
+        bool _isAborted;
+        bool _isQueued;
+        FNET_Task *const _deQueuedTask;
+    public:
+        queryQueued_t(FNET_Task *const deQueuedTask)
+            : _queueCond(),
+              _next(NULL),
+              _isAborted(false),
+              _isQueued(false),
+              _deQueuedTask(deQueuedTask)
+        {
+        }
+
+        ~queryQueued_t(void)
+        {
+            FastS_assert(!_isQueued);
+        }
+        void Wait(void) {
+            _queueCond.Lock();
+            while (_isQueued) {
+                _queueCond.Wait();
+            }
+            _queueCond.Unlock();
+        }
+        bool IsAborted(void) const { return _isAborted; }
+        void MarkAbort(void) { _isAborted = true; }
+        void MarkQueued(void) { _isQueued = true; }
+        void UnmarkQueued(void) { _isQueued = false; }
+        bool IsQueued(void) const { return _isQueued; }
+        void LockCond(void) { _queueCond.Lock(); }
+        void UnlockCond(void) { _queueCond.Unlock(); }
+        void SignalCond(void) { _queueCond.Signal(); }
+
+        FNET_Task *
+        getDequeuedTask(void) const
+        {
+            return _deQueuedTask;
+        }
+    };
+
+    //----------------------------------------------------------------
+    // per dataset query queue
+    //----------------------------------------------------------------
+
+    class queryQueue_t
+    {
+        friend class FastS_DataSetBase;
+
+    private:
+        queryQueue_t(const queryQueue_t &);
+        queryQueue_t& operator=(const queryQueue_t &);
+
+        queryQueued_t	  *_head;
+        queryQueued_t	  *_tail;
+        unsigned int           _queueLen;
+        unsigned int           _active;
+
+    public:
+        double                 _drainAllowed; // number of drainable request
+        double                 _drainStamp;   // stamp of last drain check
+        overload_t             _overload;     // queue parameters
+
+    public:
+        queryQueue_t(FastS_DataSetDesc *desc);
+        ~queryQueue_t();
+        void QueueTail(queryQueued_t *newquery);
+        void DeQueueHead(void);
+        unsigned int GetQueueLen() const        { return _queueLen; }
+        unsigned int GetActiveQueries() const   { return _active; }
+        void SetActiveQuery()                   { _active++; }
+        void ClearActiveQuery()                 { _active--; }
+        queryQueued_t *GetFirst(void) const { return _head; }
+    };
+
+    //----------------------------------------------------------------
+
+protected:
+    FastS_AppContext *_appCtx;
+    FastOS_Mutex  _lock;
+    FastOS_Time  _createtime;
+    queryQueue_t _queryQueue;
+    total_t      _total;
+    uint32_t     _id;
+    uint32_t     _unitrefcost;
+
+    // Total cost as seen by referencing objects
+    std::atomic<uint32_t>  _totalrefcost;
+    uint32_t	 _mldDocStamp;
+
+public:
+    FastS_DataSetBase(FastS_AppContext *appCtx,
+                      FastS_DataSetDesc *desc);
+    virtual ~FastS_DataSetBase();
+
+    // locking stuff
+    //--------------
+    void LockDataset()   { _lock.Lock();   }
+    void UnlockDataset() { _lock.Unlock(); }
+    FastOS_Mutex & getMutex() { return _lock; }
+
+    // query queue related methods
+    //----------------------------
+    void SetActiveQuery_HasLock();
+    void SetActiveQuery();
+    void ClearActiveQuery_HasLock(FastS_TimeKeeper *timeKeeper);
+    void ClearActiveQuery(FastS_TimeKeeper *timeKeeper);
+    void CheckQueryQueue_HasLock(FastS_TimeKeeper *timeKeeper);
+    void AbortQueryQueue_HasLock();
+
+    // common dataset methods
+    //-----------------------
+    uint32_t GetID() { return _id; }
+    double Uptime() { return _createtime.MilliSecsToNow() / 1000.0; }
+    FastS_AppContext *GetAppContext() const { return _appCtx; }
+    void AddCost();
+    void SubCost();
+    void UpdateSearchTime(double tnow, double elapsed, bool timedout);
+    void UpdateEstimateCount();
+    void CountTimeout();
+
+    void ScheduleCheckTempFail();
+    virtual void DeQueueHeadWakeup_HasLock(void);
+    virtual ChildInfo getChildInfo() const;
+    uint32_t GetMldDocStamp(void) const { return _mldDocStamp; }
+    void SetMldDocStamp(uint32_t mldDocStamp) { _mldDocStamp = mldDocStamp; }
+
+    // common dataset API
+    //-------------------
+    virtual uint32_t CalculateQueueLens_HasLock(uint32_t &dispatchnodes) = 0;
+    virtual bool AddEngine(FastS_EngineDesc *desc) = 0;
+    virtual void ConfigDone(FastS_DataSetCollection *) {}
+    virtual void ScheduleCheckBad() {}
+    virtual bool AreEnginesReady() = 0;
+    virtual FastS_ISearch *CreateSearch(FastS_DataSetCollection *dsc,
+                                        FastS_TimeKeeper *timeKeeper,
+                                        bool async) = 0;
+    virtual void Free() = 0;
+    virtual void addPerformance(FastS_QueryPerf &qp);
+
+    // typesafe down-cast
+    //-------------------
+    virtual FastS_PlainDataSet     *GetPlainDataSet()     { return NULL; }
+    virtual FastS_FNET_DataSet     *GetFNETDataSet()      { return NULL; }
+};
+
+//---------------------------------------------------------------------------
+

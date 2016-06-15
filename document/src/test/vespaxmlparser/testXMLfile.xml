@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <document documenttype="music" documentid="doc:music:http://music.yahoo.com/bobdylan/BestOf"> 
+        <url>http://music.yahoo.com/bobdylan/BestOf</url>
+        <songs>Knockin on Heaven's Door; Mr. Tambourine Man</songs>
+        <title>Best of Bob Dylan</title>
+        <tracks>
+            <item>Mr. Tambourine Man</item>
+            <item>Someday Baby</item>
+            <item>Blowin' In The Wind</item>
+        </tracks> 
+        <popularity>
+            <item weight="3">0</item>
+            <item weight="5">1</item>
+            <item weight="30">2</item>
+            <item weight="26">3</item>
+        </popularity>
+    </document>
+    
+    <remove documentid="doc:music:http://music.yahoo.com/BritneySpears/HitMe"/>
+    
+    <update documenttype="music" documentid="doc:music:http://music.yahoo.com/bobdylan/BestOf"> 
+        <assign field="title">The Best of Bob Dylan</assign>
+        <add field="tracks">
+            <item>Man Of Constant Sorrow</item>
+        </add>
+    </update>
+</vespafeed>

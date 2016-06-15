@@ -1,0 +1,70 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music3 {
+
+  document music3 {
+
+    field title type string {
+      indexing: summary | index
+      # index-to: title, default
+      rank-type: about
+
+      header
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+      # index-to: artist, default
+      rank-type:about
+
+      header
+    }
+
+    field year type int {
+      indexing: summary | attribute
+
+      header
+    }
+
+    # Increase rank score of popular documents regardless of query
+    field popularity type int {
+      indexing: summary | attribute
+
+      header
+    }
+
+    field url type uri {
+      indexing: summary | index
+
+      header
+    }
+
+  }
+
+  rank-profile other {
+
+    first-phase {
+      expression: nativeRank
+    }
+
+    second-phase {
+      expression: 0.5 * 0.5 * (0.1 * attribute(popularity) + fieldMatch(artist)) + 0.3 * fieldMatch(title)
+      rerank-count:200
+    }
+  }
+
+  rank-profile default {
+
+    first-phase {
+      expression: nativeRank
+    }
+
+    second-phase {
+      expression {
+        0.5 * 0.5 * (0.1 * attribute(popularity) + fieldMatch(artist))
+        + 0.3 * fieldMatch(title)
+      }
+      rerank-count:200
+    }
+  }
+
+}

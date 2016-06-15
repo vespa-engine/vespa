@@ -1,0 +1,1 @@
+Route 'foo' in routing table 'document' has no hops.

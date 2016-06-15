@@ -1,0 +1,8 @@
+.depend
+Makefile
+sort_test
+uca_stress
+/sortbenchmark
+searchlib_sort_test_app
+searchlib_sortbenchmark_app
+searchlib_uca_stress_app

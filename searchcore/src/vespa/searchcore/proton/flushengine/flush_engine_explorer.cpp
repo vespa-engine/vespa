@@ -1,0 +1,82 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.flushengine.flush_engine_explorer");
+#include "flush_engine_explorer.h"
+
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
+
+using vespalib::slime::Cursor;
+using vespalib::slime::Inserter;
+using vespalib::StateExplorer;
+
+namespace proton {
+
+namespace {
+
+void
+convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets,
+               const fastos::TimeStamp &now,
+               Cursor &array)
+{
+    for (const auto &target : flushingTargets) {
+        Cursor &object = array.addObject();
+        object.setString("name", target.getName());
+        object.setString("startTime", target.getStart().toString());
+        fastos::TimeStamp elapsedTime = now - target.getStart();
+        object.setDouble("elapsedTime", elapsedTime.sec());
+    }
+}
+
+void
+sortTargetList(FlushContext::List &allTargets)
+{
+    std::sort(allTargets.begin(), allTargets.end(),
+            [](const FlushContext::SP &rhs, const FlushContext::SP &lhs) {
+                return rhs->getTarget()->getFlushedSerialNum() <
+                        lhs->getTarget()->getFlushedSerialNum();
+    });
+}
+
+void
+convertToSlime(const FlushContext::List &allTargets,
+               const fastos::TimeStamp &now,
+               Cursor &array)
+{
+    for (const auto &ctx : allTargets) {
+        Cursor &object = array.addObject();
+        object.setString("name", ctx->getName());
+        const IFlushTarget::SP &target = ctx->getTarget();
+        object.setLong("flushedSerialNum", target->getFlushedSerialNum());
+        object.setLong("memoryGain", target->getApproxMemoryGain().gain());
+        object.setLong("diskGain", target->getApproxDiskGain().gain());
+        object.setString("lastFlushTime", target->getLastFlushTime().toString());
+        fastos::TimeStamp timeSinceLastFlush = now - target->getLastFlushTime();
+        object.setDouble("timeSinceLastFlush", timeSinceLastFlush.sec());
+        object.setBool("needUrgentFlush", target->needUrgentFlush());
+    }
+}
+
+}
+
+FlushEngineExplorer::FlushEngineExplorer(const FlushEngine &engine)
+    : _engine(engine)
+{
+}
+
+void
+FlushEngineExplorer::get_state(const Inserter &inserter, bool full) const
+{
+    Cursor &object = inserter.insertObject();
+    if (full) {
+        fastos::TimeStamp now = fastos::ClockSystem::now();
+        convertToSlime(_engine.getCurrentlyFlushingSet(), now, object.setArray("flushingTargets"));
+        FlushContext::List allTargets = _engine.getTargetList(true);
+        sortTargetList(allTargets);
+        convertToSlime(allTargets, now, object.setArray("allTargets"));
+    }
+}
+
+} // namespace proton

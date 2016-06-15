@@ -1,0 +1,16 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search simple {
+    document simple {
+        field my_pos type position        { indexing: summary }
+        field my_int type int             { indexing: summary }
+        field my_float type float         { indexing: summary }
+        field my_str type string          { indexing: summary }
+        field my_raw type raw             { indexing: summary }
+        field my_long type long           { indexing: summary }
+        field my_double type double       { indexing: summary }
+        field my_uri type uri             { indexing: summary }
+        field my_byte type byte           { indexing: summary }
+        field my_predicate type predicate { indexing: summary }
+        field my_tensor type tensor       { indexing: summary }
+    }
+}

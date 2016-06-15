@@ -1,0 +1,12 @@
+snapshot.0.valid=true
+snapshot.0.syncToken=50
+snapshot.0.dirName=foo
+snapshot.1.valid=true
+snapshot.1.syncToken=200
+snapshot.1.dirName=baz
+snapshot.2.valid=false
+snapshot.2.syncToken=100
+snapshot.2.dirName=bar
+snapshot.3.valid=false
+snapshot.3.syncToken=500
+snapshot.3.dirName=last

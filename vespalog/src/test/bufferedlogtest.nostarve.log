@@ -1,0 +1,26 @@
+10.000004	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Starting up, using logfile bufferedlogtest.log
+100.000000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	message
+100.000001	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x1: NOT CONNECTED
+100.000002	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x2: NOT_READY
+100.000003	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x3: BAAAH
+100.000004	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x4: RPC FAILURE
+100.000005	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x5: COSMIC RADIATION
+100.000006	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x6: ITS SATURDAY
+100.000007	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x7: Yeah, Right!!
+100.000008	example.yahoo.com	-1/-1	-	bufferedlogtest	error	Failed to send message to node 0x8: NOT CONNECTED
+100.000009	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Failed to send message to node 0x9: NOT CONNECTED
+100.000010	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0xa: NOT CONNECTED
+100.001001	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED
+100.001001	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x1: NOT CONNECTED (Repeated 99 times since 100.000001)
+100.001020	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED
+100.001020	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x2: NOT_READY (Repeated 99 times since 100.000002)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x3: BAAAH (Repeated 99 times since 100.000003)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x4: RPC FAILURE (Repeated 99 times since 100.000004)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x5: COSMIC RADIATION (Repeated 99 times since 100.000005)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x6: ITS SATURDAY (Repeated 99 times since 100.000006)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0x7: Yeah, Right!! (Repeated 99 times since 100.000007)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	error	Failed to send message to node 0x8: NOT CONNECTED (Repeated 99 times since 100.000008)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	info	Failed to send message to node 0x9: NOT CONNECTED (Repeated 99 times since 100.000009)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 0xa: NOT CONNECTED (Repeated 99 times since 100.000010)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 4: NOT CONNECTED (Repeated 899 times since 100.001001)
+100.003000	example.yahoo.com	-1/-1	-	bufferedlogtest	warning	Failed to send message to node 3: NOT CONNECTED (Repeated 99 times since 100.001020)

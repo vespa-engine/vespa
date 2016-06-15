@@ -1,0 +1,36 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.test;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAmount;
+
+/** A clock which initially has the time of its creation but can only be advanced by calling advance */
+public class ManualClock extends Clock {
+
+    private Instant currentTime = Instant.now();
+
+    public ManualClock() {}
+
+    public ManualClock(Instant currentTime) {
+        this.currentTime = currentTime;
+    }
+
+    public void advance(TemporalAmount temporal) {
+        currentTime = currentTime.plus(temporal);
+    }
+
+    @Override
+    public Instant instant() { return currentTime; }
+
+    @Override
+    public ZoneId getZone() { return null; }
+
+    @Override
+    public Clock withZone(ZoneId zone) { return null; }
+
+    @Override
+    public long millis() { return currentTime.toEpochMilli(); }
+
+}

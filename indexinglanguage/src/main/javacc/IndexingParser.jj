@@ -1,0 +1,822 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// --------------------------------------------------------------------------------
+//
+// JavaCC options.
+//
+// --------------------------------------------------------------------------------
+options {
+    CACHE_TOKENS = false;
+    DEBUG_PARSER = false;
+    ERROR_REPORTING = true;
+    STATIC = false;
+    USER_CHAR_STREAM = true;
+}
+
+// --------------------------------------------------------------------------------
+//
+// Parser body.
+//
+// --------------------------------------------------------------------------------
+PARSER_BEGIN(IndexingParser)
+
+package com.yahoo.vespa.indexinglanguage.parser;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
+import com.yahoo.collections.Pair;
+import com.yahoo.document.datatypes.*;
+import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.Linguistics;
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @version $Id$
+ */
+public class IndexingParser {
+
+    private String defaultFieldName;
+    private Linguistics linguistics;
+    private AnnotatorConfig annotatorCfg;
+
+    public IndexingParser(String str) {
+        this(new IndexingInput(str));
+    }
+
+    public IndexingParser setDefaultFieldName(String fieldName) {
+        defaultFieldName = fieldName;
+        return this;
+    }
+
+    public IndexingParser setLinguistics(Linguistics linguistics) {
+        this.linguistics = linguistics;
+        return this;
+    }
+
+    public IndexingParser setAnnotatorConfig(AnnotatorConfig cfg) {
+        annotatorCfg = cfg;
+        return this;
+    }
+
+    private static FieldValue parseDouble(String str) {
+        return new DoubleFieldValue(new BigDecimal(str).doubleValue());
+    }
+
+    private static FieldValue parseFloat(String str) {
+        if (str.endsWith("f") || str.endsWith("F")) {
+            str = str.substring(0, str.length() - 1);
+        }
+        return new FloatFieldValue(new BigDecimal(str).floatValue());
+    }
+
+    private static FieldValue parseInteger(String str) {
+        if (str.startsWith("0x")) {
+            return new IntegerFieldValue(new BigInteger(str.substring(2), 16).intValue());
+        } else {
+            return new IntegerFieldValue(new BigInteger(str).intValue());
+        }
+    }
+
+    private static FieldValue parseLong(String str) {
+        if (str.endsWith("l") || str.endsWith("L")) {
+            str = str.substring(0, str.length() - 1);
+        }
+        if (str.startsWith("0x")) {
+            return new LongFieldValue(new BigInteger(str.substring(2), 16).longValue());
+        } else {
+            return new LongFieldValue(new BigInteger(str).longValue());
+        }
+    }
+}
+
+PARSER_END(IndexingParser)
+
+SKIP :
+{
+    " " | "\t" | "\r" | "\f"
+}
+
+SPECIAL_TOKEN :
+{
+    <COMMENT: "#" (~["\n","\r"])* >
+}
+
+TOKEN :
+{
+    <INTEGER: (["0"-"9"])+ | ("0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+)> |
+    <LONG: <INTEGER> ["l","L"]> |
+    <DOUBLE: (["0"-"9"])+ ("." (["0"-"9"])*)? (["e","E"] (["+","-"])? (["0"-"9"])+)?> |
+    <FLOAT: <DOUBLE> ["f", "F"]>
+}
+
+TOKEN :
+{
+    <NL: "\n"> |
+    <ADD: "+"> |
+    <SUB: "-"> |
+    <MUL: "*"> |
+    <DIV: "/"> |
+    <MOD: "%"> |
+    <EQ: "=="> |
+    <NE: "!="> |
+    <LT: "<"> |
+    <LE: "<="> |
+    <GT: ">"> |
+    <GE: ">="> |
+    <PIPE: "|"> |
+    <LCURLY: "{"> |
+    <RCURLY: "}"> |
+    <LPAREN: "("> |
+    <RPAREN: ")"> |
+    <DOT: "."> |
+    <COMMA: ","> |
+    <COLON: ":"> |
+    <SCOLON: ";"> |
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
+             ("'" (~["'"] | "\\'")* "'")> |
+    <ATTRIBUTE: "attribute"> |
+    <BASE64_DECODE: "base64decode"> |
+    <BASE64_ENCODE: "base64encode"> |
+    <CASE: "case"> |
+    <CASE_DEFAULT: "default"> |
+    <CLEAR_STATE: "clear_state"> |
+    <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
+    <ECHO: "echo"> |
+    <ELSE: "else"> |
+    <EXACT: "exact"> |
+    <FLATTEN: "flatten"> |
+    <FOR_EACH: "for_each"> |
+    <GET_FIELD: "get_field"> |
+    <GET_VAR: "get_var"> |
+    <GUARD: "guard"> |
+    <HEX_DECODE: "hexdecode"> |
+    <HEX_ENCODE: "hexencode"> |
+    <HOST_NAME: "hostname"> |
+    <IF: "if"> |
+    <INDEX: "index"> |
+    <INPUT: "input"> |
+    <JOIN: "join"> |
+    <LOWER_CASE: "lowercase"> |
+    <NGRAM: "ngram"> |
+    <NORMALIZE: "normalize"> |
+    <NOW: "now"> |
+    <OPTIMIZE_PREDICATE: "optimize_predicate"> |
+    <PASSTHROUGH: "passthrough"> |
+    <RANDOM: "random"> |
+    <REMOVE_IF_ZERO: "remove_if_zero"> |
+    <SELECT_INPUT: "select_input"> |
+    <SET_LANGUAGE: "set_language"> |
+    <SET_VAR: "set_var"> |
+    <SPLIT: "split"> |
+    <STEM: "stem"> |
+    <SUBSTRING: "substring"> |
+    <SUMMARY: "summary"> |
+    <SWITCH: "switch"> |
+    <THIS: "this"> |
+    <TOKENIZE: "tokenize"> |
+    <TO_ARRAY: "to_array"> |
+    <TO_BYTE: "to_byte"> |
+    <TO_DOUBLE: "to_double"> |
+    <TO_FLOAT: "to_float"> |
+    <TO_INT: "to_int"> |
+    <TO_LONG: "to_long"> |
+    <TO_POS: "to_pos"> |
+    <TO_STRING: "to_string"> |
+    <TO_WSET: "to_wset"> |
+    <TRIM: "trim"> |
+    <ZCURVE: "zcurve"> |
+    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
+}
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+Expression root() :
+{
+    Expression exp;
+}
+{
+    ( exp = statement() [ <SCOLON> ] )
+    {
+      while (exp instanceof ExpressionList && ((ExpressionList)exp).size() == 1) exp = ((ExpressionList)exp).get(0);
+      return exp;
+    }
+}
+
+ScriptExpression script() :
+{
+    StatementExpression exp;
+    List<StatementExpression> lst = new LinkedList<StatementExpression>();
+}
+{
+    (   <LCURLY> nl()   exp = statement() { lst.add(exp); } nl()
+      ( <SCOLON> nl() [ exp = statement() { lst.add(exp); } nl() ] )* <RCURLY> )
+    { return new ScriptExpression(lst); }
+}
+
+StatementExpression statement() :
+{
+    Expression exp;
+    List<Expression> lst = new LinkedList<Expression>();
+}
+{
+    ( exp = expression() { lst.add(exp); } ( <PIPE> nl() exp = expression() { lst.add(exp); } )* )
+    { return new StatementExpression(lst); }
+}
+
+Expression expression() :
+{
+    Expression exp;
+    List<Expression> lst = new LinkedList<Expression>();
+}
+{
+    ( exp = math() { lst.add(exp); } ( <DOT> exp = math() { lst.add(exp); } )* )
+    { return lst.size() == 1 ? exp : new CatExpression(lst); }
+}
+
+Expression math() :
+{
+    ArithmeticExpression.Operator op = ArithmeticExpression.Operator.ADD;
+    MathResolver math = new MathResolver();
+    Expression exp;
+}
+{
+    (     exp = value() { math.push(op, exp);                     }
+      ( ( <ADD>         { op = ArithmeticExpression.Operator.ADD; } |
+          <DIV>         { op = ArithmeticExpression.Operator.DIV; } |
+          <MOD>         { op = ArithmeticExpression.Operator.MOD; } |
+          <MUL>         { op = ArithmeticExpression.Operator.MUL; } |
+          <SUB>         { op = ArithmeticExpression.Operator.SUB; } )
+          exp = value() { math.push(op, exp);                     } )* )
+    { return math.resolve(); }
+}
+
+Expression value() :
+{
+    Expression val;
+}
+{
+    ( val = attributeExp()          |
+      val = base64DecodeExp()       |
+      val = base64EncodeExp()       |
+      val = clearStateExp()         |
+      val = echoExp()               |
+      val = exactExp()              |
+      val = flattenExp()            |
+      val = forEachExp()            |
+      val = getFieldExp()           |
+      val = getVarExp()             |
+      val = guardExp()              |
+      val = hexDecodeExp()          |
+      val = hexEncodeExp()          |
+      val = hostNameExp()           |
+      val = ifThenExp()             |
+      val = indexExp()              |
+      val = inputExp()              |
+      val = joinExp()               |
+      val = lowerCaseExp()          |
+      val = ngramExp()              |
+      val = normalizeExp()          |
+      val = nowExp()                |
+      val = optimizePredicateExp()  |
+      val = passthroughExp()        |
+      val = randomExp()             |
+      val = script()                |
+      val = selectInputExp()        |
+      val = setLanguageExp()        |
+      val = setValueExp()           |
+      val = setVarExp()             |
+      val = splitExp()              |
+      val = substringExp()          |
+      val = summaryExp()            |
+      val = switchExp()             |
+      val = thisExp()               |
+      val = tokenizeExp()           |
+      val = toArrayExp()            |
+      val = toByteExp()             |
+      val = toDoubleExp()           |
+      val = toFloatExp()            |
+      val = toIntExp()              |
+      val = toLongExp()             |
+      val = toPosExp()              |
+      val = toStringExp()           |
+      val = toWsetExp()             |
+      val = trimExp()               |
+      val = zcurveExp()             |
+      ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
+    { return val; }
+}
+
+Expression attributeExp() :
+{
+    String val = defaultFieldName;
+}
+{
+    ( <ATTRIBUTE> [ val = fieldName() ] )
+    { return new AttributeExpression(val); }
+}
+
+Expression base64DecodeExp() : { }
+{
+    ( <BASE64_DECODE> )
+    { return new Base64DecodeExpression(); }
+}
+
+Expression base64EncodeExp() : { }
+{
+    ( <BASE64_ENCODE> )
+    { return new Base64EncodeExpression(); }
+}
+
+Expression clearStateExp() : { }
+{
+    ( <CLEAR_STATE> )
+    { return new ClearStateExpression(); }
+}
+
+Expression echoExp() : { }
+{
+    ( <ECHO> )
+    { return new EchoExpression(); }
+}
+
+Expression exactExp() : { }
+{
+    ( <EXACT> )
+    { return new ExactExpression(); }
+}
+
+Expression flattenExp() : { }
+{
+    ( <FLATTEN> )
+    { return new FlattenExpression(); }
+}
+
+Expression forEachExp() :
+{
+    Expression val;
+}
+{
+    ( <FOR_EACH> <LCURLY> nl() val = statement() nl() <RCURLY> )
+    { return new ForEachExpression(val); }
+}
+
+Expression getFieldExp() :
+{
+    String val;
+}
+{
+    ( <GET_FIELD> val = identifier() )
+    { return new GetFieldExpression(val); }
+}
+
+Expression getVarExp() :
+{
+    String val;
+}
+{
+    ( <GET_VAR> val = identifier() )
+    { return new GetVarExpression(val); }
+}
+
+Expression guardExp() :
+{
+    Expression val;
+}
+{
+    ( <GUARD> val = script() )
+    { return new GuardExpression(val); }
+}
+
+Expression hexDecodeExp() : { }
+{
+    ( <HEX_DECODE> )
+    { return new HexDecodeExpression(); }
+}
+
+Expression hexEncodeExp() : { }
+{
+    ( <HEX_ENCODE> )
+    { return new HexEncodeExpression(); }
+}
+
+Expression hostNameExp() : { }
+{
+    ( <HOST_NAME> )
+    { return new HostNameExpression(); }
+}
+
+Expression ifThenExp() :
+{
+    Expression lhs, rhs, ifTrue, ifFalse = null;
+    IfThenExpression.Comparator cmp;
+}
+{
+    ( <IF> <LPAREN> lhs = expression() cmp = ifThenCmp() rhs = expression() <RPAREN>
+      ifTrue = script() [ <ELSE> ifFalse = script() ] )
+    { return new IfThenExpression(lhs, cmp, rhs, ifTrue, ifFalse); }
+}
+
+IfThenExpression.Comparator ifThenCmp() :
+{
+    IfThenExpression.Comparator val = null;
+}
+{
+    ( <EQ> { val = IfThenExpression.Comparator.EQ; } |
+      <NE> { val = IfThenExpression.Comparator.NE; } |
+      <LE> { val = IfThenExpression.Comparator.LE; } |
+      <LT> { val = IfThenExpression.Comparator.LT; } |
+      <GE> { val = IfThenExpression.Comparator.GE; } |
+      <GT> { val = IfThenExpression.Comparator.GT; } )
+    { return val; }
+}
+
+Expression indexExp() :
+{
+    String val = defaultFieldName;
+}
+{
+    ( <INDEX> [ val = fieldName() ] )
+    { return new IndexExpression(val); }
+}
+
+Expression inputExp() :
+{
+    String val = defaultFieldName;
+}
+{
+    ( <INPUT> [ val = identifier() ] )
+    { return new InputExpression(val); }
+}
+
+Expression joinExp() :
+{
+    String val;
+}
+{
+    ( <JOIN> val = string() )
+    { return new JoinExpression(val); }
+}
+
+Expression lowerCaseExp() : { }
+{
+    ( <LOWER_CASE> )
+    { return new LowerCaseExpression(); }
+}
+
+Expression ngramExp() :
+{
+    int gramSize;
+}
+{
+    ( <NGRAM> gramSize = integer() )
+    { return new NGramExpression(linguistics, gramSize); }
+}
+
+Expression normalizeExp() : { }
+{
+    ( <NORMALIZE> )
+    { return new NormalizeExpression(linguistics); }
+}
+
+Expression nowExp() : { }
+{
+    ( <NOW> )
+    { return new NowExpression(); }
+}
+
+Expression optimizePredicateExp() : { }
+{
+    ( <OPTIMIZE_PREDICATE> )
+    { return new OptimizePredicateExpression(); }
+}
+
+Expression passthroughExp() :
+{
+    String val = defaultFieldName;
+}
+{
+    ( <PASSTHROUGH> [ val = fieldName() ] )
+    { return new PassthroughExpression(val); }
+}
+
+Expression randomExp() :
+{
+    Integer val = null;
+}
+{
+    ( <RANDOM> [ LOOKAHEAD(2) val = integer() ] )
+    { return new RandomExpression(val); }
+}
+
+Expression selectInputExp() :
+{
+    List<Pair<String, Expression>> cases = new LinkedList<Pair<String, Expression>>();
+    Expression exp;
+    String str;
+}
+{
+    ( <SELECT_INPUT> <LCURLY> nl() ( str = identifier() <COLON> exp = statement() <SCOLON> nl()
+      { cases.add(new Pair<String, Expression>(str, exp)); } )+ <RCURLY> )
+    { return new SelectInputExpression(cases); }
+}
+
+Expression setLanguageExp() : { }
+{
+    ( <SET_LANGUAGE> )
+    { return new SetLanguageExpression(); }
+}
+
+Expression setValueExp() :
+{
+    FieldValue val;
+}
+{
+    ( val = fieldValue() )
+    { return new SetValueExpression(val); }
+}
+
+Expression setVarExp() :
+{
+    String val;
+}
+{
+    ( <SET_VAR> val = identifier() )
+    { return new SetVarExpression(val); }
+}
+
+Expression splitExp() :
+{
+    String val;
+}
+{
+    ( <SPLIT> val = string() )
+    { return new SplitExpression(val); }
+}
+
+Expression substringExp() :
+{
+    long from, to;
+}
+{
+    ( <SUBSTRING> from = integer() to = integer() )
+    { return new SubstringExpression((int)from, (int)to); }
+}
+
+Expression summaryExp() :
+{
+    String val = defaultFieldName;
+}
+{
+    ( <SUMMARY> [ val = fieldName() ] )
+    { return new SummaryExpression(val); }
+}
+
+Expression switchExp() :
+{
+    Map<String, Expression> cases = new LinkedHashMap<String, Expression>();
+    Expression exp, defaultExp = null;
+    String str;
+}
+{
+    ( <SWITCH> <LCURLY> nl()
+      ( <CASE> str = string() <COLON> exp = statement() { cases.put(str, exp); } <SCOLON> nl() )+
+      [ <CASE_DEFAULT> <COLON> defaultExp = statement() <SCOLON> nl() ]
+      <RCURLY> )
+    { return new SwitchExpression(cases, defaultExp); }
+}
+
+Expression thisExp() : { }
+{
+    ( <THIS> )
+    { return new ThisExpression(); }
+}
+
+Expression tokenizeExp() :
+{
+    AnnotatorConfig cfg = annotatorCfg;
+}
+{
+    ( <TOKENIZE> [ cfg = tokenizeCfg() ] )
+    { return new TokenizeExpression(linguistics, cfg); }
+}
+
+AnnotatorConfig tokenizeCfg() :
+{
+    AnnotatorConfig val = new AnnotatorConfig(annotatorCfg);
+    String str = "SHORTEST";
+}
+{
+    ( <STEM> ( <COLON> str = string() ) ? { val.setStemMode(str); } |
+      <NORMALIZE> { val.setRemoveAccents(true); } )+
+    { return val; }
+}
+
+Expression toArrayExp() : { }
+{
+    ( <TO_ARRAY> )
+    { return new ToArrayExpression(); }
+}
+
+Expression toByteExp() : { }
+{
+    ( <TO_BYTE> )
+    { return new ToByteExpression(); }
+}
+
+Expression toDoubleExp() : { }
+{
+    ( <TO_DOUBLE> )
+    { return new ToDoubleExpression(); }
+}
+
+Expression toFloatExp() : { }
+{
+    ( <TO_FLOAT> )
+    { return new ToFloatExpression(); }
+}
+
+Expression toIntExp() : { }
+{
+    ( <TO_INT> )
+    { return new ToIntegerExpression(); }
+}
+
+Expression toLongExp() : { }
+{
+    ( <TO_LONG> )
+    { return new ToLongExpression(); }
+}
+
+Expression toPosExp() : { }
+{
+    ( <TO_POS> )
+    { return new ToPositionExpression(); }
+}
+
+Expression toStringExp() : { }
+{
+    ( <TO_STRING> )
+    { return new ToStringExpression(); }
+}
+
+Expression toWsetExp() :
+{
+    boolean createIfNonExistent = false;
+    boolean removeIfZero = false;
+}
+{
+    ( <TO_WSET> ( <CREATE_IF_NON_EXISTENT> { createIfNonExistent = true; } |
+                  <REMOVE_IF_ZERO>         { removeIfZero = true;        } )* )
+    { return new ToWsetExpression(createIfNonExistent, removeIfZero); }
+}
+
+Expression trimExp() : { }
+{
+    ( <TRIM> )
+    { return new TrimExpression(); }
+}
+
+Expression zcurveExp() : { }
+{
+    ( <ZCURVE> )
+    { return new ZCurveExpression(); }
+}
+
+String identifier() :
+{
+    String val;
+}
+{
+    ( val = string()             |
+      ( <ATTRIBUTE>              |
+        <BASE64_DECODE>          |
+        <BASE64_ENCODE>          |
+        <CASE>                   |
+        <CASE_DEFAULT>           |
+        <CLEAR_STATE>            |
+        <CREATE_IF_NON_EXISTENT> |
+        <ECHO>                   |
+        <EXACT>                  |
+        <ELSE>                   |
+        <FLATTEN>                |
+        <FOR_EACH>               |
+        <GET_FIELD>              |
+        <GET_VAR>                |
+        <GUARD>                  |
+        <HEX_DECODE>             |
+        <HEX_ENCODE>             |
+        <HOST_NAME>              |
+        <IDENTIFIER>             |
+        <IF>                     |
+        <INDEX>                  |
+        <INPUT>                  |
+        <JOIN>                   |
+        <LOWER_CASE>             |
+        <NGRAM>                  |
+        <NORMALIZE>              |
+        <NOW>                    |
+        <OPTIMIZE_PREDICATE>     |
+        <PASSTHROUGH>            |
+        <RANDOM>                 |
+        <REMOVE_IF_ZERO>         |
+        <SELECT_INPUT>           |
+        <SET_LANGUAGE>           |
+        <SET_VAR>                |
+        <SPLIT>                  |
+        <STEM>                   |
+        <SUBSTRING>              |
+        <SUMMARY>                |
+        <SWITCH>                 |
+        <THIS>                   |
+        <TO_ARRAY>               |
+        <TO_DOUBLE>              |
+        <TO_FLOAT>               |
+        <TO_INT>                 |
+        <TO_LONG>                |
+        <TO_POS>                 |
+        <TO_STRING>              |
+        <TO_WSET>                |
+        <TOKENIZE>               |
+        <TRIM>                   |
+        <ZCURVE>                 ) { val = token.image; } )
+    { return val; }
+}
+
+
+String fieldName() :
+{
+    StringBuilder builder = new StringBuilder();
+    String str;
+}
+{
+    ( str = identifier() { builder.append(str); } (
+      LOOKAHEAD(2) <DOT> { builder.append(token.image); }
+      str = identifier() { builder.append(str); } )* )
+    { return builder.toString(); }
+}
+
+FieldValue fieldValue() :
+{
+    FieldValue val;
+}
+{
+    ( val = numericValue() | val = stringValue() )
+    { return val; }
+}
+
+FieldValue numericValue() :
+{
+    FieldValue val;
+    String pre = "";
+}
+{
+    ( [ <ADD> | <SUB> { pre = "-";                             } ]
+      ( <DOUBLE>      { val = parseDouble(pre + token.image);  } |
+        <FLOAT>       { val = parseFloat(pre + token.image);   } |
+        <INTEGER>     { val = parseInteger(pre + token.image); } |
+        <LONG>        { val = parseLong(pre + token.image);    } ) )
+    { return val; }
+}
+
+FieldValue stringValue() :
+{
+    String val;
+}
+{
+    ( val = string() )
+    { return new StringFieldValue(val); }
+}
+
+String string() : { }
+{
+    ( <STRING> )
+    { return StringUtilities.unescape(token.image.substring(1, token.image.length() - 1)); }
+}
+
+int integer() :
+{
+    String pre = "";
+    int val;
+}
+{
+    ( [ <ADD> | <SUB> { pre = "-";                                 } ]
+      <INTEGER>       { val = Integer.parseInt(pre + token.image); } )
+    { return val; }
+}
+
+void nl() : { }
+{
+    ( <NL> )*
+}
+

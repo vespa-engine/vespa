@@ -1,0 +1,8 @@
+.depend
+Makefile
+castspeed_test
+drainpackets_test
+lockspeed_test
+fnet_castspeed_test_app
+fnet_drainpackets_test_app
+fnet_lockspeed_test_app

@@ -1,0 +1,4 @@
+.depend
+Makefile
+enumstore_test
+searchlib_enumstore_test_app

@@ -1,0 +1,39 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search annotationsinheritance {
+
+  document annotationsinheritance {
+
+  annotation fruit {
+  }
+
+  annotation banana inherits fruit {
+    field brand type string { }
+  }
+
+  annotation vehicle {
+    field numwheels type int { }
+  }
+
+  annotation car inherits vehicle {
+    field color type string { }
+  }
+
+  annotation intern inherits employee {
+    field enddate type long { }
+  }
+
+  annotation employee inherits worker {
+    field employeeid type int { }
+  }
+
+  annotation worker inherits person {
+  }
+
+  annotation person {
+    field name type string { }
+  }
+
+  }
+
+
+}

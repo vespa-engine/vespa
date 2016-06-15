@@ -1,0 +1,41 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/fnet/frt/frt.h>
+#include <string>
+
+namespace slobrok {
+
+//-----------------------------------------------------------------------------
+
+/**
+ * @class NamedService
+ * @brief Represents a server with a name and a connection specification.
+ *
+ * a NamedService is always part of a collection implementing the
+ * IRpcSrvCollection interface.
+ **/
+
+class NamedService
+{
+private:
+    NamedService(const NamedService &);            // Not used
+    NamedService &operator=(const NamedService &); // Not used
+
+protected:
+    std::string           _name;
+    std::string           _spec;
+
+public:
+    NamedService(const char *name,
+              const char *spec);
+    virtual ~NamedService();
+
+    const char *getName() const { return _name.c_str(); }
+    const char *getSpec() const { return _spec.c_str(); }
+};
+
+//-----------------------------------------------------------------------------
+
+} // namespace slobrok
+

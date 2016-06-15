@@ -1,0 +1,8 @@
+{
+  "nodes": [
+    @include(node6.json),
+    @include(node3.json),
+    @include(node2.json),
+    @include(node1.json)
+  ]
+}

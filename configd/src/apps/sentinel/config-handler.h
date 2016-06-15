@@ -1,0 +1,84 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <sys/types.h>
+#include <sys/select.h>
+
+#include <list>
+#include <vespa/vespalib/util/hashmap.h>
+
+#include <vespa/config-sentinel.h>
+#include <vespa/config/config.h>
+
+#include "service.h"
+#include "metrics.h"
+#include "state-api.h"
+
+using cloud::config::SentinelConfig;
+using config::ConfigSubscriber;
+using config::ConfigHandle;
+
+namespace config {
+namespace sentinel {
+
+class CommandConnection;
+class OutputConnection;
+
+class ConfigHandler {
+private:
+    typedef std::map<vespalib::string, Service::LP> ServiceMap;
+
+    ConfigSubscriber _subscriber;
+    ConfigHandle<SentinelConfig>::UP _sentinelHandle;
+    ServiceMap _services;
+    std::list<CommandConnection *> _connections;
+    std::list<OutputConnection *> _outputConnections;
+    int _boundPort;
+    int _commandSocket;
+    StartMetrics _startMetrics;
+    StateApi _stateApi;
+
+    ConfigHandler(const ConfigHandler&);
+    ConfigHandler& operator =(const ConfigHandler&);
+
+    Service::LP serviceByPid(pid_t pid);
+    Service::LP serviceByName(const vespalib::string & name);
+    void handleCommands();
+    void handleCommand(CommandConnection *c);
+    void handleOutputs();
+    void handleChildDeaths();
+
+    static int listen(int port);
+    void configure_port(int port);
+
+    void updateMetrics();
+
+    void doGet(CommandConnection *c, char *args);
+    void doLs(CommandConnection *c, char *args);
+    void doRestart(CommandConnection *c, char *args);
+    void doRestart(CommandConnection *c, char *args, bool force);
+    void doStart(CommandConnection *c, char *args);
+    void doStop(CommandConnection *c, char *args);
+    void doStop(CommandConnection *c, char *args, bool force);
+    void doAuto(CommandConnection *c, char *args);
+    void doManual(CommandConnection *c, char *args);
+    void doQuit(CommandConnection *c, char *args);
+
+    void terminateServices(bool catchable, bool printDebug = false);
+    void stopOldServicesNotInMap(const ServiceMap & newServices);
+
+    void doConfigure();
+
+public:
+    ConfigHandler();
+    virtual ~ConfigHandler();
+    void subscribe(const std::string & configId);
+    bool terminate();
+    int doWork();
+    void updateActiveFdset(fd_set *fds, int *maxNum);
+};
+
+
+} // end namespace config::sentinel
+} // end namespace config
+

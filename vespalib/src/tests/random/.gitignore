@@ -1,0 +1,6 @@
+.depend
+Makefile
+Tr.class
+random_test
+vespalib_friendfinder_test_app
+vespalib_random_test_app

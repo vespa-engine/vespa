@@ -1,0 +1,72 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::framework::StorageComponentRegisterImpl
+ * \ingroup component
+ *
+ * \brief Subclass of component register impl that handles storage components.
+ */
+#pragma once
+
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/config/config-stor-prioritymapping.h>
+#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+#include <vespa/vdslib/distribution/distribution.h>
+
+namespace storage {
+
+class StorageComponentRegisterImpl
+        : public virtual StorageComponentRegister,
+          public virtual framework::defaultimplementation::ComponentRegisterImpl
+{
+    typedef framework::defaultimplementation::ComponentRegisterImpl CompRegImpl;
+    typedef StorageComponent::PriorityConfig PriorityConfig;
+    //CompRegImpl _compReg;
+    vespalib::Lock _componentLock;
+    std::vector<StorageComponent*> _components;
+    vespalib::string _clusterName;
+    const lib::NodeType* _nodeType;
+    uint16_t _index;
+    document::DocumentTypeRepo::SP _docTypeRepo;
+    documentapi::LoadTypeSet::SP _loadTypes;
+    PriorityConfig _priorityConfig;
+    document::BucketIdFactory _bucketIdFactory;
+    lib::Distribution::SP _distribution;
+    NodeStateUpdater* _nodeStateUpdater;
+
+public:
+    typedef std::unique_ptr<StorageComponentRegisterImpl> UP;
+
+    StorageComponentRegisterImpl();
+
+    const vespalib::string& getClusterName() const { return _clusterName; }
+    const lib::NodeType& getNodeType() const
+        { assert(_nodeType != 0); return *_nodeType; }
+    uint16_t getIndex() const { return _index; }
+    document::DocumentTypeRepo::SP getTypeRepo() { return _docTypeRepo; }
+    documentapi::LoadTypeSet::SP getLoadTypes() { return _loadTypes; }
+    const document::BucketIdFactory& getBucketIdFactory()
+        { return _bucketIdFactory; }
+    lib::Distribution::SP getDistribution() { return _distribution; }
+    NodeStateUpdater& getNodeStateUpdater()
+        { assert(_nodeStateUpdater != 0); return *_nodeStateUpdater; }
+
+    virtual void registerStorageComponent(StorageComponent&);
+
+    void setNodeInfo(vespalib::stringref clusterName,
+                     const lib::NodeType& nodeType,
+                     uint16_t index);
+    virtual void setNodeStateUpdater(NodeStateUpdater& updater);
+    virtual void setDocumentTypeRepo(document::DocumentTypeRepo::SP);
+    virtual void setLoadTypes(documentapi::LoadTypeSet::SP);
+    virtual void setPriorityConfig(const PriorityConfig&);
+    virtual void setBucketIdFactory(const document::BucketIdFactory&);
+    virtual void setDistribution(lib::Distribution::SP);
+
+};
+
+} // storage
+
+

@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+searchlib_resolver_test_app

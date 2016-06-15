@@ -1,0 +1,104 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc.core;
+
+import com.google.inject.Module;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.OsgiFramework;
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.logging.Logger;
+
+/**
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+public class BootstrapDaemon implements Daemon {
+
+    private static final Logger log = Logger.getLogger(BootstrapDaemon.class.getName());
+    private final BootstrapLoader loader;
+    private final boolean privileged;
+    private String bundleLocation;
+
+    static {
+        // force load slf4j to avoid other logging frameworks from initializing before it
+        org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+    }
+
+    public BootstrapDaemon() {
+        this(new ApplicationLoader(newOsgiFramework(), newConfigModule()),
+             Boolean.valueOf(System.getProperty("jdisc.privileged")));
+    }
+
+    BootstrapDaemon(BootstrapLoader loader, boolean privileged) {
+        this.loader = loader;
+        this.privileged = privileged;
+    }
+
+    BootstrapLoader loader() {
+        return loader;
+    }
+
+    @Override
+    public void init(DaemonContext context) throws Exception {
+        String[] args = context.getArguments();
+        if (args == null || args.length != 1 || args[0] == null) {
+            throw new IllegalArgumentException("Expected 1 argument, got " + Arrays.toString(args) + ".");
+        }
+        bundleLocation = args[0];
+        if (privileged) {
+            log.finer("Initializing application with privileges.");
+            loader.init(bundleLocation, true);
+        }
+    }
+
+    @Override
+    public void start() throws Exception {
+        if (!privileged) {
+            log.finer("Initializing application without privileges.");
+            loader.init(bundleLocation, false);
+        }
+        loader.start();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        loader.stop();
+    }
+
+    @Override
+    public void destroy() {
+        loader.destroy();
+    }
+
+    private static OsgiFramework newOsgiFramework() {
+        String cachePath = System.getProperty("jdisc.cache.path");
+        if (cachePath == null) {
+            throw new IllegalStateException("System property 'jdisc.cache.path' not set.");
+        }
+        FelixParams params = new FelixParams()
+                .setCachePath(cachePath)
+                .setLoggerEnabled(Boolean.valueOf(System.getProperty("jdisc.logger.enabled", "true")));
+        for (String str : ContainerBuilder.safeStringSplit(System.getProperty("jdisc.export.packages"), ",")) {
+            params.exportPackage(str);
+        }
+        return new FelixFramework(params);
+    }
+
+    private static Iterable<Module> newConfigModule() {
+        String configFile = System.getProperty("jdisc.config.file");
+        if (configFile == null) {
+            return Collections.emptyList();
+        }
+        Module configModule;
+        try {
+            configModule = ApplicationConfigModule.newInstanceFromFile(configFile);
+        } catch (IOException e) {
+            throw new IllegalStateException("Exception thrown while reading config file '" + configFile + "'.", e);
+        }
+        return Arrays.asList(configModule);
+    }
+
+}

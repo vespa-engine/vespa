@@ -1,0 +1,5 @@
+*_test
+.depend
+Makefile
+
+searchcore_feedoperation_test_app

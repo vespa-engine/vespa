@@ -1,0 +1,98 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision.testutils;
+
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Configuration;
+import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * A mock repository prepopulated with some applications.
+ * Instantiated by DI from application package above.
+ */
+public class MockNodeRepository extends NodeRepository {
+
+    private final NodeFlavors flavors;
+
+    /**
+     * Constructor
+     * @param flavors flavors to have in node repo
+     */
+    public MockNodeRepository(NodeFlavors flavors) throws Exception {
+        super(flavors, new MockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")));
+        this.flavors = flavors;
+        populate();
+    }
+
+    private void populate() {
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
+
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(createNode("node1", "host1.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
+        nodes.add(createNode("node2", "host2.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
+        nodes.add(createNode("node3", "host3.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("expensive"))));
+
+        // TODO: Use docker flavor
+        Node node4 = createNode("node4", "host4.yahoo.com", Optional.of("dockerhost4"), new Configuration(flavors.getFlavorOrThrow("default")));
+        node4 = node4.setStatus(node4.status().setDockerImage("image-12"));
+        nodes.add(node4);
+
+        Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), new Configuration(flavors.getFlavorOrThrow("default")));
+        nodes.add(node5.setStatus(node5.status().setDockerImage("image-123")));
+
+        nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
+        nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
+        // 8 and 9 are added by web service calls
+        Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent.yahoo.com"), new Configuration(flavors.getFlavorOrThrow("default")));
+        Status node10newStatus = node10.status();
+        node10newStatus = node10newStatus
+                .setVespaVersion(Version.fromString("5.104.142"))
+                .setHostedVersion(Version.fromString("2.1.2408"))
+                .setStateVersion("5.104.142-2.1.2408");
+        node10 = node10.setStatus(node10newStatus);
+        nodes.add(node10);
+        nodes = addNodes(nodes);
+        nodes.remove(6);
+        setReady(nodes);
+        fail("host5.yahoo.com");
+
+        ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
+        ClusterSpec cluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty(), Optional.of("image-123"));
+        provisioner.prepare(app1, cluster1, Capacity.fromNodeCount(2), 1, null);
+
+        ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
+        ClusterSpec cluster2 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Optional.empty());
+        activate(provisioner.prepare(app2, cluster2, Capacity.fromNodeCount(2), 1, null), app2, provisioner);
+
+        ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
+        ClusterSpec cluster3 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id3"), Optional.empty());
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2), 1, null), app3, provisioner);
+    }
+
+    private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {
+        NestedTransaction transaction = new NestedTransaction();
+        provisioner.activate(transaction, application, hosts);
+        transaction.commit();
+    }
+
+}

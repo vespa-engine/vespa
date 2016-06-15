@@ -1,0 +1,26 @@
+METHOD frt.rpc.getMethodInfo
+  DESCRIPTION:
+    Obtain detailed information about a single method
+  PARAMS:
+    [s][methodName] The method we want information about
+  RETURN:
+    [s][desc] Description of what the method does
+    [s][params] Method parameter types
+    [s][return] Method return values
+    [S][paramNames] Method parameter names
+    [S][paramDesc] Method parameter descriptions
+    [S][returnNames] Method return value names
+    [S][returnDesc] Method return value descriptions
+
+METHOD frt.rpc.getMethodList
+  DESCRIPTION:
+    Obtain a list of all available methods
+  RETURN:
+    [S][names] Method names
+    [S][params] Method parameter types
+    [S][return] Method return types
+
+METHOD frt.rpc.ping
+  DESCRIPTION:
+    Method that may be used to check if the server is online
+

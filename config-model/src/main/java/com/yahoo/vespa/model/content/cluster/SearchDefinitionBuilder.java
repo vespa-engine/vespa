@@ -1,0 +1,36 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.content.cluster;
+
+import com.yahoo.documentmodel.DocumentTypeRepo;
+import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+/**
+* Created with IntelliJ IDEA.
+* User: thomasg
+* Date: 9/28/12
+* Time: 1:20 PM
+* To change this template use File | Settings | File Templates.
+*/
+public class SearchDefinitionBuilder {
+    public Map<String, NewDocumentType> build(DocumentTypeRepo repo, ModelElement elem) {
+        Map<String, NewDocumentType> docTypes = new TreeMap<>();
+
+        if (elem != null) {
+            for (ModelElement e : elem.subElements("document")) {
+                String name = e.getStringAttribute("type"); // Schema-guaranteed presence
+                NewDocumentType documentType = repo.getDocumentType(name);
+                if (documentType != null) {
+                    docTypes.put(documentType.getName(), documentType);
+                } else {
+                    throw new RuntimeException("Document type '" + name + "' not found in application package");
+                }
+            }
+        }
+
+        return docTypes;
+    }
+}

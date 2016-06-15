@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+  <jdisc version="1.0" jetty="true">
+    <rest-api path="test" jersey2="true">
+      <components bundle="node-admin">
+        <package>com.yahoo.vespa.hosted.node.admin.testapi</package>
+      </components>
+    </rest-api>
+    <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.NodeAdminScheduler" bundle="node-admin"/>
+    <config name='nodeadmin.docker.docker'>
+      <caCertPath>/host/docker/certs/ca_cert.pem</caCertPath>
+      <clientCertPath>/host/docker/certs/client_cert.pem</clientCertPath>
+      <clientKeyPath>/host/docker/certs/client_key.pem</clientKeyPath>
+    </config>
+  </jdisc>
+</services>

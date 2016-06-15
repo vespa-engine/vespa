@@ -1,0 +1,82 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::framework::FakeClock
+ * \ingroup test
+ *
+ * \brief Implements a fake clock to use for testing.
+ */
+#pragma once
+
+#include <vespa/storageframework/generic/clock/clock.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/vespalib/util/sync.h>
+
+namespace storage {
+namespace framework {
+namespace defaultimplementation {
+
+struct FakeClock : public framework::Clock {
+    enum Mode {
+        FAKE_ABSOLUTE, // Time is always equal to supplied absolute time
+        FAKE_ABSOLUTE_CYCLE // Time is equal to absolute time + counter that
+                            // increase for each request so you never get same
+                            // timestamp twice.
+    };
+
+private:
+    Mode _mode;
+    framework::MicroSecTime _absoluteTime;
+    mutable time_t _cycleCount;
+    vespalib::Lock _lock;
+
+public:
+    FakeClock(Mode m = FAKE_ABSOLUTE,
+              framework::MicroSecTime startTime = framework::MicroSecTime(1));
+
+    void setMode(Mode m) {
+        vespalib::LockGuard guard(_lock);
+        _mode = m;
+    }
+    virtual void setFakeCycleMode() { setMode(FAKE_ABSOLUTE_CYCLE); }
+
+    virtual void setAbsoluteTimeInSeconds(uint32_t seconds) {
+        vespalib::LockGuard guard(_lock);
+        _absoluteTime = framework::MicroSecTime(seconds * uint64_t(1000000));
+        _cycleCount = 0;
+        _mode = FAKE_ABSOLUTE;
+    }
+
+    virtual void setAbsoluteTimeInMicroSeconds(uint64_t usecs) {
+        vespalib::LockGuard guard(_lock);
+        _absoluteTime = framework::MicroSecTime(usecs);
+        _cycleCount = 0;
+        _mode = FAKE_ABSOLUTE;
+    }
+
+    virtual void addMilliSecondsToTime(uint64_t ms) {
+        vespalib::LockGuard guard(_lock);
+        _absoluteTime += framework::MicroSecTime(ms * 1000);
+    }
+
+    virtual void addSecondsToTime(uint32_t nr) {
+        vespalib::LockGuard guard(_lock);
+        _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
+    }
+
+    virtual framework::MicroSecTime getTimeInMicros() const {
+        vespalib::LockGuard guard(_lock);
+        if (_mode == FAKE_ABSOLUTE) return _absoluteTime;
+        return _absoluteTime + framework::MicroSecTime(1000000 * _cycleCount++);
+    }
+    virtual framework::MilliSecTime getTimeInMillis() const {
+        return getTimeInMicros().getMillis();
+    }
+    virtual framework::SecondTime getTimeInSeconds() const {
+        return getTimeInMicros().getSeconds();
+    }
+};
+
+} // defaultimplementation
+} // framework
+} // storage
+

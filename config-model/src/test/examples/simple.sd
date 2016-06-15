@@ -1,0 +1,147 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# An entry-level configuration.
+# You can get a reasonable configuration by only configuring
+# a document
+# ...this has become less and less simple over time actually
+search simple {
+
+  document simple {
+
+    field title type string {
+      indexing: summary | index
+      # index-to: title, default
+      index: prefix
+      rank-type: identity
+      rank-type default: about
+      alias: analias.totitle
+      alias default: analias.todefault
+      alias: aliaz
+    }
+
+    field description type string {
+      # index-to: default, description
+      indexing: summary | index
+      summary: full
+      summary dyndesc: dynamic
+      rank-type: about
+      rank-type default: tags
+      alias: hallo
+    }
+
+    field longdesc type string {
+      indexing: summary 
+      summary: full
+      summary longstat: full
+      summary dynlong: dynamic
+      summary dyndesc2: dynamic
+    }
+
+    field chatter type string {
+      indexing: index
+      # index-to: default
+      rank-type: about
+    }
+
+    field category type string {
+      indexing: index
+      rank-type: tags
+      stemming: none
+      normalizing: none
+      header
+    }
+
+    field popularity type int {
+      indexing: attribute
+    }
+
+    field measurement type int {
+      indexing: attribute | summary
+      rank-type: empty
+      # index-to: measurement
+    }
+
+    field smallattribute type array<byte> {
+      indexing: attribute
+    }
+
+    field access type byte { indexing: attribute }
+
+    field categories_src type string {
+
+    }
+
+    field categoriesagain_src type string {
+
+    }
+
+    field exactemento_src type string {
+
+    }
+  }
+
+  field categories type string {
+    indexing: input categories_src | lowercase | normalize | index
+    body
+  }
+
+  field categoriesagain type string {
+    indexing {
+      input categoriesagain_src | lowercase | normalize | index
+    }
+  }
+
+  field exactemento type string { indexing {
+    input exactemento_src | lowercase | index | summary;
+  }}
+
+  field category_arr type array<string> {
+    indexing: input category | split ";" | attribute
+  }
+
+  field measurement_arr type array<int> {
+    indexing: input measurement | to_array | attribute
+  }
+
+  # Some experimental ranking changes
+  rank-profile experimental inherits default {
+    rank-type measurement: identity
+  }
+
+  rank-profile other inherits experimental {
+    rank-type measurement: identity
+  }
+
+  # check inheritance of phase expressions
+  rank-profile parent inherits default {
+    first-phase {
+      keep-rank-count:200
+      rank-score-drop-limit: -13.0
+      expression: attribute(year)
+    }
+    second-phase {
+      rerank-count: 99
+    }
+    macro openTicket() {
+      expression: if(attribute(status) == "accepted",1, if(attribute(status) == "new",1,if(attribute(status) == "reopened",1,0)))
+    }
+  }
+
+  rank-profile child inherits parent {
+    second-phase {
+      expression: attribute(access)
+    }
+  }
+
+  # A field defined outside an index
+  field exact type string {
+    indexing: input title . " " . input category | summary | index
+    summary-to: default
+    stemming: none
+    normalizing: none
+    rank-type: identity
+  }
+
+  field popsiness type int {
+    indexing: input popularity * input measurement | attribute
+  }
+}

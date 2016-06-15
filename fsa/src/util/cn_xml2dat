@@ -1,0 +1,218 @@
+#!/usr/bin/perl
+
+use strict;
+
+use FSA;
+use BerkeleyDB;
+use Getopt::Long;
+use Pod::Usage;
+
+#
+# Process command line options.
+#
+
+my $help         = 0;
+my $man          = 0;
+my $verbose      = 0;
+my $input_file   = '';
+my $output_file  = '';
+
+my $result = GetOptions('help|h'          => \$help,
+						'man|m'           => \$man,
+						'verbose|v'       => \$verbose,
+						'input-file|i=s'  => \$input_file,
+						'output-file|o=s' => \$output_file,
+					);
+
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+#
+# Domain is a required parameter.
+#
+
+my $domain = shift || die "need domain";
+
+
+my $MAGIC = 238579428;
+
+#***********************************************************
+#
+# Functions
+#
+#***********************************************************
+
+
+sub msg($@){
+	my $format = shift;
+	if($verbose){
+		printf STDERR $format,@_;
+	}
+}
+
+sub progress($$$$){
+	my ($msg,$cnt,$total,$done) = @_;
+
+	if($done){
+		if($total>0){
+			msg("\r%s ... %d of %d (%.2f%%) ... done.\n",$msg,$cnt,$total,100.0*$cnt/$total);
+		}
+		else {
+			msg("\r%s ... %d ... done.\n",$msg,$cnt);
+		}			
+	}
+	elsif($cnt%1000==0){
+		if($total>0){
+			msg("\r%s ... %d of %d (%.2f%%)",$msg,$cnt,$total,100.0*$cnt/$total);
+		}
+		else {
+			msg("\r%s ... %d",$msg,$cnt);
+		}			
+	}
+}
+
+my @cats = ();
+
+my $index    = "";
+my $extinfo  = pack('L',0);  # pack dummy word to make it easy to find empties
+my $unitstr  = "";
+my $catindex = "";
+
+my $extptr = 1;
+my $strptr = 0;
+
+my $maxfrq;
+my $maxcfrq;
+my $maxqfrq;
+my $maxsfrq;
+my $maxefrq;
+my $maxafrq;
+$maxfrq = $maxcfrq = $maxqfrq = $maxsfrq = $maxefrq = $maxafrq = 0;
+
+
+my $count=0;
+my @ext;
+
+if($input_file eq ""){
+	$input_file = "${domain}.xml";
+}
+open(X,"$input_file");
+my $line = <X>;
+$line = <X>;
+my ($cnid,$total) = $line=~/<conceptnetwork id=\"([^\"]*)\" unitcount=\"(\d*)\">/;
+die "missing unit count ($total)" if($total<=0);
+if($cnid ne $domain){
+	msg("Warning! Domain \"%s\" does not match concept network id \"%s\".\n",$domain,$cnid);
+}
+while(<X>){
+	if(/^\s*<unit/){
+		$count++; progress("reading xml",$count,$total,0);
+ 		$line = <X>;
+		my ($id,$frq,$cfrq,$qfrq,$sfrq,$term) = $line=~/^\s*<term id=\"(\d*)\" freq=\"(\d*)\" cfreq=\"(\d*)\" qfreq=\"(\d*)\" gfreq=\"(\d*)\">([^<]*)<\/term>/;
+
+		if($frq>$maxfrq) { $maxfrq = $frq; }
+		if($cfrq>$maxcfrq) { $maxcfrq = $cfrq; }
+		if($qfrq>$maxqfrq) { $maxqfrq = $qfrq; }
+		if($sfrq>$maxsfrq) { $maxsfrq = $sfrq; }
+
+		$index .= pack('L',$strptr);                # pack term
+		$unitstr .= pack('Z*',$term);
+		$strptr = length($unitstr);
+		$index .= pack('L',$frq);                   # pack frq
+		$index .= pack('L',$cfrq);                  # pack frq
+		$index .= pack('L',$qfrq);                  # pack frq
+		$index .= pack('L',$sfrq);                  # pack frq
+		
+		$line = <X>;
+		@ext = ();
+	  EXT: 
+		while($line = <X>){
+			last EXT if($line=~/<\/extensions>/);
+			my ($id,$efrq) = ($line=~/^\s*<term id=\"(\d*)\" freq=\"(\d*)\">/);
+			push(@ext,$id);
+			push(@ext,$efrq);
+			if($efrq>$maxefrq) { $maxefrq = $efrq; }
+		}
+
+		if($#ext==-1){
+			$index .= pack('L',0);                  # pack empty ext
+		}
+		else {
+			$index .= pack('L',$extptr);            # pack ext
+			$extinfo .= pack('L',($#ext+1)/2);
+			$extinfo .= pack('L*',@ext);
+			$extptr += $#ext+2;
+		}
+
+		$line = <X>;
+		@ext = ();
+	  ASSOC:
+		while($line = <X>){
+			last ASSOC if($line=~/<\/associations>/);
+			my ($id,$afrq) = $line=~/^\s*<term id=\"(\d*)\" freq=\"(\d*)\">/;
+			push(@ext,$id);
+			push(@ext,$afrq);
+			if($afrq>$maxafrq) { $maxafrq = $afrq; }
+		}
+
+		if($#ext==-1){
+			$index .= pack('L',0);                  # pack empty assoc
+		}
+		else {
+			$index .= pack('L',$extptr);            # pack assoc
+			$extinfo .= pack('L',($#ext+1)/2);
+			$extinfo .= pack('L*',@ext);
+			$extptr += $#ext+2;
+		}
+
+		$line = <X>;
+		@ext = ();
+	  CAT:
+		while($line = <X>){
+			last CAT if($line=~/<\/categories>/);
+			my ($id,$cat) = $line=~/^\s*<category id=\"(\d*)\">([^<]*)<\/category>/;
+			if(!defined($cats[$id])){
+				$cats[$id] = $cat;
+			}
+			push(@ext,$id);
+		}
+		
+		if($#ext==-1){
+			$index .= pack('L',0);                  # pack empty cat
+		}
+		else {
+			$index .= pack('L',$extptr);            # pack cat
+			$extinfo .= pack('L',$#ext+1);
+			$extinfo .= pack('L*',@ext);
+			$extptr += $#ext+2;
+		}
+
+	}
+}
+close(X);
+progress("reading xml",$count,$total,1);
+
+for(my $i=0;$i<=$#cats;$i++){
+	$catindex .= pack('L',$strptr);             # pack category names
+	$unitstr .= pack('Z*',$cats[$i]);
+	$strptr = length($unitstr);
+}
+
+
+msg("writing data file ... ");
+if($output_file eq ""){
+	$output_file = "$domain.dat";
+}
+open(DAT,">$output_file");
+my $header = pack('L64',$MAGIC,0,0,
+			   $count,$extptr,$#cats+1,$strptr,
+			   $maxfrq,$maxcfrq,$maxqfrq,$maxsfrq,$maxefrq,$maxafrq,
+			   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+			   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+print DAT $header;
+print DAT $index;
+print DAT $extinfo;
+print DAT $catindex;
+print DAT $unitstr;
+close(DAT);
+msg("done.\n");

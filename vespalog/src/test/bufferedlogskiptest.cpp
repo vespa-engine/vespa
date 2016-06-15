@@ -1,0 +1,90 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/log/log.h>
+
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+#include <sys/types.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+
+LOG_SETUP("bufferedlogskiptest",
+          "$Id$");
+
+std::string readFile(const std::string& file) {
+    std::ostringstream ost;
+    std::ifstream is(file.c_str());
+    std::string line;
+    while (std::getline(is, line)) {
+        std::string::size_type pos = line.find('\t');
+        if (pos == std::string::npos) continue;
+        std::string::size_type pos2 = line.find('\t', pos + 1);
+        if (pos2 == std::string::npos) continue;
+        std::string result = line.substr(0, pos)
+                           + "\tlocalhost"
+                           + line.substr(pos2);
+            // Ignore debug entries. (Log adds some itself with timestamp we
+            // can't control)
+        if (result.find("\tdebug\t") == std::string::npos) {
+            ost << result << "\n";
+        }
+    }
+    return ost.str();
+}
+
+void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
+{
+    std::cerr << "testSkipBufferOnDebug ...\n";
+    LOGBM(info, "Starting up, using logfile %s", file.c_str());
+
+    timer = 200 * 1000000;
+    for (uint32_t i=0; i<10; ++i) {
+        LOGBP(info, "Message");
+        timer += 1;
+        LOGBM(info, "Message");
+        timer += 1;
+        LOGBT(info, "Message", "Message");
+        timer += 1;
+    }
+
+    std::string result(readFile(file));
+    std::string expected(readFile("bufferedlogskiptest.skipped.log"));
+
+    if (result != expected) {
+        std::cerr << "Failed "
+                  << "testSkipBufferOnDebug\n";
+        system(("diff -u " + file
+                    + " bufferedlogskiptest.skipped.log").c_str());
+        exit(EXIT_FAILURE);
+    }
+    unlink(file.c_str());
+
+}
+
+void reset(uint64_t & timer) {
+    timer = 0;
+    ns_log::BufferedLogger::logger.setMaxCacheSize(10);
+    ns_log::BufferedLogger::logger.setMaxEntryAge(300);
+    ns_log::BufferedLogger::logger.setCountFactor(5);
+}
+
+int
+main(int argc, char **argv)
+{
+    if (argc != 2) {
+        std::cerr << "bufferedlogskiptest must be called with one argument\n";
+        exit(EXIT_FAILURE);
+    }
+    ns_log::Logger::fakePid = true;
+    uint64_t timer;
+    logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log::BufferedLogger::logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+
+    reset(timer);
+    testSkipBufferOnDebug(argv[1], timer);
+
+    exit(EXIT_SUCCESS);
+}

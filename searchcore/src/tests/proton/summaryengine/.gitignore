@@ -1,0 +1,4 @@
+.depend
+Makefile
+summaryengine_test
+searchcore_summaryengine_test_app

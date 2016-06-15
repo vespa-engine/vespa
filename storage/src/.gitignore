@@ -1,0 +1,10 @@
+*.So
+*.lo
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile.ini
+config_command.sh
+project.dsw
+/storage.mak

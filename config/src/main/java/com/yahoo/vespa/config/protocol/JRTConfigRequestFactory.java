@@ -1,0 +1,72 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.protocol;
+
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.subscription.impl.JRTConfigSubscription;
+import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.util.ConfigUtils;
+
+import java.util.*;
+import java.util.logging.Logger;
+
+/**
+ * To hide JRT implementations.
+ *
+ * @author lulf
+ * @since 5.3
+ */
+public class JRTConfigRequestFactory {
+
+    public static final String VESPA_CONFIG_PROTOCOL_VERSION = "VESPA_CONFIG_PROTOCOL_VERSION";
+    private final static Logger log = Logger.getLogger(JRTConfigRequestFactory.class.getName());
+    private static final CompressionType compressionType = getCompressionType();
+    private static final String VESPA_CONFIG_PROTOCOL_COMPRESSION = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
+    public static final String VESPA_VERSION = "VESPA_VERSION";
+
+    public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub) {
+        // TODO: Get trace from caller
+        return JRTClientConfigRequestV3.createFromSub(sub, Trace.createNew(), compressionType, getVespaVersion());
+    }
+
+    public static JRTClientConfigRequest createFromRaw(RawConfig config, long serverTimeout) {
+        // TODO: Get trace from caller
+        return JRTClientConfigRequestV3.createFromRaw(config, serverTimeout, Trace.createNew(), compressionType, getVespaVersion());
+    }
+
+    public static String getProtocolVersion() {
+        return "3";
+    }
+
+    static String getProtocolVersion(String env, String yinstEnv, String property) {
+        return ConfigUtils.getEnvValue("3", env, yinstEnv, property);
+    }
+
+    public static Set<Long> supportedProtocolVersions() {
+        return Collections.singleton(3l);
+    }
+
+    public static CompressionType getCompressionType() {
+        return getCompressionType(System.getenv(VESPA_CONFIG_PROTOCOL_COMPRESSION),
+                System.getenv("services__config_protocol_compression"),
+                System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION));
+    }
+
+    static CompressionType getCompressionType(String env, String yinstEnv, String property) {
+        return CompressionType.valueOf(ConfigUtils.getEnvValue("LZ4", env, yinstEnv, property));
+    }
+
+    static Optional<VespaVersion> getVespaVersion() {
+        final String envValue = ConfigUtils.getEnvValue("", System.getenv(VESPA_VERSION), System.getProperty(VESPA_VERSION));
+        if (envValue != null && !envValue.isEmpty()) {
+            return Optional.of(VespaVersion.fromString(envValue));
+        }
+        return Optional.of(getCompiledVespaVersion());
+    }
+
+    static VespaVersion getCompiledVespaVersion() {
+        return VespaVersion.fromString(String.format("%d.%d.%d",
+                com.yahoo.vespa.config.VespaVersion.major,
+                com.yahoo.vespa.config.VespaVersion.minor,
+                com.yahoo.vespa.config.VespaVersion.micro));
+    }
+}

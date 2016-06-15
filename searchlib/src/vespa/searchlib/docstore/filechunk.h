@@ -1,0 +1,338 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/searchlib/docstore/chunk.h>
+#include <vespa/searchlib/docstore/ibucketizer.h>
+#include <vespa/vespalib/util/ptrholder.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/exceptions.h>
+
+namespace search
+{
+
+class IDataStoreVisitorProgress;
+class DataStoreFileChunkStats;
+
+class LidInfo {
+public:
+    LidInfo() : _value() { }
+    LidInfo(uint64_t rep) { _value.r = rep; }
+    LidInfo(uint32_t fileId, uint32_t chunkId, uint32_t size);
+    uint32_t getFileId()  const { return _value.v.fileId; }
+    uint32_t getChunkId() const { return _value.v.chunkId; }
+    uint32_t size()       const { return _value.v.size; }
+    operator uint64_t ()  const { return _value.r; }
+    bool empty()          const { return size() == 0; }
+    bool valid() const { return _value.r != std::numeric_limits<uint64_t>::max(); }
+
+    bool operator==(const LidInfo &b) const {
+        return (getFileId() == b.getFileId()) &&
+               (getChunkId() == b.getChunkId());
+    }
+    bool operator < (const LidInfo &b) const {
+        return (getFileId() == b.getFileId())
+                   ? (getChunkId() < b.getChunkId())
+                   : (getFileId() < b.getFileId());
+    }
+    static uint32_t getMaxFileNum() { return 1 << 10; }
+    static uint32_t getMaxChunkNum() { return 1 << 22; }
+private:
+    struct Rep {
+        uint16_t fileId : 10;
+        uint32_t chunkId : 22;
+        uint32_t size;
+    };
+    union Value {
+        Value() : r(std::numeric_limits<uint64_t>::max()) { }
+        Rep v;
+        uint64_t r;
+    } _value;
+};
+
+class LidInfoWithLid : public LidInfo {
+public:
+    LidInfoWithLid(LidInfo lidInfo, uint32_t lid) : LidInfo(lidInfo), _lid(lid) { }
+    uint32_t getLid() const { return _lid; }
+private:
+    uint32_t _lid;
+};
+
+typedef std::vector<LidInfoWithLid> LidInfoWithLidV;
+
+class ISetLid
+{
+public:
+    virtual ~ISetLid() { }
+    virtual void setLid(uint32_t lid, const LidInfo & lm) = 0;
+};
+
+class IGetLid
+{
+public:
+    typedef vespalib::GenerationHandler::Guard Guard;
+    virtual ~IGetLid() { }
+
+    virtual LidInfo getLid(Guard & guard, uint32_t lid) const = 0;
+    virtual vespalib::LockGuard getLidGuard(uint32_t lid) const = 0;
+    virtual Guard getLidReadGuard() const = 0;
+};
+
+class IWriteData
+{
+public:
+    typedef std::unique_ptr<IWriteData> UP;
+    virtual ~IWriteData() { }
+
+    virtual void write(vespalib::LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
+    virtual void close() = 0;
+};
+
+class IFileChunkVisitorProgress
+{
+public:
+    virtual ~IFileChunkVisitorProgress() { }
+    virtual void updateProgress() = 0;
+};
+
+class FileRandRead
+{
+public:
+    typedef std::shared_ptr<FastOS_File> FSP;
+    virtual ~FileRandRead() { }
+    virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
+    virtual int64_t getSize(void) = 0;
+};
+
+class DirectIORandRead : public FileRandRead
+{
+public:
+    DirectIORandRead(const vespalib::string & fileName);
+    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
+    int64_t getSize(void) override;
+private:
+    FastOS_File      _file;
+    size_t           _alignment;
+    size_t           _granularity;
+    size_t           _maxChunkSize;
+};
+
+class MMapRandRead : public FileRandRead
+{
+public:
+    MMapRandRead(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
+    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
+    int64_t getSize(void) override;
+    const void * getMapping() { return _file.MemoryMapPtr(0); }
+private:
+    FastOS_File      _file;
+};
+
+class MMapRandReadDynamic : public FileRandRead
+{
+public:
+    MMapRandReadDynamic(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
+    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
+    int64_t getSize(void) override;
+private:
+    void reopen();
+    vespalib::string                 _fileName;
+    vespalib::PtrHolder<FastOS_File> _holder;
+    int                              _mmapFlags;
+    int                              _fadviseOptions;
+};
+
+class NormalRandRead : public FileRandRead
+{
+public:
+    NormalRandRead(const vespalib::string & fileName);
+    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
+    int64_t getSize(void) override;
+private:
+    FastOS_File      _file;
+};
+
+class BucketDensityComputer
+{
+public:
+    BucketDensityComputer(const IBucketizer * bucketizer) : _bucketizer(bucketizer), _count(0) { }
+    void recordLid(const vespalib::GenerationHandler::Guard & guard, uint32_t lid, uint32_t dataSize) {
+        if (_bucketizer && (dataSize > 0)) {
+            _count++;
+            _bucketSet[_bucketizer->getBucketOf(guard, lid)]++;
+        }
+    }
+    size_t getNumBuckets() const { return _bucketSet.size(); }
+    vespalib::GenerationHandler::Guard getGuard() const {
+        return _bucketizer
+               ? _bucketizer->getGuard()
+               : vespalib::GenerationHandler::Guard();
+    }
+private:
+    const IBucketizer * _bucketizer;
+    size_t _count;
+    vespalib::hash_map<uint64_t, uint32_t> _bucketSet;
+};
+
+class FileChunk
+{
+public:
+    class NameId {
+    public:
+        explicit NameId(size_t id) : _id(id) { }
+        uint64_t getId() const { return _id; }
+        vespalib::string createName(const vespalib::string &baseName) const;
+        bool operator == (const NameId & rhs) const { return _id == rhs._id; }
+        bool operator != (const NameId & rhs) const { return _id != rhs._id; }
+        bool operator < (const NameId & rhs) const { return _id < rhs._id; }
+        NameId next() const { return NameId(_id + 1); }
+        static NameId first() { return NameId(0u); }
+        static NameId last() { return NameId(std::numeric_limits<uint64_t>::max()); }
+    private:
+        uint64_t _id;
+    };
+    class FileId {
+    public:
+        explicit FileId(uint32_t id) : _id(id) { }
+        uint32_t getId() const { return _id; }
+        bool operator != (const FileId & rhs) const { return _id != rhs._id; }
+        bool operator == (const FileId & rhs) const { return _id == rhs._id; }
+        bool operator < (const FileId & rhs) const { return _id < rhs._id; }
+        FileId prev() const { return FileId(_id - 1); }
+        FileId next() const { return FileId(_id + 1); }
+        bool isActive() const { return _id < 0; }
+        static FileId first() { return FileId(0u); }
+        static FileId active() { return FileId(-1); }
+    private:
+        int32_t _id;
+    };
+    typedef vespalib::hash_map<uint32_t, vespalib::DataBuffer::UP> LidBufferMap;
+    typedef std::unique_ptr<FileChunk> UP;
+    typedef uint32_t SubChunkId;
+    FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName, const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead);
+    virtual ~FileChunk();
+
+    virtual size_t updateLidMap(ISetLid & lidMap, uint64_t serialNum);
+    virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
+    virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
+    void remove(uint32_t lid, uint32_t size);
+    virtual size_t getDiskFootprint() const { return _diskFootprint; }
+    virtual size_t getMemoryFootprint() const;
+    virtual size_t getMemoryMetaFootprint() const;
+
+    virtual size_t getDiskHeaderFootprint(void) const { return _dataHeaderLen + _idxHeaderLen; }
+    size_t getDiskBloat() const {
+        return (_addedBytes == 0)
+               ? getDiskFootprint()
+               : size_t(getDiskFootprint() * double(_erasedBytes)/_addedBytes);
+    }
+    double getBucketSpread() const {
+        return ((_chunkInfo.empty() || (_numUniqueBuckets == 0))
+                ? 1.0
+                : double(_sumNumBuckets)/_numUniqueBuckets);
+    }
+    void addNumBuckets(size_t numBucketsInChunk);
+
+    FileId getFileId() const { return _fileId; }
+    NameId       getNameId() const { return _nameId; }
+    size_t   getBloatCount() const { return _erasedCount; }
+    uint64_t getLastPersistedSerialNum() const;
+    virtual fastos::TimeStamp getModificationTime() const;
+    virtual bool frozen() const { return true; }
+    const vespalib::string & getName() const { return _name; }
+    void compact(const IGetLid & iGetLid);
+    void appendTo(const IGetLid & db, IWriteData & dest, uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress);
+    /**
+     * Must be called after chunk has been created to allow correct
+     * underlying file object to be created.  Must be called before
+     * any read.
+     */
+    void enableRead();
+    // This should never be done to something that is used. Backing
+    // Files are removed and everythings dies.
+    void erase();
+    /**
+     * This will spinn through the data and verify the content of both
+     * the '.dat' and the '.idx' files.
+     *
+     * @param reportOnly If set inconsitencies will be written to 'stderr'.
+     */
+    void verify(bool reportOnly) const;
+
+    uint32_t      getNumChunks() const;
+    size_t       getNumBuckets() const { return _sumNumBuckets; }
+    size_t getNumUniqueBuckets() const { return _numUniqueBuckets; }
+
+    virtual DataStoreFileChunkStats getStats() const;
+
+    /**
+     * Read header and return number of bytes it consist of.
+     */
+    static uint64_t readIdxHeader(FastOS_FileInterface &idxFile);
+    static uint64_t readDataHeader(FileRandRead &idxFile);
+    static bool isIdxFileEmpty(const vespalib::string & name);
+    static void eraseIdxFile(const vespalib::string & name);
+    static vespalib::string createIdxFileName(const vespalib::string & name);
+    static vespalib::string createDatFileName(const vespalib::string & name);
+private:
+    typedef std::unique_ptr<FileRandRead> File;
+    void loadChunkInfo();
+    const FileId           _fileId;
+    const NameId           _nameId;
+    const vespalib::string _name;
+    const bool             _skipCrcOnRead;
+    uint32_t               _erasedCount;
+    size_t                 _erasedBytes;
+    size_t                 _diskFootprint;
+    size_t                 _sumNumBuckets;
+    size_t                 _numUniqueBuckets;
+    File                   _file;
+protected:
+    void setDiskFootprint(size_t sz) { _diskFootprint = sz; }
+    static size_t adjustSize(size_t sz);
+
+    class ChunkInfo
+    {
+    public:
+        ChunkInfo() : _lastSerial(0), _offset(0), _size(0) { }
+        ChunkInfo(size_t offset, uint32_t size, uint64_t lastSerial);
+        size_t       getOffset() const { return _offset; }
+        uint32_t       getSize() const { return _size; }
+        uint64_t getLastSerial() const { return _lastSerial; }
+
+        bool valid() const { return (_offset != 0) || (_size != 0) || (_lastSerial != 0); }
+    private:
+        uint64_t _lastSerial;
+        size_t   _offset;
+        uint32_t _size;
+    };
+
+    void setNumUniqueBuckets(size_t numUniqueBuckets) { _numUniqueBuckets = numUniqueBuckets; }
+    ssize_t read(uint32_t lid, SubChunkId chunkId, const ChunkInfo & chunkInfo, vespalib::DataBuffer & buffer) const;
+    void read(LidInfoWithLidV::const_iterator begin, size_t count, ChunkInfo ci, IBufferVisitor & visitor) const;
+
+    typedef vespalib::Array<ChunkInfo, vespalib::DefaultAlloc> ChunkInfoVector;
+    const IBucketizer * _bucketizer;
+    size_t              _addedBytes;
+    TuneFileSummary     _tune;
+    vespalib::string    _dataFileName;
+    vespalib::string    _idxFileName;
+    ChunkInfoVector     _chunkInfo;
+    uint32_t            _dataHeaderLen;
+    uint32_t            _idxHeaderLen;
+    uint64_t            _lastPersistedSerialNum;
+    fastos::TimeStamp   _modificationTime;
+};
+
+class SummaryException : public vespalib::IoException
+{
+public:
+    SummaryException(const vespalib::stringref &msg,
+                     FastOS_FileInterface & file,
+                     const vespalib::stringref &location);
+};
+
+} // namespace search

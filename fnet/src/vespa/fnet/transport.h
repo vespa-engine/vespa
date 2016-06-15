@@ -1,0 +1,291 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "connect_thread.h"
+
+/**
+ * This class represents the transport layer and handles a collection
+ * of transport threads. Note: remember to shut down your transport
+ * layer appropriately before deleting it.
+ **/
+class FNET_Transport
+{
+private:
+    using Thread = std::unique_ptr<FNET_TransportThread>;
+    using Threads = std::vector<Thread>;
+
+    Threads _threads;
+    fnet::ConnectThread _connect_thread;
+
+public:
+    /**
+     * Construct a transport layer. To activate your newly created
+     * transport object you need to call either the Start method to
+     * spawn a new thread(s) to handle IO, or the Main method to let
+     * the current thread become the transport thread. Main may only
+     * be called for single-threaded transports.
+     **/
+    FNET_Transport(size_t num_threads = 1);
+
+    /**
+     * Calling this function gives away 1 reference to 'conn' and
+     * ensures that the 'ext_connect' function will be called on it
+     * from another thread some time in the future.
+     **/
+    void connect_later(fnet::ExtConnectable *conn) { _connect_thread.connect_later(conn); }
+
+    /**
+     * Select one of the underlying transport threads. The selection
+     * is based on hashing the given key as well as the current stack
+     * pointer.
+     *
+     * @return selected transport thread
+     **/
+    FNET_TransportThread *select_thread(const void *key, size_t key_len) const;
+
+    /**
+     * Add a network listener in an abstract way. The given 'spec'
+     * string has the following format: 'type/where'. 'type' specifies
+     * the protocol used; currently only 'tcp' is allowed, but it is
+     * included for future extensions. 'where' specifies where to listen
+     * in a way depending on the 'type' field; with tcp this field holds
+     * a port number. Example: listen for tcp/ip connections on port
+     * 8001: spec = 'tcp/8001'. If you want to enable strict binding you
+     * may supply a hostname as well, like this:
+     * 'tcp/mycomputer.mydomain:8001'.
+     *
+     * @return the connector object, or NULL if listen failed.
+     * @param spec string specifying how and where to listen.
+     * @param streamer custom packet streamer.
+     * @param serverAdapter object for custom channel creation.
+     **/
+    FNET_Connector *Listen(const char *spec, FNET_IPacketStreamer *streamer,
+                           FNET_IServerAdapter *serverAdapter);
+
+    /**
+     * Connect to a target host in an abstract way. The given 'spec'
+     * string has the following format: 'type/where'. 'type' specifies
+     * the protocol used; currently only 'tcp' is allowed, but it is
+     * included for future extensions. 'where' specifies where to
+     * connect in a way depending on the type field; with tcp this field
+     * holds a host name (or IP address) and a port number. Example:
+     * connect to www.fast.no on port 80 (using tcp/ip): spec =
+     * 'tcp/www.fast.no:80'. The newly created connection will be
+     * serviced by this transport layer object. If the adminHandler
+     * parameter is given, an internal admin channel is created in the
+     * connection object. The admin channel will be used to deliver
+     * packets tagged with the reserved channel id (FNET_NOID) to the
+     * admin handler.
+     *
+     * @return an object representing the new connection.
+     * @param spec string specifying how and where to connect.
+     * @param streamer custom packet streamer.
+     * @param adminHandler packet handler for incoming packets on the
+     *                     admin channel.
+     * @param adminContext application context to be used for incoming
+     *                     packets on the admin channel.
+     * @param serverAdapter adapter used to support 2way channel creation.
+     * @param connContext application context for the connection.
+     **/
+    FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
+                             FNET_IPacketHandler *adminHandler = NULL,
+                             FNET_Context adminContext = FNET_Context(),
+                             FNET_IServerAdapter *serverAdapter = NULL,
+                             FNET_Context connContext = FNET_Context());
+
+    /**
+     * This method may be used to determine how many IO Components are
+     * currently controlled by this transport layer object. Note that
+     * locking is not used, since this information is volatile anyway.
+     *
+     * @return the current number of IOComponents.
+     **/
+    uint32_t GetNumIOComponents();
+
+    /**
+     * Set the I/O Component timeout. Idle I/O Components with timeout
+     * enabled (determined by calling the ShouldTimeOut method) will
+     * time out if idle for the given number of milliseconds. An I/O
+     * component reports its un-idle-ness by calling the UpdateTimeOut
+     * method in the owning transport object. Calling this method with 0
+     * as parameter will disable I/O Component timeouts. Note that newly
+     * created transport objects begin their lives with I/O Component
+     * timeouts disabled. An I/O Component timeout has the same effect
+     * as calling the Close method in the transport object with the
+     * target I/O Component as parameter.
+     *
+     * @param ms number of milliseconds before IOC idle timeout occurs.
+     **/
+    void SetIOCTimeOut(uint32_t ms);
+
+    /**
+     * Set maximum input buffer size. This value will only affect
+     * connections that use a common input buffer when decoding
+     * incoming packets. Note that this value is not an absolute
+     * max. The buffer will still grow larger than this value if
+     * needed to decode big packets. However, when the buffer becomes
+     * larger than this value, it will be shrunk back when possible.
+     *
+     * @param bytes buffer size in bytes. 0 means unlimited.
+     **/
+    void SetMaxInputBufferSize(uint32_t bytes);
+
+    /**
+     * Set maximum output buffer size. This value will only affect
+     * connections that use a common output buffer when encoding
+     * outgoing packets. Note that this value is not an absolute
+     * max. The buffer will still grow larger than this value if needed
+     * to encode big packets. However, when the buffer becomes larger
+     * than this value, it will be shrunk back when possible.
+     *
+     * @param bytes buffer size in bytes. 0 means unlimited.
+     **/
+    void SetMaxOutputBufferSize(uint32_t bytes);
+
+    /**
+     * Enable or disable the direct write optimization. This is
+     * enabled by default and favors low latency above throughput.
+     *
+     * @param directWrite enable direct write?
+     **/
+    void SetDirectWrite(bool directWrite);
+
+    /**
+     * Enable or disable use of the TCP_NODELAY flag with sockets
+     * created by this transport object.
+     *
+     * @param noDelay true if TCP_NODELAY flag should be used.
+     **/
+    void SetTCPNoDelay(bool noDelay);
+
+    /**
+     * Enable or disable logging of FNET statistics. This feature is
+     * disabled by default.
+     *
+     * @param logStats true if stats should be logged.
+     **/
+    void SetLogStats(bool logStats);
+
+    /**
+     * Synchronize with all transport threads. This method will block
+     * until all events posted before this method was invoked has been
+     * processed. If a transport thread has been shut down (or is in
+     * the progress of being shut down) this method will instead wait
+     * for the transport thread to complete, since no more commands
+     * will be performed, and waiting would be forever. Invoking this
+     * method from a transport thread is not a good idea.
+     **/
+    void sync();
+
+    /**
+     * Obtain a pointer to a transport thread scheduler.
+     *
+     * @return transport thread scheduler.
+     **/
+    FNET_Scheduler *GetScheduler();
+
+    /**
+     * Post an execution event on one of the transport threads. The
+     * return value from this method indicate whether the execution
+     * request was accepted or not. If it was accepted, the transport
+     * thread will execute the given executable at a later
+     * time. However, if it was rejected (this method returns false),
+     * the caller of this method will need to handle the fact that the
+     * executor will never be executed. Also note that it is the
+     * responsibility of the caller to ensure that all needed context
+     * for the executor is kept alive until the time of execution. It
+     * is ok to assume that execution requests will only be rejected
+     * due to transport thread shutdown. Calling sync will ensure that
+     * all previously posted execution events are handled.
+     *
+     * @return true if the execution request was accepted, false if it was rejected
+     * @param exe the executable we want to execute in any transport thread
+     **/
+    bool execute(FNET_IExecutable *exe);
+
+    /**
+     * Calling this method will shut down the transport layer in a nice
+     * way. Note that the actual task of shutting down is performed by
+     * the transport thread. This method simply posts an event on the
+     * transport thread event queue telling it to shut down.
+     *
+     * @param waitFinished if this flag is set, the method call will not
+     *        return until the transport layer is shut down. NOTE: do
+     *        not set this flag if you are calling this method from a
+     *        callback from the transport layer, as it will create a
+     *        deadlock.
+     **/
+    void ShutDown(bool waitFinished);
+
+    /**
+     * This method will make the calling thread wait until the transport
+     * layer has been shut down. NOTE: do not invoke this method if you
+     * are in a callback from the transport layer, as it will create a
+     * deadlock. See @ref ShutDown.
+     **/
+    void WaitFinished();
+
+    /**
+     * Start transport threads. Note that the return value of this
+     * method only indicates whether the spawning of new threads went
+     * ok.
+     *
+     * @return thread create status.
+     * @param pool threadpool that may be used to spawn new threads.
+     **/
+    bool Start(FastOS_ThreadPool *pool);
+
+    //-------------------------------------------------------------------------
+    // forward async IO Component operations to their owners
+    //-------------------------------------------------------------------------
+
+    static void Add(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->Add(comp, needRef);
+    }
+
+    static void EnableRead(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->EnableRead(comp, needRef);
+    }
+
+    static void DisableRead(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->DisableRead(comp, needRef);
+    }
+
+    static void EnableWrite(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->EnableWrite(comp, needRef);
+    }
+
+    static void DisableWrite(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->DisableWrite(comp, needRef);
+    }
+
+    static void Close(FNET_IOComponent *comp, bool needRef = true) {
+        comp->Owner()->Close(comp, needRef);
+    }
+
+    //-------------------------------------------------------------------------
+    // single-threaded API forwarding. num_threads must be 1. Note: Choose
+    // only one of: (a) Start, (b) Main, (c) InitEventLoop + EventLoopIteration
+    // -------------------------------------------------------------------------
+
+    FastOS_Time *GetTimeSampler() {
+        assert(_threads.size() == 1);
+        return _threads[0]->GetTimeSampler();
+    }
+
+    bool InitEventLoop() {
+        assert(_threads.size() == 1);
+        return _threads[0]->InitEventLoop();
+    }
+
+    bool EventLoopIteration() {
+        assert(_threads.size() == 1);
+        return _threads[0]->EventLoopIteration();
+    }
+
+    void Main() {
+        assert(_threads.size() == 1);
+        _threads[0]->Main();
+    }
+};

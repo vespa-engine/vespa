@@ -1,0 +1,4 @@
+/target
+pom.xml.build
+/logs
+.preprocessed

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+
+  <document type="outerdoc" id="doc:outer:this:is:outer:doc">
+    <innerdocuments>
+        <item>
+            <document type="docindoc" id="doc:inner:this:is:inner:doc:a">
+              <name>Peter Sellers</name>
+              <content>Comedian</content>
+            </document>
+        </item>
+        <item>
+            <document type="docindoc" id="doc:inner:this:is:inner:doc:b">
+              <name>Ole Olsen</name>
+              <content>Common man</content>
+            </document>
+        </item>
+        <item>
+            <document type="docindoc" id="doc:inner:this:is:inner:doc:c">
+              <name>Stein Nilsen</name>
+              <content>Worker</content>
+            </document>
+        </item>
+    </innerdocuments>
+  </document>
+
+</vespafeed>

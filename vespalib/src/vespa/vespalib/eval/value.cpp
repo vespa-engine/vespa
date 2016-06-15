@@ -1,0 +1,46 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include "value.h"
+#include "operation_visitor.h"
+#include "tensor_engine.h"
+
+namespace vespalib {
+namespace eval {
+
+const Value &
+Value::apply(const UnaryOperation &, Stash &stash) const
+{
+    return stash.create<ErrorValue>();
+}
+
+const Value &
+Value::apply(const BinaryOperation &, const Value &, Stash &stash) const
+{
+    return stash.create<ErrorValue>();
+}
+
+bool
+TensorValue::equal(const Value &rhs) const
+{
+    return (rhs.is_tensor() && _value->engine().equal(*_value, *rhs.as_tensor()));
+}
+
+const Value &
+TensorValue::apply(const UnaryOperation &op, Stash &stash) const
+{
+    return _value->engine().perform(op, *_value, stash);
+}
+
+const Value &
+TensorValue::apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const
+{
+    const Tensor *other = rhs.as_tensor();
+    if ((other == nullptr) || (&other->engine() != &_value->engine())) {
+        return stash.create<ErrorValue>();
+    }
+    return _value->engine().perform(op, *_value, *other, stash);
+}
+
+} // namespace vespalib::eval
+} // namespace vespalib

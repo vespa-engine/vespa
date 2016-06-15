@@ -1,0 +1,6 @@
+*.core
+.depend
+Makefile
+core
+method_pt_test
+fnet_method_pt_test_app

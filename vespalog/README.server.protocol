@@ -1,0 +1,46 @@
+Protocol for talking to the log server:
+
+Pure line-based text protocol. Tcp to some port on the log server:
+
+From log daemon (or anything, really) to server:
+
+service <service>
+component <service> <component>
+state <service> <component> <levels>
+
+
+This tells the log daemon that service <service> exists, and that it
+has a component named <component>.
+
+<levels> syntax:
+
+fatal=forward,error=forward,warning=store,info=store,event=forward,debug=off,spam=off
+
+ie: level=<status>[,...]*
+
+Where <status> is one of:
+forward : store and send to log server
+store   : store locally only (to file)
+off     : do not even generate the message in the program
+
+
+
+From server to whoever is interested:
+
+setstate <service> <component> <levels>
+
+Exactly same syntax. Levels that are not mentioned are not modified.
+
+list services
+list components <service>
+list states <service> <component>
+
+(list commands are replied to with service/component/state commands).
+
+
+
+
+
+
+
+

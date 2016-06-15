@@ -1,0 +1,75 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("cpp-client");
+#include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/sourcesession.h>
+#include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/testlib/simpleprotocol.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/iprotocol.h>
+#include <vespa/messagebus/protocolset.h>
+#include <vespa/messagebus/sourcesessionparams.h>
+#include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/vespalib/util/sync.h>
+
+using namespace mbus;
+
+class App : public FastOS_Application
+{
+public:
+    int Main();
+};
+
+int
+App::Main()
+{
+    RPCMessageBus mb(ProtocolSet().add(IProtocol::SP(new SimpleProtocol())),
+                     RPCNetworkParams()
+                     .setIdentity(Identity("server/cpp"))
+                     .setSlobrokConfig("file:slobrok.cfg"),
+                     "file:routing.cfg");
+
+    Receptor src;
+    Message::UP msg;
+    Reply::UP reply;
+
+    SourceSession::UP ss = mb.getMessageBus().createSourceSession(src, SourceSessionParams().setTimeout(300));
+    for (int i = 0; i < 10; ++i) {
+        msg.reset(new SimpleMessage("test"));
+        msg->getTrace().setLevel(9);
+        ss->send(std::move(msg), "test");
+        reply = src.getReply(600); // 10 minutes timeout
+        if (reply.get() == 0) {
+            fprintf(stderr, "CPP-CLIENT: no reply\n");
+        } else {
+            fprintf(stderr, "CPP-CLIENT:\n%s\n",
+                    reply->getTrace().toString().c_str());
+            if (reply->getNumErrors() == 2) {
+                break;
+            }
+        }
+        FastOS_Thread::Sleep(1000);
+    }
+    if (reply.get() == 0) {
+        fprintf(stderr, "CPP-CLIENT: no reply\n");
+        return 1;
+    }
+    if (reply->getNumErrors() != 2 ||
+        reply->getError(0).getCode() != (ErrorCode::APP_FATAL_ERROR + 1) ||
+        reply->getError(1).getCode() != (ErrorCode::APP_FATAL_ERROR + 2) ||
+        reply->getError(0).getMessage() != "ERR 1" ||
+        reply->getError(1).getMessage() != "ERR 2")
+    {
+        fprintf(stderr, "CPP-CLIENT: wrong errors\n");
+        return 1;
+    }
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    App app;
+    return app.Entry(argc, argv);
+}

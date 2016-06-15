@@ -1,0 +1,10 @@
+if (attribute(b) < 0.65, if (attribute(c) < 0.55, if (attribute(a) < 0.55, 0.369863, -0.6578947), if (attribute(a) < 0.65, -0.775, -1.0)), if (attribute(c) < 0.45, -0.9090909, -1.0)) + 
+if (attribute(a) < 0.55, if (attribute(b) < 0.35, if (attribute(c) < 0.75, 0.4327977, 0.025), if (attribute(c) < 0.75, -0.1090028, -0.07682927)), if (attribute(c) < 0.55, -0.04031544, -0.01875)) + 
+if (attribute(b) < 0.35, 0.06336273, if (attribute(c) < 0.85, if (attribute(a) < 0.35, if (attribute(c) < 0.35, 0.6091127, 0.02845135), -0.07638131), if (attribute(a) < 0.75, -0.018862, 0.01875))) + 
+if (attribute(c) < 0.15, if (attribute(b) < 0.55, if (attribute(a) < 0.35, if (attribute(b) < 0.3, -1.866023, 0.1300271), 0.6299557), 0.1788445), if (attribute(b) < 0.65, -0.1586424, 0.06778581)) + 
+if (attribute(c) < 0.45, if (attribute(a) < 0.35, if (attribute(b) < 0.75, 0.1426054, -0.2282), if (attribute(b) < 0.85, -0.09571452, -0.04941978)), if (attribute(a) < 0.25, 0.2759441, 0.0172878)) + 
+if (attribute(a) < 0.15, if (attribute(b) < 0.75, 0.3165435, -0.04458321), if (attribute(a) < 0.55, -0.1137117, if (attribute(b) < 0.75, 0.04622166, if (attribute(c) < 0.65, 0.004746275, -0.03648972)))) + 
+if (attribute(a) < 0.95, if (attribute(b) < 0.25, if (attribute(c) < 0.25, 0.7623822, if (attribute(a) < 0.65, 0.2338952, if (attribute(c) < 0.85, -0.06132011, 0.05052024))), -0.04188744), -0.03245768) + 
+if (attribute(c) < 0.55, if (attribute(b) < 0.65, -0.2042442, 0.03887484), if (attribute(b) < 0.25, -0.0474437, if (attribute(a) < 0.15, -0.3700475, if (attribute(a) < 0.65, 0.07656199, 0.1085871)))) + 
+if (attribute(a) < 0.75, 0.0189638, if (attribute(b) < 0.85, 1.942833E-4, if (attribute(c) < 0.85, if (attribute(c) < 0.45, -0.009795157, if (attribute(a) < 0.85, -0.01795083, -0.01329222)), -0.1179778))) + 
+if (attribute(c) < 0.75, if (attribute(b) < 0.45, if (attribute(c) < 0.15, -0.4551494, if (attribute(c) < 0.65, 0.1471968, -0.06380587)), 0.03410008), if (attribute(b) < 0.65, -0.06397114, -0.01491517))

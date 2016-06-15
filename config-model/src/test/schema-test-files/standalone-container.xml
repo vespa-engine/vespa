@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<jdisc id='qrsCluster_1' version='1.0'>
+  <rest-api path="jersey1">
+    <components bundle="my-bundle" />
+    <components bundle="other-bundle" />
+<!--
+    <inject component="foo-component" for-name="com.yahoo.Foo" />
+    <inject component="bar-component" for-name="com.yahoo.Bar" />
+-->
+  </rest-api>
+  <rest-api path="jersey/2">
+    <components bundle="my-bundle" />
+    <components bundle="other-bundle">
+      <package>com.yahoo.foo</package>
+      <package>com.yahoo.bar</package>
+    </components>
+  </rest-api>
+
+  <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
+    <path>p/a/t/h</path>
+  </servlet>
+
+  <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
+    <path>Apps/app_1.3-4/*</path>
+    <config name="foo">
+      <intVal>0</intVal>
+    </config>
+    <servlet-config>
+      <foo>bar</foo>
+    </servlet-config>
+  </servlet>
+
+  <http>
+    <filtering>
+      <filter id="com.yahoo.YcaFilter" bundle="mybundle">
+        <filter-config>
+          <foo>bar</foo>
+          <feature.enabled>true</feature.enabled>
+        </filter-config>
+      </filter>
+
+      <response-chain id="BaseChain">
+        <filter id="com.yahoo.Filter1" />
+        <filter id="com.yahoo.Filter2">
+          <filter-config />
+        </filter>
+        <binding>http://*/path1/*</binding>
+        <binding>http://*/path2/*</binding>
+      </response-chain>
+
+      <request-chain id="DerivedChain" inherits="BaseChain" excludes="com.yahoo.Filter1">
+        <filter id="com.yahoo.Filter3">
+          <config name="container.core.http.http-filter">
+            <param>
+              <item>
+                <name>yca.appid.allow</name>
+                <value>yahoo.vespa_factory.yca_test</value>
+              </item>
+            </param>
+          </config>
+        </filter>
+        <binding>http://*/path/*</binding>
+      </request-chain>
+    </filtering>
+
+    <server port="4080" id="myServer" />
+    <server port="4081" id="anotherServer" />
+  </http>
+
+  <document-api>
+    <binding>http://*/document-api/</binding>
+    <binding>https://*/document-api/</binding>
+    <abortondocumenterror>false</abortondocumenterror>
+    <retryenabled>false</retryenabled>
+    <timeout>5.55</timeout>
+    <route>default</route>
+    <maxpendingdocs>100</maxpendingdocs>
+  </document-api>
+
+  <search>
+    <searcher id='outer-searcher' />
+    <chain id='common'>
+      <searcher id='outer-searcher' />
+      <searcher id='inner-searcher' />
+    </chain>
+
+    <provider id='yca-provider' type='vespa' yca-application-id='my-app'>
+      <yca-proxy host='myhost' port='80'/>
+      <nodes>
+        <node host='sourcehost' port='12'/>
+      </nodes>
+    </provider>
+
+    <chain id="parentchain" searchers="one two">
+      <searcher id="three" />
+      <inherits>
+        <chain id="trope"/>
+        <chain id="kanoo"/>
+        <exclude id="notneededsearcher"/>
+      </inherits>
+    </chain>
+
+    <chain id="achain" searchers="asearcher anothersearcher" inherits="wonkaparentchain" excludes="notneededsearcher"/>
+  </search>
+
+  <processing>
+    <processor id='processor1' class='com.yahoo.test.Processor1' />
+    <chain id='default'>
+      <processor idref='processor1'/>
+      <processor id='processor2' class='com.yahoo.test.Processor2'/>
+    </chain>
+  </processing>
+
+  <handler id="bla" class="foo" bundle="bar" />
+  <config name="foo">
+    <intVal>0</intVal>
+    <basicstruct>
+      <bsInt>1</bsInt>
+      <bsString>Hello</bsString>
+    </basicstruct>
+  </config>
+
+  <handler id="jdisc-handler">
+    <binding>http://*:*/HelloWorld</binding>
+    <binding>http://*:*/Status</binding>
+    <clientBinding>http://*:*/foo</clientBinding>
+    <clientBinding>http://*:*/bar</clientBinding>
+  </handler>
+
+  <client id="client-provider">
+    <binding>http://*:*/HelloWorld</binding>
+    <binding>http://*:*/Status</binding>
+    <serverBinding>http://*:*/foo</serverBinding>
+    <serverBinding>http://*:*/bar</serverBinding>
+  </client>
+
+  <server id="server-provider" />
+
+
+</jdisc>

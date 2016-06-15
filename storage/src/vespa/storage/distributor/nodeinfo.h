@@ -1,0 +1,50 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class storage::distributor::NodeInfo
+ * \ingroup distributor
+ *
+ * \brief Keeps track of node state for all storage nodes.
+ */
+#pragma once
+
+#include <vespa/storageframework/storageframework.h>
+#include <vector>
+
+namespace storage {
+namespace distributor {
+
+class NodeInfo {
+public:
+    NodeInfo(const framework::Clock& clock);
+
+    uint32_t getPendingCount(uint16_t idx) const;
+
+    bool isBusy(uint16_t idx) const;
+
+    void setBusy(uint16_t idx);
+
+    void incPending(uint16_t idx);
+
+    void decPending(uint16_t idx);
+
+    void clearPending(uint16_t idx);
+
+private:
+    struct SingleNodeInfo {
+        SingleNodeInfo()
+            : _pending(0), _busyTime(0) {};
+
+        uint32_t _pending;
+        mutable framework::SecondTime _busyTime;
+    };
+
+    mutable std::vector<SingleNodeInfo> _nodes;
+    const framework::Clock& _clock;
+
+    const SingleNodeInfo& getNode(uint16_t idx) const;
+    SingleNodeInfo& getNode(uint16_t idx);
+};
+
+} // distributor
+} // storage
+

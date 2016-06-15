@@ -1,0 +1,5 @@
+.depend
+Makefile
+configagent_test
+test.cfg
+messagebus_configagent_test_app

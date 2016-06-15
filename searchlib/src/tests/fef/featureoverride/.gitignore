@@ -1,0 +1,4 @@
+.depend
+Makefile
+featureoverride_test
+searchlib_featureoverride_test_app

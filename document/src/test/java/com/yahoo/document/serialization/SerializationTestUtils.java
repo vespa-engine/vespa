@@ -1,0 +1,54 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.document.serialization;
+
+import com.yahoo.document.Document;
+import com.yahoo.io.GrowableByteBuffer;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Helper class with utils used in serialization and deserialization test cases.
+ *
+ * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ */
+public class SerializationTestUtils {
+
+    public static byte[] serializeDocument(Document doc) {
+        GrowableByteBuffer out = new GrowableByteBuffer();
+        DocumentSerializerFactory.create42(out).write(doc);
+        out.flip();
+        byte[] buf = new byte[out.remaining()];
+        out.get(buf);
+        return buf;
+    }
+
+    public static Document deserializeDocument(byte[] buf, TestDocumentFactory factory) {
+        Document document = factory.createDocument();
+        DocumentDeserializerFactory.create42(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
+        return document;
+    }
+
+    public static void assertSerializationMatchesCpp(String binaryFilesFolder, String fileName,
+                                                     Document document, TestDocumentFactory factory) throws IOException {
+        byte[] buf = serializeDocument(document);
+        Files.write(Paths.get(binaryFilesFolder, fileName + "__java"), buf,
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+
+        assertDeserializeFromFile(Paths.get(binaryFilesFolder, fileName + "__java"), document, factory);
+        assertDeserializeFromFile(Paths.get(binaryFilesFolder, fileName + "__cpp"), document, factory);
+    }
+
+    private static void assertDeserializeFromFile(Path path, Document document, TestDocumentFactory factory) throws IOException {
+        byte[] buf = Files.readAllBytes(path);
+        Document deserializedDocument = deserializeDocument(buf, factory);
+        assertEquals(path.toString(), document, deserializedDocument);
+    }
+
+}

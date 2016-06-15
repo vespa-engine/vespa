@@ -1,0 +1,246 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.feedapi;
+
+import com.yahoo.concurrent.SystemTimer;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.log.LogLevel;
+import com.yahoo.messagebus.*;
+import com.yahoo.clientmetrics.RouteMetricSet;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
+/**
+ * This class allows multiple clients to use one shared messagebus session.
+ * The user should create a ResultCallback, which acts as a "session" for that
+ * client, and send one or more messages using the send() methods.
+ * When done sending messages, the client can wait for all messages to be replied to
+ * using the waitForPending method.
+ */
+public class SharedSender implements ReplyHandler {
+
+    public static final Logger log = Logger.getLogger(SharedSender.class.getName());
+
+    private SendSession sender;
+    private final Object monitor = new Object();
+    private RouteMetricSet metrics;
+
+    // Maps from filename to number of pending requests
+    private Map<ResultCallback, Integer> activeOwners = new HashMap<>();
+
+    /**
+     * Creates a new shared sender.
+     * If oldsender != null, we copy that status information from that sender.
+     */
+    public SharedSender(String route, SessionFactory factory, SharedSender oldSender, Metric metric) {
+        if (factory != null) {
+            sender = factory.createSendSession(this, metric);
+        }
+
+        if (oldSender != null) {
+            this.metrics = oldSender.metrics;
+        } else {
+            metrics = new RouteMetricSet(route, null);
+        }
+    }
+
+    public RouteMetricSet getMetrics() {
+        return metrics;
+    }
+
+    public void remove(ResultCallback owner) {
+        synchronized (monitor) {
+            activeOwners.remove(owner);
+        }
+    }
+
+    public void shutdown() {
+        try {
+            synchronized (monitor) {
+                while ( ! activeOwners.isEmpty()) {
+                    monitor.wait(180 * 1000);
+                }
+            }
+        } catch (InterruptedException e) {
+        }
+        sender.close();
+    }
+
+    /**
+     * Waits until there are no more pending documents
+     * for the given callback, or the timeout expires.
+     *
+     * @param owner     The callback to check for.
+     * @param timeoutMs The number of milliseconds to wait, or -1 to wait indefinitely.
+     * @return true if there were no more pending, or false if the timeout expired.
+     */
+    public boolean waitForPending(ResultCallback owner, long timeoutMs) {
+        long timeStart = SystemTimer.INSTANCE.milliTime();
+        long timeLeft = timeoutMs;
+
+        try {
+            while (timeoutMs == -1 || timeLeft > 0) {
+                synchronized (monitor) {
+                    Integer count = activeOwners.get(owner);
+                    if (count == null || count == 0) {
+                        return true;
+                    } else if (timeLeft > 0) {
+                        monitor.wait(timeLeft);
+                    } else {
+                        monitor.wait();
+                    }
+                }
+
+                timeLeft = timeoutMs - (SystemTimer.INSTANCE.milliTime() - timeStart);
+            }
+        } catch (InterruptedException e) {
+        }
+
+        return false;
+    }
+
+    public int getPendingCount(ResultCallback owner) {
+        Integer count = activeOwners.get(owner);
+        if (count == null) {
+            return 0;
+        }
+        return count;
+    }
+
+    /**
+     * Returns true if the given result callback has any pending messages with this
+     * sender.
+     *
+     * @param owner The callback to check
+     * @return True if there are any pending, false if not.
+     */
+    public boolean hasPending(ResultCallback owner) {
+        return getPendingCount(owner) > 0;
+    }
+
+    /**
+     * Waits until the given file has no pending documents.
+     *
+     * @param owner the file to check for pending documents
+     */
+    public void waitForPending(ResultCallback owner) {
+        waitForPending(owner, -1);
+    }
+
+    /**
+     * Sends a message
+     *
+     * @param msg   The message to send.
+     * @param owner A callback to send replies to when received from messagebus
+     */
+    public void send(Message msg, ResultCallback owner) {
+        send(msg, owner, -1, true);
+    }
+
+    /**
+     * Sends a message. Waits until the number of pending messages for this owner has
+     * become lower than the specified limit if necessary.
+     *
+     * @param msg                The message to send
+     * @param owner              The callback to send replies to when received from messagebus
+     * @param maxPendingPerOwner The maximum number of pending messages the callback
+     * @param blockingQueue      If true, block until the message bus queue is available.
+     */
+    public void send(Message msg, ResultCallback owner, int maxPendingPerOwner, boolean blockingQueue) {
+        // Silently fail messages that are attempted sent after the callback aborted.
+        if (owner.isAborted()) {
+            return;
+        }
+
+        try {
+            synchronized (monitor) {
+                if (maxPendingPerOwner != -1 && blockingQueue) {
+                    while (true) {
+                        Integer count = activeOwners.get(owner);
+
+                        if (count != null && count >= maxPendingPerOwner) {
+                            log.log(LogLevel.INFO, "Owner " + owner + " already has " + count + " pending. Waiting for replies");
+                            monitor.wait(10000);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                Integer count = activeOwners.get(owner);
+
+                if (count == null) {
+                    activeOwners.put(owner, 1);
+                } else {
+                    activeOwners.put(owner, count + 1);
+                }
+            }
+        } catch (InterruptedException e) {
+            return;
+        }
+
+        msg.setContext(owner);
+
+        try {
+            com.yahoo.messagebus.Result r = sender.send(msg, blockingQueue);
+            if (!r.isAccepted()) {
+                EmptyReply reply = new EmptyReply();
+                msg.swapState(reply);
+                reply.setMessage(msg);
+                reply.addError(r.getError());
+                handleReply(reply);
+            }
+        } catch (InterruptedException e) {
+        }
+    }
+
+    /**
+     * Implement replyHandler from messagebus. Called when a reply is received from messagebus.
+     * Tries to find the callback from the reply context and updates the pending state for the callback.
+     *
+     * @param r the reply to process.
+     */
+    @Override
+    public void handleReply(Reply r) {
+        synchronized (monitor) {
+            ResultCallback owner = (ResultCallback) r.getContext();
+
+            if (owner != null) {
+                metrics.addReply(r);
+
+                Integer count = activeOwners.get(owner);
+
+                if (count != null) {
+                    if (log.isLoggable(LogLevel.SPAM)) {
+                        log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + " count was " + count);
+                    }
+
+                    if ( ! owner.handleReply(r, count - 1)) {
+                        activeOwners.remove(owner);
+                    } else {
+                        activeOwners.put(owner, count - 1);
+                    }
+                }
+            } else {
+                log.log(LogLevel.WARNING, "Received reply " + r + " for message " + r.getMessage() + " without context");
+            }
+
+            monitor.notifyAll();
+        }
+    }
+
+    public interface ResultCallback {
+
+        /** Return true if we should continue waiting for replies for this sender. */
+        boolean handleReply(Reply r, int numPending);
+
+        /**
+         * Returns true if feeding has been aborted. No more feeding is allowed with this
+         * callback after that.
+         */
+        boolean isAborted();
+
+    }
+
+}

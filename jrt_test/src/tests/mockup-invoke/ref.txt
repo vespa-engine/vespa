@@ -1,0 +1,5 @@
+result: 'aaabbb'
+result: 'bbbccc'
+result: 'cccddd'
+result: 'dddeee'
+result: 'eeefff'

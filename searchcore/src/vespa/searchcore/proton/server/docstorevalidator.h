@@ -1,0 +1,67 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/docstore/idocumentstore.h>
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
+
+namespace proton
+{
+
+class DocStoreValidator : public search::IDocumentStoreReadVisitor
+{
+    IDocumentMetaStore         &_dms;
+    uint32_t                   _docIdLimit;
+    search::BitVector::UP  _invalid;
+    search::BitVector::UP  _orphans;
+    uint32_t                   _visitCount;
+    uint32_t                   _visitEmptyCount;
+    
+public:
+    DocStoreValidator(IDocumentMetaStore &dms);
+
+    virtual void
+    visit(uint32_t lid, const document::Document &doc);
+
+    virtual void
+    visit(uint32_t lid);
+
+    void
+    visitDone(void);
+
+    void
+    killOrphans(search::IDocumentStore &store,
+                search::SerialNum serialNum);
+
+    uint32_t
+    getInvalidCount(void) const
+    {
+        return _invalid->countTrueBits();
+    }
+
+    uint32_t
+    getOrphanCount(void) const
+    {
+        return _orphans->countTrueBits();
+    }
+
+    uint32_t
+    getVisitCount(void) const
+    {
+        return _visitCount;
+    }
+
+    uint32_t
+    getVisitEmptyCount(void) const
+    {
+        return _visitEmptyCount;
+    }
+
+    LidVectorContext::LP
+    getInvalidLids(void) const;
+};
+
+
+} // namespace proton
+

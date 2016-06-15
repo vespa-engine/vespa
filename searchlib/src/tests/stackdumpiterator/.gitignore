@@ -1,0 +1,7 @@
+*.core
+.depend
+Makefile
+core
+core.*
+stackdumpiteratortest
+searchlib_stackdumpiteratortest_app

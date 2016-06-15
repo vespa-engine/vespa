@@ -1,0 +1,15 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search untransformedsummaryfields {
+    document untransformedsummaryfields {
+        field foo type int {
+            indexing: index | summary
+        }
+        field bar type string {
+            indexing: index | summary
+            bolding: on
+        }
+        field baz type int {
+            indexing: attribute | summary
+        }
+    }
+}

@@ -1,0 +1,4684 @@
+ 
+/* Data Dictionary, Number Of Variables = 37 */
+/*    Name = DAY_HITS, Type = continuous. */
+/*    Name = PREV_DAY_HITS, Type = continuous. */
+/*    Name = DAY_PD_HITS_RATIO, Type = continuous. */
+/*    Name = DAY_PD_HITS_DERIV, Type = continuous. */
+/*    Name = LW_DAY_HITS, Type = continuous. */
+/*    Name = DAY_LW_DAY_HITS_RATIO, Type = continuous. */
+/*    Name = DAY_LW_DAY_HITS_DERIV, Type = continuous. */
+/*    Name = WEEKAVG, Type = continuous. */
+/*    Name = DAY_WEEK_AVG_RATIO, Type = continuous. */
+/*    Name = DAY_WEEK_AVG_DERIV, Type = continuous. */
+/*    Name = ISTITLE_AVG, Type = continuous. */
+/*    Name = ISABSTRACT_AVG, Type = continuous. */
+/*    Name = SUPERDUPER_AVG, Type = continuous. */
+/*    Name = PUB_TODAY_AVG, Type = continuous. */
+/*    Name = BUSINESS, Type = continuous. */
+/*    Name = ENTERTAINMENT, Type = continuous. */
+/*    Name = INTLNEWS, Type = continuous. */
+/*    Name = LAW, Type = continuous. */
+/*    Name = LIFESTYLE, Type = continuous. */
+/*    Name = LOCALNEWS, Type = continuous. */
+/*    Name = NATIONALNEWS, Type = continuous. */
+/*    Name = POLITICS, Type = continuous. */
+/*    Name = SPORTS, Type = continuous. */
+/*    Name = TOPSTORY, Type = continuous. */
+/*    Name = AVG_RANK, Type = continuous. */
+/*    Name = MAX_RANK, Type = continuous. */
+/*    Name = MIN_RANK, Type = continuous. */
+/*    Name = MAX_MIN_RANK, Type = continuous. */
+/*    Name = AVG_SCORE, Type = continuous. */
+/*    Name = MAX_SCORE, Type = continuous. */
+/*    Name = MIN_SCORE, Type = continuous. */
+/*    Name = MAX_MIN_SCORE, Type = continuous. */
+/*    Name = FOUR_HOUR_WF, Type = continuous. */
+/*    Name = EIGHT_HOUR_WF, Type = continuous. */
+/*    Name = TWELVE_HOUR_WF, Type = continuous. */
+/*    Name = ONE_DAY_WF, Type = continuous. */
+/*    Name = TWO_DAY_WF, Type = continuous. */
+ 
+MODELBEGIN:
+ 
+/* CART version: 5.0.9.156 */
+/* TreeNet: TreeNet20071016174833 */
+/* Grove: /home/rparekh/lb/lb_titleabstract_hourly/lb_titleabstract_hourly.grv */
+/* N trees: 77 */
+ 
+link TN0;
+pred = tnscore; /* predicted value for IY_CTR */
+ 
+ 
+/*********************/
+/* Model is complete */
+/*********************/
+ 
+return;
+ 
+ 
+ 
+TN0:
+ 
+/* Tree 1 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+tnscore = 0.0;
+ 
+N0_1:
+  if AVG_SCORE < 240274 then goto N0_2;
+  else goto N0_3;
+ 
+N0_2:
+  if AVG_SCORE < 152115 then goto T0_1;
+  else goto T0_2;
+ 
+T0_1:
+  response = 0.222147;
+  goto D0;
+ 
+T0_2:
+  response = 0.231999;
+  goto D0;
+ 
+N0_3:
+  if ISABSTRACT_AVG < 0.13 then goto N0_4;
+  else goto N0_6;
+ 
+N0_4:
+  if WEEKAVG < 1.785 then goto T0_3;
+  else goto N0_5;
+ 
+T0_3:
+  response = 0.254209;
+  goto D0;
+ 
+N0_5:
+  if TWO_DAY_WF < 0.849242 then goto T0_4;
+  else goto T0_5;
+ 
+T0_4:
+  response = 0.260625;
+  goto D0;
+ 
+T0_5:
+  response = 0.274218;
+  goto D0;
+ 
+N0_6:
+  if MIN_SCORE < 328158 then goto T0_6;
+  else goto T0_7;
+ 
+T0_6:
+  response = 0.240699;
+  goto D0;
+ 
+T0_7:
+  response = 0.25683;
+  goto D0;
+ 
+D0:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 2 of 77 */
+/* N terminal nodes = 7, Depth = 4 */
+ 
+ 
+N1_1:
+  if MIN_SCORE < 224388 then goto N1_2;
+  else goto N1_4;
+ 
+N1_2:
+  if AVG_SCORE < 229835 then goto N1_3;
+  else goto T1_3;
+ 
+N1_3:
+  if MAX_SCORE < 171144 then goto T1_1;
+  else goto T1_2;
+ 
+T1_1:
+  response = -0.0167726;
+  goto D1;
+ 
+T1_2:
+  response = -0.0105451;
+  goto D1;
+ 
+T1_3:
+  response = -0.00242754;
+  goto D1;
+ 
+N1_4:
+  if ISABSTRACT_AVG < 0.13 then goto N1_5;
+  else goto N1_6;
+ 
+N1_5:
+  if WEEKAVG < 1.36 then goto T1_4;
+  else goto T1_5;
+ 
+T1_4:
+  response = 0.0097257;
+  goto D1;
+ 
+T1_5:
+  response = 0.0198661;
+  goto D1;
+ 
+N1_6:
+  if MIN_SCORE < 330678 then goto T1_6;
+  else goto T1_7;
+ 
+T1_6:
+  response = -0.00030123;
+  goto D1;
+ 
+T1_7:
+  response = 0.0145117;
+  goto D1;
+ 
+D1:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 3 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N2_1:
+  if AVG_SCORE < 240820 then goto N2_2;
+  else goto N2_3;
+ 
+N2_2:
+  if AVG_SCORE < 159292 then goto T2_1;
+  else goto T2_2;
+ 
+T2_1:
+  response = -0.0146681;
+  goto D2;
+ 
+T2_2:
+  response = -0.00755839;
+  goto D2;
+ 
+N2_3:
+  if ISABSTRACT_AVG < 0.21 then goto N2_4;
+  else goto N2_6;
+ 
+N2_4:
+  if WEEKAVG < 1.64 then goto T2_3;
+  else goto N2_5;
+ 
+T2_3:
+  response = 0.0094277;
+  goto D2;
+ 
+N2_5:
+  if AVG_RANK < 7.1 then goto T2_4;
+  else goto T2_5;
+ 
+T2_4:
+  response = 0.00789525;
+  goto D2;
+ 
+T2_5:
+  response = 0.020449;
+  goto D2;
+ 
+N2_6:
+  if TOPSTORY < 0.05 then goto T2_6;
+  else goto T2_7;
+ 
+T2_6:
+  response = -0.00410248;
+  goto D2;
+ 
+T2_7:
+  response = 0.00584918;
+  goto D2;
+ 
+D2:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 4 of 77 */
+/* N terminal nodes = 7, Depth = 4 */
+ 
+ 
+N3_1:
+  if MIN_SCORE < 226846 then goto N3_2;
+  else goto N3_4;
+ 
+N3_2:
+  if AVG_SCORE < 221526 then goto T3_1;
+  else goto N3_3;
+ 
+T3_1:
+  response = -0.0110986;
+  goto D3;
+ 
+N3_3:
+  if TOPSTORY < 0.365 then goto T3_2;
+  else goto T3_3;
+ 
+T3_2:
+  response = -0.00479654;
+  goto D3;
+ 
+T3_3:
+  response = 0.020019;
+  goto D3;
+ 
+N3_4:
+  if WEEKAVG < 1.07 then goto N3_5;
+  else goto N3_6;
+ 
+N3_5:
+  if ISTITLE_AVG < 0.93 then goto T3_4;
+  else goto T3_5;
+ 
+T3_4:
+  response = 0.0050835;
+  goto D3;
+ 
+T3_5:
+  response = -0.00497491;
+  goto D3;
+ 
+N3_6:
+  if ISABSTRACT_AVG < 0.05 then goto T3_6;
+  else goto T3_7;
+ 
+T3_6:
+  response = 0.0175386;
+  goto D3;
+ 
+T3_7:
+  response = 0.00636247;
+  goto D3;
+ 
+D3:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 5 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N4_1:
+  if MIN_SCORE < 226373 then goto N4_2;
+  else goto N4_5;
+ 
+N4_2:
+  if AVG_SCORE < 151768 then goto T4_1;
+  else goto N4_3;
+ 
+T4_1:
+  response = -0.0132135;
+  goto D4;
+ 
+N4_3:
+  if WEEKAVG < 2.5 then goto T4_2;
+  else goto N4_4;
+ 
+T4_2:
+  response = -0.00784849;
+  goto D4;
+ 
+N4_4:
+  if ISABSTRACT_AVG < 0.95 then goto T4_3;
+  else goto T4_4;
+ 
+T4_3:
+  response = -0.00100834;
+  goto D4;
+ 
+T4_4:
+  response = 0.0234278;
+  goto D4;
+ 
+N4_5:
+  if ISABSTRACT_AVG < 0.235 then goto N4_6;
+  else goto T4_7;
+ 
+N4_6:
+  if MAX_MIN_SCORE < 20325 then goto T4_5;
+  else goto T4_6;
+ 
+T4_5:
+  response = 0.00102421;
+  goto D4;
+ 
+T4_6:
+  response = 0.0145312;
+  goto D4;
+ 
+T4_7:
+  response = 0.000803179;
+  goto D4;
+ 
+D4:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 6 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N5_1:
+  if AVG_SCORE < 234937 then goto T5_1;
+  else goto N5_2;
+ 
+T5_1:
+  response = -0.00791142;
+  goto D5;
+ 
+N5_2:
+  if ISABSTRACT_AVG < 0.13 then goto N5_3;
+  else goto N5_6;
+ 
+N5_3:
+  if WEEKAVG < 1.5 then goto T5_2;
+  else goto N5_4;
+ 
+T5_2:
+  response = 0.00645581;
+  goto D5;
+ 
+N5_4:
+  if TWO_DAY_WF < 0.925548 then goto T5_3;
+  else goto N5_5;
+ 
+T5_3:
+  response = 0.0121753;
+  goto D5;
+ 
+N5_5:
+  if LOCALNEWS < 0.05 then goto T5_4;
+  else goto T5_5;
+ 
+T5_4:
+  response = 0.013493;
+  goto D5;
+ 
+T5_5:
+  response = 0.0339803;
+  goto D5;
+ 
+N5_6:
+  if AVG_SCORE < 492653 then goto T5_6;
+  else goto T5_7;
+ 
+T5_6:
+  response = -0.00104991;
+  goto D5;
+ 
+T5_7:
+  response = 0.0192918;
+  goto D5;
+ 
+D5:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 7 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N6_1:
+  if MIN_SCORE < 231118 then goto N6_2;
+  else goto N6_4;
+ 
+N6_2:
+  if AVG_SCORE < 223663 then goto T6_1;
+  else goto N6_3;
+ 
+T6_1:
+  response = -0.00824326;
+  goto D6;
+ 
+N6_3:
+  if ISABSTRACT_AVG < 0.05 then goto T6_2;
+  else goto T6_3;
+ 
+T6_2:
+  response = 0.00253809;
+  goto D6;
+ 
+T6_3:
+  response = -0.00637355;
+  goto D6;
+ 
+N6_4:
+  if ISTITLE_AVG < 0.885 then goto N6_5;
+  else goto T6_7;
+ 
+N6_5:
+  if DAY_LW_DAY_HITS_RATIO < 4.045 then goto N6_6;
+  else goto T6_6;
+ 
+N6_6:
+  if LW_DAY_HITS < 0.5 then goto T6_4;
+  else goto T6_5;
+ 
+T6_4:
+  response = 0.00769331;
+  goto D6;
+ 
+T6_5:
+  response = -0.00570545;
+  goto D6;
+ 
+T6_6:
+  response = 0.0136625;
+  goto D6;
+ 
+T6_7:
+  response = -0.000566847;
+  goto D6;
+ 
+D6:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 8 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N7_1:
+  if MIN_SCORE < 222204 then goto T7_1;
+  else goto N7_2;
+ 
+T7_1:
+  response = -0.00655529;
+  goto D7;
+ 
+N7_2:
+  if ISTITLE_AVG < 0.95 then goto N7_3;
+  else goto T7_7;
+ 
+N7_3:
+  if DAY_LW_DAY_HITS_RATIO < 15.5 then goto N7_4;
+  else goto T7_6;
+ 
+N7_4:
+  if TOPSTORY < 0.185 then goto N7_5;
+  else goto T7_5;
+ 
+N7_5:
+  if INTLNEWS < 0.39 then goto T7_2;
+  else goto N7_6;
+ 
+T7_2:
+  response = 0.00204263;
+  goto D7;
+ 
+N7_6:
+  if FOUR_HOUR_WF < 0.004 then goto T7_3;
+  else goto T7_4;
+ 
+T7_3:
+  response = 0.0157981;
+  goto D7;
+ 
+T7_4:
+  response = -0.00641486;
+  goto D7;
+ 
+T7_5:
+  response = 0.0124789;
+  goto D7;
+ 
+T7_6:
+  response = 0.0166668;
+  goto D7;
+ 
+T7_7:
+  response = -0.00299979;
+  goto D7;
+ 
+D7:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 9 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N8_1:
+  if MIN_SCORE < 224388 then goto T8_1;
+  else goto N8_2;
+ 
+T8_1:
+  response = -0.00568771;
+  goto D8;
+ 
+N8_2:
+  if WEEKAVG < 1.07 then goto N8_3;
+  else goto N8_4;
+ 
+N8_3:
+  if ISTITLE_AVG < 0.845 then goto T8_2;
+  else goto T8_3;
+ 
+T8_2:
+  response = 0.00360536;
+  goto D8;
+ 
+T8_3:
+  response = -0.00514951;
+  goto D8;
+ 
+N8_4:
+  if BUSINESS < 0.05 then goto N8_5;
+  else goto N8_6;
+ 
+N8_5:
+  if MAX_MIN_RANK < 3 then goto T8_4;
+  else goto T8_5;
+ 
+T8_4:
+  response = 0.0231505;
+  goto D8;
+ 
+T8_5:
+  response = 0.0105904;
+  goto D8;
+ 
+N8_6:
+  if MIN_SCORE < 400082 then goto T8_6;
+  else goto T8_7;
+ 
+T8_6:
+  response = 0.00196019;
+  goto D8;
+ 
+T8_7:
+  response = 0.0152236;
+  goto D8;
+ 
+D8:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 10 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N9_1:
+  if MAX_SCORE < 264920 then goto N9_2;
+  else goto N9_3;
+ 
+N9_2:
+  if AVG_SCORE < 159289 then goto T9_1;
+  else goto T9_2;
+ 
+T9_1:
+  response = -0.00812678;
+  goto D9;
+ 
+T9_2:
+  response = -0.003174;
+  goto D9;
+ 
+N9_3:
+  if DAY_WEEK_AVG_DERIV < 30.715 then goto N9_4;
+  else goto T9_7;
+ 
+N9_4:
+  if ISABSTRACT_AVG < 0.115 then goto N9_5;
+  else goto T9_6;
+ 
+N9_5:
+  if MAX_MIN_SCORE < 163787 then goto T9_3;
+  else goto N9_6;
+ 
+T9_3:
+  response = 0.0097262;
+  goto D9;
+ 
+N9_6:
+  if AVG_SCORE < 400330 then goto T9_4;
+  else goto T9_5;
+ 
+T9_4:
+  response = -0.00390127;
+  goto D9;
+ 
+T9_5:
+  response = 0.00706031;
+  goto D9;
+ 
+T9_6:
+  response = 5.49425e-05;
+  goto D9;
+ 
+T9_7:
+  response = 0.0204424;
+  goto D9;
+ 
+D9:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 11 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N10_1:
+  if AVG_SCORE < 241590 then goto T10_1;
+  else goto N10_2;
+ 
+T10_1:
+  response = -0.00459592;
+  goto D10;
+ 
+N10_2:
+  if TOPSTORY < 0.05 then goto N10_3;
+  else goto N10_4;
+ 
+N10_3:
+  if DAY_WEEK_AVG_RATIO < 4.205 then goto T10_2;
+  else goto T10_3;
+ 
+T10_2:
+  response = -0.000126418;
+  goto D10;
+ 
+T10_3:
+  response = 0.0204507;
+  goto D10;
+ 
+N10_4:
+  if TWO_DAY_WF < 0.86039 then goto N10_5;
+  else goto T10_7;
+ 
+N10_5:
+  if ISABSTRACT_AVG < 0.585 then goto N10_6;
+  else goto T10_6;
+ 
+N10_6:
+  if TOPSTORY < 0.365 then goto T10_4;
+  else goto T10_5;
+ 
+T10_4:
+  response = 0.00566686;
+  goto D10;
+ 
+T10_5:
+  response = 0.0196157;
+  goto D10;
+ 
+T10_6:
+  response = -0.00511988;
+  goto D10;
+ 
+T10_7:
+  response = 0.0124928;
+  goto D10;
+ 
+D10:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 12 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N11_1:
+  if MIN_SCORE < 222204 then goto N11_2;
+  else goto N11_3;
+ 
+N11_2:
+  if PREV_DAY_HITS < 4.5 then goto T11_1;
+  else goto T11_2;
+ 
+T11_1:
+  response = -0.00589519;
+  goto D11;
+ 
+T11_2:
+  response = -0.000631753;
+  goto D11;
+ 
+N11_3:
+  if ISABSTRACT_AVG < 0.235 then goto N11_4;
+  else goto T11_7;
+ 
+N11_4:
+  if MAX_MIN_SCORE < 171496 then goto N11_5;
+  else goto T11_6;
+ 
+N11_5:
+  if MAX_SCORE < 558130 then goto N11_6;
+  else goto T11_5;
+ 
+N11_6:
+  if AVG_RANK < 7.125 then goto T11_3;
+  else goto T11_4;
+ 
+T11_3:
+  response = 0.00086138;
+  goto D11;
+ 
+T11_4:
+  response = 0.00952768;
+  goto D11;
+ 
+T11_5:
+  response = 0.0206013;
+  goto D11;
+ 
+T11_6:
+  response = 0.00133279;
+  goto D11;
+ 
+T11_7:
+  response = -0.00112547;
+  goto D11;
+ 
+D11:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 13 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N12_1:
+  if MIN_SCORE < 222204 then goto N12_2;
+  else goto N12_4;
+ 
+N12_2:
+  if DAY_PD_HITS_DERIV < -12.5 then goto T12_1;
+  else goto N12_3;
+ 
+T12_1:
+  response = 0.00847214;
+  goto D12;
+ 
+N12_3:
+  if DAY_WEEK_AVG_DERIV < 36.785 then goto T12_2;
+  else goto T12_3;
+ 
+T12_2:
+  response = -0.00450293;
+  goto D12;
+ 
+T12_3:
+  response = 0.0134303;
+  goto D12;
+ 
+N12_4:
+  if ISABSTRACT_AVG < 0.05 then goto N12_5;
+  else goto T12_7;
+ 
+N12_5:
+  if DAY_WEEK_AVG_RATIO < 4.83 then goto N12_6;
+  else goto T12_6;
+ 
+N12_6:
+  if NATIONALNEWS < 0.355 then goto T12_4;
+  else goto T12_5;
+ 
+T12_4:
+  response = 0.00488766;
+  goto D12;
+ 
+T12_5:
+  response = 0.0169425;
+  goto D12;
+ 
+T12_6:
+  response = 0.0204287;
+  goto D12;
+ 
+T12_7:
+  response = -0.000132037;
+  goto D12;
+ 
+D12:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 14 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N13_1:
+  if MAX_SCORE < 250058 then goto N13_2;
+  else goto N13_3;
+ 
+N13_2:
+  if INTLNEWS < 0.105 then goto T13_1;
+  else goto T13_2;
+ 
+T13_1:
+  response = -0.0059595;
+  goto D13;
+ 
+T13_2:
+  response = 0.000221029;
+  goto D13;
+ 
+N13_3:
+  if TOPSTORY < 0.355 then goto N13_4;
+  else goto T13_7;
+ 
+N13_4:
+  if MIN_SCORE < 385241 then goto N13_5;
+  else goto N13_6;
+ 
+N13_5:
+  if BUSINESS < 0.05 then goto T13_3;
+  else goto T13_4;
+ 
+T13_3:
+  response = 0.00367059;
+  goto D13;
+ 
+T13_4:
+  response = -0.00223683;
+  goto D13;
+ 
+N13_6:
+  if INTLNEWS < 0.365 then goto T13_5;
+  else goto T13_6;
+ 
+T13_5:
+  response = 0.00575046;
+  goto D13;
+ 
+T13_6:
+  response = 0.0237395;
+  goto D13;
+ 
+T13_7:
+  response = 0.0174135;
+  goto D13;
+ 
+D13:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 15 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N14_1:
+  if MAX_SCORE < 265638 then goto T14_1;
+  else goto N14_2;
+ 
+T14_1:
+  response = -0.00287962;
+  goto D14;
+ 
+N14_2:
+  if ISABSTRACT_AVG < 0.235 then goto N14_3;
+  else goto T14_7;
+ 
+N14_3:
+  if DAY_PD_HITS_RATIO < 18.75 then goto N14_4;
+  else goto T14_6;
+ 
+N14_4:
+  if MAX_MIN_SCORE < 67687.2 then goto N14_5;
+  else goto N14_6;
+ 
+N14_5:
+  if PREV_DAY_HITS < 6.5 then goto T14_2;
+  else goto T14_3;
+ 
+T14_2:
+  response = 0.00469885;
+  goto D14;
+ 
+T14_3:
+  response = 0.0145573;
+  goto D14;
+ 
+N14_6:
+  if AVG_SCORE < 399037 then goto T14_4;
+  else goto T14_5;
+ 
+T14_4:
+  response = -0.00312833;
+  goto D14;
+ 
+T14_5:
+  response = 0.00680591;
+  goto D14;
+ 
+T14_6:
+  response = 0.0238803;
+  goto D14;
+ 
+T14_7:
+  response = -0.00158812;
+  goto D14;
+ 
+D14:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 16 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N15_1:
+  if MIN_SCORE < 222204 then goto N15_2;
+  else goto N15_3;
+ 
+N15_2:
+  if TOPSTORY < 0.355 then goto T15_1;
+  else goto T15_2;
+ 
+T15_1:
+  response = -0.00377546;
+  goto D15;
+ 
+T15_2:
+  response = 0.0099145;
+  goto D15;
+ 
+N15_3:
+  if ISTITLE_AVG < 0.885 then goto N15_4;
+  else goto T15_7;
+ 
+N15_4:
+  if MAX_MIN_SCORE < 57965.2 then goto N15_5;
+  else goto N15_6;
+ 
+N15_5:
+  if MIN_SCORE < 223217 then goto T15_3;
+  else goto T15_4;
+ 
+T15_3:
+  response = 0.0291906;
+  goto D15;
+ 
+T15_4:
+  response = 0.00802385;
+  goto D15;
+ 
+N15_6:
+  if AVG_SCORE < 402324 then goto T15_5;
+  else goto T15_6;
+ 
+T15_5:
+  response = -0.00259188;
+  goto D15;
+ 
+T15_6:
+  response = 0.00560142;
+  goto D15;
+ 
+T15_7:
+  response = -0.0015883;
+  goto D15;
+ 
+D15:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 17 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N16_1:
+  if MAX_SCORE < 252015 then goto T16_1;
+  else goto N16_2;
+ 
+T16_1:
+  response = -0.00312417;
+  goto D16;
+ 
+N16_2:
+  if DAY_WEEK_AVG_RATIO < 5.91 then goto N16_3;
+  else goto T16_7;
+ 
+N16_3:
+  if TOPSTORY < 0.185 then goto N16_4;
+  else goto T16_6;
+ 
+N16_4:
+  if MAX_MIN_SCORE < 123158 then goto N16_5;
+  else goto T16_5;
+ 
+N16_5:
+  if ISABSTRACT_AVG < 0.13 then goto T16_2;
+  else goto N16_6;
+ 
+T16_2:
+  response = 0.0054303;
+  goto D16;
+ 
+N16_6:
+  if PREV_DAY_HITS < 7.5 then goto T16_3;
+  else goto T16_4;
+ 
+T16_3:
+  response = -0.00350664;
+  goto D16;
+ 
+T16_4:
+  response = 0.0115054;
+  goto D16;
+ 
+T16_5:
+  response = -0.00200056;
+  goto D16;
+ 
+T16_6:
+  response = 0.00612929;
+  goto D16;
+ 
+T16_7:
+  response = 0.0248479;
+  goto D16;
+ 
+D16:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 18 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N17_1:
+  if MIN_SCORE < 232158 then goto N17_2;
+  else goto N17_5;
+ 
+N17_2:
+  if DAY_PD_HITS_DERIV < -13.5 then goto T17_1;
+  else goto N17_3;
+ 
+T17_1:
+  response = 0.012118;
+  goto D17;
+ 
+N17_3:
+  if SPORTS < 0.685 then goto T17_2;
+  else goto N17_4;
+ 
+T17_2:
+  response = -0.00337721;
+  goto D17;
+ 
+N17_4:
+  if MAX_SCORE < 165958 then goto T17_3;
+  else goto T17_4;
+ 
+T17_3:
+  response = -0.00648055;
+  goto D17;
+ 
+T17_4:
+  response = 0.00734207;
+  goto D17;
+ 
+N17_5:
+  if ISABSTRACT_AVG < 0.635 then goto N17_6;
+  else goto T17_7;
+ 
+N17_6:
+  if EIGHT_HOUR_WF < 0.493902 then goto T17_5;
+  else goto T17_6;
+ 
+T17_5:
+  response = 0.00519362;
+  goto D17;
+ 
+T17_6:
+  response = -0.00533505;
+  goto D17;
+ 
+T17_7:
+  response = -0.00220591;
+  goto D17;
+ 
+D17:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 19 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N18_1:
+  if AVG_SCORE < 387415 then goto N18_2;
+  else goto N18_4;
+ 
+N18_2:
+  if PREV_DAY_HITS < 2.5 then goto T18_1;
+  else goto N18_3;
+ 
+T18_1:
+  response = -0.00321038;
+  goto D18;
+ 
+N18_3:
+  if BUSINESS < 0.05 then goto T18_2;
+  else goto T18_3;
+ 
+T18_2:
+  response = 0.00353532;
+  goto D18;
+ 
+T18_3:
+  response = -0.0020425;
+  goto D18;
+ 
+N18_4:
+  if TWO_DAY_WF < 0.979149 then goto T18_4;
+  else goto N18_5;
+ 
+T18_4:
+  response = 0.00271552;
+  goto D18;
+ 
+N18_5:
+  if TWELVE_HOUR_WF < 0.104418 then goto T18_5;
+  else goto N18_6;
+ 
+T18_5:
+  response = 0.00180155;
+  goto D18;
+ 
+N18_6:
+  if MIN_SCORE < 350308 then goto T18_6;
+  else goto T18_7;
+ 
+T18_6:
+  response = 0.0370742;
+  goto D18;
+ 
+T18_7:
+  response = 0.0145313;
+  goto D18;
+ 
+D18:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 20 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N19_1:
+  if MAX_SCORE < 248824 then goto N19_2;
+  else goto N19_3;
+ 
+N19_2:
+  if INTLNEWS < 0.185 then goto T19_1;
+  else goto T19_2;
+ 
+T19_1:
+  response = -0.00381799;
+  goto D19;
+ 
+T19_2:
+  response = 0.00109643;
+  goto D19;
+ 
+N19_3:
+  if TOPSTORY < 0.185 then goto N19_4;
+  else goto N19_6;
+ 
+N19_4:
+  if TWO_DAY_WF < 0.779514 then goto T19_3;
+  else goto N19_5;
+ 
+T19_3:
+  response = -0.0015664;
+  goto D19;
+ 
+N19_5:
+  if WEEKAVG < 4.07 then goto T19_4;
+  else goto T19_5;
+ 
+T19_4:
+  response = 0.00171319;
+  goto D19;
+ 
+T19_5:
+  response = 0.0126131;
+  goto D19;
+ 
+N19_6:
+  if MAX_MIN_RANK < 7 then goto T19_6;
+  else goto T19_7;
+ 
+T19_6:
+  response = 0.00411675;
+  goto D19;
+ 
+T19_7:
+  response = 0.0149353;
+  goto D19;
+ 
+D19:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 21 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N20_1:
+  if MIN_SCORE < 233311 then goto T20_1;
+  else goto N20_2;
+ 
+T20_1:
+  response = -0.00183471;
+  goto D20;
+ 
+N20_2:
+  if LW_DAY_HITS < 0.5 then goto N20_3;
+  else goto T20_7;
+ 
+N20_3:
+  if SUPERDUPER_AVG < 0.21 then goto N20_4;
+  else goto N20_5;
+ 
+N20_4:
+  if MIN_RANK < 1 then goto T20_2;
+  else goto T20_3;
+ 
+T20_2:
+  response = 0.0173917;
+  goto D20;
+ 
+T20_3:
+  response = 0.000643665;
+  goto D20;
+ 
+N20_5:
+  if LOCALNEWS < 0.185 then goto N20_6;
+  else goto T20_6;
+ 
+N20_6:
+  if DAY_PD_HITS_RATIO < 8.795 then goto T20_4;
+  else goto T20_5;
+ 
+T20_4:
+  response = 0.00308276;
+  goto D20;
+ 
+T20_5:
+  response = 0.0169982;
+  goto D20;
+ 
+T20_6:
+  response = 0.0159792;
+  goto D20;
+ 
+T20_7:
+  response = -0.00499866;
+  goto D20;
+ 
+D20:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 22 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N21_1:
+  if TOPSTORY < 0.39 then goto N21_2;
+  else goto T21_7;
+ 
+N21_2:
+  if MAX_SCORE < 176763 then goto T21_1;
+  else goto N21_3;
+ 
+T21_1:
+  response = -0.00448387;
+  goto D21;
+ 
+N21_3:
+  if INTLNEWS < 0.415 then goto N21_4;
+  else goto T21_6;
+ 
+N21_4:
+  if BUSINESS < 0.05 then goto N21_5;
+  else goto T21_5;
+ 
+N21_5:
+  if MAX_MIN_SCORE < 20408.8 then goto T21_2;
+  else goto N21_6;
+ 
+T21_2:
+  response = -0.00328596;
+  goto D21;
+ 
+N21_6:
+  if TWO_DAY_WF < 0.512854 then goto T21_3;
+  else goto T21_4;
+ 
+T21_3:
+  response = -0.00211998;
+  goto D21;
+ 
+T21_4:
+  response = 0.00522867;
+  goto D21;
+ 
+T21_5:
+  response = -0.00226038;
+  goto D21;
+ 
+T21_6:
+  response = 0.00574748;
+  goto D21;
+ 
+T21_7:
+  response = 0.00900215;
+  goto D21;
+ 
+D21:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 23 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N22_1:
+  if TWO_DAY_WF < 0.75074 then goto N22_2;
+  else goto N22_6;
+ 
+N22_2:
+  if BUSINESS < 0.05 then goto N22_3;
+  else goto T22_5;
+ 
+N22_3:
+  if FOUR_HOUR_WF < 0.0149554 then goto N22_4;
+  else goto T22_4;
+ 
+N22_4:
+  if WEEKAVG < 0.785 then goto T22_1;
+  else goto N22_5;
+ 
+T22_1:
+  response = -0.00184131;
+  goto D22;
+ 
+N22_5:
+  if AVG_SCORE < 167616 then goto T22_2;
+  else goto T22_3;
+ 
+T22_2:
+  response = -0.00305123;
+  goto D22;
+ 
+T22_3:
+  response = 0.00685803;
+  goto D22;
+ 
+T22_4:
+  response = -0.00470139;
+  goto D22;
+ 
+T22_5:
+  response = -0.003457;
+  goto D22;
+ 
+N22_6:
+  if MAX_SCORE < 504246 then goto T22_6;
+  else goto T22_7;
+ 
+T22_6:
+  response = 0.000878955;
+  goto D22;
+ 
+T22_7:
+  response = 0.00850264;
+  goto D22;
+ 
+D22:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 24 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N23_1:
+  if BUSINESS < 0.105 then goto N23_2;
+  else goto N23_6;
+ 
+N23_2:
+  if AVG_SCORE < 160899 then goto T23_1;
+  else goto N23_3;
+ 
+T23_1:
+  response = -0.00270644;
+  goto D23;
+ 
+N23_3:
+  if AVG_SCORE < 194764 then goto N23_4;
+  else goto N23_5;
+ 
+N23_4:
+  if ISABSTRACT_AVG < 0.315 then goto T23_2;
+  else goto T23_3;
+ 
+T23_2:
+  response = -0.00800918;
+  goto D23;
+ 
+T23_3:
+  response = 0.012943;
+  goto D23;
+ 
+N23_5:
+  if NATIONALNEWS < 0.355 then goto T23_4;
+  else goto T23_5;
+ 
+T23_4:
+  response = 0.000901868;
+  goto D23;
+ 
+T23_5:
+  response = 0.0112161;
+  goto D23;
+ 
+N23_6:
+  if INTLNEWS < 0.39 then goto T23_6;
+  else goto T23_7;
+ 
+T23_6:
+  response = -0.00269415;
+  goto D23;
+ 
+T23_7:
+  response = 0.00725021;
+  goto D23;
+ 
+D23:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 25 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N24_1:
+  if BUSINESS < 0.105 then goto N24_2;
+  else goto T24_7;
+ 
+N24_2:
+  if MAX_SCORE < 188088 then goto T24_1;
+  else goto N24_3;
+ 
+T24_1:
+  response = -0.00298371;
+  goto D24;
+ 
+N24_3:
+  if AVG_SCORE < 190784 then goto N24_4;
+  else goto N24_5;
+ 
+N24_4:
+  if ISABSTRACT_AVG < 0.55 then goto T24_2;
+  else goto T24_3;
+ 
+T24_2:
+  response = -0.00171064;
+  goto D24;
+ 
+T24_3:
+  response = 0.0237327;
+  goto D24;
+ 
+N24_5:
+  if AVG_RANK < 9.755 then goto T24_4;
+  else goto N24_6;
+ 
+T24_4:
+  response = 0.00131049;
+  goto D24;
+ 
+N24_6:
+  if WEEKAVG < 0.93 then goto T24_5;
+  else goto T24_6;
+ 
+T24_5:
+  response = -0.00199335;
+  goto D24;
+ 
+T24_6:
+  response = 0.020099;
+  goto D24;
+ 
+T24_7:
+  response = -0.00222399;
+  goto D24;
+ 
+D24:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 26 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N25_1:
+  if NATIONALNEWS < 0.115 then goto N25_2;
+  else goto T25_7;
+ 
+N25_2:
+  if PREV_DAY_HITS < 27.5 then goto N25_3;
+  else goto N25_5;
+ 
+N25_3:
+  if INTLNEWS < 0.725 then goto N25_4;
+  else goto T25_3;
+ 
+N25_4:
+  if AVG_SCORE < 629440 then goto T25_1;
+  else goto T25_2;
+ 
+T25_1:
+  response = -0.00184197;
+  goto D25;
+ 
+T25_2:
+  response = 0.0166573;
+  goto D25;
+ 
+T25_3:
+  response = 0.0148512;
+  goto D25;
+ 
+N25_5:
+  if TWO_DAY_WF < 0.773805 then goto N25_6;
+  else goto T25_6;
+ 
+N25_6:
+  if TWELVE_HOUR_WF < 0.114144 then goto T25_4;
+  else goto T25_5;
+ 
+T25_4:
+  response = 0.00583361;
+  goto D25;
+ 
+T25_5:
+  response = -0.012718;
+  goto D25;
+ 
+T25_6:
+  response = 0.0149618;
+  goto D25;
+ 
+T25_7:
+  response = 0.00280466;
+  goto D25;
+ 
+D25:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 27 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N26_1:
+  if TOPSTORY < 0.355 then goto N26_2;
+  else goto N26_4;
+ 
+N26_2:
+  if DAY_PD_HITS_DERIV < -4.5 then goto T26_1;
+  else goto N26_3;
+ 
+T26_1:
+  response = 0.00287102;
+  goto D26;
+ 
+N26_3:
+  if SPORTS < 0.73 then goto T26_2;
+  else goto T26_3;
+ 
+T26_2:
+  response = -0.00185575;
+  goto D26;
+ 
+T26_3:
+  response = 0.00272133;
+  goto D26;
+ 
+N26_4:
+  if AVG_RANK < 9.55 then goto N26_5;
+  else goto T26_7;
+ 
+N26_5:
+  if DAY_PD_HITS_RATIO < 0.405 then goto T26_4;
+  else goto N26_6;
+ 
+T26_4:
+  response = -0.00518413;
+  goto D26;
+ 
+N26_6:
+  if MAX_MIN_SCORE < 115612 then goto T26_5;
+  else goto T26_6;
+ 
+T26_5:
+  response = 0.00438781;
+  goto D26;
+ 
+T26_6:
+  response = 0.0211867;
+  goto D26;
+ 
+T26_7:
+  response = 0.0209324;
+  goto D26;
+ 
+D26:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 28 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N27_1:
+  if AVG_SCORE < 147623 then goto T27_1;
+  else goto N27_2;
+ 
+T27_1:
+  response = -0.00405691;
+  goto D27;
+ 
+N27_2:
+  if DAY_PD_HITS_DERIV < -23.5 then goto T27_2;
+  else goto N27_3;
+ 
+T27_2:
+  response = 0.00920672;
+  goto D27;
+ 
+N27_3:
+  if INTLNEWS < 0.725 then goto N27_4;
+  else goto T27_7;
+ 
+N27_4:
+  if TOPSTORY < 0.39 then goto T27_3;
+  else goto N27_5;
+ 
+T27_3:
+  response = 7.21159e-05;
+  goto D27;
+ 
+N27_5:
+  if INTLNEWS < 0.05 then goto N27_6;
+  else goto T27_6;
+ 
+N27_6:
+  if SUPERDUPER_AVG < 0.155 then goto T27_4;
+  else goto T27_5;
+ 
+T27_4:
+  response = 0.00462984;
+  goto D27;
+ 
+T27_5:
+  response = 0.0231233;
+  goto D27;
+ 
+T27_6:
+  response = 0.000562082;
+  goto D27;
+ 
+T27_7:
+  response = 0.0141075;
+  goto D27;
+ 
+D27:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 29 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N28_1:
+  if AVG_SCORE < 159075 then goto T28_1;
+  else goto N28_2;
+ 
+T28_1:
+  response = -0.00305707;
+  goto D28;
+ 
+N28_2:
+  if TOPSTORY < 0.05 then goto N28_3;
+  else goto N28_5;
+ 
+N28_3:
+  if SPORTS < 0.73 then goto T28_2;
+  else goto N28_4;
+ 
+T28_2:
+  response = -0.000935589;
+  goto D28;
+ 
+N28_4:
+  if AVG_RANK < 5.635 then goto T28_3;
+  else goto T28_4;
+ 
+T28_3:
+  response = -0.00405106;
+  goto D28;
+ 
+T28_4:
+  response = 0.0119584;
+  goto D28;
+ 
+N28_5:
+  if LW_DAY_HITS < 0.5 then goto T28_5;
+  else goto N28_6;
+ 
+T28_5:
+  response = 0.0045483;
+  goto D28;
+ 
+N28_6:
+  if PREV_DAY_HITS < 30 then goto T28_6;
+  else goto T28_7;
+ 
+T28_6:
+  response = -0.00540909;
+  goto D28;
+ 
+T28_7:
+  response = 0.00895866;
+  goto D28;
+ 
+D28:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 30 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N29_1:
+  if MAX_SCORE < 507014 then goto N29_2;
+  else goto N29_4;
+ 
+N29_2:
+  if AVG_RANK < 6.775 then goto T29_1;
+  else goto N29_3;
+ 
+T29_1:
+  response = -0.00328147;
+  goto D29;
+ 
+N29_3:
+  if MAX_MIN_SCORE < 150474 then goto T29_2;
+  else goto T29_3;
+ 
+T29_2:
+  response = 0.000393348;
+  goto D29;
+ 
+T29_3:
+  response = -0.00536951;
+  goto D29;
+ 
+N29_4:
+  if DAY_PD_HITS_RATIO < 7.885 then goto N29_5;
+  else goto T29_7;
+ 
+N29_5:
+  if ENTERTAINMENT < 0.05 then goto N29_6;
+  else goto T29_6;
+ 
+N29_6:
+  if MAX_SCORE < 516938 then goto T29_4;
+  else goto T29_5;
+ 
+T29_4:
+  response = 0.0171772;
+  goto D29;
+ 
+T29_5:
+  response = 0.00382646;
+  goto D29;
+ 
+T29_6:
+  response = -0.00447429;
+  goto D29;
+ 
+T29_7:
+  response = 0.0153178;
+  goto D29;
+ 
+D29:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 31 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N30_1:
+  if DAY_WEEK_AVG_RATIO < 5.905 then goto N30_2;
+  else goto T30_7;
+ 
+N30_2:
+  if NATIONALNEWS < 0.105 then goto T30_1;
+  else goto N30_3;
+ 
+T30_1:
+  response = -0.000832529;
+  goto D30;
+ 
+N30_3:
+  if MAX_MIN_RANK < 7 then goto N30_4;
+  else goto N30_5;
+ 
+N30_4:
+  if NATIONALNEWS < 0.13 then goto T30_2;
+  else goto T30_3;
+ 
+T30_2:
+  response = 0.0108634;
+  goto D30;
+ 
+T30_3:
+  response = 0.000313874;
+  goto D30;
+ 
+N30_5:
+  if AVG_SCORE < 231880 then goto T30_4;
+  else goto N30_6;
+ 
+T30_4:
+  response = -0.00104106;
+  goto D30;
+ 
+N30_6:
+  if PREV_DAY_HITS < 5.5 then goto T30_5;
+  else goto T30_6;
+ 
+T30_5:
+  response = 0.0263191;
+  goto D30;
+ 
+T30_6:
+  response = 0.00601508;
+  goto D30;
+ 
+T30_7:
+  response = 0.0149012;
+  goto D30;
+ 
+D30:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 32 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N31_1:
+  if PREV_DAY_HITS < 59.5 then goto N31_2;
+  else goto T31_7;
+ 
+N31_2:
+  if NATIONALNEWS < 0.05 then goto N31_3;
+  else goto N31_6;
+ 
+N31_3:
+  if DAY_PD_HITS_DERIV < -6.5 then goto N31_4;
+  else goto T31_4;
+ 
+N31_4:
+  if DAY_WEEK_AVG_RATIO < 1.285 then goto N31_5;
+  else goto T31_3;
+ 
+N31_5:
+  if MAX_MIN_SCORE < 160894 then goto T31_1;
+  else goto T31_2;
+ 
+T31_1:
+  response = 0.00449479;
+  goto D31;
+ 
+T31_2:
+  response = -0.00886993;
+  goto D31;
+ 
+T31_3:
+  response = 0.0153285;
+  goto D31;
+ 
+T31_4:
+  response = -0.00178263;
+  goto D31;
+ 
+N31_6:
+  if POLITICS < 0.05 then goto T31_5;
+  else goto T31_6;
+ 
+T31_5:
+  response = 0.00198329;
+  goto D31;
+ 
+T31_6:
+  response = -0.00586162;
+  goto D31;
+ 
+T31_7:
+  response = 0.00935161;
+  goto D31;
+ 
+D31:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 33 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N32_1:
+  if MIN_SCORE < 132626 then goto T32_1;
+  else goto N32_2;
+ 
+T32_1:
+  response = -0.00387076;
+  goto D32;
+ 
+N32_2:
+  if WEEKAVG < 0.93 then goto T32_2;
+  else goto N32_3;
+ 
+T32_2:
+  response = -0.00135437;
+  goto D32;
+ 
+N32_3:
+  if MAX_MIN_SCORE < 46712 then goto T32_3;
+  else goto N32_4;
+ 
+T32_3:
+  response = 0.00347721;
+  goto D32;
+ 
+N32_4:
+  if AVG_SCORE < 404994 then goto N32_5;
+  else goto T32_7;
+ 
+N32_5:
+  if MIN_SCORE < 241776 then goto N32_6;
+  else goto T32_6;
+ 
+N32_6:
+  if SPORTS < 0.79 then goto T32_4;
+  else goto T32_5;
+ 
+T32_4:
+  response = -0.00180685;
+  goto D32;
+ 
+T32_5:
+  response = 0.0168028;
+  goto D32;
+ 
+T32_6:
+  response = -0.00853053;
+  goto D32;
+ 
+T32_7:
+  response = 0.00228774;
+  goto D32;
+ 
+D32:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 34 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N33_1:
+  if LW_DAY_HITS < 0.5 then goto N33_2;
+  else goto N33_6;
+ 
+N33_2:
+  if AVG_SCORE < 159292 then goto T33_1;
+  else goto N33_3;
+ 
+T33_1:
+  response = -0.00244777;
+  goto D33;
+ 
+N33_3:
+  if LIFESTYLE < 0.155 then goto N33_4;
+  else goto T33_5;
+ 
+N33_4:
+  if DAY_PD_HITS_DERIV < -3.5 then goto T33_2;
+  else goto N33_5;
+ 
+T33_2:
+  response = 0.00412328;
+  goto D33;
+ 
+N33_5:
+  if TOPSTORY < 0.39 then goto T33_3;
+  else goto T33_4;
+ 
+T33_3:
+  response = 0.000416163;
+  goto D33;
+ 
+T33_4:
+  response = 0.0104883;
+  goto D33;
+ 
+T33_5:
+  response = -0.00615481;
+  goto D33;
+ 
+N33_6:
+  if FOUR_HOUR_WF < 0.158004 then goto T33_6;
+  else goto T33_7;
+ 
+T33_6:
+  response = -0.00212154;
+  goto D33;
+ 
+T33_7:
+  response = -0.0150848;
+  goto D33;
+ 
+D33:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 35 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N34_1:
+  if DAY_PD_HITS_RATIO < 43 then goto N34_2;
+  else goto T34_7;
+ 
+N34_2:
+  if LW_DAY_HITS < 0.5 then goto N34_3;
+  else goto N34_6;
+ 
+N34_3:
+  if DAY_PD_HITS_DERIV < -5.5 then goto N34_4;
+  else goto T34_4;
+ 
+N34_4:
+  if AVG_RANK < 9.265 then goto N34_5;
+  else goto T34_3;
+ 
+N34_5:
+  if TOPSTORY < 0.05 then goto T34_1;
+  else goto T34_2;
+ 
+T34_1:
+  response = -0.00313951;
+  goto D34;
+ 
+T34_2:
+  response = 0.00432897;
+  goto D34;
+ 
+T34_3:
+  response = 0.0117073;
+  goto D34;
+ 
+T34_4:
+  response = -0.000692;
+  goto D34;
+ 
+N34_6:
+  if MAX_MIN_SCORE < 120702 then goto T34_5;
+  else goto T34_6;
+ 
+T34_5:
+  response = -0.00138028;
+  goto D34;
+ 
+T34_6:
+  response = -0.00945152;
+  goto D34;
+ 
+T34_7:
+  response = 0.0160989;
+  goto D34;
+ 
+D34:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 36 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N35_1:
+  if LW_DAY_HITS < 0.5 then goto N35_2;
+  else goto N35_5;
+ 
+N35_2:
+  if MAX_SCORE < 507008 then goto N35_3;
+  else goto T35_4;
+ 
+N35_3:
+  if MAX_SCORE < 339502 then goto N35_4;
+  else goto T35_3;
+ 
+N35_4:
+  if ENTERTAINMENT < 0.415 then goto T35_1;
+  else goto T35_2;
+ 
+T35_1:
+  response = 0.00030327;
+  goto D35;
+ 
+T35_2:
+  response = 0.00803638;
+  goto D35;
+ 
+T35_3:
+  response = -0.0034615;
+  goto D35;
+ 
+T35_4:
+  response = 0.00344157;
+  goto D35;
+ 
+N35_5:
+  if FOUR_HOUR_WF < 0.101282 then goto N35_6;
+  else goto T35_7;
+ 
+N35_6:
+  if DAY_WEEK_AVG_DERIV < 17.5 then goto T35_5;
+  else goto T35_6;
+ 
+T35_5:
+  response = -0.00192815;
+  goto D35;
+ 
+T35_6:
+  response = 0.00914257;
+  goto D35;
+ 
+T35_7:
+  response = -0.0127954;
+  goto D35;
+ 
+D35:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 37 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N36_1:
+  if DAY_WEEK_AVG_RATIO < 0.255 then goto T36_1;
+  else goto N36_2;
+ 
+T36_1:
+  response = 0.0131801;
+  goto D36;
+ 
+N36_2:
+  if MAX_MIN_SCORE < 312687 then goto N36_3;
+  else goto T36_7;
+ 
+N36_3:
+  if MAX_MIN_SCORE < 296243 then goto N36_4;
+  else goto T36_6;
+ 
+N36_4:
+  if NATIONALNEWS < 0.105 then goto T36_2;
+  else goto N36_5;
+ 
+T36_2:
+  response = -0.000609993;
+  goto D36;
+ 
+N36_5:
+  if MAX_MIN_RANK < 7 then goto T36_3;
+  else goto N36_6;
+ 
+T36_3:
+  response = 0.000898274;
+  goto D36;
+ 
+N36_6:
+  if MAX_SCORE < 234190 then goto T36_4;
+  else goto T36_5;
+ 
+T36_4:
+  response = 0.000967677;
+  goto D36;
+ 
+T36_5:
+  response = 0.0163215;
+  goto D36;
+ 
+T36_6:
+  response = 0.0161496;
+  goto D36;
+ 
+T36_7:
+  response = -0.0112906;
+  goto D36;
+ 
+D36:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 38 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N37_1:
+  if TOPSTORY < 0.39 then goto N37_2;
+  else goto T37_7;
+ 
+N37_2:
+  if MIN_SCORE < 220684 then goto T37_1;
+  else goto N37_3;
+ 
+T37_1:
+  response = -0.00143961;
+  goto D37;
+ 
+N37_3:
+  if ISABSTRACT_AVG < 0.05 then goto N37_4;
+  else goto T37_6;
+ 
+N37_4:
+  if AVG_SCORE < 277398 then goto N37_5;
+  else goto N37_6;
+ 
+N37_5:
+  if DAY_LW_DAY_HITS_RATIO < 1.75 then goto T37_2;
+  else goto T37_3;
+ 
+T37_2:
+  response = -0.000951177;
+  goto D37;
+ 
+T37_3:
+  response = 0.00924989;
+  goto D37;
+ 
+N37_6:
+  if BUSINESS < 0.39 then goto T37_4;
+  else goto T37_5;
+ 
+T37_4:
+  response = -0.00128495;
+  goto D37;
+ 
+T37_5:
+  response = 0.0103605;
+  goto D37;
+ 
+T37_6:
+  response = -0.00106493;
+  goto D37;
+ 
+T37_7:
+  response = 0.00610485;
+  goto D37;
+ 
+D37:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 39 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N38_1:
+  if AVG_SCORE < 500951 then goto N38_2;
+  else goto N38_5;
+ 
+N38_2:
+  if DAY_HITS < 42.5 then goto T38_1;
+  else goto N38_3;
+ 
+T38_1:
+  response = -0.000676917;
+  goto D38;
+ 
+N38_3:
+  if INTLNEWS < 0.45 then goto N38_4;
+  else goto T38_4;
+ 
+N38_4:
+  if ISTITLE_AVG < 0.05 then goto T38_2;
+  else goto T38_3;
+ 
+T38_2:
+  response = -0.0122069;
+  goto D38;
+ 
+T38_3:
+  response = 0.00752268;
+  goto D38;
+ 
+T38_4:
+  response = 0.0144731;
+  goto D38;
+ 
+N38_5:
+  if MIN_SCORE < 362007 then goto T38_5;
+  else goto N38_6;
+ 
+T38_5:
+  response = 0.0202143;
+  goto D38;
+ 
+N38_6:
+  if PUB_TODAY_AVG < 0.05 then goto T38_6;
+  else goto T38_7;
+ 
+T38_6:
+  response = -0.0107444;
+  goto D38;
+ 
+T38_7:
+  response = 0.00512166;
+  goto D38;
+ 
+D38:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 40 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N39_1:
+  if WEEKAVG < 1.07 then goto T39_1;
+  else goto N39_2;
+ 
+T39_1:
+  response = -0.00167316;
+  goto D39;
+ 
+N39_2:
+  if DAY_WEEK_AVG_RATIO < 6.14 then goto N39_3;
+  else goto T39_7;
+ 
+N39_3:
+  if BUSINESS < 0.05 then goto N39_4;
+  else goto T39_6;
+ 
+N39_4:
+  if PREV_DAY_HITS < 59.5 then goto N39_5;
+  else goto T39_5;
+ 
+N39_5:
+  if AVG_RANK < 9.225 then goto N39_6;
+  else goto T39_4;
+ 
+N39_6:
+  if DAY_HITS < 30.5 then goto T39_2;
+  else goto T39_3;
+ 
+T39_2:
+  response = 0.00155636;
+  goto D39;
+ 
+T39_3:
+  response = -0.0130867;
+  goto D39;
+ 
+T39_4:
+  response = 0.0105919;
+  goto D39;
+ 
+T39_5:
+  response = 0.0218533;
+  goto D39;
+ 
+T39_6:
+  response = -0.000802313;
+  goto D39;
+ 
+T39_7:
+  response = 0.0145597;
+  goto D39;
+ 
+D39:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 41 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N40_1:
+  if LIFESTYLE < 0.05 then goto N40_2;
+  else goto T40_7;
+ 
+N40_2:
+  if MAX_MIN_RANK < 7 then goto T40_1;
+  else goto N40_3;
+ 
+T40_1:
+  response = 0.000220029;
+  goto D40;
+ 
+N40_3:
+  if ISABSTRACT_AVG < 0.115 then goto N40_4;
+  else goto N40_6;
+ 
+N40_4:
+  if TWO_DAY_WF < 0.580973 then goto T40_2;
+  else goto N40_5;
+ 
+T40_2:
+  response = -0.000179904;
+  goto D40;
+ 
+N40_5:
+  if EIGHT_HOUR_WF < 0.0125776 then goto T40_3;
+  else goto T40_4;
+ 
+T40_3:
+  response = 0.0222343;
+  goto D40;
+ 
+T40_4:
+  response = 0.00659678;
+  goto D40;
+ 
+N40_6:
+  if DAY_WEEK_AVG_DERIV < -0.93 then goto T40_5;
+  else goto T40_6;
+ 
+T40_5:
+  response = 0.0146586;
+  goto D40;
+ 
+T40_6:
+  response = -0.0018679;
+  goto D40;
+ 
+T40_7:
+  response = -0.0043182;
+  goto D40;
+ 
+D40:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 42 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N41_1:
+  if AVG_SCORE < 500853 then goto N41_2;
+  else goto N41_4;
+ 
+N41_2:
+  if MIN_SCORE < 435034 then goto N41_3;
+  else goto T41_3;
+ 
+N41_3:
+  if DAY_WEEK_AVG_RATIO < 4.15 then goto T41_1;
+  else goto T41_2;
+ 
+T41_1:
+  response = -0.000600797;
+  goto D41;
+ 
+T41_2:
+  response = 0.00413062;
+  goto D41;
+ 
+T41_3:
+  response = -0.0152667;
+  goto D41;
+ 
+N41_4:
+  if MAX_SCORE < 660352 then goto N41_5;
+  else goto T41_7;
+ 
+N41_5:
+  if TWO_DAY_WF < 0.744565 then goto T41_4;
+  else goto N41_6;
+ 
+T41_4:
+  response = 0.0172406;
+  goto D41;
+ 
+N41_6:
+  if MAX_SCORE < 596568 then goto T41_5;
+  else goto T41_6;
+ 
+T41_5:
+  response = -0.0069398;
+  goto D41;
+ 
+T41_6:
+  response = 0.0163258;
+  goto D41;
+ 
+T41_7:
+  response = -0.00228486;
+  goto D41;
+ 
+D41:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 43 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N42_1:
+  if SPORTS < 0.685 then goto T42_1;
+  else goto N42_2;
+ 
+T42_1:
+  response = -0.000328185;
+  goto D42;
+ 
+N42_2:
+  if AVG_SCORE < 446734 then goto N42_3;
+  else goto T42_7;
+ 
+N42_3:
+  if MAX_SCORE < 500264 then goto N42_4;
+  else goto T42_6;
+ 
+N42_4:
+  if MAX_SCORE < 450904 then goto N42_5;
+  else goto T42_5;
+ 
+N42_5:
+  if MIN_SCORE < 254311 then goto N42_6;
+  else goto T42_4;
+ 
+N42_6:
+  if WEEKAVG < 0.785 then goto T42_2;
+  else goto T42_3;
+ 
+T42_2:
+  response = -0.00158584;
+  goto D42;
+ 
+T42_3:
+  response = 0.0075942;
+  goto D42;
+ 
+T42_4:
+  response = -0.0103296;
+  goto D42;
+ 
+T42_5:
+  response = 0.0212781;
+  goto D42;
+ 
+T42_6:
+  response = -0.0121229;
+  goto D42;
+ 
+T42_7:
+  response = 0.0182724;
+  goto D42;
+ 
+D42:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 44 of 77 */
+/* N terminal nodes = 7, Depth = 4 */
+ 
+ 
+N43_1:
+  if TOPSTORY < 0.39 then goto N43_2;
+  else goto N43_4;
+ 
+N43_2:
+  if PREV_DAY_HITS < 59.5 then goto T43_1;
+  else goto N43_3;
+ 
+T43_1:
+  response = -5.72966e-05;
+  goto D43;
+ 
+N43_3:
+  if NATIONALNEWS < 0.05 then goto T43_2;
+  else goto T43_3;
+ 
+T43_2:
+  response = 0.0144398;
+  goto D43;
+ 
+T43_3:
+  response = -0.00316385;
+  goto D43;
+ 
+N43_4:
+  if FOUR_HOUR_WF < 0.0201025 then goto N43_5;
+  else goto N43_6;
+ 
+N43_5:
+  if TWELVE_HOUR_WF < 0.163978 then goto T43_4;
+  else goto T43_5;
+ 
+T43_4:
+  response = 0.00366064;
+  goto D43;
+ 
+T43_5:
+  response = 0.0227011;
+  goto D43;
+ 
+N43_6:
+  if ONE_DAY_WF < 0.658333 then goto T43_6;
+  else goto T43_7;
+ 
+T43_6:
+  response = -0.0114776;
+  goto D43;
+ 
+T43_7:
+  response = 0.00740238;
+  goto D43;
+ 
+D43:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 45 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N44_1:
+  if TOPSTORY < 0.585 then goto N44_2;
+  else goto T44_7;
+ 
+N44_2:
+  if ENTERTAINMENT < 0.05 then goto N44_3;
+  else goto N44_6;
+ 
+N44_3:
+  if DAY_WEEK_AVG_DERIV < 43.145 then goto T44_1;
+  else goto N44_4;
+ 
+T44_1:
+  response = 0.000486446;
+  goto D44;
+ 
+N44_4:
+  if DAY_HITS < 78.5 then goto T44_2;
+  else goto N44_5;
+ 
+T44_2:
+  response = 0.0210513;
+  goto D44;
+ 
+N44_5:
+  if SUPERDUPER_AVG < 0.65 then goto T44_3;
+  else goto T44_4;
+ 
+T44_3:
+  response = -0.00387695;
+  goto D44;
+ 
+T44_4:
+  response = 0.013128;
+  goto D44;
+ 
+N44_6:
+  if AVG_RANK < 5.465 then goto T44_5;
+  else goto T44_6;
+ 
+T44_5:
+  response = 0.00674178;
+  goto D44;
+ 
+T44_6:
+  response = -0.00228932;
+  goto D44;
+ 
+T44_7:
+  response = -0.0121137;
+  goto D44;
+ 
+D44:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 46 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N45_1:
+  if TWO_DAY_WF < 0.488162 then goto T45_1;
+  else goto N45_2;
+ 
+T45_1:
+  response = -0.00237763;
+  goto D45;
+ 
+N45_2:
+  if WEEKAVG < 1.215 then goto T45_2;
+  else goto N45_3;
+ 
+T45_2:
+  response = -0.000773205;
+  goto D45;
+ 
+N45_3:
+  if EIGHT_HOUR_WF < 0.0444065 then goto N45_4;
+  else goto N45_5;
+ 
+N45_4:
+  if DAY_HITS < 19.5 then goto T45_3;
+  else goto T45_4;
+ 
+T45_3:
+  response = 0.00278939;
+  goto D45;
+ 
+T45_4:
+  response = 0.0115461;
+  goto D45;
+ 
+N45_5:
+  if NATIONALNEWS < 0.155 then goto T45_5;
+  else goto N45_6;
+ 
+T45_5:
+  response = -0.00189416;
+  goto D45;
+ 
+N45_6:
+  if SPORTS < 0.105 then goto T45_6;
+  else goto T45_7;
+ 
+T45_6:
+  response = 0.0072781;
+  goto D45;
+ 
+T45_7:
+  response = -0.00903706;
+  goto D45;
+ 
+D45:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 47 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N46_1:
+  if SPORTS < 0.47 then goto N46_2;
+  else goto N46_3;
+ 
+N46_2:
+  if SPORTS < 0.105 then goto T46_1;
+  else goto T46_2;
+ 
+T46_1:
+  response = -4.47312e-05;
+  goto D46;
+ 
+T46_2:
+  response = -0.00348966;
+  goto D46;
+ 
+N46_3:
+  if MAX_RANK < 9 then goto T46_3;
+  else goto N46_4;
+ 
+T46_3:
+  response = -0.0016478;
+  goto D46;
+ 
+N46_4:
+  if EIGHT_HOUR_WF < 0.0459777 then goto N46_5;
+  else goto T46_7;
+ 
+N46_5:
+  if TWO_DAY_WF < 0.539394 then goto N46_6;
+  else goto T46_6;
+ 
+N46_6:
+  if WEEKAVG < 1.07 then goto T46_4;
+  else goto T46_5;
+ 
+T46_4:
+  response = -0.00892999;
+  goto D46;
+ 
+T46_5:
+  response = 0.00865732;
+  goto D46;
+ 
+T46_6:
+  response = 0.0121605;
+  goto D46;
+ 
+T46_7:
+  response = 0.00131641;
+  goto D46;
+ 
+D46:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 48 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N47_1:
+  if INTLNEWS < 0.725 then goto N47_2;
+  else goto T47_7;
+ 
+N47_2:
+  if DAY_LW_DAY_HITS_RATIO < 124.5 then goto N47_3;
+  else goto T47_6;
+ 
+N47_3:
+  if AVG_SCORE < 628258 then goto N47_4;
+  else goto T47_5;
+ 
+N47_4:
+  if DAY_HITS < 55.5 then goto T47_1;
+  else goto N47_5;
+ 
+T47_1:
+  response = -0.000193067;
+  goto D47;
+ 
+N47_5:
+  if TWELVE_HOUR_WF < 0.117879 then goto T47_2;
+  else goto N47_6;
+ 
+T47_2:
+  response = 0.0187097;
+  goto D47;
+ 
+N47_6:
+  if TWELVE_HOUR_WF < 0.350814 then goto T47_3;
+  else goto T47_4;
+ 
+T47_3:
+  response = -0.00734127;
+  goto D47;
+ 
+T47_4:
+  response = 0.0131678;
+  goto D47;
+ 
+T47_5:
+  response = 0.00987754;
+  goto D47;
+ 
+T47_6:
+  response = -0.0156063;
+  goto D47;
+ 
+T47_7:
+  response = 0.00929408;
+  goto D47;
+ 
+D47:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 49 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N48_1:
+  if DAY_WEEK_AVG_DERIV < -3.36 then goto T48_1;
+  else goto N48_2;
+ 
+T48_1:
+  response = -0.00956624;
+  goto D48;
+ 
+N48_2:
+  if TOPSTORY < 0.39 then goto T48_2;
+  else goto N48_3;
+ 
+T48_2:
+  response = -0.000216336;
+  goto D48;
+ 
+N48_3:
+  if AVG_RANK < 9.55 then goto N48_4;
+  else goto T48_7;
+ 
+N48_4:
+  if AVG_RANK < 8.735 then goto N48_5;
+  else goto T48_6;
+ 
+N48_5:
+  if TWO_DAY_WF < 0.531551 then goto T48_3;
+  else goto N48_6;
+ 
+T48_3:
+  response = -0.00490451;
+  goto D48;
+ 
+N48_6:
+  if FOUR_HOUR_WF < 0.0142857 then goto T48_4;
+  else goto T48_5;
+ 
+T48_4:
+  response = 0.0229256;
+  goto D48;
+ 
+T48_5:
+  response = 0.000312813;
+  goto D48;
+ 
+T48_6:
+  response = -0.00418916;
+  goto D48;
+ 
+T48_7:
+  response = 0.0189348;
+  goto D48;
+ 
+D48:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 50 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N49_1:
+  if AVG_SCORE < 625182 then goto N49_2;
+  else goto T49_7;
+ 
+N49_2:
+  if DAY_LW_DAY_HITS_DERIV < 55.5 then goto N49_3;
+  else goto T49_6;
+ 
+N49_3:
+  if DAY_WEEK_AVG_DERIV < 19.36 then goto N49_4;
+  else goto N49_5;
+ 
+N49_4:
+  if DAY_WEEK_AVG_DERIV < 13.5 then goto T49_1;
+  else goto T49_2;
+ 
+T49_1:
+  response = -0.000195177;
+  goto D49;
+ 
+T49_2:
+  response = 0.00629794;
+  goto D49;
+ 
+N49_5:
+  if ISTITLE_AVG < 0.05 then goto T49_3;
+  else goto N49_6;
+ 
+T49_3:
+  response = -0.0149349;
+  goto D49;
+ 
+N49_6:
+  if TWELVE_HOUR_WF < 0.383204 then goto T49_4;
+  else goto T49_5;
+ 
+T49_4:
+  response = -0.00516327;
+  goto D49;
+ 
+T49_5:
+  response = 0.00921651;
+  goto D49;
+ 
+T49_6:
+  response = 0.00647785;
+  goto D49;
+ 
+T49_7:
+  response = 0.0102664;
+  goto D49;
+ 
+D49:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 51 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N50_1:
+  if DAY_WEEK_AVG_RATIO < 0.385 then goto T50_1;
+  else goto N50_2;
+ 
+T50_1:
+  response = -0.00586045;
+  goto D50;
+ 
+N50_2:
+  if LIFESTYLE < 0.155 then goto N50_3;
+  else goto T50_7;
+ 
+N50_3:
+  if MAX_MIN_SCORE < 16288 then goto T50_2;
+  else goto N50_4;
+ 
+T50_2:
+  response = -0.0016458;
+  goto D50;
+ 
+N50_4:
+  if MAX_MIN_SCORE < 45875.2 then goto N50_5;
+  else goto T50_6;
+ 
+N50_5:
+  if MAX_MIN_SCORE < 45537.5 then goto N50_6;
+  else goto T50_5;
+ 
+N50_6:
+  if AVG_SCORE < 229848 then goto T50_3;
+  else goto T50_4;
+ 
+T50_3:
+  response = -0.000297351;
+  goto D50;
+ 
+T50_4:
+  response = 0.00475294;
+  goto D50;
+ 
+T50_5:
+  response = 0.0181171;
+  goto D50;
+ 
+T50_6:
+  response = -0.000574173;
+  goto D50;
+ 
+T50_7:
+  response = -0.00499598;
+  goto D50;
+ 
+D50:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 52 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N51_1:
+  if SPORTS < 0.815 then goto N51_2;
+  else goto N51_5;
+ 
+N51_2:
+  if TWO_DAY_WF < 0.460499 then goto N51_3;
+  else goto T51_4;
+ 
+N51_3:
+  if INTLNEWS < 0.365 then goto T51_1;
+  else goto N51_4;
+ 
+T51_1:
+  response = -0.00422695;
+  goto D51;
+ 
+N51_4:
+  if DAY_HITS < 4.5 then goto T51_2;
+  else goto T51_3;
+ 
+T51_2:
+  response = 0.011483;
+  goto D51;
+ 
+T51_3:
+  response = -0.00407438;
+  goto D51;
+ 
+T51_4:
+  response = -4.78506e-06;
+  goto D51;
+ 
+N51_5:
+  if DAY_HITS < 1.5 then goto T51_5;
+  else goto N51_6;
+ 
+T51_5:
+  response = 0.00980267;
+  goto D51;
+ 
+N51_6:
+  if EIGHT_HOUR_WF < 0.301948 then goto T51_6;
+  else goto T51_7;
+ 
+T51_6:
+  response = -0.00316423;
+  goto D51;
+ 
+T51_7:
+  response = 0.0125528;
+  goto D51;
+ 
+D51:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 53 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N52_1:
+  if PREV_DAY_HITS < 0.5 then goto T52_1;
+  else goto N52_2;
+ 
+T52_1:
+  response = -0.00190281;
+  goto D52;
+ 
+N52_2:
+  if LAW < 0.05 then goto N52_3;
+  else goto T52_7;
+ 
+N52_3:
+  if PUB_TODAY_AVG < 0.05 then goto T52_2;
+  else goto N52_4;
+ 
+T52_2:
+  response = -0.00103893;
+  goto D52;
+ 
+N52_4:
+  if EIGHT_HOUR_WF < 0.0492709 then goto N52_5;
+  else goto N52_6;
+ 
+N52_5:
+  if ISABSTRACT_AVG < 0.05 then goto T52_3;
+  else goto T52_4;
+ 
+T52_3:
+  response = 0.0053372;
+  goto D52;
+ 
+T52_4:
+  response = 0.000962476;
+  goto D52;
+ 
+N52_6:
+  if NATIONALNEWS < 0.13 then goto T52_5;
+  else goto T52_6;
+ 
+T52_5:
+  response = -0.00161984;
+  goto D52;
+ 
+T52_6:
+  response = 0.005538;
+  goto D52;
+ 
+T52_7:
+  response = -0.00741284;
+  goto D52;
+ 
+D52:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 54 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N53_1:
+  if DAY_LW_DAY_HITS_RATIO < 0.69 then goto N53_2;
+  else goto N53_3;
+ 
+N53_2:
+  if AVG_SCORE < 229191 then goto T53_1;
+  else goto T53_2;
+ 
+T53_1:
+  response = -0.00217119;
+  goto D53;
+ 
+T53_2:
+  response = -0.0135186;
+  goto D53;
+ 
+N53_3:
+  if DAY_LW_DAY_HITS_RATIO < 125.5 then goto N53_4;
+  else goto T53_7;
+ 
+N53_4:
+  if ISABSTRACT_AVG < 0.05 then goto N53_5;
+  else goto T53_6;
+ 
+N53_5:
+  if AVG_SCORE < 218595 then goto T53_3;
+  else goto N53_6;
+ 
+T53_3:
+  response = -0.00358076;
+  goto D53;
+ 
+N53_6:
+  if BUSINESS < 0.685 then goto T53_4;
+  else goto T53_5;
+ 
+T53_4:
+  response = 0.00139556;
+  goto D53;
+ 
+T53_5:
+  response = 0.0140572;
+  goto D53;
+ 
+T53_6:
+  response = -0.000571652;
+  goto D53;
+ 
+T53_7:
+  response = -0.0128262;
+  goto D53;
+ 
+D53:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 55 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N54_1:
+  if WEEKAVG < 1.5 then goto N54_2;
+  else goto N54_5;
+ 
+N54_2:
+  if DAY_WEEK_AVG_DERIV < 3.5 then goto N54_3;
+  else goto T54_4;
+ 
+N54_3:
+  if SUPERDUPER_AVG < 0.355 then goto N54_4;
+  else goto T54_3;
+ 
+N54_4:
+  if LW_DAY_HITS < 0.5 then goto T54_1;
+  else goto T54_2;
+ 
+T54_1:
+  response = 0.000521639;
+  goto D54;
+ 
+T54_2:
+  response = -0.00451687;
+  goto D54;
+ 
+T54_3:
+  response = -0.00637359;
+  goto D54;
+ 
+T54_4:
+  response = -0.00562351;
+  goto D54;
+ 
+N54_5:
+  if TWO_DAY_WF < 0.829824 then goto T54_5;
+  else goto N54_6;
+ 
+T54_5:
+  response = 2.82632e-05;
+  goto D54;
+ 
+N54_6:
+  if TWELVE_HOUR_WF < 0.940588 then goto T54_6;
+  else goto T54_7;
+ 
+T54_6:
+  response = 0.00527366;
+  goto D54;
+ 
+T54_7:
+  response = -0.011917;
+  goto D54;
+ 
+D54:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 56 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N55_1:
+  if TWELVE_HOUR_WF < 0.742581 then goto N55_2;
+  else goto N55_5;
+ 
+N55_2:
+  if TOPSTORY < 0.355 then goto T55_1;
+  else goto N55_3;
+ 
+T55_1:
+  response = -0.00012321;
+  goto D55;
+ 
+N55_3:
+  if FOUR_HOUR_WF < 0.026084 then goto N55_4;
+  else goto T55_4;
+ 
+N55_4:
+  if MIN_SCORE < 356232 then goto T55_2;
+  else goto T55_3;
+ 
+T55_2:
+  response = 0.0111342;
+  goto D55;
+ 
+T55_3:
+  response = -0.00292376;
+  goto D55;
+ 
+T55_4:
+  response = -0.00479873;
+  goto D55;
+ 
+N55_5:
+  if ISABSTRACT_AVG < 0.185 then goto N55_6;
+  else goto T55_7;
+ 
+N55_6:
+  if MIN_RANK < 5 then goto T55_5;
+  else goto T55_6;
+ 
+T55_5:
+  response = -0.000125896;
+  goto D55;
+ 
+T55_6:
+  response = -0.0115332;
+  goto D55;
+ 
+T55_7:
+  response = -0.000763903;
+  goto D55;
+ 
+D55:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 57 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N56_1:
+  if NATIONALNEWS < 0.27 then goto T56_1;
+  else goto N56_2;
+ 
+T56_1:
+  response = -0.000328182;
+  goto D56;
+ 
+N56_2:
+  if ISABSTRACT_AVG < 0.05 then goto N56_3;
+  else goto T56_7;
+ 
+N56_3:
+  if AVG_SCORE < 225658 then goto T56_2;
+  else goto N56_4;
+ 
+T56_2:
+  response = -0.00305383;
+  goto D56;
+ 
+N56_4:
+  if MIN_SCORE < 231962 then goto T56_3;
+  else goto N56_5;
+ 
+T56_3:
+  response = 0.0181265;
+  goto D56;
+ 
+N56_5:
+  if MAX_MIN_SCORE < 33119.5 then goto T56_4;
+  else goto N56_6;
+ 
+T56_4:
+  response = -0.00486977;
+  goto D56;
+ 
+N56_6:
+  if WEEKAVG < 1.785 then goto T56_5;
+  else goto T56_6;
+ 
+T56_5:
+  response = 0.0229851;
+  goto D56;
+ 
+T56_6:
+  response = 0.00588037;
+  goto D56;
+ 
+T56_7:
+  response = -0.000667257;
+  goto D56;
+ 
+D56:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 58 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N57_1:
+  if MAX_MIN_SCORE < 312575 then goto N57_2;
+  else goto T57_7;
+ 
+N57_2:
+  if TWO_DAY_WF < 0.531754 then goto T57_1;
+  else goto N57_3;
+ 
+T57_1:
+  response = -0.00112552;
+  goto D57;
+ 
+N57_3:
+  if MAX_SCORE < 669432 then goto N57_4;
+  else goto T57_6;
+ 
+N57_4:
+  if BUSINESS < 0.05 then goto N57_5;
+  else goto N57_6;
+ 
+N57_5:
+  if PREV_DAY_HITS < 41.5 then goto T57_2;
+  else goto T57_3;
+ 
+T57_2:
+  response = 0.00191169;
+  goto D57;
+ 
+T57_3:
+  response = 0.0126963;
+  goto D57;
+ 
+N57_6:
+  if DAY_LW_DAY_HITS_RATIO < 37.5 then goto T57_4;
+  else goto T57_5;
+ 
+T57_4:
+  response = -0.00101754;
+  goto D57;
+ 
+T57_5:
+  response = 0.00846513;
+  goto D57;
+ 
+T57_6:
+  response = -0.00792694;
+  goto D57;
+ 
+T57_7:
+  response = -0.00834756;
+  goto D57;
+ 
+D57:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 59 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N58_1:
+  if PUB_TODAY_AVG < 0.05 then goto N58_2;
+  else goto N58_6;
+ 
+N58_2:
+  if SPORTS < 0.645 then goto N58_3;
+  else goto N58_5;
+ 
+N58_3:
+  if AVG_SCORE < 395268 then goto N58_4;
+  else goto T58_3;
+ 
+N58_4:
+  if MAX_SCORE < 460268 then goto T58_1;
+  else goto T58_2;
+ 
+T58_1:
+  response = -0.00227942;
+  goto D58;
+ 
+T58_2:
+  response = 0.00899341;
+  goto D58;
+ 
+T58_3:
+  response = -0.00823655;
+  goto D58;
+ 
+N58_5:
+  if MIN_RANK < 5 then goto T58_4;
+  else goto T58_5;
+ 
+T58_4:
+  response = -0.00122777;
+  goto D58;
+ 
+T58_5:
+  response = 0.0163908;
+  goto D58;
+ 
+N58_6:
+  if TWO_DAY_WF < 0.95119 then goto T58_6;
+  else goto T58_7;
+ 
+T58_6:
+  response = -0.00018789;
+  goto D58;
+ 
+T58_7:
+  response = 0.0021492;
+  goto D58;
+ 
+D58:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 60 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N59_1:
+  if DAY_WEEK_AVG_RATIO < 3.985 then goto T59_1;
+  else goto N59_2;
+ 
+T59_1:
+  response = -0.000226985;
+  goto D59;
+ 
+N59_2:
+  if DAY_WEEK_AVG_RATIO < 5.525 then goto N59_3;
+  else goto T59_7;
+ 
+N59_3:
+  if DAY_WEEK_AVG_RATIO < 4.95 then goto N59_4;
+  else goto T59_6;
+ 
+N59_4:
+  if AVG_SCORE < 373867 then goto N59_5;
+  else goto N59_6;
+ 
+N59_5:
+  if ENTERTAINMENT < 0.05 then goto T59_2;
+  else goto T59_3;
+ 
+T59_2:
+  response = 0.00254281;
+  goto D59;
+ 
+T59_3:
+  response = -0.0107653;
+  goto D59;
+ 
+N59_6:
+  if PREV_DAY_HITS < 3 then goto T59_4;
+  else goto T59_5;
+ 
+T59_4:
+  response = 0.0220568;
+  goto D59;
+ 
+T59_5:
+  response = 0.00220059;
+  goto D59;
+ 
+T59_6:
+  response = 0.0155791;
+  goto D59;
+ 
+T59_7:
+  response = -0.00294274;
+  goto D59;
+ 
+D59:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 61 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N60_1:
+  if EIGHT_HOUR_WF < 0.349537 then goto N60_2;
+  else goto N60_6;
+ 
+N60_2:
+  if LOCALNEWS < 0.315 then goto T60_1;
+  else goto N60_3;
+ 
+T60_1:
+  response = 0.00100629;
+  goto D60;
+ 
+N60_3:
+  if TWELVE_HOUR_WF < 0.324561 then goto N60_4;
+  else goto N60_5;
+ 
+N60_4:
+  if MAX_SCORE < 547636 then goto T60_2;
+  else goto T60_3;
+ 
+T60_2:
+  response = -0.00365503;
+  goto D60;
+ 
+T60_3:
+  response = 0.00844103;
+  goto D60;
+ 
+N60_5:
+  if MAX_SCORE < 249971 then goto T60_4;
+  else goto T60_5;
+ 
+T60_4:
+  response = -0.00217393;
+  goto D60;
+ 
+T60_5:
+  response = 0.020902;
+  goto D60;
+ 
+N60_6:
+  if ISTITLE_AVG < 0.05 then goto T60_6;
+  else goto T60_7;
+ 
+T60_6:
+  response = -0.00679711;
+  goto D60;
+ 
+T60_7:
+  response = -2.87657e-06;
+  goto D60;
+ 
+D60:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 62 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N61_1:
+  if DAY_WEEK_AVG_DERIV < 60.285 then goto N61_2;
+  else goto T61_7;
+ 
+N61_2:
+  if DAY_WEEK_AVG_DERIV < -4.07 then goto N61_3;
+  else goto N61_4;
+ 
+N61_3:
+  if DAY_WEEK_AVG_DERIV < -5.785 then goto T61_1;
+  else goto T61_2;
+ 
+T61_1:
+  response = 0.000889976;
+  goto D61;
+ 
+T61_2:
+  response = -0.016703;
+  goto D61;
+ 
+N61_4:
+  if DAY_WEEK_AVG_RATIO < 0.285 then goto T61_3;
+  else goto N61_5;
+ 
+T61_3:
+  response = 0.0108868;
+  goto D61;
+ 
+N61_5:
+  if DAY_WEEK_AVG_RATIO < 0.34 then goto T61_4;
+  else goto N61_6;
+ 
+T61_4:
+  response = -0.0115452;
+  goto D61;
+ 
+N61_6:
+  if DAY_PD_HITS_DERIV < -24.5 then goto T61_5;
+  else goto T61_6;
+ 
+T61_5:
+  response = 0.00709642;
+  goto D61;
+ 
+T61_6:
+  response = 5.85454e-05;
+  goto D61;
+ 
+T61_7:
+  response = 0.00724335;
+  goto D61;
+ 
+D61:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 63 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N62_1:
+  if WEEKAVG < 31.07 then goto N62_2;
+  else goto N62_6;
+ 
+N62_2:
+  if DAY_PD_HITS_DERIV < -8.5 then goto N62_3;
+  else goto T62_5;
+ 
+N62_3:
+  if ONE_DAY_WF < 0.209914 then goto N62_4;
+  else goto N62_5;
+ 
+N62_4:
+  if TWO_DAY_WF < 0.537088 then goto T62_1;
+  else goto T62_2;
+ 
+T62_1:
+  response = 0.00770858;
+  goto D62;
+ 
+T62_2:
+  response = -0.00166542;
+  goto D62;
+ 
+N62_5:
+  if FOUR_HOUR_WF < 0.00547982 then goto T62_3;
+  else goto T62_4;
+ 
+T62_3:
+  response = 0.0185133;
+  goto D62;
+ 
+T62_4:
+  response = 0.000303571;
+  goto D62;
+ 
+T62_5:
+  response = -0.00031074;
+  goto D62;
+ 
+N62_6:
+  if MIN_SCORE < 398722 then goto T62_6;
+  else goto T62_7;
+ 
+T62_6:
+  response = -0.0135078;
+  goto D62;
+ 
+T62_7:
+  response = 0.00113129;
+  goto D62;
+ 
+D62:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 64 of 77 */
+/* N terminal nodes = 7, Depth = 4 */
+ 
+ 
+N63_1:
+  if AVG_RANK < 9.53 then goto N63_2;
+  else goto N63_4;
+ 
+N63_2:
+  if INTLNEWS < 0.73 then goto N63_3;
+  else goto T63_3;
+ 
+N63_3:
+  if SUPERDUPER_AVG < 0.61 then goto T63_1;
+  else goto T63_2;
+ 
+T63_1:
+  response = -0.000409752;
+  goto D63;
+ 
+T63_2:
+  response = -0.00974984;
+  goto D63;
+ 
+T63_3:
+  response = 0.0133732;
+  goto D63;
+ 
+N63_4:
+  if SPORTS < 0.05 then goto N63_5;
+  else goto N63_6;
+ 
+N63_5:
+  if TOPSTORY < 0.315 then goto T63_4;
+  else goto T63_5;
+ 
+T63_4:
+  response = -0.00110238;
+  goto D63;
+ 
+T63_5:
+  response = 0.0155814;
+  goto D63;
+ 
+N63_6:
+  if AVG_SCORE < 258098 then goto T63_6;
+  else goto T63_7;
+ 
+T63_6:
+  response = 0.0025561;
+  goto D63;
+ 
+T63_7:
+  response = 0.0218633;
+  goto D63;
+ 
+D63:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 65 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N64_1:
+  if WEEKAVG < 4.215 then goto T64_1;
+  else goto N64_2;
+ 
+T64_1:
+  response = 0.00064852;
+  goto D64;
+ 
+N64_2:
+  if MAX_MIN_SCORE < 163619 then goto N64_3;
+  else goto N64_4;
+ 
+N64_3:
+  if TWO_DAY_WF < 0.463325 then goto T64_2;
+  else goto T64_3;
+ 
+T64_2:
+  response = -0.00769416;
+  goto D64;
+ 
+T64_3:
+  response = 0.00053643;
+  goto D64;
+ 
+N64_4:
+  if FOUR_HOUR_WF < 0.060024 then goto N64_5;
+  else goto T64_7;
+ 
+N64_5:
+  if TWELVE_HOUR_WF < 0.0127518 then goto T64_4;
+  else goto N64_6;
+ 
+T64_4:
+  response = -0.0161574;
+  goto D64;
+ 
+N64_6:
+  if LOCALNEWS < 0.05 then goto T64_5;
+  else goto T64_6;
+ 
+T64_5:
+  response = 0.00613049;
+  goto D64;
+ 
+T64_6:
+  response = -0.00855688;
+  goto D64;
+ 
+T64_7:
+  response = -0.0167968;
+  goto D64;
+ 
+D64:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 66 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N65_1:
+  if DAY_WEEK_AVG_RATIO < 0.255 then goto T65_1;
+  else goto N65_2;
+ 
+T65_1:
+  response = 0.00985333;
+  goto D65;
+ 
+N65_2:
+  if DAY_WEEK_AVG_RATIO < 0.335 then goto T65_2;
+  else goto N65_3;
+ 
+T65_2:
+  response = -0.00951258;
+  goto D65;
+ 
+N65_3:
+  if MAX_MIN_SCORE < 307460 then goto N65_4;
+  else goto T65_7;
+ 
+N65_4:
+  if MAX_SCORE < 517912 then goto N65_5;
+  else goto T65_6;
+ 
+N65_5:
+  if MAX_MIN_SCORE < 61870.2 then goto N65_6;
+  else goto T65_5;
+ 
+N65_6:
+  if DAY_PD_HITS_RATIO < 2.865 then goto T65_3;
+  else goto T65_4;
+ 
+T65_3:
+  response = 0.00152167;
+  goto D65;
+ 
+T65_4:
+  response = -0.0017641;
+  goto D65;
+ 
+T65_5:
+  response = -0.00258099;
+  goto D65;
+ 
+T65_6:
+  response = 0.00333836;
+  goto D65;
+ 
+T65_7:
+  response = -0.00739588;
+  goto D65;
+ 
+D65:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 67 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N66_1:
+  if WEEKAVG < 12.785 then goto N66_2;
+  else goto N66_3;
+ 
+N66_2:
+  if AVG_SCORE < 629228 then goto T66_1;
+  else goto T66_2;
+ 
+T66_1:
+  response = 3.70823e-06;
+  goto D66;
+ 
+T66_2:
+  response = 0.0113262;
+  goto D66;
+ 
+N66_3:
+  if INTLNEWS < 0.25 then goto T66_3;
+  else goto N66_4;
+ 
+T66_3:
+  response = -0.00996717;
+  goto D66;
+ 
+N66_4:
+  if EIGHT_HOUR_WF < 0.205476 then goto N66_5;
+  else goto T66_7;
+ 
+N66_5:
+  if MAX_MIN_SCORE < 105786 then goto N66_6;
+  else goto T66_6;
+ 
+N66_6:
+  if FOUR_HOUR_WF < 0.00848006 then goto T66_4;
+  else goto T66_5;
+ 
+T66_4:
+  response = 0.0151832;
+  goto D66;
+ 
+T66_5:
+  response = 0.000857643;
+  goto D66;
+ 
+T66_6:
+  response = -0.00763046;
+  goto D66;
+ 
+T66_7:
+  response = -0.015098;
+  goto D66;
+ 
+D66:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 68 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N67_1:
+  if SPORTS < 0.47 then goto T67_1;
+  else goto N67_2;
+ 
+T67_1:
+  response = -0.000209978;
+  goto D67;
+ 
+N67_2:
+  if DAY_PD_HITS_RATIO < 9.5 then goto N67_3;
+  else goto T67_7;
+ 
+N67_3:
+  if MAX_RANK < 9 then goto T67_2;
+  else goto N67_4;
+ 
+T67_2:
+  response = -0.00197712;
+  goto D67;
+ 
+N67_4:
+  if MAX_SCORE < 188360 then goto T67_3;
+  else goto N67_5;
+ 
+T67_3:
+  response = -0.000464352;
+  goto D67;
+ 
+N67_5:
+  if MAX_MIN_SCORE < 45863.5 then goto N67_6;
+  else goto T67_6;
+ 
+N67_6:
+  if DAY_PD_HITS_RATIO < 0.31 then goto T67_4;
+  else goto T67_5;
+ 
+T67_4:
+  response = 0.029664;
+  goto D67;
+ 
+T67_5:
+  response = 0.00977088;
+  goto D67;
+ 
+T67_6:
+  response = 0.00333723;
+  goto D67;
+ 
+T67_7:
+  response = -0.012958;
+  goto D67;
+ 
+D67:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 69 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N68_1:
+  if EIGHT_HOUR_WF < 0.397041 then goto N68_2;
+  else goto N68_6;
+ 
+N68_2:
+  if TWELVE_HOUR_WF < 0.327106 then goto T68_1;
+  else goto N68_3;
+ 
+T68_1:
+  response = 6.40846e-05;
+  goto D68;
+ 
+N68_3:
+  if MAX_MIN_SCORE < 129263 then goto T68_2;
+  else goto N68_4;
+ 
+T68_2:
+  response = 0.00114373;
+  goto D68;
+ 
+N68_4:
+  if SUPERDUPER_AVG < 0.105 then goto N68_5;
+  else goto T68_5;
+ 
+N68_5:
+  if AVG_SCORE < 390145 then goto T68_3;
+  else goto T68_4;
+ 
+T68_3:
+  response = 0.00590447;
+  goto D68;
+ 
+T68_4:
+  response = 0.0270599;
+  goto D68;
+ 
+T68_5:
+  response = 0.00116164;
+  goto D68;
+ 
+N68_6:
+  if DAY_LW_DAY_HITS_RATIO < 27.5 then goto T68_6;
+  else goto T68_7;
+ 
+T68_6:
+  response = -0.00395192;
+  goto D68;
+ 
+T68_7:
+  response = 0.00937395;
+  goto D68;
+ 
+D68:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 70 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N69_1:
+  if LW_DAY_HITS < 3.5 then goto N69_2;
+  else goto T69_7;
+ 
+N69_2:
+  if ENTERTAINMENT < 0.845 then goto N69_3;
+  else goto T69_6;
+ 
+N69_3:
+  if LIFESTYLE < 0.115 then goto N69_4;
+  else goto T69_5;
+ 
+N69_4:
+  if AVG_RANK < 4.45 then goto T69_1;
+  else goto N69_5;
+ 
+T69_1:
+  response = -0.00817106;
+  goto D69;
+ 
+N69_5:
+  if AVG_RANK < 5.225 then goto N69_6;
+  else goto T69_4;
+ 
+N69_6:
+  if ISABSTRACT_AVG < 0.55 then goto T69_2;
+  else goto T69_3;
+ 
+T69_2:
+  response = 0.00926281;
+  goto D69;
+ 
+T69_3:
+  response = -0.00505226;
+  goto D69;
+ 
+T69_4:
+  response = 0.000181535;
+  goto D69;
+ 
+T69_5:
+  response = -0.00449952;
+  goto D69;
+ 
+T69_6:
+  response = 0.00814113;
+  goto D69;
+ 
+T69_7:
+  response = -0.00517456;
+  goto D69;
+ 
+D69:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 71 of 77 */
+/* N terminal nodes = 7, Depth = 4 */
+ 
+ 
+N70_1:
+  if TWO_DAY_WF < 0.439697 then goto N70_2;
+  else goto N70_4;
+ 
+N70_2:
+  if AVG_RANK < 8.7 then goto T70_1;
+  else goto N70_3;
+ 
+T70_1:
+  response = -0.00429929;
+  goto D70;
+ 
+N70_3:
+  if MAX_MIN_SCORE < 47973.5 then goto T70_2;
+  else goto T70_3;
+ 
+T70_2:
+  response = -0.000903138;
+  goto D70;
+ 
+T70_3:
+  response = 0.0125022;
+  goto D70;
+ 
+N70_4:
+  if AVG_RANK < 8.635 then goto N70_5;
+  else goto N70_6;
+ 
+N70_5:
+  if DAY_WEEK_AVG_DERIV < 29.5 then goto T70_4;
+  else goto T70_5;
+ 
+T70_4:
+  response = 0.000800681;
+  goto D70;
+ 
+T70_5:
+  response = 0.0125881;
+  goto D70;
+ 
+N70_6:
+  if ISTITLE_AVG < 0.05 then goto T70_6;
+  else goto T70_7;
+ 
+T70_6:
+  response = -0.00468934;
+  goto D70;
+ 
+T70_7:
+  response = 0.00031406;
+  goto D70;
+ 
+D70:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 72 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N71_1:
+  if LW_DAY_HITS < 0.5 then goto N71_2;
+  else goto N71_3;
+ 
+N71_2:
+  if WEEKAVG < 39.855 then goto T71_1;
+  else goto T71_2;
+ 
+T71_1:
+  response = 0.000277242;
+  goto D71;
+ 
+T71_2:
+  response = -0.0132349;
+  goto D71;
+ 
+N71_3:
+  if MIN_SCORE < 234431 then goto N71_4;
+  else goto N71_5;
+ 
+N71_4:
+  if MIN_SCORE < 225952 then goto T71_3;
+  else goto T71_4;
+ 
+T71_3:
+  response = -0.00160465;
+  goto D71;
+ 
+T71_4:
+  response = 0.01256;
+  goto D71;
+ 
+N71_5:
+  if PREV_DAY_HITS < 19.5 then goto T71_5;
+  else goto N71_6;
+ 
+T71_5:
+  response = -0.0107505;
+  goto D71;
+ 
+N71_6:
+  if WEEKAVG < 12.575 then goto T71_6;
+  else goto T71_7;
+ 
+T71_6:
+  response = 0.0119228;
+  goto D71;
+ 
+T71_7:
+  response = -0.00600679;
+  goto D71;
+ 
+D71:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 73 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N72_1:
+  if WEEKAVG < 26.93 then goto N72_2;
+  else goto N72_6;
+ 
+N72_2:
+  if TOPSTORY < 0.39 then goto T72_1;
+  else goto N72_3;
+ 
+T72_1:
+  response = -0.000140614;
+  goto D72;
+ 
+N72_3:
+  if AVG_RANK < 9.55 then goto N72_4;
+  else goto T72_5;
+ 
+N72_4:
+  if AVG_RANK < 7.755 then goto T72_2;
+  else goto N72_5;
+ 
+T72_2:
+  response = 0.0151495;
+  goto D72;
+ 
+N72_5:
+  if TOPSTORY < 0.45 then goto T72_3;
+  else goto T72_4;
+ 
+T72_3:
+  response = 0.0043054;
+  goto D72;
+ 
+T72_4:
+  response = -0.00734039;
+  goto D72;
+ 
+T72_5:
+  response = 0.0204375;
+  goto D72;
+ 
+N72_6:
+  if SUPERDUPER_AVG < 0.55 then goto T72_6;
+  else goto T72_7;
+ 
+T72_6:
+  response = -0.0146963;
+  goto D72;
+ 
+T72_7:
+  response = -0.00012832;
+  goto D72;
+ 
+D72:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 74 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N73_1:
+  if TOPSTORY < 0.55 then goto N73_2;
+  else goto T73_7;
+ 
+N73_2:
+  if WEEKAVG < 0.5 then goto N73_3;
+  else goto N73_5;
+ 
+N73_3:
+  if MAX_MIN_SCORE < 165073 then goto N73_4;
+  else goto T73_3;
+ 
+N73_4:
+  if MIN_SCORE < 215208 then goto T73_1;
+  else goto T73_2;
+ 
+T73_1:
+  response = 0.000170833;
+  goto D73;
+ 
+T73_2:
+  response = -0.0051217;
+  goto D73;
+ 
+T73_3:
+  response = 0.0104792;
+  goto D73;
+ 
+N73_5:
+  if WEEKAVG < 10.93 then goto T73_4;
+  else goto N73_6;
+ 
+T73_4:
+  response = 0.000781356;
+  goto D73;
+ 
+N73_6:
+  if EIGHT_HOUR_WF < 0.00663439 then goto T73_5;
+  else goto T73_6;
+ 
+T73_5:
+  response = 0.00783355;
+  goto D73;
+ 
+T73_6:
+  response = -0.00393311;
+  goto D73;
+ 
+T73_7:
+  response = -0.0097211;
+  goto D73;
+ 
+D73:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 75 of 77 */
+/* N terminal nodes = 7, Depth = 7 */
+ 
+ 
+N74_1:
+  if DAY_WEEK_AVG_RATIO < 0.225 then goto T74_1;
+  else goto N74_2;
+ 
+T74_1:
+  response = 0.0105222;
+  goto D74;
+ 
+N74_2:
+  if SPORTS < 0.73 then goto T74_2;
+  else goto N74_3;
+ 
+T74_2:
+  response = -0.000688094;
+  goto D74;
+ 
+N74_3:
+  if MAX_MIN_RANK < 5 then goto T74_3;
+  else goto N74_4;
+ 
+T74_3:
+  response = -0.00146174;
+  goto D74;
+ 
+N74_4:
+  if PREV_DAY_HITS < 6.5 then goto N74_5;
+  else goto T74_7;
+ 
+N74_5:
+  if MIN_SCORE < 144075 then goto T74_4;
+  else goto N74_6;
+ 
+T74_4:
+  response = -0.00415946;
+  goto D74;
+ 
+N74_6:
+  if PREV_DAY_HITS < 2.5 then goto T74_5;
+  else goto T74_6;
+ 
+T74_5:
+  response = 0.010148;
+  goto D74;
+ 
+T74_6:
+  response = 0.0262199;
+  goto D74;
+ 
+T74_7:
+  response = -0.00602654;
+  goto D74;
+ 
+D74:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 76 of 77 */
+/* N terminal nodes = 7, Depth = 5 */
+ 
+ 
+N75_1:
+  if DAY_WEEK_AVG_DERIV < -3.5 then goto N75_2;
+  else goto N75_4;
+ 
+N75_2:
+  if TWO_DAY_WF < 0.635642 then goto N75_3;
+  else goto T75_3;
+ 
+N75_3:
+  if DAY_WEEK_AVG_DERIV < -5.93 then goto T75_1;
+  else goto T75_2;
+ 
+T75_1:
+  response = 0.00406292;
+  goto D75;
+ 
+T75_2:
+  response = -0.0105257;
+  goto D75;
+ 
+T75_3:
+  response = -0.0144987;
+  goto D75;
+ 
+N75_4:
+  if DAY_PD_HITS_RATIO < 43 then goto N75_5;
+  else goto T75_7;
+ 
+N75_5:
+  if DAY_WEEK_AVG_RATIO < 5.55 then goto T75_4;
+  else goto N75_6;
+ 
+T75_4:
+  response = -6.55387e-05;
+  goto D75;
+ 
+N75_6:
+  if ISTITLE_AVG < 0.05 then goto T75_5;
+  else goto T75_6;
+ 
+T75_5:
+  response = -0.0189073;
+  goto D75;
+ 
+T75_6:
+  response = 0.00177271;
+  goto D75;
+ 
+T75_7:
+  response = 0.0120068;
+  goto D75;
+ 
+D75:
+ 
+tnscore = tnscore + response;
+ 
+/* Tree 77 of 77 */
+/* N terminal nodes = 7, Depth = 6 */
+ 
+ 
+N76_1:
+  if DAY_WEEK_AVG_RATIO < 0.235 then goto T76_1;
+  else goto N76_2;
+ 
+T76_1:
+  response = 0.0112125;
+  goto D76;
+ 
+N76_2:
+  if DAY_WEEK_AVG_RATIO < 0.345 then goto T76_2;
+  else goto N76_3;
+ 
+T76_2:
+  response = -0.00610693;
+  goto D76;
+ 
+N76_3:
+  if WEEKAVG < 0.93 then goto T76_3;
+  else goto N76_4;
+ 
+T76_3:
+  response = -0.00104389;
+  goto D76;
+ 
+N76_4:
+  if WEEKAVG < 4.215 then goto N76_5;
+  else goto N76_6;
+ 
+N76_5:
+  if TOPSTORY < 0.13 then goto T76_4;
+  else goto T76_5;
+ 
+T76_4:
+  response = 0.000513026;
+  goto D76;
+ 
+T76_5:
+  response = 0.00509033;
+  goto D76;
+ 
+N76_6:
+  if MAX_MIN_SCORE < 206736 then goto T76_6;
+  else goto T76_7;
+ 
+T76_6:
+  response = -0.00041877;
+  goto D76;
+ 
+T76_7:
+  response = -0.0108199;
+  goto D76;
+ 
+D76:
+ 
+tnscore = tnscore + response;
+ 
+return;

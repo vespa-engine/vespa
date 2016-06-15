@@ -1,0 +1,5 @@
+.depend
+Makefile
+zcurve_test
+vespalib_zcurve_ranges_test_app
+vespalib_zcurve_test_app

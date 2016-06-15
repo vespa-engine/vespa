@@ -1,0 +1,33 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search multiplesummaries {
+
+  document multiplesummaries {
+
+    field field1 type weightedset<string> {
+      indexing: summary | attribute
+    }
+
+    field field2 type tag {
+      indexing: summary | attribute
+    }
+
+    field field3 type array<int> {
+      indexing: summary | attribute
+    }
+
+  }
+
+  document-summary other {
+
+    summary field1 type weightedset<string> {
+    }
+
+    summary field2 type tag {
+    }
+
+    summary field3 type array<int> {
+    }
+
+  }
+
+}

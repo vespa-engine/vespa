@@ -1,0 +1,20 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(memfilepersistence_testspi
+    SOURCES
+    memfiletestutils.cpp
+    providerconformancetest.cpp
+    memfilev1serializertest.cpp
+    memfilev1verifiertest.cpp
+    basicoperationhandlertest.cpp
+    splitoperationhandlertest.cpp
+    joinoperationhandlertest.cpp
+    iteratorhandlertest.cpp
+    memfiletest.cpp
+    memcachetest.cpp
+    simplememfileiobuffertest.cpp
+    memfileautorepairtest.cpp
+    shared_data_location_tracker_test.cpp
+    buffered_file_writer_test.cpp
+    buffer_test.cpp
+    DEPENDS
+)

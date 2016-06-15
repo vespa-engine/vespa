@@ -1,0 +1,38 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/data/databuffer.h>
+
+namespace search
+{
+
+class BufferWriter;
+
+/*
+ * Interface class to write to a single attribute vector file. Used by
+ * IAttributSaver.
+ */
+class IAttributeFileWriter
+{
+public:
+    using BufferBuf = vespalib::MMapDataBuffer;
+    using Buffer = std::unique_ptr<BufferBuf>;
+
+    virtual ~IAttributeFileWriter() = default;
+
+    /*
+     * Allocate a buffer that can later be passed on to writeBuf.
+     */
+    virtual Buffer allocBuf(size_t size) = 0;
+
+    /**
+     * Writes the given data.  Multiple calls are allowed, but only the
+     * last call can provide an unaligned buffer.
+     **/
+    virtual void writeBuf(Buffer buf) = 0;
+
+    virtual std::unique_ptr<BufferWriter> allocBufferWriter() = 0;
+};
+
+} // namespace search

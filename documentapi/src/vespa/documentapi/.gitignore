@@ -1,0 +1,5 @@
+.depend
+Makefile
+config-*.cpp
+config-*.h
+/libdocumentapi.so.5.1

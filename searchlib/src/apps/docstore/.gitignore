@@ -1,0 +1,6 @@
+/.depend
+/Makefile
+/vespa-verify-logdatastore
+/vespa-documentstore-inspect
+/vespa-documentstore-benchmark
+/vespa-create-idx-from-dat

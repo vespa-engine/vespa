@@ -1,0 +1,33 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchcore_indexmanager_test_app
+    SOURCES
+    indexmanager_test.cpp
+    DEPENDS
+    searchcore_server
+    searchcore_index
+    searchcore_flushengine
+    searchcore_pcommon
+    searchcore_util
+)
+vespa_add_executable(searchcore_fusionrunner_test_app
+    SOURCES
+    fusionrunner_test.cpp
+    DEPENDS
+    searchcore_server
+    searchcore_index
+    searchcore_pcommon
+    searchcore_util
+)
+vespa_add_executable(searchcore_diskindexcleaner_test_app
+    SOURCES
+    diskindexcleaner_test.cpp
+    DEPENDS
+    searchcore_index
+)
+vespa_add_executable(searchcore_indexcollection_test_app
+    SOURCES
+    indexcollection_test.cpp
+    DEPENDS
+    searchcore_index
+)
+vespa_add_test(NAME searchcore_index_test COMMAND sh index_test.sh)

@@ -1,0 +1,50 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+
+#pragma once
+
+#include <memory>
+
+#include <vespa/vespalib/util/runnable.h>
+#include <vbench/core/taintable.h>
+#include <vespa/vespalib/data/slime/slime.h>
+
+#include "analyzer.h"
+#include "generator.h"
+#include "latency_analyzer.h"
+#include "native_factory.h"
+#include "qps_analyzer.h"
+#include "qps_tagger.h"
+#include "request_generator.h"
+#include "request_scheduler.h"
+#include "request_sink.h"
+#include "server_tagger.h"
+#include "tagger.h"
+
+namespace vbench {
+
+class VBench : public vespalib::Runnable,
+               public Taintable
+{
+private:
+    struct InputChain {
+        typedef std::unique_ptr<InputChain> UP;
+        std::vector<Tagger::UP>           taggers;
+        Generator::UP                     generator;
+        std::unique_ptr<vespalib::Thread> thread;
+    };
+    NativeFactory                _factory;
+    std::vector<Analyzer::UP>    _analyzers;
+    RequestScheduler::UP         _scheduler;
+    std::vector<InputChain::UP>  _inputs;
+    Taint                        _taint;
+
+public:
+    VBench(const vespalib::Slime &cfg);
+    void abort();
+    virtual void run();
+    virtual const Taint &tainted() const { return _taint; }
+};
+
+} // namespace vbench
+

@@ -1,0 +1,25 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.container.component;
+
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+
+/**
+ * A component that only needs a simple ComponentModel.
+ *
+ * @author gjoranv
+ * @since 5.1.9
+ */
+public class SimpleComponent extends Component<AbstractConfigProducer<?>, ComponentModel> {
+
+    public SimpleComponent(ComponentModel model) {
+        super(model);
+    }
+
+    // @Convenience // For a component that uses the class name as id.
+    public SimpleComponent(String className) {
+        this(new ComponentModel(BundleInstantiationSpecification.getFromStrings(className, null, null)));
+    }
+
+}

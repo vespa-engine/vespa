@@ -1,0 +1,6 @@
+.depend
+Makefile
+bitvector_test
+dump
+/bitvector_test-diskindex
+searchlib_bitvector_test-diskindex_app

@@ -1,0 +1,67 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @class document::select::Node
+ * @ingroup select
+ *
+ * @brief Base class for all nodes in the document selection tree.
+ *
+ * @author H�kon Humberset
+ * @date 2005-06-07
+ * @version $Id$
+ */
+
+#pragma once
+
+#include <iostream>
+#include <string>
+#include "resultlist.h"
+#include "context.h"
+
+namespace document {
+
+namespace select {
+
+class Visitor;
+
+class Node : public Printable
+{
+protected:
+    vespalib::string _name;
+    bool _parentheses; // Set to true if parentheses was used around this part
+                       // Set such that we can recreate original query in print.
+public:
+    typedef std::unique_ptr<Node> UP;
+    typedef std::shared_ptr<Node> SP;
+
+    Node(const vespalib::stringref & name) : _name(name), _parentheses(false) {}
+    virtual ~Node() {}
+
+    void setParentheses() { _parentheses = true; }
+
+    void
+    clearParentheses()
+    {
+        _parentheses = false;
+    }
+
+    bool hadParentheses() const { return _parentheses; }
+
+    virtual ResultList contains(const Context&) const = 0;
+    virtual ResultList trace(const Context&, std::ostream& trace) const = 0;
+    virtual bool isLeafNode() const { return true; }
+    virtual void visit(Visitor&) const = 0;
+
+    virtual Node::UP clone() const = 0;
+protected:
+    Node::UP wrapParens(Node* node) const {
+        Node::UP ret(node);
+        if (_parentheses) {
+            ret->setParentheses();
+        }
+        return ret;
+    }
+};
+
+} // select
+} // document
+

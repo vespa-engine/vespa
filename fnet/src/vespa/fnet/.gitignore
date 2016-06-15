@@ -1,0 +1,6 @@
+*.So
+.depend
+Makefile
+features.h
+fnet.lib
+/libfnet.so.5.1

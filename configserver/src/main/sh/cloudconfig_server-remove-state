@@ -1,0 +1,163 @@
+#!/bin/sh
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# BEGIN environment bootstrap section
+# Do not edit between here and END as this section should stay identical in all scripts
+
+findpath () {
+    myname=${0}
+    mypath=${myname%/*}
+    myname=${myname##*/}
+    if [ "$mypath" ] && [ -d "$mypath" ]; then
+        return
+    fi
+    mypath=$(pwd)
+    if [ -f "${mypath}/${myname}" ]; then
+        return
+    fi
+    echo "FATAL: Could not figure out the path where $myname lives from $0"
+    exit 1
+}
+
+COMMON_ENV=libexec/vespa/common-env.sh
+
+source_common_env () {
+    if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
+        # ensure it ends with "/" :
+        VESPA_HOME=${VESPA_HOME%/}/
+        export VESPA_HOME
+        common_env=$VESPA_HOME/$COMMON_ENV
+        if [ -f "$common_env" ]; then
+            . $common_env
+            return
+        fi
+    fi
+    return 1
+}
+
+findroot () {
+    source_common_env && return
+    if [ "$VESPA_HOME" ]; then
+        echo "FATAL: bad VESPA_HOME value '$VESPA_HOME'"
+        exit 1
+    fi
+    if [ "$ROOT" ] && [ -d "$ROOT" ]; then
+        VESPA_HOME="$ROOT"
+        source_common_env && return
+    fi
+    findpath
+    while [ "$mypath" ]; do
+        VESPA_HOME=${mypath}
+        source_common_env && return
+        mypath=${mypath%/*}
+    done
+    echo "FATAL: missing VESPA_HOME environment variable"
+    echo "Could not locate $COMMON_ENV anywhere"
+    exit 1
+}
+
+findroot
+
+# END environment bootstrap section
+
+ROOT=$VESPA_HOME
+cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
+
+usage() {
+    (
+	echo "This script will remove cloudconfig_server state on this node."
+        echo "It will refuse to execute if cloudconfig_server is running."
+        echo "The following options are recognized:"
+        echo ""
+
+        echo "-force                 do not ask for confirmation before removal"
+    ) >&2
+}
+
+sudo="sudo"
+ask=true
+remove_zookeeper_dir=true
+remove_applications_dir=true
+remove_tenants_dir=true
+confirmed=true
+zookeeper_dir=var/zookeeper
+applications_dir=var/db/vespa/config_server/serverdb/applications
+tenants_dir=var/db/vespa/config_server/serverdb/tenants
+
+if [ -w $applications_dir ] && [ -w $zookeeper_dir ]; then
+    sudo=""
+fi
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|-help)        usage; exit 0;;
+        -nosudo)         shift; sudo="" ;;
+        -sudo)           shift; sudo="sudo" ;;
+	-force)          shift; ask=false ;;
+        *)               echo "Unrecognized option '$1'" >&2; usage; exit 1;;
+    esac
+done
+# Will first check if cloudconfig_server is running on this node
+P_CONFIGSERVER=var/run/configserver.pid
+if [ -f $P_CONFIGSERVER ] && $sudo kill -0 `cat $P_CONFIGSERVER` 2>/dev/null; then
+  echo "[ERROR] Will not remove indexes while cloudconfig_server is running" 1>&2
+  echo "[ERROR] 'stop cloudconfig_server' and 'ps xgauww' to check for cloudconfig_server process" 1>&2
+  exit 1
+fi
+
+removedata() {
+    echo "[info] removing data: $sudo rm -rf $*"
+    $sudo rm -rf $*
+    echo "[info] removed."
+}
+
+confirm() {
+    confirmed=false
+    echo -n 'Really remove state for cloudconfig_server in '$ROOT/$1'? Type "yes" if you are sure ==> ' 1>&2
+    answer=no
+    read answer
+    if [ "$answer" = "yes" ]; then
+	confirmed=true
+    else
+        confirmed=false
+        echo "[info] skipping removal ('$answer' != 'yes')"
+    fi
+}
+
+garbage_collect_dirs() {
+    find $zookeeper_dir $applications_dir -type d -depth 2>/dev/null | while read dir; do
+	[ "$dir" = "$zookeeper_dir" ] && continue
+	[ "$dir" = "$applications_dir" ] && continue
+	$sudo rmdir "$dir" 2>/dev/null
+    done
+}
+
+confirm_and_clean_dir() {
+    if $ask; then
+	kb=$(du -sk $1 | awk '{print $1}')
+	if [ $kb -gt 100 ]; then
+	    confirm $1
+	fi
+    fi
+    if $confirmed; then
+	removedata $1/*
+    fi
+}
+
+garbage_collect_dirs
+
+if $remove_zookeeper_dir && [ -d $zookeeper_dir ]; then
+    confirm_and_clean_dir $zookeeper_dir
+fi
+
+if $remove_applications_dir && [ -d $applications_dir ]; then
+    confirm_and_clean_dir $applications_dir
+fi
+
+if $remove_tenants_dir && [ -d $tenants_dir ]; then
+    confirm_and_clean_dir $tenants_dir
+fi
+
+garbage_collect_dirs
+
+exit 0

@@ -1,0 +1,43 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.tensor.serialization;
+
+import com.google.common.annotations.Beta;
+import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.Tensor;
+
+/**
+ * Class used by clients for serializing a Tensor object into binary format or
+ * de-serializing binary data into a Tensor object.
+ *
+ * The actual binary format used is not a concern for the client and
+ * is hidden in this class and in the binary data.
+ *
+ * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ */
+@Beta
+public class TypedBinaryFormat {
+
+    private static final int COMPACT_BINARY_FORMAT_TYPE = 1;
+
+    public static byte[] encode(Tensor tensor) {
+        GrowableByteBuffer buffer = new GrowableByteBuffer();
+        buffer.putInt1_4Bytes(COMPACT_BINARY_FORMAT_TYPE);
+        new CompactBinaryFormat().encode(buffer, tensor);
+        buffer.flip();
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        return result;
+    }
+
+    public static Tensor decode(byte[] data) {
+        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(data);
+        int formatType = buffer.getInt1_4Bytes();
+        switch (formatType) {
+            case COMPACT_BINARY_FORMAT_TYPE:
+                return new CompactBinaryFormat().decode(buffer);
+            default:
+                throw new IllegalArgumentException("Binary format type " + formatType + " is not a known format");
+        }
+    }
+
+}

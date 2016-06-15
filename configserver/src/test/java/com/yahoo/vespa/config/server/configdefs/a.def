@@ -1,0 +1,60 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=1
+storage[].feeder[] string
+search[].feeder[] string
+storage[].id reference
+storage[].id2 reference
+accesslog string default=""
+asyncfetchocc int default=0
+a int default=0
+b int default=0
+functionmodules[]	string restart
+c int default=0
+d int default=0
+e int default=0
+kanon double
+testref reference
+testref2 reference
+onlyindef int
+model string
+f[].b string
+f[].a string
+f[].c string
+f[].f string
+f[].h string
+
+# The name of predefined roles.
+config[].role string
+
+## Reference to the config to be used by the role.
+config[].id reference
+
+## Wether the NC should start the corresponding role using the
+## slavewrapper utility application or not.
+config[].usewrapper bool default=false
+
+routingtable[].hop[].name string
+routingtable[].hop[].selector string
+routingtable[].hop[].recipient[] string
+listenport int default=13700
+
+speciallog[].name string
+speciallog[].type string
+speciallog[].filehandler.name string default="THEDEF"
+speciallog[].filehandler.pattern string default="THEDEF.%Y%m%d%H%M%S"
+speciallog[].filehandler.rotation string default="THEDEF0 60 ..."
+speciallog[].cachehandler.name string default="THEDEF"
+speciallog[].cachehandler.size int default=1000
+
+partialsd string default = "def"
+partialsd2 string default = "def2"
+
+rulebase[].name string
+rulebase[].isdefault bool default=false
+rulebase[].automata string default=""
+rulebase[].rules string
+
+mode enum { BATCH, REALTIME, INCREMENTAL} default=BATCH
+rangecheck1 double default=10 range=[-1.6,54]
+rangecheck2 int default=10 range=[1,100]
+rangecheck3 long default=10 range=[9,13]

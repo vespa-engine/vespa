@@ -1,0 +1,4 @@
+.depend
+Makefile
+trace_test
+vespalib_trace_test_app

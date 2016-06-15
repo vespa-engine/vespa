@@ -1,0 +1,4 @@
+.depend
+Makefile
+weakref_test
+vespalib_weakref_test_app

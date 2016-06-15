@@ -1,0 +1,121 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.termfieldmatchdata");
+#include "termfieldmatchdata.h"
+#include "fieldinfo.h"
+#include <algorithm>
+
+namespace search {
+namespace fef {
+
+TermFieldMatchData::TermFieldMatchData() :
+    _docId(invalidId()),
+    _fieldId(FIELDID_MASK),
+    _sz(0)
+{
+    memset(&_data, 0, sizeof(_data));
+}
+
+TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
+    _docId(rhs._docId),
+    _fieldId(rhs._fieldId),
+    _sz(0)
+{
+    memset(&_data, 0, sizeof(_data));
+    if (isRawScore()) {
+        _data._rawScore = rhs._data._rawScore;
+    } else {
+        for (auto it(rhs.begin()), mt(rhs.end()); it != mt; it++) {
+            appendPosition(*it);
+        }
+    }
+}
+
+TermFieldMatchData & TermFieldMatchData::operator = (const TermFieldMatchData & rhs)
+{
+    if (this != & rhs) {
+        TermFieldMatchData tmp(rhs);
+        swap(tmp);
+    }
+    return *this;
+}
+
+TermFieldMatchData::~TermFieldMatchData()
+{
+    if (isRawScore()) {
+    } else if (isMultiPos()) {
+        delete [] _data._positions._positions;
+    } else {
+        getFixed()->~TermFieldMatchDataPosition();
+    }
+}
+
+namespace {
+
+template <typename T>
+void sswap(T * a, T * b) {
+    T tmp(*a);
+    *a = *b;
+    *b = tmp;
+}
+
+}
+
+void
+TermFieldMatchData::swap(TermFieldMatchData &rhs)
+{
+    sswap(&_docId, &rhs._docId);
+    sswap(&_fieldId, &rhs._fieldId);
+    sswap(&_sz, &rhs._sz);
+    char tmp[sizeof(_data)];
+    memcpy(tmp, &rhs._data, sizeof(_data));
+    memcpy(&rhs._data, &_data, sizeof(_data));
+    memcpy(&_data, tmp, sizeof(_data));
+}
+
+namespace {
+
+constexpr size_t MAX_ELEMS =  std::numeric_limits<uint16_t>::max();
+
+}
+
+void
+TermFieldMatchData::resizePositionVector(size_t sz)
+{
+    size_t newSize(std::min(MAX_ELEMS, std::max(1ul, sz*2)));
+    TermFieldMatchDataPosition * n = new TermFieldMatchDataPosition[newSize];
+    if (sz > 0) {
+        if (isMultiPos()) {
+            for (size_t i(0); i < _data._positions._allocated; i++) {
+                n[i] = _data._positions._positions[i];
+            }
+            delete [] _data._positions._positions;
+        } else {
+            assert(sz == 1);
+            _fieldId = _fieldId | 0x4000;
+            n[0] = *getFixed();
+            _data._positions._maxElementLength = getFixed()->getElementLen();
+        }
+    }
+    _data._positions._allocated = newSize;
+    _data._positions._positions = n;
+}
+
+void
+TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos)
+{
+    if (__builtin_expect(_sz >= _data._positions._allocated, false)) {
+        resizePositionVector(_sz);
+    }
+    if (__builtin_expect(pos.getElementLen() > _data._positions._maxElementLength, false)) {
+        _data._positions._maxElementLength = pos.getElementLen();
+    }
+    if (__builtin_expect(_sz < MAX_ELEMS, true)) {
+        _data._positions._positions[_sz++] = pos;
+    }
+}
+
+} // namespace fef
+} // namespace search

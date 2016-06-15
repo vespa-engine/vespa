@@ -1,0 +1,4 @@
+.depend
+Makefile
+stash_test
+vespalib_stash_test_app

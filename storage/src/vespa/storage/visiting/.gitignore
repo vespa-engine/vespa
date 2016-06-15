@@ -1,0 +1,10 @@
+*.So
+*.lo
+.*.swp
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+config-stor-visitor.cpp
+config-stor-visitor.h

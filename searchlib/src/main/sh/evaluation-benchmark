@@ -1,0 +1,1 @@
+java -cp "target/test-classes:target/searchlib.jar" com.yahoo.searchlib.rankingexpression.evaluation.EvaluationBenchmark $@

@@ -1,0 +1,12 @@
+*.class
+.depend
+Makefile
+cpp-server
+out.*
+pid.*
+routing.cfg
+slobrok.cfg
+trace_test
+/cpp-server-trace
+messagebus_test_trace_test_app
+messagebus_test_cpp-server-trace_app

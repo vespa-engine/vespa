@@ -1,0 +1,6 @@
+*.So
+.depend*
+Makefile
+fileheader.tmp
+fileheader_test
+staging_vespalib_fileheader_test_app

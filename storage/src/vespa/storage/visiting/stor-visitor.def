@@ -1,0 +1,72 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+## Number of separate threads that runs visitors.
+visitorthreads int default=4 restart
+
+## Default timeout of visitors that loses contact with client (in seconds)
+disconnectedvisitortimeout int default=0 restart
+
+## Time period (in seconds) in which to ignore requests to visitors that doesnt
+## exist anymore. (Normal for visitors to get some messages right after
+## aborting, logging them as faults instead after this timeout has passed.)
+ignorenonexistingvisitortimelimit int default=300 restart
+
+## The number of buckets that are visited in parallel in a visitor visiting
+## multiple buckets. Default is 8, meaning if you send a create visitor to visit
+## 100 buckets, 8 of them will be visited in parallel.
+defaultparalleliterators int default=8
+
+## The number of iterators we send for each bucket being visited from visitor
+## thread. For streaming search we would likely want two or three. Since
+## supporting more than one is a new feature, default is still one.
+## (If you visit 8 buckets in parallel and have 2 iterators per bucket, this
+## will be 16 requests to persistence layer, but only 8 will be able to execute
+## at the same time, since only one operation can be executed at the same time
+## for one bucket)
+iterators_per_bucket int default=3
+
+## Default number of maximum client replies pending.
+defaultpendingmessages int default=8
+
+## Default size of docblocks used to transfer visitor data.
+defaultdocblocksize int default=4190208
+
+## Default docblock timeout in ms used to transfer visitor data.
+## Currently defaults to a day. This is to avoid slow visitor target problems,
+## getting data resent faster than it can process, and since there are very few
+## reasons to actually time out
+defaultdocblocktimeout int default=180000
+
+## Default timeout of visitor info messages: Progress and error reports.
+## If these time out, the visitor will be aborted on the storage node.
+defaultinfotimeout int default=60000
+
+## Max concurrent visitors (legacy)
+maxconcurrentvisitors int default=64
+
+## Priority-based max concurrent visitors. Fixed is the total number of
+## concurrent visitors that can run for any priorities. Variable
+## increases the concurrency limit for higher priorities, the limit
+## being linear with a messages priority. Example: if Fixed is 16
+## and Variable is 64, maxconcurrent for a pri 255 message is 16 and
+## maxconcurrent for a pri 0 message is 16+64=80.
+## If fixed is left as 0, it will take the value of maxconcurrentvisitors,
+## allowing backwards compatability
+maxconcurrentvisitors_fixed int default=16
+maxconcurrentvisitors_variable int default=64
+
+## Max size of visitor priority queue
+maxvisitorqueuesize int default=1024
+
+# Limit of memory used _per visitor_ in bytes.
+# Due to optimistic parallelization, it is possible for this limit to be
+# initially violated when the visitor is first started. This can happen since
+# the visitor does not know the size of the bucket contents before fetching
+# any data from it and it will do so based on parallelization factors specified
+# in the CreateVisitor command. If 3 buckets are initially visited in parallel
+# and these both contain a single 100 MiB document, the memory usage of the
+# visitor will peak at 300 MiB even if the configured limit is e.g. 20 MiB.
+# Default value is set to 20 MiB, which attempts to keep a reasonably safe
+# level in the face of a default number of max concurrent visitors (64).
+visitor_memory_usage_limit int default=25165824

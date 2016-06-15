@@ -1,0 +1,188 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+#include <vespa/storageframework/storageframework.h>
+
+namespace storage {
+namespace framework {
+namespace defaultimplementation {
+
+ComponentRegisterImpl::ComponentRegisterImpl()
+    : _componentLock(),
+      _components(),
+      _topMetricSet("vds", "", ""),
+      _hooks(),
+      _metricManager(0),
+      _memoryManager(0),
+      _clock(0),
+      _threadPool(0),
+      _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
+      _shutdownListener(0)
+{
+}
+
+void
+ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
+{
+    vespalib::LockGuard lock(_componentLock);
+    _components.push_back(&mc);
+    if (_memoryManager != 0) mc.setMemoryManager(*_memoryManager);
+    if (_clock != 0) mc.setClock(*_clock);
+    if (_threadPool != 0) mc.setThreadPool(*_threadPool);
+    if (_metricManager != 0) mc.setMetricRegistrator(*this);
+    mc.setUpgradeFlag(_upgradeFlag);
+}
+
+void
+ComponentRegisterImpl::requestShutdown(vespalib::stringref reason)
+{
+    vespalib::LockGuard lock(_componentLock);
+    if (_shutdownListener != 0) {
+        _shutdownListener->requestShutdown(reason);
+    }
+}
+
+void
+ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
+{
+    std::vector<ManagedComponent*> components;
+    {
+        vespalib::LockGuard lock(_componentLock);
+        assert(_metricManager == 0);
+        components = _components;
+        _metricManager = &mm;
+    }
+    {
+        metrics::MetricLockGuard lock(mm.getMetricLock());
+        mm.registerMetric(lock, _topMetricSet);
+    }
+    for (uint32_t i=0; i<components.size(); ++i) {
+        components[i]->setMetricRegistrator(*this);
+    }
+}
+
+void
+ComponentRegisterImpl::setMemoryManager(MemoryManagerInterface& mm)
+{
+    vespalib::LockGuard lock(_componentLock);
+    _memoryManager = &mm;
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        _components[i]->setMemoryManager(mm);
+    }
+}
+
+void
+ComponentRegisterImpl::setClock(Clock& c)
+{
+    vespalib::LockGuard lock(_componentLock);
+    assert(_clock == 0);
+    _clock = &c;
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        _components[i]->setClock(c);
+    }
+}
+
+void
+ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
+{
+    vespalib::LockGuard lock(_componentLock);
+    assert(_threadPool == 0);
+    _threadPool = &tp;
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        _components[i]->setThreadPool(tp);
+    }
+}
+
+void
+ComponentRegisterImpl::setUpgradeFlag(UpgradeFlags flag)
+{
+    vespalib::LockGuard lock(_componentLock);
+    _upgradeFlag = flag;
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        _components[i]->setUpgradeFlag(_upgradeFlag);
+    }
+}
+
+const StatusReporter*
+ComponentRegisterImpl::getStatusReporter(vespalib::stringref id)
+{
+    vespalib::LockGuard lock(_componentLock);
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        if (_components[i]->getStatusReporter() != 0
+            && _components[i]->getStatusReporter()->getId() == id)
+        {
+            return _components[i]->getStatusReporter();
+        }
+    }
+    return 0;
+}
+
+std::vector<const StatusReporter*>
+ComponentRegisterImpl::getStatusReporters()
+{
+    std::vector<const StatusReporter*> reporters;
+    vespalib::LockGuard lock(_componentLock);
+    for (uint32_t i=0; i<_components.size(); ++i) {
+        if (_components[i]->getStatusReporter() != 0) {
+            reporters.push_back(_components[i]->getStatusReporter());
+        }
+    }
+    return reporters;
+}
+
+void
+ComponentRegisterImpl::registerMetric(metrics::Metric& m)
+{
+    metrics::MetricLockGuard lock(_metricManager->getMetricLock());
+    _topMetricSet.registerMetric(m);
+}
+
+namespace {
+    struct MetricHookWrapper : public metrics::MetricManager::UpdateHook {
+        MetricUpdateHook& _hook;
+
+        MetricHookWrapper(vespalib::stringref name,
+                          MetricUpdateHook& hook)
+            : metrics::MetricManager::UpdateHook(name.c_str()),
+              _hook(hook)
+        {
+        }
+
+        void updateMetrics(const MetricLockGuard & guard) override { _hook.updateMetrics(guard); }
+    };
+}
+
+void
+ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
+                                          MetricUpdateHook& hook,
+                                          SecondTime period)
+{
+    vespalib::LockGuard lock(_componentLock);
+    metrics::MetricManager::UpdateHook::LP hookPtr(
+            new MetricHookWrapper(name, hook));
+    _hooks.push_back(hookPtr);
+    _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
+}
+
+metrics::MetricLockGuard
+ComponentRegisterImpl::getMetricManagerLock()
+{
+    return _metricManager->getMetricLock();
+}
+
+void
+ComponentRegisterImpl::registerShutdownListener(ShutdownListener& listener)
+{
+    vespalib::LockGuard lock(_componentLock);
+    if (_shutdownListener != 0) {
+        throw vespalib::IllegalStateException(
+                "A shutdown listener is already registered. Add functionality "
+                "for having multiple if we need multiple.", VESPA_STRLOC);
+    }
+    _shutdownListener = &listener;
+}
+
+} // defaultimplementation
+} // framework
+} // storage

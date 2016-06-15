@@ -1,0 +1,2516 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// --------------------------------------------------------------------------------
+//
+// JavaCC options. When this file is changed, run "mvn generate-sources" to rebuild
+// the parser classes.
+//
+// --------------------------------------------------------------------------------
+options {
+    UNICODE_INPUT = true;
+    CACHE_TOKENS  = false;
+    STATIC = false;
+    DEBUG_PARSER = false;
+    ERROR_REPORTING = true;
+    FORCE_LA_CHECK = true;
+    USER_CHAR_STREAM = true;
+}
+
+// --------------------------------------------------------------------------------
+//
+// Parser body.
+//
+// --------------------------------------------------------------------------------
+PARSER_BEGIN(SDParser)
+
+package com.yahoo.searchdefinition.parser;
+
+import com.yahoo.document.*;
+import com.yahoo.documentmodel.*;
+import com.yahoo.compress.Compressor;
+import com.yahoo.compress.CompressionType;
+import com.yahoo.searchdefinition.document.*;
+import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
+import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
+import com.yahoo.searchdefinition.Index;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.DefaultRankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
+import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
+import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.UnproperSearch;
+import com.yahoo.searchdefinition.UnrankedRankProfile;
+import com.yahoo.searchdefinition.fieldoperation.*;
+import com.yahoo.searchlib.rankingexpression.FeatureList;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.documentmodel.DocumentSummary;
+import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.search.query.ranking.Diversity;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.logging.Level;
+
+/**
+ * A search definition parser
+ *
+ * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a> et.al.
+ */
+public class SDParser {
+    private DocumentTypeManager docMan = null;
+    private ApplicationPackage app = MockApplicationPackage.createEmpty();
+    private DeployLogger deployLogger = new BaseDeployLogger();
+    private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+
+    public SDParser(String input, DeployLogger deployLogger) {
+        this(new SimpleCharStream(input), deployLogger);
+    }
+
+    public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
+        this(stream);
+        this.deployLogger = deployLogger;
+    }
+
+    public SDParser(SimpleCharStream stream, DeployLogger deployLogger, ApplicationPackage applicationPackage, RankProfileRegistry rankProfileRegistry) {
+        this(stream);
+        this.deployLogger = deployLogger;
+        this.app = applicationPackage;
+        this.rankProfileRegistry = rankProfileRegistry;
+    }
+
+    /**
+     * Consumes an indexing language script which will use the simple linguistics implementation
+     * for testing, by taking input from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     */
+    private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
+        return newIndexingOperation(multiline, new SimpleLinguistics());
+    }
+
+    /**
+     * Consumes an indexing language script from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     * @param linguistics What to use for tokenizing.
+     */
+    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics) throws ParseException {
+        SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
+        if (token.next != null) {
+            input.backup(token.next.image.length());
+        }
+        try {
+            return IndexingOperation.fromStream(input, multiline, linguistics);
+        } finally {
+            token.next = null;
+            jj_ntk = -1;
+        }
+    }
+
+    /**
+     * Parses the given token image as a ranking expression feature list.
+     *
+     * @param image The token image to parse.
+     * @return The consumed feature list.
+     * @throws ParseException Thrown if the image could not be parsed.
+     */
+    private FeatureList getFeatureList(String image) throws ParseException {
+        try {
+            return new FeatureList(image);
+        }
+        catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+            throw (ParseException) new ParseException("Could not parse feature list '" + image + "' at line " +
+                                                      token_source.input_stream.getBeginLine() + ", column " +
+                                                      token_source.input_stream.getBeginColumn() + ".").initCause(e);
+        }
+    }
+
+    /**
+     * Sets the compression threshold in each item in the compression config array.
+     *
+     * @param cfg The array of configs to modify.
+     * @param val The compression threshold to set.
+     */
+    private void setCompressionThreshold(CompressionConfig cfg, int val) {
+        cfg.threshold = val;
+    }
+
+    /**
+     * Sets the compression level in each item in the compression config array.
+     *
+     * @param cfg The array of configs to modify.
+     * @param val The compression level to set.
+     */
+    private void setCompressionLevel(CompressionConfig cfg, int val) {
+        cfg.compressionLevel = val;
+    }
+}
+
+PARSER_END(SDParser)
+
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+// Declare white space characters. These do not include newline because it has
+// special meaning in several of the production rules.
+SKIP :
+{
+  " " | "\t" | "\r" | "\f"
+}
+
+// Declare all tokens to be recognized. When a word token is added it MUST be
+// added to the identifier() production rule.
+TOKEN :
+{
+  < NL: "\n" >
+| < ANNOTATION: "annotation" >
+| < ANNOTATIONREFERENCE: "annotationreference" >
+| < SEARCH: "search" >
+| < DIVERSITY: "diversity" >
+| < MIN_GROUPS: "min-groups" >
+| < CUTOFF_FACTOR: "cutoff-factor" >
+| < CUTOFF_STRATEGY: "cutoff-strategy" >
+| < LOOSE: "loose" >
+| < STRICT: "strict" >
+| < DOCUMENT: "document" >
+| < STRUCT: "struct" >
+| < INHERITS: "inherits" >
+| < FIELD: "field" >
+| < FIELDS: "fields" >
+| < FIELDSET: "fieldset" >
+| < STRUCTFIELD: "struct-field" >
+| < INDEXING: "indexing" >
+| < SUMMARYTO: "summary-to" >
+| < DOCUMENTSUMMARY: "document-summary" >
+| < RANKTYPE: "rank-type" >
+| < WEIGHT: "weight" >
+| < TYPE: "type" >
+| < INDEX: "index" >
+| < RISE: "rise" >
+| < MTOKEN: "token" >
+| < TEXT: "text" >
+| < WORD: "word" >
+| < GRAM: "gram" >
+| < GRAMSIZE: "gram-size" >
+| < MAXLENGTH: "max-length" >
+| < PREFIX: "prefix" >
+| < SUBSTRING: "substring" >
+| < SUFFIX: "suffix" >
+| < RANKPROFILE: "rank-profile" >
+| < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
+| < RANKDEGRADATION: "rank-degradation" >
+| < RPBINSIZE: "doc-frequency" >
+| < RPBINLOW:  "min-fullrank-docs">
+| < RPPOSBINSIZE: "occurrences-per-doc" >
+| < SUMMARY: "summary" >
+| < FULL: "full" >
+| < STATIC: "static" >
+| < DYNAMIC: "dynamic" >
+| < SSCONTEXTUAL: "contextual" >
+| < SSOVERRIDE: "override" >
+| < SSTITLE: "title" >
+| < SSURL: "url" >
+| < PROPERTIES: "properties" >
+| < ATTRIBUTE: "attribute" >
+| < SORTING: "sorting" >
+| < ASCENDING: "ascending" >
+| < DESCENDING: "descending" >
+| < UCA: "uca" >
+| < RAW: "raw" >
+| < LOWERCASE: "lowercase" >
+| < FUNCTION: "function" >
+| < LOCALE: "locale" >
+| < STRENGTH: "strength" >
+| < PRIMARY: "primary" >
+| < SECONDARY: "secondary" >
+| < TERTIARY: "tertiary" >
+| < QUATERNARY: "quaternary" >
+| < IDENTICAL: "identical" >
+| < STEMMING: "stemming" >
+| < NORMALIZING: "normalizing" >
+| < BOLDING: "bolding" >
+| < BODY: "body" >
+| < HEADER: "header" >
+| < NONE: "none" >
+| < ON: "on" >
+| < OFF: "off" >
+| < TRUE: "true" >
+| < FALSE: "false" >
+| < SYMMETRIC: "symmetric" >
+| < QUERYCOMMAND: "query-command" >
+| < ALIAS: "alias" >
+| < MATCH: "match" >
+| < RANK: "rank" >
+| < LITERAL: "literal" >
+| < EXACT: "exact" >
+| < FILTER: "filter" >
+| < NORMAL: "normal" >
+| < EXACTTERMINATOR: "exact-terminator" >
+| < INDEXINGREWRITE: "indexing-rewrite" >
+| < IGNOREDEFAULTRANKFEATURES: "ignore-default-rank-features" >
+| < ID: "id" >
+| < SOURCE: "source" >
+| < TO: "to" >
+| < DIRECT: "direct" >
+| < ALWAYS: "always" >
+| < ONDEMAND: "on-demand" >
+| < NEVER: "never" >
+| < ENABLEBITVECTORS: "enable-bit-vectors" >
+| < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
+| < FASTACCESS: "fast-access" >
+| < FASTSEARCH: "fast-search" >
+| < HUGE: "huge" >
+| < PREFETCH: "prefetch" >
+| < NOPREFETCH: "no-prefetch" >
+| < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
+| < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
+| < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < COMPRESSION: "compression" >
+| < COMPRESSIONLEVEL: "level" >
+| < COMPRESSIONTHRESHOLD: "threshold" >
+| < LZ4: "lz4" >
+| < USEDOCUMENT: "use-document" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < COLON: ":" >
+| < DOT: "." >
+| < COMMA: "," >
+| < ARRAY: "array" >
+| < WEIGHTEDSET: "weightedset" >
+| < MAP: "map" >
+| < QUESTIONMARK: "?" >
+| < CREATEIFNONEXISTENT: "create-if-nonexistent" >
+| < REMOVEIFZERO: "remove-if-zero" >
+| < MATCHPHASE: "match-phase" >
+| < EVALUATION_POINT: "evaluation-point" >
+| < PRE_POST_FILTER_TIPPING_POINT: "pre-post-filter-tipping-point" >
+| < ORDER: "order" >
+| < MAXFILTERCOVERAGE: "max-filter-coverage" >
+| < MAXHITS: "max-hits" >
+| < FIRSTPHASE: "first-phase" >
+| < SECONDPHASE: "second-phase" >
+| < MACRO: "macro" >
+| < INLINE: "inline" >
+| < ARITY: "arity" >
+| < LOWERBOUND: "lower-bound" >
+| < UPPERBOUND: "upper-bound" >
+| < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
+| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
+| < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])* >
+| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_ML_CONTENT: (~["{","}"])* >
+| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < RANKPROPERTIES: "rank-properties" >
+| < RERANKCOUNT: "rerank-count" >
+| < NUMTHREADSPERSEARCH: "num-threads-per-search" >
+| < NUMSEARCHPARTITIONS: "num-search-partitions" >
+| < TERMWISELIMIT: "termwise-limit" >
+| < KEEPRANKCOUNT: "keep-rank-count" >
+| < RANKSCOREDROPLIMIT: "rank-score-drop-limit" >
+| < CONSTANTS: "constants" >
+| < FILE: "file" >
+| < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < QUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
+| < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
+| < INTEGER: ("-")? (["0"-"9"])+ >
+| < LONG: ("-")? (["0"-"9"])+"L" >
+| < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
+| < LESSTHAN: "<" >
+| < GREATERTHAN: ">" >
+| < VARIABLE: "$" <IDENTIFIER> >
+}
+
+// Declare a special skip token for comments.
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
+}
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+/**
+ * The rule consumes any search definition and returns the corresponding object. This is the only production that should
+ * ever consume leading newlines.
+ *
+ * @param dir The directory containing the file being parsed.
+ * @return The search definition object.
+ */
+Search search(DocumentTypeManager docMan, String dir) :
+{
+    this.docMan = docMan;
+    Search search;
+}
+{
+    (<NL>)* (search = rootSearch(dir) | search = rootDocument(dir))
+    { return search; }
+}
+
+/**
+ * This rule consumes a proper search block. This and rootDocument() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @param dir The directory containing the file being parsed.
+ * @return The search definition object.
+ */
+Search rootSearch(String dir) :
+{
+    String name;
+    Search search;
+}
+{
+    ( <SEARCH> name = identifier() { if (!name.matches("[a-zA-Z_][a-zA-Z_:0-9]*")) {
+                                         deployLogger.log(Level.WARNING, name + " can not be used in YQL+ expressions.");
+                                     }
+                                     search = new Search(name, app);
+                                     rankProfileRegistry.addRankProfile(new DefaultRankProfile(search, rankProfileRegistry));
+                                     rankProfileRegistry.addRankProfile(new UnrankedRankProfile(search, rankProfileRegistry));}
+      lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+    { return search; }
+}
+
+/**
+ * Consumes an element of a search block. This and rootSearch() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @param search The search object to modify.
+ * @return Null.
+ */
+Object rootSearchItem(Search search) : { }
+{
+    ( document(search)
+      | documentSummary(search)
+      | field(null, search)
+      | index(search, null)
+      | rankProfile(search)
+      | searchStemming(search)
+      | useDocument(search)
+      | structOutside(search)
+      | annotationOutside(search)
+      | fieldSet(search) )
+    { return null; }
+}
+
+/**
+ * Consumes a search definition that contains only documents to be used for inheritance, etc.
+ *
+ * @param dir The directory containing the file being parsed.
+ * @return The search definition object.
+ */
+Search rootDocument(String dir) :
+{
+    Search search = new UnproperSearch();
+}
+{
+    ( (rootDocumentItem(search) (<NL>)*)*<EOF> )
+    { return search; }
+}
+
+/**
+ * Consumes a single item from within a root document node.
+ *
+ * @param search The search object to modify.
+ * @return Null.
+ */
+Object rootDocumentItem(Search search) : { }
+{
+    ( namedDocument(search) )
+    { return null; }
+}
+
+/**
+ * Consumes a use-document statement. This currently does nothing.
+ *
+ * @param search The search object to modify.
+ */
+void useDocument(Search search) : { }
+{
+    <USEDOCUMENT> <COLON> identifier()
+}
+
+/**
+ * Consumes a document element. The name defaults to the search's name, but may be set.
+ *
+ * @param search The search object to add content to.
+ */
+void document(Search search) :
+{
+    String name=search.getName();
+    SDDocumentType document;
+}
+{
+    ( <DOCUMENT> (name = identifier())? (<NL>)* { document = new SDDocumentType(name, search); }
+      [ inheritsDocument(document) (<NL>)* ]
+      <LBRACE> (<NL>)* (documentBody(document, search) (<NL>)*)* <RBRACE> )
+    {
+        search.addDocument(document);
+    }
+}
+
+/**
+ * Consumes a document element, explicitly named
+ *
+ * @param search The search object to add content to.
+ */
+void namedDocument(Search search) :
+{
+    String name;
+    SDDocumentType document;
+}
+{
+    ( <DOCUMENT> name = identifier() (<NL>)* { document = new SDDocumentType(name, search); }
+      [ inheritsDocument(document) (<NL>)* ]
+      <LBRACE> (<NL>)* (documentBody(document, search) (<NL>)*)* <RBRACE> )
+    {
+        search.addDocument(document);
+    }
+}
+
+/**
+ * Consumes a document body block
+ *
+ * @param document The document type to modify.
+ * @param search   The search object to add content to.
+ * @return Null.
+ */
+Object documentBody(SDDocumentType document, Search search) :
+{
+}
+{
+    ( annotation(search, document)
+      | compression(document, null)
+      | headercfg(document)
+      | bodycfg(document)
+      | structInside(document, search)
+      | field(document, search) )
+    { return null; }
+}
+
+/**
+ * Consumes a document head block.
+ *
+ * @param document The document type to modify.
+ */
+void headercfg(SDDocumentType document) : { }
+{
+    <HEADER> lbrace() [compression(document, "header") (<NL>)*] <RBRACE>
+}
+
+/**
+ * Consumes a document body block.
+ *
+ * @param document The document type to modify.
+ */
+void bodycfg(SDDocumentType document) : { }
+{
+    <BODY> lbrace() [compression(document, "body") (<NL>)*] <RBRACE>
+}
+
+/**
+ * Consumes a compression block. This can be set in both document header and -body block.
+ *
+ * @param document The document type to modify.
+ * @param name     The name of the document block to modify.
+ */
+void compression(SDDocumentType document, String name) :
+{
+    CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
+}
+{
+    <COMPRESSION> lbrace() (cfg = compressionItem(cfg) (<NL>)*)* <RBRACE>
+    {
+        if (name == null || name.equals("header")) {
+            document.getDocumentType().getHeaderType().setCompressionConfig(cfg);
+        }
+        if (name == null || name.equals("body")) {
+            document.getDocumentType().getBodyType().setCompressionConfig(cfg);
+        }
+    }
+}
+
+/**
+ * Consumes the body of a compression block.
+ *
+ * @param cfg The compression config to modify.
+ */
+CompressionConfig compressionItem(CompressionConfig cfg) :
+{
+    int val = -1;
+}
+{
+    ( ( <TYPE> <COLON> <LZ4> { cfg = new CompressionConfig(CompressionType.LZ4, cfg.compressionLevel, cfg.threshold); } )
+      | (<COMPRESSIONTHRESHOLD> <COLON> val = integer()) { setCompressionThreshold(cfg, val); }
+      | (<COMPRESSIONLEVEL>   <COLON> val = integer())  { setCompressionLevel(cfg, val); }
+    )
+    {
+       return cfg;
+    }
+}
+
+/**
+ * Consumes a document inheritance statement.
+ *
+ * @param document The document type to modify.
+ */
+void inheritsDocument(SDDocumentType document) :
+{
+    String name;
+}
+{
+    <INHERITS> name = identifier() { document.inherit(new DataTypeName(name)); }
+    ( <COMMA>  name = identifier() { document.inherit(new DataTypeName(name)); } )*
+}
+
+/**
+ * Consumes a field block from within a document element.
+ *
+ * @param document The document type to modify.
+ * @param search   The search object to add content to.
+ */
+void field(SDDocumentType document, Search search) :
+{
+    String name;
+    SDField field;
+    DataType type;
+}
+{
+    <FIELD> name = identifier() <TYPE> type = dataType()
+    {
+        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        field = new TemporarySDField(name, type, true, document);
+    }
+    lbrace() (fieldBody(field, search, document) (<NL>)*)* <RBRACE>
+    {
+        if (document != null) {
+            document.addField(field);
+        } else {
+            search.addExtraField(field);
+        }
+    }
+}
+
+void fieldSet(Search search) :
+{
+  String name;
+}
+{
+  <FIELDSET> name = identifier() lbrace()
+    (fieldSetItem(name, search)(<NL>)*)+
+  <RBRACE>
+}
+
+void fieldSetItem(String setName, Search search) :
+{
+  String field;
+  String queryCommand;
+  SDField matchSettings = new SDField(setName, DataType.STRING); // match etc for fieldset represented as SDField or ease of parsing
+}
+{
+  ( <FIELDS><COLON> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
+    ( <COMMA> field=identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
+  |
+    ( <QUERYCOMMAND> <COLON> (queryCommand = identifier() | queryCommand = quotedString())) { search.fieldSets().userFieldSets().get(setName).queryCommands().add(queryCommand);}
+  |
+    ( match(matchSettings) ) { matchSettings.applyOperations(); search.fieldSets().userFieldSets().get(setName).setMatching(matchSettings.getMatching());}
+}
+
+/**
+ * This rule consumes a annotation block from within either a document element or a search element.
+ * @param search The search object to add content to.
+ */
+void annotationOutside(Search search) :
+{
+    String name;
+    SDAnnotationType type;
+}
+{
+    <ANNOTATION> name = identifier()
+    {
+        type = new SDAnnotationType(name.trim());
+    }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    lbrace() (type = annotationBody(search, type)) <RBRACE>
+    {
+        if (search.getDocument()==null) throw new IllegalArgumentException("Can't add annotation '"+name+"' to a document type, define a document type first or declare the annotation inside of one.");
+        search.addAnnotation(type);
+    }
+}
+
+/**
+ * This rule consumes a annotation block from within either a document element.
+ * @param document The document object to add content to.
+ */
+void annotation(Search search, SDDocumentType document) :
+{
+    String name;
+    SDAnnotationType type;
+}
+{
+    <ANNOTATION> name = identifier()
+    {
+        type = new SDAnnotationType(name.trim());
+    }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    lbrace() (type = annotationBody(search, type)) <RBRACE>
+    {
+        document.addAnnotation(type);
+    }
+}
+
+
+/**
+ * This rule consumes a single element of an annotation body block.
+ *
+ * @param search   The search object to add content to.
+ * @param type     The type being built.
+ * @return a modified or new AnnotationType instance
+ */
+SDAnnotationType annotationBody(Search search, SDAnnotationType type) :
+{
+    SDDocumentType struct = new SDDocumentType("annotation." + type.getName(), search);
+}
+{
+    (structFieldDefinition(struct) (<NL>)*)*
+    {
+        if (struct.getFieldCount() > 0) { // Must account for the temporary TemporarySDField.
+            type = new SDAnnotationType(type.getName(), struct, type.getInherits());
+            struct.setStruct(null);
+        }
+        return type;
+    }
+}
+
+void inheritsAnnotation(SDAnnotationType annotation) :
+{
+    String name;
+}
+{
+    <INHERITS> name = identifier() { annotation.inherit(name); }
+}
+
+
+/**
+ * This rule consumes a struct block from within a document element.
+ *
+ * @param search The search object to add content to.
+ */
+void structInside(SDDocumentType document, Search search) :
+{
+    SDDocumentType struct;
+}
+{
+    (
+        struct = structDefinition(search, document)
+    )
+    {
+        document.addType(struct);
+    }
+}
+
+/**
+ * This rule consumes a struct block from within a document element.
+ *
+ * @param search The search object to add content to.
+ */
+void structOutside(Search search) :
+{
+    SDDocumentType struct;
+}
+{
+    (
+        struct = structDefinition(search, search.getDocument())
+    )
+    {
+        search.addType(struct);
+    }
+}
+
+/**
+ * This rule consumes a struct block from within a document element.
+ *
+ * @param search The search object to add content to.
+ */
+SDDocumentType structDefinition(Search search, SDDocumentType repo) :
+{
+    String name;
+    SDDocumentType struct;
+}
+{
+    <STRUCT> name = identifier()
+    {
+        struct = new SDDocumentType(name, search);
+    }
+    lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE>
+    {
+        try {
+            docMan.getDataType(name);
+            throw new ParseException("Reserved name '" + name + "' can not be used to declare a struct.");
+        } catch (IllegalArgumentException e) {
+            // empty
+        }
+        if (repo==null) throw new IllegalArgumentException("Can't add struct '"+name+"' to a document type, define a document type first or declare the struct inside of one.");
+        SDDocumentType sdtype = repo.getOwnedType(struct.getDocumentName());
+        DataType stype = sdtype != null
+                         ? sdtype.getStruct()
+                         : TemporaryStructuredDataType.create(struct.getName());
+        struct.setStruct(stype);
+        return struct;
+    }
+}
+
+/**
+ * This rule consumes a data type block from within a field element.
+ *
+ * @return The consumed data type.
+ */
+DataType dataType() :
+{
+    String typeName=null;
+    boolean isArrayOldStyle = false;
+    DataType mapType=null;
+	DataType arrayType=null;
+    DataType wsetType=null;
+
+}
+{
+    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)       ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return DataType.getArray(arrayType); } )
+      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>) ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return  DataType.getWeightedSet(wsetType); } )
+      | LOOKAHEAD(<MAP> <LESSTHAN>)         ( mapType = mapDataType() { return mapType; } )
+      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
+      | ( typeName = identifier() ["[]" { isArrayOldStyle = true; }] )
+    )
+    {
+        DataType type = VespaDocumentType.INSTANCE.getDataType(typeName);
+
+        //is type still null?
+        if (type == null) {
+            //we are basically creating TemporaryStructDataType instances for ANYTHING here!!
+            //we must do this and clean them up later.
+            type = TemporaryStructuredDataType.create(typeName);
+        }
+
+        if (isArrayOldStyle) {
+            deployLogger.log(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            type = DataType.getArray(type);
+        }
+        if ("tag".equalsIgnoreCase(typeName) && type instanceof WeightedSetDataType) ((WeightedSetDataType)type).setTag(true);
+        return type;
+    }
+}
+
+DataType annotationRefDataType() :
+{
+    DataType dataType;
+    String targetName;
+}
+{
+    ( <ANNOTATIONREFERENCE> <LESSTHAN> targetName = identifier() <GREATERTHAN> )
+    {
+        return new TemporaryAnnotationReferenceDataType(targetName);
+    }
+}
+
+DataType mapDataType() :
+{
+    DataType keyType;
+    DataType valType;
+}
+{
+  ( <MAP> <LESSTHAN> keyType = dataType() <COMMA> valType = dataType() <GREATERTHAN> )
+  {
+    return DataType.getMap(keyType, valType);
+  }
+
+}
+
+/* Note: not currently used, remove when decided that map type will not support
+polymorphism */
+DataType wildCardType() :
+{
+}
+{
+(<QUESTIONMARK>) { return DataType.NONE; }
+}
+
+/**
+ * This rule consumes a field block of a struct body.
+ *
+ * @param struct The struct to modify.
+ */
+void structFieldDefinition(SDDocumentType struct) :
+{
+    String name;
+    SDField field;
+    DataType type;
+}
+{
+    <FIELD> name = identifier() <TYPE> type = dataType() {
+        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        field = new TemporarySDField(name, type, true, struct);
+        struct.addField(field);
+    }
+    lbrace() (id(field,struct) (<NL>)*)? (match(field) (<NL>)*)* <RBRACE> {
+    }
+}
+
+/**
+ * This rule consumes a struct subfield from a document field body. This is not to be confused with a document
+ * struct's fields, but rather this is a subfield of a document field of type struct.
+ *
+ * @param field    The field to modify.
+ * @param search   The search object to add content to.
+ * @param document The document type to modify.
+ */
+void structField(FieldOperationContainer field, Search search,SDDocumentType document) :
+{
+    String name;
+    SDField structField;
+}
+{
+    <STRUCTFIELD> name = identifier() {
+        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        FieldOperationContainer structFieldOp = new StructFieldOperation(name);
+        field.addOperation((StructFieldOperation) structFieldOp);
+    }
+    lbrace() (structFieldBody(structFieldOp, search, document) (<NL>)*)* <RBRACE>
+}
+
+
+/**
+ * This rule consumes a single element of a field body block.
+ *
+ * @param field    The field being built.
+ * @param search   The search object to add content to.
+ * @param document The owning document, or null if this is a search field.
+ * @return Null.
+ */
+String fieldBody(SDField field, Search search, SDDocumentType document) : { }
+{
+    ( alias(field) |
+      attribute(field) |
+      body(field) |
+      bolding(field) |
+      fieldStemming(field) |
+      header(field) |
+      id(field, document) |
+      summaryInField(field) |
+      index(search, field) |
+      indexing(field) |
+      indexingRewrite(field) |
+      match(field) |
+      normalizing(field) |
+      queryCommand(field) |
+      rank(field) |
+      rankType(field) |
+      sorting(field, field.getName()) |
+      structField(field, search, document) |
+      summaryTo(field) |
+      weight(field) |
+      weightedset(field) )
+    { return null; }
+}
+
+/**
+ * This rule consumes a single element of a struct subfield body block.
+ * Only elements that make sense for streaming search are allowed,
+ * since only streaming search supports structs for now.
+ *
+ * @param field    The field being built.
+ * @param search   The search object to add content to.
+ * @param document The owning document, or null if this is a search field.
+ * @return Null.
+ */
+String structFieldBody(FieldOperationContainer field, Search search, SDDocumentType document) : { }
+{
+    ( summaryInField(field) |
+      indexing(field) |
+      match(field) |
+      queryCommand(field) |
+      structField(field, search, document) |
+      summaryTo(field) )
+    { return null; }
+}
+
+/**
+ * This rule consumes an indexing block of a field element.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object indexing(FieldOperationContainer field) : { }
+{
+    ( <INDEXING> ( (<COLON> indexingOperation(field, false)) | indexingOperation(field, true) ) )
+    { return null; }
+}
+
+/**
+ * This rule consumes an IL script block. This is expected to consume trailing newlines.
+ *
+ * @param field The field to modify.
+ */
+void indexingOperation(FieldOperationContainer field, boolean multiLine) : { }
+{
+    { field.addOperation(newIndexingOperation(multiLine)); }
+}
+
+/**
+ * This rule consumes a summary-to statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void summaryTo(FieldOperationContainer field) :
+{
+    SummaryToOperation op = new SummaryToOperation();
+    String destination;
+    String name = field.getName();
+}
+{
+    <SUMMARYTO> [name = identifier()] <COLON> destination = identifier()
+    {
+        op.setName(name);
+        op.addDestination(destination);
+    }
+    ( <COMMA> destination = identifier() {op.addDestination(destination); } )*
+    {
+        field.addOperation(op);
+    }
+}
+
+
+/**
+ * This rule consumes a weight statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void weight(FieldOperationContainer field) :
+{
+    int num;
+}
+{
+    <WEIGHT> <COLON> num = integer()
+    {
+        WeightOperation op = new WeightOperation();
+        op.setWeight(num);
+        field.addOperation(op);
+    }
+}
+
+/**
+ * This rule consumes a weighted set statement of a field element.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object weightedset(FieldOperationContainer field) :
+{
+    WeightedSetOperation op = new WeightedSetOperation();
+}
+{
+    <WEIGHTEDSET> ( (<COLON> weightedsetBody(op))
+                    | (lbrace() (weightedsetBody(op) (<NL>)*)* <RBRACE>) )
+    {
+        field.addOperation(op);
+        return null;
+    }
+}
+
+/**
+ * This rule consumes one body item of a weighted set block.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object weightedsetBody(WeightedSetOperation field) : { }
+{
+    ( <CREATEIFNONEXISTENT> { field.setCreateIfNonExistent(true); }
+      | <REMOVEIFZERO>      { field.setRemoveIfZero(true); } )
+    {
+        return null;
+    }
+}
+
+/**
+ * This rule consumes a rank-type statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankType(FieldOperationContainer field) :
+{
+    String typeName;
+    String indexName = null;
+}
+{
+    <RANKTYPE> [indexName = identifier()] <COLON> typeName = identifier()
+    {
+        RankTypeOperation op = new RankTypeOperation();
+        op.setType(RankType.fromString(typeName));
+        op.setIndexName(indexName);
+        field.addOperation(op);
+    }
+}
+
+/**
+ * This rule consumes an attribute statement of a field element.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object attribute(FieldOperationContainer field) :
+{
+    String name = field.getName();
+}
+{
+    <ATTRIBUTE> [name = identifier()]
+    {
+        AttributeOperation op = new AttributeOperation(name);
+    }
+         ( (<COLON> attributeSetting(field, op, name))
+           | (lbrace() (attributeSetting(field, op, name) (<NL>)*)* <RBRACE>) )
+    {
+        field.addOperation(op);
+        return null;
+    }
+}
+
+Object sorting(FieldOperationContainer field, String name) :
+{
+    SortingOperation op = new SortingOperation(name);
+}
+{
+    <SORTING>
+         ( (<COLON> sortingSetting(op, name))
+           | (lbrace() (sortingSetting(op, name) (<NL>)*)* <RBRACE>) )
+    {
+        field.addOperation(op);
+        return null;
+    }
+}
+
+Object sortingSetting(SortingOperation sorting, String attributeName) :
+{
+    String locale;
+}
+{
+    (
+        <ASCENDING> { sorting.setAscending(); }
+      | <DESCENDING> { sorting.setDescending(); }
+      | <FUNCTION> <COLON> (
+                               <UCA>       { sorting.setFunction(Sorting.Function.UCA); }
+                             | <RAW>       { sorting.setFunction(Sorting.Function.RAW); }
+                             | <LOWERCASE> { sorting.setFunction(Sorting.Function.LOWERCASE); }
+                           )
+      | <STRENGTH> <COLON> (
+                               <PRIMARY>    { sorting.setStrength(Sorting.Strength.PRIMARY); }
+                             | <SECONDARY>  { sorting.setStrength(Sorting.Strength.SECONDARY); }
+                             | <TERTIARY>   { sorting.setStrength(Sorting.Strength.TERTIARY); }
+                             | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
+                             | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
+                           )
+      | <LOCALE> <COLON> locale = identifier() { sorting.setLocale(locale); }
+    )
+    { return null; }
+}
+
+/**
+ * This rule consumes a single attribute setting statement of an attribute element.
+ *
+ * @param field The field to modify.
+ * @param attributeName The name of the attribute to change.
+ * @return Null.
+ */
+Object attributeSetting(FieldOperationContainer field, AttributeOperation attribute, String attributeName) :
+{
+}
+{
+    (
+        <HUGE>               { attribute.setHuge(true); }
+      | <FASTSEARCH>         { attribute.setFastSearch(true); }
+      | <FASTACCESS>         { attribute.setFastAccess(true); }
+      | <ENABLEBITVECTORS>   { attribute.setEnableBitVectors(true); }
+      | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
+      | <NOPREFETCH>         {
+          deployLogger.log(Level.WARNING, field + ": 'attribute : no-prefetch' is deprecated and has no effect.");
+          attribute.setPrefetch(false);
+      }
+      | <PREFETCH>           {
+          deployLogger.log(Level.WARNING, field + ": 'attribute : prefetch' is deprecated and has no effect.");
+          attribute.setPrefetch(true);
+      }
+      | sorting(field, attributeName)
+      | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifier() {
+          attribute.setDoAlias(true);
+          attribute.setAlias(alias);
+          attribute.setAliasedName(aliasedName);
+      }
+      | attributeTensorType(attribute)
+    )
+    { return null; }
+}
+
+/**
+ * This rule consumes a tensor type statement for an attribute element.
+ *
+ * @param attribute The attribute to modify.
+ * @return Null.
+ */
+Object attributeTensorType(AttributeOperation attribute) :
+{
+    String tensorTypeString;
+    TensorType tensorType;
+}
+{
+    <TENSOR_TYPE>
+    {
+        tensorTypeString = token.image;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("For attribute field '" + attribute.getName() +
+                "': Illegal tensor type spec: " + e.getMessage());
+        }
+        attribute.setTensorType(tensorType);
+    }
+    { return null; }
+}
+
+/**
+ * This rule consumes a summary statement defined inside a document-summary block.
+ *
+ * @param document The document summary to modify.
+ * @return Null.
+ */
+Object summaryInDocument(DocumentSummary document) :
+{
+    String name;
+    DataType type;
+    SummaryField summary;
+
+}
+{
+    <SUMMARY> name = identifier() { }
+    <TYPE>    type = dataType()   {
+        summary = new SummaryField(name, type);
+        summary.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
+
+        SummaryInFieldLongOperation op = new SummaryInFieldLongOperation();
+
+    }
+    lbrace() (summaryItem(op) (<NL>)*)* <RBRACE>
+    {
+	    if (op.destinationIterator().hasNext()) {
+            throw new ParseException("Summaries defined in a document-summary section " +
+                                     "can not have a 'to' line.");
+        }
+
+        op.applyToSummary(summary);
+
+        document.add(summary);
+        return null;
+    }
+}
+
+/**
+ * The rule consumes a summary statement defined inside a field.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object summaryInField(FieldOperationContainer field) :
+{
+    SummaryInFieldOperation summary;
+}
+{
+    ( <SUMMARY> ( LOOKAHEAD(2) summary = summaryInFieldShort(field)
+                  | summary = summaryInFieldLong(field)) )
+    {
+        field.addOperation(summary);
+        return null;
+    }
+}
+
+/**
+ * This rule consumes a single-line summary field.
+ *
+ * @param field The field to modify.
+ * @return The consumed summary field.
+ */
+SummaryInFieldOperation summaryInFieldShort(FieldOperationContainer field) :
+{
+    String name = field.getName();
+    SummaryField ret;
+}
+{
+    [ name = identifier() ]
+    {
+        SummaryInFieldShortOperation op = new SummaryInFieldShortOperation(name);
+    }
+    <COLON> ( <DYNAMIC> { op.setTransform(SummaryTransform.DYNAMICTEASER);
+                          op.addSource(name);
+                        }
+              | (<FULL> | <STATIC>) { op.setTransform(SummaryTransform.NONE); } )
+    { return op; }
+}
+
+/**
+ * This rule consumes a multi-line summary field.
+ *
+ * @return The consumed summary field.
+ */
+SummaryInFieldOperation summaryInFieldLong(FieldOperationContainer field) :
+{
+    String name = field.getName();
+    DataType type = null;
+}
+{
+    ( [ name = identifier() [ <TYPE> type = dataType() ] ]
+      lbrace()
+      {
+          SummaryInFieldLongOperation op = new SummaryInFieldLongOperation(name);
+          op.setType(type);
+      }
+      (summaryItem(op) (<NL>)*)* <RBRACE> )
+    { return op; }
+}
+
+/**
+ * This rule consumes an item of a summary field block.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object summaryItem(SummaryInFieldLongOperation field) : { }
+{
+    ( summaryTransform(field)
+      | summaryBolding(field)
+      | summarySourceList(field)
+      | summaryDestinationList(field)
+      | summaryProperties(field) )
+    { return null; }
+}
+
+/**
+ * This rule consumes a transform statement for a summary field element.
+ *
+ * @param field            The field to modify.
+ * @return Null.
+ */
+Object summaryTransform(SummaryInFieldOperation field) : { }
+{
+    ( <DYNAMIC>             { field.setTransform(SummaryTransform.DYNAMICTEASER); }
+     | (<FULL> | <STATIC>) { field.setTransform(SummaryTransform.NONE); } )
+    { return null; }
+}
+
+/**
+ * This rule consumes a bolding statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryBolding(SummaryInFieldLongOperation field) :
+{
+    boolean bold;
+}
+{
+    <BOLDING> <COLON> bold = bool()
+    { field.setBold(bold); }
+}
+
+/**
+ * This rule consumes a source-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summarySourceList(SummaryInFieldOperation field) :
+{
+    String str;
+}
+{
+    ( <SOURCE> <COLON> str = identifier() { field.addSource(str); }
+      (        <COMMA> str = identifier() { field.addSource(str); } )* ) +
+}
+
+/**
+ * This rule consumes a destination-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryDestinationList(SummaryInFieldLongOperation field) :
+{
+    String str;
+}
+{
+    <TO> <COLON> str = identifier() { field.addDestination(str); }
+    (    <COMMA> str = identifier() { field.addDestination(str); } )*
+}
+
+/**
+ * This rule consumes properties for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryProperties(SummaryInFieldLongOperation field) : { }
+{
+    <PROPERTIES> lbrace() (summaryProperty(field) <NL>)+ <RBRACE>
+}
+
+/**
+ * This rule consumes a single summary property pair for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryProperty(SummaryInFieldLongOperation field) :
+{
+    String name, value;
+}
+{
+    name = identifier() <COLON> (value = identifier() | value = quotedString())
+    { field.addProperty(new SummaryField.Property(name, value)); }
+}
+
+/**
+ * This rule consumes a stemming block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void fieldStemming(FieldOperationContainer field) :
+{
+    String setting;
+    StemmingOperation op = new StemmingOperation();
+}
+{
+    <STEMMING> <COLON> setting = identifier()
+    {
+        op.setSetting(setting);
+        field.addOperation(op);
+    }
+}
+
+/**
+ * This rule consumes a stemming statement for a search element.
+ *
+ * @param search The search to modify.
+ */
+void searchStemming(Search search) :
+{
+    String setting;
+}
+{
+    <STEMMING> <COLON> setting = identifier()
+    { search.setStemming(Stemming.get(setting)); }
+}
+
+/**
+ * This rule consumes a normalizing statement of a field element. At the moment, this can only be used to turn off
+ * normalizing.
+ *
+ * @param field The field to modify.
+ */
+void normalizing(FieldOperationContainer field) :
+{
+    String setting;
+}
+{
+    <NORMALIZING> <COLON> setting = identifier()
+    {
+        field.addOperation(new NormalizingOperation(setting));
+    }
+}
+
+/**
+ * This rule consumes a bolding statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void bolding(FieldOperationContainer field) :
+{
+    boolean bold;
+}
+{
+    <BOLDING> <COLON> bold = bool()
+    {
+        field.addOperation(new BoldingOperation(bold));
+    }
+}
+
+/**
+ * This rule consumes a body statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void body(SDField field) : { }
+{
+    <BODY>
+    {
+        field.setHeader(false);
+        field.setHeaderOrBodyDefined(true);
+    }
+}
+
+/**
+ * This rule consumes a header statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void header(SDField field) : { }
+{
+    <HEADER>
+    {
+        field.setHeader(true);
+        field.setHeaderOrBodyDefined(true);
+    }
+}
+
+void queryCommand(FieldOperationContainer container) :
+{
+    String command;
+    QueryCommandOperation field = new QueryCommandOperation();
+}
+{
+    <QUERYCOMMAND> <COLON> command = identifier()
+    {
+        field.addQueryCommand(command);
+        container.addOperation(field);
+    }
+}
+
+void alias(FieldOperationContainer container) :
+{
+    String aliasedName = null;
+    String alias;
+}
+{
+    <ALIAS> [aliasedName = identifier()] <COLON> alias = identifier()
+    {
+       AliasOperation op = new AliasOperation(aliasedName, alias);
+       container.addOperation(op);
+    }
+}
+
+Object match(FieldOperationContainer field) : { }
+{
+    <MATCH> ( (<COLON> matchType(field))
+              | (lbrace() (matchItem(field) (<NL>)*)* <RBRACE>) )
+    { return null; }
+}
+
+/**
+ * This rule consumes a single match item for a match block.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object matchItem(FieldOperationContainer field) : { }
+{
+    ( matchType(field) | exactTerminator(field) | gramSize(field) | matchSize(field) )
+    { return null; }
+}
+
+Object matchType(FieldOperationContainer container) :
+{
+    MatchOperation field = new MatchOperation();
+}
+{
+    (   <MTOKEN>    { field.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { field.setMatchingType(Matching.Type.TEXT); }
+      | <WORD>      { field.setMatchingType(Matching.Type.WORD); }
+      | <EXACT>     { field.setMatchingType(Matching.Type.EXACT); }
+      | <GRAM>      { field.setMatchingType(Matching.Type.GRAM); }
+      | <PREFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
+      | <SUBSTRING> { field.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
+      | <SUFFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
+    {
+        container.addOperation(field);
+        return null;
+    }
+}
+
+void exactTerminator(FieldOperationContainer container) :
+{
+    String terminator;
+    MatchOperation field = new MatchOperation();
+}
+{
+    <EXACTTERMINATOR> <COLON> terminator = quotedString()
+    {
+        field.setExactMatchTerminator(terminator);
+        container.addOperation(field);
+    }
+}
+
+void gramSize(FieldOperationContainer container) :
+{
+    int gramSize;
+    MatchOperation field = new MatchOperation();
+}
+{
+    <GRAMSIZE> <COLON> gramSize = integer()
+    {
+        field.setGramSize(gramSize);
+        container.addOperation(field);
+    }
+}
+
+void matchSize(FieldOperationContainer container) :
+{
+    int matchSize;
+    MatchOperation field = new MatchOperation();
+}
+{
+    <MAXLENGTH> <COLON> matchSize = integer()
+    {
+        field.setMaxLength(matchSize);
+        container.addOperation(field);
+    }
+}
+/**
+ * Consumes a rank statement of a field element.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object rank(FieldOperationContainer field) :
+{
+    RankOperation op = new RankOperation();
+}
+{
+    <RANK> ( (<COLON> rankSetting(op))
+             | (lbrace() (rankSetting(op) (<NL>)*)* <RBRACE>) )
+    {
+        field.addOperation(op);
+        return null;
+    }
+}
+
+/**
+ * Consumes a single rank setting of a rank statement.
+ *
+ * @param field The field to modify.
+ * @return Null.
+ */
+Object rankSetting(RankOperation field) : { }
+{
+    ( <LITERAL>   { field.setLiteral(true); }
+      | <NORMAL>  { field.setNormal(true); }
+      | <FILTER>  { field.setFilter(true); } )
+    { return null; }
+}
+
+/**
+ * Consumes an id statement of a field body block.
+ *
+ * @param field    The field to modify.
+ * @param document The document type to modify.
+ */
+void id(FieldOperationContainer field, SDDocumentType document) :
+{
+    int fieldId;
+    IdOperation op = new IdOperation();
+}
+{
+    <ID> <COLON> fieldId = integer()
+    {
+        op.setDocument(document);
+        op.setFieldId(fieldId);
+        field.addOperation(op);
+    }
+}
+
+/**
+ * Consumes an indexing-rewrite statement of a field body block.
+ *
+ * @param field The field to modify.
+ */
+void indexingRewrite(FieldOperationContainer field) : { }
+{
+    <INDEXINGREWRITE> <COLON> <NONE>
+    { field.addOperation(new IndexingRewriteOperation()); }
+}
+
+/**
+ * Consumes a document-summary block from within a search block.
+ *
+ * @param search The search object to add content to.
+ * @return Null.
+ */
+Object documentSummary(Search search) :
+{
+    String name;
+    DocumentSummary summary;
+}
+{
+    ( ( <DOCUMENTSUMMARY> |
+        <SUMMARY> { deployLogger.log(Level.WARNING, "Directive 'summary' is deprecated, use 'document-summary' instead."); } )
+      name = identifier() { search.addSummary(summary = new DocumentSummary(name)); }
+      lbrace() (documentSummaryItem(summary) (<NL>)*)* <RBRACE> )
+    { return null; }
+}
+
+/**
+ * Consumes a single document-summary item.
+ *
+ * @param summary The document summary to modify.
+ * @return Null.
+ */
+Object documentSummaryItem(DocumentSummary summary) : { }
+{
+    summaryInDocument(summary)
+    { return null; }
+}
+
+/**
+ * Consumes an index block for a field element.
+ *
+ * @param search The search object to add content to.
+ * @param field  The field to modify.
+ * @return Null.
+ */
+Object index(Search search, FieldOperationContainer field) :
+{
+    IndexOperation op = new IndexOperation();
+    String indexName = (field != null) ? field.getName() : null;
+}
+{
+    <INDEX> [indexName = identifier()]
+    {
+        if (indexName == null) {
+            throw new ParseException("Index statements outside fields must have an explicit name.");
+        }
+        op.setIndexName(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (lbrace() (indexBody(op) (<NL>)*)* <RBRACE>) )
+    {
+        if (field == null) {
+
+            Index index = new Index(indexName);
+            op.applyToIndex(index);
+            search.addIndex(index);
+        } else {
+            field.addOperation(op);
+        }
+        return null;
+    }
+}
+
+/**
+ * Consumes a single index statement for an index block.
+ *
+ * @param index The index to modify.
+ * @return Null.
+ */
+Object indexBody(IndexOperation index) :
+{
+    String str;
+    int arity;
+    long num;
+    double threshold;
+}
+{
+    ( <PREFIX>                                   { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
+      | <RISE> {
+              throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
+                                       "If it is a weighted set field you should also add 'attribute:fast-search'." +
+                                       "This change will require refeeding.");
+          }
+      | <ARITY> <COLON> arity = integer()                              { index.setArity(arity); }
+      | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
+      | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
+      | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
+    )
+    { return null; }
+}
+
+/**
+ * Consumes a rank-profile block of a search element.
+ *
+ * @param search The search object to add content to.
+ */
+void rankProfile(Search search) :
+{
+    String name;
+    RankProfile profile;
+}
+{
+    ( <RANKPROFILE> name = identifier()
+        {
+            if ("default".equals(name)) {
+                profile = rankProfileRegistry.getRankProfile(search, "default");
+            } else {
+                profile = new RankProfile(name, search, rankProfileRegistry);
+            }
+        }
+      [inheritsRankProfile(profile)]
+      lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
+    {
+        rankProfileRegistry.addRankProfile(profile);
+    }
+}
+
+/**
+ * This rule consumes a single statement for a rank-profile block.
+ *
+ * @param profile The rank profile to modify.
+ * @return Null.
+ */
+Object rankProfileItem(RankProfile profile) : { }
+{
+    ( fieldRankType(profile)
+      | fieldWeight(profile)
+      | fieldRankFilter(profile)
+      | firstPhase(profile)
+      | matchPhase(profile)
+      | macro(profile)
+      | ignoreRankFeatures(profile)
+      | numThreadsPerSearch(profile)
+      | numSearchPartitions(profile)
+      | termwiseLimit(profile)
+      | rankFeatures(profile)
+      | rankProperties(profile)
+      | secondPhase(profile)
+      | rankDegradation(profile)
+      | constants(profile)
+      | summaryFeatures(profile) )
+    { return null; }
+}
+
+/**
+ * This rule consumes an inherits statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void inheritsRankProfile(RankProfile profile) :
+{
+    String str;
+}
+{
+    <INHERITS> str = identifier() { profile.setInherited(str); }
+}
+
+/**
+ * This rule consumes a function statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void macro(RankProfile profile) :
+{
+    String macro, param, expr;
+    boolean inline = false;
+}
+{
+    ( <MACRO> inline = inline() macro = identifier() [ "$" { macro = macro + token.image; } ]
+      "("                                { profile.addMacro(macro, inline); }
+          [ param = identifier()         { profile.getMacros().get(macro).addParam(param); }
+          ( <COMMA> param = identifier() { profile.getMacros().get(macro).addParam(param); } )* ]
+      ")"
+      lbrace() expr = expression() (<NL>)* <RBRACE> )
+    { profile.getMacros().get(macro).setTextualExpression(expr); }
+}
+
+boolean inline() :
+{
+}
+{
+    ( <INLINE> { return true; } ) ?
+    { return false; }
+}
+
+/**
+ * This rule consumes a match-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void matchPhase(RankProfile profile) :
+{
+    MatchPhaseSettings settings = new MatchPhaseSettings();
+}
+{
+    <MATCHPHASE> lbrace() (matchPhaseItem(settings) (<NL>)*)* <RBRACE>
+    {
+        settings.checkValid();
+ 	    profile.setMatchPhaseSettings(settings);
+    }
+}
+
+void matchPhaseItem(MatchPhaseSettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+    double coverage;
+}
+{
+    ( <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
+      | diversity(settings)
+      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
+                          | <DESCENDING> { settings.setAscending(false); } )
+      | <MAXHITS> <COLON> num = integer() { settings.setMaxHits(num); }
+      | <MAXFILTERCOVERAGE> <COLON> coverage = consumeFloat() { settings.setMaxFilterCoverage(coverage); }
+      | <EVALUATION_POINT> <COLON> multiplier = consumeFloat() { settings.setEvaluationPoint(multiplier); }
+      | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = consumeFloat() { settings.setPrePostFilterTippingPoint(multiplier); }
+    )
+    { return; }
+}
+
+/**
+ * This rule consumes a diversity block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void diversity(MatchPhaseSettings profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+{
+    <DIVERSITY> lbrace() (diversityItem(settings) (<NL>)*)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+    }
+}
+
+void diversityItem(DiversitySettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+}
+{
+    (   <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
+      | <MIN_GROUPS> <COLON> num = integer() { settings.setMinGroups(num); }
+      | <CUTOFF_FACTOR> <COLON> multiplier = consumeFloat() { settings.setCutoffFactor(multiplier); }
+      | <CUTOFF_STRATEGY> <COLON>
+        (   <STRICT> { settings.setCutoffStrategy(Diversity.CutoffStrategy.strict); }
+          | <LOOSE>  { settings.setCutoffStrategy(Diversity.CutoffStrategy.loose); }
+        )
+    )
+    { return; }
+}
+
+
+
+/**
+ * Consumes the first-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void firstPhase(RankProfile profile) :
+{
+    String exp;
+}
+{
+    <FIRSTPHASE> lbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
+}
+
+Object firstPhaseItem(RankProfile profile) :
+{
+  String expression;
+  int rerankCount;
+  double dropLimit;
+}
+{
+    ( expression = expression()                        { profile.setFirstPhaseRankingString(expression); }
+      | (<KEEPRANKCOUNT> <COLON> rerankCount = integer()) { profile.setKeepRankCount(rerankCount); }
+      | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
+    )
+    { return null; }
+}
+
+/**
+ * Consumes the second-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void secondPhase(RankProfile profile) : { }
+{
+    <SECONDPHASE> lbrace() (secondPhaseItem(profile) (<NL>)*)* <RBRACE>
+}
+
+/**
+ * Consumes a statement for a second-phase block.
+ *
+ * @param profile The rank profile to modify.
+ * @return Null.
+ */
+Object secondPhaseItem(RankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+}
+{
+    ( expression = expression()                 { profile.setSecondPhaseRankingString(expression); }
+      | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    )
+    { return null; }
+}
+
+/**
+ * This rule consumes a summary-features block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ * @return Null.
+ */
+Object summaryFeatures(RankProfile profile) :
+{
+    String features;
+}
+{
+    ( <SUMMARYFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
+      <SUMMARYFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
+                                                              token.image.lastIndexOf("}")).trim(); } )
+    {
+        profile.addSummaryFeatures(getFeatureList(features));
+        return null;
+    }
+}
+
+/**
+ * This rule consumes a rank-features block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ * @return Null.
+ */
+Object rankFeatures(RankProfile profile) :
+{
+    String features;
+}
+{
+    ( <RANKFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
+      <RANKFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
+                                                           token.image.lastIndexOf("}")).trim(); } )
+    {
+        profile.addRankFeatures(getFeatureList(features));
+        return null;
+    }
+}
+
+/**
+ * This rule consumes a ignore-default-rank-features statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void ignoreRankFeatures(RankProfile profile) : { }
+{
+    <IGNOREDEFAULTRANKFEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
+}
+
+/**
+ * This rule consumes a num-threads-per-search statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void numThreadsPerSearch(RankProfile profile) :
+{
+    int num;
+}
+{
+    (<NUMTHREADSPERSEARCH> <COLON> num = integer()) { profile.setNumThreadsPerSearch(num); }
+}
+
+/**
+ * This rule consumes a num-search-partitions statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void numSearchPartitions(RankProfile profile) :
+{
+    int num;
+}
+{
+    (<NUMSEARCHPARTITIONS> <COLON> num = integer()) { profile.setNumSearchPartitions(num); }
+}
+
+/**
+ * This rule consumes a num-threads-per-search statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void termwiseLimit(RankProfile profile) :
+{
+    double num;
+}
+{
+    (<TERMWISELIMIT> <COLON> num = consumeFloat()) { profile.setTermwiseLimit(num); }
+}
+/**
+ * This rule consumes a rank-properties block of a rank profile. There is a little trick within this rule to allow the
+ * final rank property to skip the terminating newline token.
+ *
+ * @param profile The rank profile to modify.
+ */
+void rankProperties(RankProfile profile) : { }
+{
+    <RANKPROPERTIES> lbrace() (LOOKAHEAD(rankPropertyItem() <COLON> rankPropertyItem() <NL>)
+                               rankProperty(profile) (<NL>)+)* [rankProperty(profile)] <RBRACE>
+}
+
+/**
+ * This rule consumes a single rank property pair for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void rankProperty(RankProfile profile) :
+{
+    String key, val;
+}
+{
+    key = rankPropertyItem() <COLON> val = rankPropertyItem()
+    { profile.addRankProperty(key, val); }
+}
+
+
+/**
+ * This rule consumes a single rank property for a rank-properties block.
+ *
+ * @return The token image of the consumed item.
+ */
+String rankPropertyItem() :
+{
+    String image, ret = "";
+}
+{
+    ( ( image = identifier()              { ret += image; }
+        | image = quotedString()          { ret += image; }
+        | ( "(" | ")" | <DOT> | <COMMA> ) { ret += token.image; } )+ )
+    { return ret; }
+}
+
+/**
+ * This rule consumes a field-weight statement of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void fieldWeight(RankProfile profile) :
+{
+    Integer num;
+    String name;
+}
+{
+    <WEIGHT> name = identifier() <COLON> num = integer()
+    { profile.addRankSetting(name, RankProfile.RankSetting.Type.WEIGHT, num); }
+}
+
+/**
+ * This rule consumes a rank-type statement of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void fieldRankType(RankProfile profile) :
+{
+    String name;
+    String type;
+}
+{
+    <RANKTYPE> name = identifier() <COLON> type = identifier()
+    { profile.addRankSetting(name, RankProfile.RankSetting.Type.RANKTYPE, RankType.fromString(type)); }
+}
+
+/**
+ * This rule consumes a rank filter statement of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void fieldRankFilter(RankProfile profile) :
+{
+    String name;
+}
+{
+    <RANK> name = identifier() <COLON> <FILTER>
+    { profile.addRankSetting(name, RankProfile.RankSetting.Type.PREFERBITVECTOR, new Boolean(true)); }
+}
+
+/**
+ * This rule consumes part of a rank-degradation statement of a rank profile.
+ */
+void rankDegradationBinSize() :
+{
+    double freq;
+}
+{
+    <RPBINSIZE> <COLON> freq = consumeFloat()
+    { deployLogger.log(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
+}
+
+
+/**
+ * This rule consumes part of a rank-degradation statement of a rank profile.
+ */
+void rankDegradationBinLow() :
+{
+    int n;
+}
+{
+    <RPBINLOW> <COLON> n = integer()
+    { deployLogger.log(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
+}
+
+
+/**
+ * This rule consumes part of a rank-degradation statement of a rank profile.
+ */
+void rankDegradationPosbinSize() :
+{
+    double avgOcc;
+}
+{
+    <RPPOSBINSIZE> <COLON> avgOcc = consumeFloat()
+    { deployLogger.log(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
+}
+
+
+/**
+ * This rule consumes part of a rank-degradation statement of a rank profile.
+ */
+Object rankDegradationItem() :
+{
+}
+{
+    ( rankDegradationBinSize()
+      | rankDegradationBinLow()
+      | rankDegradationPosbinSize() )
+    { return null; }
+}
+
+/**
+ * This rule consumes a rank-degradation statement of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+Object rankDegradation(RankProfile profile) :
+{
+    double freq;
+}
+{
+    ( <RANKDEGRADATIONFREQ> <COLON> freq = consumeFloat()
+    { deployLogger.log(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
+      | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
+    )
+    {
+        return null;
+    }
+}
+
+/**
+ * Consumes a set of constants available in ranking expressions in the enclosing profile.
+ */
+void constants(RankProfile profile) :
+{
+    String name;
+}
+{
+    <CONSTANTS> <LBRACE> (<NL>)*
+      ( name = identifier() ( constantValue(profile, name) |
+                              constantTensor(profile, name) ) (<NL>)* )*
+    <RBRACE>
+}
+
+void constantValue(RankProfile profile, String name) :
+{
+    String value;
+}
+{
+    <COLON> value = identifier() { profile.addConstant(name, Value.parse(value)); }
+}
+
+void constantTensor(RankProfile profile, String name) :
+{
+    String tensorString = "";
+    TensorType tensorType = null;
+}
+{
+    <LBRACE> (<NL>)*
+      (( tensorString = tensorValue() |
+         tensorType = tensorType(profile.getName(), name) ) (<NL>)* )* <RBRACE>
+    {
+        if (tensorType != null) {
+            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString), tensorType));
+        } else {
+            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString)));
+        }
+    }
+}
+
+String tensorValue() :
+{
+    String tensor;
+}
+{
+    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
+                                                         token.image.lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+}
+
+TensorType tensorType(String rankProfileName, String constantTensorName) :
+{
+    String tensorTypeString;
+}
+{
+    <TYPE> <COLON> ( <TENSOR_TYPE> { tensorTypeString = token.image; } )
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("For constant tensor '" + constantTensorName + "' in rank profile '" + rankProfileName +
+                "': Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
+    }
+}
+
+/**
+ * This rule consumes an expression token and returns its image.
+ *
+ * @return The consumed token image.
+ */
+String expression() :
+{
+    String exp;
+}
+{
+    ( <EXPRESSION_SL> { exp = token.image.substring(token.image.indexOf(":") + 1); } |
+      <EXPRESSION_ML> { exp = token.image.substring(token.image.indexOf("{") + 1,
+                                                    token.image.lastIndexOf("}")); } )
+    { return exp; }
+}
+
+/**
+ * This rule consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * identifiers.
+ *
+ * @return The identifier string.
+ */
+String identifier() : { }
+{
+    ( <ALIAS>
+      | <ALWAYS>
+      | <ANNOTATION>
+      | <ANNOTATIONREFERENCE>
+      | <ARITY>
+      | <ARRAY>
+      | <ASCENDING>
+      | <ATTRIBUTE>
+      | <BODY>
+      | <BOLDING>
+      | <COMPRESSION>
+      | <COMPRESSIONLEVEL>
+      | <COMPRESSIONTHRESHOLD>
+      | <CONTEXT>
+      | <CREATEIFNONEXISTENT>
+      | <DENSEPOSTINGLISTTHRESHOLD>
+      | <DESCENDING>
+      | <DIRECT>
+      | <DOCUMENT>
+      | <DOCUMENTSUMMARY>
+      | <DOUBLE>
+      | <DYNAMIC>
+      | <ENABLEBITVECTORS>
+      | <ENABLEONLYBITVECTOR>
+      | <EXACT>
+      | <EXACTTERMINATOR>
+      | <FALSE>
+      | <FASTACCESS>
+      | <FASTSEARCH>
+      | <FIELD>
+      | <FIELDS>
+      | <FIELDSET>
+      | <FILE>
+      | <FILTER>
+      | <FIRSTPHASE>
+      | <FULL>
+      | <FUNCTION>
+      | <GRAM>
+      | <HEADER>
+      | <HUGE>
+      | <ID>
+      | <IDENTICAL>
+      | <IDENTIFIER>
+      | <IGNOREDEFAULTRANKFEATURES>
+      | <INDEX>
+      | <INDEXING>
+      | <INDEXINGREWRITE>
+      | <INHERITS>
+      | <INTEGER>
+      | <KEEPRANKCOUNT>
+      | <LITERAL>
+      | <LOCALE>
+      | <LONG>
+      | <LOWERBOUND>
+      | <LOWERCASE>
+      | <MACRO>
+      | <MAP>
+      | <MATCH>
+      | <MATCHPHASE>
+      | <MAXFILTERCOVERAGE>
+      | <MAXHITS>
+      | <MTOKEN>
+      | <NEVER>
+      | <NONE>
+      | <NOPREFETCH>
+      | <NORMAL>
+      | <NORMALIZING>
+      | <OFF>
+      | <ON>
+      | <ONDEMAND>
+      | <ORDER>
+      | <PREFETCH>
+      | <PREFIX>
+      | <PRIMARY>
+      | <PROPERTIES>
+      | <QUATERNARY>
+      | <QUERYCOMMAND>
+      | <RANK>
+      | <RANKPROFILE>
+      | <RANKPROPERTIES>
+      | <RANKSCOREDROPLIMIT>
+      | <RANKTYPE>
+      | <RAW>
+      | <REMOVEIFZERO>
+      | <RERANKCOUNT>
+      | <RISE>
+      | <SEARCH>
+      | <SECONDARY>
+      | <SECONDPHASE>
+      | <SORTING>
+      | <SOURCE>
+      | <SSCONTEXTUAL>
+      | <SSOVERRIDE>
+      | <SSTITLE>
+      | <SSURL>
+      | <STATIC>
+      | <STEMMING>
+      | <STRENGTH>
+      | <STRING>
+      | <STRUCT>
+      | <SUBSTRING>
+      | <SUFFIX>
+      | <SUMMARY>
+      | <SUMMARYTO>
+      | <SYMMETRIC>
+      | <TERTIARY>
+      | <TEXT>
+      | <TO>
+      | <TRUE>
+      | <TYPE>
+      | <UCA>
+      | <UPPERBOUND>
+      | <USEDOCUMENT>
+      | <VARIABLE>
+      | <WEIGHT>
+      | <WEIGHTEDSET>
+      | <WORD>
+      | <INLINE>
+      | <CONSTANTS>
+    )
+    { return token.image; }
+}
+
+/**
+ * This rule consumes a string token and returns the token image.
+ *
+ * @return The consumed token image.
+ */
+String string() : { }
+{
+    <STRING> { return token.image; }
+}
+
+/**
+ * This rule consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
+ * contain anything but a double quote.
+ *
+ * @return The unquoted token image.
+ */
+String quotedString() : { }
+{
+    <QUOTEDSTRING> { return token.image.substring(1, token.image.length() - 1); }
+}
+
+/**
+ * This rule consumes a boolean value.
+ *
+ * @return The consumed boolean value.
+ */
+Boolean bool() : { }
+{
+    ( ( <ON>  | <TRUE> )  { return true; } |
+      ( <OFF> | <FALSE> ) { return false; } )
+}
+
+/**
+ * This rule consumes an integer token and returns its numeric value.
+ *
+ * @return The consumed integer value.
+ */
+int integer() : { }
+{
+    <INTEGER> { return Integer.parseInt(token.image); }
+}
+
+/**
+ * This rule consumes a long or integer token and returns its numeric value.
+ *
+ * @return The consumed long value.
+ */
+long consumeLong() : { }
+{
+    ( <INTEGER> { return Long.parseLong(token.image); } |
+      <LONG>    { return Long.parseLong(token.image.substring(0, token.image.length()-1)); }
+    )
+}
+
+/**
+ * This rule consumes a floating-point token and returns its numeric value.
+ *
+ * @return The consumed value.
+ */
+double consumeFloat() : { }
+{
+    <DOUBLE> { return Double.valueOf(token.image); }
+}
+
+/**
+ * This rule consumes an opening brace with leading and trailing newline tokens.
+ */
+void lbrace() : { }
+{
+    (<NL>)* <LBRACE> (<NL>)*
+}

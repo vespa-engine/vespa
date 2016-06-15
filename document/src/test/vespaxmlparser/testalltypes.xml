@@ -1,0 +1,136 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!--
+    NOTE: see documentmanager.cfg for document type during test
+    a new document, adding all possible fields available to this documenttype 
+-->
+
+<vespafeed>
+    
+    <document documenttype="news" documentid="doc:news:http://news1"> 
+        <url>testUrl</url>
+        <title>testTitle</title>
+        <last_downloaded>1</last_downloaded>
+        <value_long>2</value_long>
+
+        <value_raw binaryencoding="base64">Zm9vYmFy</value_raw>
+        <value_content>dGVzdFZhbHVlQ29udGVudA==</value_content>
+
+        <stringarr>
+            <item>stringarrItem1</item>
+            <item>stringarrItem2</item>
+        </stringarr>
+        <intarr>
+            <item>2983742937</item>
+            <item>2983742938</item>
+            <item>4294967295</item>
+            <item>-2147483648</item>
+        </intarr>
+        <longarr>
+            <item>5</item>
+            <item>6</item>
+        </longarr>
+        <bytearr>
+            <item>7</item>
+            <item>8</item>
+        </bytearr>
+        <floatarr>
+            <item>9</item>
+            <item>10</item>
+        </floatarr>
+        <weightedsetint>
+            <item weight="11">11</item>
+            <item weight="12">12</item>
+        </weightedsetint>
+        <weightedsetstring>
+            <item weight="13">string13</item>
+            <item weight="14">string14</item>
+        </weightedsetstring>
+
+        <stringmap>
+            <item><key>italia</key><value>slovakia</value></item>
+            <item><key>danmark</key><value>japan</value></item> 
+            <item><key>paraguay</key><value>new zealand</value></item>
+        </stringmap>
+
+        <structfield>
+            <title>star wars</title>
+            <structfield>dummy</structfield>
+        </structfield>
+
+        <structarr>
+           <item>
+             <title>title1</title>
+             <mymap>
+               <item><key>key1</key><value>value1</value></item>
+               <item><key>key2</key><value>value2</value></item> 
+             </mymap>
+           </item>
+           <item> 
+             <title>title2</title> 
+             <mymap> 
+               <item><key>key1.1</key><value>value1.1</value></item> 
+               <item><key>key1.2</key><value>value1.2</value></item>  
+             </mymap> 
+           </item>
+        </structarr>
+
+        <structmap>
+           <item>
+              <key>32</key>
+              <value>
+                 <title>title1</title>
+                 <mymap>
+                   <item><key>key1</key><value>value1</value></item> 
+                   <item><key>key2</key><value>value2</value></item>  
+                 </mymap>
+              </value>
+           </item>
+           <item> 
+              <key>28</key> 
+              <value> 
+                 <title>title2</title> 
+                 <mymap> 
+                   <item><key>key3</key><value>value3</value></item>  
+                   <item><key>key4</key><value>value4</value></item>   
+                 </mymap> 
+              </value> 
+           </item>
+        </structmap>
+
+        <arrmap>
+           <item>
+              <key>foo</key>
+              <value>
+                 <item>hei1</item>
+                 <item>hei2</item> 
+                 <item>hei3</item> 
+              </value>
+           </item>
+           <item> 
+              <key>bar</key> 
+              <value> 
+                 <item>hei4</item> 
+                 <item>hei5</item>  
+                 <item>hei6</item>  
+              </value> 
+           </item>
+        </arrmap>
+
+        <maparr>
+            <item>
+                <item><key>key1</key><value>value1</value></item>
+                <item><key>key2</key><value>value2</value></item>
+            </item>
+            <item>
+                <item><key>key3</key><value>value3</value></item>
+                <item><key>key4</key><value>value4</value></item>
+            </item>
+            <item>
+                <item><key>key5</key><value>value5</value></item>
+                <item><key>key6</key><value>value6</value></item>
+            </item>
+        </maparr>
+
+    </document>
+    
+</vespafeed>

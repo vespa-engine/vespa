@@ -1,0 +1,68 @@
+## Dynamic teasers
+## Some sensible default values
+##  This file is used by the testclient application by default, 
+##  if run from this directory.
+##  Use the -f option to testclient to specify an alternate location
+
+# A string to be included before each hit in the generated summary 
+juniper.dynsum.highlight_on <b>
+
+# A string to be included after each hit in the generated summary 
+juniper.dynsum.highlight_off </b>
+
+# A string to be included to denote abbreviated/left out pieces of the 
+# original text in the generated summary 
+juniper.dynsum.continuation ...
+
+# whether or not Juniper should escape the 5 chars <>&"'
+#  auto means escape if any of the markup defs above starts with <
+juniper.dynsum.escape_markup auto
+
+# Length of the generated summary in bytes. This is a hint to Juniper. 
+# The result may be slightly longer or shorter depending on the structure 
+# of the available document text and the submitted query. 
+juniper.dynsum.length 256
+
+# The number of (possibly partial) set of keywords matching the query 
+# to try to include in the summary. The larger this value compared is 
+# set relative to the length parameter, the more dense the keywords 
+# may appear in the summary. 
+juniper.dynsum.max_matches 3 
+
+# The maximal number of bytes of context to prepend and append to each 
+# of the selected query keyword hits. This parameter defines the max 
+# size a summary would become if there are few keyword hits (max_matches
+# set low or document contained few matches of the keywords. 
+juniper.dynsum.surround_max 128
+
+# The size of the sliding window used to determine if
+# multiple query terms occur together. The larger the value, the more
+# likely the system will find (and present in dynamic summary) complete
+# matches containing all the search terms. The downside is a potential 
+# performance overhead of keeping candidates for matches longer during
+# matching, and consequently updating more candidates that eventually
+# gets thrown
+juniper.matcher.winsize 600
+
+# The minimal number of bytes in a query keyword for it to be subject 
+# to the simple Juniper stemming algorithm. Keywords that are shorter 
+# than or equal to this limit will only yield exact matches in the 
+# dynamic summaries.  
+juniper.stem.min_length 5
+
+# The maximal number of bytes in a query keyword for it to be subject 
+# to the simple Juniper stemming algorithm 
+juniper.stem.max_extend 3
+
+# A factor to multiply the internal Juniper metric with when producing 
+# proximity metric for a given field. A real/floating point value accepted 
+# Default value is 0.25 - scaling down by a factor 4.
+# Note that the QRserver also supports a factor that is global to all proximity
+# metric fields, and that is applied in addition when proximityboosting 
+# is enabled there. This parameter applies to Juniper version >= 2.0.4 only.
+# and is intended to be used on a per field basis.
+juniper.proximity.factor 0.25
+
+# debugging Juniper (intended for internal usage)
+# (See juniperdebug.h for details about the various bits)
+juniper.debug_mask 0x0

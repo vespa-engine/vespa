@@ -1,0 +1,36 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# tests rules containing ellipses (wildcards)
+
+# From tutorial, referenced ellipsis
+[...] album -> album:[...];
+
+# From tutorial, referenced ellipsis
+[...] [album] -> album:[...];
+[album] :- album, cd, record, lp;
+
+
+
+# Invented answerish use case, unreferenced ellipsis
+why is [noun] ... [adjective] +> about:[noun];
+
+[noun] :- stench, the sky, aardwark;
+[adjective] :- unpleasant, blue, most relevant;
+
+
+
+# Ellipsis in named condition
+buy [video] -> name:[videoname] product:video;
+
+[video] :- videoname/[...] [videosynonym], videoname/[knownvideoname];
+
+[knownvideoname] :- a sun came, illinois, the avalance, seven swans;
+
+[videosynonym] :- dvd, video;
+
+
+
+# Multiple ellipsis
+
+from from/[...] to to/[...] -> from:[from] to:[to];
+
+

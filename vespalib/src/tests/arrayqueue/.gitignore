@@ -1,0 +1,4 @@
+.depend
+Makefile
+arrayqueue_test
+vespalib_arrayqueue_test_app

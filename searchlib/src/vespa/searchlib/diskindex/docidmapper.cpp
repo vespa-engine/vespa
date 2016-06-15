@@ -1,0 +1,73 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.docidmapper");
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/searchlib/common/documentsummary.h>
+#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include "docidmapper.h"
+
+#define NO_DOC static_cast<uint32_t>(-1)
+
+namespace search
+{
+
+namespace diskindex
+{
+
+
+DocIdMapping::DocIdMapping(void)
+    : _docIdLimit(0u),
+      _selector(NULL),
+      _selectorId(0)
+{
+}
+
+
+void
+DocIdMapping::clear(void)
+{
+    _docIdLimit = 0;
+    _selector = NULL;
+    _selectorId = 0;
+}
+
+
+void
+DocIdMapping::setup(uint32_t docIdLimit)
+{
+    _docIdLimit = docIdLimit;
+    _selector = NULL;
+    _selectorId = 0;
+}
+
+
+void
+DocIdMapping::setup(uint32_t docIdLimit,
+                    const SelectorArray *selector,
+                    uint8_t selectorId)
+{
+    _docIdLimit = docIdLimit;
+    _selector = selector;
+    _selectorId = selectorId;
+}
+
+
+bool
+DocIdMapping::readDocIdLimit(const vespalib::string &mergedDir)
+{
+    uint32_t docIdLimit = 0;
+    if (!search::docsummary::DocumentSummary::
+        readDocIdLimit(mergedDir, docIdLimit))
+        return false;
+    _docIdLimit = docIdLimit;
+    return true;
+}
+
+
+
+} // namespace diskindex
+
+} // namespace search

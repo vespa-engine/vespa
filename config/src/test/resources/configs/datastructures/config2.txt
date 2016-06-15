@@ -1,0 +1,19 @@
+date[3]
+date[0] 14-Apr-08
+date[1] 15-Apr-08
+date[2] 16-Apr-08
+stock[2]
+stock[0].ticker YHOO
+stock[0].type COMMON
+stock[0].volume[3]
+stock[0].volume[0] 1333000
+stock[0].volume[1] 996000
+stock[0].volume[2] 2400000
+stock[1].ticker EWJ
+stock[1].type ETF
+stock[1].volume[3]
+stock[1].volume[0] 4600000
+stock[1].volume[1] 3002000
+stock[1].volume[2] 10987000
+basicstruct.foo "bar"
+basicstruct.bar 42

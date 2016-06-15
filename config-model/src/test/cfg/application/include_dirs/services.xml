@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+  <admin version="2.0">
+    <adminserver hostalias="node1" />
+    <logserver hostalias="node1" />
+  </admin>
+
+  <jdisc id="default" version="1.0">
+  <!--  <component id="test.Exampledocproc"/> -->
+    <components>
+      <include dir="jdisc_dir"/>
+    </components>
+    <search>
+      <include dir='dir1'/>
+      <include dir='dir2'/>
+      <include dir='empty_dir'/>
+    </search>
+
+    <nodes>
+      <node hostalias="node1" />
+    </nodes>
+  </jdisc>
+
+</services>

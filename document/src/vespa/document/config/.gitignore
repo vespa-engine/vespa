@@ -1,0 +1,11 @@
+.depend
+Makefile
+config-bucket.So
+config-bucket.cpp
+config-bucket.h
+config-documentmanager.So
+config-documentmanager.cpp
+config-documentmanager.h
+config-documenttypes.So
+config-documenttypes.cpp
+config-documenttypes.h

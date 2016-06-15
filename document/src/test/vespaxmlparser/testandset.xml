@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<!--
+    Document   : testandset.xml
+    Created on : October 16, 2015
+    Author     : Vegard Sjonfjell
+    Description:
+    This feed contains documents, updates and removes with a test and set condition set
+-->
+
+<vespafeed>
+    <document documenttype="news" documentid="id:news:news::test1" condition="news.value_long == 1">
+        <value_long>2</value_long>
+    </document>
+
+    <update documenttype="news" documentid="id:news:news::test2" condition="news.value_long == 1">
+        <assign field="value_long">2</assign>
+    </update>
+
+    <remove documentid="id:news:news::test3" condition="news.value_long == 1"/>
+</vespafeed>

@@ -1,0 +1,28 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<page id="MapSectionsToSections" layout="column" description="Contains 4 boxes, to which 4 sections are mapped">
+
+    <section layout="row" description="row 1">
+        <placeholder id="box1holder"/>
+        <placeholder id="box2holder"/>
+    </section>
+    <section layout="row" description="row 2">
+        <placeholder id="box3holder"/>
+        <placeholder id="box4holder"/>
+    </section>
+
+    <choice method="myMethod">
+        <map to="box1holder box2holder box3holder box4holder">
+            <section id="box1" source="source1"/>
+            <section id="box2" source="source2"/>
+            <item>
+                <section id="box3" source="source3"/>
+                <section id="box5" source="source5"/>
+            </item>
+            <section id="box4" source="source4"/>
+        </map>
+    </choice>
+
+    <choice> <!-- Empty choices should have no effect -->
+    </choice>
+
+</page>

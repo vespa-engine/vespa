@@ -1,0 +1,9 @@
+*.core
+*.ilk
+*.pdb
+.depend
+Makefile
+pingclient
+pingserver
+fnet_pingclient_app
+fnet_pingserver_app

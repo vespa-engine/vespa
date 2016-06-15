@@ -1,0 +1,163 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include "andnotsearch.h"
+
+namespace search {
+namespace queryeval {
+
+void
+AndNotSearch::doSeek(uint32_t docid)
+{
+    const Children & children(getChildren());
+    if (!children[0]->seek(docid)) {
+        return; // not match in positive subtree
+    }
+    for (uint32_t i = 1; i < children.size(); ++i) {
+        if (children[i]->seek(docid)) {
+            return; // match in negative subtree
+        }
+    }
+    setDocId(docid); // we have a match
+}
+
+void
+AndNotSearch::doUnpack(uint32_t docid)
+{
+   getChildren()[0]->doUnpack(docid);
+}
+
+SearchIterator::UP
+AndNotSearchStrictBase::andWith(UP filter, uint32_t estimate)
+{
+    return getChildren()[0]->andWith(std::move(filter), estimate);
+}
+
+namespace {
+class AndNotSearchStrict : public AndNotSearchStrictBase
+{
+private:
+    template<bool doSeekOnlyOnPositiveChild>
+    void internalSeek(uint32_t docid);
+protected:
+    void doSeek(uint32_t docid) override {
+        internalSeek<true>(docid);
+    }
+public:
+    /**
+     * Create a new strict AndNot Search with the given children.
+     * A strict AndNot can assume that the first child below is also strict.
+     * No such assumptions can be made about the * other children.
+     *
+     * @param children the search objects we are andnot'ing
+     **/
+    AndNotSearchStrict(const Children & children) : AndNotSearchStrictBase(children)
+    {
+    }
+
+    void initRange(uint32_t beginid, uint32_t endid) override {
+        AndNotSearch::initRange(beginid, endid);
+        internalSeek<false>(beginid);
+    }
+   
+};
+
+template <bool doSeekOnlyOnPositiveChild>
+void
+AndNotSearchStrict::internalSeek(uint32_t docid)
+{
+    const Children & children(getChildren());
+    bool hit;
+    if (doSeekOnlyOnPositiveChild) {
+        children[0]->doSeek(docid);
+        hit = (children[0]->getDocId() == docid);
+    } else {
+        hit = children[0]->seek(docid);
+    }
+    for (uint32_t i = 1; hit && i < children.size(); ++i) {
+        if (children[i]->seek(docid)) {
+            hit = false;
+        }
+    }
+    if (hit) {
+        setDocId(docid);
+        return;
+    }
+    uint32_t nextId = children[0]->getDocId();
+    while (!isAtEnd(nextId)) {
+        bool foundHit = true;
+        for (uint32_t i = 1; i < children.size(); ++i) {
+            if (children[i]->seek(nextId)) {
+                foundHit = false;
+                ++nextId;
+                break;
+            }
+        }
+        if (foundHit) {
+            break;
+        } else {
+            children[0]->doSeek(nextId);
+            nextId = children[0]->getDocId();
+        }
+    }
+    setDocId(nextId);
+}
+
+}  // namespace
+
+OptimizedAndNotForBlackListing::OptimizedAndNotForBlackListing(const MultiSearch::Children & children) :
+    AndNotSearchStrictBase(children)
+{   
+}
+    
+void OptimizedAndNotForBlackListing::initRange(uint32_t beginid, uint32_t endid)
+{
+    AndNotSearch::initRange(beginid, endid);
+    setDocId(internalSeek<false>(beginid));
+}
+
+bool OptimizedAndNotForBlackListing::isBlackListIterator(const SearchIterator * iterator)
+{
+    return dynamic_cast<const BlackListIterator *>(iterator) != 0;
+}
+
+void OptimizedAndNotForBlackListing::doSeek(uint32_t docid)
+{
+    setDocId(internalSeek<true>(docid));
+}   
+
+void OptimizedAndNotForBlackListing::doUnpack(uint32_t docid)
+{
+    positive()->doUnpack(docid);
+} 
+
+SearchIterator *
+AndNotSearch::create(const AndNotSearch::Children &children, bool strict) {
+    if (strict) {
+        if ((children.size() == 2) && OptimizedAndNotForBlackListing::isBlackListIterator(children[1])) {
+            return new OptimizedAndNotForBlackListing(children);
+        } else {
+            return new AndNotSearchStrict(children);
+        }
+    } else {
+        return new AndNotSearch(children);
+    }
+}
+
+BitVector::UP
+AndNotSearch::get_hits(uint32_t begin_id) {
+    const Children &children = getChildren();
+    BitVector::UP result = children.front()->get_hits(begin_id);
+    if (children.size() > 1) {
+        BitVector::UP not_result = children[1]->get_hits(begin_id);
+        for (size_t i = 2; i < children.size(); ++i) {
+            children[i]->or_hits_into(*not_result, begin_id);
+        }
+        const BitVector &rhs = *not_result;
+        result->andNotWith(rhs);
+    }
+    return result;
+}
+
+}  // namespace queryeval
+}  // namespace search

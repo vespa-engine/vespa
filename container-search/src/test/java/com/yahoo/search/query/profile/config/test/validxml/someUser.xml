@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<query-profile id="someUser" type="user">
+    <dimensions>x</dimensions>
+    <field name="age">18</field>
+    <field name="sub.test">5</field>
+    <query-profile for="x1">
+        <field name="age">37</field>
+        <field name="gender">male</field>
+    </query-profile>
+</query-profile>

@@ -1,0 +1,26 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "i_document_meta_store_context.h"
+#include <vespa/vespalib/net/state_explorer.h>
+
+namespace proton {
+
+/**
+ * Class used to explore the state of a document meta store.
+ */
+class DocumentMetaStoreExplorer : public vespalib::StateExplorer
+{
+private:
+    IDocumentMetaStoreContext::IReadGuard::UP _metaStore;
+
+public:
+    DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::UP metaStore);
+
+    // Implements vespalib::StateExplorer
+    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+};
+
+} // namespace proton
+

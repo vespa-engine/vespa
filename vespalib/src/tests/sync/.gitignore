@@ -1,0 +1,4 @@
+.depend
+Makefile
+sync_test
+vespalib_sync_test_app

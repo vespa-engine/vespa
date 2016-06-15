@@ -1,0 +1,163 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore.lidstatevector");
+#include "lidstatevector.h"
+
+namespace proton
+{
+
+using vespalib::GenerationHolder;
+
+LidStateVector::LidStateVector(unsigned int newSize,
+                               unsigned int newCapacity,
+                               GenerationHolder &generationHolder,
+                               bool trackLowest,
+                               bool trackHighest)
+    : _bv(newSize, newCapacity, generationHolder),
+      _lowest(trackLowest ? newSize : 0u),
+      _highest(0),
+      _count(0u),
+      _trackLowest(trackLowest),
+      _trackHighest(trackHighest)
+{
+}
+
+
+LidStateVector::~LidStateVector()
+{
+}
+
+
+void
+LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
+{
+    assert(!_trackLowest || _lowest <= _bv.size());
+    assert(!_trackHighest || _bv.size() == 0 || _highest < _bv.size());
+    bool nolowest(_lowest == _bv.size());
+    if (_bv.size() > newSize) {
+        _bv.shrink(newSize);
+        assert(_count >= internalCount());
+        _count = internalCount();
+    }
+    if (_bv.capacity() < newCapacity) {
+        _bv.reserve(newCapacity);
+        assert(_count == internalCount());
+    }
+    if (_bv.size() < newSize) {
+        _bv.extend(newSize);
+        assert(_count == internalCount());
+    }
+    if (_trackLowest) {
+        if (nolowest) {
+            _lowest = _bv.size();
+        }
+        if (_lowest > _bv.size()) {
+            _lowest = _bv.size();
+        }
+    }
+    if (_trackHighest) {
+        if (_highest >= _bv.size()) {
+            _highest = _bv.size() > 0 ? _bv.getPrevTrueBit(_bv.size() - 1) : 0;
+        }
+    }
+    maybeUpdateLowest();
+    maybeUpdateHighest();
+}
+
+
+void
+LidStateVector::updateLowest(void)
+{
+    if (_lowest >= _bv.size())
+        return;
+    if (_bv.testBit(_lowest))
+        return;
+    uint32_t lowest = _bv.getNextTrueBit(_lowest);
+    assert(lowest <= _bv.size());
+    _lowest = lowest;
+}
+
+
+void
+LidStateVector::updateHighest(void)
+{
+    if (_highest == 0)
+        return;
+    if (_bv.testBit(_highest))
+        return;
+    uint32_t highest = _bv.getPrevTrueBit(_highest);
+    assert(_bv.size() == 0 || highest < _bv.size());
+    _highest = highest;
+}
+
+
+void
+LidStateVector::setBit(unsigned int idx)
+{
+    assert(idx < _bv.size());
+    if (_trackLowest && idx < _lowest) {
+        _lowest = idx;
+    }
+    if (_trackHighest && idx > _highest) {
+        _highest = idx;
+    }
+    assert(!_bv.testBit(idx));
+    _bv.slowSetBit(idx);
+    ++_count;
+    assert(_count == internalCount());
+}
+
+
+void
+LidStateVector::clearBit(unsigned int idx)
+{
+    assert(idx < _bv.size());
+    assert(_bv.testBit(idx));
+    _bv.slowClearBit(idx);
+    --_count;
+    assert(_count == internalCount());
+    maybeUpdateLowest();
+    maybeUpdateHighest();
+}
+
+
+bool
+LidStateVector::empty(void) const
+{
+    return _count == 0u;
+}
+
+
+unsigned int
+LidStateVector::getLowest(void) const
+{
+    return _lowest;
+}
+
+
+unsigned int
+LidStateVector::getHighest(void) const
+{
+    return _highest;
+}
+
+
+uint32_t
+LidStateVector::internalCount(void)
+{
+    // Called by document db executor thread.
+    return _bv.countTrueBits();
+}
+
+
+uint32_t
+LidStateVector::count(void) const
+{
+    // Called by document db executor thread or metrics related threads
+    return _count;
+}
+
+
+}  // namespace proton

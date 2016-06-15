@@ -1,0 +1,121 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include "group.h"
+#include <vespa/searchlib/expression/aggregationrefnode.h>
+
+namespace search {
+namespace aggregation {
+
+class Grouping;
+
+/**
+ * This struct contains information about how grouping should be
+ * performed on a given level in the grouping tree. The Grouping class
+ * holds an array of these, one for each level in the tree below the
+ * root.
+ **/
+class GroupingLevel : public vespalib::Identifiable
+{
+private:
+    class Grouper {
+    public:
+        virtual ~Grouper() { }
+        virtual void group(Group & group, const ResultNode & result, DocId doc, HitRank rank) const = 0;
+        virtual void group(Group & group, const ResultNode & result, const document::Document & doc, HitRank rank) const = 0;
+        virtual Grouper * clone() const = 0;
+    protected:
+        Grouper(const Grouping * grouping, uint32_t level);
+        bool isFrozen() const { return _frozen; }
+        bool  hasNext() const { return _hasNext; }
+        bool   doNext() const { return _doNext; }
+        bool isFrosen(size_t level) const;
+        bool  hasNext(size_t level) const;
+        const Grouping * _grouping;
+        uint32_t   _level;
+        bool       _frozen;
+        bool       _hasNext;
+        bool       _doNext;
+    };
+    class SingleValueGrouper : public Grouper {
+    public:
+        SingleValueGrouper(const Grouping * grouping, uint32_t level) : Grouper(grouping, level) { }
+    protected:
+        template<typename Doc>
+        void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
+        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+            groupDoc(g, result, doc, rank);
+        }
+        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+            groupDoc(g, result, doc, rank);
+        }
+        virtual SingleValueGrouper * clone() const { return new SingleValueGrouper(*this); }
+    };
+    class MultiValueGrouper : public SingleValueGrouper {
+    public:
+        MultiValueGrouper(const Grouping * grouping, uint32_t level) : SingleValueGrouper(grouping, level) { }
+    private:
+        template<typename Doc>
+        void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
+        virtual void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const {
+            groupDoc(g, result, doc, rank);
+        }
+        virtual void group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const {
+            groupDoc(g, result, doc, rank);
+        }
+        virtual MultiValueGrouper * clone() const { return new MultiValueGrouper(*this); }
+    };
+    int64_t                            _maxGroups;
+    int64_t                            _precision;
+    bool                               _isOrdered;
+    bool                               _frozen;
+    search::expression::ExpressionTree _classify;
+    Group                              _collect;
+
+    vespalib::CloneablePtr<Grouper>    _grouper;
+public:
+
+    GroupingLevel();
+    DECLARE_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel);
+    DECLARE_NBO_SERIALIZE;
+
+    GroupingLevel unchain() const { return *this; }
+
+    GroupingLevel &setMaxGroups(int64_t maxGroups) {
+        _maxGroups = maxGroups;
+        if ((maxGroups == -1) || (maxGroups > _precision)) {
+            _precision = maxGroups;
+        }
+        return *this;
+    }
+    GroupingLevel & freeze() { _frozen = true; return *this; }
+    GroupingLevel &setPresicion(int64_t precision) { _precision = precision; return *this; }
+    GroupingLevel &setExpression(const ExpressionNode::CP &root) { _classify = root; return *this; }
+    GroupingLevel &addResult(const ExpressionNode::CP &result) { _collect.addResult(result); return *this; }
+    GroupingLevel &addAggregationResult(const ExpressionNode::CP &aggr) { _collect.addAggregationResult(aggr); return *this; }
+    GroupingLevel &addOrderBy(const ExpressionNode::CP & orderBy, bool ascending) { _collect.addOrderBy(orderBy, ascending); return *this; }
+    bool needResort() const { return _collect.needResort(); }
+
+    int64_t getMaxGroups() const { return _maxGroups; }
+    int64_t getPrecision() const { return _precision; }
+    bool        isFrozen() const { return _frozen; }
+    bool    allowMoreGroups(size_t sz) const { return (!_frozen && (!_isOrdered || (sz < (uint64_t)_precision))); }
+    const ExpressionTree & getExpression() const { return _classify; }
+    const       Group &getGroupPrototype() const { return _collect; }
+    void prepare(const Grouping * grouping, uint32_t level, bool isOrdered_);
+
+    Group &groupPrototype() { return _collect; }
+    const Group & groupPrototype() const { return _collect; }
+
+    template<typename Doc>
+    void group(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const {
+        _grouper->group(g, result, doc, rank);
+    }
+
+    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation);
+};
+
+}
+}
+

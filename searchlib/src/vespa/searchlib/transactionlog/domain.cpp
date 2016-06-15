@@ -1,0 +1,405 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/searchlib/transactionlog/domain.h>
+#include <limits>
+#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <stdexcept>
+#include <vespa/log/log.h>
+#include <vespa/vespalib/util/closuretask.h>
+
+LOG_SETUP(".transactionlog.domain");
+
+using vespalib::string;
+using vespalib::make_string;
+using vespalib::make_vespa_string;
+using vespalib::LockGuard;
+using vespalib::makeTask;
+using vespalib::makeClosure;
+using vespalib::Monitor;
+using vespalib::MonitorGuard;
+using search::common::FileHeaderContext;
+using std::runtime_error;
+
+namespace search
+{
+
+namespace transactionlog
+{
+
+Domain::Domain(const string &domainName,
+               const string & baseDir,
+               vespalib::ThreadStackExecutor & executor,
+               uint64_t domainPartSize,
+               bool useFsync,
+               DomainPart::Crc defaultCrcType,
+               const FileHeaderContext &fileHeaderContext) :
+    _defaultCrcType(defaultCrcType),
+    _executor(executor),
+    _count(0),
+    _sessionId(1),
+    _useFsync(useFsync),
+    _syncMonitor(),
+    _pendingSync(false),
+    _name(domainName),
+    _domainPartSize(domainPartSize),
+    _parts(),
+    _lock(),
+    _sessionLock(),
+    _sessions(),
+    _baseDir(baseDir),
+    _fileHeaderContext(fileHeaderContext),
+    _markedDeleted(false)
+{
+    int retval(0);
+    if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
+        throw runtime_error(make_string("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
+    }
+    if ((retval = makeDirectory(dir().c_str())) != 0) {
+        throw runtime_error(make_string("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
+    }
+    SerialNumList partIdVector = scanDir();
+    const int64_t lastPart = partIdVector.empty() ? 0 : partIdVector.back();
+    for (const int64_t partId : partIdVector) {
+        if ( partId != -1) {
+            _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
+        }
+    }
+    _executor.sync();
+    if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
+        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _useFsync, _defaultCrcType, _fileHeaderContext, false));
+    }
+}
+
+void Domain::addPart(int64_t partId, bool isLastPart) {
+    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _useFsync, _defaultCrcType, _fileHeaderContext, isLastPart));
+    if (dp->size() == 0) {
+        // Only last domain part is allowed to be truncated down to
+        // empty size.
+        assert(isLastPart);
+        dp->erase(dp->range().to() + 1);
+    } else {
+        {
+            LockGuard guard(_lock);
+            _count += dp->size();
+            _parts[partId] = dp;
+        }
+        if (! isLastPart) {
+            dp->close();
+        }
+    }
+}
+
+class Sync : public vespalib::Executor::Task
+{
+public:
+    Sync(Monitor &syncMonitor, const DomainPart::SP &dp, bool &pendingSync) :
+        _syncMonitor(syncMonitor),
+        _dp(dp),
+        _pendingSync(pendingSync)
+    { }
+private:
+    void run() override {
+        _dp->sync();
+        MonitorGuard guard(_syncMonitor);
+        _pendingSync = false;
+        guard.broadcast();
+    }
+    
+    Monitor           & _syncMonitor;
+    DomainPart::SP      _dp;
+    bool              & _pendingSync;
+};
+
+Domain::~Domain() { }
+
+DomainInfo
+Domain::getDomainInfo() const
+{
+    LockGuard guard(_lock);
+    DomainInfo info(SerialNumRange(begin(), end()), count(), byteSize());
+    for (const auto &entry: _parts) {
+        const DomainPart &part = *entry.second;
+        info.parts.emplace_back(PartInfo(part.range(), part.size(),
+                                         part.byteSize(), part.fileName()));
+    }
+    return info;
+}
+
+SerialNum Domain::begin() const
+{
+    SerialNum s(0);
+    if ( ! _parts.empty() ) {
+        s = _parts.begin()->second->range().from();
+    }
+    return s;
+}
+
+SerialNum Domain::end() const
+{
+    SerialNum s(0);
+    if ( ! _parts.empty() ) {
+        s = _parts.rbegin()->second->range().to();
+    }
+    return s;
+}
+
+size_t Domain::byteSize() const
+{
+    size_t size = 0;
+    for (const auto &entry : _parts) {
+        const DomainPart &part = *entry.second;
+        size += part.byteSize();
+    }
+    return size;
+}
+
+SerialNum
+Domain::getSynced(void) const
+{
+    SerialNum s(0);
+    LockGuard guard(_lock);
+    if (_parts.empty()) {
+        return s;
+    }
+    DomainPartList::const_iterator it(_parts.end());
+    --it;
+    s = it->second->getSynced();
+    if (s == 0 && it != _parts.begin()) {
+        --it;
+        s = it->second->getSynced();
+    }
+    return s;
+}
+
+
+void
+Domain::triggerSyncNow(void)
+{
+    MonitorGuard guard(_syncMonitor);
+    if (!_pendingSync) {
+        _pendingSync = true;
+        DomainPart::SP dp(_parts.rbegin()->second);
+        _executor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+    }
+}
+
+DomainPart::SP Domain::findPart(SerialNum s)
+{
+    LockGuard guard(_lock);
+    DomainPartList::iterator it(_parts.upper_bound(s));
+    if (!_parts.empty() && it != _parts.begin()) {
+        DomainPartList::iterator prev(it);
+        --prev;
+        if (prev->second->range().to() > s) {
+            return prev->second;
+        }
+    }
+    if (it != _parts.end()) {
+        return it->second;
+    }
+    return DomainPart::SP();
+}
+
+uint64_t Domain::size() const
+{
+    LockGuard guard(_lock);
+    return size(guard);
+}
+
+uint64_t Domain::size(const LockGuard & guard) const
+{
+    (void) guard;
+    uint64_t sz(0);
+    for (const auto & part : _parts) {
+        sz += part.second->size();
+    }
+    return sz;
+}
+
+SerialNum Domain::findOldestActiveVisit() const
+{
+    SerialNum oldestActive(std::numeric_limits<SerialNum>::max());
+    LockGuard guard(_sessionLock);
+    for (const auto & pair : _sessions) {
+        Session * session(pair.second.get());
+        if (!session->inSync()) {
+            oldestActive = std::min(oldestActive, session->range().from());
+        }
+    }
+    return oldestActive;
+}
+
+void Domain::cleanSessions()
+{
+    if ( _sessions.empty()) {
+        return;
+    }
+    LockGuard guard(_sessionLock);
+    for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
+        Session * session(it->second.get());
+        if ((!session->continous() && session->inSync())) {
+            _sessions.erase(it++);
+        } else if (session->finished()) {
+            _sessions.erase(it++);
+        } else {
+            it++;
+        }
+    }
+}
+
+void Domain::commit(const Packet & packet)
+{
+    DomainPart::SP dp(_parts.rbegin()->second);
+    vespalib::nbostream is(packet.getHandle().c_str(), packet.getHandle().size(), true);
+    Packet::Entry entry;
+    entry.deserialize(is);
+    if (dp->byteSize() > _domainPartSize) {
+        triggerSyncNow();
+        {
+            MonitorGuard guard(_syncMonitor);
+            while (_pendingSync) {
+                guard.wait();
+            }
+        }
+        dp->close();
+        dp.reset(new DomainPart(_name, dir(), entry.serial(), _useFsync, _defaultCrcType, _fileHeaderContext, false));
+        {
+            LockGuard guard(_lock);
+            _parts[entry.serial()] = dp;
+        }
+        dp = _parts.rbegin()->second;
+    }
+    size_t oldSz(dp->size());
+    dp->commit(entry.serial(), packet);
+    cleanSessions();
+    // If commit fails no updates should be sent to subscribers either.
+    // Is is better to keep a consistent behaviour.
+    _count += dp->size() - oldSz;
+
+    LockGuard guard(_sessionLock);
+    for (auto & it : _sessions) {
+        const Session::SP & session(it.second);
+        if (session->continous()) {
+            if (session->ok()) {
+                Session::enQ(session, entry.serial(), packet);
+            }
+        }
+    }
+}
+
+bool Domain::erase(const SerialNum & to)
+{
+    bool retval(true);
+    /// Do not erase the last element
+    for (DomainPartList::iterator it(_parts.begin()); (_parts.size() > 1) && (it->second.get()->range().to() < to); it = _parts.begin()) {
+        DomainPart::SP dp(it->second);
+        {
+            LockGuard guard(_lock);
+            _parts.erase(it);
+        }
+        retval = retval && dp->erase(to);
+    }
+    if (_parts.begin()->second->range().to() >= to) {
+        _parts.begin()->second->erase(to);
+    }
+    return retval;
+}
+
+int Domain::visit(const Domain::SP & domain, const SerialNum & from, const SerialNum & to, FRT_Supervisor & supervisor, FNET_Connection *conn)
+{
+    assert(this == domain.get());
+    cleanSessions();
+    SerialNumRange range(from, to);
+    Session * session = new Session(_sessionId++, range, domain, supervisor, conn);
+    LockGuard guard(_sessionLock);
+    _sessions[session->id()] = Session::SP(session);
+    return session->id();
+}
+
+int Domain::startSession(int sessionId)
+{
+    int retval(-1);
+    LockGuard guard(_sessionLock);
+    SessionList::iterator found = _sessions.find(sessionId);
+    if (found != _sessions.end()) {
+        if ( execute(Session::createTask(found->second)).get() == nullptr ) {
+            retval = 0;
+        } else {
+            _sessions.erase(sessionId);
+        }
+    }
+    return retval;
+}
+
+int Domain::closeSession(int sessionId)
+{
+    int retval(-1);
+    {
+        LockGuard guard(_sessionLock);
+        SessionList::iterator found = _sessions.find(sessionId);
+        if (found != _sessions.end()) {
+            retval = 1;
+            _executor.sync();
+        }
+    }
+    if (retval == 1) {
+        FastOS_Thread::Sleep(10);
+        LockGuard guard(_sessionLock);
+        SessionList::iterator found = _sessions.find(sessionId);
+        if (found != _sessions.end()) {
+            _sessions.erase(sessionId);
+            retval = 0;
+        } else {
+            retval = 0;
+        }
+    }
+    return retval;
+}
+
+int Domain::subscribe(const Domain::SP & domain, const SerialNum & from, FRT_Supervisor & supervisor, FNET_Connection *conn)
+{
+    assert(this == domain.get());
+    cleanSessions();
+    SerialNumRange range(from, end());
+    Session * session = new Session(_sessionId++, range, domain, supervisor, conn, true);
+    LockGuard guard(_sessionLock);
+    _sessions[session->id()] = Session::SP(session);
+    return session->id();
+}
+
+
+Domain::SerialNumList
+Domain::scanDir(void)
+{
+    SerialNumList res;
+
+    FastOS_DirectoryScan dirScan(dir().c_str());
+
+    const char *wantPrefix = _name.c_str();
+    size_t wantPrefixLen = strlen(wantPrefix);
+
+    while (dirScan.ReadNext()) {
+        const char *ename = dirScan.GetName();
+        if (strcmp(ename, ".") == 0 ||
+            strcmp(ename, "..") == 0)
+            continue;
+        if (strncmp(ename, wantPrefix, wantPrefixLen) != 0)
+            continue;
+        if (ename[wantPrefixLen] != '-')
+            continue;
+        const char *p = ename + wantPrefixLen + 1;
+        uint64_t num = strtoull(p, NULL, 10);
+        string checkName = make_string("%s-%016" PRIu64, _name.c_str(), num);
+        if (strcmp(checkName.c_str(), ename) != 0)
+            continue;
+        res.push_back(static_cast<SerialNum>(num));
+    }
+    std::sort(res.begin(), res.end());
+    return res;
+}
+
+}
+}

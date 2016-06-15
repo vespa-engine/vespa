@@ -1,0 +1,268 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @author  <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @version $Id$
+ */
+options {
+    CACHE_TOKENS       = true;
+    DEBUG_PARSER       = false;
+    ERROR_REPORTING    = true;
+    IGNORE_CASE        = true;
+    STATIC             = false;
+    UNICODE_INPUT      = true;
+    USER_CHAR_STREAM   = true;
+    USER_TOKEN_MANAGER = false;
+}
+
+PARSER_BEGIN(SelectParser)
+
+package com.yahoo.document.select.parser;
+
+import com.yahoo.document.select.rule.*;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.ArrayList;
+
+public class SelectParser {
+
+
+}
+
+PARSER_END(SelectParser)
+
+SKIP :
+{
+    " " | "\f" | "\n" | "\r" | "\t"
+}
+
+TOKEN :
+{
+    <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
+        <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
+        <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
+        <#OCTAL: "0" (["0"-"7"])*> |
+    <FLOAT: (["0"-"9"])+ ("." (["0"-"9"])*)? (<EXPONENT>)? (["f","F","d","D"])?> |  
+        <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
+}
+
+TOKEN :
+{
+    <LBRACE: "("> |
+    <RBRACE: ")"> |
+    <ADD: "+"> |
+    <SUB: "-"> |
+    <MUL: "*"> |
+    <DIV: "/"> |
+    <MOD: "%"> |
+    <DOT: "."> |
+    <COMMA: ","> |
+    <NE: "!="> |
+    <GE: ">="> |
+    <LE: "<="> |
+    <REGEX: "=~"> |
+    <EQ: "=="> |
+    <GLOB: "="> |
+    <GT: ">"> |
+    <LT: "<"> |
+    <DOLLAR: "$"> |
+    <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
+             ("'" (~["'"] | "\\'")* "'")> |
+    <ID: "id"> |
+    <SEARCHCOLUMN: "searchcolumn"> |
+    <ID_SCHEME: "scheme"> |
+    <ID_TYPE: "type"> |
+    <ID_NAMESPACE: "namespace"> |
+    <ID_SPECIFIC: "specific"> |
+    <ID_USER: "user"> |
+    <ID_GROUP: "group"> |
+    <ID_ORDER: "order"> |
+    <ID_BUCKET: "bucket"> |
+    <NULL: "null"> |
+    <NOW: "now"> |
+    <TRUE: "true"> |
+    <FALSE: "false"> |
+    <AND: "and"> |
+    <OR: "or"> |
+    <NOT: "not"> |
+    <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-","@","$","[","]","{","}"])*>
+}
+
+ExpressionNode expression() :
+{
+    ExpressionNode ret = new LiteralNode(true);
+}
+{
+    ( [ ret = logic() ] <EOF> )
+    { return ret; }
+}
+
+ExpressionNode logic() :
+{
+    LogicNode lst = new LogicNode();
+    String op = null;
+    ExpressionNode node;
+}
+{
+    ( node = negation() { lst.add(null, node); }
+      ( ( <AND> | <OR> ) { op = token.image; }
+        node = negation() { lst.add(op, node); } )* )
+    { return op != null ? lst : node; }
+}
+
+ExpressionNode negation() :
+{
+    boolean not = false;
+    ExpressionNode node;
+}
+{
+    ( [ <NOT> { not = true; } ] node = relational() )
+    { return not ? new NegationNode(node) : node; }
+}
+
+NowNode now() : { }
+{
+    ( <NOW> <LBRACE> <RBRACE> )
+    { return new NowNode(); }
+}
+
+ExpressionNode relational() :
+{
+    ExpressionNode lhs, rhs = null;
+    String op = null;
+}
+{
+    ( lhs = arithmetic()
+      [ ( <EQ> | <NE> | <LT> | <GT> | <LE> | <GE> | <REGEX> | <GLOB> ) { op = token.image; }
+        rhs = arithmetic() ] )
+    { return rhs != null ? new ComparisonNode(lhs, op, rhs) : lhs; }
+}
+
+ExpressionNode arithmetic() :
+{
+    ArithmeticNode lst = new ArithmeticNode();
+    String op = null;
+    ExpressionNode node;
+}
+{
+    ( node = attribute() { lst.add(null, node); }
+      ( ( <ADD> | <SUB> | <DIV> | <MUL> | <MOD> ) { op = token.image; }
+        node = attribute() { lst.add(op, node); } )* )
+    { return op != null ? lst : node; }
+}
+
+VariableNode variable() :
+{
+    VariableNode ret;
+}
+{
+    ( <DOLLAR> identifier() { ret = new VariableNode(token.image); } )
+    { return ret; }
+}
+
+ExpressionNode attribute() :
+{
+    ExpressionNode val;
+    AttributeNode.Item item;
+    List lst = new ArrayList();
+}
+{
+    ( val = value() ( <DOT> identifier()  { item = new AttributeNode.Item(token.image); }
+                      [ <LBRACE> <RBRACE> { item.setType(AttributeNode.Item.FUNCTION); } ]
+                                          { lst.add(item); } )* )
+    { return lst.size() > 0 ? new AttributeNode(val, lst) : val; }
+}
+
+ExpressionNode value() :
+{
+    ExpressionNode ret;
+}
+{
+    ( LOOKAHEAD(2)
+      ( ret = id() |
+        ret = searchColumn() |
+        ret = literal() |
+        ret = variable() |
+        ret = now() |
+        <LBRACE> ret = logic() <RBRACE> { ret = new EmbracedNode(ret); } ) |
+     ( ret = document() ) )
+    { return ret; }
+}
+
+DocumentNode document() :
+{
+    DocumentNode ret;
+}
+{
+    ( identifier() { ret = new DocumentNode(token.image); } )
+    { return ret; }
+}
+
+                                                                                                                                                                                                                                             
+void identifier() : { }
+{                                                                                                                                                                                                                                            
+    (  <ID> |
+       <SEARCHCOLUMN> |
+       <ID_SCHEME> |
+       <ID_TYPE> |
+       <ID_NAMESPACE> |
+       <ID_SPECIFIC> |
+       <ID_USER> |
+       <ID_GROUP> |
+       <ID_ORDER> |
+       <ID_BUCKET> |
+       <NULL> |
+       <NOW> |
+       <TRUE> |
+       <FALSE> |
+       <AND> |
+       <OR> |
+       // <NOT> |  Causes a choice conflict, but it is not such a good name anyway ...
+       <IDENTIFIER> )
+}  
+
+IdNode id() :
+{
+    IdNode ret = new IdNode();
+}
+{
+    ( <ID> [ LOOKAHEAD(2) <DOT>
+             ( <ID_SCHEME>     { ret.setField(token.image); } | 
+               <ID_TYPE>       { ret.setField(token.image); } |
+               <ID_NAMESPACE>  { ret.setField(token.image); } |
+               <ID_SPECIFIC>   { ret.setField(token.image); } |
+               <ID_USER>       { ret.setField(token.image); } | 
+               <ID_GROUP>      { ret.setField(token.image); } | 
+               <ID_BUCKET>     { ret.setField(token.image); } | 
+               ( <ID_ORDER>    { ret.setField(token.image); } <LBRACE> 
+     <INTEGER> { ret.setWidthBits(Short.parseShort(token.image)); } <COMMA> 
+     <INTEGER> { ret.setDivisionBits(Short.parseShort(token.image)); } <RBRACE> ) )
+              ] )
+    { return ret; }
+}
+
+SearchColumnNode searchColumn() :
+{
+    SearchColumnNode ret = new SearchColumnNode();
+}
+{
+    ( <SEARCHCOLUMN> [ LOOKAHEAD(2) <DOT> <INTEGER> { ret.setField(Integer.parseInt(token.image)); } ] )
+    { return ret; }
+}
+
+LiteralNode literal() :
+{
+    String sign = "";
+    Object ret = null;
+}
+{
+    ( ( [ <SUB>       { sign = "-"; } ]
+        ( <FLOAT>     { ret = Double.parseDouble(sign + token.image); } |
+          <INTEGER>   { ret = SelectParserUtils.decodeLong(sign + token.image); } ) ) |
+      ( <ADD> <FLOAT> { ret = Double.parseDouble(token.image); } ) |
+      ( <STRING>      { ret = SelectParserUtils.unquote(token.image); } ) |
+      ( <TRUE>        { ret = true; } ) |
+      ( <FALSE>       { ret = false; } ) |
+      ( <NULL>        { ret = null; } ) )
+    { return new LiteralNode(ret); }
+}

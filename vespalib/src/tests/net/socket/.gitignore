@@ -1,0 +1,5 @@
+/socket_server
+/socket_client
+vespalib_socket_test_app
+vespalib_socket_client_app
+vespalib_socket_server_app

@@ -1,0 +1,11 @@
+*.So
+*.lo
+*.o
+.*.swp
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+config-stor-filestor.cpp
+config-stor-filestor.h

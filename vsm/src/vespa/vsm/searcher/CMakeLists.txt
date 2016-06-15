@@ -1,0 +1,18 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(vsm_vsmsearcher OBJECT
+    SOURCES
+    fieldsearcher.cpp
+    floatfieldsearcher.cpp
+    fold.cpp
+    futf8strchrfieldsearcher.cpp
+    intfieldsearcher.cpp
+    strchrfieldsearcher.cpp
+    utf8flexiblestringfieldsearcher.cpp
+    utf8strchrfieldsearcher.cpp
+    utf8stringfieldsearcherbase.cpp
+    utf8substringsearcher.cpp
+    utf8substringsnippetmodifier.cpp
+    utf8suffixstringfieldsearcher.cpp
+    utf8exactstringfieldsearcher.cpp
+    DEPENDS
+)

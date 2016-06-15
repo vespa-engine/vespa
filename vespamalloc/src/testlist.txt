@@ -1,0 +1,7 @@
+tests/test1
+tests/test2
+tests/allocfree
+tests/doubledelete
+tests/overwrite
+tests/stacktrace
+tests/thread

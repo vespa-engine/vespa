@@ -1,0 +1,14 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search predicate_type {
+    document predicate_type {
+        field some_predicate_field type predicate {
+            indexing: attribute | summary
+            index {
+                arity: 5
+                lower-bound: 3
+                upper-bound: 200
+                dense-posting-list-threshold: 0.2
+            }
+        }
+    }
+}

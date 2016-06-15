@@ -1,0 +1,5 @@
+.depend
+Makefile
+slobrok.out
+standalone_test
+slobrok_standalone_test_app

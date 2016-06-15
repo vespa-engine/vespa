@@ -1,0 +1,28 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search
+
+attribute[].name                string
+attribute[].datatype            enum { STRING, UINT1, UINT2, UINT4, INT8, INT16, INT32, INT64, FLOAT, DOUBLE, PREDICATE, TENSOR, NONE } default=NONE
+attribute[].collectiontype      enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
+attribute[].removeifzero        bool default=false
+attribute[].createifnonexistent bool default=false
+attribute[].fastsearch          bool default=false
+attribute[].huge                bool default=false
+attribute[].sortascending       bool default=true
+attribute[].sortfunction        enum { RAW, LOWERCASE, UCA } default=UCA
+attribute[].sortstrength        enum { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL } default=PRIMARY
+attribute[].sortlocale          string default=""
+# Allow bitvector postings in addition to btree postings ?
+attribute[].enablebitvectors    bool default=false
+# Allow only bitvector postings, i.e. drop btree postings to save memory.?
+attribute[].enableonlybitvector bool default=false
+# Allow fast access to this attribute at all times.
+# If so, attribute is kept in memory also for non-searchable documents.
+attribute[].fastaccess          bool default=false
+attribute[].arity               int default=8
+attribute[].lowerbound         long default=-9223372036854775808
+attribute[].upperbound         long default=9223372036854775807
+# The threshold is given as a ratio of the corpus size
+attribute[].densepostinglistthreshold   double default=0.40
+# Specification of tensor type if this attribute is of type TENSOR.
+attribute[].tensortype         string default=""

@@ -1,0 +1,95 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+Admin = AdminV2 | AdminV3 | AdminV4
+
+AdminV2 =
+ element admin {
+   attribute version { "2.0" } &
+   element adminserver { service.attlist } &
+   GenericConfig* &
+   LogServer? &
+   (ConfigServer | ConfigServers)? &
+   FileDistribution? &
+   AdminSlobroks? &
+   AdminYamas? &
+   MetricConsumers? &
+   ClusterControllers?
+ }
+
+AdminV3 =
+  element admin {
+    attribute version { "3.0"  } &
+    Nodes
+  }
+
+AdminV4 =
+  element admin {
+    attribute version { "4.0"  } &
+    AdminV4Slobroks? &
+    AdminV4LogServers?
+  }
+
+AdminV4Slobroks =
+  element slobroks {
+    OptionalDedicatedNodes
+  }
+
+AdminV4LogServers =
+  element logservers {
+    OptionalDedicatedNodes
+  }
+
+AdminSlobroks =
+   element slobroks {
+      element slobrok {
+         service.attlist &
+         attribute index { xsd:nonNegativeInteger }?
+      }+
+   }
+
+AdminYmon =
+   element ymon {
+      attribute endpoint { xsd:anyURI { minLength = "1" } }?,
+      attribute clustername { xsd:NCName }?,
+      attribute interval { xsd:int }?
+   }
+
+AdminYamas =
+   element yamas {
+      attribute interval { xsd:int }?,
+      attribute systemname { xsd:string }?
+   }
+
+
+ConfigServer = element configserver {
+   service.attlist
+}
+
+ConfigServers = element configservers {
+   ConfigServer+
+}
+
+LogServer = element logserver {
+   service.attlist
+}
+
+FileDistribution = element filedistribution {
+   element uploadbitrate { xsd:string {   pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
+   element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }?
+}
+
+MetricConsumers = element metric-consumers {
+    element consumer {
+        attribute name { xsd:string { pattern = "[a-zA-Z][_a-zA-Z0-9]*" } }&
+        element metric {
+            attribute name{xsd:Name} &
+            attribute output-name{xsd:Name}?
+         }+
+    }+
+}
+
+ClusterControllers = element cluster-controllers {
+    attribute standalone-zookeeper { xsd:string  }? &
+    element cluster-controller {
+       service.attlist
+    }+
+}

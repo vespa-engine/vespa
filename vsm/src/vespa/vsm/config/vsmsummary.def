@@ -1,0 +1,21 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.vsm
+
+## The name of the result class that should be generated for documents
+## returned from the VSM. If this value is empty, the first found
+## result class will be used.
+outputclass string default=""
+
+## Mapping of field names between the result class and the document
+## model. This value represents the name in the result class. Fields
+## not mentioned here will get the identity mapping.
+fieldmap[].summary string
+
+## Mapping of field names between the result class and the document
+## model. This field vector represents the names in the document model
+## that should be used as input when generating the summary field.
+fieldmap[].document[].field string
+
+## This command specifies how the document fields should be combined
+## when generating the summary field.
+fieldmap[].command enum { NONE, FLATTENJUNIPER, FLATTENSPACE } default=NONE

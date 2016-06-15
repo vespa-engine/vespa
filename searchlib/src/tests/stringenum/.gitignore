@@ -1,0 +1,8 @@
+*.core
+.depend
+Makefile
+core
+core.*
+stringenum
+tmp.enum
+searchlib_stringenum_test_app

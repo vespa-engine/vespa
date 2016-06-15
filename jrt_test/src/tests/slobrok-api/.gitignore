@@ -1,0 +1,4 @@
+*.class
+.depend
+Makefile
+out.slobrok.1

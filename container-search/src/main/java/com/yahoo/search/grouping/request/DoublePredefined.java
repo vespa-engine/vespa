@@ -1,0 +1,48 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.grouping.request;
+
+import java.util.List;
+
+/**
+ * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
+ * double.
+ *
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ */
+public class DoublePredefined extends PredefinedFunction {
+
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param exp  The expression to evaluate, must evaluate to a double.
+     * @param arg1 The compulsory bucket.
+     * @param argN The optional buckets.
+     */
+    public DoublePredefined(GroupingExpression exp, DoubleBucket arg1, DoubleBucket... argN) {
+        this(exp, asList(arg1, argN));
+    }
+
+    private DoublePredefined(GroupingExpression exp, List<DoubleBucket> args) {
+        super(exp, args);
+    }
+
+    @Override
+    public DoubleBucket getBucket(int i) {
+        return (DoubleBucket)getArg(i + 1);
+    }
+
+    /**
+     * Constructs a new instance of this class from a list of arguments.
+     *
+     * @param exp  The expression to evaluate, must evaluate to a double.
+     * @param args The buckets to pass to the constructor.
+     * @return The created instance.
+     * @throws IllegalArgumentException Thrown if the list of buckets is empty.
+     */
+    public static DoublePredefined newInstance(GroupingExpression exp, List<DoubleBucket> args) {
+        if (args.isEmpty()) {
+            throw new IllegalArgumentException("Expected at least one bucket, got none.");
+        }
+        return new DoublePredefined(exp, args);
+    }
+}

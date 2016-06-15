@@ -1,0 +1,53 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/vespalib/data/slime/slime.h>
+#include "frtconfigrequest.h"
+#include "protocol.h"
+
+class FRT_Values;
+class FRT_RPCRequest;
+
+namespace config {
+
+class ConfigKey;
+class Connection;
+class Trace;
+class VespaVersion;
+
+class SlimeConfigRequest : public FRTConfigRequest {
+public:
+    SlimeConfigRequest(Connection * connection,
+                       const ConfigKey & key,
+                       const vespalib::string & configMd5,
+                       int64_t currentGeneration,
+                       int64_t wantedGeneration,
+                       const vespalib::string & hostName,
+                       int64_t serverTimeout,
+                       const Trace & trace,
+                       const VespaVersion & vespaVersion,
+                       int64_t protocolVersion,
+                       const CompressionType & compressionType,
+                       const vespalib::string & methodName);
+    virtual ~SlimeConfigRequest() {}
+    bool verifyKey(const ConfigKey & key) const;
+    bool verifyState(const ConfigState & state) const;
+    virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const = 0;
+private:
+    void populateSlimeRequest(const ConfigKey & key,
+                              const vespalib::string & configMd5,
+                              int64_t currentGeneration,
+                              int64_t wantedGeneration,
+                              const vespalib::string & hostName,
+                              int64_t serverTimeout,
+                              const Trace & trace,
+                              const VespaVersion & vespaVersion,
+                              int64_t protocolVersion,
+                              const CompressionType & compressionType);
+    static vespalib::string createJsonFromSlime(const vespalib::Slime & data);
+    static const vespalib::string REQUEST_TYPES;
+    vespalib::Slime _data;
+};
+
+}
+

@@ -1,0 +1,224 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<refentry id="makefsa">
+
+<refmeta>
+<refentrytitle>makefsa</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>makefsa</refname>
+<refpurpose>create finite state automata files from text or binary input</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>makefsa</command>
+  <arg>OPTIONS</arg>
+  <arg>input_file</arg>
+  <arg choice='plain'>fsa_file</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1><title>Description</title>
+<para>
+<command>makefsa</command> creates a finite state automaton file from
+text or binary input. If <option>input_file</option> is not specified,
+standard input is used. The input must be sorted and must not contain
+duplicate input strings (unsorted or duplicate entries will be
+ignored).
+</para>
+<refsect2><title>Options</title>
+<para>
+<variablelist>
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>
+use text input format, with empty meta info (default)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+use text input format
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>
+use binary input format, with base64 encoded meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-B</option></term>
+<listitem>
+<para>
+use binary input format with raw meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+use text input with numerical meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-s size</option></term>
+<listitem>
+<para>
+data size for numerical meta info (default=4)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>
+ignore meta info regardless of input format
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>
+build the automaton with a perfect hash
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-S num</option></term>
+<listitem>
+<para>
+set serial number of automaton (default=0)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+be verbose, display progress information and statistics
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+display usage help
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>
+display version number
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+</refsect2>
+</refsect1>
+
+
+<refsect1><title>Input formats</title>
+<para>
+<variablelist>
+<varlistentry>
+<term>Text input format with empty meta info (<option>-e</option>)</term>
+<listitem>
+<para>
+The input strings are terminated with '\n', and may not contain '\0',
+'\0xff' or '\n' characters. This is the default.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Text input format (<option>-t</option>)</term>
+<listitem>
+<para>
+Input lines are terminated with '\n', input string and meta info are
+separated by '\t'. Input and meta strings may not contain '\0',
+'\0xff', '\n' or '\t' characters. A terminating '\0' is added to the
+meta info when stored in the automaton.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Text input format with numerical info (<option>-n</option>)</term>
+<listitem>
+<para>
+Input lines are terminated with '\n', input string and meta info are
+separated by '\t'. Input strings may not contain '\0', '\0xff', '\n'
+or '\t' characters. Meta strings are unsigned integers ([0-9]+), which
+will be stored in binary representation in the automaton. The size of
+the data can be controlled by the <option>-s</option> option, valid
+values are 1, 2 or 4 bytes, correcponding to uint8_t, uint16_t and
+uint32_t, respectively. (Default is 4 bytes.)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Binary input format, with base64 encoded meta info (<option>-b</option>)</term>
+<listitem>
+<para>
+Both the input string and meta info are terminated by '\0'. The input
+string must not contain the reserved characters '\0' and '\0xff'. The
+meta info is base64 encoded, as it may contain any character.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Binary input format with raw meta info (<option>-B</option>)</term>
+<listitem>
+<para>
+Both the input string and meta info are terminated by '\0'. The input
+string must not contain the reserved characters '\0' and '\0xff'. The
+meta info must not contain '\0'.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+</refsect1>
+
+<refsect1><title>Perfect hashes</title>
+<para>
+Automata built with perfect hash ((<option>-p</option>) will contain
+an additional data structure which provides a mapping from the strings
+stored in the automaton to unique integers in the range [0,n-1] where
+n is the number of accepted strings. The size of the fsa file will
+increase by up to 80%. Lookup time is slightly longer if the hash
+value needs to be retrieved (but still O(m), where m is the length of
+the input). Reverse lookup is also possible, though it is more
+expensive (also O(m), but with a much higher constant).
+</para>
+</refsect1>
+
+<refsect1><title>See also</title>
+<para>
+fsainfo, fsadump.
+</para>
+</refsect1>
+
+<refsect1><title>Author</title>
+<para>
+Written by Peter Boros.
+</para>
+</refsect1>
+
+</refentry>

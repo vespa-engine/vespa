@@ -1,0 +1,30 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+## This config is used to define load types in VESPA. Load types are merely
+## a way to distinguish types of load, as to present such types differently.
+## For instance, some metrics will be presented per load type, such that you
+## can see how that specific type is being handled. Load types are especially
+## useful for separating loads of different priority.
+
+namespace=vespa.config.content
+
+## The identifying index of this type. 0 cannot be used as it is
+## reserved for the default type. Other types should be
+## non-overlapping from 1 and upwards. No gaps are allowed in the
+## index range. (For performance reasons we want to use arrays
+## internally where the id is the index)
+##
+## The identifier is used for efficient transfer of type information.
+## The types will be identified by names instead in more textual or
+## verbose interfaces.
+## restart flag was added automatically and needs to be verified.
+type[].id int restart
+
+## The name of a given load type. Each load type must have a unique
+## name. The name "default" is reserved for the default type of id 0.
+## restart flag was added automatically and needs to be verified.
+type[].name string restart
+
+## The default priority for the load type.
+## restart flag was added automatically and needs to be verified.
+type[].priority string restart
+

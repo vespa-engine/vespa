@@ -1,0 +1,111 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".sequencer");
+
+#include <vespa/vespalib/util/vstringfmt.h>
+#include "sequencer.h"
+#include "tracelevel.h"
+
+namespace mbus {
+
+Sequencer::Sequencer(IMessageHandler &sender) :
+    _lock("mbus::Sequencer::_lock", false),
+    _sender(sender),
+    _seqMap()
+{
+    // empty
+}
+
+Sequencer::~Sequencer()
+{
+    for (QueueMap::iterator it = _seqMap.begin(); it != _seqMap.end(); ++it) {
+        MessageQueue *queue = it->second;
+        if (queue != NULL) {
+            while (queue->size() > 0) {
+                Message *msg = queue->front();
+                queue->pop();
+                msg->discard();
+                delete msg;
+            }
+            delete queue;
+        }
+    }
+}
+
+Message::UP
+Sequencer::filter(Message::UP msg)
+{
+    uint64_t seqId = msg->getSequenceId();
+    msg->setContext(Context(seqId));
+    {
+        vespalib::LockGuard guard(_lock);
+        QueueMap::iterator it = _seqMap.find(seqId);
+        if (it != _seqMap.end()) {
+            if (it->second == NULL) {
+                it->second = new MessageQueue();
+            }
+            msg->getTrace().trace(TraceLevel::COMPONENT,
+                                  vespalib::make_vespa_string("Sequencer queued message with sequence id '%" PRIu64 "'.", seqId));
+            it->second->push(msg.get());
+            msg.release();
+            return Message::UP();
+        }
+        _seqMap[seqId] = NULL; // insert empty queue
+    }
+    return std::move(msg);
+}
+
+void
+Sequencer::sequencedSend(Message::UP msg)
+{
+    msg->getTrace().trace(TraceLevel::COMPONENT,
+                          vespalib::make_vespa_string("Sequencer sending message with sequence id '%" PRIu64 "'.",
+                                                msg->getContext().value.UINT64));
+    msg->pushHandler(*this);
+    _sender.handleMessage(std::move(msg));
+}
+
+void
+Sequencer::handleMessage(Message::UP msg)
+{
+    if (msg->hasSequenceId()) {
+        msg = filter(std::move(msg));
+        if (msg.get() != NULL) {
+            sequencedSend(std::move(msg));
+        }
+    } else {
+        _sender.handleMessage(std::move(msg)); // unsequenced
+    }
+}
+
+void
+Sequencer::handleReply(Reply::UP reply)
+{
+    uint64_t seq = reply->getContext().value.UINT64;
+    reply->getTrace().trace(TraceLevel::COMPONENT,
+                            vespalib::make_vespa_string("Sequencer received reply with sequence id '%" PRIu64 "'.", seq));
+    Message::UP msg;
+    {
+        vespalib::LockGuard guard(_lock);
+        QueueMap::iterator it = _seqMap.find(seq);
+        MessageQueue *que = it->second;
+        LOG_ASSERT(it != _seqMap.end());
+        if (que == NULL || que->size() == 0) {
+            if (que != NULL) {
+                delete que;
+            }
+            _seqMap.erase(it);
+        } else {
+            msg.reset(que->front());
+            que->pop();
+        }
+    }
+    if (msg.get() != NULL) {
+        sequencedSend(std::move(msg));
+    }
+    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    handler.handleReply(std::move(reply));
+}
+
+} // namespace mbus

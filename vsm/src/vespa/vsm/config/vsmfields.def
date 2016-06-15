@@ -1,0 +1,31 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.vsm
+
+## Level of verification applied to the documents received.
+documentverificationlevel int default=0
+
+## Set if one should ignore limit hits.
+searchall int default=1
+
+## The name of a field for which we are assigning a search method.
+## The field name refers directly to a field in the document model.
+fieldspec[].name string
+
+## The search method for a given field. Note: same field in 2 different document types must match on type if not a random result might be expected.
+fieldspec[].searchmethod enum { NONE, AUTOUTF8, UTF8, SSE2UTF8, INT8, INT16, INT32, INT64, FLOAT, DOUBLE } default=AUTOUTF8
+fieldspec[].arg1 string default=""
+
+## Maximum number of chars to search per field.
+fieldspec[].maxlength int default=1048576
+
+## Type of the field
+fieldspec[].fieldtype enum {ATTRIBUTE, INDEX} default=INDEX
+
+## The name of a documenttype for which we are assigning a set of indexes.
+documenttype[].name string
+## The name of an index of a documenttype for which we are assigning a set of fields.
+documenttype[].index[].name string
+
+## The name of a field part of an index.
+## The field name refers directly to a field in the document model.
+documenttype[].index[].field[].name string

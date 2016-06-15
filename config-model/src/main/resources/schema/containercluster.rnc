@@ -1,0 +1,217 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+ContainerCluster = element container | jdisc {
+    attribute version { "1.0" } &
+    attribute id { xsd:NCName }? &
+    attribute jetty { xsd:boolean }? &
+    Include* &
+    ContainerServices &    
+    DocumentBinding* &
+    Aliases? &
+    NodesOfContainerCluster?
+}
+
+ContainerServices =
+    RestApi* &
+    Servlet* &
+    SearchInContainer? &
+    DocprocInContainer? &
+    ProcessingInContainer? &
+    DocumentApi? &
+    Components* &
+    Component* &
+    Handler* &
+    Client* &
+    Server* &
+    Http? &
+    HttpFilter? &
+    AccessLog* &
+    GenericConfig*
+
+Components = element components {
+    Include* &
+    Component*
+}
+
+Aliases = element aliases {
+    element service-alias { xsd:NCName }* &
+    element endpoint-alias { xsd:NCName }*
+}
+
+Include = element \include {
+    attribute dir { text }
+}
+
+Http = element http {
+    (Filtering & HttpServer+) |
+    HttpServer+ |
+    empty
+}
+
+Filtering = element filtering {
+    HttpFilter* &
+    element request-chain {
+        HttpFilterChain
+    }* &
+    element response-chain {
+        HttpFilterChain
+    }*
+}
+
+HttpServer =  element server {
+    attribute port { xsd:nonNegativeInteger } &
+    ComponentId &
+    GenericConfig*
+}
+
+AccessLog = element accesslog {
+    attribute type { "yapache" | "vespa" | "disabled" }? &
+    attribute fileNamePattern { string }? &
+    attribute symlinkName { string }? &
+
+    attribute rotationInterval { string }? &
+    attribute rotationScheme { "date" | "sequence" }?
+}
+
+# REST-API:
+
+RestApi = element rest-api {
+    attribute path { xsd:string { pattern = "\w[\w_/\-\.]*" } } &
+    attribute jersey2 { xsd:boolean }? &
+    element components {
+      attribute bundle { xsd:Name } &
+      element package { xsd:NCName }*
+    }*
+
+#    element inject {
+#        attribute component { xsd:Name } &
+#        attribute for-name { xsd:Name }
+#    }*
+}
+
+# Servlet:
+
+Servlet = element servlet {
+    ComponentDefinition &
+    ServletConfig? &
+    element path { xsd:string { pattern = "\w[\w_/\-\.]*(\*)?" } }
+}
+
+ServletConfig = element servlet-config {
+    anyElement+
+}
+
+# SEARCH:
+
+SearchInContainer = element search {
+    Include* &
+    ServerBindings? &
+    Searcher* &
+    SearchChain* &
+    Provider* &
+    Renderer* &
+    GenericConfig*
+}
+
+SearchChain = element chain {
+    GenericSearchChain
+}
+
+GenericSearchChain =
+    ComponentId &
+    SearchChainInheritance &
+    attribute searchers { text }? &
+    Searcher* &
+    Phase* &
+    GenericConfig*
+
+SearchChainInheritance =
+    attribute inherits { text }? &
+    attribute excludes { text }? &
+    element inherits {
+        element chain { ComponentSpec }* &
+        element exclude { ComponentSpec }*
+    }?
+
+
+# DOCPROC:
+
+DocprocInContainer = element document-processing {
+    Include* &
+    DocprocClusterAttributes? &
+    DocumentProcessorV3* &
+    ChainInDocprocInContainerCluster* &
+    GenericConfig*
+}
+ChainInDocprocInContainerCluster = element chain {
+    DocprocChainV3Contents
+}
+
+
+
+# PROCESSING:
+
+ProcessingInContainer = element processing {
+    Include* &
+    ServerBindings? &
+    Processor* &
+    Chain* &
+    ProcessingRenderer* &
+    GenericConfig*
+}
+
+
+
+# DOCUMENT API/GATEWAY:
+
+DocumentApi = element document-api {
+   ServerBindings &
+   GenericConfig* &
+   element abortondocumenterror { xsd:boolean }? &
+   element retryenabled { xsd:boolean }? &
+   element route { text }? &
+   element maxpendingdocs { xsd:positiveInteger }? &
+   element maxpendingbytes { xsd:positiveInteger }? &
+   element retrydelay { xsd:double { minInclusive = "0.0" } }? &
+   element timeout { xsd:double { minInclusive = "0.0" } }? &
+   element tracelevel { xsd:positiveInteger }? &
+   element mbusport { xsd:positiveInteger }?
+}
+
+
+
+# NODES:
+
+NodesOfContainerCluster = element nodes {
+    attribute jvmargs { text }? &
+    attribute preload { text }? &
+    attribute cpu-socket-affinity { xsd:boolean }? &
+    (
+      (
+        attribute count { xsd:positiveInteger } &
+        attribute flavor { xsd:string }? &
+        attribute docker-image { xsd:string }?
+      )
+      |
+      element node {
+        attribute hostalias { xsd:NCName } &
+        attribute cpu-socket { xsd:positiveInteger }? &
+        ServerPort* &
+        GenericConfig*
+      }+
+    )
+}
+
+ServerPort = element server-port {
+    ComponentId &
+    attribute port { xsd:positiveInteger }
+}
+
+
+#DOCUMENT BINDINGS:
+
+DocumentBinding = element document {
+    attribute type { xsd:NCName } &
+    attribute class { xsd:NCName } &
+    attribute bundle { xsd:NCName }
+}
+

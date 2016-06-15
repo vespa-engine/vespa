@@ -1,0 +1,90 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/storage/bucketdb/judyarray.h>
+
+namespace storage {
+
+JudyArray::~JudyArray()
+{
+    clear();
+}
+
+bool
+JudyArray::operator==(const JudyArray& array) const
+{
+    if (size() != array.size()) return false;
+    for (JudyArray::const_iterator it1 = begin(), it2 = array.begin();
+         it1 != end(); ++it1, ++it2)
+    {
+        if (*it1 != *it2) return false;
+    }
+    return true;
+}
+
+bool
+JudyArray::operator<(const JudyArray& array) const
+{
+    if (size() != array.size()) return (size() < array.size());
+    for (JudyArray::const_iterator it1 = begin(), it2 = array.begin();
+         it1 != end(); ++it1, ++it2)
+    {
+        if (*it1 != *it2) return (*it1 < *it2);
+    }
+    return false;
+}
+
+JudyArray::size_type
+JudyArray::size() const
+{
+    key_type lastIndex = 0;
+    --lastIndex; // Get last index in size independent way
+    return JudyLCount(_judyArray, 0, lastIndex, PJE0);
+}
+
+void
+JudyArray::swap(JudyArray& other)
+{
+    void* judyArray = _judyArray; // Save our variables
+    _judyArray = other._judyArray; // Assign others to ours
+    other._judyArray = judyArray; // Assign temporary to other
+}
+
+void
+JudyArray::print(std::ostream& out, bool, const std::string& indent) const
+{
+    out << "JudyArray(";
+    for (const_iterator i = begin(); i != end(); ++i) {
+        out << "\n" << indent << "  Key: " << i.key()
+            << ", Value: " << i.value();
+    }
+    out << "\n" << indent << ")";
+}
+
+JudyArray::ConstIterator::ConstIterator(const JudyArray& arr)
+    : _key(0), _data(0), _parent(const_cast<JudyArray*>(&arr)) {}
+
+JudyArray::ConstIterator::ConstIterator(const JudyArray& arr, key_type mykey)
+    : _key(mykey), _data(0), _parent(const_cast<JudyArray*>(&arr))
+{
+    _data = reinterpret_cast<data_type*>(
+                JudyLFirst(_parent->_judyArray, &_key, PJE0));
+}
+
+void
+JudyArray::ConstIterator::print(std::ostream& out, bool, const std::string&) const
+{
+    if (dynamic_cast<const Iterator*>(this) == 0) {
+        out << "Const";
+    }
+    out << "Iterator(Key: " << _key << ", Valp: " << _data;
+    if (_data) out << ", Val: " << *_data;
+    out << ")";
+}
+
+JudyArray::Iterator::Iterator(JudyArray& arr)
+    : ConstIterator(arr) {}
+
+JudyArray::Iterator::Iterator(JudyArray& arr, key_type mykey)
+    : ConstIterator(arr, mykey) {}
+
+} // storage

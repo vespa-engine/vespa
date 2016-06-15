@@ -1,0 +1,5 @@
+.depend
+Makefile
+dirconfig.tmp
+dirconfig_test
+vdstestlib_dirconfig_test_app

@@ -1,0 +1,15 @@
+Makefile
+.depend
+__testfsa__.__fsa__
+fsa_conceptnet_test_app
+fsa_detector_test_app
+fsa_fsa_create_test_app
+fsa_fsa_perf_test_app
+fsa_fsa_test_app
+fsa_fsamanager_test_app
+fsa_lookup_test_app
+fsa_ngram_test_app
+fsa_segmenter_test_app
+fsa_vectorizer_perf_test_app
+fsa_vectorizer_test_app
+*.output

@@ -1,0 +1,38 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".mb");
+#include "rpcmessagebus.h"
+
+namespace mbus {
+
+RPCMessageBus::RPCMessageBus(const MessageBusParams &mbusParams,
+                             const RPCNetworkParams &rpcParams,
+                             const config::ConfigUri & routingCfgUri) :
+    _net(rpcParams),
+    _bus(_net, mbusParams),
+    _agent(_bus),
+    _subscriber(routingCfgUri.getContext())
+{
+    _subscriber.subscribe(routingCfgUri.getConfigId(), &_agent);
+    _subscriber.start();
+}
+
+RPCMessageBus::RPCMessageBus(const ProtocolSet &protocols,
+                             const RPCNetworkParams &rpcParams,
+                             const config::ConfigUri &routingCfgUri) :
+    _net(rpcParams),
+    _bus(_net, protocols),
+    _agent(_bus),
+    _subscriber(routingCfgUri.getContext())
+{
+    _subscriber.subscribe(routingCfgUri.getConfigId(), &_agent);
+    _subscriber.start();
+}
+
+RPCMessageBus::~RPCMessageBus()
+{
+    _subscriber.close();
+}
+
+} // namespace mbus

@@ -1,0 +1,20 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+highest int default=50
+very_high int default=60
+high_1 int default=70
+high_2 int default=80
+high_3 int default=90
+normal_1 int default=100
+normal_2 int default=110
+normal_3 int default=120
+normal_4 int default=130
+normal_5 int default=140
+normal_6 int default=150
+low_1 int default=160
+low_2 int default=170
+low_3 int default=180
+very_low int default=190
+lowest int default=200
+

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+
+    <admin version="2.0">
+        <adminserver hostalias="host1" />
+    </admin>
+
+    <simple version="1.0">
+        <simpleservice hostalias="host1" />
+        <simpleservice hostalias="host1" />
+    </simple>
+
+    <simple id="simple2" version="1.0">
+        <simpleservice hostalias="host1" />
+    </simple>
+
+    <api version="1.0">
+        <apiservice hostalias="host1" />
+    </api>
+
+</services>

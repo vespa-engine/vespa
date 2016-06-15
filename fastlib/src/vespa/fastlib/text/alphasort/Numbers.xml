@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE sortOrder SYSTEM "AlphaSort1_0.dtd">
+<sortOrder>  
+   <sortValue>
+      <unicode>
+         <hex> 30 </hex>
+      </unicode>
+      <unicode>
+         <hex> 660 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F0 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF10 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 31 </hex>
+      </unicode>
+      <unicode>
+         <hex> 661 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F1 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF11 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 32 </hex>
+      </unicode>
+      <unicode>
+         <hex> 662 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F2 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF12 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 33 </hex>
+      </unicode>
+      <unicode>
+         <hex> 663 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F3 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF13 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 34 </hex>
+      </unicode>
+      <unicode>
+         <hex> 664 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F4 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF14 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 35 </hex>
+      </unicode>
+      <unicode>
+         <hex> 665 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F5 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF15 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 36 </hex>
+      </unicode>
+      <unicode>
+         <hex> 666 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F6 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF16 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 37 </hex>
+      </unicode>
+      <unicode>
+         <hex> 667 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F7 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF17 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 38 </hex>
+      </unicode>
+      <unicode>
+         <hex> 668 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F8 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF18 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 39 </hex>
+      </unicode>
+      <unicode>
+         <hex> 669 </hex>
+      </unicode>
+      <unicode>
+         <hex> 6F9 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF19 </hex>
+      </unicode>
+   </sortValue>
+</sortOrder>
+

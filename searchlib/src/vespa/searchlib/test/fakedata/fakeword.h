@@ -1,0 +1,355 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <vespa/searchlib/util/rand48.h>
+#include <vector>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/bitcompression/compression.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
+
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/diskindex/fieldreader.h>
+#include <vespa/searchlib/diskindex/fieldwriter.h>
+
+namespace search
+{
+
+namespace fakedata
+{
+
+
+class CheckPointCallback
+{
+public:
+    CheckPointCallback(void)
+    {
+    }
+
+    virtual
+    ~CheckPointCallback(void)
+    {
+    }
+
+    virtual void
+    checkPoint(void) = 0;
+};
+
+/*
+ * General representation of a faked word, containing all features used
+ * by any of the candidate posting list formats.
+ */
+class FakeWord
+{
+public:
+    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+
+    class DocWordPosFeature
+    {
+    public:
+        uint32_t _elementId;
+        uint32_t _wordPos;
+        int32_t _elementWeight;
+        uint32_t _elementLen;
+
+        inline bool
+        operator<(const DocWordPosFeature &rhs) const
+        {
+            if (_elementId != rhs._elementId)
+                return _elementId < rhs._elementId;
+            return _wordPos < rhs._wordPos;
+        }
+
+        DocWordPosFeature(void);
+        ~DocWordPosFeature(void);
+    };
+
+    typedef std::vector<DocWordPosFeature> DocWordPosFeatureList;
+
+    class DocWordCollapsedFeature
+    {
+    public:
+        DocWordCollapsedFeature(void);
+        ~DocWordCollapsedFeature(void);
+    };
+
+    class DocWordFeature
+    {
+    public:
+        uint32_t _docId;
+        DocWordCollapsedFeature _collapsedDocWordFeatures;
+        uint32_t _positions;
+        uint32_t _accPositions;	// accumulated positions for previous words
+
+        DocWordFeature(void);
+        ~DocWordFeature(void);
+    };
+
+    typedef std::vector<DocWordFeature> DocWordFeatureList;
+
+    class Randomizer
+    {
+    public:
+        uint32_t _random;
+        int32_t _ref;
+
+        Randomizer(void)
+            : _random(0),
+              _ref(0)
+        {
+        }
+
+        bool
+        operator<(const Randomizer &rhs) const
+        {
+            if (_random != rhs._random)
+                return _random < rhs._random;
+            return _ref < rhs._ref;
+        }
+
+        bool
+        operator==(const Randomizer &rhs) const
+        {
+            return _random == rhs._random && _ref == rhs._ref;
+        }
+
+        bool
+        isExtra(void) const
+        {
+            return _ref < 0;
+        }
+
+        bool
+        isRemove(void) const
+        {
+            return isExtra() && (_ref & 1) == 0;
+        }
+
+        uint32_t
+        extraIdx(void) const
+        {
+            return (~_ref) >> 1;
+        }
+
+    };
+
+    class RandomizedWriter
+    {
+    public:
+        virtual
+        ~RandomizedWriter(void);
+
+        virtual void
+        add(uint32_t wordIdx, index::DocIdAndFeatures &features) = 0;
+
+        virtual void
+        remove(uint32_t wordIdx, uint32_t docId) = 0;
+    };
+
+    class RandomizedReader
+    {
+        Randomizer _r;
+        const FakeWord *_fw;
+        uint32_t _wordIdx;
+        bool _valid;
+        std::vector<Randomizer>::const_iterator _ri;
+        std::vector<Randomizer>::const_iterator _re;
+        index::DocIdAndPosOccFeatures _features;
+    public:
+        RandomizedReader(void);
+
+        void
+        read(void);
+
+        void
+        write(RandomizedWriter &writer)
+        {
+            const FakeWord::DocWordFeature &d = _fw->getDocWordFeature(_r);
+            if (_r.isRemove()) {
+                writer.remove(_wordIdx, d._docId);
+            } else {
+                const DocWordPosFeature *p = _fw->getDocWordPosFeature(_r, d);
+                FakeWord::setupFeatures(d, p, _features);
+                writer.add(_wordIdx, _features);
+            }
+        }
+
+        bool
+        isValid(void) const
+        {
+            return _valid;
+        }
+
+        bool operator<(const RandomizedReader &rhs) const
+        {
+            if (_r < rhs._r)
+                return true;
+            if (!(_r == rhs._r))
+                return false;
+            return _wordIdx < rhs._wordIdx;
+        }
+
+        void
+        setup(const FakeWord *fw,
+              uint32_t wordIdx);
+    };
+
+    DocWordFeatureList _postings;
+    DocWordPosFeatureList _wordPosFeatures;
+    DocWordFeatureList _extraPostings;
+    DocWordPosFeatureList _extraWordPosFeatures;
+    std::vector<Randomizer> _randomizer;
+    uint32_t _docIdLimit;	// Documents in index
+    std::string _name;
+    const PosOccFieldsParams &_fieldsParams;
+    uint32_t _packedIndex;
+
+    void
+    fakeup(search::BitVector &bitmap,
+           search::Rand48 &rnd,
+           DocWordFeatureList &postings,
+           DocWordPosFeatureList &wordPosFeatures);
+
+    void
+    fakeupTemps(search::Rand48 &rnd,
+                uint32_t docIdLimit,
+                uint32_t tempWordDocs);
+
+    void
+    setupRandomizer(search::Rand48 &rnd);
+
+    const DocWordFeature &
+    getDocWordFeature(const Randomizer &r) const
+    {
+        if (r.isExtra()) {
+            assert(r.extraIdx() < _extraPostings.size());
+            return _extraPostings[r.extraIdx()];
+        }
+        assert(static_cast<uint32_t>(r._ref) < _postings.size());
+        return _postings[r._ref];
+    }
+
+    const
+    DocWordPosFeature *
+    getDocWordPosFeature(const Randomizer &r, const DocWordFeature &d) const
+    {
+        if (r.isExtra()) {
+            assert(d._accPositions + d._positions <=
+                   _extraWordPosFeatures.size());
+            return &_extraWordPosFeatures[d._accPositions];
+        }
+        assert(d._accPositions + d._positions <=
+               _wordPosFeatures.size());
+        return &_wordPosFeatures[d._accPositions];
+    }
+
+    static void
+    setupFeatures(const DocWordFeature &d,
+                  const DocWordPosFeature *p,
+                  index::DocIdAndPosOccFeatures &features)
+    {
+        unsigned int positions = d._positions;
+        features.clear(d._docId);
+        for (unsigned int t = 0; t < positions; ++t) {
+            features.addNextOcc(p->_elementId, p->_wordPos,
+                                p->_elementWeight, p->_elementLen);
+            ++p;
+        }
+    }
+
+public:
+
+    FakeWord(uint32_t docIdLimit,
+             const std::vector<uint32_t> & docIds,
+             const std::string &name,
+             const PosOccFieldsParams &fieldsParams,
+             uint32_t packedIndex);
+
+    FakeWord(uint32_t docIdLimit,
+             uint32_t wordDocs,
+             uint32_t tempWordDocs,
+             const std::string &name,
+             search::Rand48 &rnd,
+             const PosOccFieldsParams &fieldsParams,
+             uint32_t packedIndex);
+
+    FakeWord(uint32_t docIdLimit,
+             uint32_t wordDocs,
+             uint32_t tempWordDocs,
+             const std::string &name,
+             const FakeWord &otherWord,
+             size_t overlapDocs,
+             search::Rand48 &rnd,
+             const PosOccFieldsParams &fieldsParams,
+             uint32_t packedIndex);
+
+    ~FakeWord(void);
+
+    bool
+    validate(search::queryeval::SearchIterator *iterator,
+             const fef::TermFieldMatchDataArray &matchData,
+             uint32_t stride,
+             bool verbose) const;
+
+    bool
+    validate(search::queryeval::SearchIterator *iterator,
+             const fef::TermFieldMatchDataArray &matchData,
+             bool verbose) const;
+
+    bool
+    validate(search::queryeval::SearchIterator *iterator,
+             bool verbose) const;
+
+    bool
+    validate(std::shared_ptr<search::diskindex::FieldReader> &fieldReader,
+             uint32_t wordNum,
+             const fef::TermFieldMatchDataArray &matchData,
+             bool verbose,
+             uint32_t &checkPointCheck,
+             uint32_t checkPointInterval,
+             CheckPointCallback *const checkPointCallback) const;
+
+    void
+    validate(const std::vector<uint32_t> &docIds) const;
+
+    void
+    validate(const BitVector &bv) const;
+
+    bool
+    dump(std::shared_ptr<search::diskindex::FieldWriter> &fieldWriter,
+         bool verbose,
+         uint32_t &checkPointCheck,
+         uint32_t checkPointInterval,
+         CheckPointCallback *checkPointCallback) const;
+
+    const std::string &getName(void) const
+    {
+        return _name;
+    }
+
+    uint32_t
+    getDocIdLimit(void) const
+    {
+        return _docIdLimit;
+    }
+
+    const PosOccFieldsParams &
+    getFieldsParams(void) const
+    {
+        return _fieldsParams;
+    }
+
+    uint32_t
+    getPackedIndex(void) const
+    {
+        return _packedIndex;
+    }
+
+    void
+    addDocIdBias(uint32_t docIdBias);
+};
+
+} // namespace fakedata
+
+} // namespace search
+

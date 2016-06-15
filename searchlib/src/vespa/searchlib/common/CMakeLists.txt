@@ -1,0 +1,30 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchlib_common OBJECT
+    SOURCES
+    bitvector.cpp
+    allocatedbitvector.cpp
+    partialbitvector.cpp
+    growablebitvector.cpp
+    bitvectorcache.cpp
+    bitvectoriterator.cpp
+    condensedbitvectors.cpp
+    documentlocations.cpp
+    documentsummary.cpp
+    featureset.cpp
+    fileheadercontext.cpp
+    foregroundtaskexecutor.cpp
+    indexmetainfo.cpp
+    location.cpp
+    locationiterators.cpp
+    mapnames.cpp
+    packets.cpp
+    resultset.cpp
+    sequencedtaskexecutor.cpp
+    serialnumfileheadercontext.cpp
+    sort.cpp
+    sortdata.cpp
+    sortresults.cpp
+    sortspec.cpp
+    tunefileinfo.cpp
+    DEPENDS
+)

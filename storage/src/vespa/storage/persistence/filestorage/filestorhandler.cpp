@@ -1,0 +1,208 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/storage/persistence/filestorage/filestorhandler.h>
+#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
+
+namespace storage {
+
+FileStorHandler::FileStorHandler(MessageSender& sender,
+                                 FileStorMetrics& metrics,
+                                 const spi::PartitionStateList& partitions,
+                                 ServiceLayerComponentRegister& compReg,
+                                 uint8_t maxPriorityToBlock,
+                                 uint8_t minPriorityToBeBlocking)
+    : _impl(new FileStorHandlerImpl(
+                sender, metrics, partitions, compReg,
+                maxPriorityToBlock, minPriorityToBeBlocking))
+{
+}
+
+FileStorHandler::~FileStorHandler()
+{
+    delete _impl;
+}
+
+void
+FileStorHandler::flush(bool flushMerges)
+{
+    _impl->flush(flushMerges);
+}
+
+void
+FileStorHandler::setDiskState(uint16_t disk, DiskState state)
+{
+    _impl->setDiskState(disk, state);
+}
+
+FileStorHandler::DiskState
+FileStorHandler::getDiskState(uint16_t disk)
+{
+    return _impl->getDiskState(disk);
+}
+
+void
+FileStorHandler::close()
+{
+    _impl->close();
+}
+
+ResumeGuard
+FileStorHandler::pause()
+{
+    return _impl->pause();
+}
+
+bool
+FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t thread)
+{
+    return _impl->schedule(msg, thread);
+}
+
+void
+FileStorHandler::pause(uint16_t disk, uint8_t priority) const {
+    return _impl->pause(disk, priority);
+}
+
+FileStorHandler::LockedMessage
+FileStorHandler::getNextMessage(uint16_t thread, uint8_t lowestPriority)
+{
+    return _impl->getNextMessage(thread, lowestPriority);
+}
+
+FileStorHandler::LockedMessage &
+FileStorHandler::getNextMessage(uint16_t thread,
+                                LockedMessage& lck,
+                                uint8_t lowestPriority)
+{
+    return _impl->getNextMessage(thread, lck, lowestPriority);
+}
+
+FileStorHandler::BucketLockInterface::SP
+FileStorHandler::lock(const document::BucketId& bucket, uint16_t disk)
+{
+    return _impl->lock(bucket, disk);
+}
+
+void
+FileStorHandler::remapQueueAfterDiskMove(
+        const document::BucketId& bucket,
+        uint16_t sourceDisk, uint16_t targetDisk)
+{
+    RemapInfo target(bucket, targetDisk);
+
+    _impl->remapQueue(RemapInfo(bucket, sourceDisk), target,
+                      FileStorHandlerImpl::MOVE);
+}
+
+void
+FileStorHandler::remapQueueAfterJoin(
+        const RemapInfo& source,
+        RemapInfo& target)
+{
+    _impl->remapQueue(source, target, FileStorHandlerImpl::JOIN);
+}
+
+void
+FileStorHandler::remapQueueAfterSplit(
+        const RemapInfo& source,
+        RemapInfo& target1,
+        RemapInfo& target2)
+{
+    _impl->remapQueue(source, target1, target2, FileStorHandlerImpl::SPLIT);
+}
+
+void
+FileStorHandler::failOperations(const document::BucketId& bid,
+                                uint16_t fromDisk, const api::ReturnCode& err)
+{
+    _impl->failOperations(bid, fromDisk, err);
+}
+
+void
+FileStorHandler::sendCommand(const api::StorageCommand::SP& msg)
+{
+    _impl->sendCommand(msg);
+}
+
+void
+FileStorHandler::sendReply(const api::StorageReply::SP& msg)
+{
+    _impl->sendReply(msg);
+}
+
+void
+FileStorHandler::getStatus(std::ostream& out,
+                           const framework::HttpUrlPath& path) const
+{
+    _impl->getStatus(out, path);
+}
+
+uint32_t
+FileStorHandler::getQueueSize() const
+{
+    return _impl->getQueueSize();
+}
+
+uint32_t
+FileStorHandler::getQueueSize(uint16_t disk) const
+{
+    return _impl->getQueueSize(disk);
+}
+
+void
+FileStorHandler::addMergeStatus(const document::BucketId& bucket,
+                                MergeStatus::SP ms)
+{
+    return _impl->addMergeStatus(bucket, ms);
+}
+
+MergeStatus&
+FileStorHandler::editMergeStatus(const document::BucketId& bucket)
+{
+    return _impl->editMergeStatus(bucket);
+}
+
+bool
+FileStorHandler::isMerging(const document::BucketId& bucket) const
+{
+    return _impl->isMerging(bucket);
+}
+
+uint32_t
+FileStorHandler::getNumActiveMerges() const
+{
+    return _impl->getNumActiveMerges();
+}
+
+void
+FileStorHandler::clearMergeStatus(const document::BucketId& bucket,
+                                  const api::ReturnCode& code)
+{
+    return _impl->clearMergeStatus(bucket, &code);
+}
+
+void
+FileStorHandler::clearMergeStatus(const document::BucketId& bucket)
+{
+    return _impl->clearMergeStatus(bucket, 0);
+}
+
+void
+FileStorHandler::abortQueuedOperations(const AbortBucketOperationsCommand& cmd)
+{
+    _impl->abortQueuedOperations(cmd);
+}
+
+void
+FileStorHandler::setGetNextMessageTimeout(uint32_t timeout)
+{
+    _impl->setGetNextMessageTimeout(timeout);
+}
+
+std::string
+FileStorHandler::dumpQueue(uint16_t disk) const
+{
+    return _impl->dumpQueue(disk);
+}
+
+} // storage

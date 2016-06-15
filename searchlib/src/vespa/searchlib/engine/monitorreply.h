@@ -1,0 +1,31 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
+#include <memory>
+
+namespace search {
+namespace engine {
+
+struct MonitorReply
+{
+    typedef std::unique_ptr<MonitorReply> UP;
+
+    bool                      mld;
+    bool                      activeDocsRequested;
+    uint32_t                  partid;
+    uint32_t                  timestamp;
+    uint32_t                  totalNodes;  // mld
+    uint32_t                  activeNodes; // mld
+    uint32_t                  totalParts;  // mld
+    uint32_t                  activeParts; // mld
+    uint64_t                  activeDocs;
+    uint32_t                  flags;
+
+    MonitorReply();
+};
+
+} // namespace engine
+} // namespace search

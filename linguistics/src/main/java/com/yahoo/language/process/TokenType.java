@@ -1,0 +1,51 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.language.process;
+
+/**
+ * An enumeration of token types.
+ *
+ * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ */
+public enum TokenType {
+
+    UNKNOWN(0),
+    SPACE(1),
+    PUNCTUATION(2),
+    SYMBOL(3),
+    ALPHABETIC(4),
+    NUMERIC(5),
+    MARKER(255);
+
+    private final int value;
+
+    TokenType(int value) {
+        this.value = value;
+    }
+
+    /** Returns an int code for this type */
+    public int getValue() { return value; }
+
+    /**
+     * Marker for whether this type of token can be indexed for search.
+     * Note that a Token can be excluded from an index, even though the token type marks
+     * it as indexable.
+     *
+     * @see com.yahoo.language.process.Token#isIndexable()
+     * @return whether this type of token can be indexed
+     */
+    public boolean isIndexable() {
+        switch (this) {
+            case ALPHABETIC: case NUMERIC: return true;
+            default: return false;
+        }
+    }
+
+    /** Translates this from the int code representation returned from {@link #getValue} */
+    public static TokenType valueOf(int value) {
+        for (TokenType type : values()) {
+            if (value == type.value) return type;
+        }
+        return UNKNOWN;
+    }
+
+}

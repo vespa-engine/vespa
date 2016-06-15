@@ -1,0 +1,19 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host7.yahoo.com",
+  "id": "host7.yahoo.com",
+  "state": "provisioned",
+  "hostname": "host7.yahoo.com",
+  "openStackId": "node7",
+  "flavor": "default",
+  "minDiskAvailableGb":400.0,
+  "minMainMemoryAvailableGb":16.0,
+  "description":"Flavor-name-is-default",
+  "minCpuCores":2.0,
+  "canonicalFlavor": "default",
+  "environment":"env",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure" : false,
+  "history":[]
+}

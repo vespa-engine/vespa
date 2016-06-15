@@ -1,0 +1,105 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * A system state parser.
+ * When this file is changed, do "ant compileparser" to rebuild the parser.
+ *
+ * @author  <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @version $Id: StateParser.jj,v 1.7 2007-11-15 13:24:45 simon Exp $
+ */
+options {
+    CACHE_TOKENS  = true;
+    STATIC = false;
+    DEBUG_PARSER = false;
+    IGNORE_CASE = true;
+
+    // Flip for higher performance
+    ERROR_REPORTING = true;
+}
+
+PARSER_BEGIN(StateParser)
+
+package com.yahoo.documentapi.messagebus.systemstate.parser;
+
+import com.yahoo.documentapi.messagebus.systemstate.rule.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.ArrayList;
+
+public class StateParser {
+
+}
+
+PARSER_END(StateParser)
+
+TOKEN :
+{
+    <WHITESPACE: " " | "\t" | "\r" | "\n" | "\f"> |
+    <SLASH: "/"> |
+    <DOTDOT: ".."> |
+    <DOT: "."> |
+    <ARG: "?"> |
+    <AND: "&"> |
+    <EQ: "="> |
+    <STRING: (<SPACE> | <CODE> | <ALPHANUM>)+> |
+        <#SPACE: "+"> |
+        <#CODE: "%" ["0"-"9","A"-"F","a"-"f"] ["0"-"9","A"-"F","a"-"f"]> |
+        <#ALPHANUM: ["0"-"9","A"-"Z","a"-"z","-",".","_","~"]>
+}
+
+NodeState systemState() throws UnsupportedEncodingException :
+{
+    NodeState node = new NodeState();
+    Location loc, pwd = new Location();
+    List<Argument> arg;
+}
+{
+     ( ( <WHITESPACE> )*
+       ( loc = location(pwd)              { arg = null; }
+         [ <ARG> arg = argumentList() ] ) { if (arg == null) { pwd = new Location(loc); }
+                                            else { node.addChild(loc.toString(), new NodeState(arg)); } } )+
+     { return node; }
+}
+
+Location location(Location pwd) throws UnsupportedEncodingException :
+{
+    String item;
+    List<String> list = new ArrayList<String>();
+}
+{
+    ( ( <SLASH> { pwd.getItems().clear(); } )?
+      item = locationItem() { list.add(item); }
+      ( LOOKAHEAD(2) <SLASH> item = locationItem() { list.add(item); } )*
+      ( LOOKAHEAD(2) <SLASH> )? )
+    { Location ret = new Location(pwd, list); return ret; }
+}
+
+String locationItem() throws UnsupportedEncodingException :
+{
+    String ret;
+}
+{
+    ( <DOTDOT> { return NodeState.NODE_PARENT; } |
+      <DOT>    { return NodeState.NODE_CURRENT; } |
+      <STRING> { return URLDecoder.decode(token.image, "UTF-8"); } )
+}
+
+List<Argument> argumentList () throws UnsupportedEncodingException :
+{
+    Argument item;
+    List<Argument> list = new ArrayList<Argument>();
+}
+{
+    ( item = argument() { list.add(item); } ( <AND> item = argument() { list.add(item); } )* )
+    { return list; }
+}
+
+Argument argument() throws UnsupportedEncodingException :
+{
+    String key, val;
+}
+{
+    ( <STRING> { key = token.image; } <EQ>
+      <STRING> { val = token.image; } )
+    { return new Argument(URLDecoder.decode(key, "UTF-8"), URLDecoder.decode(val, "UTF-8")); }
+}

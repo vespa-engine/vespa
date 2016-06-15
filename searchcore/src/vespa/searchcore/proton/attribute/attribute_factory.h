@@ -1,0 +1,28 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "i_attribute_factory.h"
+#include <set>
+
+namespace proton {
+
+/**
+ * Concrete factory for creating attribute vectors by using the search::AttributeFactory.
+ */
+class AttributeFactory : public IAttributeFactory
+{
+public:
+    typedef std::shared_ptr<AttributeFactory> SP;
+    AttributeFactory();
+
+    // Implements IAttributeFactory
+    virtual search::AttributeVector::SP create(const vespalib::string &name,
+                                               const search::attribute::Config &cfg) const;
+
+    virtual void setupEmpty(const search::AttributeVector::SP &vec,
+                            search::SerialNum serialNum) const;
+};
+
+} // namespace proton
+

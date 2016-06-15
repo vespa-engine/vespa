@@ -1,0 +1,67 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 2002-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
+#pragma once
+
+namespace search
+{
+
+class DirectoryTraverse
+{
+private:
+    DirectoryTraverse(const DirectoryTraverse &);
+    DirectoryTraverse& operator=(const DirectoryTraverse &);
+
+public:
+    class Name
+    {
+    private:
+        Name(const Name &);
+        Name& operator=(const Name &);
+
+    public:
+        char *_name;
+        Name *_next;
+        explicit Name(const char *name)
+            : _name(NULL),
+              _next(NULL)
+        {
+            _name = strdup(name);
+        }
+        ~Name(void) { free(_name); }
+        static Name *sort(Name *head, int count);
+    };
+private:
+    char *_baseDir;
+    Name *_nameHead;
+    int _nameCount;
+    Name *_dirHead;
+    Name *_dirTail;
+    Name *_pdirHead;
+    Name *_rdirHead;
+    Name *_curDir;
+    Name *_curName;
+    char *_fullDirName;
+    char *_fullName;
+    char *_relName;
+public:
+    const char *GetFullName(void) const { return _fullName; }
+    const char *GetRelName(void) const { return _relName; }
+    void QueueDir(const char *name);
+    void PushDir(const char *name);
+    void PushRemoveDir(const char *name);
+    void PushPushedDirs(void);
+    Name *UnQueueDir(void);
+    Name *UnQueueName(void);
+    void ScanSingleDir(void);
+    bool NextName(void);
+    bool NextRemoveDir(void);
+    bool RemoveTree(void);
+    uint64_t GetTreeSize(); // Returns size of directory in bytes
+    explicit DirectoryTraverse(const char *baseDir);
+    ~DirectoryTraverse(void);
+};
+
+} // namespace search
+

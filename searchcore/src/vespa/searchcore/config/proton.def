@@ -1,0 +1,340 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.core
+
+## Base directory. The default is ignored as it is assigned by the model
+basedir       string default="tmp" restart
+
+## specifies the port number for the persistent internal transport
+## protocol provided for a multi-level dispatch system.
+ptport        int default=8003 restart
+
+## Port to use for the rpcserver.
+rpcport       int default=8004 restart
+
+## Port used for Slime Message Passing (srmp protocol)
+slime_messaging_port int default=8005 restart
+
+## Connect spec for rtc.
+rtcspec       string default="tcp/localhost:8004" restart
+
+## Port to use for the web server
+httpport       int default=0 restart
+
+## Port to use for the persistence provider rpc server
+persistenceprovider.port       int default=8006 restart
+
+## Number of threads used to drive the internal persistence SPI
+persistenceprovider.threads    int default=16 restart
+
+## Cluster name
+clustername	string default="" restart
+
+## Partition number
+partition     int default=0 restart
+
+## Distribution key
+distributionkey int default=-1
+
+## Num searcher threads
+numsearcherthreads int default=64 restart
+
+## Number of threads used per search
+numthreadspersearch int default=1 restart
+
+## Num summary threads
+numsummarythreads int default=16 restart
+
+## Stop on io errors ?
+stoponioerrors bool default=false restart
+
+## Maximum number of concurrent flushes outstanding.
+flush.maxconcurrent int default=2 restart
+
+## Number of seconds between checking for stuff to flush when the system is idling.
+flush.idleinterval double default=10.0 restart
+
+## Which flushstrategy to use.
+flush.strategy enum {SIMPLE, MEMORY} default=MEMORY restart
+
+## Total number of bytes allowed before forcing flush.
+flush.memory.maxmemory long default=4294967296 restart
+
+## Maximum total disk bloat factor before forcing flush.
+flush.memory.diskbloatfactor double default=0.2 restart
+
+## Max disk usage (in bytes) for all transaction logs before forcing flush.
+flush.memory.maxtlssize long default=21474836480 restart
+
+## Number of bytes allowed per component before forcing memory prioritization.
+flush.memory.each.maxmemory long default=1073741824 restart
+
+## Maximum disk bloat factor per component before forcing flush.
+flush.memory.each.diskbloatfactor double default=0.2 restart
+
+## Age of unflushed content before forcing age prioritization.
+## Unit is seconds with 1 day being the default.
+flush.memory.maxage.time double default=86400.0 restart
+
+## Max diff in serial number allowed before that takes precedence.
+flush.memory.maxage.serial long default=1000000 restart
+
+## The cost of doing replay when replaying the transaction log.
+##
+## The number of bytes to replay * replaycost gives an estimate of the
+## total cost of replaying the transaction log.
+##
+## The prepare for restart flush strategy will choose a set of components to flush
+## such that the cost of flushing these + the cost of replaying the transaction log
+## is as low as possible.
+flush.preparerestart.replaycost double default=4.0 restart
+
+## The cost of doing writes when flushing components to disk.
+##
+## The number of bytes to write (for a set of flushed components) * writecost
+## gives an estimate of the total cost of flushing this set of components.
+##
+## The prepare for restart flush strategy will choose a set of components to flush
+## such that the cost of flushing these + the cost of replaying the transaction log
+## is as low as possible.
+flush.preparerestart.writecost double default=1.0 restart
+
+## Control io options during write both under dump and fusion.
+indexing.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
+
+## Control io options during read both under dump and fusion.
+indexing.read.io enum {NORMAL, DIRECTIO} default=DIRECTIO restart
+
+## Control number of threads used for indexing
+indexing.threads int default=1 restart
+
+## How long a freshly loaded index shall be warmed up
+## before being used for serving
+index.warmup.time double default=0.0 restart
+
+## How many flushed indexes there can be befor fusion is forced.
+## Setting to 1 will force an immediate fusion.
+index.maxflushed int default=2 restart
+
+## How much memory is set aside for caching.
+## Now only used for caching of dictionary lookups.
+index.cache.size long default=0 restart
+
+## Control io options during flushing of attributes.
+attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
+
+## Control options for io during search.
+## Dictionary is always MMAP.
+search.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
+
+## Multiple optional options for use with mmap
+search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+
+## Advise to give to os when mapping memory.
+search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
+
+## Max number of threads allowed to handle large queries concurrently
+## Postitive number means there is a limit, 0 or negative mean no limit.
+search.memory.limiter.maxthreads int default=0
+
+## Minimum coverage of corpus to postprocess before applying above concurrency limit.
+search.memory.limiter.mincoverage double default=1.0
+
+## Minimum number of hits to postprocess before applying above concurrency limit.
+## Both must be covered before applying limiter.
+search.memory.limiter.minhits int default=1000000
+
+## Control of grouping session manager entries
+grouping.sessionmanager.maxentries int default=500 restart
+
+## Control of pruning interval to remove sessions that have timed out
+grouping.sessionmanager.pruning.interval double default=1.0
+
+## Minimum initial size for any per document tables.
+grow.initial int default=1024 restart
+## Grow factor in percent for any per document tables.
+grow.factor int default=50 restart
+## Constant added when growing any per document tables.
+grow.add int default=1 restart
+## The number of documents to amortize memory spike cost over
+grow.numdocs int default=10000 restart
+
+## Control cache size in bytes.
+summary.cache.maxbytes long default=0 restart
+
+## Control number of cache entries preallocated.
+## Default is no preallocation
+## Can be set to a higher number to avoid resizing.
+summary.cache.initialentries long default=0 restart
+
+## Control compression type of the summary while in the cache.
+summary.cache.compression.type enum {NONE, LZ4} default=LZ4 restart
+
+## Control compression level of the summary while in cache.
+summary.cache.compression.level int default=9 restart
+
+## Control compression type of the summary
+## NB So far only stragey=LOG honours it.
+summary.log.chunk.compression.type enum {NONE, LZ4} default=LZ4 restart
+
+## Control compression level of the summary
+summary.log.chunk.compression.level int default=9 restart
+
+## Max size in bytes per chunk.
+summary.log.chunk.maxbytes int default=65536 restart
+
+## Max number of documents in each chunk.
+summary.log.chunk.maxentries int default=256 restart
+
+## Skip crc32 check on read.
+summary.log.chunk.skipcrconread bool default=false restart
+
+## Control how compation is done, write to the front or to new const file.
+summary.log.compact2activefile bool default=true restart
+
+## Max size per summary file.
+summary.log.maxfilesize long default=1000000000 restart
+
+## Max disk bloat factor. This will trigger compacting.
+summary.log.maxdiskbloatfactor double default=0.1 restart
+
+## Max bucket spread within a single summary file. This will trigger bucket order compacting.
+## Only used when summary.compact2buckets is true.
+summary.log.maxbucketspread double default=2.5 restart
+
+## If a file goes below this ratio compared to allowed max size it will be joined to the front.
+## Value in the range [0.0, 1.0]
+summary.log.minfilesizefactor double default=0.2 restart
+
+## Number of threads used for compressing incomming documents/compacting.
+summary.log.numthreads int default=8 restart
+
+## Control io options during flush of stored documents.
+summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
+
+## Control io options during read of stored documents.
+summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
+
+## Multiple optional options for use with mmap
+summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+
+## Advise to give to os when mapping memory.
+summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
+
+## Enable compact for bucket oriented access.
+summary.compact2buckets bool default=false restart
+
+## The name of the input document type
+documentdb[].inputdoctypename string restart
+## The configid used to subscribe to config for this database.
+documentdb[].configid string restart
+## How many seconds is allowed from document is received to it is visible in the index.
+documentdb[].visibilitydelay double default=0.0
+
+## The interval of when periodic tasks should be run
+periodic.interval double default=3600.0
+
+## Connect spec for transactionlog server.
+tlsspec       string default="tcp/localhost:13700" restart
+
+## ConfigId for transactionlogserver
+tlsconfigid   string default="" restart
+
+## Slobrok configid
+slobrokconfigid         string default="" restart
+
+## Slobrok configid
+routingconfigid         string default="" restart
+
+## Interval between pruning of old removed documents.
+##
+## Default value is 6 hours (21600 seconds).
+pruneremoveddocumentsinterval double default=21600.0
+
+## Age of removed document before it can be pruned.
+##
+## Default value is 2 weeks (1209600 seconds).
+pruneremoveddocumentsage double default=1209600.0
+
+## Interval between wiping of old removed document fields (in seconds).
+##
+## Default value is 6 hours (21600 seconds).
+wipeoldremovedfieldsinterval double default=21600.0
+
+## Age of removed document fields before they can be wiped (in seconds).
+##
+## Default value is 2 weeks (1209600 seconds).
+wipeoldremovedfieldsage double default=1209600.0
+
+## Timeout of recovery rpc calls in rowcolumn mode
+##
+## Default value is 60 seconds
+recoverymanager.rpctimeout double default=60.0 restart
+
+## Minimum size of packets to compress (0 means no compression)
+##
+packetcompresslimit int default=1024
+
+## Compression level for packets
+##
+## Default value is 3
+packetcompresslevel int default=3
+
+## Compression type for packets
+##
+## Default is LZ4
+packetcompresstype enum {NONE, LZ4} default=LZ4
+
+## Interval between considering if lid space compaction should be done (in seconds).
+##
+## Default value is 1 hour (3600 seconds).
+lidspacecompaction.interval double default=3600.0
+
+## The allowed lid bloat (in docs) before considering lid space compaction.
+##
+## When considering compaction the lid bloat is calculated as (docIdLimit - numDocs).
+## The lid bloat must be >= allowedlidbloat before considering compaction.
+lidspacecompaction.allowedlidbloat int default=1000
+
+## The allowed lid bloat factor (relative) before considering lid space compaction.
+##
+## When considering compaction the lid bloat factor is calculated as (docIdLimit - numDocs)/docIdLimit.
+## The lid bloat factor must be >= allowedlidbloatfactor before considering compaction.
+lidspacecompaction.allowedlidbloatfactor double default=0.01
+
+## This is the maximum value visibilitydelay you can have.
+## A to higher value here will cost more memory while not improving too much.
+maxvisibilitydelay double default=1.0
+
+## You can set this to a number above zero for visit to shortcut expensive serialize size computation.
+## This value will be provided instead.
+## negative number will compute it accurately.
+## Default will be flipped shortly. (Once image personal index has gone live.)
+visit.defaultserializedsize long default=-1
+
+## This will ignore the maxbytes limit advised from above.
+## default will be flipped shortly. (Once image personal index has gone live.)
+visit.ignoremaxbytes bool default=false
+
+## Number of initializer threads used for loading structures from disk at proton startup.
+## The threads are shared between document databases when value is larger than 0.
+## When set to 0 (default) we use 1 separate thread per document database.
+initialize.threads int default = 0
+
+## Portion of enumstore address space that can be used before put and update
+## portion of feed is blocked.
+writefilter.attribute.enumstorelimit double default = 1.0
+
+## Portion of attribute multivalue mapping address space that can be used
+## before put and update portion of feed is blocked.
+writefilter.attribute.multivaluelimit double default = 1.0
+
+## Portion of physical memory that can be resident memory in anonymous mapping
+## by the proton process before put and update portion of feed is blocked.
+writefilter.memorylimit double default = 1.0
+
+## Portion of space on disk partition that can be used or reserved before
+## put and update portion of feed is blocked.
+writefilter.disklimit double default = 1.0
+
+## Interval between sampling of disk and memory usage. Default is 60 seconds.
+writefilter.sampleinterval double default = 60.0

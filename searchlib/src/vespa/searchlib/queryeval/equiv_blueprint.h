@@ -1,0 +1,36 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "blueprint.h"
+#include <vespa/searchlib/fef/matchdatalayout.h>
+
+namespace search {
+namespace queryeval {
+
+class EquivBlueprint : public ComplexLeafBlueprint
+{
+private:
+    FieldSpecBaseList          _fields;
+    HitEstimate                _estimate;
+    fef::MatchDataLayout       _layout;
+    std::vector<Blueprint::UP> _terms;
+    std::vector<double>        _exactness;
+
+public:
+    EquivBlueprint(const FieldSpecBaseList &fields, fef::MatchDataLayout subtree_mdl);
+    virtual ~EquivBlueprint();
+
+    // used by create visitor
+    EquivBlueprint& addTerm(Blueprint::UP term, double exactness);
+
+    virtual SearchIterator::UP
+    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
+                     bool strict) const;
+
+    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual void fetchPostings(bool strict);
+};
+
+} // namespace queryeval
+} // namespace search

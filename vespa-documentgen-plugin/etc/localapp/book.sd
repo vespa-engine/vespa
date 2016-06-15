@@ -1,0 +1,91 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search book {
+   document book inherits common {
+     struct ss0 {
+       field s0 type string{}
+       field d0 type double{}
+     }
+     struct ss1 {
+        field s1 type string { }
+        field l1 type long { }
+        field i1 type int { }
+        field d1 type double { }
+        field as1 type array<string> { }
+        field al1 type array<long> { }
+        field ss01 type ss0 {}
+      }
+
+      struct ss2 {
+        field s21 type string {}
+        field ss02 type ss0 {}
+      }
+
+      field mystruct type ss1 {
+      }
+
+      field mystruct2 type ss2 {}
+
+      field mywsfloat type weightedset<float> {
+        indexing: attribute
+        attribute: prefetch
+      }
+
+      field myarrayint type array<int> {
+        indexing: attribute
+        attribute: prefetch
+      }
+
+      field mytriplearray type array<array<array<int>>> {}
+
+      field stringmap type map<string, string> {
+      }
+
+      field structmap type map<int, ss1> {
+      }
+
+      field mysinglestructarray type array<ss1> {}
+      #field mydoublestructarray type array<array<ss1>> {}
+
+      field author type string {
+         bolding: on
+         # index-to: default, author
+         indexing: summary | index
+      }
+      field isbn type string {
+         # index-to: default, isbn
+         indexing: summary | index
+      }
+      field year type int {
+         indexing: summary | index
+      }
+      field description type string {
+         # index-to: default, description
+         indexing: summary | index
+         summary: dynamic
+      }
+
+      field myraw type raw {}
+      }
+
+   field sw1 type float {
+      indexing {
+        input weight * 6 + input w1 + input w2 | summary;
+      }
+   }
+
+   field didinteger type array<int> {
+      indexing: input did | split " " | for_each { to_int } | attribute
+   }
+
+   rank-profile default {
+      first-phase {
+         expression: nativeRank
+      }
+   }
+   rank-profile rp1 inherits default {
+      #static-rank: weight1
+   }
+   rank-profile rp2 inherits default {
+      #static-rank: weight2
+   }
+}

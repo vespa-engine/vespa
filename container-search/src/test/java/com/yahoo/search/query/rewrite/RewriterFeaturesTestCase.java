@@ -1,0 +1,45 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.query.rewrite;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
+import com.yahoo.search.Query;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.Execution.Context;
+import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
+import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist;
+import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist.Tokens;
+
+/**
+ * Fine grained testing of RewriterFeatures for easier testing of innards.
+ */
+public class RewriterFeaturesTestCase {
+
+    private static final String ASCII_ELLIPSIS = "...";
+
+    @Test
+    public final void testConvertStringToQTree() {
+        Execution placeholder = new Execution(Context.createContextStub());
+        SpecialTokenRegistry tokenRegistry = new SpecialTokenRegistry(
+                new SpecialtokensConfig(
+                        new SpecialtokensConfig.Builder()
+                                .tokenlist(new Tokenlist.Builder().name(
+                                        "default").tokens(
+                                        new Tokens.Builder().token(ASCII_ELLIPSIS)))));
+        placeholder.context().setTokenRegistry(tokenRegistry);
+        Query query = new Query();
+        query.getModel().setExecution(placeholder);
+        Item parsed = RewriterFeatures.convertStringToQTree(query, "a b c "
+                + ASCII_ELLIPSIS);
+        assertSame(AndItem.class, parsed.getClass());
+        assertEquals(4, ((CompositeItem) parsed).getItemCount());
+        assertEquals(ASCII_ELLIPSIS, ((CompositeItem) parsed).getItem(3).toString());
+    }
+
+}

@@ -1,0 +1,82 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".protocolrepository");
+
+#include "protocolrepository.h"
+
+namespace mbus {
+
+void
+ProtocolRepository::clearPolicyCache()
+{
+    vespalib::LockGuard guard(_lock);
+    _routingPolicyCache.clear();
+}
+
+IProtocol::SP
+ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
+{
+    vespalib::LockGuard guard(_lock);
+    const string &name = protocol->getName();
+    if (_protocols.find(name) != _protocols.end()) {
+        _routingPolicyCache.clear();
+    }
+    IProtocol::SP prev = _protocols[name];
+    _protocols[name] = protocol;
+    return prev;
+}
+
+bool
+ProtocolRepository::hasProtocol(const string &name) const
+{
+    vespalib::LockGuard guard(_lock);
+    return _protocols.find(name) != _protocols.end();
+}
+
+IProtocol::SP
+ProtocolRepository::getProtocol(const string &name)
+{
+    vespalib::LockGuard guard(_lock);
+    ProtocolMap::iterator it = _protocols.find(name);
+    if (it != _protocols.end()) {
+        return it->second;
+    }
+    return IProtocol::SP();
+}
+
+IRoutingPolicy::SP
+ProtocolRepository::getRoutingPolicy(const string &protocolName,
+                                     const string &policyName,
+                                     const string &policyParam)
+{
+    vespalib::LockGuard guard(_lock);
+    string cacheKey = protocolName + "." + policyName + "." + policyParam;
+    RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
+    if (cit != _routingPolicyCache.end()) {
+        return cit->second;
+    }
+    ProtocolMap::iterator pit = _protocols.find(protocolName);
+    if (pit == _protocols.end()) {
+        LOG(error, "Protocol '%s' not supported.", protocolName.c_str());
+        return IRoutingPolicy::SP();
+    }
+    IRoutingPolicy::UP policy;
+    try {
+        policy = pit->second->createPolicy(policyName, policyParam);
+    } catch (const std::exception &e) {
+        LOG(error, "Protocol '%s' threw an exception; %s",
+            protocolName.c_str(), e.what());
+    }
+    if (policy.get() == NULL) {
+        LOG(error, "Protocol '%s' failed to create routing policy '%s' "
+            "with parameter '%s'.",
+            protocolName.c_str(), policyName.c_str(), policyParam.c_str());
+        return IRoutingPolicy::SP();
+    }
+    IRoutingPolicy::SP ret(policy.release());
+    _routingPolicyCache[cacheKey] = ret;
+    return ret;
+}
+
+}

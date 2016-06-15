@@ -1,0 +1,183 @@
+This is the unified logging library for Vespa.
+
+To use in a C++ program, make and install this module, and do the
+following in your program(s):
+
+1. In each .cpp file, add the following near the top, preferably
+before any other non-system include:
+
+#include "log/log.h"
+LOG_SETUP("name");
+
+Where "name" should be replaced with the proper COMPONENT NAME (see
+separate section about component names).
+
+NOTE: Naming convention: In LOG_SETUP, only use lower-case letters,
+and use "-" to separate words if necessary, ie:
+  LOG_SETUP(".my-lib.bla-bla")
+Do not use spaces.
+
+This will define a macro named LOG that performs logging. The reason
+for doing this before any other non-system includes, is that you will
+be able to use the LOG macro in your included .h files as well
+then. If you do not LOG from any of your included .h files, it doesn't
+matter.
+
+2. Optionally, add a LOG_RCSID("$Id$") line after LOG_SETUP. This will
+cause debug messages to be tagged with the rcs version of the file
+as well (in addition to the normal filename and line number).
+
+3. At each location where you want to make a log message, use the LOG
+   macro like this:
+
+LOG(<level>, "printf-format" [, optional printf arguments]);
+
+<level> can be one of :
+  fatal - deprecated, use "error"
+  error - An error condition
+  warning - A problem that is not severe enough to warrant an error message.
+
+  event - Information in machine-readable (fixed) format.
+        event should be used instead of info where possible
+
+  info - Information in non-machine-readable format (ie for humans only)
+         info should not be used for error conditions, but is fine for
+         progress reports and similar (unless an event is defined for it!)
+
+  debug - Debug messages, intented for developers (ie you!)
+ 	 only. Debug messages are normally suppressed, and will use
+         very little resources unless they are enabled. Arguments
+         to suppressed log messages are _not_ evaluated.
+
+         Debug messages should contain whatever information you need
+         while debugging your code to make sure it behaves like it should,
+         and to track down any suspected problems.
+  
+  spam  - Spammy debug messages, intented for developers only. This is intended
+        for VERY spammy debug output, such as printing 100 lines per
+        document processed.
+
+4. When linking the program, link with -llog.
+
+
+COMPONENT NAMES
+
+Component names are hierarchical, a "." separates each level. The root
+component name must be IDENTICAL in all files for a particular
+binary. The root component name should be identical to the name of the
+final binary.
+
+There is some support in LOG_SETUP for simplifying this:
+
+1. An empty argument to LOG_SETUP will use whatever root component name
+ is defined in any other .cpp file.
+
+2. If the component name used in LOG_SETUP starts with a ".", it will be
+   appended to the root component name that is defined in any other
+   .cpp file.
+
+
+The normal way to use this is then:
+
+1. In applications
+
+  a) Find the .cpp file that defines the main() function, and use
+      LOG_SETUP("binary-name");
+     in that file.
+
+  b) For all other .cpp files in the application that only want to use
+     the root name, the following will then be equivalent, and the short
+     form is preferable if you are ever going to rename the program:
+
+      LOG_SETUP("");
+     or
+      LOG_SETUP("binary-name");
+
+
+2. In libraries or sub-modules
+
+      Decide on a name for the library or sub-module, and use this:
+      LOG_SETUP(".name")   (where "name" is the name of the library
+         or sub-module)
+
+      If you want more levels you can also do
+      LOG_SETUP(".level1.level2"); 
+
+      And so on.
+
+The reason it is useful to have more than one component name in an
+application is that it is possible to change at _runtime_ which log
+levels are suppressed in each individual component. This is especially
+useful for enabling debug output only in parts of a program.
+
+Some hypothetical examples:
+
+In the application "fdispatch" there could be some files that have
+code primarily for query parsing. It also links with the library "fnet"
+for communicating.
+
+in main.cpp the following is done:
+LOG_SETUP("fdispatch");
+LOG_RCSID("$Id$");
+
+In the .cpp files that worry about query parsing, the following is done:
+LOG_SETUP(".query-parse");
+LOG_RCSID("$Id$");
+
+In fnet, all files do at least this:
+LOG_SETUP(".fnet");
+LOG_RCSID("$Id$");
+
+It is also possible to sub-divide fnet into more components, and do
+something like this in some of the fnet files:
+LOG_SETUP(".fnet.network");
+LOG_RCSID("$Id$");
+
+
+OUTPUT FORMAT
+
+The output log format is tab-separated fields, and the following
+fields exist, always in this order:
+
+<time> <host> <process/thread id> <service> <component> <level> <message>
+
+time: Seconds since 1970-01-01 UTC, optionally with fractional seconds.
+  Examples: "1088516763", "1088516763.808240"
+  Time is always output with a "neutral" time zone (UTC).
+
+host: Hostname as given by "uname -n", or "-" for no hostname.
+
+process/thread-id: pid[/tid] of the process/thread that procuded the log.
+     For systems where pid uniquely defines the logging thread, or where
+     there are no threads, only the pid will be logged. If a tid is logged
+     in addition, the format will be "pid/tid".
+
+service: Service name as given by Vespa configuration setup, or "-" for
+     no service name
+
+component: Application decided logging component name. Hierarchical with
+     "." between each level, top level should always be the name of the
+     binary that produced the log.
+
+level (see above)
+
+message: The log message itself. Any content is possible, but the following
+     quoting rules are enforced by the library:
+
+
+QUOTING
+
+The library will forcibly quote all characters that have an ASCII
+value < 32 (and also 92) according to the following table, 
+
+9 -> \t
+10 -> \n
+13 -> \r
+92 -> \\   (ie \ is escaped as \\)
+
+All other values that must be quoted will be quoted as \xXX where X is
+a hexadecimal number, eg 1 -> \x01, 2 -> \x02, 17 -> \x11 and so on.
+
+Any code reading logs should be prepared to see \xXX style quoting also
+for the characters that have defined alphabetic quoting shortcuts (ie
+9, 10, 13 and 92)!

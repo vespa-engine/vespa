@@ -1,0 +1,105 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search advanced {
+    document advanced {
+        field debug_src      type string { }
+        field attributes_src type string { }
+        field location_str   type string { }
+        field title_src      type string { }
+        field product_src    type string { }
+        field product2_src   type string { }
+        field product3_src   type string { }
+    }
+        field debug type string {
+          indexing {
+
+            # Initialize variables used for superduper ranking
+            0 | set_var superduperus | set_var superdupereu | set_var superduperasia;
+
+            input debug_src | lowercase | summary | index | split ";" | for_each {
+              # Loop through each token in debug string
+              switch {
+                case "superduperus": 10 | set_var superduperus;
+                case "superdupereu": 10 | set_var superdupereu;
+                case "superduperasia": 10 | set_var superduperasia;
+              }
+            };
+          }
+          stemming: none
+        }
+
+        field attributes type string {
+          indexing {
+
+            # Initialize variables used for superduper ranking
+            1 | set_var superdupermod;
+            2 | set_var tmppubdate;
+            input attributes_src | lowercase | summary | index | split ";" | for_each {
+              # Loop through each token in attributes string
+              switch {
+
+                # De-rank PR articles using the following rules:
+                #   1. Set editedstaticrank to '1'
+                #   2. Subtract 2.5 hours (9000 seconds) from timestamp used in ranking
+                #   3. No superduper rank
+                case "typepr": 1 | set_var tmpsourcerank | get_var tmppubdate - 9000 | set_var tmppubdate | 0 | set_var superdupermod;
+              }
+            };
+          }
+          stemming: none
+        }
+
+        field title type string {
+          indexing: input title_src | index
+          indexing-rewrite: none
+          rank-type: identity
+          stemming: none
+          alias: headline
+        }
+
+        field title_s type string {
+          indexing: input title_src | summary
+        }
+
+ 	    field product type string {
+	      indexing: input product_src | switch {
+		      case "": "myweb" | index | summary;
+		      default: input product_src | index | summary;
+	        }
+          indexing-rewrite: none
+	      normalizing: none
+        }
+
+        field product2 type string {
+          indexing {
+	        if (input product2_src == "foo") {
+	          "bar" | index product2;
+	        } else {
+	          "baz" | index product2;
+	        };
+          }
+          indexing-rewrite: none
+          normalizing: none
+        }
+
+        field product3 type string {
+          indexing: input product3_src | switch {
+ 		      case "": "myweb" | index product3 | summary product3;
+ 		      default: input product3_src | index product3 | summary product3;
+ 	        }
+ 	      normalizing: none
+ 	      indexing-rewrite: none
+ 	    }
+
+    field location type position {
+        indexing: input location_str | to_pos | attribute
+    }
+    field mysummary type string {
+        indexing: input title_src | summary
+    }
+    fieldset titleabstract {
+      fields: title
+    }
+    fieldset default {
+      fields: title
+    }
+}

@@ -1,0 +1,32 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <memory>
+#include <vespa/messagebus/common.h>
+#include <vespa/config/helper/configfetcher.h>
+#include <vespa/messagebus/config-messagebus.h>
+
+namespace mbus {
+
+class IConfigHandler;
+
+/**
+ * A ConfigAgent will register with the config server and obtain
+ * config on behalf of a IConfigHandler.
+ **/
+class ConfigAgent : public config::IFetcherCallback<messagebus::MessagebusConfig>,
+                    public vespalib::noncopyable
+{
+private:
+    IConfigHandler &_handler;
+
+public:
+    ConfigAgent(IConfigHandler & handler);
+
+    // Implements IFetcherCallback
+    void configure(std::unique_ptr<messagebus::MessagebusConfig> config);
+};
+
+} // namespace mbus
+

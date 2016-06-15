@@ -1,0 +1,5 @@
+.depend
+Makefile
+ranksetup_test
+/.gdbinit
+searchlib_ranksetup_test_app

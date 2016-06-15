@@ -1,0 +1,7 @@
+.*.swp
+.depend
+.~
+Makefile
+testrunner
+/test.vlog
+metrics_testrunner_app

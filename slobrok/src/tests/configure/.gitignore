@@ -1,0 +1,12 @@
+.depend
+Makefile
+configure_test
+gencfg
+slobrok1.cfg
+slobrok1.cfg.new
+slobrok1.out
+slobrok2.cfg
+slobrok2.cfg.new
+slobrok2.out
+slobrok_configure_test_app
+slobrok_gencfg_app

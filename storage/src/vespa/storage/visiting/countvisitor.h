@@ -1,0 +1,62 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @class storage::CountVisitor
+ * @ingroup visitors
+ *
+ * @brief A count visitor is a visitor that sends documentid statistics
+ * to the client.
+ *
+ */
+#pragma once
+
+#include <vespa/storage/visiting/visitor.h>
+
+namespace storage {
+
+class CountVisitor : public Visitor {
+public:
+    CountVisitor(StorageComponent&,
+                 const vdslib::Parameters& params);
+
+    virtual void completedVisiting(HitCounter&);
+
+private:
+    void handleDocuments(const document::BucketId& bucketId,
+                         std::vector<spi::DocEntry::LP>& entries,
+                         HitCounter& hitCounter);
+
+    bool _doScheme;
+    std::map<std::string, int> _schemeCount;
+
+    bool _doNamespace;
+    typedef std::map<vespalib::string, int> NamespaceCountMap;
+    NamespaceCountMap _namespaceCount;
+
+    bool _doUser;
+    std::map<uint64_t, int> _userCount;
+
+    bool _doGroup;
+    typedef std::map<vespalib::string, int> GroupCountMap;
+    GroupCountMap _groupCount;
+};
+
+struct CountVisitorFactory : public VisitorFactory {
+
+    VisitorEnvironment::UP
+    makeVisitorEnvironment(StorageComponent&) {
+        return VisitorEnvironment::UP(new VisitorEnvironment);
+    };
+
+    Visitor*
+    makeVisitor(StorageComponent& c, VisitorEnvironment&,
+                const vdslib::Parameters& params)
+    {
+        return new CountVisitor(c, params);
+    }
+
+};
+
+}
+
+
+

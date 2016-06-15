@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<services version="1.0">
+
+  <admin version="2.0">
+    <adminserver hostalias="ADMIN0" />
+    <logserver hostalias="ADMIN0" />
+    <slobroks>
+      <slobrok hostalias="SLOBROK0" />
+    </slobroks>
+    <configservers>
+    <configserver hostalias="ADMIN0" />
+    <configserver hostalias="SLOBROK0" />
+    </configservers>
+  </admin>
+
+  <routing version="1.0">
+    <routingtable protocol="document">
+      <route name="cats" hops="storage"/>
+     </routingtable>
+  </routing>
+
+  <container version="1.0">
+    <nodes>
+      <node hostalias="QRS0"/>
+    </nodes>
+    <document-api/>
+    <handler id="com.yahoo.foo.bar.FooHandler:1" />
+  </container>
+
+  <container version="1.0" id="migration">
+    <http>
+      <server port="8000" id="migration-server" />
+    </http>
+    <document-processing>
+      <chain id="baz">
+        <documentprocessor id="com.yahoo.foo.bar.baz.BazDocproc" />
+      </chain>
+    </document-processing>
+
+    <nodes>
+      <node hostalias="DOCPROC0" />
+    </nodes>
+  </container>
+
+  <content version="1.0" id="mailbox">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="mailbox" mode="streaming"/>
+    </documents>
+    <nodes><node hostalias="VDS0" distribution-key="0"/></nodes>
+  </content>
+
+  <content version="1.0" id="message">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="message" mode="streaming"/>
+    </documents>
+    <nodes><node hostalias="VDS0" distribution-key="0"/></nodes>
+  </content>
+
+  <content version="1.0" id="mail">
+    <redundancy>1</redundancy>
+    <documents>
+      <document type="mail" mode="streaming"/>
+    </documents>
+    <nodes><node hostalias="VDS0" distribution-key="0"/></nodes>
+  </content>
+
+</services>

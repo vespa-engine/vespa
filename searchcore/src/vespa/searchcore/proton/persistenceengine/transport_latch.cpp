@@ -1,0 +1,49 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.persistenceengine.transportlatch");
+
+#include "transport_latch.h"
+
+using storage::spi::Result;
+
+namespace proton {
+
+TransportLatch::TransportLatch(uint32_t cnt)
+    : _latch(cnt),
+      _lock(),
+      _result()
+{}
+
+void
+TransportLatch::send(mbus::Reply::UP reply,
+                     ResultUP result,
+                     bool documentWasFound,
+                     double latency_ms)
+{
+    (void) reply;
+    (void) latency_ms;
+    {
+        vespalib::LockGuard guard(_lock);
+        if (!_result.get()) {
+            _result = std::move(result);
+        } else if (result->hasError()) {
+            _result.reset(new Result(mergeErrorResults(*_result, *result)));
+        } else if (documentWasFound) {
+            _result = std::move(result);
+        }
+    }
+    _latch.countDown();
+}
+
+Result
+TransportLatch::mergeErrorResults(const Result &lhs, const Result &rhs)
+{
+    Result::ErrorType error = (lhs.getErrorCode() > rhs.getErrorCode() ? lhs : rhs).getErrorCode();
+    return Result(error, vespalib::make_string("%s, %s",
+                                               lhs.getErrorMessage().c_str(),
+                                               rhs.getErrorMessage().c_str()));
+}
+
+} // proton

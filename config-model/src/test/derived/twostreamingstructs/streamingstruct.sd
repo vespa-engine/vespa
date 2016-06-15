@@ -1,0 +1,183 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search streamingstruct {
+
+  document streamingstruct {
+    field coupleof type string {
+      indexing: index | summary
+    }
+
+    field normalfields type string {
+      indexing: index | summary
+      summary anothersummaryfield {
+        source: normalfields
+      }
+    }
+
+    struct s1 {
+      field f1 type string { }
+      field f1s type string { match: substring }
+      field f2 type int { }
+      field f3 type double { }
+      # Allow default matchtypes in struct. Can be overridden.
+      # No index/attribute related stuff. It is only a datatype definition.
+    }
+    struct ns1 {
+      field nf1 type s1 { }
+      field nf1s type s1 { match: substring }
+      field nf2 type string { }
+      # May specify nested structs.
+    }
+
+    field a type s1 {
+      indexing: summary
+      # Will generate attribute a.f1, a.f1s, a.f2, a.f3
+      # with datatypes preserved.
+      # No customisation.
+      # a will be a synonym for all (a.*)
+    }
+    field m type map<long, string> {
+      indexing: summary
+      # Will generate attribute m.key, m.value
+      # with datatypes preserved.
+      # m will be a synonym for all (m.*)
+    }
+    field b type s1 {
+      indexing: index | summary
+      # Will generate index b.f1, b.f1s, b.f2, b.f3
+      # with datatypes preserved if backend allows.
+      # No customisation.
+      # b will be synonym for all (b.*).
+    }
+    field c type s1 {
+      struct-field f1 {
+        # Whatever you normally write in a field declaration
+        indexing: attribute | summary  # -> Generates attribute c.f1
+      }
+      struct-field f1s {
+        indexing: index | summary      # -> c.f1s
+        match: prefix
+      }
+      struct-field f3 {
+        indexing: index | summary      # -> c.f3
+      }
+      # attribute c will be synonym for c.f1.
+      # Index c will be synonym for c.f1s OR c.f3.
+      # Indexed search can handle that however they want.
+    }
+    field c2 type s1 {
+      struct-field f1 {
+        # Whatever you normally write in a field declaration
+        indexing: attribute | summary  # -> Generates attribute c2.f1
+      }
+      struct-field f1s {
+        indexing: index | summary      # -> c2.f1s
+        match: suffix
+      }
+      struct-field f2 {
+        indexing: index | summary      # -> c2.f2
+      }
+      struct-field f3 {
+        indexing: index | summary      # -> c2.f3
+      }
+    }
+    field c3 type s1 {
+      # Uses all sub fields, but not summary for all. 
+      struct-field f1 {
+        indexing: attribute | summary
+      }
+      struct-field f1s {
+        indexing: index
+        match: prefix
+      }
+      struct-field f2 {
+        indexing: index | summary
+      }
+      struct-field f3 {
+        indexing: index | summary
+      }
+    }
+    field n type ns1 {
+      struct-field nf1 {
+        struct-field f1 {
+          indexing: index | summary
+        }
+        struct-field f1s {
+          indexing: index | summary
+          match: prefix
+        }
+        struct-field f3 {
+          indexing: index
+        }
+      }
+      struct-field nf1s {
+        indexing: index | summary
+      }
+      struct-field nf2 {
+        indexing: index | summary
+      }
+      # Will generate indexes n.nf1.f1, n.nf1.f1s, n.nf1.f3,
+      # n.nf1s.f1, n.nf1s.f1s, n.nf1s.f2, n.nf1s.f3
+      # and n.nf2.
+      # n will be synonym for all 8,
+      # n.nf1 will be synonym for the first 3 and
+      # n.nf1s will be synonym for the next 4
+    }
+
+    field array1 type array<s1> {
+      indexing: summary
+    }
+    field array2 type array<s1> {
+      indexing: index | summary
+    }
+    field array3 type array<s1> {
+      struct-field f1 {
+        indexing: attribute | summary  # -> Generates attribute array3.f1
+      }
+      struct-field f1s {
+        indexing: index | summary      # -> array3.f1s
+        match: prefix
+      }
+      struct-field f3 {
+        indexing: index | summary      # -> array3.f3
+      }
+    }
+    field subject type s1 {
+      struct-field f1 {
+        indexing: summary
+        summary subject {
+          source:subject.f1
+        }
+      }
+    }
+    field d type s1 {
+      indexing: index
+      # override matching for all subfields
+      match: prefix
+    }
+    field e type s1 {
+      indexing: index
+      # override matching for all subfields
+      match: substring
+    }
+    field f type s1 {
+      indexing: index
+      # override matching for all subfields
+      match: suffix
+    }
+    field g type string {
+      indexing: index | summary
+      summary: dynamic
+    }
+  }
+
+  document-summary summ {
+    summary snippet type string {
+      dynamic
+      source: a.f1, b.f2
+    }
+    summary snippet2 type string {
+      source: a.f1, b.f1, b.f2
+    }
+  }
+
+}

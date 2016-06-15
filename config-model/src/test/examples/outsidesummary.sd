@@ -1,0 +1,45 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search outsidesummary {
+
+  document-summary other {
+
+    summary sa type string {
+      dynamic
+      source: a
+    }
+
+    summary sa2 type string {
+      full
+      source: a
+    }
+
+    summary a type string {
+    }
+
+  }
+
+  document outsidesummary {
+
+    field a type string {
+      indexing: summary
+    }
+
+    field b type string {
+      indexing: summary
+      summary-to: default, other
+      summary {
+        dynamic
+      }
+    }
+
+    field c type string {
+      indexing: summary
+      summary {
+        dynamic
+        to: other, default
+      }
+    }
+
+  }
+
+}

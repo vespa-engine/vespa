@@ -1,0 +1,184 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.matchdatabuilder");
+
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/floatbase.h>
+#include <vespa/searchlib/attribute/stringbase.h>
+#include "matchdatabuilder.h"
+
+namespace search {
+namespace fef {
+namespace test {
+
+MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data) :
+    _queryEnv(queryEnv),
+    _data(data),
+    _index(),
+    _match()
+{
+    // reset all match data objects and set docId to 'endId' (aka -1)
+    for (TermFieldHandle handle = 0; handle < _data.getNumTermFields(); ++handle) {
+        _data.resolveTermField(handle)->reset(TermFieldMatchData::invalidId());
+    }
+    _data.setDocId(TermFieldMatchData::invalidId());
+}
+
+TermFieldMatchData *
+MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId)
+{
+    const ITermData *term = _queryEnv.getTerm(termId);
+    if (term == NULL) {
+        return NULL;
+    }
+    const ITermFieldData *field = term->lookupField(fieldId);
+    if (field == NULL || field->getHandle() >= _data.getNumTermFields()) {
+        return NULL;
+    }
+    return _data.resolveTermField(field->getHandle());
+}
+
+
+bool
+MatchDataBuilder::setFieldLength(const vespalib::string &fieldName, uint32_t length)
+{
+    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+    if (info == NULL) {
+        LOG(error, "Field '%s' does not exist.", fieldName.c_str());
+        return false;
+    }
+    _index[info->id()].fieldLength = length;
+    return true;
+}
+
+bool
+MatchDataBuilder::addElement(const vespalib::string &fieldName, int32_t weight, uint32_t length)
+{
+    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+    if (info == NULL) {
+        LOG(error, "Field '%s' does not exist.", fieldName.c_str());
+        return false;
+    }
+    _index[info->id()].elements.push_back(MyElement(weight, length));
+    return true;
+}
+
+bool
+MatchDataBuilder::addOccurence(const vespalib::string &fieldName, uint32_t termId, uint32_t pos, uint32_t element)
+{
+    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+    if (info == NULL) {
+        LOG(error, "Field '%s' does not exist.", fieldName.c_str());
+        return false;
+    }
+    if (termId >= _queryEnv.getNumTerms()) {
+        LOG(error, "Term id '%u' is invalid.", termId);
+        return false;
+    }
+    const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
+    if (tfd == NULL) {
+        LOG(error, "Field '%s' is not searched by the given term.",
+            fieldName.c_str());
+        return false;
+    }
+    _match[termId][info->id()].insert(Position(pos, element));
+    return true;
+}
+
+bool
+MatchDataBuilder::setWeight(const vespalib::string &fieldName, uint32_t termId, int32_t weight)
+{
+    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+    if (info == NULL) {
+        LOG(error, "Field '%s' does not exist.", fieldName.c_str());
+        return false;
+    }
+    if (termId >= _queryEnv.getNumTerms()) {
+        LOG(error, "Term id '%u' is invalid.", termId);
+        return false;
+    }
+    const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
+    if (tfd == NULL) {
+        LOG(error, "Field '%s' is not searched by the given term.",
+            fieldName.c_str());
+        return false;
+    }
+    uint32_t eid = _index[info->id()].elements.size();
+    _match[termId][info->id()].clear();
+    _match[termId][info->id()].insert(Position(0, eid));
+    _index[info->id()].elements.push_back(MyElement(weight, 1));
+    return true;
+}
+
+bool
+MatchDataBuilder::apply(uint32_t docId)
+{
+    _data.setDocId(docId);
+
+    // For each term, do
+    for (TermMap::const_iterator term_iter = _match.begin();
+         term_iter != _match.end(); ++term_iter)
+    {
+        uint32_t termId = term_iter->first;
+
+        for (FieldPositions::const_iterator field_iter = term_iter->second.begin();
+             field_iter != term_iter->second.end(); ++field_iter)
+        {
+            uint32_t fieldId = field_iter->first;
+            TermFieldMatchData *match = getTermFieldMatchData(termId, fieldId);
+
+            // Make sure there is a corresponding term field match data object.
+            if (match == NULL) {
+                LOG(error, "Term id '%u' is invalid.", termId);
+                return false;
+            }
+            match->reset(docId);
+
+            // find field data
+            MyField field;
+            IndexData::const_iterator idxItr = _index.find(fieldId);
+            if (idxItr != _index.end()) {
+                field = idxItr->second;
+            }
+
+            // For log, attempt to lookup field name.
+            const FieldInfo *info = _queryEnv.getIndexEnv()->getField(fieldId);
+            vespalib::string name = info != NULL ? info->name() : vespalib::make_string("%d", fieldId).c_str();
+
+            // For each occurence of that term, in that field, do
+            for (Positions::const_iterator occ_iter = field_iter->second.begin();
+                 occ_iter != field_iter->second.end(); occ_iter++)
+            {
+                // Append a term match position to the term match data.
+                Position occ = *occ_iter;
+                match->appendPosition(TermFieldMatchDataPosition(
+                                              occ.eid,
+                                              occ.pos,
+                                              field.getWeight(occ.eid),
+                                              field.getLength(occ.eid)));
+                LOG(debug,
+                    "Added occurence of term '%u' in field '%s'"
+                    " at position '%u'.",
+                    termId, name.c_str(), occ.pos);
+                if (occ.pos >= field.getLength(occ.eid)) {
+                    LOG(warning,
+                        "Added occurence of term '%u' in field '%s'"
+                        " at position '%u' >= fieldLen '%u'.",
+                        termId, name.c_str(), occ.pos, field.getLength(occ.eid));
+                }
+            }
+        }
+    }
+    // Return ok.
+    return true;
+}
+
+} // namespace test
+} // namespace fef
+} // namespace search

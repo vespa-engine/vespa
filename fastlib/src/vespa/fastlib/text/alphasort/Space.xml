@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE sortOrder SYSTEM "AlphaSort1_0.dtd">
+<sortOrder>  
+   <sortValue>
+      <unicode>
+         <hex> 20 </hex>
+      </unicode>
+      <unicode>
+         <hex> 3000 </hex>
+      </unicode>
+   </sortValue>
+</sortOrder>
+

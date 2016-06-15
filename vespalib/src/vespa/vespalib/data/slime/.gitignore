@@ -1,0 +1,5 @@
+*.So
+.depend
+Makefile
+/slime_me.h
+/slime_me.cpp

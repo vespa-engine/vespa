@@ -1,0 +1,61 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search rankproperties {
+
+  document rankproperties {
+
+    field title type string {
+      indexing: index
+      weight: 50
+    }
+
+    field description type string {
+      indexing: index
+      weight: 10
+    }
+
+    field tag type string {
+      indexing: attribute
+    }
+
+  }
+
+  rank-profile default {
+    weight tag: 33
+    first-phase {
+      expression: nativeFieldMatch
+    }
+    second-phase {
+      expression: match
+    }
+    rank-properties {
+      $test:"foo"
+      #$weight:1
+    }
+  }
+
+  rank-profile child inherits default {
+    weight title: 15
+    #rank-properties {
+    #  $test:"bar"
+    #  $weight:2
+    #}
+    #first-phase {
+    #  expression {
+    #    $weight
+    #  }
+    #}
+  }
+
+  rank-profile standalone {
+    weight description: 35
+    weight tag: 88
+
+    first-phase {
+      expression: match + fieldMatch(title)
+    }
+    second-phase {
+      expression: match + nativeFieldMatch
+    }
+  }
+
+}

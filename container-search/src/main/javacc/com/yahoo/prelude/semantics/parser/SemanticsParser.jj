@@ -1,0 +1,649 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @author bratseth
+ */
+options {
+    CACHE_TOKENS    = true;
+    DEBUG_PARSER    = false;
+    ERROR_REPORTING = true;
+    STATIC          = false;
+    UNICODE_INPUT   = true;
+}
+
+PARSER_BEGIN(SemanticsParser)
+
+package com.yahoo.prelude.semantics.parser;
+
+import com.yahoo.javacc.UnicodeUtilities;
+import com.yahoo.prelude.semantics.*;
+import com.yahoo.prelude.semantics.rule.*;
+import com.yahoo.prelude.query.TermType;
+
+public class SemanticsParser {
+
+}
+
+PARSER_END(SemanticsParser)
+
+SKIP :
+{
+    " " | "\f" | "\r" | "\t"
+}
+
+SPECIAL_TOKEN :
+{
+    <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* ("\n"|"\r"|"\r\n")? >
+}
+
+TOKEN :
+{
+    <NUMBER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |
+        <#DECIMAL: ["1"-"9"] (["0"-"9"])*> |
+        <#HEX: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+> |
+        <#OCTAL: "0" (["0"-"7"])*>
+}
+
+TOKEN :
+{
+    <AUTOMATADIRECTIVE: "@automata"> |
+    <COLON: ":"> |
+    <COMMA: ","> |
+    <CONDITION: ":-"> |
+    <CONTAINS: "=~"> |
+    <DASH: "-"> |
+    <DEFAULTDIRECTIVE: "@default"> |
+    <DIFFERENT: "!="> |
+    <DOLLAR: "$"> |
+    <DOT: "."> |
+    <ELLIPSIS: "..."> |
+    <EQUALS: "="> |
+    <EXCLAMATION: "!"> |
+    <INCLUDEDIRECTIVE: "@include"> |
+    <LARGER: ">"> |
+    <LARGEREQUALS: ">="> |
+    <LEFTBRACE: "("> |
+    <LEFTSQUAREBRACKET: "["> |
+    <LITERAL: "'" (~["'"] | "\\'")* "'"> |
+    <NL: "\n"> |
+    <PLUS: "+"> |
+    <PRODUCE: "+>"> |
+    <QUESTION: "?"> |
+    <QUOTE: "\""> |
+    <REPLACE: "->"> |
+    <RIGHTBRACE: ")"> |
+    <RIGHTSQUAREBRACKET: "]"> |
+    <SEMICOLON: ";"> |
+    <SLASH: "/"> |
+    <SMALLER: "<"> |
+    <SMALLEREQUALS: "<="> |
+    <STEMMINGDIRECTIVE: "@stemming"> |
+    <SUPERDIRECTIVE: "@super"> |
+    <IDENTIFIER: (~[
+"\u0000"-"\u002f","\u003a"-"\u003f","\u005b"-"\u005d","\u007b"-"\u00a7","\u00a9","\u00ab"-"\u00ae","\u00b0"-"\u00b3","\u00b6"-"\u00b7","\u00b9","\u00bb"-"\u00bf",
+"\u00d7","\u00f7","\u037e","\u0387","\u03f6","\u0482","\u055a"-"\u055f","\u0589"-"\u058a","\u05be","\u05c0","\u05c3","\u05c6","\u05f3"-"\u05f4","\u0600"-"\u0603",
+"\u0606"-"\u060f","\u061b","\u061e"-"\u061f","\u066a"-"\u066d","\u06d4","\u06dd"-"\u06de","\u06e9","\u06fd"-"\u06fe","\u0700"-"\u070d","\u070f","\u07f6"-"\u07f9",
+"\u0830"-"\u083e","\u085e","\u0964"-"\u0965","\u0970","\u09f2"-"\u09fb","\u0af1","\u0b70","\u0b72"-"\u0b77","\u0bf0"-"\u0bfa","\u0c78"-"\u0c7f","\u0d70"-"\u0d75",
+"\u0d79","\u0df4","\u0e3f","\u0e4f","\u0e5a"-"\u0e5b","\u0f01"-"\u0f17","\u0f1a"-"\u0f1f","\u0f2a"-"\u0f34","\u0f36","\u0f38","\u0f3a"-"\u0f3d","\u0f85",
+"\u0fbe"-"\u0fc5","\u0fc7"-"\u0fcc","\u0fce"-"\u0fda","\u104a"-"\u104f","\u109e"-"\u109f","\u10fb","\u1360"-"\u137c","\u1390"-"\u1399","\u1400","\u166d"-"\u166e",
+"\u1680","\u169b"-"\u169c","\u16eb"-"\u16f0","\u1735"-"\u1736","\u17b4"-"\u17b5","\u17d4"-"\u17d6","\u17d8"-"\u17db","\u17f0"-"\u17f9","\u1800"-"\u180a",
+"\u180e","\u1940","\u1944"-"\u1945","\u19da","\u19de"-"\u19ff","\u1a1e"-"\u1a1f","\u1aa0"-"\u1aa6","\u1aa8"-"\u1aad","\u1b5a"-"\u1b6a","\u1b74"-"\u1b7c",
+"\u1bfc"-"\u1bff","\u1c3b"-"\u1c3f","\u1c7e"-"\u1c7f","\u1cd3","\u2000"-"\u2064","\u206a"-"\u2070","\u2074"-"\u207e","\u2080"-"\u208e","\u20a0"-"\u20b9",
+"\u2100"-"\u2101","\u2103"-"\u2106","\u2108"-"\u2109","\u2114","\u2116"-"\u2118","\u211e"-"\u2123","\u2125","\u2127","\u2129","\u212e","\u213a"-"\u213b",
+"\u2140"-"\u2144","\u214a"-"\u214d","\u214f"-"\u2182","\u2185"-"\u2189","\u2190"-"\u23f3","\u2400"-"\u2426","\u2440"-"\u244a","\u2460"-"\u26ff","\u2701"-"\u27ca",
+"\u27cc","\u27ce"-"\u2b4c","\u2b50"-"\u2b59","\u2ce5"-"\u2cea","\u2cf9"-"\u2cff","\u2d70","\u2e00"-"\u2e2e","\u2e30"-"\u2e31","\u2e80"-"\u2e99","\u2e9b"-"\u2ef3",
+"\u2f00"-"\u2fd5","\u2ff0"-"\u2ffb","\u3000"-"\u3004","\u3007"-"\u3029","\u3030","\u3036"-"\u303a","\u303d"-"\u303f","\u30a0","\u30fb","\u3190"-"\u319f",
+"\u31c0"-"\u31e3","\u3200"-"\u321e","\u3220"-"\u32fe","\u3300"-"\u33ff","\u4dc0"-"\u4dff","\ua490"-"\ua4c6","\ua4fe"-"\ua4ff","\ua60d"-"\ua60f","\ua673",
+"\ua67e","\ua6e6"-"\ua6ef","\ua6f2"-"\ua6f7","\ua828"-"\ua82b","\ua830"-"\ua839","\ua874"-"\ua877","\ua8ce"-"\ua8cf","\ua8f8"-"\ua8fa","\ua92e"-"\ua92f",
+"\ua95f","\ua9c1"-"\ua9cd","\ua9de"-"\ua9df","\uaa5c"-"\uaa5f","\uaa77"-"\uaa79","\uaade"-"\uaadf","\uabeb","\ue000"-"\uf8ff","\ufb29","\ufd3e"-"\ufd3f",
+"\ufdfc"-"\ufdfd","\ufe10"-"\ufe19","\ufe30"-"\ufe52","\ufe54"-"\ufe66","\ufe68"-"\ufe6b","\ufeff","\uff01"-"\uff0f","\uff1a"-"\uff20","\uff3b"-"\uff3d",
+"\uff3f","\uff5b"-"\uff65","\uffe0"-"\uffe2","\uffe4"-"\uffe6","\uffe8"-"\uffee","\ufff9"-"\ufffd"
+    ])+>
+}
+
+/** Parses a search definition and returns the resulting object */
+RuleBase semanticRules(RuleBase rules,RuleImporter importer) :
+{
+}
+{
+    ( LOOKAHEAD(2) <NL> |
+      directive(rules,importer) |
+      LOOKAHEAD(4) namedCondition(rules) |
+      productionRule(rules) ) *
+    { return rules; }
+}
+
+// ---------------------------------- Directive ---------------------------------------
+
+RuleBase directive(RuleBase rules,RuleImporter importer) :
+{
+    String name;
+}
+{
+    ( includeDirective(rules,importer) | defaultDirective(rules) | automataDirective(rules,importer) | stemmingDirective(rules) )
+    { return rules; }
+}
+
+void includeDirective(RuleBase rules,RuleImporter importer) :
+{
+    String name;
+}
+{
+    <INCLUDEDIRECTIVE> <LEFTBRACE> name=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    {
+        try {
+            importer.include(name,rules);
+        }
+        catch (java.io.IOException e) {
+            ParseException ep=new ParseException("Could not read included rule base '" +
+                                                 name + "'");
+            ep.initCause(e);
+            throw ep;
+        }
+    }
+}
+
+void automataDirective(RuleBase rules,RuleImporter importer) :
+{
+    String name;
+}
+{
+    <AUTOMATADIRECTIVE> <LEFTBRACE> name=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    {
+        importer.setAutomata(rules,name);
+    }
+}
+
+void defaultDirective(RuleBase rules) :
+{
+}
+{
+    <DEFAULTDIRECTIVE> (<SEMICOLON>)?
+    {
+        rules.setDefault(true);
+    }
+}
+
+void stemmingDirective(RuleBase rules) :
+{
+    String booleanString;
+}
+{
+    <STEMMINGDIRECTIVE> <LEFTBRACE> booleanString=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    {
+        rules.setStemming(Boolean.parseBoolean(booleanString));
+    }
+}
+
+// ---------------------------------- Production rules --------------------------------
+
+void productionRule(RuleBase rules) :
+{
+    ProductionRule rule;
+    Condition condition;
+    ProductionList production=null;
+}
+{
+    condition=topLevelCondition() rule=productionRuleType() ( production=productionList() )? <SEMICOLON>
+    {
+        rule.setCondition(condition);
+        if (production!=null) rule.setProduction(production);
+        rules.addRule(rule);
+    }
+}
+
+ProductionRule productionRuleType() :
+{
+}
+{
+    ( <REPLACE> { return new ReplacingProductionRule(); } ) |
+    ( <PRODUCE> { return new AddingProductionRule(); } )
+}
+
+ProductionList productionList() :
+{
+    ProductionList productionList=new ProductionList();
+    Production production;
+    int weight=100;
+}
+{
+    ( production=production() (<EXCLAMATION> weight=number())?
+      {
+          production.setWeight(weight);
+          productionList.addProduction(production);
+          weight=100;
+      } (<NL>)*
+    ) +
+    { return productionList; }
+}
+
+Production production() :
+{
+    Production production;
+}
+{
+    ( LOOKAHEAD(2) production=namespaceProduction() | production=termProduction() )
+    { return production; }
+}
+
+TermProduction termProduction() :
+{
+    TermProduction termProduction;
+    TermType termType;
+    String label=null;
+}
+{
+    termType=termType()
+    ( LOOKAHEAD(2) label=label() )?
+    ( termProduction=nonphraseTermProduction() | termProduction=phraseProduction() )
+
+    {
+        termProduction.setLabel(label);
+        termProduction.setTermType(termType);
+        return termProduction;
+    }
+}
+
+TermProduction nonphraseTermProduction() :
+{
+    TermProduction termProduction;
+}
+{
+    ( termProduction=referenceTermProduction() |
+      termProduction=literalTermProduction() )
+    {
+      return termProduction;
+    }
+}
+
+LiteralPhraseProduction phraseProduction() :
+{
+    LiteralPhraseProduction phraseProduction=new LiteralPhraseProduction();
+    String term=null;
+}
+{
+
+    <QUOTE>
+    (
+      term=identifier()
+      { phraseProduction.addTerm(term); }
+    )+
+    <QUOTE>
+
+    { return phraseProduction; }
+
+}
+
+NamespaceProduction namespaceProduction() :
+{
+    String namespace;
+    String key;
+    String value=null;
+}
+{
+    namespace=identifier() <DOT> key=stringOrLiteral() <EQUALS> value=identifierOrLiteral()
+    { return new NamespaceProduction(namespace,key,value); }
+}
+
+ReferenceTermProduction referenceTermProduction() :
+{
+    String reference;
+}
+{
+    <LEFTSQUAREBRACKET> reference=referenceIdentifier() <RIGHTSQUAREBRACKET>
+    { return new ReferenceTermProduction(reference); }
+}
+
+LiteralTermProduction literalTermProduction() :
+{
+    String literal;
+}
+{
+    literal=identifier()
+    { return new LiteralTermProduction(literal); }
+}
+
+TermType termType() :
+{
+}
+{
+    <QUESTION> { return TermType.OR; } |
+    <DOLLAR> { return TermType.RANK; } |
+    <PLUS> { return TermType.AND; }  |
+    <DASH> { return TermType.NOT; } |
+    { return TermType.DEFAULT; }
+}
+
+String referenceIdentifier() :
+{
+    String reference;
+}
+{
+    ( reference=identifier() { return reference; } )
+    |
+    ( <ELLIPSIS> { return "..."; } )
+}
+
+// ---------------------------------- Conditions -------------------------------------
+
+void namedCondition(RuleBase rules) :
+{
+    String conditionName;
+    Condition condition;
+}
+{
+    <LEFTSQUAREBRACKET> conditionName=identifier() <RIGHTSQUAREBRACKET> <CONDITION> condition=topLevelCondition() <SEMICOLON>
+    { rules.addCondition(new NamedCondition(conditionName,condition)); }
+}
+
+Condition topLevelCondition() :
+{
+    Condition condition;
+    boolean startAnchor=false;
+    boolean endAnchor=false;
+}
+{
+    ( <DOT> { startAnchor=true; } )?
+    (
+      LOOKAHEAD(3) condition=choiceCondition() |
+      LOOKAHEAD(3) condition=sequenceCondition()
+    )
+    ( LOOKAHEAD(2) <DOT> { endAnchor=true; } )?
+    {
+      condition.setAnchor(Condition.Anchor.create(startAnchor,endAnchor));
+      return condition;
+    }
+}
+
+Condition condition() :
+{
+    Condition condition;
+}
+{
+  (
+    ( LOOKAHEAD(3) condition=choiceCondition()
+      | condition=terminalCondition() )
+    {
+      return condition;
+    }
+  )
+}
+
+Condition terminalOrSequenceCondition() :
+{
+    Condition condition;
+}
+{
+    ( LOOKAHEAD(3) condition=sequenceCondition() |
+      condition=terminalCondition() )
+    { return condition; }
+}
+
+Condition terminalCondition() :
+{
+    Condition condition;
+}
+{
+    ( condition=notCondition() | condition=terminalOrComparisonCondition() )
+    { return condition; }
+}
+
+Condition terminalOrComparisonCondition() :
+{
+    Condition condition,rightCondition;
+    String comparison;
+}
+{
+    condition=reallyTerminalCondition()
+    ( comparison=comparison() ( LOOKAHEAD(2) rightCondition=nestedCondition() | rightCondition=reallyTerminalCondition() )
+//    ( comparison=comparison() rightCondition=condition()
+      { condition=new ComparisonCondition(condition,comparison,rightCondition); }
+    ) ?
+    { return condition; }
+
+}
+
+Condition reallyTerminalCondition() :
+{
+    String label=null;
+    String context=null;
+    String nameSpace=null;
+    Condition condition=null;
+}
+{
+// This body looks like this to distinguish these two cases
+// namespace.condition
+// condition .  (end anchor)
+   ( LOOKAHEAD(8)
+   (
+       ( LOOKAHEAD(2) context=context() )?
+       ( nameSpace=nameSpace() )
+       ( LOOKAHEAD(2) label=label() )?
+       condition=terminalConditionBody()
+   )
+   |
+   (
+       ( LOOKAHEAD(2) context=context() )?
+       ( LOOKAHEAD(2) label=label() )?
+       condition=terminalConditionBody()
+   )
+   )
+   {
+     if (context!=null)
+         condition.setContextName(context);
+     condition.setLabel(label);
+     condition.setNameSpace(nameSpace);
+     return condition;
+   }
+}
+
+
+Condition terminalConditionBody() :
+{
+    Condition condition=null;
+}
+{
+    (
+    LOOKAHEAD(2) condition=conditionReference() |
+    condition=termCondition() |
+    condition=nestedCondition() |
+    condition=nonReferableEllipsisCondition() |
+    condition=referableEllipsisCondition() |
+    condition=superCondition() |
+    condition=literalCondition() |
+    condition=compositeItemCondition())
+    { return condition; }
+}
+
+Condition notCondition() :
+{
+    Condition condition;
+}
+{
+    <EXCLAMATION> condition=terminalOrComparisonCondition()
+    { return new NotCondition(condition); }
+}
+
+
+ConditionReference conditionReference() :
+{
+    String conditionName;
+}
+{
+    <LEFTSQUAREBRACKET> conditionName=identifier() <RIGHTSQUAREBRACKET>
+    { return new ConditionReference(conditionName); }
+}
+
+EllipsisCondition nonReferableEllipsisCondition() :
+{
+}
+{
+    <ELLIPSIS> { return new EllipsisCondition(false); }
+}
+
+EllipsisCondition referableEllipsisCondition() :
+{
+}
+{
+    <LEFTSQUAREBRACKET> <ELLIPSIS> <RIGHTSQUAREBRACKET>
+    { return new EllipsisCondition(); }
+}
+
+Condition nestedCondition() :
+{
+    Condition condition;
+}
+{
+    <LEFTBRACE> condition=choiceCondition() <RIGHTBRACE>
+    { return condition; }
+}
+
+Condition sequenceCondition() :
+{
+    SequenceCondition sequenceCondition=new SequenceCondition();
+    Condition condition;
+}
+{
+    condition=terminalCondition()
+    { sequenceCondition.addCondition(condition); }
+    ( LOOKAHEAD(2) condition=terminalCondition()
+      { sequenceCondition.addCondition(condition); }
+    )*
+    {
+      if (sequenceCondition.conditionSize()==1)
+          return sequenceCondition.removeCondition(0);
+      else
+          return sequenceCondition;
+    }
+}
+
+Condition choiceCondition() :
+{
+    ChoiceCondition choiceCondition=new ChoiceCondition();
+    Condition condition;
+}
+{
+    condition=terminalOrSequenceCondition()
+    { choiceCondition.addCondition(condition); }
+    ( LOOKAHEAD(3) (<NL>)* <COMMA> (<NL>)* condition=terminalOrSequenceCondition()
+      { choiceCondition.addCondition(condition); }
+    ) *
+    {
+      if (choiceCondition.conditionSize()==1)
+          return choiceCondition.removeCondition(0);
+      else
+          return choiceCondition;
+    }
+}
+
+TermCondition termCondition() :
+{
+    String str;
+}
+{
+    ( str = identifier() )
+    { return new TermCondition(str); }
+}
+
+SuperCondition superCondition() : { }
+{
+    ( <SUPERDIRECTIVE> )
+    { return new SuperCondition(); }
+}
+
+LiteralCondition literalCondition() :
+{
+    String str;
+}
+{
+    ( str = literal() )
+    { return new LiteralCondition(str); }
+}
+
+CompositeItemCondition compositeItemCondition() :
+{
+    Condition condition;
+    CompositeItemCondition compositeItemCondition = new CompositeItemCondition();
+}
+{
+    ( <QUOTE> ( condition=terminalConditionBody() { compositeItemCondition.addCondition(condition); } ) <QUOTE> )
+    { return compositeItemCondition; }
+}
+
+// ---------------------------------- Primitives -------------------------------------
+
+String context() :
+{
+    String str;
+}
+{
+    ( str = identifier() <SLASH> )
+    { return str; }
+}
+
+String label() :
+{
+    String str;
+}
+{
+    ( str = identifier() <COLON> )
+    { return str; }
+}
+
+String nameSpace() :
+{
+    String str;
+}
+{
+    ( str = identifier() <DOT> )
+    { return str; }
+}
+
+String identifier() : { }
+{
+    ( <IDENTIFIER> | <NUMBER> )
+    { return token.image; }
+}
+
+String stringOrLiteral() :
+{
+    String str;
+}
+{
+    ( str = string() | str = literal() )
+    { return str; }
+}
+
+String identifierOrLiteral() :
+{
+    String str;
+}
+{
+    ( str = identifier() | str = literal() )
+    { return str; }
+}
+
+String comparison() : { }
+{
+    ( <DIFFERENT> | <CONTAINS> | <EQUALS> | <LARGEREQUALS> | <SMALLEREQUALS> | <LARGER> | <SMALLER> )
+    { return token.image; }
+}
+
+String string() :
+{
+    StringBuilder str = new StringBuilder();
+}
+{
+    ( ( <SLASH> | <IDENTIFIER> | <DOT> | <DASH> ) { str.append(token.image); } ) +
+    { return str.toString(); }
+}
+
+String literal() : { }
+{
+    ( <LITERAL> )
+    { return UnicodeUtilities.unquote(token.image); }
+}
+
+int number() : { }
+{
+    <NUMBER> { return Integer.decode(token.image); }
+}

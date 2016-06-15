@@ -1,0 +1,118 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "docsum_by_slime.h"
+#include <vespa/document/util/compressor.h>
+#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.summaryengine.docsum_by_slime");
+
+namespace proton {
+
+using search::engine::DocsumRequest;
+using search::engine::DocsumReply;
+using vespalib::slime::Inspector;
+using vespalib::slime::Cursor;
+using vespalib::slime::ObjectSymbolInserter;
+using vespalib::slime::Memory;
+using vespalib::slime::Symbol;
+using vespalib::slime::BinaryFormat;
+using vespalib::slime::ArrayTraverser;
+using vespalib::slime::SimpleBuffer;
+using vespalib::DataBuffer;
+using vespalib::ConstBufferRef;
+using document::CompressionConfig;
+
+namespace {
+
+Memory SUMMARYCLASS("class");
+Memory GIDS("gids");
+Memory DOCSUM("docsum");
+Memory DOCSUMS("docsums");
+
+class GidTraverser : public ArrayTraverser
+{
+public:
+    GidTraverser(std::vector<DocsumRequest::Hit> & hits) : _hits(hits) { }
+    void entry(size_t idx, const Inspector &inspector) override {
+        (void) idx;
+        Memory data(inspector.asData());
+        assert(data.size >= document::GlobalId::LENGTH);
+        _hits.emplace_back(document::GlobalId(data.data));
+    }
+private:
+    std::vector<DocsumRequest::Hit> & _hits;
+};
+
+CompressionConfig
+getCompressionConfig()
+{
+    using search::fs4transport::FS4PersistentPacketStreamer;
+    const FS4PersistentPacketStreamer & streamer = FS4PersistentPacketStreamer::Instance;
+    return CompressionConfig(streamer.getCompressionType(), streamer.getCompressionLevel(), 80, streamer.getCompressionLimit());
+}
+
+}
+
+DocsumRequest::UP
+DocsumBySlime::slimeToRequest(const Inspector & request)
+{
+    DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
+
+    docsumRequest->_flags = search::fs4transport::GDFLAG_ALLOW_SLIME;
+    docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
+    Inspector & gids = request[GIDS];
+    docsumRequest->hits.reserve(gids.entries());
+    GidTraverser gidFiller(docsumRequest->hits);
+    gids.traverse(gidFiller);
+
+    return docsumRequest;
+}
+
+vespalib::Slime::UP
+DocsumBySlime::getDocsums(const Inspector & req)
+{
+    DocsumReply::UP reply = _docsumServer.getDocsums(slimeToRequest(req));
+    if (reply && reply->_root) {
+        return std::move(reply->_root);
+    } else {
+        LOG(warning, "got <null> docsum reply from back-end");
+    }
+    return std::make_unique<vespalib::Slime>();
+}
+
+DocsumByRPC::DocsumByRPC(DocsumBySlime & slimeDocsumServer) :
+    _slimeDocsumServer(slimeDocsumServer)
+{
+}
+
+void
+DocsumByRPC::getDocsums(FRT_RPCRequest & req)
+{
+    FRT_Values &arg = *req.GetParams();
+    uint8_t encoding = arg[0]._intval8;
+    uint32_t uncompressedSize = arg[1]._intval32;
+    DataBuffer uncompressed(arg[2]._data._buf, arg[2]._data._len);
+    ConstBufferRef blob(arg[2]._data._buf, arg[2]._data._len);
+    document::decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
+    assert(uncompressedSize == uncompressed.getDataLen());
+    vespalib::Slime summariesToGet;
+    BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), summariesToGet);
+
+    vespalib::Slime::UP summaries = _slimeDocsumServer.getDocsums(summariesToGet.get());
+    assert(summaries);  // Mandatory, not optional.
+
+    search::RawBuf rbuf(4096);
+    search::SlimeOutputRawBufAdapter output(rbuf);
+    BinaryFormat::encode(*summaries, output);
+    ConstBufferRef buf(rbuf.GetDrainPos(), rbuf.GetUsedLen());
+    DataBuffer compressed(rbuf.GetWritableDrainPos(0), rbuf.GetUsedLen());
+    CompressionConfig::Type type = document::compress(getCompressionConfig(), buf, compressed, true);
+
+    FRT_Values &ret = *req.GetReturn();
+    ret.AddInt8(type);
+    ret.AddInt32(buf.size());
+    ret.AddData(compressed.getData(), compressed.getDataLen());
+}
+
+}

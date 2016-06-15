@@ -1,0 +1,8 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=1
+namespace=prelude.searcher
+
+## The ordinal number of the character to quote in UNICODE.
+character[].ordinal int
+## The string to translate a character to.
+character[].quoting string

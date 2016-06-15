@@ -1,0 +1,29 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchcore_attribute STATIC
+    SOURCES
+    address_space_usage_stats.cpp
+    attribute_collection_spec_factory.cpp
+    attribute_factory.cpp
+    attribute_initializer.cpp
+    attribute_manager_explorer.cpp
+    attribute_manager_initializer.cpp
+    attribute_populator.cpp
+    attribute_usage_filter.cpp
+    attribute_usage_sampler_context.cpp
+    attribute_usage_sampler_functor.cpp
+    attribute_usage_stats.cpp
+    attribute_vector_explorer.cpp
+    attribute_writer.cpp
+    attributes_initializer_base.cpp
+    attributedisklayout.cpp
+    attributemanager.cpp
+    attributesconfigscout.cpp
+    document_field_populator.cpp
+    document_field_retriever.cpp
+    exclusive_attribute_read_accessor.cpp
+    filter_attribute_manager.cpp
+    flushableattribute.cpp
+    initialized_attributes_result.cpp
+    sequential_attributes_initializer.cpp
+    DEPENDS
+)

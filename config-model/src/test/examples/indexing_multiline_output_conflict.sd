@@ -1,0 +1,21 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search indexing_multiline_output_confict {
+    document indexing_multiline_output_confict {
+        field foo type string {
+
+        }
+        field bar type string {
+
+        }
+        field baz type string {
+
+        }
+    }
+    field cox type string {
+        indexing {
+            input foo | attribute;
+            input bar | index;
+            input baz | summary;
+        }
+    }
+}

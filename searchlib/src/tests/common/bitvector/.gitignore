@@ -1,0 +1,8 @@
+.depend
+Makefile
+*_test
+*_benchmark
+/bitvector_test-common
+searchlib_condensedbitvector_test_app
+searchlib_bitvector_benchmark_app
+searchlib_bitvector_test-common_app

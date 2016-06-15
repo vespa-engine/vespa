@@ -1,0 +1,35 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(storage_distributor
+    SOURCES
+    distributor.cpp
+    operationowner.cpp
+    distributorcomponent.cpp
+    statechecker.cpp
+    persistencemessagetracker.cpp
+    messagetracker.cpp
+    externaloperationhandler.cpp
+    bucketlistmerger.cpp
+    idealstatemanager.cpp
+    statecheckers.cpp
+    bucketdbupdater.cpp
+    pendingmessagetracker.cpp
+    pendingclusterstate.cpp
+    nodeinfo.cpp
+    sentmessagemap.cpp
+    operationtargetresolverimpl.cpp
+    distributorconfiguration.cpp
+    throttlingoperationstarter.cpp
+    blockingoperationstarter.cpp
+    distributormessagesender.cpp
+    clusterinformation.cpp
+    activecopy.cpp
+    statusreporterdelegate.cpp
+    bucketgctimecalculator.cpp
+    distributor_host_info_reporter.cpp
+    latency_statistics_provider.cpp
+    $<TARGET_OBJECTS:storage_bucketdatabase>
+    INSTALL lib64
+    DEPENDS
+    AFTER
+    storage_storageconfig
+)

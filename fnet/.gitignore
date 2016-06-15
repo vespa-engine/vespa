@@ -1,0 +1,10 @@
+.Build_completed
+.Dist_completed
+.Install_completed
+.PreBuild_completed
+doc
+include
+lib
+update.log
+Makefile
+Testing

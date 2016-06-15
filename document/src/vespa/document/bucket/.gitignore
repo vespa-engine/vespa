@@ -1,0 +1,6 @@
+*.So
+.*.swp
+.depend
+Makefile
+config-bucket.cpp
+config-bucket.h

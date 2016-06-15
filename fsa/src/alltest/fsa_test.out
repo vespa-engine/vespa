@@ -1,0 +1,60 @@
+start/delta test: string("cucu")+'m'+"ber" is accepted
+                  data size: 10
+                  data string: "Vegetable "
+lookup test: "cucumber" -> "Vegetable"
+copy hashed state test:
+    "pe"+"a":    hash=26, data_size=10, data string="Vegetable "
+    "pe"+"ach":  hash=27, data_size=6, data string="Fruit "
+    "pe"+"ar":   hash=28, data_size=6, data string="Fruit "
+revLookup test:
+    0 -> Cupertino -> 0
+    1 -> Foster City -> 1
+    2 -> Los Altos -> 2
+    3 -> Menlo Park -> 3
+    4 -> Mountain View -> 4
+    5 -> Palo Alto -> 5
+    6 -> San Francisco -> 6
+    7 -> San Jose -> 7
+    8 -> Santa Clara -> 8
+    9 -> Saratoga -> 9
+    10 -> Sunnyvale -> 10
+    11 -> apple -> 11
+    12 -> apricot -> 12
+    13 -> artichoke -> 13
+    14 -> banana -> 14
+    15 -> cabbage -> 15
+    16 -> carrot -> 16
+    17 -> cherry -> 17
+    18 -> chili -> 18
+    19 -> cucumber -> 19
+    20 -> eggplant -> 20
+    21 -> grapes -> 21
+    22 -> lettuce -> 22
+    23 -> onion -> 23
+    24 -> paprika -> 24
+    25 -> passion fruit -> 25
+    26 -> pea -> 26
+    27 -> peach -> 27
+    28 -> pear -> 28
+    29 -> pineapple -> 29
+    30 -> plum -> 30
+    31 -> potato -> 31
+    32 -> pumpkin -> 32
+    33 -> sour cherry -> 33
+    34 -> squash -> 34
+    35 -> tomato -> 35
+iterator test:
+  possible continuations from "p":
+    "p" + "aprika"
+    "p" + "assion fruit"
+    "p" + "ea"
+    "p" + "each"
+    "p" + "ear"
+    "p" + "ineapple"
+    "p" + "lum"
+    "p" + "otato"
+    "p" + "umpkin"
+counter/memory state test
+    "cucu" -> cucu:4
+    "cucumber" -> cucumber:8
+    "cucumber slumber" -> cucumber:8

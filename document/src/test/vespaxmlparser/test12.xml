@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+ 
+    <!--warning document: -->
+    <vespaadd>
+        <document documenttype="news" documentid="34sdfasva4"> 
+            <value_long>testUrlA</value_long>
+        </document>
+    </vespaadd>
+
+    <!-- bad document: -->
+    <document documenttype="news" documentid="doc:news:http://news12b"> 
+        <value_long>testUrlB</value_long>
+    </document>
+    
+    <!-- OK document -->
+    <document documenttype="news" documentid="doc:news:http://news12c"> 
+        <url>testUrl</url>
+        <title>testTitle</title>
+    </document>
+    
+    <!-- bad document: -->
+    <document documenttype="news" documentid="doc:news:http://news12d"> 
+        <value_long>testUrlC</value_long>
+    </documen>
+
+    <!-- OK document -->
+    <document documenttype="news" documentid="doc:news:http://news12e"> 
+        <url>testUrl</url>
+        <title>testTitle</title>
+    </document>
+    
+    <!-- bad document: -->
+    <document documenttype="news" documentid="doc:news:http://news12f"> 
+        <value_long>testUrlD</value_long>
+    </document>
+    
+    <!--warning document: -->
+    <document documenttype="news" documentid="98svh98sdfh"> 
+        <value_long>testUrlD</value_long>
+    </document>
+</vespafeed>

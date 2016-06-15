@@ -1,0 +1,92 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <boost/utility.hpp>
+#include <vespa/messagebus/queue.h>
+#include <vespa/messagebus/reply.h>
+#include <queue>
+#include <vector>
+#include <vespa/vespalib/util/sync.h>
+#include "iretrypolicy.h"
+
+namespace mbus {
+
+class RoutingNode;
+
+/**
+ * The resender handles scheduling and execution of sending instances of {@link
+ * RoutingNode}. An instance of this class is owned by {@link
+ * com.yahoo.messagebus.MessageBus}. Because this class does not have any
+ * internal thread, it depends on message bus to keep polling it whenever it has
+ * time.
+ */
+class Resender : public boost::noncopyable
+{
+private:
+    typedef std::pair<uint64_t, RoutingNode*> Entry;
+    struct Cmp {
+        bool operator()(const Entry &a, const Entry &b) {
+            return (b.first < a.first);
+        }
+    };
+    typedef std::priority_queue<Entry, std::vector<Entry>, Cmp> PriorityQueue;
+
+    PriorityQueue    _queue;
+    IRetryPolicy::SP _retryPolicy;
+    FastOS_Time      _time;
+
+public:
+    /**
+     * Convenience typedefs.
+     */
+    typedef std::unique_ptr<Resender> UP;
+
+    /**
+     * Constructs a new resender.
+     *
+     * @param retryPolicy The retry policy to use.
+     */
+    Resender(IRetryPolicy::SP retryPolicy);
+
+    /**
+     * Empties the retry queue.
+     */
+    ~Resender();
+
+    /**
+     * Returns whether or not the current {@link RetryPolicy} supports resending
+     * a {@link Reply} that contains an error with the given error code.
+     *
+     * @param errorCode The code to check.
+     * @return True if the message can be resent.
+     */
+    bool canRetry(uint32_t errorCode) const;
+
+    /**
+     * Returns whether or not the given reply should be retried.
+     *
+     * @param reply The reply to check.
+     * @return True if retry is required.
+     */
+    bool shouldRetry(const Reply &reply) const;
+
+    /**
+     * Schedules the given node for resending, if enabled by message. This will
+     * invoke {@link RoutingNode#prepareForRetry()} if the node was queued. This
+     * method is NOT thread-safe, and should only be called by the messenger
+     * thread.
+     *
+     * @param node The node to resend.
+     * @return True if the node was queued.
+     */
+    bool scheduleRetry(RoutingNode &node);
+
+    /**
+     * Invokes {@link RoutingNode#send()} on all routing nodes that are
+     * applicable for sending at the current time.
+     */
+    void resendScheduled();
+};
+
+} // namespace mbus
+

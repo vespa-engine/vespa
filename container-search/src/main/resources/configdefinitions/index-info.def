@@ -1,0 +1,17 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+## Commands per search definition to be applied to query terms per index before searching
+version=2
+namespace=search.config
+
+## The name of the search definition this index info applies to
+indexinfo[].name string
+
+## The name of a index for which we have a command
+indexinfo[].command[].indexname string
+## The command, e.g. "lowercase", "word" or "rise"
+indexinfo[].command[].command string
+
+## The name of an alias for an index or attribute
+indexinfo[].alias[].alias string
+## The index name that the alias should map to
+indexinfo[].alias[].indexname string

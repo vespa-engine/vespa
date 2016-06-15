@@ -1,0 +1,43 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include "tcpdirective.h"
+
+namespace mbus {
+
+TcpDirective::TcpDirective(const vespalib::stringref &host, uint32_t port, const vespalib::stringref &session) :
+    _host(host),
+    _port(port),
+    _session(session)
+{
+    // empty
+}
+
+bool
+TcpDirective::matches(const IHopDirective &dir) const
+{
+    if (dir.getType() != TYPE_TCP) {
+        return false;
+    }
+    const TcpDirective &rhs = static_cast<const TcpDirective&>(dir);
+    return _host == rhs._host && _port == rhs._port && _session == rhs._session;
+}
+
+string
+TcpDirective::toString() const
+{
+    vespalib::asciistream os;
+    os << "tcp/" << _host << ':' << _port << '/' << _session;
+    return os.str();
+}
+
+string
+TcpDirective::toDebugString() const
+{
+    vespalib::asciistream os;
+    os << "TcpDirective(host = '" << _host << "', port = " << _port << ", session = '" << _session << "')";
+    return os.str();
+}
+
+} // mbus

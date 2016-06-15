@@ -1,0 +1,1 @@
+java -cp target/searchlib.jar com.yahoo.searchlib.mlr.gbdt.ExpressionAnalysis $@

@@ -1,0 +1,30 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=2
+namespace=messagebus
+
+# Name of the protocol that uses this routing table. All
+# instances of message bus must support all named protocols.
+routingtable[].protocol string
+
+# A protocol-unique name for a hop.
+routingtable[].hop[].name string
+
+# The selector string of a hop, this string typically contains 
+# routing policy references on the form [policy-name:parameter].
+# The protocol for the routing table must support all named
+# policies.
+routingtable[].hop[].selector string
+
+# List of recipients for a hop. These strings may contain
+# wildcards to allow the network layer to choose any single 
+# matching service.
+routingtable[].hop[].recipient[] string
+
+# Whether or not to ignore the result from this hop.
+routingtable[].hop[].ignoreresult bool default=false
+
+# A protocol-unique name for a route.
+routingtable[].route[].name string
+
+# An array of hop names that together make up the route.
+routingtable[].route[].hop[] string

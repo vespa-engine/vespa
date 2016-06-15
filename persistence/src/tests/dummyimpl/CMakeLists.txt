@@ -1,0 +1,14 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(persistence_testdummyimpl
+    SOURCES
+    dummyimpltest.cpp
+    DEPENDS
+)
+vespa_add_executable(persistence_dummypersistence_test_app
+    SOURCES
+    dummypersistence_test.cpp
+    DEPENDS
+    persistence
+    persistence_persistence_conformancetest
+)
+vespa_add_test(NAME persistence_dummypersistence_test_app COMMAND persistence_dummypersistence_test_app)

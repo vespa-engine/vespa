@@ -1,0 +1,234 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config;
+
+import org.junit.Test;
+
+import com.yahoo.vespa.config.ConfigDefinition.EnumDef;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
+
+/**
+ * Unit tests for ConfigDefinition.
+ *
+ * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ */
+public class ConfigDefinitionTest {
+
+    @Test
+    public void testVersionComparator() {
+        Comparator<String> c = new ConfigDefinition.VersionComparator();
+
+        assertEquals(0, c.compare("1", "1"));
+        assertEquals(0, c.compare("1-0", "1"));
+        assertEquals(0, c.compare("1-0-0", "1"));
+        assertEquals(0, c.compare("1-0-0", "1-0"));
+        assertEquals(0, c.compare("0-1-1", "0-1-1"));
+        assertEquals(0, c.compare("0-1-0", "0-1"));
+        assertEquals(-1, c.compare("0", "1"));
+        assertEquals(-1, c.compare("0-1-0", "0-1-1"));
+        assertEquals(-1, c.compare("0-1-0", "1-1-1"));
+        assertEquals(-1, c.compare("0-0-1", "0-1"));
+        assertEquals(1, c.compare("0-1-1", "0-1-0"));
+        assertEquals(1, c.compare("1-1-1", "0-1-0"));
+        assertEquals(1, c.compare("0-1", "0-0-1"));
+        assertEquals(1, c.compare("1-1", "1"));
+
+        List<String> versions = Arrays.asList("25", "5", "1-1", "0-2-3", "1", "1-0");
+        Collections.sort(versions, new ConfigDefinition.VersionComparator());
+        List<String> solution = Arrays.asList("0-2-3", "1", "1-0", "1-1", "5", "25");
+        assertEquals(solution, versions);
+    }
+
+    @Test
+    public void testDefNumberCompare() {
+        ConfigDefinition df1 = new ConfigDefinition("d", "25");
+        ConfigDefinition df2 = new ConfigDefinition("d", "5");
+        ConfigDefinition df3 = new ConfigDefinition("d", "1-1");
+        ConfigDefinition df4 = new ConfigDefinition("d", "0-2-3");
+        ConfigDefinition df5 = new ConfigDefinition("d", "1");
+        ConfigDefinition df6 = new ConfigDefinition("d", "1-0");
+        assertTrue(df1.compareTo(df2) > 0);
+        assertTrue(df2.compareTo(df4) > 0);
+        assertEquals(1, df3.compareTo(df4));
+        assertEquals(-1, df4.compareTo(df5));
+        assertEquals(0, df5.compareTo(df6));
+    }
+
+    @Test
+    public void testIntDefaultValues() {
+        ConfigDefinition def = new ConfigDefinition("foo", "1");
+
+        def.addIntDef("foo");
+        def.addIntDef("bar", 0);
+        def.addIntDef("baz", 1);
+        def.addIntDef("xyzzy", 2, 0, null);
+
+        assertNull(def.getIntDefs().get("foo").getDefVal());
+        assertThat(def.getIntDefs().get("foo").getMin(), is(ConfigDefinition.INT_MIN));
+        assertThat(def.getIntDefs().get("foo").getMax(), is(ConfigDefinition.INT_MAX));
+        assertThat(def.getIntDefs().get("bar").getDefVal(), is(0));
+        assertThat(def.getIntDefs().get("baz").getDefVal(), is(1));
+
+        assertThat(def.getIntDefs().get("xyzzy").getDefVal(), is(2));
+        assertThat(def.getIntDefs().get("xyzzy").getMin(), is(0));
+        assertThat(def.getIntDefs().get("xyzzy").getMax(), is(ConfigDefinition.INT_MAX));
+    }
+
+    @Test
+    public void testLongDefaultValues() {
+        ConfigDefinition def = new ConfigDefinition("foo", "1");
+
+        def.addLongDef("foo");
+        def.addLongDef("bar", 1234567890123L);
+        def.addLongDef("xyzzy", 2L, 0L, null);
+
+        assertNull(def.getLongDefs().get("foo").getDefVal());
+        assertThat(def.getLongDefs().get("foo").getMin(), is(ConfigDefinition.LONG_MIN));
+        assertThat(def.getLongDefs().get("foo").getMax(), is(ConfigDefinition.LONG_MAX));
+        assertThat(def.getLongDefs().get("bar").getDefVal(), is(1234567890123L));
+
+        assertThat(def.getLongDefs().get("xyzzy").getDefVal(), is(2L));
+        assertThat(def.getLongDefs().get("xyzzy").getMin(), is(0L));
+        assertThat(def.getLongDefs().get("xyzzy").getMax(), is(ConfigDefinition.LONG_MAX));
+    }
+
+    @Test
+    @SuppressWarnings("serial")
+    public void testDefaultsPayloadMap() {
+        ConfigDefinition def = new ConfigDefinition("foo", "1");
+        def.addStringDef("mystring");
+        def.addStringDef("mystringdef", "foo");
+        def.addBoolDef("mybool");
+        def.addBoolDef("mybooldef", true);
+        def.addIntDef("myint");
+        def.addIntDef("myintdef", 1);
+        def.addLongDef("mylong");
+        def.addLongDef("mylongdef", 11l);
+        def.addDoubleDef("mydouble");
+        def.addDoubleDef("mydoubledef", 2d);
+        EnumDef ed = new EnumDef(new ArrayList<String>(){{add("a1"); add("a2");}}, null);
+        EnumDef eddef = new EnumDef(new ArrayList<String>(){{add("a11"); add("a22");}}, "a22");
+        def.addEnumDef("myenum", ed);
+        def.addEnumDef("myenumdef", eddef);
+        def.addReferenceDef("myref");
+        def.addReferenceDef("myrefdef", "reff");
+        def.addFileDef("myfile");
+        def.addFileDef("myfiledef", "etc");
+    }
+
+    @Test
+    public void testVerification() {
+        ConfigDefinition def = new ConfigDefinition("foo", "1", "bar");
+        def.addBoolDef("boolval");
+        def.addStringDef("stringval");
+        def.addIntDef("intval");
+        def.addLongDef("longval");
+        def.addDoubleDef("doubleval");
+        def.addEnumDef("enumval", new EnumDef(Arrays.asList("FOO"), "FOO"));
+        def.addReferenceDef("refval");
+        def.addFileDef("fileval");
+        def.addInnerArrayDef("innerarr");
+        def.addLeafMapDef("leafmap");
+        ConfigDefinition.ArrayDef intArray = def.arrayDef("intArray");
+        intArray.setTypeSpec(new ConfigDefinition.TypeSpec("intArray", "int", null, null, Integer.MIN_VALUE, Integer.MAX_VALUE));
+
+        ConfigDefinition.ArrayDef longArray = def.arrayDef("longArray");
+        longArray.setTypeSpec(new ConfigDefinition.TypeSpec("longArray", "long", null, null, Long.MIN_VALUE, Long.MAX_VALUE));
+
+        ConfigDefinition.ArrayDef doubleArray = def.arrayDef("doubleArray");
+        doubleArray.setTypeSpec(new ConfigDefinition.TypeSpec("doubleArray", "double", null, null, Double.MIN_VALUE, Double.MAX_VALUE));
+
+        ConfigDefinition.ArrayDef enumArray = def.arrayDef("enumArray");
+        enumArray.setTypeSpec(new ConfigDefinition.TypeSpec("enumArray", "enum", null, "VALID", null, null));
+
+        ConfigDefinition.ArrayDef stringArray = def.arrayDef("stringArray");
+        stringArray.setTypeSpec(new ConfigDefinition.TypeSpec("stringArray", "string", null, null, null, null));
+
+        def.structDef("struct");
+
+        assertVerify(def, "boolval", "true", 0);
+        assertVerify(def, "boolval", "false", 0);
+        assertVerify(def, "boolval", "invalid", IllegalArgumentException.class);
+
+
+        assertVerify(def, "stringval", "foobar", 0);
+        assertVerify(def, "stringval", "foobar", 0);
+        assertVerify(def, "intval", "123", 0);
+        assertVerify(def, "intval", "foobar", IllegalArgumentException.class);
+        assertVerify(def, "longval", "1234", 0);
+        assertVerify(def, "longval", "foobar", IllegalArgumentException.class);
+        assertVerify(def, "doubleval", "foobar", IllegalArgumentException.class);
+        assertVerify(def, "doubleval", "3", 0);
+        assertVerify(def, "doubleval", "3.14", 0);
+        assertVerify(def, "enumval", "foobar", IllegalArgumentException.class);
+        assertVerify(def, "enumval", "foo", IllegalArgumentException.class);
+        assertVerify(def, "enumval", "FOO", 0);
+        assertVerify(def, "refval", "foobar", 0);
+        assertVerify(def, "fileval", "foobar", 0);
+
+        assertVerifyComplex(def, "innerarr", 0);
+        assertVerifyComplex(def, "leafmap", 0);
+        assertVerifyComplex(def, "intArray", 0);
+        assertVerifyComplex(def, "longArray", 0);
+        assertVerifyComplex(def, "doubleArray", 0);
+        assertVerifyComplex(def, "enumArray", 0);
+        assertVerifyComplex(def, "stringArray", 0);
+        assertVerifyArray(intArray, "1345", 0, 0);
+        assertVerifyArray(intArray, "invalid", 0, IllegalArgumentException.class);
+        assertVerifyArray(longArray, "1345", 0, 0);
+        assertVerifyArray(longArray, "invalid", 0, IllegalArgumentException.class);
+        assertVerifyArray(doubleArray, "1345", 0, 0);
+        assertVerifyArray(doubleArray, "1345.3", 0, 0);
+        assertVerifyArray(doubleArray, "invalid", 0, IllegalArgumentException.class);
+        assertVerifyArray(enumArray, "valid", 0, IllegalArgumentException.class);
+        assertVerifyArray(enumArray, "VALID", 0, 0);
+        assertVerifyArray(enumArray, "inVALID", 0, IllegalArgumentException.class);
+        assertVerifyArray(stringArray, "VALID", 0, 0);
+        assertVerifyComplex(def, "struct", 0);
+    }
+
+    private void assertVerifyArray(ConfigDefinition.ArrayDef def, String val, int index, int expectedNumWarnings) {
+        List<String> issuedWarnings = new ArrayList<>();
+        def.verify(val, index, issuedWarnings);
+        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    }
+
+    private void assertVerifyArray(ConfigDefinition.ArrayDef def, String val, int index, Class<?> expectedException) {
+        try {
+            def.verify(val, index, new ArrayList<String>());
+        } catch (Exception e) {
+            if (!(e.getClass().isAssignableFrom(expectedException))) {
+                throw e;
+            }
+        }
+    }
+
+    private void assertVerify(ConfigDefinition def, String id, String val, int expectedNumWarnings) {
+        List<String> issuedWarnings = new ArrayList<>();
+        def.verify(id, val, issuedWarnings);
+        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    }
+
+    private void assertVerify(ConfigDefinition def, String id, String val, Class<?> expectedException) {
+        try {
+            def.verify(id, val, new ArrayList<String>());
+        } catch (Exception e) {
+            if (!(e.getClass().isAssignableFrom(expectedException))) {
+                throw e;
+            }
+        }
+    }
+
+    private void assertVerifyComplex(ConfigDefinition def, String id, int expectedNumWarnings) {
+        List<String> issuedWarnings = new ArrayList<>();
+        def.verify(id, issuedWarnings);
+        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    }
+}

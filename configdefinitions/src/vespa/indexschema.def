@@ -1,0 +1,26 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+## Config specifying the index fields and field collections that are part of an index schema.
+version=7
+namespace=vespa.config.search
+
+## The name of the index field.
+indexfield[].name string
+## This is the type of an index. Currently only rise and vespa are supported
+indexfield[].indextype enum {VESPA, RISE} default=VESPA
+## The data type of the index field.
+indexfield[].datatype enum { STRING, INT64, BOOLEANTREE } default=STRING
+## The collection type of the index field.
+indexfield[].collectiontype enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
+## Whether the index should support prefix searches.
+indexfield[].prefix bool default=false
+## Whether the index should support phrase searches.
+indexfield[].phrases bool default=false
+## Whether the index should have posting lists with word positions.
+indexfield[].positions bool default=true
+## Average element length
+indexfield[].averageelementlen int default=512
+
+## The name of the field collection (aka logical view).
+fieldset[].name string
+## The name of the index field that are part of this collection.
+fieldset[].field[].name string

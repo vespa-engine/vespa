@@ -1,0 +1,8 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="default">
+    <field name="hits">5</field>
+    <field name="model.defaultIndex">title</field>
+    <field name="ranking.profile">production1</field>
+    <field name="ranking.features.query(scorelimit)">-20</field>
+    <field name="ranking.properties.dotProduct.X">(a:1,b:2)</field>
+</query-profile>

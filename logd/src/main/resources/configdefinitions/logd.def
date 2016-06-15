@@ -1,0 +1,33 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config.log
+
+## Host to contact the logserver on.
+logserver.host string default="localhost"
+
+## Port to contact the logserver on.
+logserver.port int default=5821
+
+## Forward to a logserver. If false, logserver.host and logserver.port are irrelevant
+logserver.use bool default=true
+
+## Loglevel config whether they should be stored and/or forwarded
+loglevel.fatal.forward bool default=true
+loglevel.error.forward bool default=true
+loglevel.warning.forward bool default=true
+loglevel.config.forward bool default=true
+loglevel.info.forward bool default=true
+loglevel.event.forward bool default=false
+loglevel.debug.forward bool default=false
+loglevel.spam.forward bool default=false
+
+## when the logfile reaches this size, rotate it
+rotate.size int default=10000000
+
+## when the logfile reaches this age (in seconds), rotate it
+rotate.age int default=86400
+
+## remove old logfiles so total size does not exceed this (in megabytes)
+remove.totalmegabytes int default=1000
+
+## remove old logfiles older than this (in days)
+remove.age int default=31

@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+searchlib_termfieldmodel_test_app

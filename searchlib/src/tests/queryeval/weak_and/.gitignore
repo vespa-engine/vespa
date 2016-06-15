@@ -1,0 +1,7 @@
+/weak_and_bench
+/weak_and_test_expensive
+/parallel_weak_and_bench
+searchlib_weak_and_test_app
+searchlib_parallel_weak_and_bench_app
+searchlib_weak_and_bench_app
+searchlib_weak_and_test_expensive_app

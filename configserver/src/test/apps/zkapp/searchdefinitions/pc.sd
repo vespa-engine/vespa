@@ -1,0 +1,47 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search pc {
+
+  document pc inherits product {
+
+    field brand type string {
+      indexing: index | summary
+    }
+
+    field color type string {
+      indexing: summary | index
+      index: prefix
+      alias: colour
+      rank: filter
+    }
+
+    field cpuspeed type int {
+      indexing: summary
+    }
+
+    field location_str type array<string> {
+
+    }
+  }
+
+  field location type array<position>  {
+    indexing: input location_str | for_each { to_pos } | attribute
+  }
+
+  rank-profile default {
+    first-phase {
+      expression: fieldMatch(brand).completeness + fieldMatch(color).completeness
+    }
+    second-phase {
+      expression: fieldMatch(brand).completeness*fieldMatch(brand).importancy + fieldMatch(color).completeness*fieldMatch(color).importancy
+    }
+
+    summary-features: fieldMatch(title) fieldMatch(brand).proximity match.weight.title nativeFieldMatch(title)
+
+    rank-features: attribute(cpuspeed)
+
+    rank-properties {
+        fieldMatch(brand).maxOccurrences : 20
+    }
+  }
+
+}

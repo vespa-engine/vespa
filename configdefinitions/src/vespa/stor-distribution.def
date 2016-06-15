@@ -1,0 +1,70 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+## Redundancy decides how many copies of documents will be stored. Documents
+## will store copies on enough nodes, such that the sum of the node reliability
+## factors is equal or above the redundancy.
+redundancy int default=3
+
+## Initial redundancy allows put-operations to return as completed after
+## a subset of all copies have been persisted (known as initial persistence
+## in BCP terms).
+## Set to 0 to disable and use normal redundancy behavior instead.
+initial_redundancy int default=0
+
+## If set, requires that the primary nodes copy should always be persisted
+## before an n-of-m initial persistence operation can complete.
+ensure_primary_persisted bool default=true
+
+## The number of copies that should be "ready" to be active.
+## Maximum is redundancy.
+ready_copies int default=0
+
+## If this option is set true, the distributor will try to enforce one active copy
+## of buckets per leaf hierarchical group. This is a simple implementation for
+## search to be able to setup top level dispatcher to only send search to all
+## nodes in one group as they have a static cost per node used. It used,
+## hierarchical grouping can not be used for other purposes. Using this option
+## implies that:
+##   - ready_copies == redundancy
+##   - Only one level of hierarchical grouping defined.
+##   - That level distributes copies to all defined groups.
+active_per_leaf_group bool default=false
+
+## Search have some unfortunate properties with some queries, adding a static
+## query cost, independent of the number of documents searched on a node. For
+## these cases they use many small groups to be able to scale. In such cases,
+## where groups are small, having distributors able to take over when none are
+## available in a group is useful.
+distributor_auto_ownership_transfer_on_whole_group_down bool default=true
+
+## Hierarchical grouping divides the nodes into a tree of groups. Due to config
+## liking flat structures. The tree of groups is represented by a single array
+## of groups defined here, where index is a string that can have a form like
+## "1.2.1" in order to tell where in the tree structure the group is.
+group[].index string
+## Each group needs to have a name. Makes it easier to operations that they can
+## name their groups according to what they want to call them.
+group[].name string
+## Capacity of the given group
+group[].capacity double default=1
+## Partitions define how copies are divided among child groups/nodes.
+group[].partitions string default=""
+## Leaf groups will have a set of nodes within them. Branch groups will have
+## none.
+group[].nodes[].index int
+# Whether this node is retired.
+# The system will migrate all data away from retired nodes such that they can
+# eventually be removed without partial data loss
+group[].nodes[].retired bool default=false
+
+## Which disk distribution to use. From the current choices, we very much
+## recommend using MODULO_BID. The only reason to use any of the earlier one is
+## during an upgrade where you dont want to mess up the distribution in case you
+## want to revert the upgrade.
+##
+## MODULO old one (4.0)
+## MODULO_INDEX with node index in seed
+## MODULO_KNUTH with random(node index) in seed
+## MODULO_BID using all used bits, except count bits, and random(node index)
+disk_distribution enum { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID } default=MODULO_BID

@@ -1,0 +1,72 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search rankprofiles {
+
+  document rankprofiles {
+
+    field field1 type string {
+      indexing: index
+    }
+
+    field field2 type int {
+      indexing: attribute
+      attribute: fast-search
+    }
+
+    field field3 type int {
+      indexing: attribute
+      attribute: fast-search
+    }
+
+  }
+
+  rank-profile default {
+  }
+
+  rank-profile other1 inherits default {
+    rank field1: filter
+    rank none: filter
+  }
+
+  rank-profile other2 inherits other1 {
+  }
+
+  rank-profile other3 {
+  }
+
+  rank-profile four {
+    match-phase {
+      attribute: field2
+      order: ascending
+      max-hits: 12345
+    }
+  }
+
+  rank-profile five {
+    match-phase {
+      attribute: field2
+      order: descending
+      max-hits: 54321
+    }
+  }
+
+  rank-profile six {
+    match-phase {
+      attribute: field3
+      max-hits: 666
+    }
+  }
+
+  rank-profile seven {
+    match-phase {
+      attribute: field3
+      max-hits:800
+      evaluation-point:0.7
+      pre-post-filter-tipping-point:3.4
+    }
+  }
+
+  rank-profile eight inherits seven {
+  
+  }
+
+}

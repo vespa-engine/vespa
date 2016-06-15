@@ -1,0 +1,9 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+. first -> anchor;
+last . -> anchor;
+. word. -> anchor;
+. [phrases] -> anchor;
+.anotherword. -> anchor;
+. this is complete . -> anchor;
+
+[phrases] :- a phrase, another phrase;

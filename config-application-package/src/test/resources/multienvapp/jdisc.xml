@@ -1,0 +1,17 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<jdisc id='stateless' version='1.0'>
+    <search deploy:environment="prod">
+        <chain id="common">
+            <searcher id="MySearcher1" />
+            <searcher deploy:environment="prod" id="MySearcher2" />
+        </chain>
+    </search>
+    <search />
+    <component id="foo" class="MyFoo" bundle="foobundle" />
+    <component id="bar" class="TestBar" bundle="foobundle" deploy:environment="dev" />
+    <component id="bar" class="ProdBar" bundle="foobundle" deploy:environment="prod" />
+    <component id="baz" class="ProdBaz" bundle="foobundle" deploy:environment="prod" />
+    <nodes>
+        <node hostalias='node0' baseport="${qrs.port}"/>
+    </nodes>
+</jdisc>

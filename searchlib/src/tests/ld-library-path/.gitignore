@@ -1,0 +1,4 @@
+.depend
+Makefile
+ld-library-path_test
+searchlib_ld-library-path_test_app

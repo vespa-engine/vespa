@@ -1,0 +1,52 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
+#include <boost/utility.hpp>
+#include <map>
+#include <string>
+#include <vespa/vespalib/util/sync.h>
+#include "iroutingpolicyfactory.h"
+
+namespace documentapi {
+
+class RoutingPolicyRepository : public boost::noncopyable {
+private:
+    typedef std::map<string, IRoutingPolicyFactory::SP> FactoryMap;
+
+    vespalib::Lock       _lock;
+    FactoryMap           _factories;
+
+public:
+    /**
+     * Constructs a new routing policy repository.
+     */
+    RoutingPolicyRepository();
+
+    /**
+     * Registers a routing policy factory for a given name.
+     *
+     * @param name    The name of the factory to register.
+     * @param factory The factory to register.
+     */
+    void putFactory(const string &name, IRoutingPolicyFactory::SP factory);
+
+    /**
+     * Returns the routing policy factory for a given name.
+     *
+     * @param name The name of the factory to return.
+     * @return The routing policy factory matching the criteria, or null.
+     */
+    IRoutingPolicyFactory::SP getFactory(const string &name) const;
+
+    /**
+     * Creates and returns a routing policy using the named factory and the given parameter.
+     *
+     * @param name  The name of the factory to use.
+     * @param param The parameter to pass to the factory.
+     * @return The craeted policy.
+     */
+    mbus::IRoutingPolicy::UP createPolicy(const string &name, const string &param) const;
+};
+
+}
+

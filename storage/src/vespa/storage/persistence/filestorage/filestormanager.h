@@ -1,0 +1,202 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * @class storage::FileStorManager
+ * @ingroup filestorage
+ *
+ * @version $Id$
+ */
+
+#pragma once
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/util/document_runnable.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/metricpersistenceprovider.h>
+#include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/storage/common/statusmessages.h>
+#include <vespa/storage/common/storagelinkqueued.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/storage/persistence/diskthread.h>
+#include <vespa/storage/persistence/filestorage/filestorhandler.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
+#include <vespa/storage/persistence/providershutdownwrapper.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/storage/common/nodestateupdater.h>
+
+namespace storage {
+namespace api {
+    class ReturnCode;
+    class StorageReply;
+}
+
+class BucketMergeTest;
+class DiskInfo;
+class FileStorManagerTest;
+class ReadBucketList;
+class ModifiedBucketCheckerThread;
+class BucketOwnershipNotifier;
+class AbortBucketOperationsCommand;
+
+class FileStorManager : public StorageLinkQueued,
+                        public framework::HtmlStatusReporter,
+                        public StateListener,
+                        private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
+                        private MessageSender
+{
+    ServiceLayerComponentRegister& _compReg;
+    ServiceLayerComponent _component;
+    const spi::PartitionStateList& _partitions;
+    spi::PersistenceProvider& _providerCore;
+    ProviderShutdownWrapper _providerShutdown;
+    bool _nodeUpInLastNodeStateSeenByProvider;
+    spi::MetricPersistenceProvider::UP _providerMetric;
+    spi::PersistenceProvider* _provider;
+    
+    const document::BucketIdFactory& _bucketIdFactory;
+    config::ConfigUri _configUri;
+
+    typedef std::vector<DiskThread::SP> DiskThreads;
+    std::vector<DiskThreads> _disks;
+    std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
+
+    std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
+    config::ConfigFetcher _configFetcher;
+    uint32_t _threadLockCheckInterval; // In seconds
+    bool _failDiskOnError;
+    int _killSignal;
+    std::shared_ptr<FileStorMetrics> _metrics;
+    std::unique_ptr<FileStorHandler> _filestorHandler;
+    lib::ClusterState _lastState;
+
+    struct ReplyHolder {
+        int refCount;
+        std::unique_ptr<api::StorageReply> reply;
+
+        ReplyHolder(int rc, std::unique_ptr<api::StorageReply> r)
+            : refCount(rc), reply(std::move(r)) {};
+    };
+
+    std::map<api::StorageMessage::Id,
+             std::shared_ptr<ReplyHolder> > _splitMessages;
+    vespalib::Lock _splitLock;
+    mutable vespalib::Monitor _threadMonitor; // Notify to stop sleeping
+    bool _closed;
+
+    FileStorManager(const FileStorManager &);
+    FileStorManager& operator=(const FileStorManager &);
+
+    std::vector<DiskThreads> getThreads() { return _disks; }
+
+    friend class BucketMergeTest;
+    friend class FileStorManagerTest;
+    friend class MessageTest;
+
+public:
+    explicit FileStorManager(const config::ConfigUri &,
+                             const spi::PartitionStateList&,
+                             spi::PersistenceProvider&,
+                             ServiceLayerComponentRegister&);
+    ~FileStorManager();
+
+    virtual void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const;
+
+    // Return true if we are currently merging the given bucket.
+    bool isMerging(const document::BucketId& bucket) const;
+
+    FileStorHandler& getFileStorHandler() {
+        return *_filestorHandler;
+    };
+
+    spi::PersistenceProvider& getPersistenceProvider() {
+        return *_provider;
+    }
+
+    void handleNewState();
+
+private:
+    void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config);
+
+    void replyWithBucketNotFound(api::StorageMessage&,
+                                 const document::BucketId&);
+
+    void replyDroppedOperation(api::StorageMessage& msg,
+                               const document::BucketId& bucket,
+                               api::ReturnCode::Result returnCode,
+                               vespalib::stringref reason);
+
+    StorBucketDatabase::WrappedEntry ensureConsistentBucket(
+            const document::BucketId& bucket,
+            api::StorageMessage& msg,
+            const char* callerId);
+
+    bool validateApplyDiffCommandBucket(api::StorageMessage& msg,
+                                        const StorBucketDatabase::WrappedEntry&);
+    bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&,
+                                 const document::BucketId&);
+
+    StorBucketDatabase::WrappedEntry mapOperationToDisk(
+            api::StorageMessage&, const document::BucketId&);
+    StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(
+            api::BucketCommand&, const document::DocumentId*);
+    bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&,
+                                  uint16_t disk);
+
+    // Document operations
+    bool onPut(const std::shared_ptr<api::PutCommand>&);
+    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&);
+    bool onGet(const std::shared_ptr<api::GetCommand>&);
+    bool onRemove(const std::shared_ptr<api::RemoveCommand>&);
+    bool onRevert(const std::shared_ptr<api::RevertCommand>&);
+    bool onMultiOperation(const std::shared_ptr<api::MultiOperationCommand>&);
+    bool onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveCommand>&);
+    bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&);
+
+    // Bucket operations
+    bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&);
+    bool onCreateBucket(const std::shared_ptr<api::CreateBucketCommand>&);
+    bool onDeleteBucket(const std::shared_ptr<api::DeleteBucketCommand>&);
+    bool onMergeBucket(const std::shared_ptr<api::MergeBucketCommand>&);
+    bool onGetBucketDiff(const std::shared_ptr<api::GetBucketDiffCommand>&);
+    bool onGetBucketDiffReply(
+            const std::shared_ptr<api::GetBucketDiffReply>&);
+    bool onApplyBucketDiff(
+            const std::shared_ptr<api::ApplyBucketDiffCommand>&);
+    bool onApplyBucketDiffReply(
+            const std::shared_ptr<api::ApplyBucketDiffReply>&);
+    bool onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>&);
+    bool onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>&);
+    bool onSetBucketState(const std::shared_ptr<api::SetBucketStateCommand>&);
+    bool onNotifyBucketChangeReply(
+            const std::shared_ptr<api::NotifyBucketChangeReply>&)
+        { return true; }
+
+    // Other
+    bool onInternal(const std::shared_ptr<api::InternalCommand>&);
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
+
+    void handleAbortBucketOperations(
+            const std::shared_ptr<AbortBucketOperationsCommand>&);
+
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&);
+    void sendReply(const std::shared_ptr<api::StorageReply>&);
+
+    void sendUp(const std::shared_ptr<api::StorageMessage>&);
+
+    void onClose();
+    void onFlush(bool downwards);
+
+    virtual void reportHtmlStatus(std::ostream&,
+                                  const framework::HttpUrlPath&) const;
+
+    virtual void storageDistributionChanged();
+
+    void updateState();
+};
+
+} // storage
+

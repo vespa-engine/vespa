@@ -1,0 +1,71 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+#include "dictionarywordreader.h"
+#include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/index/olddictionaryfile.h>
+#include <vespa/vespalib/util/error.h>
+LOG_SETUP(".diskindex.dictionarywordreader");
+
+namespace search
+{
+
+namespace diskindex
+{
+
+using vespalib::getLastErrorString;
+using index::SchemaUtil;
+
+DictionaryWordReader::DictionaryWordReader(void)
+    : _word(),
+      _wordNum(noWordNumHigh()),
+      _old2newwordfile(),
+      _dictFile()
+{
+}
+
+
+DictionaryWordReader::~DictionaryWordReader(void)
+{
+}
+
+
+bool
+DictionaryWordReader::open(const vespalib::stringref &dictionaryName,
+                           const vespalib::stringref & wordMapName,
+                           const TuneFileSeqRead &tuneFileRead)
+{
+    _old2newwordfile.reset(new Fast_BufferedFile(new FastOS_File));
+    _dictFile.reset(new PageDict4FileSeqRead);
+    if (!_dictFile->open(dictionaryName, tuneFileRead)) {
+        LOG(error, "Could not open dictionary %s: %s",
+            dictionaryName.c_str(), getLastErrorString().c_str());
+        return false;
+    }
+    _wordNum = noWordNum();
+
+    // Make a mapping from old to new wordID
+    if (tuneFileRead.getWantDirectIO())
+        _old2newwordfile->EnableDirectIO();
+    // no checking possible
+    _old2newwordfile->WriteOpen(wordMapName.c_str());
+    _old2newwordfile->SetSize(0);
+
+    return true;
+}
+
+void
+DictionaryWordReader::close(void)
+{
+    if (!_dictFile->close())
+        LOG(error, "Error closing input dictionary");
+    _old2newwordfile->Flush();
+    _old2newwordfile->Sync();
+    _old2newwordfile->Close();
+}
+
+
+} // namespace diskindex
+
+} // namespace search

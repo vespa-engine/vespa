@@ -1,0 +1,146 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search newrank{
+  document newrank{
+
+    field bgndata type string {
+      indexing: summary
+      summary: dynamic
+    }
+
+    field sales type int {
+      indexing: summary | attribute | index
+    }
+
+    field pto type int {
+      indexing: summary | attribute | index
+    }
+
+    field keys type string {
+      indexing: index
+    }
+
+    field mid type int {
+      indexing: summary | attribute | index
+    }
+
+    field ew type string {
+      indexing: summary | index
+      bolding: on
+    }
+
+    field surl type string {
+      indexing: summary
+    }
+
+    field userrate type int {
+      indexing: summary
+    }
+
+    field pid type string {
+      indexing: summary
+    }
+
+    field weight type float {
+      indexing: summary | attribute
+    }
+
+    field url type string {
+      indexing: summary
+    }
+
+    field isbn type string {
+      indexing: summary
+    }
+
+    field fmt type string {
+      indexing: summary | index
+    }
+
+    field albumid type string {
+      indexing: summary
+    }
+
+    field disp_song type string {
+      indexing: summary
+    }
+
+    field song type string {
+      indexing: summary | index
+      summary: dynamic
+    }
+
+    field pfrom type int {
+      indexing: summary
+    }
+
+    field bgnpfrom type float {
+      indexing: summary | attribute
+    }
+
+    field categories type string {
+      indexing: summary | index
+    }
+
+    field data type string {
+      indexing: summary
+    }
+
+    field numreview type int {
+      indexing: summary
+    }
+
+    field bgnsellers type int {
+      indexing: summary
+    }
+
+    field image type string {
+      indexing: summary
+    }
+
+    field artist type string {
+      indexing: summary | index
+      # index-to: artist, default
+    }
+
+    field artistspid type string {
+      indexing: summary
+    }
+
+    field title type string {
+      indexing: summary | index
+    }
+
+    field newestedition type int {
+      indexing: summary | attribute | index
+    }
+
+    field bgnpto type string {
+      indexing: summary
+      summary: dynamic
+      bolding: on
+    }
+
+    field year type int {
+      indexing: summary | attribute | index
+    }
+
+    field did type int {
+      indexing: summary | attribute | index
+    }
+
+    field scorekey type int {
+      indexing: summary | index
+    }
+
+    field cbid type int {
+      indexing: summary | attribute | index
+    }
+
+  }
+
+  fieldset default {
+    fields: keys, ew, song, title
+  }
+
+}
+

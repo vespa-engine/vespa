@@ -1,0 +1,9 @@
+classes[types1125507321].id 1125507321
+classes[types1125507321].name types
+classes[types1125507321].fields[3]
+classes[types1125507321].fields[0].name sddocname
+classes[types1125507321].fields[0].type string
+classes[types1125507321].fields[1].name abyte
+classes[types1125507321].fields[1].type byte
+classes[types1125507321].fields[2].name ranklog
+classes[types1125507321].fields[2].type string

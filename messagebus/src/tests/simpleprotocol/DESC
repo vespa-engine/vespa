@@ -1,0 +1,3 @@
+Small test of the simple protocol defined in the test library. The
+protocol will be used to test other messagebus features, including
+cross-language compatibility.

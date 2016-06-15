@@ -1,0 +1,205 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<refentry id="fsadump">
+
+<refmeta>
+<refentrytitle>fsadump</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>fsadump</refname>
+<refpurpose>dump the contents of finite state automata files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>fsadump</command>
+  <arg>OPTIONS</arg>
+  <arg choice='plain'>fsa_file</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1><title>Description</title>
+<para>
+<command>fsadump</command> dumps the contents of fsa files to standard
+out in one of several different formats (some of which can be directly
+used as input for <command>makefsa</command>).
+</para>
+<refsect2><title>Options</title>
+<para>
+<variablelist>
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>
+text output format, with empty meta info (default)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+text output format
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>
+binary output format, with base64 encoded meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-B</option></term>
+<listitem>
+<para>
+binary output format with raw meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+text ouptut with numerical meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>
+text output format, with the perfect hash value instead of meta info
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+dot output format (for visualization using graphviz)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+display usage help
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>
+display version number
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+</refsect2>
+</refsect1>
+
+
+<refsect1><title>Output formats</title>
+<para>
+<variablelist>
+<varlistentry>
+<term>Text output format with empty meta info (<option>-e</option>)</term>
+<listitem>
+<para>
+The input strings are terminated with '\n', and may not contain '\0',
+'\0xff' or '\n' characters. This is the default.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Text output format (<option>-t</option>)</term>
+<listitem>
+<para>
+Lines are terminated with '\n', input string and meta info are
+separated by '\t'. Input and meta strings may not contain '\0',
+'\0xff', '\n' or '\t' characters. A terminating '\0' (if found) is
+removed from the end of the meta info.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Text output format with numerical info (<option>-n</option>)</term>
+<listitem>
+<para>
+Lines are terminated with '\n', input string and meta info are
+separated by '\t'. Input strings may not contain '\0', '\0xff', '\n'
+or '\t' characters. Meta strings are unsigned integers ([0-9]+), which
+will be are retrieved from the binary representation in the
+automaton. Valid data sizes are 1, 2 or 4 bytes, for sizes other than
+these only the first 2 or 4 bytes are used.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Binary output format, with base64 encoded meta info (<option>-b</option>)</term>
+<listitem>
+<para>
+Both the input string and meta info are terminated by '\0'. The input
+string must not contain the reserved characters '\0' and '\0xff'. The
+meta info is base64 encoded, as it may contain any character.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Binary output format with raw meta info (<option>-B</option>)</term>
+<listitem>
+<para>
+Both the input string and meta info are terminated by '\0'. The input
+string must not contain the reserved characters '\0' and '\0xff'. The
+meta info must not contain '\0'.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Text output format, with the perfect hash value instead of meta
+info (<option>-p</option>)</term>
+<listitem>
+<para>
+The format is the same as for text output with numerical info, but the
+perfect hash value for each string is used instead of meta info.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Dot output format for visualization using GraphViz (<option>-d</option>)</term>
+<listitem>
+<para>
+Output a dot format graph, with the start and final states marked and
+edges labeled with transition symbols. The <command>dot</command> tool
+can be used to generate graphical output (e.g. PostScript) of the
+graph. Use this format for small automata only (a few hundred states
+or less), as the graph soon becomes quite complex.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</para>
+</refsect1>
+
+<refsect1><title>See also</title>
+<para>
+makefsa, fsainfo.
+</para>
+</refsect1>
+
+<refsect1><title>Author</title>
+<para>
+Written by Peter Boros.
+</para>
+</refsect1>
+
+</refentry>

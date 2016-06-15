@@ -1,0 +1,173 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".features.nativerankfeature");
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/properties.h>
+#include "nativerankfeature.h"
+#include "valuefeature.h"
+#include "utils.h"
+
+using namespace search::fef;
+
+namespace {
+
+vespalib::string
+buildFeatureName(const vespalib::string & baseName, const search::features::FieldWrapper & fields)
+{
+    std::ostringstream oss;
+    oss << baseName << "(";
+    for (size_t i = 0; i < fields.getNumFields(); ++i) {
+        if (i > 0) {
+            oss << ",";
+        }
+        oss << fields.getField(i)->name();
+    }
+    oss << ")";
+    return oss.str();
+}
+
+}
+
+namespace search {
+namespace features {
+
+FieldWrapper::FieldWrapper(const IIndexEnvironment & env,
+                           const ParameterList & fields,
+                           const FieldType filter) :
+    _fields()
+{
+    if (!fields.empty()) {
+        for (size_t i = 0; i < fields.size(); ++i) {
+            const search::fef::FieldInfo * info = fields[i].asField();
+            if (info->type() == filter) {
+                _fields.push_back(info);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < env.getNumFields(); ++i) {
+            const search::fef::FieldInfo * info = env.getField(i);
+            LOG_ASSERT(info->id() == i && "The field ids must be the same in FieldInfo as in IIndexEnvironment");
+            if (info->type() == filter) {
+                _fields.push_back(info);
+            }
+        }
+    }
+}
+
+
+NativeRankExecutor::NativeRankExecutor(const NativeRankParams & params) :
+    FeatureExecutor(),
+    _params(params),
+    _divisor(0)
+{
+    _divisor += _params.fieldMatchWeight;
+    _divisor += _params.attributeMatchWeight;
+    _divisor += _params.proximityWeight;
+}
+
+void
+NativeRankExecutor::execute(search::fef::MatchData & match)
+{
+    *match.resolveFeature(outputs()[0]) = (*match.resolveFeature(inputs()[0]) * _params.fieldMatchWeight
+                    + *match.resolveFeature(inputs()[1]) * _params.proximityWeight
+                    + *match.resolveFeature(inputs()[2]) * _params.attributeMatchWeight) / _divisor;
+}
+
+
+NativeRankBlueprint::NativeRankBlueprint() :
+    Blueprint("nativeRank"),
+    _params()
+{
+}
+
+void
+NativeRankBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
+                                       IDumpFeatureVisitor & visitor) const
+{
+    (void) env;
+    visitor.visitDumpFeature(getBaseName());
+}
+
+Blueprint::UP
+NativeRankBlueprint::createInstance() const
+{
+    return Blueprint::UP(new NativeRankBlueprint());
+}
+
+bool
+NativeRankBlueprint::setup(const IIndexEnvironment & env,
+                           const ParameterList & params)
+{
+    _params.fieldMatchWeight = util::strToNum<feature_t>
+        (env.getProperties().lookup(getBaseName(), "fieldMatchWeight").get("100"));
+    _params.attributeMatchWeight = util::strToNum<feature_t>
+        (env.getProperties().lookup(getBaseName(), "attributeMatchWeight").get("100"));
+    vespalib::string defProxWeight = "25";
+    if (!useTableNormalization(env)) {
+        defProxWeight = "100"; // must use another weight to match the default boost tables
+    }
+    _params.proximityWeight = util::strToNum<feature_t>
+        (env.getProperties().lookup(getBaseName(), "proximityWeight").get(defProxWeight));
+
+    vespalib::string nfm = "nativeFieldMatch";
+    vespalib::string np = "nativeProximity";
+    vespalib::string nam = "nativeAttributeMatch";
+    vespalib::string zero = "value(0)";
+
+    // handle parameter list
+    if (!params.empty()) {
+        FieldWrapper indexFields(env, params, FieldType::INDEX);
+        FieldWrapper attrFields(env, params, FieldType::ATTRIBUTE);
+        if (indexFields.getNumFields() > 0) {
+            nfm = buildFeatureName("nativeFieldMatch", indexFields);
+            np = buildFeatureName("nativeProximity", indexFields);
+        } else {
+            nfm = zero;
+            np = zero;
+        }
+        if (attrFields.getNumFields() > 0) {
+            nam = buildFeatureName("nativeAttributeMatch", attrFields);
+        } else {
+            nam = zero;
+        }
+    }
+    // optimizations when weight == 0
+    if (_params.fieldMatchWeight == 0) {
+        nfm = zero;
+    }
+    if (_params.proximityWeight == 0) {
+        np = zero;
+    }
+    if (_params.attributeMatchWeight == 0) {
+        nam = zero;
+    }
+
+    defineInput(nfm);
+    defineInput(np);
+    defineInput(nam);
+    describeOutput("score", "The native rank score");
+    return true;
+}
+
+FeatureExecutor::LP
+NativeRankBlueprint::createExecutor(const IQueryEnvironment &) const
+{
+    if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
+        return FeatureExecutor::LP(new NativeRankExecutor(_params));
+    } else {
+        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+    }
+}
+
+bool
+NativeRankBlueprint::useTableNormalization(const search::fef::IIndexEnvironment & env)
+{
+    Property norm = env.getProperties().lookup("nativeRank", "useTableNormalization");
+    return (!(norm.found() && (norm.get() == vespalib::string("false"))));
+}
+
+
+} // namespace features
+} // namespace search

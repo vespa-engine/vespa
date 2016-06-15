@@ -1,0 +1,14 @@
+date[2]
+date[0] 16-Apr-08
+date[1] 17-Apr-08
+stock[2]
+stock[0].ticker YHOO
+stock[0].type COMMON
+stock[0].volume[2]
+stock[0].volume[0] 1333000
+stock[0].volume[1] 800800
+stock[1].ticker JNJ
+stock[1].type COMMON
+stock[1].volume[2]
+stock[1].volume[0] 10987000
+stock[1].volume[1] 1300000

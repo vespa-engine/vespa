@@ -1,0 +1,20 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="multi" inherits="default"> <!-- default sets default-index to title -->
+  <dimensions>myquery, myindex </dimensions>
+  <field name="model"><ref>querybest</ref></field>
+  <field name="model.defaultIndex">default-default</field>
+
+  <query-profile for="love,default">
+   <field name="model"><ref>querylove</ref></field>
+   <field name="model.defaultIndex">default</field>
+  </query-profile>
+
+  <query-profile for="*,default">
+    <field name="model.defaultIndex">default</field>
+  </query-profile>
+
+  <query-profile for="love">
+    <field name="model"><ref>querylove</ref></field>
+  </query-profile>
+
+</query-profile>

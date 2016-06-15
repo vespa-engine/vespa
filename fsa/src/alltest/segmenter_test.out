@@ -1,0 +1,332 @@
+List of all segments:
+  cupertino:0 [0,0]
+Weighted segmentation:
+  (cupertino)
+Rightmost-longest segmentation:
+  (cupertino)
+Lefttmost-longest segmentation:
+  (cupertino)
+List of all segments:
+  foster:0 [0,0]
+  city:0 [1,1]
+Weighted segmentation:
+  (foster)(city)
+Rightmost-longest segmentation:
+  (foster)(city)
+Lefttmost-longest segmentation:
+  (foster)(city)
+List of all segments:
+  los:0 [0,0]
+  altos:0 [1,1]
+Weighted segmentation:
+  (los)(altos)
+Rightmost-longest segmentation:
+  (los)(altos)
+Lefttmost-longest segmentation:
+  (los)(altos)
+List of all segments:
+  menlo:0 [0,0]
+  park:0 [1,1]
+Weighted segmentation:
+  (menlo)(park)
+Rightmost-longest segmentation:
+  (menlo)(park)
+Lefttmost-longest segmentation:
+  (menlo)(park)
+List of all segments:
+  mountain:0 [0,0]
+  view:0 [1,1]
+Weighted segmentation:
+  (mountain)(view)
+Rightmost-longest segmentation:
+  (mountain)(view)
+Lefttmost-longest segmentation:
+  (mountain)(view)
+List of all segments:
+  palo:0 [0,0]
+  alto:0 [1,1]
+Weighted segmentation:
+  (palo)(alto)
+Rightmost-longest segmentation:
+  (palo)(alto)
+Lefttmost-longest segmentation:
+  (palo)(alto)
+List of all segments:
+  san:0 [0,0]
+  francisco:0 [1,1]
+Weighted segmentation:
+  (san)(francisco)
+Rightmost-longest segmentation:
+  (san)(francisco)
+Lefttmost-longest segmentation:
+  (san)(francisco)
+List of all segments:
+  san:0 [0,0]
+  jose:0 [1,1]
+Weighted segmentation:
+  (san)(jose)
+Rightmost-longest segmentation:
+  (san)(jose)
+Lefttmost-longest segmentation:
+  (san)(jose)
+List of all segments:
+  santa:0 [0,0]
+  clara:0 [1,1]
+Weighted segmentation:
+  (santa)(clara)
+Rightmost-longest segmentation:
+  (santa)(clara)
+Lefttmost-longest segmentation:
+  (santa)(clara)
+List of all segments:
+  saratoga:0 [0,0]
+Weighted segmentation:
+  (saratoga)
+Rightmost-longest segmentation:
+  (saratoga)
+Lefttmost-longest segmentation:
+  (saratoga)
+List of all segments:
+  sunnyvale:0 [0,0]
+Weighted segmentation:
+  (sunnyvale)
+Rightmost-longest segmentation:
+  (sunnyvale)
+Lefttmost-longest segmentation:
+  (sunnyvale)
+List of all segments:
+  apple:1769304646 [0,0]
+Weighted segmentation:
+  (apple)
+Rightmost-longest segmentation:
+  (apple)
+Lefttmost-longest segmentation:
+  (apple)
+List of all segments:
+  apricot:1769304646 [0,0]
+Weighted segmentation:
+  (apricot)
+Rightmost-longest segmentation:
+  (apricot)
+Lefttmost-longest segmentation:
+  (apricot)
+List of all segments:
+  artichoke:1701274966 [0,0]
+Weighted segmentation:
+  (artichoke)
+Rightmost-longest segmentation:
+  (artichoke)
+Lefttmost-longest segmentation:
+  (artichoke)
+List of all segments:
+  banana:1769304646 [0,0]
+Weighted segmentation:
+  (banana)
+Rightmost-longest segmentation:
+  (banana)
+Lefttmost-longest segmentation:
+  (banana)
+List of all segments:
+  cabbage:1701274966 [0,0]
+Weighted segmentation:
+  (cabbage)
+Rightmost-longest segmentation:
+  (cabbage)
+Lefttmost-longest segmentation:
+  (cabbage)
+List of all segments:
+  carrot:1701274966 [0,0]
+Weighted segmentation:
+  (carrot)
+Rightmost-longest segmentation:
+  (carrot)
+Lefttmost-longest segmentation:
+  (carrot)
+List of all segments:
+  cherry:1769304646 [0,0]
+Weighted segmentation:
+  (cherry)
+Rightmost-longest segmentation:
+  (cherry)
+Lefttmost-longest segmentation:
+  (cherry)
+List of all segments:
+  chili:1701274966 [0,0]
+Weighted segmentation:
+  (chili)
+Rightmost-longest segmentation:
+  (chili)
+Lefttmost-longest segmentation:
+  (chili)
+List of all segments:
+  cucumber:1701274966 [0,0]
+Weighted segmentation:
+  (cucumber)
+Rightmost-longest segmentation:
+  (cucumber)
+Lefttmost-longest segmentation:
+  (cucumber)
+List of all segments:
+  eggplant:1701274966 [0,0]
+Weighted segmentation:
+  (eggplant)
+Rightmost-longest segmentation:
+  (eggplant)
+Lefttmost-longest segmentation:
+  (eggplant)
+List of all segments:
+  grapes:1769304646 [0,0]
+Weighted segmentation:
+  (grapes)
+Rightmost-longest segmentation:
+  (grapes)
+Lefttmost-longest segmentation:
+  (grapes)
+List of all segments:
+  lettuce:1701274966 [0,0]
+Weighted segmentation:
+  (lettuce)
+Rightmost-longest segmentation:
+  (lettuce)
+Lefttmost-longest segmentation:
+  (lettuce)
+List of all segments:
+  onion:1701274966 [0,0]
+Weighted segmentation:
+  (onion)
+Rightmost-longest segmentation:
+  (onion)
+Lefttmost-longest segmentation:
+  (onion)
+List of all segments:
+  paprika:1701274966 [0,0]
+Weighted segmentation:
+  (paprika)
+Rightmost-longest segmentation:
+  (paprika)
+Lefttmost-longest segmentation:
+  (paprika)
+List of all segments:
+  passion:0 [0,0]
+  fruit:0 [1,1]
+  passion fruit:1769304646 [0,1]
+Weighted segmentation:
+  (passion fruit)
+Rightmost-longest segmentation:
+  (passion fruit)
+Lefttmost-longest segmentation:
+  (passion fruit)
+List of all segments:
+  peach:1769304646 [0,0]
+Weighted segmentation:
+  (peach)
+Rightmost-longest segmentation:
+  (peach)
+Lefttmost-longest segmentation:
+  (peach)
+List of all segments:
+  pear:1769304646 [0,0]
+Weighted segmentation:
+  (pear)
+Rightmost-longest segmentation:
+  (pear)
+Lefttmost-longest segmentation:
+  (pear)
+List of all segments:
+  pineapple:1769304646 [0,0]
+Weighted segmentation:
+  (pineapple)
+Rightmost-longest segmentation:
+  (pineapple)
+Lefttmost-longest segmentation:
+  (pineapple)
+List of all segments:
+  plum:1769304646 [0,0]
+Weighted segmentation:
+  (plum)
+Rightmost-longest segmentation:
+  (plum)
+Lefttmost-longest segmentation:
+  (plum)
+List of all segments:
+  potato:1701274966 [0,0]
+Weighted segmentation:
+  (potato)
+Rightmost-longest segmentation:
+  (potato)
+Lefttmost-longest segmentation:
+  (potato)
+List of all segments:
+  pumpkin:1701274966 [0,0]
+Weighted segmentation:
+  (pumpkin)
+Rightmost-longest segmentation:
+  (pumpkin)
+Lefttmost-longest segmentation:
+  (pumpkin)
+List of all segments:
+  sour:0 [0,0]
+  cherry:1769304646 [1,1]
+  sour cherry:1769304646 [0,1]
+Weighted segmentation:
+  (sour cherry)
+Rightmost-longest segmentation:
+  (sour cherry)
+Lefttmost-longest segmentation:
+  (sour cherry)
+List of all segments:
+  squash:1701274966 [0,0]
+Weighted segmentation:
+  (squash)
+Rightmost-longest segmentation:
+  (squash)
+Lefttmost-longest segmentation:
+  (squash)
+List of all segments:
+  tomato:1701274966 [0,0]
+Weighted segmentation:
+  (tomato)
+Rightmost-longest segmentation:
+  (tomato)
+Lefttmost-longest segmentation:
+  (tomato)
+List of all segments:
+  alpha:0 [0,0]
+Weighted segmentation:
+  (alpha)
+Rightmost-longest segmentation:
+  (alpha)
+Lefttmost-longest segmentation:
+  (alpha)
+List of all segments:
+  beta:0 [0,0]
+Weighted segmentation:
+  (beta)
+Rightmost-longest segmentation:
+  (beta)
+Lefttmost-longest segmentation:
+  (beta)
+List of all segments:
+  gamma:0 [0,0]
+Weighted segmentation:
+  (gamma)
+Rightmost-longest segmentation:
+  (gamma)
+Lefttmost-longest segmentation:
+  (gamma)
+List of all segments:
+  delta:0 [0,0]
+Weighted segmentation:
+  (delta)
+Rightmost-longest segmentation:
+  (delta)
+Lefttmost-longest segmentation:
+  (delta)
+List of all segments:
+  epsilon:0 [0,0]
+Weighted segmentation:
+  (epsilon)
+Rightmost-longest segmentation:
+  (epsilon)
+Lefttmost-longest segmentation:
+  (epsilon)

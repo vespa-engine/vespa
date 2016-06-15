@@ -1,0 +1,9 @@
+*.dsp
+Makefile.ini
+config_command.sh
+include
+juniper.mak
+lib
+project.dsw
+Makefile
+Testing

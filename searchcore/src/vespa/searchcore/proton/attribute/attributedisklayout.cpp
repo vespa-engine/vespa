@@ -1,0 +1,134 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.attributedisklayout");
+#include "attributedisklayout.h"
+#include <vespa/searchcommon/common/schemaconfigurer.h>
+
+using search::IndexMetaInfo;
+using search::index::SchemaBuilder;
+using search::index::Schema;
+using search::AttributeVector;
+
+namespace proton
+{
+
+
+bool
+AttributeDiskLayout::removeOldSnapshots(IndexMetaInfo &snapInfo,
+                                        vespalib::Lock &snapInfoLock)
+{
+    IndexMetaInfo::Snapshot best = snapInfo.getBestSnapshot();
+    if (!best.valid) {
+        return true;
+    }
+    std::vector<IndexMetaInfo::Snapshot> toRemove;
+    const IndexMetaInfo::SnapshotList & list = snapInfo.snapshots();
+    for (const auto &snap : list) {
+        if (!(snap == best)) {
+            toRemove.push_back(snap);
+        }
+    }
+    LOG(debug,
+        "About to remove %zu old snapshots. "
+        "Will keep best snapshot with sync token %" PRIu64,
+        toRemove.size(),
+        best.syncToken);
+    for (const auto &snap : toRemove) {
+        if (snap.valid) {
+            {
+                vespalib::LockGuard guard(snapInfoLock);
+                snapInfo.invalidateSnapshot(snap.syncToken);
+            }
+            if (!snapInfo.save()) {
+                LOG(warning,
+                    "Could not save meta info file in directory '%s' after "
+                    "invalidating snapshot with sync token %" PRIu64,
+                    snapInfo.getPath().c_str(),
+                    snap.syncToken);
+                return false;
+            }
+        }
+        vespalib::string rmDir =
+            getSnapshotRemoveDir(snapInfo.getPath(), snap.dirName);
+        FastOS_StatInfo statInfo;
+        if (!FastOS_File::Stat(rmDir.c_str(), &statInfo) &&
+            statInfo._error == FastOS_StatInfo::FileNotFound)
+        {
+            // Directory already removed
+        } else {
+            FastOS_FileInterface:: EmptyAndRemoveDirectory(rmDir.c_str());
+#if 0
+            LOG(warning,
+                "Could not remove snapshot directory '%s'",
+                rmDir.c_str());
+            return false;
+#endif
+        }
+        {
+            vespalib::LockGuard guard(snapInfoLock);
+            snapInfo.removeSnapshot(snap.syncToken);
+        }
+        if (!snapInfo.save()) {
+            LOG(warning,
+                "Could not save meta info file in directory '%s' after "
+                "removing snapshot with sync token %" PRIu64,
+                snapInfo.getPath().c_str(), snap.syncToken);
+            return false;
+        }
+        LOG(debug, "Removed snapshot directory '%s'", rmDir.c_str());
+    }
+    return true;
+}
+
+bool
+AttributeDiskLayout::removeAttribute(const vespalib::string &baseDir,
+                                     const vespalib::string &attrName)
+{
+    const vespalib::string currDir = getAttributeBaseDir(baseDir, attrName);
+    const vespalib::string rmDir =
+        getAttributeBaseDir(baseDir,
+                            vespalib::make_string("remove.%s",
+                                    attrName.c_str()));
+
+    FastOS_StatInfo statInfo;
+    if (FastOS_File::Stat(rmDir.c_str(), &statInfo) && statInfo._isDirectory) {
+        FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str());
+#if 0
+        if (!FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str())) {
+            LOG(warning,
+                "Could not remove attribute directory '%s'",
+                rmDir.c_str());
+            return false;
+        }
+#endif
+    }
+    if (!FastOS_File::Stat(currDir.c_str(), &statInfo) &&
+        statInfo._error == FastOS_StatInfo::FileNotFound)
+    {
+        // Directory already removed
+        return true;
+    }
+    if (!FastOS_FileInterface::MoveFile(currDir.c_str(), rmDir.c_str())) {
+        LOG(warning,
+            "Could not move attribute directory '%s' to '%s'",
+            currDir.c_str(),
+            rmDir.c_str());
+        return false;
+    }
+    FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str());
+#if 0
+    if (!FastOS_FileInterface::EmptyAndRemoveDirectory(rmDir.c_str())) {
+        LOG(warning,
+            "Could not remove attribute directory '%s'",
+            rmDir.c_str());
+        return false;
+    }
+#endif
+    return true;
+}
+
+
+} // namespace proton
+

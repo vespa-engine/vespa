@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<query-profile-type id="user">
+
+    <field name="age" type="integer" mandatory="true" alias="alder anno"/>
+    <field name="gender" type="string" alias="sex"/>
+    <field name="robot" type="boolean" overridable="false"/>
+
+</query-profile-type>

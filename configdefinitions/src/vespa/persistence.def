@@ -1,0 +1,60 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+## If set, causes the service layer to trigger an abort of any queued
+## operations for buckets whose ownership changes during a cluster state
+## change. This helps ensure consistency between the distributors and
+## the storage nodes by discarding operations that were not sent by the
+## new owning distributor. The service layer will also block any new
+## operations from happening until all operations currently executing for
+## buckets with changed ownership have completed.
+## Enabling this option has a potential of causing a minor performance
+## impact when a node goes up or down due to its blocking semantics, but
+## this should be on the order of tens to a few hundred milliseconds.
+abort_operations_with_changed_bucket_ownership bool default=true
+
+## If set, aborts any mutating ideal state operations that arrive to a node
+## that were scheduled and sent by distributors that no longer own the buckets
+## the operations are bound for. This option complements the above config,
+## as this is checked for every arriving message and not when the state changes.
+abort_outdated_mutating_ideal_state_ops bool default=true
+
+## If set, aborts any external (client) operations that arrive to a node from
+## a distributor that is no longer the owner of the bucket those operations
+## belong to. As with the abort_outdated_mutating_ideal_state_ops option,
+## this is a check that happens whenever a message arrives, not when the state
+## changes.
+abort_outdated_mutating_external_load_ops bool default=false
+
+## Whether or not to disable partitions when they report I/O errors
+fail_partition_on_error bool default=true
+
+## Time period to keep all updates (given in seconds). One can revert any
+## operation done within this time.
+revert_time_period int default=300
+
+## Minimum number of seconds that document remove (tombstone) entries are
+## retained in a bucket before being automatically compacted away. In the case
+## where a node has been down for a longer period of time than this value
+## and then comes back up, there exists a possibility for documents to be
+## resurrected. This happens when documents existing on both the downed node
+## and the online nodes are marked as removed on the online nodes and then
+## subsequently compacted away along with their remove entries. When the old
+## node comes back online, it will appear to the system as if the node has
+## documents that do not exist on other nodes (as no remove-entries can be
+## found for them) and they will subsequently re-appear.
+keep_remove_time_period int default=604800
+
+## For providers supporting multiple document versions, this option specifies
+## a soft limit on the maximum number of versions that can be stored for a
+## single document at any given time. This is considered a soft limit as it
+## is possible for more versions to exist concurrently than what this config
+## value specifies in a case where the pressure on the containing bucket is not
+## yet high enough to warrant a compaction.
+## After a compaction has taken place, only the n _newest_ document versions
+## will be present in the compacted representation of the bucket.
+## This limitation takes precedence over what versions may be stored according
+## to revert_time_period.
+## Configured value must be at least 1.
+maximum_versions_of_single_document_stored int default=5
+

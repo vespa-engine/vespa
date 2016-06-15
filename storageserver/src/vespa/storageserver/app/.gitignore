@@ -1,0 +1,12 @@
+*.So
+*.lo
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+Makefile.inc
+config_command.sh
+project.dsw
+storaged
+storaged.core

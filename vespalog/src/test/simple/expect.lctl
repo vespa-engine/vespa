@@ -1,0 +1,5 @@
+Vespa log control file version 1
+Prefix: logtest
+                                                         
+default:   ON  ON  ON  ON  ON  ON OFF OFF
+.log:    ON  ON  ON  ON  ON  ON OFF OFF

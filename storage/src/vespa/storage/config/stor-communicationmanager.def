@@ -1,0 +1,19 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+mbusport int default=-1 restart
+
+rpcport int default=6000 restart
+
+# Limits for max pending concurrent number of operations towards a node before
+# MessageBus starts busy-bouncing messages. Distributor and content nodes are
+# treated separately. 0 means no limit.
+mbus_distributor_node_max_pending_count int default=5000
+mbus_content_node_max_pending_count int default=0
+
+# Limits for max total amount of memory (in bytes) used by operations towards
+# a node before MessageBus starts busy-bouncing messages. Distributor and
+# content nodes are treated separately. 0 means no limit.
+mbus_distributor_node_max_pending_size int default=0
+mbus_content_node_max_pending_size int default=0
+

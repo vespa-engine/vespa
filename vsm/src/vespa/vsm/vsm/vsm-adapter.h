@@ -1,0 +1,135 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright (C) 1998-2003 Fast Search & Transfer ASA
+// Copyright (C) 2003 Overture Services Norway AS
+
+#pragma once
+
+#include <time.h>
+#include <vespa/searchlib/query/base.h>
+#include <vespa/config/retriever/configsnapshot.h>
+#include <vespa/vsm/config/vsm-cfif.h>
+#include <memory>
+#include <vector>
+#include <vespa/config-summary.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchsummary/docsummary/docsumwriter.h>
+#include <vespa/searchsummary/docsummary/docsumstate.h>
+
+using search::docsummary::ResultConfig;
+using search::docsummary::ResultClass;
+using search::docsummary::IDocsumWriter;
+using search::docsummary::DynamicDocsumWriter;
+using search::docsummary::GetDocsumsState;
+using search::docsummary::IDocsumEnvironment;
+using search::docsummary::JuniperProperties;
+
+using vespa::config::search::SummaryConfig;
+using vespa::config::search::SummarymapConfig;
+using vespa::config::search::summary::JuniperrcConfig;
+
+namespace vsm {
+
+class GetDocsumsStateCallback : public search::docsummary::GetDocsumsStateCallback
+{
+private:
+    search::FeatureSet::SP _summaryFeatures;
+    search::FeatureSet::SP _rankFeatures;
+
+public:
+    GetDocsumsStateCallback();
+    virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env);
+    virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env);
+    virtual void ParseLocation(GetDocsumsState * state);
+    virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
+    void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
+    void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }
+    virtual ~GetDocsumsStateCallback(void);
+};
+
+class DocsumTools : public IDocsumEnvironment
+{
+public:
+    class FieldSpec {
+    private:
+        vespalib::string                      _outputName;
+        std::vector<vespalib::string>         _inputNames;
+        VsmsummaryConfig::Fieldmap::Command   _command;
+
+    public:
+        FieldSpec();
+        const vespalib::string & getOutputName() const { return _outputName; }
+        void setOutputName(const vespalib::string & name) { _outputName = name; }
+        const std::vector<vespalib::string> & getInputNames() const { return _inputNames; }
+        std::vector<vespalib::string> & getInputNames() { return _inputNames; }
+        VsmsummaryConfig::Fieldmap::Command getCommand() const { return _command; }
+        void setCommand(VsmsummaryConfig::Fieldmap::Command command) { _command = command; }
+    };
+
+private:
+    std::unique_ptr<DynamicDocsumWriter>                  _writer;
+    std::unique_ptr<juniper::Juniper>                     _juniper;
+    const ResultClass                                   * _resultClass;
+    std::vector<FieldSpec>                                _fieldSpecs;
+    DocsumTools(const DocsumTools &);
+    DocsumTools &operator=(const DocsumTools &);
+
+public:
+    DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer);
+    ~DocsumTools();
+    void setJuniper(std::unique_ptr<juniper::Juniper> juniper) { _juniper = std::move(juniper); }
+    ResultConfig *getResultConfig() const { return _writer->GetResultConfig(); }
+    DynamicDocsumWriter *getDocsumWriter() const { return _writer.get(); }
+    const ResultClass *getResultClass() const { return _resultClass; }
+    const std::vector<FieldSpec> & getFieldSpecs() const { return _fieldSpecs; }
+    bool obtainFieldNames(const FastS_VsmsummaryHandle &cfg);
+
+    // inherit doc from IDocsumEnvironment
+    virtual search::IAttributeManager * getAttributeManager() { return NULL; }
+    virtual vespalib::string lookupIndex(const vespalib::string&) const { return ""; }
+    virtual juniper::Juniper * getJuniper() { return _juniper.get(); }
+};
+
+typedef std::shared_ptr<DocsumTools> DocsumToolsPtr;
+
+class VSMConfigSnapshot {
+private:
+    const vespalib::string _configId;
+    const config::ConfigSnapshot _snapshot;
+public:
+    VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot)
+        : _configId(configId),
+          _snapshot(snapshot)
+    { }
+    template <typename ConfigType>
+    std::unique_ptr<ConfigType> getConfig() const
+    {
+        return _snapshot.getConfig<ConfigType>(_configId);
+    }
+};
+
+class VSMAdapter
+{
+public:
+    VSMAdapter(const vespalib::string & highlightindexes, const vespalib::string & configId, Fast_WordFolder & wordFolder);
+    virtual ~VSMAdapter();
+
+    VsmfieldsHandle getFieldsConfig() const { return _fieldsCfg.get(); }
+    DocsumToolsPtr getDocsumTools()   const { return _docsumTools.get(); }
+    void configure(const VSMConfigSnapshot & snapshot);
+private:
+    vespalib::string                          _highlightindexes;
+    const vespalib::string                    _configId;
+    Fast_WordFolder                         & _wordFolder;
+    vespalib::PtrHolder<VsmfieldsConfig>      _fieldsCfg;
+    vespalib::PtrHolder<DocsumTools>          _docsumTools;
+    std::unique_ptr<JuniperProperties>        _juniperProps;
+
+    vespalib::Lock                                  _lock;
+
+    VSMAdapter(const VSMAdapter &);
+    VSMAdapter &operator=(const VSMAdapter &);
+};
+
+} // namespace vsm
+

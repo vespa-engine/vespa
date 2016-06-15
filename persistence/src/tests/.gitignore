@@ -1,0 +1,6 @@
+.depend
+Makefile
+/testrunner
+/test.vlog
+*_test
+persistence_testrunner_app

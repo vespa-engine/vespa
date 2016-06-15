@@ -1,0 +1,7 @@
+target
+docproc.iml
+.settings
+.classpath
+.project
+/tmp
+/pom.xml.build

@@ -1,0 +1,69 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search common {
+    document common {
+        field uri type string {
+            indexing: summary
+        }
+        field title type string {
+            bolding: on
+            # index-to: default, title
+            indexing: index|summary
+            summary-to: smallsum
+            body
+        }
+        field mid type int {
+            indexing: attribute|index|summary
+        }
+        field scorekey type string {
+            indexing: summary
+        }
+        field weight_src type float {
+
+        }
+        field w1_src type float {
+
+        }
+        field w2_src type float {
+
+        }
+        field did type string {
+            indexing: attribute|index|summary
+        }
+        field ew type string {
+            indexing: index|summary
+        }
+        field content type raw {
+            body
+        }
+        annotation date {
+            field exacttime type long { }
+        }
+        annotation emptyannotation { }
+        annotation NodeImpl { }
+        annotation DocumentImpl { }
+        annotation NodeImplSub inherits NodeImpl {
+            field refToPovided type annotationreference<DocumentImpl> { }
+        }
+        annotation DocumentImplSub inherits DocumentImpl { }
+    }
+    field weight type float {
+    }
+    field w1 type float {
+    }
+    field w2 type float {
+    }
+    rank-profile default {
+        first-phase {
+            expression: nativeRank
+        }
+    }
+    field weight type float {
+        indexing: input weight_src * 10 | attribute | summary
+    }
+    field w1 type float {
+        indexing: input weight_src * 6 + input w1_src | summary
+    }
+    field w2 type float {
+        indexing: input w2_src + input weight_src | summary
+    }
+}

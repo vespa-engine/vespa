@@ -1,0 +1,4 @@
+.depend
+Makefile
+testgraph
+vespamalloc_testgraph_app

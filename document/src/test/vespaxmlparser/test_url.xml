@@ -1,0 +1,20 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <document documenttype="my_doc" documentid="doc:scheme:">
+        <my_url>
+            <all>scheme://user@host:99/path?query#fragment</all>
+            <scheme>scheme</scheme>
+            <host>host</host>
+            <port>99</port>
+            <path>/path</path>
+            <query>query</query>
+            <fragment>fragment</fragment>
+        </my_url>
+    </document>
+    <document documenttype="my_doc" documentid="doc:scheme:">
+        <my_url>scheme://user@host:99/path?query#fragment</my_url>
+    </document>
+    <document documenttype="my_doc" documentid="doc:scheme:">
+        <my_url binaryencoding="base64">c2NoZW1lOi8vdXNlckBob3N0Ojk5L3BhdGg/cXVlcnkjZnJhZ21lbnQ=</my_url>
+    </document>
+</vespafeed>

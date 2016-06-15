@@ -1,0 +1,140 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+## Name of VDS cluster
+cluster_name string restart
+
+## The fleetcontroller index. Each fleetcontroller should have a unique index
+## which can be used to identify them.
+index int restart
+
+## Number of fleet controllers. If more than one, the fleetcontroller needs to
+## do master election in order to know which one is active. It then needs to
+## know how many exist.
+fleet_controller_count int default=1
+
+## The number of seconds we can attempt to talk to zookeeper before our session
+## time out and we lose our connection.
+zookeeper_session_timeout double default=30.0
+
+## When a master candidate see the master disappearing from ZooKeeper, it wants
+## to take over as master. But, before taking over, the master should be aware
+## that it has lost its zookeeper connection, so it will stop reacting as
+## master. Suggests setting this to 2-3 times the zookeeper session timeout.
+## (Set in number of seconds)
+master_zookeeper_cooldown_period double default=60.0
+
+## Sets how many fleetcontrollers will gather state. A fleetcontroller
+## gathering state can take over quicker should ## the master fail.
+## If set to 1, only master will gather state. If set higher, others will
+## also do so, prioritizing those fleetcontrollers likely to be the ones to
+## take over if the master fails.
+state_gather_count int default=2
+
+## Location of ZooKeeper servers
+zookeeper_server string restart
+
+## RPC Port used by fleetcontroller
+rpc_port int default=6500 restart
+
+## Port where fleetcontroller listens for HTTP status request
+http_port int default=0 restart
+
+## Maximum number of milliseconds a storage will be automatically reported in
+## maintenance due to node recently being availble. (If 0, no time at all)
+storage_transition_time int default=30000
+
+## Maximum number of milliseconds a distributor will be automatically reported
+## in maintenance due to node recently being availble. (If 0, no time at all)
+##
+## Currently default is 0.. Should probably be more then we know it is working
+## correctly
+distributor_transition_time int default=0
+
+## Maximum number of milliseconds allowed between progress increase during
+## initialization. If no progress have been made during this time period, the
+## node will be considered down.
+##
+## Currently disabled as 5.0 nodes gets load while initializing which may be
+## higher pri than initializing, so nodes can stay in init for a long time.
+init_progress_time int default=0
+
+## Minimum time (in ms) between system state updates. To limit updates in a
+## system where a lot is happening at the same time, this value will make sure
+## we dont change the state too often.
+min_time_between_new_systemstates int default=10000
+
+## Sets how many milliseconds to wait between each state poll for old nodes
+## requiring state polling. (4.1 or older)
+state_polling_frequency int default=5000
+
+## The maximum amount of premature crashes a node is allowed to have in a row
+## before the fleetcontroller disables that node.
+max_premature_crashes int default=100000
+
+## If a node has been down or up this many milliseconds, clear the premature
+## crash count of a node and consider the node as stable
+stable_state_time_period int default=7200000
+
+## The maximum number of events to keep in the event log
+event_log_max_size int default=1024
+
+## The maximum number of node events to keep in the node event log per node
+event_node_log_max_size int default=1024
+
+## The total number of distributor nodes that can exist. If 0, we dont know and
+## will use the highest distributor index number we have ever seen + 1.
+total_distributor_count int default=0
+
+## The total number of storage nodes that can exist. If 0, we dont know and
+## will use the highest storage index number we have ever seen + 1.
+total_storage_count int default=0
+
+## The minimum number of distributor nodes that should be up for the cluster
+## state to be up. (Retired nodes counts as up in this case)
+min_distributors_up_count int default=1
+
+## The minimum number of storage nodes that should be up for the cluster state
+## to be up (Retired nodes counts as up in this case)
+min_storage_up_count int default=1
+
+## The minimum ratio of known distributor nodes that should be up (or retired)
+## for the cluster state to stay up.
+min_distributor_up_ratio double default=0.01
+
+## The minimum ratio of known storage nodes that should be up (or retired) for
+## the cluster state to stay up.
+min_storage_up_ratio double default=0.01
+
+## Seconds to sleep after doing a work cycle where we did no work. Some
+## events do not interrupt the sleeping, such as slobrok changes, so shouldnt
+## set this too high
+cycle_wait_time double default=0.1
+
+## Minimum time to pass in seconds before broadcasting our first systemstate as
+## a new fleetcontroller. (Will broadcast earlier than this if we have gathered
+## state from all before this). To prevent disturbance when taking over as
+## fleetcontroller, give nodes a bit of time to answer so we dont temporarily
+## report nodes as down.
+min_time_before_first_system_state_broadcast double default=5.0
+
+## Request timeout of node state requests. Keeping a high timeout allows us to
+## always have a pending operation with very low cost. Keeping a low timeout is
+## good to detect issues like packet loss. The default tries to balance the two
+## by not resending too often, but detecting packet loss within a minute at
+## least. If we can guarantuee RPC layer to fail on packet loss within
+## reasonable time we should increase this default.
+get_node_state_request_timeout double default=120.0
+
+## If a node is out of slobrok longer than this time period, assume the node
+## is down, even if we have a pending node state request to it. Slobrok does
+## a bit more keep alive checking than fleetcontroller, so it is possible that
+## the node disappears from slobrok while it still looks ok in fleetcontroller.
+max_slobrok_disconnect_grace_period double default=60.0
+
+## Whether to show system states that have never been sent to storage nodes in
+## the event log.
+show_local_systemstates_in_event_log bool default=true
+
+## The ideal number of distribution bits this system should have
+ideal_distribution_bits int default=16

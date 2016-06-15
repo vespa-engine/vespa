@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<MlrFunction name="CHANGE THIS NUMBER" featuredef="mlrfeaturedefs.xml" version="1.0">
+
+  <!-- ADD SCORE STANDARDIZATION OR CALIBRATION HERE -->
+
+    <DecisionTree loss="regression">
+
+    <!-- ADD EARLY EXIT HERE -->
+
+        <Forest>
+            <Tree id="130">
+                 <Node feature="INFD_SCORE" value="2.1280360" id="N130_1">
+                     <Response value="-0.0000112" id="T130_1"/>
+                     <Response value="0.0000871" id="T130_2"/>
+                 </Node>
+            </Tree>
+            <Tree id="135">
+                 <Response value="0.0000028" id="T135_1"/>
+            </Tree>
+            <Tree id="136">
+                 <Node feature="GMP_SCORE" value="0.0167980" id="N136_1">
+                     <Node feature="INFD_SCORE" value="3.9760852" id="N136_2">
+                         <Node feature="INFD_SCORE" value="0.1266405" id="N136_3">
+                             <Response value="-0.0000598" id="T136_1"/>
+                             <Response value="0.0000225" id="T136_2"/>
+                         </Node>
+                         <Response value="-0.0001383" id="T136_3"/>
+                     </Node>
+                     <Response value="0.0001529" id="T136_4"/>
+                 </Node>
+            </Tree>
+        </Forest>
+    </DecisionTree>
+</MlrFunction>

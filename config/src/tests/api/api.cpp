@@ -1,0 +1,45 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/config/config.h>
+#include <config-my.h>
+
+using namespace config;
+
+TEST("require that can subscribe with empty config id") {
+    ConfigSet set;
+    ConfigContext::SP ctx(new ConfigContext(set));
+    MyConfigBuilder builder;
+    builder.myField = "myfoo";
+    set.addBuilder("", &builder);
+    ConfigSubscriber subscriber(ctx);
+    ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("");
+    ASSERT_TRUE(subscriber.nextConfig(0));
+    std::unique_ptr<MyConfig> cfg(handle->getConfig());
+    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_EQUAL("myfoo", cfg->myField);
+}
+
+/*
+ * TODO: Convert to frt test.
+TEST_MT_FFF("require that source may be unable to serve config temporarily", 2, ConfigContext::SP(new ConfigContext()),
+                                                                                 ConfigSet(),
+                                                                                 MyConfigBuilder()) {
+    if (thread_id == 0) {
+        ConfigSubscriber subscriber(f1, f2);
+        ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("myid", 10000);
+        ASSERT_TRUE(subscriber.nextConfig(10000));
+        std::unique_ptr<MyConfig> cfg(handle->getConfig());
+        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_EQUAL("myfoo", cfg->myField);
+    } else {
+        FastOS_Thread::Sleep(1000);
+        f3.myField = "myfoo";
+        f2.addBuilder("myid", &f3);
+        f1->reload();
+
+    }
+}
+*/
+
+TEST_MAIN() { TEST_RUN_ALL(); }

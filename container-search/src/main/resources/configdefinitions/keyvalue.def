@@ -1,0 +1,20 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=prelude.searcher
+
+# The doc id scheme to use.
+docIdScheme enum { DOC_SCHEME, ID_SCHEME } default=ID_SCHEME
+
+# Number of partitions in search cluster
+numparts int
+
+# Number of rows in search cluster
+numrows int default=1
+
+# Which summary to request for each key
+summaryName string
+
+# Document ID namespace
+docIdNameSpace string
+
+# Document id type (only necessary if 
+docIdType string default=""

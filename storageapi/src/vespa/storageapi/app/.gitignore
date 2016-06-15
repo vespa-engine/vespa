@@ -1,0 +1,14 @@
+*.lo
+.depend
+.depend.NEW
+.deps
+.libs
+Makefile
+dumpstatusfile
+getbucketid
+inspectfeedapistatus
+testdocstorefile
+testdocstorefile2
+testdocstoremem
+testresendctrl
+storageapi_getbucketid_app

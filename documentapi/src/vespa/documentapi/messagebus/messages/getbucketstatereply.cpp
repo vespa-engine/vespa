@@ -1,0 +1,22 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/documentapi/messagebus/messages/getbucketstatereply.h>
+
+namespace documentapi {
+
+GetBucketStateReply::GetBucketStateReply() :
+    DocumentReply(DocumentProtocol::REPLY_GETBUCKETSTATE),
+    _state()
+{
+    // empty
+}
+
+GetBucketStateReply::GetBucketStateReply(std::vector<DocumentState> &state) :
+    DocumentReply(DocumentProtocol::REPLY_GETBUCKETSTATE),
+    _state()
+{
+    _state.swap(state);
+}
+
+}

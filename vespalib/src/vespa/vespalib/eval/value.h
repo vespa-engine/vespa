@@ -1,0 +1,75 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+#include <vespa/vespalib/util/stash.h>
+#include "tensor.h"
+
+namespace vespalib {
+namespace eval {
+
+class Tensor;
+
+constexpr double error_value = 31212.0;
+
+struct UnaryOperation;
+struct BinaryOperation;
+
+/**
+ * An abstract Value. Calculation using abstract values should be done
+ * using the perform function on the appropriate Operation.
+ **/
+struct Value {
+    typedef std::unique_ptr<Value> UP;
+    typedef std::reference_wrapper<const Value> CREF;
+    virtual bool is_error() const { return false; }
+    virtual bool is_double() const { return false; }
+    virtual bool is_tensor() const { return false; }
+    virtual double as_double() const { return 0.0; }
+    virtual bool as_bool() const { return false; }
+    virtual const Tensor *as_tensor() const { return nullptr; }
+    virtual bool equal(const Value &rhs) const = 0;
+    virtual const Value &apply(const UnaryOperation &op, Stash &stash) const;
+    virtual const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const;
+    virtual ~Value() {}
+};
+
+struct ErrorValue : public Value {
+    virtual bool is_error() const override { return true; }
+    virtual double as_double() const { return error_value; }
+    virtual bool equal(const Value &) const override { return false; }
+};
+
+class DoubleValue : public Value
+{
+private:
+    double _value;
+public:
+    DoubleValue(double value) : _value(value) {}
+    bool is_double() const override { return true; }
+    double as_double() const override { return _value; }
+    bool as_bool() const override { return (_value != 0.0); }
+    bool equal(const Value &rhs) const override {
+        return (rhs.is_double() && (_value == rhs.as_double()));
+    }
+};
+
+class TensorValue : public Value
+{
+private:
+    std::unique_ptr<Tensor> _value;
+public:
+    TensorValue(std::unique_ptr<Tensor> value) : _value(std::move(value)) {}
+    bool is_tensor() const override { return true; }
+    const Tensor *as_tensor() const override { return _value.get(); }
+    bool equal(const Value &rhs) const override;
+    const Value &apply(const UnaryOperation &op, Stash &stash) const override;
+    const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const override;
+};
+
+} // namespace vespalib::eval
+} // namespace vespalib
+
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);

@@ -1,0 +1,27 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search annotationsimplicitstruct {
+
+  document annotationsimplicitstruct {
+      field structfield type sct {
+      }
+
+      field structarrayfield type array<sct> {
+      }
+
+  annotation banana {
+    field b type sct { }
+    field c type foo { }
+  }
+
+  struct sct {
+    field s1 type string {}
+    field s2 type string {}
+    field s3 type sct {}
+    field s4 type foo {}
+  }
+
+  struct foo {
+    field s1 type int {}
+  }
+  }
+}

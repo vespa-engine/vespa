@@ -1,0 +1,4 @@
+a b c	[ {"rule": "biz", "weight": 0.5}, {"rule": "cat", "weight": 0.1} ]
+a b c d	[ {"rule": "cat", "weight": 0.2} ]
+d e f	[ {"rule": "biz", "weight": 0.5}, {"rule": "cat", "weight": 0.01} ]
+d e f g	[ {"rule": "cat", "weight": 0.8} ]

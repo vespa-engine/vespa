@@ -1,0 +1,78 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content.core
+
+## Root directory for all files related to this storage node.
+## Will typically be "$VESPA_HOME/var/db/vespa/vds/<cluster>/<nodetype>/<index>
+root_folder string restart
+
+## VDS cluster
+cluster_name string default="storage" restart
+
+## The index of this node. Each node of the same type in the same cluster need
+## to have unique indexes. This should not be changed, as this is what we use
+## to identify the node, and to decide what data should be on it.
+node_index int default=0 restart
+
+## The maximum amount of memory to use in the storage node.
+## Currently default is 2 GB.
+## DEPRECATED!
+memorytouse long default=2147483647 restart
+
+## Set whether this is a distributor or a storage node. This will decide what
+## storage links are set up.
+is_distributor bool restart
+
+## Capacity of the node. How much data and load this node will get relative to
+## other nodes.
+node_capacity double default=1.0 restart
+
+## Capacity of the disks on this node. How much data and load will each disk
+## get relative to the other disks on this node.
+disk_capacity[] double restart
+
+## Reliability of this node. How much of the cluster redundancy factor can this
+## node make up for.
+node_reliability int default=1 restart
+
+## The upper bound of merges that any storage node can have active.
+## A merge operation will be chained through all nodes involved in the
+## merge, only actually starting the operation when every node has
+## allowed it to pass through.
+max_merges_per_node int default=16
+max_merge_queue_size int default=1024
+
+## Whether the deadlock detector should be enabled or not. If disabled, it will
+## still run, but it will never actually abort the process it is running in.
+enable_dead_lock_detector bool default=false restart
+
+## Whether to enable deadlock detector warnings in log or not. If enabled,
+## warnings will be written even if dead lock detecting is not enabled.
+enable_dead_lock_detector_warnings bool default=true restart
+
+## Each thread registers how often it will at minimum register ticks (given that
+## the system is not overloaded. If you are running Vespa on overloaded nodes,
+## you can use this slack timeout to add to the thread timeouts in order to
+## allow for more slack before dead lock detector kicks in. The value is in seconds.
+dead_lock_detector_timeout_slack double default=240 restart
+
+## If set to 0, storage will attempt to auto-detect the number of VDS mount
+## points to use. If set to a number, force this number. This number only makes
+## sense on a storage node of course
+disk_count int default=0  restart
+
+## Configure persistence provider. Temporary here to test.
+persistence_provider.type enum {STORAGE, DUMMY, RPC } default=STORAGE restart
+persistence_provider.rpc.connectspec string default="tcp/localhost:27777" restart
+
+## Whether or not to use the new metadata flow implementation. Default to not
+## as it is currently in development and not even functional
+switch_new_meta_data_flow bool default=false restart
+
+## When the content layer receives a set of changed buckets from the persistence
+## layer, it must recheck all of these. Each such recheck results in an
+## operation scheduled against the persistence queust and since the total
+## number of buckets to recheck may reach hundreds of thousands in a large
+## system, we send these in chunks to avoid saturating the queues with
+## operations.
+bucket_rechecking_chunk_size int default=100
+

@@ -1,0 +1,7 @@
+nextSnapshotId=128
+snapshot.1.valid=true
+snapshot.1.syncToken=50
+snapshot.1.dirName=foo
+snapshot.0.valid=false
+snapshot.0.syncToken=100
+snapshot.0.dirName=bar

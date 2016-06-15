@@ -1,0 +1,44 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=16
+namespace=search.federation
+
+node[].host string
+node[].port int
+path string default=""
+maxConnections int default=10000
+maxConnectionPerRoute int default=10000
+socketBufferBytes int default=8192
+retries int default=1
+## Timeout for blocking IO calls in HTTP client.
+## Unit is seconds, default value is
+## in com.yahoo.search.federation.http.HTTPParameters.
+readTimeout double default=-1.0
+## The timeout until a connection is etablished.
+## Unit is seconds, default value is
+## in com.yahoo.search.federation.http.HTTPParameters.
+connectionTimeout double default=-1.0
+## Timeout when retrieving a connection from the connection manager.
+## Unit is seconds, default value is
+## in com.yahoo.search.federation.http.HTTPParameters.
+connectionPoolTimeout double default=-1.0
+## YCA proxy host
+yca.host string default="yca-proxy.corp.yahoo.com"
+## YCA proxy port
+yca.port int default=3128
+## Whether a proxy is needed (i.e. should the proxy settings be used)
+yca.useProxy bool default=false
+yca.applicationId string default=""
+## TTL to use in the certificate cache. 0 means use default cache behavior.
+## Unit is seconds.
+yca.ttl int default=0
+## How often to retry direct cert DB access if no certificate is found,
+## i.e. the cache TTL for null entries. Unit is seconds.
+yca.retry int default=0
+
+# The form of the serialized query.
+queryType enum { LEGACY, PROGRAMMATIC, YQL } default=LEGACY
+
+# How to do pinging against a backend.
+pingOption enum { DISABLE, NORMAL, YCA } default=NORMAL
+
+followRedirects bool default=true

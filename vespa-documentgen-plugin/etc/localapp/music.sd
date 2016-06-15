@@ -1,0 +1,70 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music {
+   document music inherits common {
+      field artist type string {
+         bolding: on
+         # index-to: default, artist
+         indexing: index|summary
+      }
+      field disp_song type string {
+         indexing: summary
+      }
+      field song type string {
+         # index-to: default, song
+         indexing: index
+      }
+      field isbn type string {
+         bolding: on
+         # index-to: default, isbn
+         indexing: index|summary
+      }
+      field year type int {
+         indexing: attribute|index|summary
+      }
+      annotation recordlabel {}
+
+      annotation person {
+        field name type string { }
+      }
+
+      annotation artist inherits person {
+        field instrument type int { }
+      }
+
+      annotation place {
+        field lat type long { }
+        field lon type long { }
+      }
+
+      annotation event {
+        field description type string { }
+        field person type annotationreference<person> { }
+        field date type annotationreference<date> { }
+        field place type annotationreference<place> { }
+      }
+   }
+
+   field sw1 type float {
+      indexing {
+        input weight * 6 + input w1 + input w2 | summary;
+      }
+   }
+
+   field didinteger type array<int> {
+      indexing: input did | split " " | attribute
+   }
+
+   rank-profile default {
+      first-phase {
+         expression: nativeRank
+      }
+   }
+   rank-profile rp1 inherits default {
+      #static-rank: weight1
+   }
+   rank-profile rp2 inherits default {
+      #static-rank: weight2
+   }
+
+
+}

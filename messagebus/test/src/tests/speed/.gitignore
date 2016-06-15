@@ -1,0 +1,15 @@
+*.class
+.depend
+Makefile
+cpp-client
+cpp-server
+out.*
+pid.*
+routing.cfg
+slobrok.cfg
+speed_test
+cpp-client-speed
+cpp-server-speed
+messagebus_test_speed_test_app
+messagebus_test_cpp-client-speed_app
+messagebus_test_cpp-server-speed_app

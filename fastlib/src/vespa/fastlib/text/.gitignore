@@ -1,0 +1,17 @@
+*.So
+*.a
+*.ilk
+*.lib
+*.o
+*.obj
+*.pdb
+.cvsignore
+.depend
+.pure
+Debug
+Makefile
+SunWS_cache
+extcase
+extprop
+unicode_propertydump
+unicode_tolowerdump

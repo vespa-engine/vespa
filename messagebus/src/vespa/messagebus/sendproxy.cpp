@@ -1,0 +1,72 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".sendproxy");
+
+#include "sendproxy.h"
+
+namespace mbus {
+
+SendProxy::SendProxy(MessageBus &mbus, INetwork &net, Resender *resender) :
+    _mbus(mbus),
+    _net(net),
+    _resender(resender),
+    _msg(),
+    _logTrace(false),
+    _root()
+{
+    // empty
+}
+
+void
+SendProxy::handleMessage(Message::UP msg)
+{
+    Trace &trace = msg->getTrace();
+    if (trace.getLevel() == 0) {
+        if (logger.wants(ns_log::Logger::spam)) {
+            trace.setLevel(9);
+            _logTrace = true;
+        } else if (logger.wants(ns_log::Logger::debug)) {
+            trace.setLevel(6);
+            _logTrace = true;
+        }
+    }
+    _msg = std::move(msg);
+    _root.reset(new RoutingNode(_mbus, _net, _resender, *this, *_msg, this));
+    _root->send();
+}
+
+void
+SendProxy::handleDiscard(Context ctx)
+{
+    (void)ctx;
+    _msg->discard();
+    delete this;
+}
+
+void
+SendProxy::handleReply(Reply::UP reply)
+{
+    Trace &trace = _msg->getTrace();
+    if (_logTrace) {
+        if (reply->hasErrors()) {
+            LOG(debug, "Trace for reply with error(s):\n%s", reply->getTrace().toString().c_str());
+        } else if (logger.wants(ns_log::Logger::spam)) {
+            LOG(spam, "Trace for reply:\n%s", reply->getTrace().toString().c_str());
+        }
+        Trace empty;
+        trace.swap(empty);
+    } else if (trace.getLevel() > 0) {
+        trace.getRoot().addChild(reply->getTrace().getRoot());
+        trace.getRoot().normalize();
+    }
+    reply->swapState(*_msg);
+    reply->setMessage(std::move(_msg));
+
+    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    handler.handleReply(std::move(reply));
+
+    delete this;
+}
+
+} // namespace mbus

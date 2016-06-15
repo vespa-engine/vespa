@@ -1,0 +1,41 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search attributerank {
+
+  document attributerank {
+
+    field singlebyte type byte {
+      indexing: attribute
+    }
+    field singleint type int {
+      indexing: attribute
+    }
+    field singlelong type long {
+      indexing: attribute
+    }
+    field singlefloat type float {
+      indexing: attribute
+      rank-type: identity
+    }
+    field singledouble type double {
+      indexing: attribute
+      rank-type: identity
+    }
+    field singlestring type string {
+      indexing: attribute
+      rank-type: identity
+    }
+  }
+
+  rank-profile firstprofile inherits default {
+    rank-type singlestring: default
+  }
+
+  rank-profile secondprofile inherits identity {
+    rank-type singlebyte: identity
+    rank-type singleint: identity
+    rank-type singlelong: identity
+    rank-type singlefloat: identity
+    rank-type singledouble: identity
+    rank-type singlestring: identity
+  }
+}

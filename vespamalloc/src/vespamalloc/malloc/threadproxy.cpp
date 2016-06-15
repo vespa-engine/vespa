@@ -1,0 +1,112 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespamalloc/malloc/threadproxy.h>
+#include <dlfcn.h>
+
+namespace vespamalloc {
+
+IAllocator * _G_myMemP = NULL;
+
+void setAllocatorForThreads(IAllocator * allocator)
+{
+    _G_myMemP = allocator;
+}
+
+}
+extern "C" {
+
+typedef void * (*VoidpFunctionVoidp) (void *);
+class ThreadArg
+{
+public:
+    ThreadArg(VoidpFunctionVoidp func, void * arg) : _func(func), _arg(arg) { }
+    VoidpFunctionVoidp  _func;
+    void               * _arg;
+};
+
+typedef int (*pthread_create_function) (pthread_t *thread,
+                                        const pthread_attr_t *attr,
+                                        VoidpFunctionVoidp start_routine,
+                                        void *arg);
+
+int linuxthreads_pthread_getattr_np(pthread_t pid, pthread_attr_t *dst);
+
+static void * _G_mallocThreadProxyReturnAddress = NULL;
+static volatile size_t _G_threadCount = 1;  // You always have the main thread.
+
+static void cleanupThread(void * arg)
+{
+    ThreadArg * ta = (ThreadArg *) arg;
+    delete ta;
+    vespamalloc::_G_myMemP->quitThisThread();
+    vespamalloc::Mutex::subThread();
+    vespalib::Atomic::postDec(&_G_threadCount);
+}
+
+void * mallocThreadProxy (void * arg)
+{
+    ThreadArg * ta = (ThreadArg *) arg;
+
+    void * tempReturnAddress = __builtin_return_address(0);
+    assert((_G_mallocThreadProxyReturnAddress == NULL) || (_G_mallocThreadProxyReturnAddress == tempReturnAddress));
+    _G_mallocThreadProxyReturnAddress = tempReturnAddress;
+    vespamalloc::_G_myMemP->setReturnAddressStop(tempReturnAddress);
+
+    vespamalloc::Mutex::addThread();
+    vespamalloc::_G_myMemP->initThisThread();
+    void * result = NULL;
+    DEBUG(fprintf(stderr, "arg(%p=%p), local(%p=%p)\n", &arg, arg, &ta, ta));
+
+    pthread_cleanup_push(cleanupThread, ta);
+        result = (*ta->_func)(ta->_arg);
+    pthread_cleanup_pop(1);
+
+    return result;
+}
+
+
+extern "C" VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
+                                     const pthread_attr_t *attrOrg,
+                                     void * (*start_routine) (void *),
+                                     void * arg) __asm__("pthread_create");
+
+VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
+                          const pthread_attr_t *attrOrg,
+                          void * (*start_routine) (void *),
+                          void * arg)
+{
+    size_t numThreads;
+    for (numThreads = _G_threadCount
+        ;(numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) && ! vespalib::Atomic::cmpSwap(&_G_threadCount, numThreads+1, numThreads)
+        ; numThreads = _G_threadCount) {
+    }
+    if (numThreads >= vespamalloc::_G_myMemP->getMaxNumThreads()) {
+        return EAGAIN;
+    }
+    // A pointer to the library version of pthread_create.
+    static pthread_create_function real_pthread_create = NULL;
+
+    const char * pthread_createName = "pthread_create";
+
+    if (real_pthread_create == NULL) {
+        real_pthread_create = (pthread_create_function) dlsym (RTLD_NEXT, pthread_createName);
+        if (real_pthread_create == NULL) {
+            fprintf (stderr, "Could not find the pthread_create function!\n");
+            abort();
+        }
+    }
+
+    ThreadArg * args = new ThreadArg(start_routine, arg);
+    pthread_attr_t locAttr;
+    pthread_attr_t *attr(const_cast<pthread_attr_t *>(attrOrg));
+    if (attr == NULL) {
+        pthread_attr_init(&locAttr);
+        attr = &locAttr;
+    }
+
+    vespamalloc::_G_myMemP->enableThreadSupport();
+    int retval = (*real_pthread_create)(thread, attr, mallocThreadProxy, args);
+
+    return retval;
+}
+
+}

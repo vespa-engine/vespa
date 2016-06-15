@@ -1,0 +1,6 @@
+*.So
+*_test
+.depend
+Makefile
+annotation_test
+document_annotation_test_app

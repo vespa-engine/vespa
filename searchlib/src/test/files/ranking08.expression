@@ -1,0 +1,5 @@
+if (CT$ in ["Wiki","Web","Image","Video","Finance"], if (SDSF_LOCAL < 0.6359952986, if (CT$ in ["Image","Video"], -0.1846455351, -0.0057844764), -0.4039473684), 0.2900655347) + 
+if (CT$ in ["Wiki","Web","Image","Video","KGMovie","Finance","Timezone"], -0.079079733, if (CT$ in ["Local","Q2A"], if (SDSF_LOCAL < 0.5348491371, -0.0304336373, 0.2401947405), 0.373999153)) + 
+if (CT$ in ["Web","Image","Video","Timezone"], -0.0572267897, if (CT$ in ["Wiki","Local","KGMovie"], if (SDSF_LOCAL < 0.4078139514, -0.0295648159, 0.1601345785), 0.2612064355)) + 
+if (CT$ in ["Image","Video","Timezone"], -0.1103244788, if (CT$ in ["Wiki","Web","Local","KGMovie"], if (QPSCOREFOR_KG_PEOPLE < 0.9930000007, 0.0194079789, -0.2056829336), 0.1987635246)) + 
+if (CT$ in ["Image","Video","Event","Timezone"], if (SDSF_WEB < 0.3725785315, -0.0680975953, -0.2264832978), if (CT$ in ["Wiki","Web","Local","Q2A"], 0.010592822, 0.1366891795))

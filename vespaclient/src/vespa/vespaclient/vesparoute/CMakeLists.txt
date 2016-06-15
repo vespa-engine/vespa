@@ -1,0 +1,11 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(vespaclient_vesparoute_app
+    SOURCES
+    application.cpp
+    main.cpp
+    mynetwork.cpp
+    params.cpp
+    OUTPUT_NAME vesparoute-bin
+    INSTALL bin
+    DEPENDS
+)

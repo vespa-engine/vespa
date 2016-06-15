@@ -1,0 +1,11 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search struct_outside {
+    struct my_struct {
+
+    }
+    document struct_outside {
+        field my_field type my_struct {
+
+        }
+    }
+}

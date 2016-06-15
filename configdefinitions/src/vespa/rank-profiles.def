@@ -1,0 +1,13 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+version=13
+namespace=vespa.config.search
+
+## name of this rank profile. maps to table index for internal use.
+rankprofile[].name string
+
+## the name of a generic property available to the feature execution framework and feature plugins
+rankprofile[].fef.property[].name string
+
+## the value of a generic property available to feature plugins
+rankprofile[].fef.property[].value string
+

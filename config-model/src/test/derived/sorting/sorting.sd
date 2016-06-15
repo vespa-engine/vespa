@@ -1,0 +1,53 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search sorting {
+
+  document sorting {
+
+    field syntaxcheck type string {
+      indexing: attribute
+      attribute {
+        sorting: ascending
+        sorting: descending
+        sorting: function: uca
+        sorting: function: raw
+        sorting: function: lowercase
+        sorting: strength: primary
+        sorting: strength: secondary
+        sorting: strength: tertiary
+        sorting: strength: quaternary
+        sorting: strength: identical
+        sorting: locale: en_US
+      }
+    }
+
+    field syntaxcheck2 type string {
+      indexing: attribute
+      attribute {
+        sorting {
+          ascending
+          descending
+          function: uca
+          function: raw
+          function: lowercase
+          strength: primary
+          strength: secondary
+          strength: tertiary
+          strength: quaternary
+          strength: identical
+          locale: en_US
+        }
+      }
+    }
+
+    field infieldonly type string {
+      indexing: attribute
+      sorting {
+        descending
+        function: lowercase
+        strength: secondary
+        locale: en_US
+      }
+    }
+  }
+
+}

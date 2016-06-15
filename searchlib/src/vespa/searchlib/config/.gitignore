@@ -1,0 +1,5 @@
+*.So
+.depend
+Makefile
+config-*.cpp
+config-*.h

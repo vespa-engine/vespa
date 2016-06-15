@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<MlrFunction name="CHANGE THIS NUMBER" featuredef="mlrfeaturedefs.xml" version="1.0">
+
+  <!-- ADD SCORE STANDARDIZATION OR CALIBRATION HERE -->
+
+    <DecisionTree loss="regression">
+
+    <!-- ADD EARLY EXIT HERE -->
+
+        <Forest>
+            <Tree id="0">
+            </Tree>
+            <Tree id="1">
+                 <Node feature="INFD_SCORE" value="3.2105989" id="N1_1">
+                     <Node feature="GMP_SCORE" value="0.0138730" id="N1_2">
+                         <Node feature="INFD_SCORE" value="1.8138845" id="N1_3">
+                             <Response value="0.0018257" id="T1_1"/>
+                             <Node feature="GMP_SCORE" value="0.0061840" id="N1_4">
+                                 <Response value="0.0034753" id="T1_2"/>
+                                 <Response value="0.0062119" id="T1_3"/>
+                             </Node>
+                         </Node>
+                         <Node feature="INFD_SCORE" value="1.5684295" id="N1_5">
+                             <Node feature="GMP_SCORE" value="0.0217475" id="N1_6">
+                                 <Response value="0.0043064" id="T1_4"/>
+                                 <Response value="0.0082065" id="T1_5"/>
+                             </Node>
+                             <Response value="0.0110743" id="T1_6"/>
+                         </Node>
+                     </Node>
+                     <Node feature="GMP_SCORE" value="0.0100120" id="N1_7">
+                         <Node feature="INFD_SCORE" value="5.5982456" id="N1_8">
+                             <Node feature="GMP_SCORE" value="0.0052305" id="N1_9">
+                                 <Response value="0.0060169" id="T1_7"/>
+                                 <Response value="0.0094888" id="T1_8"/>
+                             </Node>
+                             <Response value="0.0119292" id="T1_9"/>
+                         </Node>
+                         <Response value="0.0174150" id="T1_10"/>
+                     </Node>
+                 </Node>
+            </Tree>
+        </Forest>
+    </DecisionTree>
+</MlrFunction>

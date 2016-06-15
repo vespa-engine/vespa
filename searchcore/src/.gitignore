@@ -1,0 +1,17 @@
+*.dsp
+*.dsw
+*.ncb
+*.opt
+*.plg
+ID
+Makefile.ini
+bin
+config_command.bat
+config_command.sh
+distrib
+doxygen.err.log
+lib
+make.bootstrap
+output
+project.ncb
+project.opt

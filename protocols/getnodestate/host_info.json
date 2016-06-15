@@ -1,0 +1,94 @@
+{
+    "metrics": {
+        "snapshot": {
+            "from": 1416823008,
+            "to": 1416823308
+        },
+        "values": [
+            {
+                "name": "vds.datastored.alldisks.buckets",
+                "description": "buckets managed",
+                "values": {
+                    "average": 5095,
+                    "count": 11,
+                    "rate": 0.036666,
+                    "min": 436,
+                    "max": 498,
+                    "last": 5095
+                },
+                "dimensions": {}
+            },
+            {
+                "name": "vds.datastored.alldisks.docs",
+                "description": "documents stored",
+                "values": {
+                    "average": 3069833,
+                    "count": 11,
+                    "rate": 0.036666,
+                    "min": 242892,
+                    "max": 337830,
+                    "last": 3069833
+                },
+                "dimensions": {}
+            }
+        ]
+    },
+    "cluster-state-version": 123,
+    "vtag": {
+        "version": "5.32.76"
+    },
+    "distributor": {
+        "storage-nodes": [
+            {
+                "node-index": 0,
+                "min-current-replication-factor": 2,
+                "ops-latency" : {
+                    "put": {
+                        "latency-ms-sum": 15,
+                        "count": 16
+                    }
+                },
+                "outstanding-merge-ops": {
+                    "syncing": {
+                        "buckets": 1
+                    },
+                    "copying-in": {
+                        "buckets": 2
+                    },
+                    "moving-out": {
+                        "buckets": 3
+                    },
+                    "copying-out": {
+                        "buckets": 4
+                    }
+                }
+            },
+            {
+                "node-index": 1,
+                "min-current-replication-factor": 2,
+                "ops-latency": {
+                    "put": {
+                        "latency-ms-sum": 17,
+                        "count": 18
+                    }
+                 },
+                 "outstanding-merge-ops": {
+                    "syncing": {
+                        "buckets": 1
+                    },
+                    "copying-in": {
+                        "buckets": 2
+                    },
+                    "moving-out": {
+                        "buckets": 3
+                    },
+                    "copying-out": {
+                        "buckets": 4
+                    }
+                }
+
+            }
+
+        ]
+    }
+}

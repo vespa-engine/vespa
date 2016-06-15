@@ -1,0 +1,14 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music {
+  document music {
+
+    field hello type music { }
+
+    struct music {
+      field banana type string { }
+    }
+
+    field foo type music { }
+
+  }
+}

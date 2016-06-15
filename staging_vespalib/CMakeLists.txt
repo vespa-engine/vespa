@@ -1,0 +1,51 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_define_module(
+    DEPENDS
+    fastos
+    vespalog
+    fastlib_fast
+    vespalib
+    fnet
+
+    TESTS
+    src/tests/array
+    src/tests/benchmark
+    src/tests/bits
+    src/tests/clock
+    src/tests/cpu
+    src/tests/crc
+    src/tests/databuffer
+    src/tests/directio
+    src/tests/dotproduct
+    src/tests/encoding/base64
+    src/tests/fileheader
+    src/tests/floatingpointtype
+    src/tests/growablebytebuffer
+    src/tests/json
+    src/tests/librarypool
+    src/tests/memorydatastore
+    src/tests/objectdump
+    src/tests/objects
+    src/tests/objectselection
+    src/tests/polymorphicarray
+    src/tests/programoptions
+    src/tests/rusage
+    src/tests/shutdownguard
+    src/tests/state_server
+    src/tests/stllike
+    src/tests/timer
+    src/tests/trace
+    src/tests/util/process_memory_stats
+    src/tests/xmlserializable
+
+    LIBS
+    src/vespa/vespalib
+    src/vespa/vespalib/data
+    src/vespa/vespalib/encoding
+    src/vespa/vespalib/hwaccelrated
+    src/vespa/vespalib/net
+    src/vespa/vespalib/objects
+    src/vespa/vespalib/stllike
+    src/vespa/vespalib/trace
+    src/vespa/vespalib/util
+)

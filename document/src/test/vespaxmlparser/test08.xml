@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<!-- 
+    NOTE: see documentmanager.cfg for document type during test
+    
+    - Different types of remove
+    - All are valid
+    
+-->
+
+<vespafeed>
+    <update documenttype="news" documentid="doc:news:http://news8a"> 
+        <remove field="stringarr">
+            <item>removeString1</item>
+            <item>removeString2</item>
+        </remove>
+        <remove field="weightedsetint">
+            <item>4</item>
+            <item>5</item>
+        </remove>
+    </update>
+</vespafeed>

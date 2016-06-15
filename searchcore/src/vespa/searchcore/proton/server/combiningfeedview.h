@@ -1,0 +1,92 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "ifeedview.h"
+#include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
+#include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
+#include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
+#include <vespa/searchcore/proton/feedoperation/updateoperation.h>
+#include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include "replaypacketdispatcher.h"
+#include "ibucketstatecalculator.h"
+
+namespace proton
+{
+
+
+class CombiningFeedView : public IFeedView
+{
+private:
+    const document::DocumentTypeRepo::SP          _repo;
+    std::vector<IFeedView::SP>                    _views;
+    std::vector<const ISimpleDocumentMetaStore *> _metaStores;
+    IBucketStateCalculator::SP                    _calc;
+    bool                                          _clusterUp;
+    bool                                          _forceReady;
+
+    const ISimpleDocumentMetaStore * getDocumentMetaStorePtr(void) const override;
+
+    void findPrevDbdId(const document::GlobalId &gid, DocumentOperation &op);
+    uint32_t getReadyFeedViewId() const { return 0u; }
+    uint32_t getRemFeedViewId() const { return 1u; }
+    uint32_t getNotReadyFeedViewId() const { return 2u; }
+
+    IFeedView * getReadyFeedView() {
+        return _views[getReadyFeedViewId()].get();
+    }
+
+    IFeedView * getRemFeedView() {
+        return _views[getRemFeedViewId()].get();
+    }
+
+    IFeedView * getNotReadyFeedView() {
+        return _views[getNotReadyFeedViewId()].get();
+    }
+
+    bool hasNotReadyFeedView() const {
+        return _views.size() > getNotReadyFeedViewId();
+    }
+
+    bool shouldBeReady(const document::BucketId &bucket) const;
+    void forceCommit(search::SerialNum serialNum) override;
+public:
+    typedef std::shared_ptr<CombiningFeedView> SP;
+
+    CombiningFeedView(const std::vector<IFeedView::SP> &views,
+                      const IBucketStateCalculator::SP &calc);
+
+    virtual ~CombiningFeedView();
+
+    const document::DocumentTypeRepo::SP & getDocumentTypeRepo(void) const override;
+
+    /**
+     * Similar to IPersistenceHandler functions.
+     */
+
+    void preparePut(PutOperation &putOp) override;
+    void handlePut(FeedToken *token, const PutOperation &putOp) override;
+    void prepareUpdate(UpdateOperation &updOp) override;
+    void handleUpdate(FeedToken *token, const UpdateOperation &updOp) override;
+    void prepareRemove(RemoveOperation &rmOp) override;
+    void handleRemove(FeedToken *token, const RemoveOperation &rmOp) override;
+    void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
+    void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
+    void prepareMove(MoveOperation &putOp) override;
+    void handleMove(const MoveOperation &moveOp) override;
+    void heartBeat(search::SerialNum serialNum) override;
+    void sync() override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+
+    // Called by document db executor
+    void setCalculator(const IBucketStateCalculator::SP &newCalc);
+};
+
+} // namespace proton
+

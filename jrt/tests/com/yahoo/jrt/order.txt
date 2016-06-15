@@ -1,0 +1,25 @@
+Topological sorting of test dependencies (success assumptions)
+===============================================================================
+Test.java (does no testing, but contains common stuff)
+ValuesTest.java
+SpecTest.java
+QueueTest.java
+PacketTest.java
+SchedulerTest.java
+ListenTest.java
+ConnectTest.java
+WatcherTest.java
+InvokeSyncTest.java
+InvokeAsyncTest.java
+InvokeVoidTest.java
+EchoTest.java
+InvokeErrorTest.java
+MandatoryMethodsTest.java
+DetachTest.java
+AbortTest.java
+BackTargetTest.java
+TimeoutTest.java
+SessionTest.java
+===============================================================================
+NOTE: 'ls -al | wc -l' should give the same result as 'wc -l order.txt'
+===============================================================================

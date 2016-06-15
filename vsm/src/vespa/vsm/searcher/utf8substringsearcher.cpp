@@ -1,0 +1,56 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/vsm/searcher/utf8substringsearcher.h>
+
+using search::byte;
+using search::QueryTerm;
+using search::QueryTermList;
+
+namespace vsm
+{
+
+IMPLEMENT_DUPLICATE(UTF8SubStringFieldSearcher);
+
+size_t
+UTF8SubStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
+{
+    const byte * n = reinterpret_cast<const byte *> (f.c_str());
+    if ( f.size() >= _buf->size()) {
+        _buf->reserve(f.size() + 1);
+    }
+    cmptype_t * fntemp = &(*_buf.get())[0];
+    BufferWrapper wrapper(fntemp);
+    size_t fl = skipSeparators(n, f.size(), wrapper);
+    const cmptype_t * fn(fntemp);
+    const cmptype_t * fe = fn + fl;
+    const cmptype_t * fre = fe - mintsz;
+    termcount_t words(0);
+    for(words = 0; fn <= fre; ) {
+        for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
+            QueryTerm & qt = **it;
+            const cmptype_t * term;
+            termsize_t tsz = qt.term(term);
+
+            const cmptype_t *tt=term, *et=term+tsz, *fnt=fn;
+            for (; (tt < et) && (*tt == *fnt); tt++, fnt++);
+            if (tt == et) {
+                addHit(qt, words);
+            }
+        }
+        if ( ! Fast_UnicodeUtil::IsWordChar(*fn++) ) {
+            words++;
+            for(; (fn < fre) && ! Fast_UnicodeUtil::IsWordChar(*fn); fn++ );
+        }
+    }
+
+    NEED_CHAR_STAT(addAnyUtf8Field(f.size()));
+    return words + 1; // we must also count the last word
+}
+
+size_t
+UTF8SubStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
+{
+    return matchTermSubstring(f, qt);
+}
+
+}

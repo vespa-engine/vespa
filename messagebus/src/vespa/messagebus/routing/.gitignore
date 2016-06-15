@@ -1,0 +1,5 @@
+.depend
+Makefile
+lex.yy.cpp
+parser.tab.cpp
+parser.tab.h

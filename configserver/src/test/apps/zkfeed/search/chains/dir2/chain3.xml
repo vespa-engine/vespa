@@ -1,0 +1,10 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<searchchains>
+<searchchain id="chain3_1">
+ <searcher id="com.yahoo.search.example.SimpleSearcher" bundle="mybundle"/>
+</searchchain>
+<searchchain id="chain3_2">
+ <searcher id="com.yahoo.search.example.SimpleSearcher" bundle="mybundle"/>
+ <searcher id="com.yahoo.search.example.SimpleSearcher2" bundle="mybundle"/>
+</searchchain>
+</searchchains>

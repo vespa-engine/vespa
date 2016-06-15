@@ -1,0 +1,5 @@
+.cvsignore
+.depend
+Makefile
+features.h
+/libstorageapi.so.5.1

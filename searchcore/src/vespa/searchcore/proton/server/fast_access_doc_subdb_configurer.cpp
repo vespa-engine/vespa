@@ -1,0 +1,70 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.fast_access_doc_subdb_configurer");
+
+#include "fast_access_doc_subdb_configurer.h"
+#include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
+
+using document::DocumentTypeRepo;
+using search::index::Schema;
+
+namespace proton {
+
+typedef AttributeReprocessingInitializer::Config ARIConfig;
+
+void
+FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
+                                                  const Schema::SP &schema,
+                                                  const DocumentTypeRepo::SP &repo,
+                                                  const IAttributeWriter::SP &writer)
+{
+    _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(
+            StoreOnlyFeedView::Context(curr->getSummaryAdapter(),
+                    schema,
+                    curr->getDocumentMetaStore(),
+                    repo,
+                    curr->getWriteService(),
+                    curr->getLidReuseDelayer(),
+                    curr->getCommitTimeTracker()),
+            curr->getPersistentParams(),
+            FastAccessFeedView::Context(writer,
+                    curr->getDocIdLimit()))));
+}
+
+FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
+                                                           IAttributeAdapterFactory::UP factory,
+                                                           const vespalib::string &subDbName)
+    : _feedView(feedView),
+      _factory(std::move(factory)),
+      _subDbName(subDbName)
+{
+}
+
+IReprocessingInitializer::UP
+FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
+                                          const DocumentDBConfig &oldConfig,
+                                          const AttributeCollectionSpec &attrSpec)
+{
+    FastAccessFeedView::SP oldView = _feedView.get();
+    IAttributeWriter::SP writer =
+            _factory->create(oldView->getAttributeWriter(), attrSpec);
+    reconfigureFeedView(oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
+
+    const document::DocumentType *newDocType = newConfig.getDocumentType();
+    const document::DocumentType *oldDocType = oldConfig.getDocumentType();
+    assert(newDocType != nullptr);
+    assert(oldDocType != nullptr);
+    return IReprocessingInitializer::UP(new AttributeReprocessingInitializer(
+            ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP(),
+                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*newDocType))),
+            ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP(),
+                    IDocumentTypeInspector::SP(new DocumentTypeInspector(*oldDocType))),
+                    _subDbName));
+}
+
+} // namespace proton

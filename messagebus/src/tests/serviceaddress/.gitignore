@@ -1,0 +1,4 @@
+.depend
+Makefile
+serviceaddress_test
+messagebus_serviceaddress_test_app

@@ -1,0 +1,79 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=jdisc.http
+
+# The TCP port to listen to for this connector.
+listenPort                          int      default=0
+
+# The connector name
+name                                string   default="default"
+
+# The header field cache size.
+headerCacheSize                     int      default=512
+
+# The size of the buffer into which response content is aggregated before being sent to the client.
+outputBufferSize                    int      default=65536
+
+# The maximum size of a request header.
+requestHeaderSize                   int      default=65536
+
+# The maximum size of a response header.
+responseHeaderSize                  int      default=65536
+
+# The accept queue size (also known as accept backlog).
+acceptQueueSize                     int      default=0
+
+# Whether the server socket reuses addresses.
+reuseAddress                        bool     default=true
+
+# The linger time. Use -1 to disable.
+soLingerTime                        int      default=-1
+
+# The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
+idleTimeout                         double   default=180.0
+
+# The stop timeout.
+stopTimeout                         double   default=30.0
+
+# Whether or not to have socket keep alive turned on.
+tcpKeepAliveEnabled                 bool     default=false
+
+# Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
+tcpNoDelay                          bool     default=true
+
+# Whether to enable SSL for this connector.
+ssl.enabled                         bool     default=false
+
+# The KeyDB key.
+ssl.keyDbKey                        string   default=""
+
+# Names of protocols to exclude.
+ssl.excludeProtocol[].name          string
+
+# Names of protocols to include.
+ssl.includeProtocol[].name          string
+
+# Names of cipher suites to exclude.
+ssl.excludeCipherSuite[].name       string
+
+# Names of cipher suites to include.
+ssl.includeCipherSuite[].name       string
+
+# The type of the keystore.
+ssl.keyStoreType                    enum { JKS, PEM }  default=JKS
+
+# JKS only - the path to the keystore.
+ssl.keyStorePath                    string   default=""
+
+ssl.pemKeyStore.keyPath             string   default=""
+ssl.pemKeyStore.certificatePath     string   default=""
+
+ssl.trustStoreType                  enum { JKS }  default="JKS"
+
+# JKS only - the path to the truststore.
+ssl.trustStorePath                  string   default=""
+
+# The algorithm name used by the KeyManagerFactory.
+ssl.sslKeyManagerFactoryAlgorithm   string   default="SunX509"
+
+# The SSL protocol passed to SSLContext.getInstance()
+ssl.protocol                        string   default="TLS"

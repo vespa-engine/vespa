@@ -1,0 +1,14 @@
+*.core
+.depend
+clientstatus
+filereader
+filereader_clean.txt
+filereader_messy.txt
+geturl
+httpclient
+httpclient_splitstring
+Makefile
+fbench_clientstatus_app
+fbench_filereader_app
+fbench_httpclient_app
+fbench_httpclient_splitstring_app

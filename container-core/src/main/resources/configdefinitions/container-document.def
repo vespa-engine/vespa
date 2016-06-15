@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Container settings for document type management
+#
+version=1
+namespace=container.core.document
+
+# A document type name to use a concrete document type for
+doctype[].type string
+
+# The component id of the AbstractConcreteDocumentFactory to use to instantiate the concrete document type
+doctype[].factorycomponent string

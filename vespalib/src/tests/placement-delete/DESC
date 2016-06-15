@@ -1,0 +1,4 @@
+This test checks whether gcc generates code to invoke placement delete
+when a templated placement new throws an exception. We expect this
+test to fail until gcc has been fixed to handle templated placement
+new correctly.

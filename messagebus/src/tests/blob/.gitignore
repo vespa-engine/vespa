@@ -1,0 +1,4 @@
+.depend
+Makefile
+blob_test
+messagebus_blob_test_app

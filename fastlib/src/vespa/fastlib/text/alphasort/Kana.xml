@@ -1,0 +1,899 @@
+<?xml version="1.0"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE sortOrder SYSTEM "AlphaSort1_0.dtd">
+<sortOrder> 
+   <sortValue>
+      <unicode>
+         <hex> 3042 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A2 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF71 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3041 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A1 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF67 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3044 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A4 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF72 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3043 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A3 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF68 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3046 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A6 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF73 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3045 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A5 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF69 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3094 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F4 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3048 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A8 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF74 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3047 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A7 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304A </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AA </hex>
+      </unicode>
+      <unicode>
+         <hex> FF75 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3049 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30A9 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304B </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AB </hex>
+      </unicode>
+      <unicode>
+         <hex> FF76 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3095 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F5 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304C </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AC </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304D </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AD </hex>
+      </unicode>
+      <unicode>
+         <hex> FF77 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304E </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AE </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 304F </hex>
+      </unicode>
+      <unicode>
+         <hex> 30AF </hex>
+      </unicode>
+      <unicode>
+         <hex> FF78 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3050 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B0 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3051 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B1 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF79 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3096 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F6 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3052 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B2 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3053 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B3 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3054 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B4 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3055 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B5 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3056 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B6 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3057 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B7 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3058 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B8 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3059 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30B9 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305A </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BA </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305B </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BB </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305C </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BC </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305D </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BD </hex>
+      </unicode>
+      <unicode>
+         <hex> FF7F </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305E </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BE </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 305F </hex>
+      </unicode>
+      <unicode>
+         <hex> 30BF </hex>
+      </unicode>
+      <unicode>
+         <hex> FF80 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3060 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C0 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3061 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C1 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF81 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3062 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C2 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3064 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C4 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF82 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3063 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C3 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6F </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3065 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C5 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3066 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C6 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF83 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3067 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C7 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3068 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C8 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF84 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3069 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30C9 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306A </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CA </hex>
+      </unicode>
+      <unicode>
+         <hex> FF85 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306B </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CB </hex>
+      </unicode>
+      <unicode>
+         <hex> FF86 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306C </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CC </hex>
+      </unicode>
+      <unicode>
+         <hex> FF87 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306D </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CD </hex>
+      </unicode>
+      <unicode>
+         <hex> FF88 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306E </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CE </hex>
+      </unicode>
+      <unicode>
+         <hex> FF89 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 306F </hex>
+      </unicode>
+      <unicode>
+         <hex> 30CF </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3070 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D0 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3071 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D1 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3072 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D2 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3073 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D3 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3074 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D4 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3075 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D5 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3076 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D6 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3077 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D7 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3078 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D8 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3079 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30D9 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307A </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DA </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307B </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DB </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307C </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DC </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307D </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DD </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307E </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DE </hex>
+      </unicode>
+      <unicode>
+         <hex> FF8F </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 307F </hex>
+      </unicode>
+      <unicode>
+         <hex> 30DF </hex>
+      </unicode>
+      <unicode>
+         <hex> FF90 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3080 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E0 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF91 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3081 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E1 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF92 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3082 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E2 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF93 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3084 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E4 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF94 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3083 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E3 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3090 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F0 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30F8 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3086 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E6 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF95 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3085 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E5 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3091 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F1 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30F9 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3088 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E8 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF96 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3087 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E7 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF6E </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3089 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30E9 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF97 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308A </hex>
+      </unicode>
+      <unicode>
+         <hex> 30EA </hex>
+      </unicode>
+      <unicode>
+         <hex> FF98 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308B </hex>
+      </unicode>
+      <unicode>
+         <hex> 30EB </hex>
+      </unicode>
+      <unicode>
+         <hex> FF99 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308C </hex>
+      </unicode>
+      <unicode>
+         <hex> 30EC </hex>
+      </unicode>
+      <unicode>
+         <hex> FF9A </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308D </hex>
+      </unicode>
+      <unicode>
+         <hex> 30ED </hex>
+      </unicode>
+      <unicode>
+         <hex> FF9B </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308F </hex>
+      </unicode>
+      <unicode>
+         <hex> 30EF </hex>
+      </unicode>
+      <unicode>
+         <hex> FF9C </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 308E </hex>
+      </unicode>
+      <unicode>
+         <hex> 30EE </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30F7 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 3092 </hex>
+      </unicode>
+      <unicode>
+         <hex> 30F2 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF66 </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30FA </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30F3 </hex>
+      </unicode>
+      <unicode>
+         <hex> 3093 </hex>
+      </unicode>
+      <unicode>
+         <hex> FF9D </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30FB </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30FC </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30FD </hex>
+      </unicode>
+   </sortValue>
+   <sortValue>
+      <unicode>
+         <hex> 30FE </hex>
+      </unicode>
+   </sortValue>
+</sortOrder>  
+

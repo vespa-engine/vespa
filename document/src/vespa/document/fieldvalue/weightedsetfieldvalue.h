@@ -1,0 +1,152 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+/**
+ * \class document::WeightedSetFieldValue
+ * \ingroup fieldvalue
+ *
+ * \brief A fieldvalue containing fieldvalue <-> weight mappings.
+ */
+#pragma once
+
+#include <vespa/document/fieldvalue/collectionfieldvalue.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <map>
+
+namespace document {
+
+class WeightedSetFieldValue : public CollectionFieldValue
+{
+public:
+    struct FieldValuePtrOrder {
+        template<typename T> bool operator()(const T& s1, const T& s2) const
+            { return *s1 < *s2; }
+    };
+    typedef MapFieldValue WeightedFieldValueMap;
+
+private:
+    std::shared_ptr<const MapDataType> _map_type;
+    WeightedFieldValueMap _map;
+    bool _altered;
+
+    void verifyKey(const FieldValue & key);
+    virtual bool addValue(const FieldValue& fval) { return add(fval, 1); }
+    virtual bool containsValue(const FieldValue& val) const;
+    virtual bool removeValue(const FieldValue& val);
+    virtual IteratorHandler::ModificationStatus onIterateNested(
+            FieldPath::const_iterator start,
+            FieldPath::const_iterator end,
+            IteratorHandler& handler) const;
+public:
+    typedef std::unique_ptr<WeightedSetFieldValue> UP;
+
+    /**
+     * @param wsetType Type of the weighted set. Must be a WeightedSetDataType,
+     *                 but does not enforce type compile time so it will be
+     *                 easier to create instances using field's getDataType().
+     */
+    WeightedSetFieldValue(const DataType &wsetType);
+    virtual ~WeightedSetFieldValue();
+
+    void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
+    void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
+
+    /**
+     * Add an item to the weighted set with the given weight. If removeIfZero
+     * is set in the data type and weight is zero, the new item will not be
+     * added and any existing item for the key will be immediately removed.
+     */
+    bool add(const FieldValue&, int32_t weight = 1);
+    /**
+     * Add an item to the weighted set, but do not erase the item if the
+     * weight is zero and removeIfZero is set in the weighted set's type.
+     */
+    bool addIgnoreZeroWeight(const FieldValue&, int32_t weight = 1);
+    void push_back(FieldValue::UP, int32_t weight);
+    void increment(const FieldValue& fval, int val = 1);
+    void decrement(const FieldValue& fval, int val = 1)
+        { increment(fval, -1*val); }
+    int32_t get(const FieldValue&, int32_t defaultValue = 0) const;
+
+        // CollectionFieldValue implementation
+    virtual bool isEmpty() const { return _map.isEmpty(); }
+    virtual size_t size() const { return _map.size(); }
+    virtual void clear() { _map.clear(); }
+    void reserve(size_t sz) { _map.reserve(sz); }
+    void resize(size_t sz) { _map.resize(sz); }
+
+        // FieldValue implementation
+    virtual FieldValue& assign(const FieldValue&);
+    virtual WeightedSetFieldValue* clone() const
+        { return new WeightedSetFieldValue(*this); }
+    virtual int compare(const FieldValue&) const;
+    virtual void printXml(XmlOutputStream& out) const;
+    virtual void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const;
+    virtual bool hasChanged() const;
+
+        // Implements iterating through internal content.
+    typedef WeightedFieldValueMap::const_iterator const_iterator;
+    typedef WeightedFieldValueMap::iterator iterator;
+
+    const_iterator begin() const { return _map.begin(); }
+    iterator begin() { return _map.begin(); }
+
+    const_iterator end() const { return _map.end(); }
+    iterator end() { return _map.end(); }
+
+    const_iterator find(const FieldValue& fv) const;
+    iterator find(const FieldValue& fv);
+
+        // Utility functions for easy use of weighted sets of primitives
+
+    bool add(const vespalib::stringref & val, int32_t weight = 1)
+        { return add(*createNested() = val, weight); }
+    bool add(int32_t val, int32_t weight = 1)
+        { return add(*createNested() = val, weight); }
+    bool add(int64_t val, int32_t weight = 1)
+        { return add(*createNested() = val, weight); }
+    bool add(float val, int32_t weight = 1)
+        { return add(*createNested() = val, weight); }
+    bool add(double val, int32_t weight = 1)
+        { return add(*createNested() = val, weight); }
+
+    int32_t get(const vespalib::stringref & val) const
+        { return get(*createNested() = val); }
+    int32_t get(int32_t val) const
+        { return get(*createNested() = val); }
+    int32_t get(int64_t val) const
+        { return get(*createNested() = val); }
+    int32_t get(float val) const
+        { return get(*createNested() = val); }
+    int32_t get(double val) const
+        { return get(*createNested() = val); }
+
+    void increment(const vespalib::stringref & val, int32_t weight = 1)
+        { increment(*createNested() = val, weight); }
+    void increment(int32_t val, int32_t weight = 1)
+        { increment(*createNested() = val, weight); }
+    void increment(int64_t val, int32_t weight = 1)
+        { increment(*createNested() = val, weight); }
+    void increment(float val, int32_t weight = 1)
+        { increment(*createNested() = val, weight); }
+    void increment(double val, int32_t weight = 1)
+        { increment(*createNested() = val, weight); }
+
+    void decrement(const vespalib::stringref & val, int32_t weight = 1)
+        { decrement(*createNested() = val, weight); }
+    void decrement(int32_t val, int32_t weight = 1)
+        { decrement(*createNested() = val, weight); }
+    void decrement(int64_t val, int32_t weight = 1)
+        { decrement(*createNested() = val, weight); }
+    void decrement(float val, int32_t weight = 1)
+        { decrement(*createNested() = val, weight); }
+    void decrement(double val, int32_t weight = 1)
+        { decrement(*createNested() = val, weight); }
+
+    DECLARE_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue);
+
+};
+
+} // document
+

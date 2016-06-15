@@ -1,0 +1,35 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_library(searchcore_matching STATIC
+    SOURCES
+    attribute_limiter.cpp
+    blueprintbuilder.cpp
+    docid_range_scheduler.cpp
+    document_scorer.cpp
+    fakesearchcontext.cpp
+    handlerecorder.cpp
+    i_match_loop_communicator.cpp
+    indexenvironment.cpp
+    match_loop_communicator.cpp
+    match_master.cpp
+    match_params.cpp
+    match_phase_limit_calculator.cpp
+    match_phase_limiter.cpp
+    match_thread.cpp
+    match_tools.cpp
+    matcher.cpp
+    matching_stats.cpp
+    partial_result.cpp
+    query.cpp
+    queryenvironment.cpp
+    querylimiter.cpp
+    querynodes.cpp
+    requestcontext.cpp
+    result_processor.cpp
+    session_manager_explorer.cpp
+    sessionmanager.cpp
+    termdataextractor.cpp
+    termdatafromnode.cpp
+    viewresolver.cpp
+    DEPENDS
+    searchcore_grouping
+)

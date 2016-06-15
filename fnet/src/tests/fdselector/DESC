@@ -1,0 +1,1 @@
+Test selecting on external file descriptors in the FNET event loop.

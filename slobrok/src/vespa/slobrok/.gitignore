@@ -1,0 +1,6 @@
+.depend
+Makefile
+config-slobroks.cpp
+config-slobroks.h
+features.h
+/libslobrok.so.5.1

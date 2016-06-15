@@ -1,0 +1,35 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.container.component.chain;
+
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.chain.model.ChainedComponentModel;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.container.component.Component;
+
+
+/**
+ * @author tonytv
+ * @author gjoranv
+ *
+ * Base class for all ChainedComponent config producers.
+ */
+public class ChainedComponent<T extends ChainedComponentModel> extends Component<AbstractConfigProducer<?>, T> {
+
+    public ChainedComponent(T model) {
+        super(model);
+    }
+
+    public void initialize() {}
+
+    @Override
+    public ComponentId getGlobalComponentId() {
+        return model.getComponentId().nestInNamespace(namespace());
+    }
+
+    private ComponentId namespace() {
+        AbstractConfigProducer owner = getParent().getParent();
+        return (owner instanceof Chain) ?
+                ((Chain) owner).getGlobalComponentId() :
+                null;
+    }
+}

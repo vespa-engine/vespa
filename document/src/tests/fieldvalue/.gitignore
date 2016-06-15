@@ -1,0 +1,7 @@
+*.So
+*_test
+.depend
+Makefile
+document_document_test_app
+document_fieldvalue_test_app
+document_predicatefieldvalue_test_app

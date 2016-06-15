@@ -1,0 +1,625 @@
+#!/usr/bin/perl
+
+use strict;
+
+use FSA;
+use BerkeleyDB;
+use Getopt::Long;
+use Pod::Usage;
+
+#
+# Process command line options.
+#
+
+my $do_qfreq       = 1;
+my $do_sqfreq      = 1;
+my $do_ext         = 1;
+my $do_assoc       = 1;
+my $do_cat         = 1;
+my $do_fsa         = 1;
+my $help           = 0;
+my $man            = 0;
+my $verbose        = 0;
+my $stopwords_file = '';
+my $output_file    = '';
+
+my $result = GetOptions('qfreq|q!'        => \$do_qfreq,
+						'sqfreq|s!'       => \$do_sqfreq,
+						'ext|e!'          => \$do_ext,
+						'assoc|a!'        => \$do_assoc,
+						'cat|c!'          => \$do_cat,
+						'fsa|f!'          => \$do_fsa,
+						'help|h'          => \$help,
+						'man|m'           => \$man,
+						'verbose|v'       => \$verbose,
+						'stopwords|w:s'   => \$stopwords_file,
+						'output-file|o=s' => \$output_file,
+					);
+
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+#
+# Domain is a required parameter.
+#
+
+my $domain = shift || die "need domain";
+
+#
+# Some constants for setting limits etc.
+#
+
+my $MAX_UNIT_LENGTH  =  8;
+my $MAX_QUERY_LENGTH = 10;
+
+#
+# Declare arrays to store concept net data.
+#
+
+my @unit     = ();
+my @unit_f   = ();
+my @unit_qf  = ();
+my @unit_qfc = ();
+my @unit_qfs = ();
+my @ext      = ();
+my @assoc    = ();
+my @cats     = ();
+my @ucats    = ();
+my @st_map   = ();
+
+#
+# Some other global variables
+#
+
+my %stopwords = ();
+my %stopMap   = ();
+
+my ($total,$count);
+
+my ($fsa,$sfsa);
+
+#***********************************************************
+#
+# Functions
+#
+#***********************************************************
+
+
+sub msg($@){
+	my $format = shift;
+	if($verbose){
+		printf STDERR $format,@_;
+	}
+}
+
+sub progress($$$$){
+	my ($msg,$cnt,$total,$done) = @_;
+
+	if($done){
+		if($total>0){
+			msg("\r%s ... %d of %d (%.2f%%) ... done.\n",$msg,$cnt,$total,100.0*$cnt/$total);
+		}
+		else {
+			msg("\r%s ... %d ... done.\n",$msg,$cnt);
+		}			
+	}
+	elsif($cnt%1000==0){
+		if($total>0){
+			msg("\r%s ... %d of %d (%.2f%%)",$msg,$cnt,$total,100.0*$cnt/$total);
+		}
+		else {
+			msg("\r%s ... %d",$msg,$cnt);
+		}			
+	}
+}
+
+sub lookup($$){
+	my $fsa = shift; 
+	my $u = shift;
+	my $st = FSA::State->new($fsa);
+
+	$st->start();
+	$st->delta($u);
+	if($st->isFinal()){
+		return ($st->hash(),$st->nData());
+	}
+	else {
+		return (-1,0);
+	}
+}
+
+sub aggregate(\@){
+	my $aref = shift;
+	my %hash = ();
+	my $i;
+	for($i=0;$i<$#{$aref}+1;$i+=2){
+		$hash{$$aref[$i]} += $$aref[$i+1];
+	}
+	my @res;
+	foreach $i (sort {$hash{$b} <=> $hash{$a}} keys %hash){
+		push(@res,$i,$hash{$i});
+	}
+	return @res;
+}
+
+sub firstComb($$){
+	my $n = shift;
+	my $m = shift;
+
+	if($n==0 || $n>31 || $m==0 || $m>31 || $n>$m){
+		return 0;
+	}
+ 
+	return (1<<$n)-1;
+}
+
+sub nextComb($$){
+	my $c = shift;
+	my $m = shift;
+
+	if($c==0 || $m==0 || $m>31){
+		return 0;
+	}
+
+	my $x = $c;
+	my $limit = 1<<$m;
+	my ($mask,$mask1,$mask2);
+
+	if($x&1){
+		$mask=2;
+		while($x&$mask){
+			$mask<<=1;
+		}
+		$x^=($mask+($mask>>1));
+	}
+	else{
+		$mask=2;
+		while(!($x&$mask)){
+			$mask<<=1;
+		}
+		$mask1=$mask2=0;
+		while($x&$mask){
+			$mask1<<=1;
+			$mask1++;
+			$mask2+=$mask;
+			$mask<<=1;
+		}
+		$mask1>>=1;
+		$x^=($mask+($mask1^$mask2));
+	}
+	
+	return ($x<$limit)?$x:0;
+}
+
+sub selectComb($\@){
+	my $c = shift;
+	my $aref = shift;
+
+	my @res;
+	my $i = 0;
+	while($c>0 && $i<=$#$aref){
+		if($c&1){
+			push(@res,$$aref[$i]);
+		}
+		$c>>=1;
+		$i++;
+	}
+	return @res;
+}
+
+sub sortGrams($){
+	my $in = shift;
+	my @grams = split(/\s+/,$in);
+
+	if($#grams<1){
+		return $in;
+	}
+
+	my @sorted_grams = sort(@grams);
+	my $i=1;
+	while($i<=$#sorted_grams){
+		if($sorted_grams[$i] eq $sorted_grams[$i-1]){
+			splice(@sorted_grams,$i,1);
+		}
+		else{
+			$i++;
+		}
+	}
+	return join(" ",@sorted_grams);
+}
+
+sub cleanStop($){
+	my $unit = shift;
+	if($stopwords_file ne ''){
+		if(!defined($stopMap{$unit})){
+			my @words = split(/\s+/,$unit);
+			while ((@words) && ($stopwords{$words[0]})) {
+				shift(@words);
+			} 
+			while ((@words) && ($stopwords{$words[$#words]})) {
+				pop(@words);
+			}
+			$stopMap{$unit} = join(' ', @words);
+		}
+		return $stopMap{$unit};
+	}
+	return($unit);
+}
+
+
+#***********************************************************
+#
+# Main program.
+#
+#***********************************************************
+
+
+#
+# Configure stopwords list
+#
+
+if($stopwords_file ne ''){
+	msg("configuring stopwords ... ");
+	open(STOPFILE, $stopwords_file) or die "error opening stopwords file '$stopwords_file': $!\n\t";
+	while(<STOPFILE>){
+		chomp;
+		$stopwords{$_}=1;
+	}
+	close(STOPFILE);
+	msg("done.\n");
+}
+
+#
+# Build plain FSA with perfect hash and frequencies,
+# and compact FSA with perfect hash only.
+#
+if($do_fsa){
+	msg("building plain fsa ... ");
+	my %units_t = ();
+	open(U,"${domain}_unit.txt");
+	while(<U>){
+		chomp;
+		my ($f,$u) = split(/\t/);
+		my $uns = cleanStop($u);
+		if($uns ne ""){
+			$units_t{$uns}+=$f;
+		}
+	}
+	close(U);
+	open(F1,"| makefsa -vnp ${domain}.plain.fsa");
+	open(F2,"| makefsa -ep ${domain}.fsa");
+	foreach my $u (sort keys %units_t){
+		print F1 "$u\t$units_t{$u}\n";
+		print F2 "$u\n";
+	}
+	close(F1);
+	close(F2);
+	%units_t = ();
+	msg("done.\n");
+}
+
+#
+# Open plain FSA.
+#
+
+$fsa = FSA->new("${domain}.plain.fsa");
+
+#
+# Read units.
+#
+
+$total = 0 + `wc -l ${domain}_unit.txt`;
+$count = 0;
+open(U,"${domain}_unit.txt");
+while(<U>){
+	$count++; progress("reading units",$count,$total,0);
+	chomp;
+	my ($f,$u) = split(/\t/);
+	my $uns = cleanStop($u);
+	if($uns ne ""){
+		my ($idx,$frq) = lookup($fsa,$uns);
+		if($idx>=0){
+			$unit[$idx]   = $uns;
+			$unit_f[$idx] = $frq;
+		}
+	}
+}
+close(U);
+progress("reading units",$count,$total,1);
+
+
+#
+# Build term-sorted FSA for counting query frequencies.
+#
+
+if($do_qfreq || $do_sqfreq){
+	msg("building fsa for query frequencies ... ");
+	my %units_st = ();
+	for(my $i=0;$i<=$#unit;$i++){
+		my $uns = sortGrams($unit[$i]);
+		if(defined($units_st{$uns})){
+			$units_st{$uns}.=",$i";
+		}
+		else{
+			$units_st{$uns}="$i";
+		}
+	}
+	open(F,"| makefsa -vep ${domain}.sorted.fsa");
+	my $i=0;
+	foreach my $u (sort keys %units_st){
+		$st_map[$i]=$units_st{$u};
+		print F "$u\n";
+		$i++;
+	}
+	close(F);
+	%units_st = ();
+	msg("done.\n");
+
+    #
+    # Open term-sorted FSA.
+    #
+
+	$sfsa = FSA->new("${domain}.sorted.fsa");
+
+    #
+    # Read complete query file for query frequencies.
+    #
+
+	$total = 0 + `zcat complete.txt.gz | wc -l`;
+	$count = 0;
+	open(C,"zcat complete.txt.gz|") or die "ERROR opening pipe: \"zcat complete.txt.gz|\"\n";
+	while(<C>){
+		$count++; progress("processing raw query file for query frequencies",$count,$total,0);
+		chomp;
+		my ($frq,$query) = split(/\t/);
+
+		#
+		# Complete query match.
+		#
+		my ($idx,$f) = lookup($fsa,$query);
+		if($idx>=0){
+			$unit_qfc[$idx] += $frq;
+		}
+
+		#
+		# Partial query match.
+		#
+		my @qgrams = split(/\s+/,$query);
+		my $st = FSA::State->new($fsa);
+		my %frq_add = ();
+		for(my $i=0;$i<=$#qgrams;$i++){
+			$st->start();
+			$st->delta($qgrams[$i]);
+			if($st->isFinal()){
+				$frq_add{$st->hash()} = 1;
+			}
+			for(my $j=$i+1;$st->isValid()&&$j<=$#qgrams;$j++){
+				$st->delta(" ");
+				$st->delta($qgrams[$j]);
+				if($st->isFinal()){
+					$frq_add{$st->hash()} = 1;
+				}
+			}
+		}
+		foreach my $a (keys %frq_add){
+			$unit_qf[$a] += $frq;
+		}
+
+		if($do_sqfreq){
+			#
+			# Partial query match in any order.
+			#
+			my $squery = sortGrams($query);
+			my @sqgrams = split(/\s+/,$squery);
+			my $sst = FSA::State->new($sfsa);
+			%frq_add = ();
+			my $qlen=$#sqgrams+1;
+			if($qlen>$MAX_QUERY_LENGTH){
+				$qlen=$MAX_QUERY_LENGTH;
+			}
+			for(my $i=1;$i<=$qlen && $i<=$MAX_UNIT_LENGTH; $i++){
+				for(my $c=firstComb($i,$qlen);$c>0;$c=nextComb($c,$qlen)){
+					$sst->start();
+					my $tmp=join(" ",selectComb($c,@sqgrams));
+					$sst->delta($tmp);
+					if($sst->isFinal()){
+						my @to_add = split(/,/,$st_map[$sst->hash()]);
+						foreach my $a (@to_add){
+							$frq_add{$a} = 1;
+						}
+					}
+				}
+			}
+			foreach my $a (keys %frq_add){
+				$unit_qfs[$a] += $frq;
+			}
+		}
+	}
+	close(C);
+	progress("processing raw query file for query frequencies",$count,$total,1);
+}
+
+#
+# Read extensions.
+#
+if($do_ext){
+	$total = 0 + `wc -l ${domain}_ext.txt`;
+	$count = 0;
+	open(E,"${domain}_ext.txt");
+	while(<E>){
+		$count++; progress("reading extensions",$count,$total,0);
+		chomp;
+		my ($f,$u1,$u2) = split(/\t/);
+		my $uns1 = cleanStop($u1);
+		my $uns2 = cleanStop($u2);
+		if($uns1 ne "" && $uns1 ne $uns2){
+			my ($idx1,$frq1) = lookup($fsa,$u1);
+			my ($idx2,$frq2) = lookup($fsa,$u2);
+			if($idx1>=0 && $idx2>=0){
+				$ext[$idx1] .= "$idx2,$f ";
+			}
+		}
+	}
+	close(E);
+	progress("reading extensions",$count,$total,1);
+}
+
+#
+# Read associations.
+#
+if($do_assoc){
+	$total = 0 + `wc -l ${domain}_assoc.txt`;
+	$count = 0;
+	open(A,"${domain}_assoc.txt");
+	while(<A>){
+		$count++; progress("reading associations",$count,$total,0);
+		chomp;
+		my ($f,$u1,$u2) = split(/\t/);
+		my $uns1 = cleanStop($u1);
+		my $uns2 = cleanStop($u2);
+		if($uns1 ne "" && $uns2 ne "" && $uns1 ne $uns2){
+			my ($idx1,$frq1) = lookup($fsa,$u1);
+			my ($idx2,$frq2) = lookup($fsa,$u2);
+			if($idx1>=0 && $idx2>=0){
+				$assoc[$idx1] .= "$idx2,$f ";
+				$assoc[$idx2] .= "$idx1,$f ";
+			}
+		}	
+	}
+	close(A);
+	progress("reading associations",$count,$total,1);
+}
+
+#
+# Read categories.
+#
+
+if($do_cat){
+	tie my %hash, 'BerkeleyDB::Btree', -Filename => "uCat.db";
+
+	$total = scalar(keys %hash);
+	$count = 0;
+	my $cid = 0;
+	foreach my $c (sort keys %hash){
+		$count++; progress("reading categories",$count,$total,0);
+		if($c ne "Misc" && $c ne "zzz_uncategorized_catchall"){
+			$cats[$cid] = $c;
+			my (@ucs) = split(/\t/,$hash{$c});
+			foreach my $u (@ucs){
+				my ($t,$f) = split(/,/,$u);
+				my ($idx,$frq) = lookup($fsa,cleanStop($t));
+				if($idx>=0){
+					if(defined($ucats[$idx])){
+						if(!($ucats[$idx]=~/\b$cid\b/)){
+							$ucats[$idx] .= ",$cid";
+						}
+					}
+					else{
+						$ucats[$idx] = "$cid";
+					}
+				}
+			}
+			$cid++;
+		}
+	}
+	progress("reading categories",$count,$total,1);
+	untie %hash;
+}
+
+
+#
+# Write XML output.
+#
+$count=0;
+$total=$#unit+1;
+
+if($output_file eq ""){
+	$output_file = "${domain}.xml";
+}
+open(X,">$output_file");
+print X "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+print X "<conceptnetwork id=\"$domain\" unitcount=\"" . ($#unit+1). "\">\n";
+for(my $i=0;$i<=$#unit;$i++){
+	$count++; progress("writing xml",$count,$total,0);
+	print X "  <unit id=\"$i\">\n";
+	print X "    <term id=\"$i\" freq=\"" . (0+$unit_f[$i]) . "\" cfreq=\"" . 
+		(0+$unit_qfc[$i]) . "\" qfreq=\"" . (0+$unit_qf[$i]) . "\" gfreq=\"" .
+		($do_sqfreq? (0+$unit_qfs[$i]) : 0) . "\">" . $unit[$i] . "</term>\n";
+    print X "    <extensions>\n";
+	if(defined($ext[$i]) && $ext[$i] ne ""){
+		chop($ext[$i]);
+		my @us = split(/[ ,]/,$ext[$i]);
+		for(my $j=0;$j<$#us+1;$j+=2){
+			print X "      <term id=\"".$us[$j]."\" freq=\"".$us[$j+1]."\">".$unit[$us[$j]]."</term>\n";
+		}
+	}
+    print X "    </extensions>\n";
+    print X "    <associations>\n";
+	if(defined($assoc[$i]) && $assoc[$i] ne ""){
+		chop($assoc[$i]);
+		my @usr = split(/[ ,]/,$assoc[$i]);
+		my (@us) = aggregate(@usr);
+		for(my $j=0;$j<$#us+1;$j+=2){
+			print X "      <term id=\"".$us[$j]."\" freq=\"".$us[$j+1]."\">".$unit[$us[$j]]."</term>\n";
+		}
+	}
+    print X "    </associations>\n";
+    print X "    <categories>\n";
+	if(defined($ucats[$i]) && $ucats[$i] ne ""){
+		my @ucs = split(/,/,$ucats[$i]);
+		foreach my $c (@ucs){
+			print X "      <category id=\"$c\">$cats[$c]</category>\n";
+		}
+	}
+    print X "    </categories>\n";
+}
+progress("writing xml",$count,$total,1);
+print X "  </unit>\n";
+print X "</conceptnetwork>\n";
+close(X);
+
+__END__
+	
+=head1 NAME
+
+cn_txt2xml - Convert a concept network to single XML file.
+
+=head1 SYNOPSIS
+
+cn_txt2xml [options] domain
+
+Options:
+
+  --[no]qfreq, -[no]q        [do not] retrieve query frequencies
+  --[no]sqfreq, -[no]s       [do not] retrieve term-sorted query frequencies
+  --[no]ext, -[no]e          [do not] process extensions
+  --[no]assoc, -[no]a        [do not] process associations
+  --[no]cat, -[no]c          [do not] process categories
+  --[no]fsa, -[no]f          [do not] build fsa
+  --stopwords=FILE, -w FILE  use the given stopwords file
+  --output-file, -o          output file
+  --verbose, -v              be verbose
+  --help, -h                 brief help message
+  --man, -m                  full documentation
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will convert a concept network to a single XML file.
+useful with the contents thereof.
+
+=cut
+

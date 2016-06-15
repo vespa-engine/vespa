@@ -1,0 +1,72 @@
+'this is a test'
+'dGhpcyBpcyBhIHRlc3Q='
+'this is a test'
+a b c d e f
+b d a c e f
+a b c d e f
+a b c d e f
+f e d c b a
+1: a
+2: b
+4: c
+8: d
+10: e
+20: f
+3: a b
+5: a c
+6: b c
+9: a d
+a: b d
+c: c d
+11: a e
+12: b e
+14: c e
+18: d e
+21: a f
+22: b f
+24: c f
+28: d f
+30: e f
+7: a b c
+b: a b d
+d: a c d
+e: b c d
+13: a b e
+15: a c e
+16: b c e
+19: a d e
+1a: b d e
+1c: c d e
+23: a b f
+25: a c f
+26: b c f
+29: a d f
+2a: b d f
+2c: c d f
+31: a e f
+32: b e f
+34: c e f
+38: d e f
+f: a b c d
+17: a b c e
+1b: a b d e
+1d: a c d e
+1e: b c d e
+27: a b c f
+2b: a b d f
+2d: a c d f
+2e: b c d f
+33: a b e f
+35: a c e f
+36: b c e f
+39: a d e f
+3a: b d e f
+3c: c d e f
+1f: a b c d e
+2f: a b c d f
+37: a b c e f
+3b: a b d e f
+3d: a c d e f
+3e: b c d e f
+3f: a b c d e f
+test -|- PUNCT -|- wordchar -|- tokenizer -|- PUNCT -|- does -|- it -|- work

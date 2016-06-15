@@ -1,0 +1,12 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=document.config
+datatype[].id int
+datatype[].arraytype[].datatype int
+documenttype[].name string
+documenttype[].version int
+documenttype[].inherits[].name string
+documenttype[].inherits[].version int 
+documenttype[].field[].name string
+documenttype[].field[].id int
+documenttype[].field[].header bool
+documenttype[].field[].datatype int

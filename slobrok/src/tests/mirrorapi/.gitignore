@@ -1,0 +1,6 @@
+.depend
+Makefile
+*_test
+slobrok.out
+slobrok_mirror_match_test_app
+slobrok_mirrorapi_test_app

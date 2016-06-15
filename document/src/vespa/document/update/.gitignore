@@ -1,0 +1,4 @@
+*.So
+.*.swp
+.depend
+Makefile

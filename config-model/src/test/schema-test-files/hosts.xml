@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<hosts>
+
+  <host name="localhost">
+    <alias>host1</alias>
+    <alias>configserver</alias>
+    <alias>logserver</alias>
+    <alias>qrserver</alias>
+    <alias>distributor</alias>
+    <alias>feeder</alias>
+    <alias>rtx</alias>
+    <alias>tld</alias>
+    <alias>rtc-1</alias>
+    <alias>rtc-2</alias>
+  </host>
+
+  <host name="example.yahoo.com">
+    <alias>host2</alias>
+    <alias>distributor-3</alias>
+  </host>
+
+</hosts>

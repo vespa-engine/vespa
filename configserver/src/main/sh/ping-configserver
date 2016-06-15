@@ -1,0 +1,9 @@
+#!/bin/sh
+host=$1
+port=$2
+curl -s -S -m 5 http://$host:$port/state/v1/health | grep "status\": {\"code\": \"up\"}"
+if [ $? -gt 0 ]; then
+    exit 1
+else
+    exit 0
+fi
