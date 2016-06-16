@@ -1437,7 +1437,9 @@ tensor(x{},y{})
 
 Example tensor with this type:
 <pre>
+{% raw %}
 {{x:a,y:b}:10,{x:c,y:d}:20}
+{% endraw %}
 </pre>
 </p>
 
@@ -1449,9 +1451,11 @@ tensor(x[3],y[2])
 
 Example tensor with this type (representing a matrix):
 <pre>
+{% raw %}
 {{x:0,y:0}:1,{x:0,y:1}:2,
  {x:1,y:0}:3,{x:1,y:1}:5,
  {x:2,y:0}:7,{x:2,y:1}:11}
+{% endraw %}
 </pre>
 
 Note that the labels are indexes in the range <em>[0,dimension-size&gt;</em>
