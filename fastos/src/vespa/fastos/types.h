@@ -110,153 +110,20 @@
 
 #include <inttypes.h>
 
-#ifndef INT64_C
-#ifdef FASTOS_64BIT_LONG
-#define INT64_C(c) c ## L
-#else
-# warning "You need to define INT64_C or find a header that defines this macro"
-#endif
-#endif /* INT64_C */
-
-#ifndef UINT64_C
-#ifdef FASTOS_64BIT_LONG
-#define UINT64_C(c) c ## UL
-#else
-#define UINT64_C(c) c ## ULL
-#endif
-#endif /* UINT64_C */
-
-
 #include <getopt.h>
 
 /* 64bit printf specifiers */
 #ifdef FASTOS_64BIT_LONG
-#ifndef PRId64
-#define PRId64        "ld"
-#endif
 
-#ifndef PRIu64
-#define PRIu64        "lu"
-#endif
-
-#ifndef PRIo64
-#define PRIo64        "lo"
-#endif
-
-#ifndef PRIx64
-#define PRIx64        "lx"
-#endif
-
-#ifndef PRIX64
-#define PRIX64        "lX"
-#endif
-
-#ifndef SCNd64
-#define SCNd64        "ld"
-#endif
-
-#ifndef SCNu64
-#define SCNu64        "lu"
-#endif
-
-#ifndef SCNo64
-#define SCNo64        "lo"
-#endif
-
-#ifndef SCNx64
-#define SCNx64        "lx"
-#endif
-
-#ifndef SCNX64
-#define SCNX64        "lX"
-#endif
+  #ifndef PRIu64
+    #define PRIu64        "lu"
+  #endif
+  #ifndef PRId64
+    #define PRId64        "ld"
+  #endif
 
 #else /* ! FASTOS_64BIT_LONG */
-
-#ifndef PRId64
-#define PRId64        "lld"
-#endif
-
-#ifndef PRIu64
-#define PRIu64        "llu"
-#endif
-
-#ifndef PRIo64
-#define PRIo64        "llo"
-#endif
-
-#ifndef PRIx64
-#define PRIx64        "llx"
-#endif
-
-#ifndef PRIX64
-#define PRIX64        "llX"
-#endif
-
-#ifndef SCNd64
-#define SCNd64        "lld"
-#endif
-
-#ifndef SCNu64
-#define SCNu64        "llu"
-#endif
-
-#ifndef SCNo64
-#define SCNo64        "llo"
-#endif
-
-#ifndef SCNx64
-#define SCNx64        "llx"
-#endif
-
-#ifndef SCNX64
-#define SCNX64        "llX"
-#endif
-
+  #error "Only 64 environments are supported."
 #endif /* FASTOS_64BIT_LONG */
 
-#ifndef PRId32
-#define PRId32        "d"
-#endif
-
-#ifndef PRIu32
-#define PRIu32        "u"
-#endif
-
-#ifndef PRIo32
-#define PRIo32        "o"
-#endif
-
-#ifndef PRIx32
-#define PRIx32        "x"
-#endif
-
-#ifndef PRIX32
-#define PRIX32        "X"
-#endif
-
-#ifndef SCNd32
-#define SCNd32        "d"
-#endif
-
-#ifndef SCNu32
-#define SCNu32        "u"
-#endif
-
-#ifndef SCNo32
-#define SCNo32        "o"
-#endif
-
-#ifndef SCNx32
-#define SCNx32        "x"
-#endif
-
-#ifndef SCNX32
-#define SCNX32        "X"
-#endif
-
-
 typedef pthread_t FastOS_ThreadId;
-
-#define FASTOS_EXTERNC extern "C"
-#define FASTOS_KLASS   class
