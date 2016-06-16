@@ -60,24 +60,19 @@ findroot
 
 # END environment bootstrap section
 
-ROOT=$VESPA_HOME
-export ROOT
-cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
+cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
-# get common PATH etc:
-. $ROOT/libexec/vespa/common-env.sh
-
-if [ -f $ROOT/conf/zookeeper/zookeeper.cfg ]; then
-    chown yahoo $ROOT/conf/zookeeper/zookeeper.cfg
-    chmod 644 $ROOT/conf/zookeeper/zookeeper.cfg
+if [ -f ${VESPA_HOME}conf/zookeeper/zookeeper.cfg ]; then
+    chown yahoo ${VESPA_HOME}conf/zookeeper/zookeeper.cfg
+    chmod 644 ${VESPA_HOME}conf/zookeeper/zookeeper.cfg
 fi
 
-if [ -f $ROOT/var/zookeeper/myid ]; then
-    chown yahoo $ROOT/var/zookeeper/myid
-    chmod 644 $ROOT/var/zookeeper/myid
+if [ -f ${VESPA_HOME}var/zookeeper/myid ]; then
+    chown yahoo ${VESPA_HOME}var/zookeeper/myid
+    chmod 644 ${VESPA_HOME}var/zookeeper/myid
 fi
 
-$ROOT/libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
+${VESPA_HOME}libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
 if [ "$?" != "0" ] ; then
     echo "Not able to start config server, host `hostname` is not part of 'services.addr_configserver'"
     exit 1;
@@ -86,34 +81,76 @@ fi
 fixlimits
 checkjava
 
-ZOOKEEPER_DATA_PATH="$VESPA_HOME/var/zookeeper/version-2"
+ZOOKEEPER_DATA_PATH="${VESPA_HOME}var/zookeeper/version-2"
 if [ ! -d "$ZOOKEEPER_DATA_PATH" ]; then
     echo "Creating data directory $ZOOKEEPER_DATA_PATH"
     mkdir -p $ZOOKEEPER_DATA_PATH
     chown yahoo:users $ZOOKEEPER_DATA_PATH
 fi
 
-ZOOKEEPER_LOG_FILE="$VESPA_HOME/logs/vespa/zookeeper.configserver.log"
+ZOOKEEPER_LOG_FILE="${VESPA_HOME}logs/vespa/zookeeper.configserver.log"
 rm -f $ZOOKEEPER_LOG_FILE*lck
 
-baseuserargs=$vespa_base__jvmargs_configserver
+# common setup
+export VESPA_LOG_TARGET=file:${VESPA_HOME}logs/vespa/vespa.log
+export VESPA_LOG_CONTROL_DIR="${VESPA_HOME}var/db/vespa/logcontrol"
+export VESPA_LOG_CONTROL_DIR=${VESPA_HOME}var/db/vespa/logcontrol
+export VESPA_LOG_CONTROL_FILE=${VESPA_HOME}var/db/vespa/logcontrol/configserver.logcontrol
+export VESPA_LOG_CONTROL_FILE="${VESPA_HOME}var/db/vespa/logcontrol/configserver.logcontrol"
+export VESPA_SERVICE_NAME=configserver
+export LD_LIBRARY_PATH=${VESPA_HOME}lib64
+
+#Does not need fast allocation
+export MALLOC_ARENA_MAX=1
+
+run-as-yahoo ${VESPA_HOME}libexec/vespa/start-filedistribution
+run-as-yahoo ${VESPA_HOME}libexec/vespa/start-logd
+
+# stuff for the configserver process:
+
+appdir="${VESPA_HOME}conf/configserver-app"
+pidfile="${VESPA_HOME}var/run/configserver.pid"
+cfpfile="${VESPA_HOME}var/jdisc_core/configserver.properties"
+bundlecachedir="${VESPA_HOME}var/vespa/bundlecache/configserver"
+
+export JAVAVM_LD_PRELOAD=
+unset LD_PRELOAD
+# will be picked up by standalone-container:
+export standalone_jdisc_container__app_location=${appdir}
+export standalone_jdisc_container__deployment_profile=configserver
+# used by vespa/models etc:
+export VESPA_WEB_SERVICE_PORT=4080
+
+# class path
+CP="${VESPA_HOME}lib/jars/jdisc_core-jar-with-dependencies.jar"
+
+baseuserargs="$vespa_base__jvmargs_configserver"
 serveruserargs="$cloudconfig_server__jvmargs"
+jvmargs="$baseuserargs $serveruserargs"
 
-# TODO: Move this stuff to package when fully working
-APP=$VESPA_HOME/conf/configserver-app
-VESPA_SERVICE_NAME=configserver
-LOGFILE="${ROOT}/logs/vespa/vespa.log"
-VESPA_LOG_TARGET="file:${LOGFILE}"
-PID_FILE="${ROOT}/var/run/configserver.pid"
-VESPA_LOG_CONTROL_DIR="$ROOT/var/db/vespa/logcontrol"
-VESPA_LOG_CONTROL_FILE="$ROOT/var/db/vespa/logcontrol/configserver.logcontrol"
-jvmargs="-Dzookeeperlogfile=$ZOOKEEPER_LOG_FILE $baseuserargs $serveruserargs"
-standalone_jdisc_container__deployment_profile="configserver"
-MAXRESTARTS=100000
-export UNPRIVILEGED=1
-export MALLOC_ARENA_MAX=1 #Does not need fast allocation
-export VESPA_SERVICE_NAME VESPA_LOG_TARGET PID_FILE VESPA_LOG_CONTROL_DIR JAVA_OPTS VESPA_LOG_CONTROL_FILE standalone_jdisc_container__deployment_profile MAXRESTARTS
-run-as-yahoo ${ROOT}/bin/jdisc_container_start $APP $jvmargs
+printenv > $cfpfile
+mkdir -p $bundlecachedir
 
-run-as-yahoo $ROOT/libexec/vespa/start-filedistribution
-run-as-yahoo $ROOT/libexec/vespa/start-logd
+run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
+	java \
+	-Xms128m -Xmx2048m \
+	-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${VESPA_HOME}var/crash \
+	-XX:OnOutOfMemoryError='kill -9 %p' \
+	$jvmargs \
+	-Djava.library.path=${VESPA_HOME}lib64 \
+	-Djava.awt.headless=true \
+	-Dsun.rmi.dgc.client.gcInterval=3600000 \
+	-Dsun.net.client.defaultConnectTimeout=5000 -Dsun.net.client.defaultReadTimeout=60000 \
+	-Djavax.net.ssl.keyStoreType=JKS \
+	-Djdisc.config.file=$cfpfile \
+	-Djdisc.export.packages= \
+	-Djdisc.cache.path=$bundlecachedir \
+	-Djdisc.debug.resources=false \
+	-Djdisc.bundle.path=${VESPA_HOME}lib/jars \
+	-Djdisc.logger.enabled=true \
+	-Djdisc.logger.level=ALL \
+	-Djdisc.logger.tag=jdisc/configserver \
+	-Dfile.encoding=UTF-8 \
+	-Dzookeeperlogfile=${VESPA_HOME}logs/vespa/zookeeper.configserver.log \
+	-cp "$CP" \
+	com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar
