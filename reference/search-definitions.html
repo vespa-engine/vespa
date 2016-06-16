@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-
-<html lang="en">
-
-<head>
-<title>Search Definitions</title>
-<link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-<meta name="date"       content="October 2010" />
-<meta name="authors"    content="bratseth, bergum, musum" />
-</head>
-
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Search Definitions"
+---
 
 <p class="ingress">
 This document lists the syntax and content of search definitions,
@@ -1446,7 +1437,9 @@ tensor(x{},y{})
 
 Example tensor with this type:
 <pre>
+{% raw %}
 {{x:a,y:b}:10,{x:c,y:d}:20}
+{% endraw %}
 </pre>
 </p>
 
@@ -1458,9 +1451,11 @@ tensor(x[3],y[2])
 
 Example tensor with this type (representing a matrix):
 <pre>
+{% raw %}
 {{x:0,y:0}:1,{x:0,y:1}:2,
  {x:1,y:0}:3,{x:1,y:1}:5,
  {x:2,y:0}:7,{x:2,y:1}:11}
+{% endraw %}
 </pre>
 
 Note that the labels are indexes in the range <em>[0,dimension-size&gt;</em>
@@ -2854,5 +2849,4 @@ search example {
 }
 </pre>
 
-</body>
-</html>
+

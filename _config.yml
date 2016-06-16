@@ -1,0 +1,15 @@
+# Site settings
+title: Vespa
+email: ""
+description: ""
+baseurl: ""
+url: ""
+defaults:
+    -
+        scope:
+            path: ""
+        values:
+            layout: "default"
+
+# Build settings
+markdown: kramdown

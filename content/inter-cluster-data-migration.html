@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<html lang="en">
-
-<head>
-  <title>Copy and migrate data between clusters</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="May 2016" />
-  <meta name="authors" content="kraune" />
-</head>
-
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Copy and migrate data between clusters"
+---
 
 <p>
 Data can easily be copied and/or migrated between clusters using Visit.
@@ -60,5 +52,4 @@ also be specified. It should be set to the same value as the cluster.</em>
 $ vespavisit --selection music --datahandler '[Storage:config=tcp/myconfigserver.mydomain.com:12345;cluster=mycluster;clusterconfigid=mycluster]'
 </pre>
 
-</body>
-</html>
+

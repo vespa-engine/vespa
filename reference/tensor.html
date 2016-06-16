@@ -1,16 +1,8 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Tensor Evaluation Reference"
+---
 
-<html lang="en">
-<head>
-  <title>Tensor Evaluation Reference</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="September 2015" />
-  <meta name="authors" content="geirst" />
-</head>
-
-
-<body>
 <p>
 A tensor is a set of named <em>dimensions</em> (integer or identifier) defining its <em>order</em>
 and a set of values located in the space of those dimensions:
@@ -79,8 +71,10 @@ The dimensions of the resulting tensor is the union of the dimensions of the arg
 <p>
 Examples:
 <pre>
+{% raw %}
 {{x:1}:3} + {{x:2}:5} = {{x:1}:3,{x:2}:5}
 {{x:1}:3} + {{x:1}:5} = {{x:1}:8}
+{% endraw %}
 </pre>
 </p>
 
@@ -95,8 +89,10 @@ The dimensions of the resulting tensor is the union of the dimensions of the arg
 <p>
 Examples:
 <pre>
+{% raw %}
 {{x:1}:3} - {{x:2}:5} = {{x:1}:3,{x:2}:-5}
 {{x:1}:5} - {{x:1}:3} = {{x:1}:2}
+{% endraw %}
 </pre>
 </p>
 
@@ -114,10 +110,12 @@ A combination of two cell addresses is legal if for each shared dimension either
 <p>
 Examples:
 <pre>
+{% raw %}
 {{x:1}:3} * {{x:2}:5} = {}
 {{x:1}:3} * {{x:1}:5} = {{x:1}:15}
 {{x:1}:3, {x:2}:7} * {{y:1}:5} = {{x:1,y:1}:15, {x:2,y:1}:35}
 {{x:1}:5, {x:1,y:1}:1} * {{z:1}:11, {y:1,z:1}:7} = {{x:1,y:1,z:1}:7, {x:1,z:1}:55}
+{% endraw %}
 </pre>
 </p>
 
@@ -133,10 +131,12 @@ The dimensions of the resulting tensor is the union of the dimensions of the arg
 <p>
 Examples:
 <pre>
+{% raw %}
 match({{x:1}:3}, {{x:2}:5}) = {}
 match({{x:1}:3}, {{x:1}:5}) = {{x:1}:15}
 match({{x:1}:3, {x:2}:3, {x:1,y:1}:1, {x:1,y:2}:6},
       {{x:1}:5, {x:1,y:1}:7, {x:1,y:1,z:1}:6}) = {{x:1}:15, {x:1,y:1}:7}
+{% endraw %}
 </pre>
 </p>
 
@@ -149,8 +149,10 @@ Returns the sum of all the cells of the argument tensor.
 <p>
 Examples:
 <pre>
+{% raw %}
 sum({{x:1}:3, {x:2}:5}}) = 8
 sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}) = 16
+{% endraw %}
 </pre>
 </p>
 
@@ -165,8 +167,10 @@ The dimensions of the resulting tensor is the dimenions of the given tensor with
 <p>
 Examples:
 <pre>
+{% raw %}
 sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}, x) = {{y:1}:4, {y:2}:12}
 sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}, y) = {{x:1}:6, {x:2}:10}
+{% endraw %}
 </pre>
 </p>
 
@@ -181,8 +185,10 @@ The dimensions of the resulting tensor is the union of the dimensions of the arg
 <p>
 Examples:
 <pre>
+{% raw %}
 min({{x:1}:3}, {{x:2}:5}) = {{x:1}:3,{x:2}:5}
 min({{x:1}:3}, {{x:1}:5} = {{x:1}:3}
+{% endraw %}
 </pre>
 </p>
 
@@ -197,8 +203,10 @@ The dimensions of the resulting tensor is the union of the dimensions of the arg
 <p>
 Examples:
 <pre>
+{% raw %}
 max({{x:1}:3}, {{x:2}:5}) = {{x:1}:3,{x:2}:5}
 max({{x:1}:3}, {{x:1}:5} = {{x:1}:5}
+{% endraw %}
 </pre>
 </p>
 
@@ -252,7 +260,9 @@ query.getRanking().getFeatures().put("query(tensorFeature)",
 
 The verbatim version of the same tensor is:
 <pre>
+{% raw %}
 {{x:1}:500}
+{% endraw %}
 </pre>
 </p>
 
@@ -352,5 +362,4 @@ This is a sparse tensor product over a shared dimension (<em>x</em>) followed by
 </p>
 
 
-</body>
-</html>
+

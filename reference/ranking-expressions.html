@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-
-<html lang="en">
-
-<head>
-  <title>Ranking Expressions</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="February 2008" />
-  <meta name="authors" content="steinar, bratseth" />
-</head>
-
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Ranking Expressions"
+---
 
 <p class="ingress">
 This document is a complete reference to the <strong>ranking
@@ -208,5 +199,4 @@ by 1-exp of the document age.
   7*attributeMatch(tags).normalizedWeight ) /22 * ( 1 - age(creationtime) )
 </pre>
 
-</body>
-</html>
+

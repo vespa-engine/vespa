@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-
-<html lang="en">
-
-<head>
-  <title>vespafeeder</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="October 2006" />
-  <meta name="authors" content="thomasg" />
-</head>
-
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "vespafeeder"
+---
 
 <p class="ingress" data-annotation="Rewrite entire document to match the other command-line tool documents">
 This page provides the reference documentation on
@@ -109,5 +100,4 @@ Some examples of why this could happen are:
   <li>You have configured one or more selection expressions that restrict the documents the cluster will accept and your feed file contains documents that are excluded by all these. E.g. you have a selection that says the cluster will only accept or store documents that are less than 30 days old and your feed file contains documents that are 30+ days old.</li>
 </ul>
 
-</body>
-</html>
+

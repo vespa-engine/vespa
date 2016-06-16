@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-
-<html lang="en">
-<head>
-  <title>Using Valgrind with Vespa</title>
-  <link rel="stylesheet"
-        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
-  <meta name="date" content="March 2014"/>
-  <meta name="authors" content="balder"/>
-</head>
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Using Valgrind with Vespa"
+---
 
 <p class="ingress">
 Valgrind is a useful tool to investigate bugs and to get a detailed performance
@@ -116,5 +108,4 @@ $ VESPA_USE_VALGRIND="proton" VESPA_VALGRIND_OPT="--tool=callgrind --simulate-hw
 Remember to stop <code>vespa_base</code>. The callgrind.* files are not generated until the program stops.
 </p>
 
-</body>
-</html>
+
