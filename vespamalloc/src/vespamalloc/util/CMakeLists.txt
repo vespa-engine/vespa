@@ -7,3 +7,5 @@ vespa_add_library(vespamalloc_util OBJECT
     stream.cpp
     DEPENDS
 )
+vespa_add_target_system_dependency(vespamalloc_util dl)
+

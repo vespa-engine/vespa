@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ulimit -u 31215
+
 VESPA_MALLOC_SO=../../../src/vespamalloc/libvespamalloc.so
 VESPA_MALLOC_SO_D=../../../src/vespamalloc/libvespamalloc_vespamallocd.so
 

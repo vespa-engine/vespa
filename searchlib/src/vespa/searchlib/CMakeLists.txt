@@ -28,4 +28,6 @@ vespa_add_library(searchlib
     searchlib_queryeval
     searchlib_queryeval_test
     staging_vespalib
+    icuuc
+    atomic
 )

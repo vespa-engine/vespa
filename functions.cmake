@@ -143,9 +143,6 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     # This is used within the generated config-<name>.cpp
     # TODO: Should modify configgen to use #include <vespa/<modulename>/config-<name>.h> instead
     target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_PARENT_DIR})
-
-    # Needed to be able to do a #include <config-<name>.h> for this target
-    # This is used within some unit tests
     target_include_directories(${TARGET} PRIVATE ${CONFIG_DEST_DIR})
 endfunction()
 

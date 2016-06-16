@@ -1,6 +1,7 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 # @author Eirik Nygaard
+# @author Arnstein Ressem
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 project(vespa CXX C)
@@ -17,6 +18,10 @@ enable_testing()
 
 # Include vespa config definitions in every target
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
+
+include_directories(/opt/vespa-boost/include /opt/vespa-libtorrent/include /opt/vespa-zookeeper-c-client/include /opt/vespa-cppunit/include)
+link_directories(/opt/vespa-boost/lib /opt/vespa-libtorrent/lib /opt/vespa-zookeeper-c-client/lib /opt/vespa-cppunit/lib)
+link_directories(/usr/lib64/llvm)
 
 add_subdirectory(config)
 add_subdirectory(configd)

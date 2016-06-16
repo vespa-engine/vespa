@@ -5,7 +5,7 @@ vespa_define_module(
     vespalog
 
     EXTERNAL_DEPENDS
-    LLVM
+    LLVM-3.4
 
     APPS
     src/apps/eval_expr
