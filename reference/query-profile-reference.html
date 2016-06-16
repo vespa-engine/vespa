@@ -3,7 +3,7 @@
 title: "Query profile reference"
 ---
 
-<h1>Query profile reference</h1>
+<h2>Query profile reference</h2>
 
 <p class="ingress">
 This is a reference to the full format of <a
@@ -15,7 +15,7 @@ href="../query-profiles.html">query profiles</a>.
 
 
 
-<h1 id="query_profiles">Query Profiles</h1>
+<h2 id="query_profiles">Query Profiles</h2>
 
 <p>
 A query profile defines a named set of search request parameters with
@@ -44,7 +44,7 @@ repeatable tag. These items are described in the following sections.
 </p>
 
 
-<h2 id="id">id</h2>
+<h3 id="id">id</h3>
 
 <p>The id has the format</p>
 
@@ -69,7 +69,7 @@ special default one.  If there are multiple profiles named
 </p>
 
 
-<h2 id="optional_query_profile_attributes">Optional <code>query-profile</code> attributes</h2>
+<h3 id="optional_query_profile_attributes">Optional <code>query-profile</code> attributes</h3>
 
 <p>
 The optional <code>query-profile</code> attributes are:
@@ -85,7 +85,7 @@ overrides the same field name in an inherited profile.</td><td><em>No inclusion<
 </table>
 
 
-<h2 id="description">Description</h2>
+<h3 id="description">Description</h3>
 
 <p>
 A textual description of the purpose of this. Used for
@@ -93,7 +93,7 @@ documentation.
 </p>
 
 
-<h2 id="query_profile_field">Query profile <code>field</code></h2>
+<h3 id="query_profile_field">Query profile <code>field</code></h3>
 
 <p>
 A field in a query profile defines a key-value pair.
@@ -116,7 +116,7 @@ profile, i.e
 </p>
 
 
-<h2 id="field_name"><code>field</code> name</h2>
+<h3 id="field_name"><code>field</code> name</h3>
 
 <p>
 The name of the field, must be a valid <a
@@ -124,7 +124,7 @@ href="#identifiers">identifier</a>.
 </p>
 
 
-<h2 id="optional_field_attributes">Optional <code>field</code> attributes</h2>
+<h3 id="optional_field_attributes">Optional <code>field</code> attributes</h3>
 
 <p>
 The optional <code>field</code> attributes are:
@@ -139,7 +139,7 @@ a value later, the assignment will <em>not</em> cause an error, but will simply 
 </table>
 
 
-<h2 id="field_value"><code>field</code> value</h2>
+<h3 id="field_value"><code>field</code> value</h3>
 
 <p>
 This value of the field, may be either
@@ -157,7 +157,7 @@ that query type field definition.
 </p>
 
 
-<h2 id="dimensions">Dimensions</h2>
+<h3 id="dimensions">Dimensions</h3>
 
 A comma-separated list of dimensions over which variants of this profile may be created as
 <a href="#query_profile_nested">nested query profiles</a>.
@@ -165,7 +165,7 @@ The names of the dimensions are the names of request parameters which, when rece
 the matching profile variants.
 
 
-<h2 id="query_profile_nested">Query profile (nested)</h2>
+<h3 id="query_profile_nested">Query profile (nested)</h3>
 
 A nested query profile defines variants of values returned from the enclosing query profile, which are returned
 for variable requests where this variant is the most specific match to the request properties named by the
@@ -173,7 +173,7 @@ for variable requests where this variant is the most specific match to the reque
 No other attributes may be set in nested query profiles.
 
 
-<h2 id="query_profile_nested_for_attribute">Query profile (nested) <code>for</code> attribute</h2>
+<h3 id="query_profile_nested_for_attribute">Query profile (nested) <code>for</code> attribute</h3>
 
 This attribute defines the values of the <a href="#dimensions">dimensions</a> of the enclosing profile for
 which this nested profile defined alternative values, as a comma-separated list.
@@ -189,7 +189,7 @@ this should match any value may be denoted by a "*". One or more trailing "*" ma
 
 
 
-<h1 id="query_profile_types">Query Profile Types</h1>
+<h2 id="query_profile_types">Query Profile Types</h2>
 
 <p>
 A query profile type defines a set of legal, typed values for a query
@@ -216,7 +216,7 @@ repeatable tag. These items are described in the following sections.
 </p>
 
 
-<h2 id="optional_query_profile_type_attributes">Optional <code>query-profile-type</code> attributes</h2>
+<h3 id="optional_query_profile_type_attributes">Optional <code>query-profile-type</code> attributes</h3>
 
 <p>
 The optional <code>query-profile-type</code> attributes are:
@@ -231,7 +231,7 @@ overrides inherited ones. The same rules apply to other elements than fields.</t
 </table>
 
 
-<h2 id="match"><code>match</code></h2>
+<h3 id="match"><code>match</code></h3>
 
 <p>
 If &lt;match path=&quot;true&quot;&gt; is added to the query profile
@@ -254,7 +254,7 @@ The match setting is inherited from supertypes to subtypes.<
 /p>
 
 
-<h2 id="strict"><code>strict</code></h2>
+<h3 id="strict"><code>strict</code></h3>
 
 <p>
 If this element is added to a query profile type, then that profile
@@ -290,7 +290,7 @@ be exposed must be declared explicitly in a strict top level type.</li>
 </ul>
 
 
-<h2 id="query_profile_type_field">Query profile type <code>field</code></h2>
+<h3 id="query_profile_type_field">Query profile type <code>field</code></h3>
 
 <p>
 This defines the name and type of a field of query profiles of this
@@ -298,7 +298,7 @@ type.
 </p>
 
 
-<h2 id="field_type"><code>field</code> type</h2>
+<h3 id="field_type"><code>field</code> type</h3>
 
 <p>
 This defines the type of this field. The type is one of
@@ -318,7 +318,7 @@ This defines the type of this field. The type is one of
 </table>
 
 
-<h2 id="optional_field_definition_attributes">Optional <code>field</code> definition attributes</h2>
+<h3 id="optional_field_definition_attributes">Optional <code>field</code> definition attributes</h3>
 
 <p>
 The optional <code>field</code> definition attributes are:
@@ -335,7 +335,7 @@ parameter of the same name in the search request. If it is <code>false</code>, i
 </table>
 
 
-<h2 id="identifiers">Identifiers</h2>
+<h3 id="identifiers">Identifiers</h3>
 
 <p>
 An identifier is a string matches the pattern <code>[a-zA-Z_/][a-zA-Z0-9_/]*</code>.
