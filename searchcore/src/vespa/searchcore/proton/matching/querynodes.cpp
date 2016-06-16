@@ -108,12 +108,6 @@ ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit)
     }
 }
 
-const ProtonTermData::FieldEntry &
-ProtonTermData::field(size_t i) const
-{
-    return _fields[i];
-}
-
 const ProtonTermData::FieldEntry *
 ProtonTermData::lookupField(uint32_t fieldId) const
 {

@@ -63,7 +63,7 @@ public:
 
     // ITermData interface
     size_t numFields() const override final { return _fields.size(); }
-    const FieldEntry &field(size_t i) const override final;
+    const FieldEntry &field(size_t i) const override final { return _fields[i]; }
     const FieldEntry *lookupField(uint32_t fieldId) const override final;
 };
 
