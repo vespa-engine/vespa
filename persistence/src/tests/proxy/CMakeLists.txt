@@ -11,7 +11,7 @@ vespa_add_executable(persistence_providerproxy_test_app
     DEPENDS
     persistence
 )
-vespa_add_executable(persistence_providerproxy_conformance_test_app
+vespa_add_executable(persistence_providerproxy_conformance_test_app TEST
     SOURCES
     providerproxy_conformancetest.cpp
     DEPENDS

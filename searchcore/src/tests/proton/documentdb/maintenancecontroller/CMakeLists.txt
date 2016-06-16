@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(searchcore_maintenancecontroller_test_app
+vespa_add_executable(searchcore_maintenancecontroller_test_app TEST
     SOURCES
     maintenancecontroller_test.cpp
     DEPENDS
@@ -18,7 +18,7 @@ vespa_add_executable(searchcore_maintenancecontroller_test_app
     searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_maintenancecontroller_test_app COMMAND searchcore_maintenancecontroller_test_app)
-vespa_add_executable(searchcore_frozenbucketsmap_test_app
+vespa_add_executable(searchcore_frozenbucketsmap_test_app TEST
     SOURCES
     frozenbucketsmap_test.cpp
     DEPENDS
