@@ -53,12 +53,10 @@ This is the Vespa!
 
 source /opt/rh/devtoolset-4/enable || true
 sh bootstrap.sh
-cmake3 \
-       -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-       -DEXTRA_LINK_DIRECTORY=%{_prefix}/lib64 \
-       -DCMAKE_C_COMPILER=gcc \
-       -DCMAKE_CXX_COMPILER=g++ \
+       -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm" \
+       -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include" \
        -DCMAKE_INSTALL_RPATH=%{_prefix}/lib64 \
        -DCMAKE_BUILD_RPATH=%{_prefix}/lib64 \
        .
