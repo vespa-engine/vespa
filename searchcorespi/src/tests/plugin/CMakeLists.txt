@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(searchcorespi_plugin_test_app
+vespa_add_executable(searchcorespi_plugin_test_app TEST
     SOURCES
     plugin_test.cpp
     DEPENDS
@@ -10,7 +10,7 @@ vespa_add_test(
     COMMAND searchcorespi_plugin_test_app
     ENVIRONMENT "LD_LIBRARY_PATH=."
 )
-vespa_add_executable(searchcorespi_factoryregistry_test_app
+vespa_add_executable(searchcorespi_factoryregistry_test_app TEST
     SOURCES
     factoryregistry_test.cpp
     DEPENDS

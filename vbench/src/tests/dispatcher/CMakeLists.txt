@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(vbench_dispatcher_test_app
+vespa_add_executable(vbench_dispatcher_test_app TEST
     SOURCES
     dispatcher_test.cpp
     DEPENDS

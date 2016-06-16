@@ -61,7 +61,7 @@ vespa_add_executable(fsa_vectorizer_test_app
     DEPENDS
     fsa
 )
-vespa_add_executable(fsa_vectorizer_perf_test_app
+vespa_add_executable(fsa_vectorizer_perf_test_app TEST
     SOURCES
     vectorizer_perftest.cpp
     DEPENDS

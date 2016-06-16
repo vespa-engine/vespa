@@ -192,7 +192,7 @@ endfunction()
 
 function(vespa_add_executable TARGET)
     cmake_parse_arguments(ARG
-        ""
+        "TEST"
         "INSTALL;OUTPUT_NAME"
         "DEPENDS;AFTER;SOURCES"
         ${ARGN})
@@ -200,6 +200,16 @@ function(vespa_add_executable TARGET)
     __check_target_parameters()
     add_executable(${TARGET} ${ARG_SOURCES})
     __add_dependencies_to_target()
+
+    # If this is a test executable, add it to the test target for this module
+    # If building of unit tests is not specified, exclude this target from the all target
+    if(ARG_TEST)
+        __add_test_target_to_module(${TARGET})
+
+        if(EXCLUDE_TESTS_FROM_ALL)
+            set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+        endif()
+    endif()
 
     if(ARG_INSTALL)
         install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
@@ -342,13 +352,6 @@ function(vespa_add_test)
         endif()
 
         separate_arguments(ARG_COMMAND)
-    endif()
-
-    # If there exists a target with the same name as the test, exclude the target from the "all" target 
-    # Instead, add it to the test target for this module
-    if (TARGET ${ARG_NAME})
-        set_target_properties(${ARG_NAME} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-        __add_test_target_to_module(${ARG_NAME})
     endif()
 
     add_test(NAME ${ARG_NAME} COMMAND ${ARG_COMMAND} WORKING_DIRECTORY ${ARG_WORKING_DIRECTORY})

@@ -4,7 +4,7 @@ vespa_add_library(persistence_testdummyimpl
     dummyimpltest.cpp
     DEPENDS
 )
-vespa_add_executable(persistence_dummypersistence_test_app
+vespa_add_executable(persistence_dummypersistence_test_app TEST
     SOURCES
     dummypersistence_test.cpp
     DEPENDS

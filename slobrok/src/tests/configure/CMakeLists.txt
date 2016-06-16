@@ -4,7 +4,7 @@ vespa_add_executable(slobrok_gencfg_app
     gencfg.cpp
     DEPENDS
 )
-vespa_add_executable(slobrok_configure_test_app
+vespa_add_executable(slobrok_configure_test_app TEST
     SOURCES
     configure.cpp
     DEPENDS

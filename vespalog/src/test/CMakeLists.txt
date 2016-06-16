@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(vespalog_bufferedlogtest_app
+vespa_add_executable(vespalog_bufferedlogtest_app TEST
     SOURCES
     bufferedlogtest.cpp
     bufferedlogtest.logger1.cpp
@@ -8,14 +8,14 @@ vespa_add_executable(vespalog_bufferedlogtest_app
     vespalog
 )
 vespa_add_test(NAME vespalog_bufferedlogtest_app NO_VALGRIND COMMAND sh bufferedlogtest_test.sh)
-vespa_add_executable(vespalog_bufferedlogskiptest_app
+vespa_add_executable(vespalog_bufferedlogskiptest_app TEST
     SOURCES
     bufferedlogskiptest.cpp
     DEPENDS
     vespalog
 )
 vespa_add_test(NAME vespalog_bufferedlogskiptest_app NO_VALGRIND COMMAND sh bufferedlogskiptest_test.sh) 
-vespa_add_executable(vespalog_rejectfiltertest_app
+vespa_add_executable(vespalog_rejectfiltertest_app TEST
     SOURCES
     rejectfiltertest.cpp
     DEPENDS
