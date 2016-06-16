@@ -1,33 +1,33 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(vespalib_hash_test_app
+vespa_add_executable(vespalib_hash_test_app TEST
     SOURCES
     hash_test.cpp
     DEPENDS
     vespalib
 )
 vespa_add_test(NAME vespalib_hash_test_app COMMAND vespalib_hash_test_app)
-vespa_add_executable(vespalib_string_test_app
+vespa_add_executable(vespalib_string_test_app TEST
     SOURCES
     string_test.cpp
     DEPENDS
     vespalib
 )
 vespa_add_test(NAME vespalib_string_test_app COMMAND vespalib_string_test_app)
-vespa_add_executable(vespalib_vector_map_test_app
+vespa_add_executable(vespalib_vector_map_test_app TEST
     SOURCES
     vector_map_test.cpp
     DEPENDS
     vespalib
 )
 vespa_add_test(NAME vespalib_vector_map_test_app COMMAND vespalib_vector_map_test_app)
-vespa_add_executable(vespalib_asciistream_test_app
+vespa_add_executable(vespalib_asciistream_test_app TEST
     SOURCES
     asciistream_test.cpp
     DEPENDS
     vespalib
 )
 vespa_add_test(NAME vespalib_asciistream_test_app COMMAND vespalib_asciistream_test_app)
-vespa_add_executable(vespalib_hashtable_test_app
+vespa_add_executable(vespalib_hashtable_test_app TEST
     SOURCES
     hashtable_test.cpp
     DEPENDS
