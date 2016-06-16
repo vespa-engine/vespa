@@ -27,7 +27,7 @@ class ProtonTermData : public search::fef::ITermData
 public:
     typedef search::queryeval::FieldSpec FieldSpec;
 
-    struct FieldEntry : search::fef::SimpleTermFieldData {
+    struct FieldEntry final : search::fef::SimpleTermFieldData {
         vespalib::string field_name;
         bool attribute_field;
         bool filter_field;
@@ -42,7 +42,7 @@ public:
             return FieldSpec(field_name, getFieldId(),
                              getHandle(), filter_field);
         }
-        virtual search::fef::TermFieldHandle getHandle() const;
+        search::fef::TermFieldHandle getHandle() const override;
     };
 
 private:
@@ -62,9 +62,9 @@ public:
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
 
     // ITermData interface
-    virtual size_t numFields() const;
-    virtual const FieldEntry &field(size_t i) const;
-    virtual const FieldEntry *lookupField(uint32_t fieldId) const;
+    size_t numFields() const override final { return _fields.size(); }
+    const FieldEntry &field(size_t i) const override final;
+    const FieldEntry *lookupField(uint32_t fieldId) const override final;
 };
 
 namespace {
