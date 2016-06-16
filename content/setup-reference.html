@@ -1,6 +1,6 @@
 ---
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-title: "services.xml - &#39;content&#39;"
+title: "services.xml - 'content'"
 ---
 
 <pre>
@@ -317,11 +317,11 @@ This example creates two groups, where each group has all copies of half of the 
 <pre class="code">
 &lt;group name='top-group' distribution-key='0'>
   &lt;distribution partitions='*'/>
-  
+
   &lt;group name='bottom-1' distribution-key='0'>
     &lt;node distribution-key='0' hostalias='node1'/>
   &lt;/group>
-  
+
   &lt;group name='bottom-2' distribution-key='1'>
     &lt;node distribution-key='1' hostalias='node2'/>
   &lt;/group>
@@ -452,8 +452,8 @@ Specifies the query timeout for queries against the search interface on the cont
 <h2 id="visibility-delay">visibility-delay</h2>
 <p>Contained in:<a href="#search"><code>search</code></a>.
 Specifies the maximum amount of time (in seconds) that should pass from a write operation is
-performed to the change is visible in search results. The default value is 0 seconds. Configuring a larger value then 0 will also introduce a results oriented cache at the container level where 
-time to live (ttl) is set to the same value as the visibility-delay. 
+performed to the change is visible in search results. The default value is 0 seconds. Configuring a larger value then 0 will also introduce a results oriented cache at the container level where
+time to live (ttl) is set to the same value as the visibility-delay.
 Note that by increasing this value you should also expect an increase in throughput during batch feeding.
 </p>
 
@@ -744,7 +744,7 @@ Attributes
 </ul>
 </p>
 
-  
+
 <h2 class="param" id="visitors">visitors</h2>
 <p>Contained in <a href="#tuning"><code>tuning</code></a>.
   Tuning parameters for visitor operations. Might contain <a href="#max-concurrent"><code>&lt;max-concurrent&gt;</code></a>.
@@ -759,7 +759,7 @@ Attributes
 </ul>
 </p>
 
-  
+
 <h2 id="max-concurrent">max-concurrent</h2>
 <p>Contained in <a href="#visitors"><code>visitors</code></a>.
 Defines how many visitors can be active concurrently on each storage node. The number allowed depends on priority - lower priority visitors
@@ -808,7 +808,7 @@ Optional sub-elements are:
 <p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
 Tells what policy shall be used to choose wich group/row shall receive the next request.
 Default is <b>round-robin</b> which simply round robin between the different groups. <b>random</b> is the
-  other option that can be used if you have a very regular query pattern to obtain better distribution. 
+  other option that can be used if you have a very regular query pattern to obtain better distribution.
 Note that <b>round-robin</b> require all groups to be of equal size where as <b>random</b> allows heterogeneous groups.
 Also note that <b>round-robin</b> will put equal load on the groups. Hence requiring them to be similar with
 regards to capacity. <b>random</b> will measure latency and prefer lower latency groups.
