@@ -10,9 +10,7 @@
 
 #pragma once
 
-#ifndef FASTOS_AUTOCONF         /* Are we in the autoconf stage? */
 #include <vespa/fastos/autoconf.h>
-#endif
 
 /**
  * @def __STDC_LIMIT_MACROS
@@ -110,48 +108,7 @@
 
 #define FASTOS_PREFIX(a) FastOS_##a
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-#ifndef FASTOS_AUTOCONF
-
 #include <inttypes.h>
-
-/**
- * On UNIX we use the [long long] type for 64bit integers.
- */
-#ifndef FASTOS_HAVE_INT64_T
-typedef long long int64_t;
-#endif
-
-#ifndef FASTOS_HAVE_UINT64_T
-typedef unsigned long long uint64_t;
-#endif
-
-#ifndef FASTOS_HAVE_INT32_T
-typedef int int32_t;
-#endif
-
-#ifndef FASTOS_HAVE_UINT32_T
-typedef unsigned int uint32_t;
-#endif
-
-#ifndef FASTOS_HAVE_INT16_T
-typedef short int int16_t;
-#endif
-
-#ifndef FASTOS_HAVE_UINT16_T
-typedef unsigned short int uint16_t;
-#endif
-
-#ifndef FASTOS_HAVE_INT8_T
-typedef signed char int8_t;
-#endif
-
-#ifndef FASTOS_HAVE_UINT8_T
-typedef unsigned char uint8_t;
-#endif
 
 #ifndef INT64_C
 #ifdef FASTOS_64BIT_LONG
@@ -170,61 +127,7 @@ typedef unsigned char uint8_t;
 #endif /* UINT64_C */
 
 
-#ifndef INT8_MIN
-#define INT8_MIN        (-128)
-#endif
-
-#ifndef INT16_MIN
-#define INT16_MIN       (-32767-1)
-#endif
-
-#ifndef INT32_MIN
-#define INT32_MIN       (-2147483647-1)
-#endif
-
-#ifndef INT64_MIN
-#define INT64_MIN       (-INT64_C(9223372036854775807)-1)
-#endif
-
-#ifndef INT8_MAX
-#define INT8_MAX        (127)
-#endif
-
-#ifndef INT16_MAX
-#define INT16_MAX       (32767)
-#endif
-
-#ifndef INT32_MAX
-#define INT32_MAX       (2147483647)
-#endif
-
-#ifndef INT64_MAX
-#define INT64_MAX       (INT64_C(9223372036854775807))
-#endif
-
-#ifndef UINT8_MAX
-#define UINT8_MAX       (255U)
-#endif
-
-#ifndef UINT16_MAX
-#define UINT16_MAX      (65535U)
-#endif
-
-#ifndef UINT32_MAX
-#define UINT32_MAX      (4294967295U)
-#endif
-
-#ifndef UINT64_MAX
-#define UINT64_MAX      (UINT64_C(18446744073709551615))
-#endif
-
 #include <getopt.h>
-
-#endif  /* FASTOS_AUTOCONF */
-
-#ifndef SHUT_WR
-#define SHUT_WR 1
-#endif
 
 /* 64bit printf specifiers */
 #ifdef FASTOS_64BIT_LONG

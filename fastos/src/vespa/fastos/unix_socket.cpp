@@ -20,6 +20,10 @@ bool FastOS_UNIX_Socket::Close()
     return rc;
 }
 
+#ifndef SHUT_WR
+#define SHUT_WR 1
+#endif
+
 bool FastOS_UNIX_Socket::Shutdown()
 {
     bool rc=true;
