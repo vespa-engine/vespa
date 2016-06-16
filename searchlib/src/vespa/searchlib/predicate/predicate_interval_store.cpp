@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_interval_store");
 #include <vespa/fastos/fastos.h>
 
 #include "predicate_interval_store.h"
@@ -10,6 +8,8 @@ LOG_SETUP(".predicate_interval_store");
 #include <vespa/searchlib/btree/bufferstate.h>
 #include <vespa/searchlib/btree/datastore.hpp>
 #include <vespa/searchlib/btree/entryref.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".predicate_interval_store");
 
 using search::btree::BufferState;
 using search::btree::EntryRef;

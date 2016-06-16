@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_tree_annotator");
 #include <vespa/fastos/fastos.h>
 
 #include "predicate_tree_annotator.h"
@@ -15,6 +13,9 @@ LOG_SETUP(".predicate_tree_annotator");
 #include <vespa/vespalib/data/slime/slime.h>
 #include <map>
 #include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".predicate_tree_annotator");
 
 using document::Predicate;
 using std::map;

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_tree_analyzer");
 #include <vespa/fastos/fastos.h>
 
 #include "predicate_tree_analyzer.h"
@@ -9,6 +7,8 @@ LOG_SETUP(".predicate_tree_analyzer");
 #include <algorithm>
 #include <iostream>
 #include <cmath>
+#include <vespa/log/log.h>
+LOG_SETUP(".predicate_tree_analyzer");
 
 using document::Predicate;
 using std::map;
