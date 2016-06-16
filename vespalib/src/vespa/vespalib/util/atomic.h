@@ -67,7 +67,7 @@ public:
     static inline int64_t postDec(volatile int64_t *data);
     static inline bool cmpSwap(volatile int64_t * dest, int64_t newVal, int64_t oldVal);
 
-#if defined(FASTOS_64BIT_LONG)
+#if defined(__x86_64__)
     static inline bool cmpSwap(volatile long long * dest, long long newVal, long long oldVal);
     static inline bool cmpSwap(volatile unsigned long long * dest, unsigned long long newVal, unsigned long long oldVal);
 #endif
@@ -75,8 +75,6 @@ public:
 
 #if defined(__x86_64__)
     #define VESPALIB_ATOMIC_TAGGEDPTR_ALIGNMENT __attribute__ ((aligned (16)))
-#elif defined(__i386__)
-    #define VESPALIB_ATOMIC_TAGGEDPTR_ALIGNMENT
 #else
     #error "VESPALIB_ATOMIC_TAGGEDPTR_ALIGNMENT can not be defined."
 #endif

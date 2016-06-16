@@ -15,6 +15,7 @@
 #include <vespa/fastos/mutex.h>
 #include <vespa/fastos/cond.h>
 
+typedef pthread_t FastOS_ThreadId;
 
 class FastOS_Runnable;
 class FastOS_ThreadInterface;
@@ -207,10 +208,9 @@ public:
 
 
 // Operating system thread entry point
-FASTOS_EXTERNC
-{
+extern "C" {
     void *FastOS_ThreadHook (void *arg);
-};
+}
 
 /**
  * This class controls each operating system thread.
