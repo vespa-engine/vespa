@@ -5,7 +5,6 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     clock.cpp
     cpu.cpp
     crc.cpp
-    document_runnable.cpp
     doom.cpp
     growablebytebuffer.cpp
     jsonstream.cpp
@@ -15,6 +14,7 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     process_memory_stats.cpp
     programoptions.cpp
     programoptions_testutils.cpp
+    document_runnable.cpp
     rusage.cpp
     shutdownguard.cpp
     timer.cpp
