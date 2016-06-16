@@ -3,6 +3,8 @@
 #include <vespa/fastos/socket.h>
 #include <sstream>
 
+typedef caddr_t FastOS_SockOptValP;
+
 FastOS_SocketInterface::FastOS_SocketInterface()
     : _readEventEnabled(false),
       _writeEventEnabled(false),

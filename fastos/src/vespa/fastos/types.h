@@ -97,8 +97,6 @@
 #undef __USE_GNU  /* for O_DIRECT define */
 #endif
 
-typedef caddr_t FastOS_SockOptValP;
-
 #ifndef FASTOS_AUTOCONF
 #if defined(FASTOS_HAVE_SOCKLEN_T)
 typedef socklen_t FastOS_SocketLen;
