@@ -1,0 +1,2110 @@
+<html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<head>
+  <title>nativeRank Reference</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date"    content="April 2009">
+  <meta name="authors" content="geirst">
+</head>
+
+<body>
+
+<p class="alert alert-success">
+This doc uses MathML for mathematical formulae, which will not render
+correctly when using Chrome or Internet Explorer. Using Firefox or
+Safari is recommended.
+</p>
+
+<p class="ingress">
+The <em>nativeRank</em> score is a reasonably good rank score which is
+computed at an acceptable performance by Vespa, and is a good
+candidate for the first phase rank score.  The <em>nativeRank</em>
+feature is a linear combination of the normalized scores computed by
+the features <em>nativeFieldMatch</em>, <em>nativeProximity</em>,
+and <em>nativeAttributeMatch</em>.  All these features are described in
+detail below.  See
+the <a href="#configuration-properties">configuration properties</a>
+section for how to configure the features.
+</p>
+
+
+
+<h1 id="nativeFieldMatch">nativeFieldMatch</h1>
+<p>
+The <em>nativeFieldMatch</em> feature tries to capture how well query
+terms match searched index fields by looking at the number of times a
+term occurs in a field and how early in the field it occurs.  The
+significance and weight of the terms are also taken into account such
+that unusual terms will give a higher rank contribution than common
+ones.
+</p>
+
+<p>
+The score for <em>nativeFieldMatch</em> is calculated as follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>F</mi>
+          <mi>i</mi>
+          <mi>e</mi>
+          <mi>l</mi>
+          <mi>d</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>c</mi>
+          <mi>h</mi>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>i</mi>
+                <mi>n</mi>
+              </munderover>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>S</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>n</mi>
+              <mi>i</mi>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>c</mi>
+              <mi>a</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>i</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>i</mi>
+              </msub>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>j</mi>
+                <mi>m</mi>
+              </munderover>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>e</mi>
+              <mi>l</mi>
+              <mi>d</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <mfenced close=")" open="(">
+                <mrow>
+                  <mi>f</mi>
+                  <mi>i</mi>
+                  <mi>r</mi>
+                  <mi>s</mi>
+                  <mi>t</mi>
+                  <mi>O</mi>
+                  <mi>c</mi>
+                  <mi>c</mi>
+                  <mi>I</mi>
+                  <mi>m</mi>
+                  <msub>
+                    <mi>p</mi>
+                    <mi>j</mi>
+                  </msub>
+                  <mo>&times;</mo>
+                  <mi>f</mi>
+                  <mi>i</mi>
+                  <mi>r</mi>
+                  <mi>s</mi>
+                  <mi>t</mi>
+                  <mi>O</mi>
+                  <mi>c</mi>
+                  <mi>c</mi>
+                  <mi>B</mi>
+                  <mi>o</mi>
+                  <mi>o</mi>
+                  <mi>s</mi>
+                  <msub>
+                    <mi>t</mi>
+                    <mrow>
+                      <mi>i</mi>
+                      <mi>j</mi>
+                    </mrow>
+                  </msub>
+                  <mo>+</mo>
+                  <mfenced close=")" open="(">
+                    <mrow>
+                      <mn>1</mn>
+                      <mo>-</mo>
+                      <mi>f</mi>
+                      <mi>i</mi>
+                      <mi>r</mi>
+                      <mi>s</mi>
+                      <mi>t</mi>
+                      <mi>O</mi>
+                      <mi>c</mi>
+                      <mi>c</mi>
+                      <mi>I</mi>
+                      <mi>m</mi>
+                      <msub>
+                        <mi>p</mi>
+                        <mi>j</mi>
+                      </msub>
+                    </mrow>
+                  </mfenced>
+                  <mo>&times;</mo>
+                  <mi>n</mi>
+                  <mi>u</mi>
+                  <mi>m</mi>
+                  <mi>O</mi>
+                  <mi>c</mi>
+                  <mi>c</mi>
+                  <mi>B</mi>
+                  <mi>o</mi>
+                  <mi>o</mi>
+                  <mi>s</mi>
+                  <msub>
+                    <mi>t</mi>
+                    <mrow>
+                      <mi>i</mi>
+                      <mi>j</mi>
+                    </mrow>
+                  </msub>
+                </mrow>
+              </mfenced>
+            </mrow>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>i</mi>
+                <mi>n</mi>
+              </munderover>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>S</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>n</mi>
+              <mi>i</mi>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>c</mi>
+              <mi>a</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>i</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>i</mi>
+              </msub>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>j</mi>
+                <mi>m</mi>
+              </munderover>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>e</mi>
+              <mi>l</mi>
+              <mi>d</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>f</mi>
+              <mi>m</mi>
+              <mi>M</mi>
+              <mi>a</mi>
+              <mi>x</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfrac>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeFieldMatch = \frac{\sum_i^ntermSignificance_i \times termWeight_i\sum_j^mfieldWeight_j(firstOccImp_j \times firstOccBoost_{ij} + (1 - firstOccImp_j) \times numOccBoost_{ij})}{\sum_i^ntermSignificance_i \times termWeight_i\sum_j^mfieldWeight_j \times fmMaxTable_j} \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>n</em> is the number of query terms searched in index fields,
+<em>m</em> is the number of fields searched by query term <em>i</em>,
+<em>firstOccImp<sub>j</sub></em> is the <em>firstOccurrenceImportance</em>
+for field <em>j</em>, and <em>firstOccBoost<sub>ij</sub></em>,
+<em>numOccBoost<sub>ij</sub></em> and <em>fmMaxTable<sub>j</sub></em>
+are given below.
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>f</mi>
+          <mi>i</mi>
+          <mi>r</mi>
+          <mi>s</mi>
+          <mi>t</mi>
+          <mi>O</mi>
+          <mi>c</mi>
+          <mi>c</mi>
+          <mi>B</mi>
+          <mi>o</mi>
+          <mi>o</mi>
+          <mi>s</mi>
+          <msub>
+            <mi>t</mi>
+            <mrow>
+              <mi>i</mi>
+              <mi>j</mi>
+            </mrow>
+          </msub>
+          <mo>=</mo>
+          <mi>f</mi>
+          <mi>i</mi>
+          <mi>r</mi>
+          <mi>s</mi>
+          <mi>t</mi>
+          <mi>O</mi>
+          <mi>c</mi>
+          <mi>c</mi>
+          <mi>u</mi>
+          <mi>r</mi>
+          <mi>r</mi>
+          <mi>e</mi>
+          <mi>n</mi>
+          <mi>c</mi>
+          <mi>e</mi>
+          <mi>T</mi>
+          <mi>a</mi>
+          <mi>b</mi>
+          <mi>l</mi>
+          <msub>
+            <mi>e</mi>
+            <mi>j</mi>
+          </msub>
+          <mfenced close="]" open="[">
+            <mfrac>
+              <mrow>
+                <mi>f</mi>
+                <mi>i</mi>
+                <mi>r</mi>
+                <mi>s</mi>
+                <mi>t</mi>
+                <mi>O</mi>
+                <mi>c</mi>
+                <msub>
+                  <mi>c</mi>
+                  <mrow>
+                    <mi>i</mi>
+                    <mi>j</mi>
+                  </mrow>
+                </msub>
+                <mo>&times;</mo>
+                <mi>t</mi>
+                <mi>a</mi>
+                <mi>b</mi>
+                <mi>l</mi>
+                <mi>e</mi>
+                <mi>S</mi>
+                <mi>i</mi>
+                <mi>z</mi>
+                <msub>
+                  <mi>e</mi>
+                  <mi>j</mi>
+                </msub>
+              </mrow>
+              <mrow>
+                <mi>m</mi>
+                <mi>a</mi>
+                <mi>x</mi>
+                <mfenced close=")" open="(">
+                  <mn>6</mn>
+                  <mrow>
+                    <mi>f</mi>
+                    <mi>i</mi>
+                    <mi>e</mi>
+                    <mi>l</mi>
+                    <mi>d</mi>
+                    <mi>L</mi>
+                    <mi>e</mi>
+                    <mi>n</mi>
+                    <mi>g</mi>
+                    <mi>t</mi>
+                    <msub>
+                      <mi>h</mi>
+                      <mi>j</mi>
+                    </msub>
+                  </mrow>
+                </mfenced>
+              </mrow>
+            </mfrac>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[ firstOccBoost_{ij} = firstOccurrenceTable_j[\frac{firstOcc_{ij} \times tableSize_j}{max(6,fieldLength_j)}] \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>firstOccurrenceTable<sub>j</sub></em> is the boost table
+configured for field <em>j</em>, typically an expdecay function (see
+the <a href="#boost-tables">boost tables</a> section
+below), <em>firstOcc<sub>ij</sub></em> is the first occurrence of query
+term <em>i</em> in field <em>j</em>, and <em>tableSize<sub>j</sub></em> is
+the size of the boost table.
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>u</mi>
+          <mi>m</mi>
+          <mi>O</mi>
+          <mi>c</mi>
+          <mi>c</mi>
+          <mi>B</mi>
+          <mi>o</mi>
+          <mi>o</mi>
+          <mi>s</mi>
+          <msub>
+            <mi>t</mi>
+            <mrow>
+              <mi>i</mi>
+              <mi>j</mi>
+            </mrow>
+          </msub>
+          <mo>=</mo>
+          <mi>o</mi>
+          <mi>c</mi>
+          <mi>c</mi>
+          <mi>u</mi>
+          <mi>r</mi>
+          <mi>r</mi>
+          <mi>e</mi>
+          <mi>n</mi>
+          <mi>c</mi>
+          <mi>e</mi>
+          <mi>C</mi>
+          <mi>o</mi>
+          <mi>u</mi>
+          <mi>n</mi>
+          <mi>t</mi>
+          <mi>T</mi>
+          <mi>a</mi>
+          <mi>b</mi>
+          <mi>l</mi>
+          <msub>
+            <mi>e</mi>
+            <mi>j</mi>
+          </msub>
+          <mfenced close="]" open="[">
+            <mfrac>
+              <mrow>
+                <mi>n</mi>
+                <mi>u</mi>
+                <mi>m</mi>
+                <mi>O</mi>
+                <mi>c</mi>
+                <mi>c</mi>
+                <msub>
+                  <mi>s</mi>
+                  <mrow>
+                    <mi>i</mi>
+                    <mi>j</mi>
+                  </mrow>
+                </msub>
+                <mo>&times;</mo>
+                <mi>t</mi>
+                <mi>a</mi>
+                <mi>b</mi>
+                <mi>l</mi>
+                <mi>e</mi>
+                <mi>S</mi>
+                <mi>i</mi>
+                <mi>z</mi>
+                <msub>
+                  <mi>e</mi>
+                  <mi>j</mi>
+                </msub>
+              </mrow>
+              <mrow>
+                <mi>m</mi>
+                <mi>a</mi>
+                <mi>x</mi>
+                <mfenced close=")" open="(">
+                  <mn>6</mn>
+                  <mrow>
+                    <mi>f</mi>
+                    <mi>i</mi>
+                    <mi>e</mi>
+                    <mi>l</mi>
+                    <mi>d</mi>
+                    <mi>L</mi>
+                    <mi>e</mi>
+                    <mi>n</mi>
+                    <mi>g</mi>
+                    <mi>t</mi>
+                    <msub>
+                      <mi>h</mi>
+                      <mi>j</mi>
+                    </msub>
+                  </mrow>
+                </mfenced>
+              </mrow>
+            </mfrac>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[ numOccBoost_{ij} = occurrenceCountTable_j[\frac{numOccs_{ij} \times tableSize_j}{max(6,fieldLength_j)}] \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>occurrenceCountTable<sub>j</sub></em> is the boost table
+configured for field <em>j</em>, typically a loggrowth function (see
+the <a href="#boost-tables">boost tables</a> section
+below), <em>numOccs<sub>ij</sub></em> is the number of occurrences of
+query term <em>i</em> in field <em>j</em>,
+and <em>tableSize<sub>j</sub></em> is the size of the boost table.
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>f</mi>
+          <mi>m</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mi>T</mi>
+          <mi>a</mi>
+          <mi>b</mi>
+          <mi>l</mi>
+          <msub>
+            <mi>e</mi>
+            <mi>j</mi>
+          </msub>
+          <mo>=</mo>
+          <mi>f</mi>
+          <mi>i</mi>
+          <mi>r</mi>
+          <mi>s</mi>
+          <mi>t</mi>
+          <mi>O</mi>
+          <mi>c</mi>
+          <mi>c</mi>
+          <mi>I</mi>
+          <mi>m</mi>
+          <msub>
+            <mi>p</mi>
+            <mi>j</mi>
+          </msub>
+          <mo>&times;</mo>
+          <mi>m</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>r</mi>
+              <mi>s</mi>
+              <mi>t</mi>
+              <mi>O</mi>
+              <mi>c</mi>
+              <mi>c</mi>
+              <mi>u</mi>
+              <mi>r</mi>
+              <mi>r</mi>
+              <mi>e</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <mi>e</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+          <mo>+</mo>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mn>1</mn>
+              <mo>-</mo>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>r</mi>
+              <mi>s</mi>
+              <mi>t</mi>
+              <mi>O</mi>
+              <mi>c</mi>
+              <mi>c</mi>
+              <mi>I</mi>
+              <mi>m</mi>
+              <msub>
+                <mi>p</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+          <mo>&times;</mo>
+          <mi>m</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>o</mi>
+              <mi>c</mi>
+              <mi>c</mi>
+              <mi>u</mi>
+              <mi>r</mi>
+              <mi>r</mi>
+              <mi>e</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <mi>e</mi>
+              <mi>C</mi>
+              <mi>o</mi>
+              <mi>u</mi>
+              <mi>n</mi>
+              <mi>t</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  fmMaxTable_j = firstOccImp_j \times max(firstOccurrenceTable_j) + (1 - firstOccImp_j) \times max(occurrenceCountTable_j) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>max(boostTable<sub>j</sub>)</em> is the max value in that
+table. <em>fmMaxTable<sub>j</sub></em> is 1 if table normalization is
+turned off (see the property <em>nativeRank.useTableNormalization</em>
+in the <a href="#configuration-properties">configuration
+properties</a> section).
+</p>
+
+<p>
+The default behavior for <em>nativeFieldMatch</em> is to consider all
+query terms searching in all index fields when calculating the
+score. The calculation can be limited to a specified set of index
+fields as follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>F</mi>
+          <mi>i</mi>
+          <mi>e</mi>
+          <mi>l</mi>
+          <mi>d</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>c</mi>
+          <mi>h</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>f</mi>
+              <mn>1</mn>
+            </mrow>
+            <mrow>
+              <mi>f</mi>
+              <mn>2</mn>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeFieldMatch(f1, f2) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+In this case only query terms searching in index fields <em>f1</em>
+and <em>f2</em> will be considered.
+</p>
+
+
+
+<h1 id="nativeProximity">nativeProximity</h1>
+<p>
+The <em>nativeProximity</em> feature tries to capture how near the
+matched query terms occur in searched index fields by looking at the
+word distance between query terms in query term pairs.  Two query
+terms that are close to each other should give a higher score than two
+terms that are far from each other.
+</p>
+
+<p>
+The score for <em>nativeProximity</em> is calculated as follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>P</mi>
+          <mi>r</mi>
+          <mi>o</mi>
+          <mi>x</mi>
+          <mi>i</mi>
+          <mi>m</mi>
+          <mi>i</mi>
+          <mi>t</mi>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>j</mi>
+                <mi>m</mi>
+              </munderover>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>e</mi>
+              <mi>l</mi>
+              <mi>d</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <munder>
+                <mo>&Sum;</mo>
+                <mrow>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                </mrow>
+              </munder>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>P</mi>
+              <mi>a</mi>
+              <mi>i</mi>
+              <mi>r</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mrow>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                </mrow>
+              </msub>
+              <mfenced close=")" open="(">
+                <mrow>
+                  <mi>p</mi>
+                  <mi>r</mi>
+                  <mi>o</mi>
+                  <mi>x</mi>
+                  <mi>I</mi>
+                  <mi>m</mi>
+                  <msub>
+                    <mi>p</mi>
+                    <mi>j</mi>
+                  </msub>
+                  <mo>&times;</mo>
+                  <mi>p</mi>
+                  <mi>r</mi>
+                  <mi>o</mi>
+                  <mi>x</mi>
+                  <mi>T</mi>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                  <mi>l</mi>
+                  <msub>
+                    <mi>e</mi>
+                    <mi>j</mi>
+                  </msub>
+                  <mfenced close="]" open="[">
+                    <mrow>
+                      <mi>d</mi>
+                      <mi>i</mi>
+                      <mi>s</mi>
+                      <msub>
+                        <mi>t</mi>
+                        <mrow>
+                          <mi>a</mi>
+                          <mi>b</mi>
+                        </mrow>
+                      </msub>
+                      <mo>-</mo>
+                      <mn>1</mn>
+                    </mrow>
+                  </mfenced>
+                  <mo>+</mo>
+                  <mfenced close=")" open="(">
+                    <mrow>
+                      <mn>1</mn>
+                      <mo>-</mo>
+                      <mi>p</mi>
+                      <mi>r</mi>
+                      <mi>o</mi>
+                      <mi>x</mi>
+                      <mi>I</mi>
+                      <mi>m</mi>
+                      <msub>
+                        <mi>p</mi>
+                        <mi>j</mi>
+                      </msub>
+                    </mrow>
+                  </mfenced>
+                  <mo>&times;</mo>
+                  <mi>r</mi>
+                  <mi>e</mi>
+                  <mi>v</mi>
+                  <mi>P</mi>
+                  <mi>r</mi>
+                  <mi>o</mi>
+                  <mi>x</mi>
+                  <mi>T</mi>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                  <mi>l</mi>
+                  <msub>
+                    <mi>e</mi>
+                    <mi>j</mi>
+                  </msub>
+                  <mfenced close="]" open="[">
+                    <mrow>
+                      <mi>d</mi>
+                      <mi>i</mi>
+                      <mi>s</mi>
+                      <msub>
+                        <mi>t</mi>
+                        <mrow>
+                          <mi>b</mi>
+                          <mi>a</mi>
+                        </mrow>
+                      </msub>
+                      <mo>-</mo>
+                      <mn>1</mn>
+                    </mrow>
+                  </mfenced>
+                </mrow>
+              </mfenced>
+            </mrow>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>j</mi>
+                <mi>m</mi>
+              </munderover>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>e</mi>
+              <mi>l</mi>
+              <mi>d</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <munder>
+                <mo>&Sum;</mo>
+                <mrow>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                </mrow>
+              </munder>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>P</mi>
+              <mi>a</mi>
+              <mi>i</mi>
+              <mi>r</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mrow>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                </mrow>
+              </msub>
+              <mo>&times;</mo>
+              <mi>p</mi>
+              <mi>M</mi>
+              <mi>a</mi>
+              <mi>x</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfrac>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeProximity = \frac{\sum_j^mfieldWeight_j\sum_{ab}termPairWeight_{ab}(proxImp_j \times proxTable_j[dist_{ab} - 1] + (1 - proxImp_j) \times revProxTable_j[dist_{ba} - 1])}{\sum_j^mfieldWeight_j\sum_{ab}termPairWeight_{ab} \times pMaxTable_j} \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+
+<p>
+where <em>m</em> is the number of index fields, <em>ab</em> is a term pair
+searched for in field <em>j</em>, <em>proxImp<sub>j</sub></em> is
+the <em>proximityImportance</em> for
+field <em>j</em>, <em>proxTable<sub>j</sub></em> is the forward proximity
+boost table for field <em>j</em>, <em>dist<sub>ab</sub></em> is the
+minimum distance between occurrences of query terms <em>a</em>
+and <em>b</em> in field <em>j</em>, (<em>a</em> occurs
+before <em>b</em>), <em>revProxTable<sub>j</sub></em> is the reverse
+proximity boost table for field <em>j</em>, <em>dist<sub>ba</sub></em> is
+the minimum distance between occurrences of query terms <em>b</em>
+and <em>a</em> in field <em>j</em> (<em>b</em> occurs before <em>a</em>),
+and <em>termPairWeight<sub>ab</sub></em>
+and <em>pMaxTable<sub>j</sub></em> are given below. For each
+field <em>j</em> we consider all query terms searched in this field and
+generate a set of term pairs. The <em>slidingWindowSize</em> parameter
+determines how many pairs that will be generated. With a sliding
+window of size 3 over the terms <em>a b c d</em> we will first consider
+the terms <em>a b c</em>, then the terms <em>b c d</em>, and finally the
+terms <em>c d</em>. The following pairs will be
+generated: <em>ab</em>, <em>ac</em>, <em>bc</em>, <em>bd</em>, and <em>cd</em>.
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>t</mi>
+          <mi>e</mi>
+          <mi>r</mi>
+          <mi>m</mi>
+          <mi>P</mi>
+          <mi>a</mi>
+          <mi>i</mi>
+          <mi>r</mi>
+          <mi>W</mi>
+          <mi>e</mi>
+          <mi>i</mi>
+          <mi>g</mi>
+          <mi>h</mi>
+          <msub>
+            <mi>t</mi>
+            <mrow>
+              <mi>a</mi>
+              <mi>b</mi>
+            </mrow>
+          </msub>
+          <mo>=</mo>
+          <mi>c</mi>
+          <mi>o</mi>
+          <mi>n</mi>
+          <mi>n</mi>
+          <mi>e</mi>
+          <mi>c</mi>
+          <mi>t</mi>
+          <mi>e</mi>
+          <mi>d</mi>
+          <mi>n</mi>
+          <mi>e</mi>
+          <mi>s</mi>
+          <msub>
+            <mi>s</mi>
+            <mrow>
+              <mi>a</mi>
+              <mi>b</mi>
+            </mrow>
+          </msub>
+          <mo>&times;</mo>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>S</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>n</mi>
+              <mi>i</mi>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>c</mi>
+              <mi>a</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>a</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>a</mi>
+              </msub>
+              <mo>+</mo>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>S</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>n</mi>
+              <mi>i</mi>
+              <mi>f</mi>
+              <mi>i</mi>
+              <mi>c</mi>
+              <mi>a</mi>
+              <mi>n</mi>
+              <mi>c</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>b</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>b</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  termPairWeight_{ab} = connectedness_{ab} \times (termSignificance_a \times termWeight_a + termSignificance_b \times termWeight_b) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>c</mi>
+          <mi>o</mi>
+          <mi>n</mi>
+          <mi>n</mi>
+          <mi>e</mi>
+          <mi>c</mi>
+          <mi>t</mi>
+          <mi>e</mi>
+          <mi>d</mi>
+          <mi>n</mi>
+          <mi>e</mi>
+          <mi>s</mi>
+          <msub>
+            <mi>s</mi>
+            <mrow>
+              <mi>a</mi>
+              <mi>c</mi>
+            </mrow>
+          </msub>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <mi>m</mi>
+              <mi>i</mi>
+              <mi>n</mi>
+              <mfenced close=")" open="(">
+                <mrow>
+                  <mi>c</mi>
+                  <mi>o</mi>
+                  <mi>n</mi>
+                  <mi>n</mi>
+                  <mi>e</mi>
+                  <mi>c</mi>
+                  <mi>t</mi>
+                  <mi>e</mi>
+                  <mi>d</mi>
+                  <mi>n</mi>
+                  <mi>e</mi>
+                  <mi>s</mi>
+                  <msub>
+                    <mi>s</mi>
+                    <mrow>
+                      <mi>a</mi>
+                      <mi>b</mi>
+                    </mrow>
+                  </msub>
+                </mrow>
+                <mrow>
+                  <mi>c</mi>
+                  <mi>o</mi>
+                  <mi>n</mi>
+                  <mi>n</mi>
+                  <mi>e</mi>
+                  <mi>c</mi>
+                  <mi>t</mi>
+                  <mi>e</mi>
+                  <mi>d</mi>
+                  <mi>n</mi>
+                  <mi>e</mi>
+                  <mi>s</mi>
+                  <msub>
+                    <mi>s</mi>
+                    <mrow>
+                      <mi>b</mi>
+                      <mi>c</mi>
+                    </mrow>
+                  </msub>
+                </mrow>
+              </mfenced>
+            </mrow>
+            <mrow>
+              <mi>d</mi>
+              <mi>i</mi>
+              <mi>s</mi>
+              <msub>
+                <mi>t</mi>
+                <mrow>
+                  <mi>a</mi>
+                  <mi>c</mi>
+                </mrow>
+              </msub>
+            </mrow>
+          </mfrac>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  connectedness_{ac} = \frac{min(connectedness_{ab}, connectedness_{bc})}{dist_{ac}} \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>dist<sub>ac</sub></em> is the distance between term <em>a</em>
+and <em>c</em> in the query.
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>p</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mi>T</mi>
+          <mi>a</mi>
+          <mi>b</mi>
+          <mi>l</mi>
+          <msub>
+            <mi>e</mi>
+            <mi>j</mi>
+          </msub>
+          <mo>=</mo>
+          <mi>p</mi>
+          <mi>r</mi>
+          <mi>o</mi>
+          <mi>x</mi>
+          <mi>I</mi>
+          <mi>m</mi>
+          <msub>
+            <mi>p</mi>
+            <mi>j</mi>
+          </msub>
+          <mo>&times;</mo>
+          <mi>m</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>p</mi>
+              <mi>r</mi>
+              <mi>o</mi>
+              <mi>x</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+          <mo>+</mo>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mn>1</mn>
+              <mo>-</mo>
+              <mi>p</mi>
+              <mi>r</mi>
+              <mi>o</mi>
+              <mi>x</mi>
+              <mi>I</mi>
+              <mi>m</mi>
+              <msub>
+                <mi>p</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+          <mo>&times;</mo>
+          <mi>m</mi>
+          <mi>a</mi>
+          <mi>x</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>r</mi>
+              <mi>e</mi>
+              <mi>v</mi>
+              <mi>P</mi>
+              <mi>r</mi>
+              <mi>o</mi>
+              <mi>x</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  pMaxTable_j = proxImp_j \times max(proxTable_j) + (1 - proxImp_j) \times max(revProxTable_j) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>max(boostTable<sub>j</sub>)</em> is the max value in that
+table. <em>pMaxTable<sub>j</sub></em> is 1 if table normalization is
+turned off (see the property <em>nativeRank.useTableNormalization</em>
+in the <a href="#configuration-properties">configuration
+properties</a> section).
+</p>
+
+<p>
+The default behavior for <em>nativeProximity</em> is to consider all
+index fields and all query terms pairs searching in these fields when
+calculating the score. The calculation can be limited to a specified
+set of index fields as follows:
+</p>
+
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>P</mi>
+          <mi>r</mi>
+          <mi>o</mi>
+          <mi>x</mi>
+          <mi>i</mi>
+          <mi>m</mi>
+          <mi>i</mi>
+          <mi>t</mi>
+          <mi>y</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>f</mi>
+              <mn>1</mn>
+            </mrow>
+            <mrow>
+              <mi>f</mi>
+              <mn>2</mn>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeProximity(f1, f2) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+In this case only query term pairs searching in index fields <em>f1</em>
+and <em>f2</em> will be considered.
+</p>
+
+
+
+<h1 id="nativeAttributeMatch">nativeAttributeMatch</h1>
+<p>
+The <em>nativeAttributeMatch</em> feature tries to capture how well
+query terms match searched attribute fields, and is calculated as
+follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>A</mi>
+          <mi>t</mi>
+          <mi>t</mi>
+          <mi>r</mi>
+          <mi>i</mi>
+          <mi>b</mi>
+          <mi>u</mi>
+          <mi>t</mi>
+          <mi>e</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>c</mi>
+          <mi>h</mi>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>i</mi>
+                <mi>n</mi>
+              </munderover>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>i</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>t</mi>
+              <mi>r</mi>
+              <mi>i</mi>
+              <mi>b</mi>
+              <mi>u</mi>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>s</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>n</mi>
+              <mfenced close=")" open="(">
+                <msub>
+                  <mi>w</mi>
+                  <mrow>
+                    <mi>i</mi>
+                    <mi>j</mi>
+                  </mrow>
+                </msub>
+              </mfenced>
+              <mo>&times;</mo>
+              <mi>w</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <mi>t</mi>
+              <mi>T</mi>
+              <mi>a</mi>
+              <mi>b</mi>
+              <mi>l</mi>
+              <msub>
+                <mi>e</mi>
+                <mi>j</mi>
+              </msub>
+              <mfenced close="]" open="[">
+                <mrow>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                  <mi>s</mi>
+                  <mfenced close=")" open="(">
+                    <msub>
+                      <mi>w</mi>
+                      <mrow>
+                        <mi>i</mi>
+                        <mi>j</mi>
+                      </mrow>
+                    </msub>
+                  </mfenced>
+                </mrow>
+              </mfenced>
+            </mrow>
+            <mrow>
+              <munderover>
+                <mo>&Sum;</mo>
+                <mi>i</mi>
+                <mi>n</mi>
+              </munderover>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>r</mi>
+              <mi>m</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>i</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>t</mi>
+              <mi>r</mi>
+              <mi>i</mi>
+              <mi>b</mi>
+              <mi>u</mi>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>W</mi>
+              <mi>e</mi>
+              <mi>i</mi>
+              <mi>g</mi>
+              <mi>h</mi>
+              <msub>
+                <mi>t</mi>
+                <mi>j</mi>
+              </msub>
+              <mo>&times;</mo>
+              <mi>m</mi>
+              <mi>a</mi>
+              <mi>x</mi>
+              <mfenced close=")" open="(">
+                <mrow>
+                  <mi>w</mi>
+                  <mi>e</mi>
+                  <mi>i</mi>
+                  <mi>g</mi>
+                  <mi>h</mi>
+                  <mi>t</mi>
+                  <mi>T</mi>
+                  <mi>a</mi>
+                  <mi>b</mi>
+                  <mi>l</mi>
+                  <msub>
+                    <mi>e</mi>
+                    <mi>j</mi>
+                  </msub>
+                </mrow>
+              </mfenced>
+            </mrow>
+          </mfrac>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeAttributeMatch = \frac{\sum_i^ntermWeight_i \times attributeWeight_j \times sign(w_{ij}) \times weightTable_j[abs(w_{ij})]}{\sum_i^ntermWeight_i \times attributeWeight_j \times max(weightTable_j)} \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>n</em> is the number of query terms searched in attribute
+fields, <em>weightTable<sub>j</sub></em> is the boost table for
+attribute <em>j</em>, <em>max(weightTable<sub>j</sub>)</em> is the max
+value in that table (1 if table normalization is turned
+off), <em>sign(w<sub>ij</sub>)</em> is the sign
+of <em>w<sub>ij</sub></em>. <em>w<sub>ij</sub></em> is dependent on the
+attribute type:
+</p>
+
+<ul>
+<li><strong>Weighted set</strong>: equals the weight associated with the key
+    (represented by query term <em>i</em>) in attribute <em>j</em>.</li>
+<li><strong>Array</strong>: equals the number of occurrences of query
+    term <em>i</em> in attribute <em>j</em>.</li>
+<li><strong>Single</strong>: equals 1.</li>
+</ul>
+
+
+<p>
+The default behavior for <em>nativeAttributeMatch</em> is to consider
+all query terms searching in all attribute fields when calculating the
+score. The calculation can be limited to a specified set of attribute
+fields as follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>A</mi>
+          <mi>t</mi>
+          <mi>t</mi>
+          <mi>r</mi>
+          <mi>i</mi>
+          <mi>b</mi>
+          <mi>u</mi>
+          <mi>t</mi>
+          <mi>e</mi>
+          <mi>M</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>c</mi>
+          <mi>h</mi>
+          <mfenced close=")" open="(">
+            <mrow>
+              <mi>a</mi>
+              <mn>1</mn>
+            </mrow>
+            <mrow>
+              <mi>a</mi>
+              <mn>2</mn>
+            </mrow>
+          </mfenced>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeAttributeMatch(a1, a2) \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+In this case only query terms searching in attribute fields <em>a1</em>
+and <em>a2</em> will be considered.
+</p>
+
+
+
+<h1 id="nativeRank">nativeRank</h1>
+
+<p>
+The <em>nativeRank</em> feature is just a linear combination of the
+three other features, and is calculated as follows:
+</p>
+
+<figure>
+  <div>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+      <semantics>
+        <mrow>
+          <mi>n</mi>
+          <mi>a</mi>
+          <mi>t</mi>
+          <mi>i</mi>
+          <mi>v</mi>
+          <mi>e</mi>
+          <mi>R</mi>
+          <mi>a</mi>
+          <mi>n</mi>
+          <mi>k</mi>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <mi>f</mi>
+              <mi>m</mi>
+              <mi>w</mi>
+              <mo>&times;</mo>
+              <mi>n</mi>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>i</mi>
+              <mi>v</mi>
+              <mi>e</mi>
+              <mi>F</mi>
+              <mi>i</mi>
+              <mi>e</mi>
+              <mi>l</mi>
+              <mi>d</mi>
+              <mi>M</mi>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>c</mi>
+              <mi>h</mi>
+              <mo>+</mo>
+              <mi>p</mi>
+              <mi>w</mi>
+              <mo>&times;</mo>
+              <mi>n</mi>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>i</mi>
+              <mi>v</mi>
+              <mi>e</mi>
+              <mi>P</mi>
+              <mi>r</mi>
+              <mi>o</mi>
+              <mi>x</mi>
+              <mi>i</mi>
+              <mi>m</mi>
+              <mi>i</mi>
+              <mi>t</mi>
+              <mi>y</mi>
+              <mo>+</mo>
+              <mi>a</mi>
+              <mi>m</mi>
+              <mi>w</mi>
+              <mo>&times;</mo>
+              <mi>n</mi>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>i</mi>
+              <mi>v</mi>
+              <mi>e</mi>
+              <mi>A</mi>
+              <mi>t</mi>
+              <mi>t</mi>
+              <mi>r</mi>
+              <mi>i</mi>
+              <mi>b</mi>
+              <mi>u</mi>
+              <mi>t</mi>
+              <mi>e</mi>
+              <mi>M</mi>
+              <mi>a</mi>
+              <mi>t</mi>
+              <mi>c</mi>
+              <mi>h</mi>
+            </mrow>
+            <mrow>
+              <mi>f</mi>
+              <mi>m</mi>
+              <mi>w</mi>
+              <mo>+</mo>
+              <mi>p</mi>
+              <mi>w</mi>
+              <mo>+</mo>
+              <mi>a</mi>
+              <mi>m</mi>
+              <mi>w</mi>
+            </mrow>
+          </mfrac>
+        </mrow>
+        <annotation encoding="SnuggleTeX">\[  nativeRank = \frac{fmw \times nativeFieldMatch + pw \times nativeProximity + amw \times nativeAttributeMatch}{fmw + pw + amw} \]</annotation>
+      </semantics>
+    </math>
+  </div>
+</figure>
+
+<p>
+where <em>fmw</em> is the <em>fieldMatchWeight</em>, <em>pw</em> is
+the <em>proximityWeight</em>, and <em>amw</em> is
+the <em>attributeMatchWeight</em>.
+</p>
+
+<p>
+The default behavior when calculating the native rank score is to
+consider all query terms searching in all defined index fields and
+attribute fields.  In many cases though only a subset of these fields
+are of interest for the rank score calculation.  You can
+setup <em>nativeRank</em> for a subset of fields by specifying the field
+names in the parameter list as follows:
+</p>
+
+<pre class="code">
+first-phase {
+    expression: nativeRank(title,body,tags)
+}
+</pre>
+
+<p>
+In this case we have two index fields (<em>title</em> and <em>body</em>)
+and one attribute field (<em>tags</em>), and the <em>nativeRank</em>
+feature will be calculated based on the
+features <em>nativeFieldMatch(title,body)</em>, <em>nativeProximity(title,body)</em>,
+and <em>nativeAttributeMatch(tags)</em>. Note that the CPU cost of
+calculating the native rank score is also reduced when specifying a
+subset of the fields.
+</p>
+
+
+
+<h1 id="variables">Description of variables</h1>
+
+<p>
+This is a list of the common variables used in the formulas above:
+</p>
+
+<table>
+<tr><th>Variable</th><th>Description</th></tr>
+
+<tr>
+  <td>
+    <em>attributeWeight<sub>j</sub></em>
+  </td>
+  <td>
+    The weight of attribute field <em>j</em>. See
+    the <a href="search-definitions.html#weight">search
+    definitions</a> reference for how to set this weight. The default
+    value is 100.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <em>connectedness<sub>ab</sub></em>
+  </td>
+  <td>
+    The connectedness between query terms <em>a</em>
+    and <em>b</em>.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <em>fieldLength<sub>j</sub></em>
+  </td>
+  <td>
+    The length of field <em>j</em> in number of words.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <em>fieldWeight<sub>j</sub></em>
+  </td>
+  <td>
+    The weight of index field <em>j</em>. See
+    the <a href="search-definitions.html#weight">search
+    definitions</a> reference for how to set this weight. The default
+    value is 100.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <em>termSignificance<sub>i</sub></em>
+  </td>
+  <td>
+    The significance of query term <em>i</em>.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <em>termWeight<sub>i</sub></em>
+  </td>
+  <td>
+    The weight of query term <em>i</em>.
+  </td>
+</tr>
+</table>
+
+
+
+<h1 id="configuration-properties">Configuration properties</h1>
+
+<p>
+This is a comprehensive list of all the configuration properties to
+all native rank features in Vespa.
+</p>
+
+<table>
+
+<tr><th>Feature</th><th>Parameter</th><th>Default</th><th>Description</th></tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>firstOccurrenceTable</code></td>
+    <td>expdecay(8000,12.50)</td>
+    <td>The default table used when calculating boost for the first occurrence in a field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>firstOccurrenceTable.<em>fieldName</em></code></td>
+    <td>The value of <code>firstOccurrenceTable</code></td>
+    <td>The table used when calculating boost for the first occurrence in the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>occurrenceCountTable</code></td>
+    <td>loggrowth(1500,4000,19)</td>
+    <td>The default table used when calculating boost for the number of occurrences in a field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>occurrenceCountTable.<em>fieldName</em></code></td>
+    <td>The value of <code>occurrenceCountTable</code></td>
+    <td>The table used when calculating boost for the number of occurrences in the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>firstOccurrenceImportance</code></td>
+    <td>0.5</td>
+    <td>The default importance value used for weighting the boosts for first occurrence and number of occurrences in a field.
+        This value should be in the interval [0, 1].</td>
+</tr>
+
+<tr>
+    <td><code>nativeFieldMatch</code></td>
+    <td><code>firstOccurrenceImportance.<em>fieldName</em></code></td>
+    <td>The value of <code>firstOccurrenceImportance</code></td>
+    <td>The importance value used for the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>proximityTable</code></td>
+    <td>expdecay(500,3)</td>
+    <td>The default table used when calculating forward proximity boost in a field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>proximityTable.<em>fieldName</em></code></td>
+    <td>The value of <code>proximityTable</code></td>
+    <td>The table used when calculating forward proximity boost in the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>reverseProximityTable</code></td>
+    <td>expdecay(400,3)</td>
+    <td>The default table used when calculating reverse proximity boost in a field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>reverseProximityTable.<em>fieldName</em></code></td>
+    <td>The value of <code>reverseProximityTable</code></td>
+    <td>The table used when calculating reverse proximity boost in the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>proximityImportance</code></td>
+    <td>0.5</td>
+    <td>The default importance value used for weighting the boosts for forward and reverse proximity in a field.
+        This value should be in the interval [0, 1].</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>proximityImportance.<em>fieldName</em></code></td>
+    <td>The value of <code>proximityImportance</code></td>
+    <td>The importance value used for the given field.</td>
+</tr>
+
+<tr>
+    <td><code>nativeProximity</code></td>
+    <td><code>slidingWindowSize</code></td>
+    <td>4</td>
+    <td>The size of the sliding window used when generating term pairs.
+    </td>
+</tr>
+
+<tr>
+    <td><code>nativeAttributeMatch</code></td>
+    <td><code>weightTable</code></td>
+    <td>linear(1,0)</td>
+    <td>The default table used when calculating boost for hitting in an attribute.</td>
+</tr>
+
+<tr>
+    <td><code>nativeAttributeMatch</code></td>
+    <td><code>weightTable.<em>attributeName</em></code></td>
+    <td>The value of <code>weightTable</code></td>
+    <td>The table used when calculating boost for hitting in the given attribute.</td>
+</tr>
+
+<tr>
+    <td><code>nativeRank</code></td>
+    <td><code>fieldMatchWeight</code></td>
+    <td>100.0</td>
+    <td>How much to weight the score from <em>nativeFieldMatch</em>.</td>
+</tr>
+
+<tr>
+    <td><code>nativeRank</code></td>
+    <td><code>proximityWeight</code></td>
+    <td>25.0</td>
+    <td>How much to weight the score from <em>nativeProximity</em>.
+        If table normalization is turned off the default value is 100.0.</td>
+</tr>
+
+<tr>
+    <td><code>nativeRank</code></td>
+    <td><code>attributeMatchWeight</code></td>
+    <td>100.0</td>
+    <td>How much to weight the score from <em>nativeAttributeMatch</em>.</td>
+</tr>
+
+<tr>
+    <td><code>nativeRank</code></td>
+    <td><code>useTableNormalization</code></td>
+    <td>true</td>
+    <td>Whether we should use table normalization for the native rank features.
+        Set this property to <em>false</em> to turn off table normalization</td>
+</tr>
+
+</table>
+
+<p>
+For example, to override the <em>occurrenceCountTable</em>
+and <em>reverseProximityTable</em> for the index field <em>content</em>
+add the following to the rank profile in the sd file:
+</p>
+
+<pre class="code">
+rank-properties {
+    nativeFieldMatch.occurrenceCountTable.content: "linear(0,0)"
+    nativeProximity.reverseProximityTable.content: "linear(0,0)"
+}
+</pre>
+
+<p>
+See
+the <a href="search-definitions.html#rankproperties">search
+definitions</a> reference for more information on rank-properties.
+</p>
+
+
+<h2 id="boost-tables">Boost tables</h2>
+<p>
+The following boost tables are supported by the native rank features:
+</p>
+
+<table>
+<tr><th>Name</th><th>Function</th><th>Description</th></tr>
+
+<tr>
+    <td>expdecay(w,t)</td>
+    <td><code style="white-space:nowrap">w * exp(-x/t)</code></td>
+    <td>This table represents an exponential decay function where
+        <em>w</em> is the weight controlling the amplitude and
+        <em>t</em> is the tune parameter controlling the slope.</td>
+</tr>
+
+<tr>
+    <td>loggrowth(w,t,s)</td>
+    <td><code style="white-space:nowrap">w * log(1 + (x/s)) + t</code></td>
+    <td>This table represents a logarithmic growth function where
+        <em>w</em> is the weight controlling the amplitude,
+        <em>t</em> is the tune parameter controlling the offset,
+        and <em>s</em> is a scale parameter controlling the sensitivity to the variable <em>x</em></td>
+</tr>
+
+<tr>
+    <td>linear(w,t)</td>
+    <td><code style="white-space:nowrap">w * x + t</code></td>
+    <td>This table represents a linear function where
+        <em>w</em> controls the slope and <em>t</em> controls the offset.</td>
+</tr>
+
+</table>
+
+<p>
+The parameters <em>w</em>, <em>t</em>, and <em>s</em> are floating point
+numbers, the same as the content of the tables.  The default table
+size is 256 with x in the interval [0,255].  You can override this
+default size by specifying an optional last parameter to the table
+name.  For instance if you use <em>linear(1.5,0,512)</em> you get a
+table with size 512 populated with the result of evaluating the
+function <em>1.5*x + 0</em> for all x in the interval [0,511].
+</p>
+
+
+<h2>Rank types</h2>
+<p>
+Four predefined rank types are supported
+by <em>nativeRank</em>: <em>about</em>
+(default), <em>identity</em>, <em>tags</em>, and <em>empty</em>.  Each type
+is associated with a set of boost tables that are used by the native
+rank features.  See the <a href="rank-types.html">rank type</a>
+document for detailed information on these type.
+</p>
+
+<p>
+When setting up your sd file, you can either use one of the predefined
+rank types for a field, or you can explicit specify the boost tables
+to use for that field as a set of rank-properties.  If you don't
+specify anything you will get the boost tables associated with
+the <em>about</em> type.  The <em>about</em> boost tables
+for <em>nativeFieldMatch</em> and <em>nativeProximity</em> are already
+optimized for textual match, while the boost table
+for <em>nativeAttributeMatch</em> is data dependent and must be
+optimized for each use case.
+</p>
+
+
+
+<h1>Limitations of nativeRank</h1>
+<p>
+The nativeRank feature is a pure text match scoring feature.  In
+particular, it does not take the following concepts into account for
+documents that match a query:
+</p>
+
+<ul>
+  <li>
+    Static rank or any other relevancy contribution that is based on a
+    numeric value.  Use the <em>attribute</em> feature in a ranking
+    expression to get this concept into the final relevancy
+    score.
+  </li>
+  <li>
+    Geographical location of a match correlated to a location
+    assosiated with the query.  Use the <em>distance</em>
+    or <em>closeness</em> feature in a ranking expression to take this
+    into account.
+  </li>
+  <li>
+    The age of the matching documents. Use the <em>freshness</em>
+    feature in a ranking expression to take this into account.
+  </li>
+</ul>
+
+</body>
+</html>

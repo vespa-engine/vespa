@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>CRUD operations - Put, Get, Update &amp; Remove</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+  <p>
+    The
+    <a href="../reference/terminology.html#crud" class="glossary">CRUD</a>
+    operations are the four basic functions of persistent storage. In Vespa
+    context these are called put, get, update and remove. This document
+    explains how they work in detail.
+  </p>
+
+  <h1 id="put">Put</h1>
+  <p>
+    The <em>put</em> operation is used to write a complete
+    <a href="../reference/terminology.html#document"
+       class="glossary">document</a> to the content layer.
+  </p>
+  <p>
+    By specifying
+    a <a href="../reference/document-json-format.html#conditional-put">test
+    and set condition</a>, one can perform a conditional put that only
+    executes if the condition matches the already existing document.
+    If another document with the exact same document identifier exists
+    and no test and set condition is given, it will be overwritten.
+    <strong>Note:</strong> Conditional puts is considered an experimental feature.
+  </p>
+
+  <h1 id="get">Get</h1>
+  <p>
+    The <em>get</em> operation is used to retrieve the newest document instance
+    with a given document identfier seen by the content cluster. It is possible
+    to specify what fields to retrieve, saving bandwidth if the client does not
+    need all the fields for that request.
+  </p><p>
+    If no document with specified identifier exist, no document will be
+    returned. This state is not considered a failure, and should be easily
+    distinguishable from a failure reply.
+  </p><p>
+    The <em>get</em> reply includes the internal timestamp of the document,
+    stating when the document was last written. Look in the 
+    <a href="#timestamp">timestamp</a> section for details.
+  </p>
+
+  <h1 id="update">Update</h1>
+  <p>
+    The <em>update</em> operation is often referred to as
+    <em>partial update</em> as one typically use it to update only parts of a
+    document. An update specifies document changes per field.
+  </p><p>
+    If the document to update does not exist, the update returns a reply
+    stating that no document was found.
+  </p><p>
+    Failing operations are typically resent automatically if timeouts allow for
+    it. Due to for instance network failures, an operation may appear to have
+    failed and thus being resent, while it has still been applied to the
+    backend. The content layer does not guarantuee that an update is only
+    applied once. Due to this fact it is safest to send updates that sets
+    fields to constant values. Updates relative to last state is also supported
+    though, such as increasing the value of an integer field. Note though that
+    a single update may have been applied to the backend multiple times.
+  </p><p>
+    Updates also supports only applying the update if the last entry has a
+    specific timestamp. Using this attribute, one can ensure an update is only
+    applied once, but one typically have to retrieve the document first to know
+    the timestamp to specify.
+  </p>
+  <p>
+    Like put operations,
+    a <a href="../reference/document-json-format.html#conditional-update">test
+    and set condition</a> can be specified for update operations as
+    well. This can be useful for, e.g., only updating the underlying
+    document if a specific timestamp field is less than the expected
+    value.
+  </p>
+
+  <h1 id="remove">Remove</h1>
+  <p>
+    Simplisticly, a <em>remove</em> operation removes a document with a given
+    identifier in the cluster. However, due to various reasons listed below,
+    there may be traces of the document left in the cluster for quite a while
+    longer. More specifically, a <em>remove</em> operation will cause later
+    requests to access the document to not be able to see it anymore.
+  </p>
+  <p>
+    If the document to be removed is not found, this is returned in the reply.
+    This is not considered a failure.
+  <p>
+    Like the put and update operations,
+    a <a href="../reference/document-json-format.html#conditional-remove">test
+    and set condition</a> can be specified for remove operations as
+    well; only removing the document when the condition (document
+    selection) matches the document.
+    <strong>Note:</strong> Conditional removes are considered an experimental feature.
+  </p>
+  <p>
+    <strong>Note:</strong> The backend will
+    typically not store remove entries if the document to be removed did not
+    exist at the time of removal. This is to ensure that a misbehaving clients
+    sending wrong document identifiers doesn't end up filling the content
+    cluster with invalid remove entries. The side-effect is that if a major
+    cluster incident have caused all copies of some buckets to be unavailable,
+    documents in these buckets cannot be removed until at least one copy is
+    available again. Documents may of course be written in new bucket copies
+    while the old copies are down, and if these are removed, then older versions
+    of these will not re-emerge.
+  </p>
+
+  <h2 id="remove2">Reasons for document data to exist after removal</h2>
+  <ul>
+  <li>
+    Backends that support snapshotting may end up storing the document until
+    no snapshot exist between the time of the remove and the document write.
+  </li><li>
+    To avoid the document from re-emerge when a node comes back up, the cluster
+    store that the document has been removed at a given time, such that the
+    cluster can resolve whether the re-emerging document have been removed or
+    not. The newest entry will survive.
+  </li><li>
+    If one wants to replicate the contents of the cluster in a separate service,
+    one not only want to get the new documents, but also information about what
+    documents have been removed recently. Remove entries should exist for such
+    services to access.
+  </li><li>
+    If one wants to replicate only parts of the content in the cluster,
+    identifiable by a document selection, the remove entry needs enough document
+    data to serve the document selection. A backend may keep storing parts of
+    the documents, such that removes only related to a part of the documents can
+    be identified.
+  </li>
+  </ul>
+
+  <h1 id="serialization">Serialization</h1>
+  <p>
+    All these simple operation are document operations. They relate to a
+    document with a given document identifier. The Document API uses the
+    document identifier to implement serializing. Documents with the same
+    identifier will have the same serialize id, and a Document API client will
+    ensure that only one operation with a given serialize id is pending at the
+    same time. This ensures that if a client sends multiple operations for the
+    same document, they will be processed in a defined order.
+  </p><p>
+    <strong>Note:</strong> If sending two <em>put</em> operations to the same
+    document, and the first operation fails, the second operation that were
+    enqueued is sent. If the client chooses to just resend the failed request,
+    the order of operations have been switched.
+  </p><p>
+    If different clients have operations towards the same document pending,
+    the order of operations is undefined.
+  </p>
+
+
+  <h1 id="timestamp">Timestamps</h1>
+  <p>
+    Write operations like <em>put</em>, <em>update</em> and <em>remove</em>,
+    will have a timestamp assigned to them going through the
+    <a href="../reference/terminology.html#distributor"
+       class="glossary">distributor</a>.
+    This timestamp is guaranteed to be unique within the
+    <a href="../reference/terminology.html#bucket" class="glossary">bucket</a>
+    where it is stored. This timestamp is used by the content layer to decide
+    which operation is newest.
+  </p><p>
+    These timestamps may be used when
+    <a href="feature-visiting.html">visiting</a>, to only process/retrieve
+    documents within a given timeframe.
+  </p><p>
+    To guarantee unique timestamps, they are given in microseconds, and the
+    microsecond part may be generated or altered to avoid conflicts with other
+    documents.
+  </p>
+
+  <h2 id="last-modified-time">Last modified time</h2>
+  <p>
+    The internal timestamp is often referred to as the last modified time. Bear
+    in mind though, that it is actually the time of the last write operation
+    going through the distributor. If documents are migrated from cluster to
+    cluster, the target cluster will have new timestamps for their entries, and
+    if you reprocess documents within a cluster, documents will have new
+    timestamps even if they were not modified.
+  </p>
+  
+</body>
+</html>

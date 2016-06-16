@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Inspecting Java Services Using JConsole</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="August 2009" />
+  <meta name="authors" content="tonyv" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document will show you how to determine the state of each running
+Java Vespa service using a tool called JConsole.
+</p>
+
+
+
+<h1 id="starting-jconsole">Starting JConsole</h1>
+<p>
+The JConsole tool is distributed along with the Java developer kit. It
+can be started as follows:
+</p>
+
+<pre class="brush: cli">
+$ jconsole &lt;host&gt;:&lt;port&gt;
+</pre>
+
+<p>
+where the host and port determine which service to attach
+to. Unfortunately, for security purposes the JConsole tool can not
+directly attach to Vespa services from external machines.
+</p>
+
+
+
+<h1 id="connecting">Connecting to a Vespa Service</h1>
+
+<p>
+To attach a JConsole to a Vespa service running on another host, you
+must first create a tunnel from the JConsole host to the Vespa service
+host. This can for example be done by setting up two SSH tunnels as
+follows:
+</p>
+
+<pre class="brush: cli">
+$ ssh -N -L&lt;port1&gt;:localhost:&lt;port1&gt; &lt;service-host&gt; &amp;
+$ ssh -N -L&lt;port2&gt;:localhost:&lt;port2&gt; &lt;service-host&gt; &amp;
+</pre>
+
+<p>
+where port1 and port2 are determined by the type of service (see
+below). A JConsole can then be attached to the service as follows:
+</p>
+
+<pre class="brush: cli">
+$ jconsole localhost:&lt;port1&gt;
+</pre>
+
+
+
+<h1 id="port-numbers">Port Numbers for Each Service</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Port 1</th>
+      <th>Port 2</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>QRS</td>
+      <td>19015</td>
+      <td>19016</td>
+    </tr>
+    <tr>
+      <td>Docproc</td>
+      <td>19123</td>
+      <td>19124</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+Updated port information can be found by running:
+</p>
+
+<pre class="brush: cli">
+$ vespa-model-inspect service &lt;servicename&gt;
+</pre>
+
+<p>
+where the resulting RMIREGISTRY and JMX lines determine port1 and
+port2 respectively.
+</p>
+
+
+<h1 id="examining-states">Examining QRS thread states</h1>
+
+<p>
+The state of each QRS is available in JConsole by pressing the Threads
+tab and selecting the thread of interest in the threads list.
+</p>
+
+<figure>
+  <img src="img/troubleshooting/jconsole.png" alt="Thread states in JConsole." />
+</figure>
+
+<p>
+Threads of interest includes search, connector, closer, transport and
+acceptor (the latter four are used for backend communications).
+</p>
+
+</body>
+</html>

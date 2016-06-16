@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Document Field Sets</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2007" />
+  <meta name="authors" content="thomasg" />
+</head>
+
+<body>
+
+<p class="ingress">
+<em>Please note: The field set syntax covered in this document is a different thing to the <a href="search-definitions.html#fieldset">searchable fieldsets in indexed search</a>.
+</em>
+
+<p class="ingress">
+In various APIs in Vespa, we use field sets to limit the fields that
+are returned from a read operation. For instance, <em>vespaget</em>
+has a --fieldset option which, if specified, has storage only return a
+limited set of fields. This potentially saves activity on both disk
+and network.
+</p>
+
+<p>
+Field sets should be considered hints to Vespa. Vespa will use this to
+perform appropriate optimizations. It should not be considered an error
+if Vespa returns more than what is asked for.
+</p>
+
+
+
+<h1 id="syntax">Syntax</h1>
+
+<p>
+There are two options for specifying a field set:
+</p>
+
+<ul>
+  <li>Use a built-in field set ([all], [id], [none], &lt;document type&gt;:[document])</li>
+  <li>Use a comma-separated list of fields related to one document
+      type.</li>
+</ul>
+
+<p>
+The following four built in field sets are allowed:
+</p>
+
+<ul>
+  <li><strong>[all]: </strong>Returns all fields in the document,
+      including the document ID.</li>
+  <li><strong>[none]: </strong>Returns no fields at all, not even the
+      document ID.</li>
+  <li><strong>[id]: </strong>Returns only the document ID</li>
+  <li><strong>&lt;document type&gt;:[document]: </strong>Returns only the original document fields (generated fields not included) together with the document ID. Supported for indexed search only.</li>
+</ul>
+
+<p>
+If a built-in field set is not used, a list of fields can be
+specified. The following syntax is used:
+</p>
+
+
+<pre class="brush: text">
+&lt;document type&gt;:field1,field2,&hellip;
+</pre>
+
+<p>
+For instance:
+</p>
+
+<pre class="brush: text">
+music:title,artist
+</pre>
+
+<p>
+Note that the built-in field set <code>[none]</code> is mostly useful
+for internal operations inside the content distribution layer. If
+specified to external tools, it will work equivalently
+as <code>[id]</code>.
+</p>
+
+</body>
+</html>
+

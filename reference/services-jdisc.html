@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html lang="en-US" xml:lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1" />
+    <title>services.xml - 'jdisc'</title>
+    <link href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" type="text/css" rel="stylesheet" />
+    <meta content="June 2012" name="date" />
+    <meta content="gv, bjormel" name="authors" />
+</head>
+
+<body>
+
+<p class="ingress">
+    This document provides a complete reference for configuration of a
+    JDisc cluster in Vespa. The JDisc model elements are:
+</p>
+
+<pre><a href="#jdisc">jdisc [version, id]</a>
+    <a href="services-http.html">http</a>
+        <a href="services-http.html#server">server</a>
+        <a href="services-http.html#filtering">filtering</a>
+    <a href="#rest-api">rest-api</a>
+        <a href="#rest-api-components">components</a>
+    <a href="#servlet">servlet</a>
+        <a href="#servlet-path">path</a>
+        <a href="#servlet-config">servlet-config</a>
+    <a href="#handler">handler</a>
+    <a href="#components">components</a>
+    <a href="#component">component</a>
+    <a href="services-search.html#sec-1">search</a>
+        <a href="#include">include [dir]</a>
+        <a href="services-search.html#binding">binding</a>
+        <a href="services-search.html#sec-2.1">searcher</a>
+        <a href="services-search.html#sec-2.2">federation</a>
+        <a href="services-search.html#sec-3.2">provider</a>
+        <a href="services-search.html#sec-3.1">chain</a>
+        <a href="services-search.html#sec-2.3">renderer</a>
+    <a href="services-docproc.html">document-processing</a>
+        <a href="#include">include [dir]</a>
+        <a href="services-docproc.html#documentprocessor">documentprocessor</a>
+        <a href="services-docproc.html#chain">chain</a>
+    <a href="services-processing.html">processing</a>
+        <a href="#include">include [dir]</a>
+        <a href="services-processing.html#binding">binding</a>
+        <a href="services-processing.html#processor">processor</a>
+        <a href="services-processing.html#chain">chain</a>
+        <a href="services-processing.html#renderer">renderer</a>
+    <a href="services-documentapi.html">document-api</a>
+        <a href="services-documentapi.html#abortondocumenterror">abortondocumenterror</a>
+        <a href="services-documentapi.html#retryenabled">retryenabled</a>
+        <a href="services-documentapi.html#route">route</a>
+        <a href="services-documentapi.html#maxpendingdocs">maxpendingdocs</a>
+        <a href="services-documentapi.html#maxpendingbytes">maxpendingbytes</a>
+        <a href="services-documentapi.html#retrydelay">retrydelay</a>
+        <a href="services-documentapi.html#timeout">timeout</a>
+        <a href="services-documentapi.html#tracelevel">tracelevel</a>
+        <a href="services-documentapi.html#mbusport">mbusport</a>
+    <a href="#accesslog">accesslog</a>
+    <a href="#document">document [type, class, bundle]</a>
+    <a href="#client">client</a>
+    <a href="#server">server</a>
+    <a href="config-files.html#configuration_format_in_services.xml">config</a>
+    <a href="#nodes">nodes [jvmargs, count, flavor]</a>
+        <a href="#node">node</a>
+
+</pre>
+
+
+<h1 id="jdisc-model-elements">JDisc configuration model elements</h1>
+
+
+<h2 id="jdisc">jdisc</h2>
+
+<p>
+  Contained in <code><a href="services.html#overview">services</a></code>.
+The root element of a JDisc cluster definition.
+The xml file may have zero or more such tags. The attribute
+<code>version</code> is required and <strong>must</strong> be set to <code>1.0</code>
+in this version of Vespa.
+Attributes:
+<ul>
+    <li><strong>version (required)</strong>: 'version'
+        must be set to '1.0' in this version of Vespa.
+    </li>
+    <li><strong>id (required)</strong>: 'id'
+        must be set to the logical name of this cluster
+    </li>
+</ul>
+</p>
+<p>
+    Optional subelements:
+</p>
+<ul>
+    <li><a href="#rest-api"><code>rest-api</code></a></li>
+    <li><a href="#servlet"><code>servlet</code></a></li>
+    <li><a href="services-search.html"><code>search</code></a></li>
+    <li><a href="services-docproc.html"><code>document-processing</code></a></li>
+    <li><a href="services-processing.html"><code>processing</code></a></li>
+    <li><a href="services-documentapi.html"><code>document-api</code></a></li>
+    <li><a href="#component"><code>component</code></a></li>
+    <li><a href="#handler"><code>handler</code></a></li>
+    <li><a href="#document"><code>document</code></a></li>
+    <li><a href="#nodes"><code>nodes</code></a></li>
+    <li><a href="#aliases"><code>aliases</code></a></li>
+</ul>
+
+<h3>Example</h3>
+
+<pre>
+&lt;jdisc id='default' version='1.0'&gt;
+  &lt;search&gt;
+    &lt;chain id='default'&gt;
+      &lt;searcher id='com.yahoo.search.example.SimpleSearcher'/&gt;
+    &lt;/chain&gt;
+  &lt;/search&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias='node1'/&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<h3>Running multiple clusters on the same node</h3>
+
+<p>
+Each jdisc cluster has a default http server port, unless it contains a <a
+href="services-http.html#http">http</a> element. Hence, when running more than one
+<code>jdisc</code> cluster on the same node, it is necessary to
+manually assign a port to the http server to all but one cluster. Otherwise,
+the application will not deploy. Assigning a port is done by adding a <a
+href="services-http.html#server">server</a> element with an explicit
+port number:
+</p>
+<pre>
+&lt;jdisc id='cluster2' version='1.0'&gt;
+  &lt;http&gt;
+    &lt;server id='myServer' port='8081' /&gt;
+  &lt;/http&gt;
+  ...
+&lt;/jdisc&gt;
+</pre>
+
+
+<h2 id="include">include</h2>
+
+<p>
+    Allows including XML snippets contained in external files. All files from
+    all listed directories will be included. All files must have the same outer
+    tag as they were referred from, i.e. search, document-processing or
+    processing. The path must be relative to the application package
+    root, and must never point outside of the package.
+    Attributes:
+</p>
+<ul>
+    <li><strong>dir (required)</strong>: 'dir'
+        the directory to include files from. File inclusion order is undefined.
+    </li>
+</ul>
+
+<h3>Example</h3>
+
+<pre>
+&lt;include dir="included_configs/search" /&gt;
+</pre>
+
+
+<h2 id="rest-api">rest-api</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+Add a Jersey web application with resources and providers to the JDisc container
+cluster. Multiple web applications can be created by adding multiple <code>rest-api</code>
+elements with unique paths. Bundles containing Jersey components are added by giving the
+symbolic name (and optional version) in <code>components</code> sub-elements. From each
+given bundle, all classes with root annotations will be included in the corresponding web
+application.
+Attributes:
+<ul>
+  <li><strong>path (required)</strong>: the path to bind the rest-api.</li>
+</ul>
+ </p>
+<p>
+    Required subelements:
+</p>
+<ul>
+    <li><a href="#rest-api-components"><code>components</code></a></li>
+</ul>
+
+<h3>Example</h3>
+
+<pre>
+&lt;rest-api path="my-app"&gt;
+  &lt;components bundle="my-bundle" /&gt;
+  &lt;components bundle="other-bundle:2.0.0" /&gt;
+&lt;/rest-api&gt;
+</pre>
+
+
+<h2 id="rest-api-components">components</h2>
+
+<p>
+  Contained in <code><a href="#rest-api">rest-api</a></code>.
+  Add a bundle to scan for Jersey components. Attributes:
+<ul>
+  <li><strong>bundle (required)</strong>: the bundle to include Jersey components from. Format: 'symbolicName:version'.</li>
+</ul>
+</p>
+
+<p>
+    Optional subelements:
+</p>
+<ul>
+    <li><a href="#rest-api-package"><code>package</code></a></li>
+</ul>
+
+<h2 id="rest-api-package">package</h2>
+<p>
+  Contained in <code><a href="#rest-api-components">components</a></code>.
+  Scan for components only in the given packages. If no 'package' elements are given,
+  all packages will be scanned.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;rest-api path="my-app"&gt;
+  &lt;components bundle="my-bundle"&gt;
+    &lt;package&gt;com.mydomain.foo&lt;/package&gt;
+    &lt;package&gt;com.mydomain.bar&lt;/package&gt;
+  &lt;/components&gt;
+&lt;/rest-api&gt;
+</pre>
+
+
+<h2 id="servlet">servlet</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  Add a Servlet, one per <code>servlet</code> element. Attributes:
+<ul>
+  <li><strong>id (required)</strong>: a unique id.</li>
+  <li><strong>class (required)</strong>: the class to load as a Servlet.</li>
+  <li><strong>bundle (required)</strong>: the bundle that the Servlet resides in.</li>
+</ul>
+</p>
+<p>
+    Required subelement:
+</p>
+<ul>
+    <li><a href="#servlet-path"><code>path</code></a></li>
+</ul>
+
+<p>
+    Optional subelements:
+</p>
+<ul>
+    <li><a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a></li>
+    <li><a href="#servlet-config"><code>servlet-config</code></a></li>
+</ul>
+
+<h3>example</h3>
+
+<pre>
+&lt;servlet id="my-servlet" class="com.mydomain.MyServlet" package="servlet-example"&gt;
+    &lt;path&gt;my-path&lt;/path&gt;
+&lt;/servlet&gt;
+</pre>
+
+
+<h2 id="servlet-path">path</h2>
+<p>
+  Contained in <code><a href="#servlet">servlet</a></code>.
+  The path the Servlet will bind to.</p>
+
+<h3>example</h3>
+
+<pre>
+&lt;servlet id="my-servlet" class="com.mydomain.MyServlet" package="servlet-example"&gt;
+    &lt;path&gt;my-path&lt;/path&gt;
+&lt;/servlet&gt;
+</pre>
+
+
+<h2 id="servlet-config">servlet-config</h2>
+<p>
+  Contained in <code><a href="#servlet">servlet</a></code>.
+  An alternative to regular <a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a>
+to support legacy ServletConfig. It is a simple map of string keys to string values that will be available
+as ServletConfig inside the Servlet.</p>
+
+<h3>example</h3>
+
+<pre>
+&lt;servlet id="my-servlet" class="com.mydomain.MyServlet" package="servlet-example"&gt;
+    &lt;path&gt;my-path&lt;/path&gt;
+    &lt;servlet-config&gt;
+        &lt;myKey&gt;myValue&lt;/myKey&gt;
+    &lt;/servlet-config&gt;
+&lt;/servlet&gt;
+</pre>
+
+
+<h2 id="handler">handler</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  The <code>handler</code> element holds the configuration of a
+  handler. It has one mandatory attribute, <code>id</code>.
+  If any binding tag, <code>binding</code> og <code>clientBinding</code>
+  is present, the handler is a JDisc request handler, and will be bound
+  to the pertinent JDisc interfaces using the given bindings.
+  Attributes:
+  <ul>
+    <li><strong>id (required)</strong>: The component ID.</li>
+    <li><strong>class (optional)</strong>: The class of the handler, defaults to
+    id.</li>
+    <li><strong>bundle (optional)</strong>: The bundle to load the handler
+    from, defaults to class or id (if no class is given).</li>
+  </ul>
+</p>
+<p>
+  Optional subelements:
+  <ul>
+    <li><a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a></li>
+    <li><code>binding</code> For JDisc request handlers, add this server binding to this handler.
+    <li><code>clientBinding</code> For JDisc request handlers, add this client binding to this handler.
+    <li><a href="#component"><code>component</code></a> for injecting another
+    component. Must be a declaration of a new component, not a reference.</li>
+  </ul>
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;jdisc id='default' version='1.0'&gt;
+  &lt;handler id='com.yahoo.search.handler.LegacyBridge'&gt;
+    &lt;binding&gt;http://*/*&lt;/binding&gt;
+  &lt;/handler&gt;
+  &lt;handler bundle='myHandlers' id='com.mydomain.vespatest.RedirectingHandler'/&gt;
+  &lt;handler bundle='myHandlers' id='com.mydomain.vespatest.ExampleHandler'/&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias='node1'/&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<h2 id="client">client</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  The <code>client</code> element holds the configuration of a
+  JDisc client provider. It has one mandatory attribute, <code>id</code>
+  and must be bound to some URI pattern to be available for use.
+  Attributes:
+  <ul>
+    <li><strong>id (required)</strong>: The component ID.</li>
+    <li><strong>class (optional)</strong>: The class of the handler, defaults to
+    id.</li>
+    <li><strong>bundle (optional)</strong>: The bundle to load the handler
+    from, defaults to class or id (if no class is given).</li>
+  </ul>
+</p>
+<p>
+  Optional subelements:
+  <ul>
+    <li><a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a></li>
+    <li><code>binding</code> Add this client binding to this client provider.
+    <li><code>serverBinding</code> Add this server binding to this handler.
+    <li><a href="#component"><code>component</code></a> for injecting another
+    component. Must be a declaration of a new component, not a reference.</li>
+  </ul>
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;client id='com.mydomain.vespatest.DemoClient'&gt;
+  &lt;config name='vespatest.response'&gt;
+    &lt;response&gt;DemoClient says: Hello, world!
+    &lt;/response&gt;
+  &lt;/config&gt;
+  &lt;binding&gt;http://remotehost/*&lt;/binding&gt;
+  &lt;binding&gt;http://another-remotehost/*&lt;/binding&gt;
+  &lt;serverBinding&gt;http://*:4080/DemoClient&lt;/serverBinding&gt;
+&lt;/client&gt;
+</pre>
+
+<h2 id="server">server</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  The <code>server</code> element holds the configuration of a
+  JDisc server provider. It has one mandatory attribute, <code>id</code>.
+  Attributes:
+  <ul>
+    <li><strong>id (required)</strong>: The component ID.</li>
+    <li><strong>class (optional)</strong>: The class of the server, defaults to
+    id.</li>
+    <li><strong>bundle (optional)</strong>: The bundle to load the server
+    from, defaults to class or id (if no class is given).</li>
+  </ul>
+</p>
+<p>
+  Optional subelements:
+  <ul>
+    <li><a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a></li>
+  </ul>
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;server id='com.mydomain.vespatest.DemoServer'&gt;
+  &lt;config name='vespatest.demo-server'&gt;
+    &lt;response&gt;Hello, world!
+    &lt;/response&gt;
+    &lt;port&gt;16889&lt;/port&gt;
+  &lt;/config&gt;
+&lt;/server&gt;
+</pre>
+
+<h2 id="components">components</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+Contains <a href="#component">component</a> elements. Can be used in conjunction with <a href="#include">include</a> for modular config of components.
+  Optional subelements:
+  <ul>
+    <li><a href="#component"><code>component</code></a></li>
+    <li><a href="#include"><code>include</code></a></li>
+  </ul>
+</p>
+
+
+<h2 id="component">component</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  The <code>component</code> element holds the configuration of a
+  <a href="../jdisc/injecting-components.html#implement-provider">generic component</a>. It
+  has one mandatory attribute, <code>id</code>.
+  Attributes:
+  <ul>
+    <li><strong>id (required)</strong>: The component ID.</li>
+    <li><strong>class (optional)</strong>: The class of the component, defaults to
+    id.</li>
+    <li><strong>bundle (optional)</strong>: The bundle to load the component
+    from, defaults to class or id (if no class is given).</li>
+  </ul>
+</p>
+<p>
+  Optional subelements:
+  <ul>
+    <li><a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a></li>
+    <li><a href="#component"><code>component</code></a> for injecting another
+    component. Must be a declaration of a new component, not a reference.</li>
+  </ul>
+</p>
+
+<h3>Example</h3>
+<pre>
+&lt;component id="com.mydomain.demo.DemoComponent" bundle="demo" /&gt;
+</pre>
+<p>
+Refer to <a href="../jdisc/injecting-components.html">Injecting components</a> for details and examples.
+</p>
+
+<h2 id="accesslog">accesslog</h2>
+<p>
+  Contained in <code><a href="#jdisc">jdisc</a></code>.
+  The <code>accesslog</code> element configures the properties of
+  the accesslog.  Setting the type to <code>vespa</code> gives a
+  classic Apache like format. Access logging can
+  be disabled by setting the type to <code>disabled</code>.
+  Attributes:
+  <ul>
+    <li><strong>type</strong>: The accesslog type.</li>
+    <li><strong>fileNamePattern</strong>: File name pattern.</li>
+    <li><strong>symlinkName</strong>: Symlink name.</li>
+    <li><strong>rotationInterval</strong>: Rotation interval.</li>
+    <li><strong>rotationScheme</strong>: Allowed values are 'date' or 'sequence'.</li>
+  </ul>
+</p>
+
+
+<h3>Example</h3>
+
+<pre>
+&lt;accesslog fileNamePattern='$VESPA_HOME/logs/vespa/qrs/QueryAccessLog.a.%Y%m%d%H%M%S' symlinkName='QueryAccessLog.a' rotationInterval='0 1 ...' type='vespa' /&gt;
+</pre>
+
+<h2 id="document">document</h2>
+
+<p>
+    <a href="../concrete-documents.html">Concrete document type</a>
+    bindings for the JDisc Container.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;jdisc id='default' version='1.0'&gt;
+  &lt;document class='com.mydomain.concretedocs.Vehicle' bundle='concretedocs' type='vehicle'/&gt;
+  &lt;document class='com.mydomain.concretedocs.Vehicle' bundle='concretedocs' type='ship'/&gt;
+  &lt;document class='com.mydomain.concretedocs2.Disease' bundle='concretedocs2' type='disease'/&gt;
+  &lt;search/&gt;
+  &lt;document-processing&gt;
+    &lt;chain id='default'&gt;
+      &lt;documentprocessor bundle='concretedocs' id='concretedocs.ConcreteDocDocProc'/&gt;
+    &lt;/chain&gt;
+  &lt;/document-processing&gt;
+  &lt;nodes&gt;
+  &lt;node hostalias='node1'/&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<h2 id="nodes">nodes</h2>
+
+<p>
+    The <code>nodes</code> element specifies the nodes that comprise this <code>JDisc</code> cluster.
+    Attributes:
+<ul>
+    <li>
+        <strong>jvmargs (optional)</strong>: The default for JVM arguments to set for nodes in this cluster.
+    </li>
+    <li>
+        <strong>count (optional)</strong>: Sets the number of nodes for the cluster, when deploying to a hosted Vespa system.
+        This is mutually exclusive with respect to the <code>&lt;node&gt;</code> sub element below.
+    </li>
+    <li>
+        <strong>flavor (optional)</strong>: The node flavor to use. If omitted the default flavor will be used.
+    </li>
+    <li>
+        <strong>deploy (optional)</strong>: Refer to <a href="application-packages-reference.html#deploy">deployment directives</a> for how to configure per-region/environment overrides (e.g. different number of nodes per region)
+    </li>
+</ul>
+</p>
+<p>
+    Optional subelements:
+</p>
+<ul>
+    <li><a href="#node"><code>node</code></a> (one or more)</li>
+</ul>
+
+<h3>Example</h3>
+
+<pre>
+&lt;nodes jvmargs="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps"&gt;
+  &lt;node hostalias='node1' /&gt;
+&lt;/nodes&gt;
+</pre>
+
+<h2 id="node">node</h2>
+
+<p>
+    Contained in <code><a href="#nodes">nodes</a></code>.
+    Attributes:
+<ul>
+    <li><strong>hostalias (required)</strong>: This attribute specifies the location
+        of the node in the system.
+    </li>
+</ul>
+</p>
+
+<h3>Example</h3>
+
+<pre>
+&lt;nodes&gt;
+  &lt;node hostalias='node1'/&gt;
+&lt;/nodes&gt;
+</pre>
+
+</body></html>

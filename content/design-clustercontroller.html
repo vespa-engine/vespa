@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Cluster Controller</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+<h1 id="overview">Responsibilities</h1>
+<dl>
+  <dt>Give the cluster a uniform view of its state</dt><dd>
+    The main responsibility of the cluster controller is to give the entire
+    cluster a uniform view of what nodes are available and what they capacities
+    are. To do this, it polls all distributor and content nodes for their
+    health and state information. All the states are combined into a cluster
+    state which is broadcasted back to all the distributors and content nodes.
+  </dd>
+  <dt>Allow administrators to override node states</dt><dd>
+    If one wants a node to be less available than its health indicates,
+    administrators can override node states in the cluster controller.
+    Maintenance and retired modes offer other options to stop using the node
+    than just stopping the services, and enforcing it to be down also means
+    that if someone accidentally starts the services again it will not enter
+    the live cluster.
+  </dd>
+  <dt>Automatically detect and fix cluster issues</dt><dd>
+    The cluster controller may notice that a node is misbehaving, such as
+    constantly crashing. The cluster controller may detect such issues and fix
+    them by stop using problematic nodes.
+  </dd>
+  <dt>Improving alerting and monitoring</dt><dd>
+    As the cluster controller monitors every nodes health, and can easily gather
+    node metrics, it is a good location to implement utilities to improve
+    automatic detection of issues and cluster monitoring.
+  </dd>
+</dl>
+
+<h1 id="uniform-state-view">Giving the cluster a uniform state view</h1>
+<p>
+  The main responsibility of the cluster controller is to give the cluster
+  a uniform view of its <a href="admin-states.html">state</a>. This is
+  achieved by <a href="#state-gather">gathering</a> node states,
+  <a href="#state-combine">combining</a> them into a cluster state which is
+  then <a href="#state-broadcast">broadcasted</a> to all the nodes in the
+  cluster.
+</p><p>
+  Clients use the cluster state to route to the correct distributor
+  using the <a href="idealstate.html">ideal state algorithm</a>. They get
+  updated cluster states through the distributors they talk to.
+</p><p>
+  With an updated cluster state, distributors can detect that they are the
+  correct target for the request, and content nodes can verify that the request
+  comes from the correct distributor node. Verifying this allows the cluster to
+  be less confused by misbehaving nodes.
+</p>
+
+<figure>
+    <img src="../img/design/clustercontroller-overview.png"/>
+</figure>
+
+<h2 id="state-gather">Gathering node states</h2>
+<p>
+  The cluster state needs availability and capacity information from all the
+  distributor and content nodes. The cluster controller retrieves this
+  information by polling all the nodes for health and state information.
+</p>
+<p>
+  To give the cluster controller an updated view, the cluster controller sends
+  requests with the currently known node state. If the supplied state is no
+  longer correct, the node returns correct information immediately. If the
+  state is correct, the request lingers on the node for a while, such that the
+  node can reply to it immediately if its state changes. After a while, the
+  cluster controller will send a new state request to the node, even if it has
+  one pending. This will trigger a reply to the lingering request and make the
+  new one linger instead. This way, each node have a pending state request at
+  almost all times, such that new information can be quickly given to the
+  cluster controller.
+</p>
+<p>
+  In the case of a node doing a controlled shutdown it may thus start the
+  shutdown process by responding to the pending state request that it is now
+  stopping. Seeing this reply, the cluster controller can know that the node
+  is doing a controlled shutdown or restart. <strong>Note: </strong> As
+  controlled restarts or shutdowns currently are implemented as TERM signals
+  from the config-sentinel, the cluster controller is not able to differ
+  between controlled shutdowns and the process being killed by the OS for using
+  too much memory or any other functionality that may end up sending a TERM
+  signal.
+</p>
+
+<h2 id="state-combine">Combining node states into a cluster state</h2>
+<p>
+  The node states kept in the cluster state doesn't need to match the states
+  reported from the node themselves. For instance, while a node may return that
+  it is stopping to the cluster controller to indicate a reason for it
+  shutting down, the cluster state will say that this node is down or in
+  maintenance mode.
+</p><p>
+  The cluster controller is also free to keep the node temporarily out of
+  service. For instance, if the node died while initializing last time it
+  started, the cluster controller may find it wise to keep the node in the
+  down state until it verifies that the node managed to finish initializing
+  this time around.
+</p><p>
+  On top of this, there may be permanent state overrides for the node. If the
+  cluster controller detects the node constantly restarting, creating
+  unnecessary state flux that interrupts the cluster, it may permanently set
+  the node out of service until an administrator can fix it. Administrators may
+  also manually override the state to set the node temporarily out of service
+  while doing maintenance work, or removing it permanently due to some issues
+  being manually detected.
+</p><p>
+  The node states in the cluster states are thus calculated based on the
+  reported states from the node, and historic knowledge kept in the cluster
+  controller. If the result ends up in a state with higher availability than
+  the user state for the node, the state is adjusted based on it.
+</p>
+
+<h2 id="state-broadcast">Cluster state broadcasting</h2>
+<p>
+  When node states are received, an cluster controller internal cluster state
+  is updated. To limit the amount of cluster states broadcasted to the cluster,
+  the cluster controller is not allowed to create a new official state before a
+  given time period has past since the last one. Additionally it will wait for
+  a short period of time after receiving a change, in case there are other
+  changes happening at about the same time that should be included too. For
+  instance, distributors and content nodes that are on the same node often go
+  down at the same time.
+</p><p>
+  If the internal cluster state have changed enough from the last official
+  cluster state for the cluster to care, enough time has passed since the last
+  official state was generated (typically a few seconds), and no more node state
+  changes have been seen recently (typically less than a second), a new official
+  cluster state is generated based on the internal state. The version number
+  is upped, and the new official cluster state is immediately broadcasted to
+  all the nodes.
+</p>
+
+<h1 id="master-election">Master election</h1>
+<p>
+  Having only a single cluster controller, if the controller goes down for any
+  reason, there is no longer a cluster controller alive to adjust the cluster
+  state. While this is not a single point of failure, as typically a distributor
+  or content node have to go down afterwards for it to matter much, it would
+  still be good if one could have more than one cluster controller such that
+  it was less critical for one to go down.
+</p><p>
+  However, having two cluster controllers working at the same time, the cluster
+  could end up confused with the cluster controllers sending contradicting
+  cluster states. One of them may have failed to talk to node 3 while the other
+  one may have failed to talk to node 5, and then they send out two different
+  cluster states. The nodes in the cluster may receive the cluster states in
+  different order, and may end up confused with the state of the cluster.
+</p><p>
+  To allow multiple controllers, but avoid confusion, only a single cluster
+  controller is allowed to broadcast cluster states. This cluster controller is
+  known as the master cluster controller. The other cluster controller instances
+  only exist to participate in master election and potentially take over if the
+  master dies.
+</p><p>
+  All cluster controllers will vote for cluster controller with the lowest index
+  that says it is ready. If a cluster controller have more than half of the
+  configured cluster controllers voting for it, it will be elected master. A
+  newly elected master will not start broadcasting states before a transition
+  time is passed, allowing an old master to have some time to realize it is no
+  longer the master.
+</p><p>
+  This means, that for there to be a master with <code>N</code> nodes down,
+  <code>2 * N + 1</code> cluster controllers must be configured. It also means
+  only the cluster controllers with the <code>N</code> lowest indexes will ever
+  be able to become master. The remaining cluster controllers will never do
+  anything but participate in the master election voting process and will use
+  minimal resources, meaning they can probably be set to run anywhere.
+</p>
+
+<h1 id="historic-state">Historic state</h1>
+<p>
+  Very little state is currently persisted by the cluster controllers. If the
+  master changes, or is restarted, historic knowledge built up is typically
+  reset. A few exceptions exist, currently being stored in a ZooKeeper cluster:
+</p>
+<ul>
+  <li>The last cluster state version is stored, such that a cluster controller
+      taking over can continue the version numbers where the old one left
+      of.</li>
+  <li>The user states set externally are stored, such that a reset does not
+      remove an administrator to set a node down for instance.</li>
+</ul>
+<p>
+Note: ZooKeeper data tends to be corrupted if the disk they store data on
+  gets full. It is thus recommended to not store ZooKeeper data on partitions
+  that are also used for logs or data storage, which are prone to getting
+  filled.
+  If ZooKeeper data is corrupted, it must be deleted, in which case all
+  persisted state is cleared. If having multiple nodes, the state may survive
+  from a node where the data is not corrupt. Otherwise the data is lost. User
+  states must be reset. Cluster state versions will start back at zero.
+</p>
+
+<h2 id="version-reset">Cluster State Version Reset</h2>
+<p>
+  If ZooKeeper data goes missing, the cluster state version will be reset to
+  zero. This is not an issue for distributors and content nodes, as these will
+  trust that the most recently received cluster state is always the most
+  correct one.
+</p><p>
+  Clients use the versions to detect that a cluster state is upgraded. The
+  cluster controller tries to broadcast the cluster state at the same time to
+  all the nodes, but the distributors may process the new cluster state at a bit
+  different times, such that clients may alternatively talk to distributors
+  having the newest cluster state or not. By using the version numbers, the
+  clients does not dump the newest cluster state for one received by a
+  distributor that haven't processed the new one yet.
+</p><p>
+  To handle a cluster state version reset, clients have some functionality for
+  detecting whether distributors seems to agree the cluster state it has is
+  wrong, even if version is newer. In such cases clients will dump its cluster
+  state and use a new one even if version is lower. Clients thus handle a
+  version reset, but it may result in a few temporarily failures while it is
+  confused.
+</p>
+
+<h1 id="monitoring">Monitoring cluster controller state</h1>
+
+<h2 id="rest-api">State Rest API</h2>
+<p>
+  Basic cluster and node state information is available through the
+  <a href="api-state-rest-api.html">State Rest API</a>. This API can also be
+  used to set a user state for a node. For instance, forcing a node permanently
+  down that some external process or administrator have detected to be
+  disrupting the cluster.
+</p>
+
+<h2 id="console-tools">Command line tools</h2>
+<p>
+  For simpler manual usage, a few command line tools have been implemented using
+  the State Rest API. These are:
+</p>
+<ul>
+  <li><code>vespa-get-cluster-state</code></li>
+  <li><code>vespa-get-node-state</code></li>
+  <li><code>vespa-set-node-state</code></li>
+</ul>
+<p>
+  For details on how these work, see their <code>--help</code> pages on the
+  command line.
+</p>
+
+<h2 id="monitoring">Monitoring cluster controller state</h2>
+<p>
+  There is an internal status page for the cluster controller available at
+  the status port. This page is located at
+  <code>/clustercontroller-status/v1/<i>&lt;clustername&gt;</i>/</code>. If a
+  cluster name is not specified, the available clusters will be listed.
+  Note though, that these pages are intended for internal use. The output may
+  change at any time and is not intended to be parseable. It may also expose
+  concepts not explained in the public documentation.
+</p>
+
+</body>
+</html>

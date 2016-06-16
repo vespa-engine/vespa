@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Configuring Legacy Components</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2016" />
+  <meta name="authors" content="gv" />
+</head>
+
+<body>
+<p>
+When writing new components, one should always use cloud config classes
+for configuring them. However, sometimes we have to set up
+legacy components that take their own proprietary config
+classes. These components can still be configured via
+<code>services.xml</code> by adding a <em>cloud config bridge</em> to
+the application.
+</p>
+
+
+<h1 id="creating-application">Creating the Application Package</h1>
+<p>
+First, we create an application using maven.
+For this example, we set the properties asked for by maven like this:
+</p>
+<pre class="brush: cli">
+groupId: com.yahoo.demo
+artifactId: legacy_handler
+version: 1.0
+package: com.yahoo.demo
+</pre>
+
+
+<h1 id="creating-legacy-handler">Creating a Sample Legacy Handler</h1>
+<p>
+In real life, of course, the legacy handler and its config class will
+already exist. But, for the sake of this example we create a request
+handler that takes a non-cloud config object, of the class
+<code>LegacyResponseConfig</code>, as its sole constructor
+parameter. We put the handler in a new file called
+<code>legacy_handler/components/src/main/java/com/yahoo/demo/LegacyHandler.java</code>:
+</p>
+<pre class="brush: java">
+package com.yahoo.demo;
+
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.handler.*;
+
+public class LegacyHandler extends AbstractRequestHandler {
+
+    private final String response;
+
+    public LegacyHandler(LegacyResponseConfig config) {
+        response = config.getResponse();
+    }
+
+    @Override
+    public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+        ContentWriter writer =
+        ResponseDispatch.newInstance(Response.Status.OK).
+                connectWriter(handler);
+        writer.write(response);
+        writer.close();
+        return null;
+    }
+}
+</pre>
+
+<p>
+Then, we add the legacy config class in a file called
+<code>legacy_handler/components/src/main/java/com/yahoo/demo/LegacyResponseConfig.java</code>:
+</p>
+<pre class="brush: java">
+package com.yahoo.demo;
+
+public class LegacyResponseConfig {
+    private String response;
+
+    public void setResponse(String response) {
+        this.response = response;
+    }
+
+    public String getResponse() {
+        return response;
+    }
+
+}
+</pre>
+
+
+<h1 id="creating-config-bridge">Creating the Cloud Config Bridge</h1>
+<p>
+We will now create the config bridge, along with the cloud config
+class needed to configure it. We'll start by creating the config
+definition schema. In our maven project, create the file
+<code>legacy_handler/components/src/main/resources/configdefinitions/response.def</code>
+with:
+</p>
+<pre>
+namespace=demo
+
+response string default="Default response."
+</pre>
+<p>
+Based on this schema, maven will create a configuration class
+called <code>ResponseConfig</code> consisting of a single string
+field named <em>response</em>.  Now, let us create the bridge itself, with
+the new configuration class as a constructor parameter. In our maven
+project, create the file
+<code>legacy_handler/components/src/main/java/com/yahoo/demo/LegacyConfigProvider.java</code>
+with:
+</p>
+<pre class="brush: java">
+package com.yahoo.demo;
+
+import com.yahoo.container.di.componentgraph.Provider;
+
+/**
+ * Translates ResponseConfig (cloud config) to LegacyResponseConfig (non-cloud config)
+ */
+public class LegacyConfigProvider implements Provider&lt;LegacyResponseConfig&gt; {
+    private final LegacyResponseConfig legacyResponseConfig;
+
+    public LegacyConfigProvider(ResponseConfig config) {
+        legacyResponseConfig = new LegacyResponseConfig();
+        legacyResponseConfig.setResponse(config.response());
+    }
+
+    @Override
+    public LegacyResponseConfig get() {
+        return legacyResponseConfig;
+    }
+
+    @Override
+    public void deconstruct() {}  // No resources to release here.
+}
+</pre>
+
+
+<h1 id="set-up-application">Set up the application</h1>
+<p>
+Finally, it's time to add all these components to our project's
+services file,
+<code>legacy_handler/src/main/application/services.xml</code>. The
+complete file should look like this:
+</p>
+<pre class="brush: xml">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;jdisc version="1.0"&gt;
+  &lt;handler id="com.yahoo.demo.LegacyHandler" bundle="legacy_handler"&gt;
+    &lt;binding&gt;http://*:4080/legacy&lt;/binding&gt;
+
+    &lt;component id="com.yahoo.demo.LegacyConfigProvider" bundle="legacy_handler" &gt;
+      &lt;config name='demo.response'&gt;
+        &lt;response&gt;We can configure a legacy component that takes non-cloud config!&lt;/response&gt;
+      &lt;/config&gt;
+    &lt;/component&gt;
+
+  &lt;/handler&gt;
+&lt;/jdisc&gt;
+</pre> 
+
+<p>Now, we can build our new application, and try it:</p>
+<pre class="brush: cli">
+$ cd legacy_handler
+$ mvn install
+$ yinst set standalone_jdisc_container.app_location=/absolutepath/legacy_handler
+$ yinst restart standalone_jdisc_container
+$ curl localhost:4080/legacy
+</pre>
+
+</body>
+</html>

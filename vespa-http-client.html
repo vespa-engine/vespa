@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>The Vespa HTTP Client - Feeding to Vespa from External Sources</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2016" />
+  <meta name="authors" content="einarmr" />
+</head>
+
+<body>
+<p>
+    This document describes the Vespa HTTP Client - a Java API and commandline util to feed document
+    operations to Vespa content clusters.
+    Even though it is possible to feed xml directly to the gateway through a simple HTTP protocol,
+    there are several advantages by using the client:
+</p>
+    <ul>
+        <li>Feeds in parallel to <strong>one or more</strong> Vespa clusters, ordering still guaranteed</li>
+        <li>Programmatic Java API that has <em>very few</em> runtime dependencies in its <em>pom.xml</em>, and which is completely independent of Vespa</li>
+        <li>Easy feeding from sources like e.g. Hadoop or Storm, or any other Java process</li>
+        <li>Feed document operations in XML or JSON format</li>
+        <li>Feed with <strong>much higher performance</strong> than all na&iuml;ve HTTP feeding approaches towards the <a href="httpgateway.html">HTTP gateway</a></li>
+        <li>Automatic retries, re-connect, performance tuning through parameters, compression, statistics supported.</li>
+        <li>Supports unlimited sized data sources, it is processed streaming (the simple HTTP protocol is batch)</li>
+        <li>Built in back throttling, it is hard to flood the system using this library.</li>
+    </ul>
+<p>
+    There is a prebuilt standalone command-line tool that let you feed from file using the API. This tool can be used outside the Vespa cluster.
+</p>
+
+
+<h1 id="preparing">Basics: Preparing to Use The Vespa HTTP Client API</h1>
+<p>
+    The receiving process in Vespa is an HTTP gateway node. The minimum
+    configuration to set this up is as follows:
+</p>
+
+<pre class="brush: xml">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;services version="1.0"&gt;
+  &lt;!-- &hellip; more config here &hellip; --&gt;
+
+  &lt;jdisc version="1.0" id="default"&gt;
+    &lt;document-api/&gt;
+  &lt;/jdisc&gt;
+
+  &lt;!-- &hellip; more config here &hellip; --&gt;
+&lt;/services&gt;
+</pre>
+
+<p>
+    The sending side is any Java process. To use the HTTP Client API, add the following
+    dependency to pom.xml:
+</p>
+<pre class="brush: xml">
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+      &lt;artifactId&gt;vespa-http-client&lt;/artifactId&gt;
+      &lt;version&gt; &lt;!--set correct version--&gt; &lt;/version&gt;
+    &lt;/dependency&gt;
+</pre>
+
+<h1 id="standalonetool">Using the Prebuilt HTTP Client Feeder</h1>
+<p>
+This works in the same manner as using the Vespa HTTP Client API, except that you use the API by running a prebuilt binary. This binary supports feeding a file of document operations.
+This binary is installed with Vespa and can be found at:
+</p>
+
+<pre class="brush: xml">
+$VESPA_HOME/lib/jars/vespa-http-client-jar-with-dependencies.jar
+</pre>
+
+<p>
+In order to feed, you need a file to feed, let us call this file.json, and you need to know the host name where the gateway is (gatewayhost)
+</p>
+<pre class="brush: xml">
+java -jar $VESPA_HOME/lib/jars/vespa-http-client-jar-with-dependencies.jar --file file.json --host gatewayhost
+</pre>
+<p>
+Use the --help option to see the list of supported features.
+</p>
+
+
+<h1 id="using">Using The Vespa HTTP Client API</h1>
+<p>
+    In this API, you call <code>stream(document)</code> on your document operations. You can do this as fast as you want, the API will block while/if the queues are full.
+    When a document has been processed, you will get a callback asynchronously. This callback will always happen, even when errors occur.
+    The callback is just for your information.
+</p>
+
+<p>
+    The API is centered around the <a href="javadoc/index.html?com/yahoo/vespa/http/client/FeedClient.html"><em>FeedClient</em></a>, which is created using a  <a href="javadoc/vespa-http-client/com/yahoo/vespa/http/client/FeedClientFactory.html"><em>FeedClientFactory</em></a>.
+</p>
+<pre class="brush: java">
+public interface FeedClient extends AutoCloseable {
+
+    /**
+     * Streams a document operation to cluster(s). If the pipeline and buffers are full, this call will be blocking.
+     * Document operations might time out before they are sent. Failed operations are not re-attempted.
+     * Don't call stream() after close is called.
+     * @param documentId Document id of the document.
+     * @param documentData The document data as JSON or XML (as specified when using the factory to create the API)
+     */
+    void stream(String documentId, CharSequence documentData);
+
+    /**
+     * This callback is executed when new results are arriving. Don't do any heavy lifting in this thread (no IO, disk,
+     * or heavy CPU usage) as this might block the progress of result processing and data sending.
+     * This call back will run in a different thread than your main program so use e.g.
+     * AtomicInteger for counters and follow general guides for thread-safe programming.
+     * There is an example implementation in class SimpleLoggerResultCallback.
+     */
+    static interface ResultCallback {
+        void onCompletion(String docId, Result documentResult);
+    }
+
+    /**
+     * Waits for all results to arrive and closes the FeedClient. Don't call any other method after calling close().
+     * Does not throw any exceptions.
+     */
+    @Override
+    void close();
+</pre>
+<p>
+    When creating a <code>FeedClient</code>, some config must be provided. The <strong>minimum</strong> is the hostname and port
+    of <strong>one</strong> HTTP gateway, denoted as an <a href="javadoc/index.html?com/yahoo/vespa/http/client/config/Endpoint.html"><em>Endpoint</em></a>. Other options include:
+</p>
+<ul>
+    <li>One or more <a href="javadoc/index.html?com/yahoo/vespa/http/client/config/Cluster.html"><em>clusters</em></a> to feed to in parallel.</li>
+    <li>The <em>data format</em> to use, UTF-8-encoded XML or JSON.</li>
+    <li>The <em>route</em> and <em>timeout</em> for the data in the Vespa cluster.</li>
+    <li>Whether to use <em>SSL</em> or not (default: off).</li>
+    <li>Any additional <em>HTTP headers</em></li>
+</ul>
+<p>
+    See the <a href="javadoc/index.html?com/yahoo/vespa/http/client/package-summary.html">Javadoc</a> for a full overview of the API.
+</p>
+
+<h2 id="single">Code Examples</h2>
+<p>Check the repo for sample applications</p> <!-- ToDo: add link to sample apps -->
+
+<h2 id="results">Feeding a stream of data</h2>
+<p>
+    If there is already a file of data that is just waiting to be fed into Vespa, you should consider using one of the utility functions for feeding inputStreams into already created FeedClients.
+</p>
+
+<pre class="brush: java">
+ /**
+   * Utility function that takes an array of JSON documents and calls the FeedClient for each element.
+   * @param inputStream This can be a very large stream. The outer element is an array (of document operations).
+   * @param feedClient The feedClient that will receive the document operations.
+   * @param numSent increased per document sent to API (but no waiting for results).
+   */
+  public static void feedJson(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
+      JsonReader.read(inputStream, feedClient, numSent);
+  }
+</pre>
+
+<h2 id="results">Result Callbacks</h2>
+<p>
+    After a document operation has been streamed, there will always be a callback eventually.
+</p>
+<p>
+    The <code>Result</code> has information on its document ID, the Endpoint it was fed to (recall that operations are sent to <code>Endpoints</code>
+    based on hashing of document ID within one Cluster), whether it was successful or not, whether an error was transient or permanent,
+    and any exception that was thrown (possibly containing an error message from the Vespa cluster).
+</p>
+<p>
+    The order of the callbacks is non-deterministic - the only guarantee is that
+    operations are sequenced per document ID.
+</p>
+
+<h2 id="errorhandling">Error Handling</h2>
+<p>
+    The vespa-http-client is set up with a high number of retries and a long time out.
+    (This can be changed for clients with special needs.)
+    The client will retry transient errors such as network problems, capacity problems etc.
+    If they later succeed, they are not reported to the user.
+    For permanent problems such as parsing problems, it will fail early.
+    There should normally be no need to retry operations that have failed externally.
+    All errors are propagated out to Result objects.
+    The API has <strong>no (semi) transactional behavior</strong>
+    (such as rollback in case of partial failure in a multi-cluster scenario). It is thus important that user
+    code checks the state of the Result objects returned.
+</p>
+
+<h2 id="multifeeding">Feeding Multiple Clusters</h2>
+<p>
+    Both the API and the commandline tool have support for feeding multiple clusters.
+    For example if there are a few documents that are to be inserted in two clusters, it is easy to feed both simultaneously.
+    In the commandline tool you specify several hosts comma separately, and in the API more clusters are added in the parameters.
+    However, in a production system this is more complex than feeding a single cluster.
+    An important question is what should happen when feeding a cluster is problematic.
+    This can be network problems, cluster problems, bugs, regions that are down due to power maintenance etc.
+    If you want all clusters to be synchronized, it means that feeding should stop when one cluster can not receive data.
+    If you want all clusters to be as updated as soon as possible at all times, it means feeding should continue to the clusters that are up
+    and maybe be replayed to the clusters that are unavailable when they come up (with all the challenges this have).
+    In the current library, you will get feedback on each feed operation; which clusters where successful and which
+    failed.
+    On failures you can e.g. save the document to a file and retry it later (the document is in the reply).
+    However, the cluster that is down might impact the global feed rate because the feeding library might wait for timeout before answering
+    the request, and the number of in-flight requests is limited.
+    One way around this is to have independent processes for each cluster and feed totally asynchronously.
+    Which approach is best depends on the use case; how long lived is the data, is it acceptable that
+    the clusters are out of synch, is it ok to drop data in case of failure and so on.
+    We know this is hard, and we are currently working on making a more sophisticated solution for our tenants.
+    The design is still in progress, but we foresee automatic reply on clusters that comes up after being down,
+    easier monitoring, alerting, and better transparency on what is happening.
+</p>
+<h2>Config Parameters</h2>
+<p>
+   The default values for the client should work fine in most cases.
+   In some cases you want to try to tune feeding for higher throughput.
+   You need to understand where the bottlenecks are in order to improve performance.
+   If you start feeding from more machines in parallel, and the total throughput increases significantly, it is the feeding client that is the bottleneck.
+   You can try to increase number of threads, enable compression, but you might need to feed from several machines to increase speed.
+   Remember that ordering is only guaranteed per instance of the library, so when feeding from different machines you might want to shard data accordingly.
+   If it does not increase performance, the vespa cluster is the botleneck.
+   You need to increase the number of containers with gateway nodes and/or increase the number of content nodes.
+</p>
+
+<h3>Configuration</h3>
+</p><p>
+    The configuration parameters are set in the <code>SessionParams</code> builder. The <code>SessionParams</code> consists of two sub configurations,
+    one is called <code>FeedParams</code> and one is called <code>ConnectionParams</code>.
+    Additionally <code>SessionParams</code> consists of a set of clusters.
+    The following text will describe the most used parameters.
+</p>
+
+<h3>Cluster SetUp</h3>
+<p>
+   A cluster consists of one or more <code>Endpoint</code>s. If the endpoint server is overloaded, it makes sense to add more endpoints to increase performance.
+   A common pattern is to run the DocumentProcessor on the same server as the endpoint, so it really depends on what the DocumentProcessor is doing.
+   You can start with one endpoint and monitor the server.
+</p><p>
+   You can feed to several clusters and they can be in different colos. Please note that the performance will be driven by the slowest colos with
+   the slowest network seen from the feedclient. It might be possible to set timeouts so the slowest colos don't slow down other colos,
+   but this will cause data loss. It will create a model that is hard to understand, so it is not recommended. The client does have buffering
+   so temporarily slowdowns is fine.
+</p>
+
+<h3>ConnectionParams</h3>
+<p>
+   If you are throttled by the network, it might be an idea to try to enable compression which can be done with this class.
+</p><p>
+    One parameter that has impact on performance is <code>numPersistentConnectionsPerEndpoint</code>. The client uses parallel requests to the gateway.
+    This reduces the impact of round-trip time and enables using more of the network bandwidth.
+    Setting it too high is not beneficial. This will cause more network sessions, and might create packet loss on the network.
+    Setting it too low means you will not be able to use the network bandwidth.
+    It seems like sweet spot is around 32.
+    If you are feeding from hundreds of machines to a small cluster, it makes sense to use a low number such as 2.
+</p>
+
+<h3>FeedParams</h3>
+<p>
+    There is a timeout that will cause the stream to fail if response from server is slow (or never happens). This timeout is the sum of the
+    <code>serverTimeout</code> and <code>clientTimeout</code>.
+    This value impacts performance since it can reduce the impact of a slow endpoint at the expense of data loss and high complexity.
+    Slow cluster will then timeout, and the clusters might be overloaded.
+    In case where the client is not even able to send document due to queued up system, the client *might* drop the document if the clientTimout is reached before
+    the document hits the network.
+</p><p>
+    <code>maxChunkSizeBytes</code> is the max size of a request sent to an endpoint. If there are documents waiting to be sent it will pack them together
+    up to this size. Setting this value to high can lead to out-of-memory for feeder or endpoint.
+    Setting it too low means that the round trip time of the connection might have an impact.
+    This parameter is related to numPersistentConnectionsPerEndpoint.
+    Sweet spot is expected to be wide and a value of 200kbytes should work in most cases.
+</p><p>
+    It is possible to limit the number of outstanding requests per cluster by adjusting <code>maxInFlightRequests</code>. It makes sense to tune this parameter if parts of
+    the cluster gets overloaded.
+</p><p>
+    Parsing JSON is in general cheaper than parsing XML, and the dataformat is set in FeedParams. This cost only applies mostly to the gateway component.
+</p>
+
+<h2 id="highperformance">Finding Slowest Cluster when Feeding Multi-Cluster</h2>
+<p>
+   You can get a snapshot of the current state by calling FeedClient getStatsAsJson().
+   This JSON is meant to be human readable, and can change at any time. At the time of writing it looks like this:
+</p>
+<pre class="brush: json">
+{
+    "clusters": [
+        {
+            "clusterid": 0,
+            "stats": {
+                "session": [
+                    {
+                        "endpoint": {
+                            "host": "localhost",
+                            "port": 4080
+                        },
+                        "stats": {
+                            "wrongSessionDetectedCounter": 0,
+                            "wrongVersionDetectedCounter": 0,
+                            "problemStatusCodeFromServerCounter": 0,
+                            "executeProblemsCounter": 0,
+                            "docsReceivedCounter": 4,
+                            "statusReceivedCounter": 4,
+                            "pendingDocumentStatusCount": 0
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "sessionParams": {
+      // .. The configurtion parameters used.
+    }
+}
+</pre>
+<p>
+    By looking at the JSON you can see which endpoints that are slow as these will usually have more pending documents.
+    You can also verify that documents are sharded nicely by looking at document received on various endpoints.
+    For debugging purposes you can dump this to the log now and then as this will give you some insight when needed.
+</body>
+</html>

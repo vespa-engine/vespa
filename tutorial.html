@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Vespa Tutorial</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="January 2015" />
+  <meta name="authors" content="eirikref, musum, havardpe,kraune" />
+</head>
+
+<body>
+
+<p>
+Welcome to the Vespa tutorial. It is a
+<em>Beginner's Guide to Vespa</em> and an overview of the major
+features of the service. Please read <a href="develop-with-vespa.html">Develop with Vespa</a> first.
+In this tutorial:
+</p>
+<ul>
+  <li>Application packages/Vespa configuration files</li>
+  <li>Feeding data</li>
+  <li>Searching, sorting and grouping</li>
+  <li>Understanding search definitions and more complex field
+      definitions</li>
+  <li>Bolding and dynamic summaries</li>
+  <li>Custom Document Processing</li>
+  <li>Ranking Expressions</li>
+</ul>
+
+<p>
+The objective of the tutorial is to build a Vespa based <em>music search</em> application.
+Functional specification:
+</p>
+<ul>
+  <li>Artist names, song and album titles, and lyrics must all be searchable</li>
+  <li>Allow songs/albums to be sorted by both relevance and release year</li>
+  <li>Allow grouping of search results by release year</li>
+  <li>Annotate data with the ArtistID from the Spotify API</li>
+</ul>
+
+
+
+<h1 id="get-started">Get started</h1>
+<ul>
+  <li>Deploy the configuration describing your application - an <em>application package</em></li>
+  <li>Insert some data into the system, or <em>feed data</em>, as it is
+      often called in Vespa terminology</li>
+</ul>
+<p>
+In terms of data, Vespa operates with the notion of
+<em>documents</em>.  A document represents a single, searchable item
+in your system - e.g. a web page in web search, a photo, or a news article.
+Each document type must be defined in your Vespa configuration through a
+<em>search definition</em>.  You can think of a search
+definition as being similar to a table definition in a relational
+database; it consists of a set of fields, each with a given name, a
+specific type, and some optional properties.
+</p><p>
+<strong>Example:</strong> For a simple web search application we could
+create the document type <em>webpage</em>, which could be defined in a
+search definition with the following fields:
+<ul>
+  <li><em>pageurl</em>, of type uri</li>
+  <li><em>title</em>, of type string</li>
+  <li><em>body</em>, of type string (string fields can be of any
+      length)</li>
+  <li><em>lastUpdate</em>, of type long (to store the date)</li>
+</ul>
+</p><p>
+The data you feed into Vespa needs to match the structure of your
+search definition, and the hits returned when searching will of course
+be of the same format as well.
+</p>
+
+
+
+
+<h1 id="application-packages">Application packages</h1>
+<p>
+A Vespa <em>application package</em> is the set of configuration
+files and Java plugins, that together
+defines the behavior of a Vespa system; what functionality to use, the
+available document types, how ranking will be done and how data will be
+processed during indexing and feeding.
+</p><p>
+The tutorial starts with the most simple application package
+possible which is the <em>sample basic search application</em> <!-- ToDo: add link to sample apps -->
+- <a href="https://help.github.com/articles/fork-a-repo/">fork</a> the repo and clone it.
+</p><p>
+The application package is found in <em>src/main/application</em>.
+Import the project into your favorite IDE and get Maven integration (IntelliJ:
+Import project =&gt; open <em>basic-search/pom.xml</em> ).
+</p>
+
+
+<h2 id="app-sd">src/main/application/searchdefinitions/music.sd</h2>
+<p>
+<em>music.sd</em> contains the <em><a href="reference/search-definitions.html">search definition</a></em>
+for a document of type <em>music</em>:</p>
+<pre>
+search music {
+    document music {
+        field artist type string {
+            indexing: summary | index
+        }
+
+        field title type string {
+            indexing: summary | index
+        }
+
+        field album type string {
+            indexing: index
+        }
+
+        field duration type int {
+            indexing: summary
+        }
+
+        field year type int {
+            indexing: summary | attribute
+        }
+
+        field popularity type int {
+            indexing: summary | attribute
+        }
+    }
+
+    fieldset default {
+        fields: artist, title, album
+    }
+
+    rank-profile song inherits default {
+        first-phase {
+          expression:nativeRank(artist,title,album) + if(isNan(attribute(popularity)) == 1, 0,attribute(popularity))
+        }
+    }
+}
+</pre>
+<p>
+Notes:
+</p>
+<ul>
+<li><em>document</em> is wrapped inside another element
+called <em>search</em>.  The name following these elements
+(<em>music</em>) must be exactly the same for both.
+</li>
+<li>We have used fields of type <em>string</em> and <em>int</em>, but there are other
+data types like <em>long</em>, <em>float</em> and also collection types like <em>array</em>,
+and <em>weightedset</em> as well.
+</li>
+<li>
+The field property <em>indexing</em> configures the
+so-called <em>indexing pipeline</em> for a field, which defines how
+Vespa will treat input during indexing.  Each part of the indexing
+pipeline is separated by a pipe character (|), and the two keywords we
+have used above - <em>index</em> and <em>summary</em> - are
+the most common ones:
+<dl>
+  <dt>index</dt>
+  <dd>tells Vespa that we want it to create a search index for this field</dd>
+  <dt>attribute</dt>
+  <dd>tells Vespa that we want to store this field in memory as an attribute
+    (e.g for sorting, searching and grouping)</dd>
+  <dt>summary</dt>
+  <dd>means that this field will be part of the <em>document
+    summary</em> - the data included to represent a document in the
+    search result output.</dd>
+</dl>
+</li>
+</ul>
+
+
+<h2 id="app-services">src/main/application/services.xml</h2>
+<p>
+<a href="reference/services.html">services.xml</a> defines the services that make up your Vespa
+instance - which services to run and how many nodes per service:
+</p>
+<pre>
+&lt;services version="1.0"&gt;
+ &lt;jdisc version="1.0" id="default"&gt;
+  &lt;search/&gt;
+  &lt;document-api/&gt;
+  &lt;nodes count="1"/&gt;
+ &lt;/jdisc&gt;
+ &lt;content version="1.0" id="music"&gt;
+  &lt;redundancy&gt;1&lt;/redundancy&gt;
+  &lt;documents&gt;
+   &lt;document type="music" mode="index"/&gt;
+  &lt;/documents&gt;
+  &lt;nodes count="1"/&gt;
+  &lt;engine&gt;
+   &lt;proton&gt;
+    &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+   &lt;/proton&gt;
+  &lt;/engine&gt;
+ &lt;/content&gt;
+&lt;/services&gt;
+</pre>
+<p>Notes:</p>
+<ul>
+<li>
+    <em>jdisc</em> defines the JDisc Container cluster
+    for document, query and result processing.
+    The empty <em>search</em> element
+    sets up an HTTP search interface for Vespa queries.
+    The default HTTP port for JDisc container nodes is 4080.
+    <em>nodes</em> defines the number of nodes required per service</li>
+<li>
+  <em>content</em> defines how documents are stored
+    and searched within Vespa. The most important parts
+    are <em>redundancy</em>, which tells Vespa how many copies to keep
+    of each document, <em>nodes</em>, which defines how many hosts making up
+    the content cluster, and <em>documents</em>, which lists the
+    document types handled by the cluster. Setting the <em>mode</em>
+    attribute to <em>index</em> for our document type enables indexed
+    search. Extending the capacity of the content cluster can be done simply
+    by increasing the node count.
+  </p>
+</li>
+</ul>
+
+
+
+<h1 id="deploying-basic">Deploy the application package</h1>
+<p>Build the project and run unit tests - then,
+<a href="cloudconfig/application-packages.html">deploy</a> it:</p>
+<pre>$ deploy prepare applicationdir &amp;&amp; deploy activate</pre>
+
+
+<h1 id="feeding">Feeding data</h1>
+<p>
+As mentioned in <em>Get started</em>, the data
+fed to Vespa must match the search definition for the document type.
+The sample <em>music-data.json</em> got some documents with the same fields and types
+as in the search definition <em>song.sd</em>.
+Feed it to your application (replace with your own endpoint url):</p>
+<pre>
+$ curl -X POST --data-binary  @music-data-1.json \
+  http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 | python -m json.tool
+$ curl -X POST --data-binary  @music-data-2.json \
+  http://myhost.mydomain.com:4080/document/v1/music/music/docid/2 | python -m json.tool
+</pre>
+<p>
+For applications with high feed throughput requirements we recommend using the
+  <a href="api.html">Java feeding api</a>.
+  Although searching is the most useful way to access the documents,
+  you may fetch individual documents based on document id:
+</p>
+<pre>
+$ curl http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 | python -m json.tool
+</pre>
+
+
+
+
+<h1 id="first-search">Do your first query</h1>
+<p>
+You are now ready to search the data you have indexed,
+which is done by sending requests to the <em>JDisc
+Container</em>. Replace the hostname with your endpoint:
+</p>
+<pre>
+http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+%22bad%22%3B
+</pre>
+<p>
+Looking at the output, please note:
+</p>
+<ul>
+<li>
+There is a one-to-one mapping between the documents we fed into Vespa
+earlier and the hits in the JSON output.  Notice the field named
+<em>documentid</em> in the output above and how it matches the value
+of the property ID given to each put operation in the input
+feed.
+</li><li>
+Each hit has a property named <em>relevancy</em>, which indicates how
+well the given document matched our query using a pre-defined default ranking function (You have full control over ranking, more about ranking and ordering later).  The hits are sorted by
+this value.
+</li><li>
+When multiple hits have the same relevancy score their internal
+ordering is undefined. However, their internal ordering will not
+change unless the documents are re-indexed.
+</li>
+</ul>
+
+
+<h2 id="query-examples-1">Example queries</h2>
+<p>
+A structured query in Vespa is formulated in <a
+href="search/query-language.html">YQL</a>. The field which <em>contains</em> the terms
+searched for, corresponds to the fields in the search definition. The fields may
+also be field sets, like the <em>default field set</em> (remember the
+<em>fieldset default</em> statement in our search definition).
+</p><p>
+Try out the following examples by querying your url endpoint
+(e.g. <em>http://myhost.mydomain.com:4080/search/</em>):
+</p>
+
+<dl>
+<dt>?yql=select+*+from+sources+*+where+default+contains+"bad"%3B</dt>
+<dd>
+The same query as above, which is a single-term query for the term <em>bad</em>.
+Given our configuration -  where the fields <em>artist</em>, <em>title</em>,
+and <em>album</em> all are part of the default field set - any document
+containing the word <em>bad</em> in one or more of these three fields will be
+considered to match our query. Note that the plus sign in the query string is a URL-encoded
+space character, and the terminating "%3B" is a quoted semi-colon to terminate
+a valid YQL+ statement.
+</dd>
+
+<dt>yql=select+*+from+sources+*+where+title+contains+"bad"%3B</dt>
+<dd>
+Once more a search for the single term <em>bad</em>, but this time
+with the explicit field <em>title:</em>. This means that we only want to
+match documents that contain the word <em>bad</em> in the field
+<em>title</em>.  If you try this query right now you will see that the
+number of documents returned will be different from the previous
+query.
+</dd>
+
+<dt>yql=select+*+from+sources+*+where+default+contains+"bad"+AND+default+contains+"religion"%3B</dt>
+<dd>
+A query for the two terms <em>bad</em> AND <em>religion</em>, combined with and
+AND operation. So it will find documents that match <em>both</em> terms, but not
+just one of them.</dd>
+
+<dt>yql=select+*+from+sources+*+where+sddocname+contains+"music"%3B</dt>
+<dd>
+<p>
+This is a single-term query in the special field <em>sddocname</em> for the
+value <em>music</em>.  This is
+a common and useful Vespa trick to get the number of indexed documents for a ceratin document type (search definition).
+</p><p>
+<em>sddocname</em> is a special and reserved field which is always set
+to the name of the document type for a given document.  Our ten
+documents are all of type <em>song</em>, and will therefore
+automatically have the field <em>sddocname</em> set to the
+value <em>song</em>.
+</p><p>
+This means that the query above really means "Give me <strong>all</strong>
+documents of type <em>song</em>", and as such all ten documents in
+our index will be returned.
+</p>
+</dd>
+</dl>
+
+
+
+
+<!-- ======================================================================= -->
+<!-- =======================  Sorting and Grouping ========================= -->
+<!-- ======================================================================= -->
+
+<h1 id="sorting_grouping">Sorting and grouping</h1>
+
+<p>
+<strong>Sorting</strong> of the hits should be rather self-explanatory; we want to be
+able to get the hits in ascending or descending order based on some value in the document
+</p>
+
+
+
+<h2 id="what-is">What is an attribute?</h2>
+<p>
+An attribute is an <em>in-memory field</em>, which means that Vespa
+will keep the contents of the field in memory at all time.  You can
+still use this field in searches and treat it almost as any other
+field, but conceptually it is quite different than regular Vespa
+indexes - where new documents are only kept in memory for a period
+of time, and then gradually moved to a disk-based index.  As you have
+already guessed, the downside of attributes is that they make Vespa
+use more memory per document as the actual field contents is stored in memory. Searching attribute fields is by default done without any index support unless <em>attribute:fast-search</em> has been defined.
+</p>
+
+
+<h2 id="change-sd">Defining an attribute field</h2>
+<p>
+A field with indexing attribute will be present in memory at all time for very fast access, an example is found in the <em>music.sd</em>:
+</p>
+
+<pre>
+field year type int {
+    indexing: summary | attribute
+}
+</pre>
+
+<h2 id="query-examples-2">Example queries using attribute field </h2>
+<dl>
+<dt>yql=select+*+from+sources+*+where+default+contains+"1987"%3B</dt>
+<dd>
+A single-term query for the term <em>1987</em> in the default field set.
+Looking at our search definition, you will see that the field
+<em>year</em> is not included in the default field set.
+As such, this query will not give any results with
+our current setup and data.
+</dd>
+
+<dt>yql=select+*+from+sources+*+where+year+contains+"1987"%3B</dt>
+<dd>
+Another single-term query for the term <em>1987</em>, but this time
+restricted to the field named <em>year</em>. This query will find all
+documents in our document corpus (our entire collection of documents)
+that have the field <em>year</em> set to the value <em>1987</em>, and
+should return the single document representing Michael Jackson's
+monster hit <em>Bad</em>. Note that since our <em>year</em> field has not been defined with <em>attribute:fast-search</em> searching will be done by scanning ALL documents.
+</dd>
+
+<dt>yql=select+*+from+sources+*+where+default+contains+"lucky"+AND+year+contains+"1997"%3B</dt>
+<dd>
+A query with two terms; a search in the default field set for the term
+<em>lucky</em> combined with a search in the <em>year</em> field for
+the term <em>1997</em>. This excludes our one song by
+Britney Spears, while it matches the one by Radiohead. This search will be faster then the previous example as the query term <em>lucky</em> is using a field which has an index and the search core will try to evaluate that query term first.
+</dd>
+</dl>
+
+
+<h2 id="integer-index">Querying integer fields</h2>
+<p>
+In the examples above we searched <em>year</em> just as we would any
+other field, and requested documents where the value was
+exactly <em>1987</em> or exactly <em>1997</em>. But since we have
+defined the field as being of type <em>int</em>, Vespa is aware that
+any value found here is an integer.  We can use this to our advantage
+and do range searches using the <em>less than</em> and <em>greater
+than</em> operators:
+</p>
+
+<dl>
+<dt>yql=select+*+from+sources+*+where+year+&lt;+1980%3B</dt>
+<dd>
+Find all documents where the value of <em>year</em> is less
+than <em>1980</em>.
+</dd>
+
+<dt>yql=select+*+from+sources+*+where+year+&lt;+&gt;+1997%3B</dt>
+<dd>
+Find all documents where the value of <em>year</em> is greater
+than <em>1997</em>.
+</dd>
+</dl>
+
+
+
+<h2 id="sorting">Sorting the query results</h2>
+<p>
+The first feature we will look at is how an attribute can be used to
+change the order of the hits that are returned when you do a query.
+Remember our original query for <em>bad</em>?  We got five document
+hits, and - only considering year and relevancy for each document
+ - the output and order looked like this:
+</p>
+<pre>
+{...
+    "relevance": 0.381862383599512,
+    "fields": {...
+        "year": <strong>1981</strong>
+    }
+},
+{...
+    "relevance": 0.254574922399675,
+    "fields": {...
+        "year": <strong>1987</strong>
+    }
+},
+{...
+    "relevance": 0.254574922399675,
+    "fields": {...
+      "year": <strong>1989</strong>
+    }
+},
+{...
+    "relevance": 0.254574922399675,
+    "fields": {...
+        "year": <strong>1974</strong>
+    }
+},
+{...
+    "relevance": 0.05447959677335429,
+    "fields": {...
+        "year": <strong>2010</strong>
+    }
+}
+</pre>
+<p>
+As you can see, the hits are sorted by relevancy; the better the
+document matched our query, the higher the relevancy, and the higher
+up in our list of hits.  The values for <em>year</em> are highlighted in
+order to show that the hits are currently not in any kind of order as
+far as that field is concerned.
+</p><p>
+Now try to send the following queries to Vespa and look at the order
+of the hits:
+</p>
+<pre>
+http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year%3B
+http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year+desc%3B
+</pre>
+<p>
+As you can see, adding the keyword <em>desc</em> after the attribute name leads
+to sorting in descending order, while omitting the keyword (or using
+<em>asc</em>) sorts the results in ascending order.
+</p>
+
+
+
+<h2 id="grouping">Query time data grouping</h2>
+<p>
+<em>Grouping</em> is the concept of looking through all matching
+documents at query-time and then performing a set of operations on the
+data in specific fields across all the documents - some common use
+cases include:
+</p>
+<ul>
+<li>Find all the unique values for a given field, make <strong>one group
+    per unique value</strong>, and return the count of documents per
+    group</li>
+<li><strong>Group documents by time and date</strong> in fixed-width or
+    custom-width buckets.  An example of fixed-width buckets could be
+    to group all documents by year, while an example of custom buckets
+    could be to sort bug tickets by date of creation into the
+    buckets <em>Today</em>, <em>Past Week</em>, <em>Past Month</em>, <em>Past
+    Year</em>, and <em>Everything else</em></li>
+<li>Calculate the <strong>minimum/maximum/average value</strong> for a given
+    field</li>
+</ul>
+<p> Displaying such groups and their size (in terms of matching documents per group) on a search result page (SERP), is a common way to let
+end-users refine and narrow down their search by clicking on a single
+link.
+</p><p>
+For now we will only do a very simple grouping query to get a list of unique values for <em>year</em> ordered by the number of documents they occur in and top 3 is shown:
+</p>
+<pre>
+?yql=select+*+from+sources+*+where+sddocname+contains+"music"+limit+0+|+all(group(year)+max(3) order(-count())each(output(count())))%3B
+</pre>
+<p>
+You then get the following output
+</p>
+<pre>
+{
+   "root" : {
+      "coverage" : {
+         "resultsFull" : 1,
+         "coverage" : 100,
+         "documents" : 10,
+         "nodes" : 1,
+         "full" : true,
+         "results" : 1
+      },
+      "fields" : {
+         "totalCount" : 10
+      },
+      "relevance" : 1,
+      "children" : [
+         {
+            "continuation" : {
+               "this" : ""
+            },
+            "relevance" : 1,
+            "children" : [
+               {
+                  "continuation" : {
+                     "next" : "BGAAABEBGBC"
+                  },
+                  "relevance" : 1,
+                  "children" : [
+                     {
+                        "fields" : {
+                           "count()" : 2
+                        },
+                        "value" : "1997",
+                        "relevance" : 1,
+                        "id" : "group:long:1997"
+                     },
+                     {
+                        "fields" : {
+                           "count()" : 2
+                        },
+                        "value" : "2000",
+                        "relevance" : 0.666666666666667,
+                        "id" : "group:long:2000"
+                     },
+                     {
+                        "fields" : {
+                           "count()" : 1
+                        },
+                        "value" : "1974",
+                        "relevance" : 0.333333333333333,
+                        "id" : "group:long:1974"
+                     }
+                  ],
+                  "label" : "year",
+                  "id" : "grouplist:year"
+               }
+            ],
+            "id" : "group:root:0"
+         }
+      ],
+      "id" : "toplevel"
+   }
+}
+</pre>
+<p>
+As you can see, all the unique values of <em>year</em> are represented
+listed along with their respective counts.
+</p><p>
+Try to change the filter part of the YQL+ expression to text
+match of <em>bad</em> or numeric match of <em>year</em> to less than
+<em>2000</em> and see how the list of unique values changes as the set of
+matching documents for your query changes.  Try to search for the single-term
+<em>yahoo</em> as well - a word we know is <em>not</em> present in our
+document set, and as such will not match any documents - and you will see
+that the list of <em>groups</em> is empty.
+</p>
+
+
+
+<h2 id="limitations">Limitations</h2>
+<p>
+Having looked at both sorting and grouping, we need to add a few words
+about the limitations of attributes.
+</p>
+
+
+<h3 id="memory-usage">Memory usage</h3>
+<p>
+As previously mentioned, the contents of attributes is kept in memory
+at all time - as opposed to normal indexes where the data is
+mostly kept on disk.  So even if the search nodes have 48, 64 or
+maybe even 128 GB of memory each, you will soon notice that it is not
+practical to define all your search definition fields as attributes,
+as it will heavily restrict the number of documents you can have per
+search node.  Some Vespa installations have more than 100
+million documents per node, which means that having megabytes of
+text in memory per document is not an option.
+</p>
+
+
+<h3 id="matching">Matching</h3>
+<p>
+Another limitation is the way so-called <em>matching</em> is done for
+attributes.  Consider the field <em>artist</em> from our search
+definition, and the document for the song by Britney Spears.  In our
+original input, the value for the artist is a string built of up
+the two words <em>Britney</em> and <em>Spears</em>, with a single
+whitespace character between them.  How should we be able to search
+this field?
+</p><p>
+For normal index fields, Vespa does something called
+<em>tokenization</em> on the string.  In our case this means that the
+string above is split into the two tokens <em>Britney</em>
+and <em>Spears</em>, enabling Vespa to match this document both for
+the single-term queries <em>Britney</em> and <em>Spears</em>, the
+exact phrase query <em>"Britney Spears"</em>, and a two-term
+query with both tokens in either order (<em>Britney Spears</em>
+or <em>Spears Britney</em>).  This is how we all have come to expect
+normal free text search to work.
+</p><p>
+As mentioned there is however a limitation in Vespa when it comes to
+attribute fields and matching.  Attributes do not support normal
+token-based matching, only <em>exact matching</em> or <em>prefix
+matching</em>.  Exact matching is the default, and as the name implies
+it requires you to search for the exact contents of the field in order
+to get a match.
+</p>
+
+
+<h2 id="usage">When to use attributes</h2>
+<p>
+As we have seen there are both advantages and drawbacks of using
+attributes  -  it allows you to do sorting and grouping, but uses
+more memory and has limited matching capabilities.  When to use
+attributes really depends on your application and its use cases, but
+in general the following applies:
+</p>
+<ul>
+<li>If you need to sort the query results by this field, ie. a
+    timestamp for when the document was created, last updated,
+    etc.</li>
+<li>If you want to include this field in grouping</li>
+<li>If the fields are not very long string fields</li>
+<li>All numeric type fields must always be attributes</li>
+</ul>
+
+
+
+<!-- ======================================================================= -->
+<!-- ===================== MORE ON SEARCH DEFINITIONS ====================== -->
+<!-- ======================================================================= -->
+
+<h1 id="search-definitions">More on search definitions</h1>
+<p>
+It is time to take a closer look at search definitions.  We need to
+talk a little bit more about the various field types available, extend
+the <em>song</em> search definition with a couple of fields, and also
+discuss <em>why</em> we choose the field types we do.
+</p>
+
+
+<h2 id="field-types">Field types overview</h2>
+<p>
+The various field types all have different characteristics and
+use cases, and in order to build the best possible search application
+it is important to have an overview of the available types and what
+they offer.  So before we start extending our current search
+definition, let us get an overview of the most common field types
+(<a href="reference/search-definitions.html#field">fields reference</a>).
+</p>
+
+<dl>
+<dt>string</dt>
+<dd>
+  The <em>string</em> type can probably be considered the default data
+  type in Vespa; if you are in doubt, use a string field.  The
+  contents of a <em>string</em> field can be anything from a single
+  word to a massive block of text. When using text try to think about what
+  type of matching you require (traditional text or word/exact). Examples:
+  <ul>
+    <li>Contents of a web page, document, etc.</li>
+    <li>Document titles</li>
+    <li>A username with <em>match:word</em></li>
+    <li>An ID consisting of both numbers and letters (e.g UUID), use <em> match:word</em></li>
+  </ul>
+</dd>
+<dt>byte, int, long, float,double</dt>
+<dd>
+  <em>longs</em> and <em>ints</em> should be used for
+  integers/numbers.  Can be used for range searches and range
+  grouping. All numeric values are signed. Examples:
+  <ul>
+    <li>Year</li>
+    <li>Timestamps</li>
+    <li>Numerical ids</li>
+  </ul>
+</dd>
+<dt>array &amp; weighted set collection types</dt>
+<dd>
+  An array of the basic data types: string, int, long, etc.
+  A variant of arrays is the <em>weighted set</em>, where you can associate a weight
+  for each element which can be used during ranking. Examples:
+  <ul>
+    <li>lists of all kinds</li>
+    <li>tags</li>
+  </ul>
+</dd>
+</dl>
+
+
+<!-- ======================================================================= -->
+<!-- ==================== BOLDING AND DYNAMIC SUMMARIES ==================== -->
+<!-- ======================================================================= -->
+
+<h1 id="dynamic-summaries">Bolding and dynamic summaries</h1>
+<p>
+Vespa can provide bolding and snippeting functionality for longer
+parts of text. If we were to index lyrics along with our album
+and song title it would not make sense to present the entire lyrics
+content to the frontend, but instead show a short summary matching the
+user's query terms.
+</p>
+
+
+<h2 id="dynsum-bolding-config">Configuring bolding and dynamic summaries</h2>
+<p>
+In order to add dynamic summaries and bolding for the
+field <em>lyrics</em>, we need to add the two following lines to the
+definition of the field in our <em><a href="reference/search-definitions.html#dynamic">search definition</a></em>:
+</p>
+<pre>
+summary: dynamic
+bolding: on
+</pre>
+
+<!-- ======================================================================= -->
+<!-- ========================= DOCUMENT PROCESSING ========================= -->
+<!-- ======================================================================= -->
+
+<h1 id="docproc">Document processing</h1>
+<p>
+So far the document indexing has been very simple and
+straight-forward: What we have put in, we have gotten back out.
+Document for document, the contents of each field in the search result
+output has been the exact same as what we have in the original input
+JSON file - save for some minor alterations of the <em>lyrics</em>
+field due to bolding and dynamic summaries.
+</p><p>
+It is however possible to alter the contents of documents during
+indexing, or even to remove or add completely new fields.  This is
+done using so-called <em>document processors</em> (or
+just <em>docproc</em> for short), plugins written in Java and executed
+during document indexing.  Some common use cases for document
+processing include:
+</p>
+<ul>
+  <li>Calling external APIs to perform an action on parts of your
+    documents, ie. for categorizing or language detection, and then
+    storing the results from the API in a new field</li>
+  <li>Parsing JSON contents, ie. splitting a single field into several
+    new ones</li>
+  <li>Doing string parsing or normalization on a single field</li>
+  <li>Extracting information from binary data, ie. parsing ID3 data from
+    MP3 files</li>
+</ul>
+<p class="alert alert-success">
+One could write a custom Perl script to look up the artist
+IDs from Spotify outside of Vespa, and feed in XML documents with
+the value already in place.  But over time it is not unlikely that we
+want to enrich and enhance our documents like this in multiple ways,
+and by having a custom script in Perl here, one in PHP there, and
+maybe even a command-line tool written in C++, we could soon end up
+with a system that is neither easily maintainable nor simple for a new
+employee to comprehend. Doing custom feed proccessing inside the Vespa
+cluster allows you to scale with the data volume (e.g. by adding more
+jdisc processing nodes as feed volume increases).
+</p>
+
+
+<h2 id="docproc-objective">Objective: Annotate documents with Spotify artist ID</h2>
+<p>
+We need to annotate all <em>song</em> documents with the appropriate
+Artist ID from Spotify as they are indexed.  Not only will it be
+handy for potential frontend developers using our music search
+backend, but it also allows us to keep the field <em>artist</em> as an
+index field - searchable using token matching - while having
+the new field <em>artistId</em> as an attribute for use with grouping
+and aggregation.
+</p><p>
+So there are two things we need to do:
+</p>
+<ol>
+  <li>Add an <em>artistId</em> field to our search definition</li>
+  <li>Write a document processor in Java that looks up the Artist ID
+      and annotates our documents</li>
+</ol>
+
+
+<h2 id="docproc-sd">Updating the search definition</h2>
+<p>
+Adding an <em>artistId</em> field to our search definition is simple
+and straight-forward.  Using the <a
+ href="https://developer.spotify.com/web-api/search-item/">The Spotify
+API</a> to search for an artist name will give us an artist id as a
+string. Since we want to be able to use
+this field for grouping and possibly sorting, we need to have it as
+an attribute.  We do not see a use case where end-users are searching
+for these artist IDs though, so we will not include the field in the
+default field set.
+</p><p>
+With all these considerations in mind, add the following field to your
+search definition:
+</p>
+<pre>
+field artistId type string {
+    indexing: summary | attribute
+}
+</pre>
+<p>Then build and deploy the application:</p>
+<pre>
+$ deploy prepare applicationdir &amp;&amp; deploy activate
+</pre>
+
+
+<h2 id="docproc-code">Deploying the document processor </h2>
+<p>
+Find the <em>ExampleDocumentProcessor.java</em> in the forked
+git repository. As you can see,
+we implement <em>process()</em> - although we only consider the
+complete documents, not removes or updates - and for each document
+that passes through our docproc, we call the
+method <em>addArtistId()</em> to do a search through the Spotify
+API and select the first artist returned in the JSON data we get
+back.
+</p>
+
+
+<h3 id="docproc-vespa-config">Add docproc configuration to <em>services.xml</em></h3>
+<p>
+Extend <em>jdisc</em> in <em>src/main/application/services.xml</em>:
+</p>
+<pre>
+ &lt;jdisc version='1.0' id='default'&gt;
+<strong style="background-color: yellow;">    &lt;document-processing&gt;
+        &lt;chain id="default"&gt;
+            &lt;documentprocessor id="com.yahoo.example.ExampleDocumentProcessor"
+		bundle="basic-application"/&gt;
+        &lt;/chain&gt;
+    &lt;/document-processing&gt;</strong>
+    &lt;search&gt;
+      &lt;chain id="default" inherits="vespa"&gt;
+        &lt;searcher id="com.yahoo.example.ExampleSearcher" bundle="basic-application"&gt;
+          &lt;config name="example.message"&gt;
+            &lt;message&gt;Hello, Vespa!&lt;/message&gt;
+          &lt;/config&gt;
+        &lt;/searcher&gt;
+      &lt;/chain&gt;
+    &lt;/search&gt;
+    &lt;document-api /&gt;
+    &lt;nodes count="1" /&gt;
+  &lt;/jdisc&gt;
+</pre>
+<dl>
+<dt>document-processing</dt>
+<dd>adds document processing capabilities to a JDisc cluster.</dd>
+<dt>chain</dt>
+<dd>a sequence of document processors. Giving this chain the name <em>default</em> makes it special.</dd>
+<dt>documentprocessor</dt>
+<dd>A document processor instance created from a specified class which
+  resides in a specific bundle</dd>
+</dl>
+
+
+<h3 id="docproc-testing">Test the document processor</h3>
+<p>
+To make the changes effective in the index, re-feed the
+document set, replacing the url with your endpoint. First do
+a single query for the term <em>bad</em> or similar and verify that
+the <em>artistId</em> is empty for all results. Then re-feed your data:
+</p>
+<pre>
+$ curl -X POST --data-binary \
+@music-data-1.json http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 \
+| python -m json.tool
+$ curl -X POST --data-binary \
+@music-data-2.json http://myhost.mydomain.com:4080/document/v1/music/music/docid/2 \
+| python -m json.tool
+</pre>
+<p>
+Once the feeding is finished, run the query again and take a look at the field <em>artistId</em>.
+</p>
+
+<h1 id="searcher">Searcher development</h1>
+<p>As with document processing, it is also possible to do custom
+processing of both queries and results from the content nodes.
+The <em>basic-search</em> application also has a custom
+<em>ExampleSearcher</em> which demonstrates the Searcher API.
+It manipulates the result set and adds a custom <em>hit</em> with a
+simple configurable message obtained from the active configuration.
+Try to alter the message in the <em>services.xml</em> and re-deploy
+your application to see the message change. Please also note the set
+of tests in the <em>basic-search</em> project.</p>
+</p>
+
+
+
+
+<!-- ======================================================================= -->
+<!-- ============================ RANK PROFILES ============================ -->
+<!-- ======================================================================= -->
+
+<h1 id="relevancy-and-ranking">Relevance and ranking</h1>
+
+<p>
+At the beginning of this tutorial - when we did a few simple
+searches and looked at order of the hits - we briefly mentioned
+ranking and relevance, and then changed the order of the hits by
+sorting on the value of an attribute field.  But what is really the
+relevance of a hit? And how can we change the way relevance
+calculations are done to our liking?  It is time to introduce
+so-called <em>rank profiles</em> and <em>rank
+expressions</em> - simple, yet extremely powerful methods for
+tuning the relevancy in your Vespa application exactly the way you
+want it.
+</p>
+
+<p>
+Relevancy is a measure of how well a given document matches your
+query.  In the section on attributes we did a search for the
+query <em>bad</em> and looked at how each hit got a relevancy value
+between 0 and 1.  This default relevancy is calculated by a formula
+that takes several factors into consideration, but the essence is that
+it is all a measure of how well the document matches the terms in your
+query.
+</p>
+
+<p>
+This is a good default value, but when building specialized
+applications on top of Vespa you will almost always find yourself in
+the situation where you want to tweak the relevancy calculations:
+</p>
+
+<ul>
+<li>Personalize search results based on some property; age,
+    nationality, language, friends and friends of friends, and so on</li>
+<li>Rank fresh (age) documents higher, while still considering other relevancy
+measures</li>
+<li>Rank documents by geographical location, searching for relevant
+resources nearby</li>
+</ul>
+
+<p>
+Vespa allows you to create any number of so-called <em>rank
+profiles</em>, named collections of ranking and relevancy calculations
+that you can choose from at query time.  You can use a number of
+built-in functions and expressions to create highly specialized rank
+expressions that suit all your needs.
+</p>
+
+<p>
+Our ranking requirements are not very advanced.  We still want
+the basic search relevancy for (artist, title, and album), but we
+just want to boost documents based on some document level popularity signal.
+</p>
+
+<p>
+Open the <em>music.sd</em> search definition, and add the following
+section almost at the bottom - within <em>search</em> and on the
+same level as <em>document</em>:
+</p>
+
+<pre>
+rank-profile song inherits default {
+  first-phase {
+    expression:nativeRank(artist,title,album) + if(isNan(attribute(popularity)) == 1, 0,attribute(popularity))
+  }
+}
+</pre>
+<p>
+Let us explain the important parts:
+</p>
+
+<dl>
+<dt>rank-profile song inherits default</dt>
+<dd>This tells Vespa that we want to create a new rank profile
+named <em>song</em> and that it should inherit all its properties
+from the default rank-profile.  This means that any properties we do
+not explicitly specify are used as-is from the default rank profile
+instead.  Simple and straight-forward inheritance.</dd>
+
+<dt>first-phase</dt>
+<dd>
+<p>
+Relevancy calculations in Vespa are two-phased. The calculations done
+in the first phase are performed on every single document matching
+your query, while the second phase calculations are only done on the
+top <em>n</em> documents as determined by the calculations done in the
+first phase.
+</p>
+</dd>
+
+<dt>expression:nativeRank(artist,title,album) + if(isNan(attribute(popularity)) == 1, 0,attribute(popularity))
+<dd>
+<p>
+This is where it all happens.  We tell Vespa that we want to
+calculate the relevancy for each document by first finding
+the <em>nativeRank(artist,title,album)</em> for the document, and then add the value of
+the static document value <em>attribute(popularity)</em> if it's set,
+for those documents that do not have a popularity value  we set the
+score to 0. The sum of these two factors is the final relevancy for a given document.
+</p>
+</dd>
+
+</dl>
+
+
+<h2 id="rankprofile-testing">Testing the rank profile</h2>
+<p>
+In order to apply the changes to our application package, simply
+re-deploy the application. No refeeding of data is required (unless you have
+to re-calculate the popularity scores, e.g from a grid job).
+</p>
+<p>
+Once the configuration has been reloaded, try out the following queries in your browser:
+</p>
+<pre>
+http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B
+http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B&amp;ranking.profile=song
+</pre>
+<p>
+In the first query we do not use our new rank profile at all, and
+everything should be as before.  In the second query however, we tell
+Vespa to use the rank profile named <em>song</em>, and if you look
+at the relevancy of each hit you will see that the values have changed
+a lot.
+</p>
+
+
+<h1 id="conclusion">Conclusion</h1>
+<p>
+This concludes the Vespa tutorial. You should now have a basic
+understanding of how Vespa can help build your application. Please
+refer to the rest of the documentation for in-depth information about
+individual concepts.
+</p>
+</body>
+</html>

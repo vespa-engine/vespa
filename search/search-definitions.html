@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Documents and Search Definitions</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2010" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+Documents are the entities in which data is transferred to Vespa
+Search to be indexed, Vespa Document Storage to be stored, or Vespa
+Document Processing to be processed. Search definitions describe an
+application's document types and how they should be stored, indexed,
+ranked, searched and presented.
+</p>
+
+
+
+<h1 id="document-structure">The structure of a Document</h1>
+
+<p>
+A document is a set of key-value pairs, where the key is the name of a
+document <em>field</em> and the value is the value of that field. In
+addition to the key-value pairs, each document has a
+unique <em>Document Id</em>. The Document Id is a URI conforming to a
+<a href="../document-ids.html">document identifier URI scheme</a>.
+</p>
+
+<p>
+Documents adhere strictly to a configured <em>document type</em>. A
+Vespa system can have multiple document types and each document type
+is defined in a <a href="#search-definitions">search definition</a>.
+</p>
+
+<p>
+The values in each field have an associated data type: string, long,
+array, etc., see the
+<a href="../reference/search-definitions.html#field_types">search
+definitions reference</a> for a complete list.
+</p>
+
+<p>
+You can have thousands of fields in a document, this is however not
+recommended - if you have a use case requiring many fields, it might be a
+good idea to discuss it with other users of Vespa - there might be other
+more efficient ways to solve the problem.
+Check the <a href="../contact.html">Vespa contact page</a> for information
+on how to get in contact with other users of Vespa.
+</p>
+
+
+
+<h1 id="search-definitions">Search definitions</h1>
+
+<p>
+<strong>Search definitions</strong> describe the application's document types
+and how they should be stored, indexed, ranked, searched and
+presented. Search definitions must have the suffix <em>.sd</em>,
+and the prefix must be the same as the document type and the search
+name described inside. All Vespa applications must create at least one
+search definition that contains one document type.
+</p>
+
+<p>
+Here is the annotated example in
+<em>$VESPA_HOME/share/vespa/sampleapps/search/music/searchdefinitions/music.sd</em>:
+</p>
+
+<pre id="sd-example" class="brush: sd">
+# A basic search definition - called music, should be saved to music.sd
+search music {
+
+  # It contains one document type only - called music as well
+  document music {
+
+    field title type string {
+      indexing: summary | index   # How this field should be indexed
+      weight: 75 # Ranking importancy of this field, used by the built in nativeRank feature
+      header
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+      weight: 25
+      header
+    }
+
+    field year type int {
+      indexing: summary | attribute
+      header
+    }
+
+    # Increase query
+    field popularity type int {
+      indexing: summary | attribute
+      header
+    }
+
+    field url type uri {
+      indexing: summary | index
+      header
+    }
+
+  }
+
+  fieldset default {
+    fields: title, artist
+  }
+
+  rank-profile default inherits default {
+    first-phase {
+      expression: nativeRank(title,artist) + attribute(popularity)
+    }
+
+  }
+
+  rank-profile textmatch inherits default {
+    first-phase {
+      expression: nativeRank(title,artist)
+    }
+
+  }
+
+}
+</pre>
+
+<p>
+This search definition will make it possible to feed documents having
+these field names to Vespa: <code>title</code>,
+<code>artist</code>, <code>year</code>, <code>popularity</code>,
+<code>url</code> and <code>cover</code>. Vespa will make these
+fields searchable using the information found in the field
+properties.
+</p>
+
+<p>
+For applications using Storage, the user must decide for each field
+whether it should be a <em>header</em> or <em>body</em> field. In Storage,
+the header fields of all the documents in a file must be able to be
+read into memory at the same time. This implies that the total size of
+the header data should be small. On the other
+hand, <a href="../content/feature-visiting.html">visiting</a>
+allows only header fields to be used
+for <a href="../reference/document-select-language.html">document
+selection</a>. In the example above, the field "cover" is a body
+field, while the other fields are header fields.
+</p>
+
+
+
+<h1 id="search-definition-propeties">Search Definition Field Properties</h1>
+
+<p>
+The most commonly used field properties in a search definition are
+described below&mdash;there are several other properties that provide
+finer control over ranking, linguistics and other advanced
+features. To learn about these, see
+the <a href="../reference/search-definitions.html">search
+definition reference</a>.
+</p>
+
+
+<h2 id="indexing-field-property"><code>indexing</code> field property</h2>
+
+<p>
+The <code>indexing</code> property takes as a value a set of
+instructions that tells Vespa how to process data of this field during
+indexing. Some of the legal instructions are:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td><code>index</code></td>
+      <td>Make this field's content part of a searchable index</td>
+    </tr>
+    <tr>
+      <td><code>summary</code></td>
+      <td>Include this field in the document summary, which is the set
+          of fields presented to the front end for each document that
+          matches the user query</td>
+    </tr>
+    <tr>
+      <td><code>attribute</code></td>
+      <td>Create an in-memory attribute of this field, to enable
+          sorting or grouping on the field and for searching
+          (some <a href="../reference/search-definitions.html#match">matching
+          methods</a> are not available for attributes)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+Indexing instructions have pipeline semantics similar to unix shell
+commands, with data flowing from left to right.  They can perform
+complex transformations on field values, or just send the field value
+unchanged to the next sections of the index structure. Consider this
+example:
+</p>
+
+<pre>
+indexing: summary | attribute | index
+</pre>
+
+<p>
+The data is first added to the document summary, then added as an
+in-memory attribute and finally indexed. Do not worry about listing
+these instructions in the wrong order, since Vespa automatically
+re-orders them if necessary.
+</p>
+
+<p>
+The indexing language offers a lot more functionality than this. You
+can filter field values, combine field values, select on different
+values and so on. To learn more, see the <a
+href="../indexing-language.html">indexing
+language</a> reference document.</p>
+
+
+<h2 id="attribute-property"><code>attribute</code> field property</h2>
+
+<p>
+<code>attribute</code> specifies attribute properties. These are
+described in
+<a href="../reference/search-definitions.html#attribute">Search definition: attribute</a>.
+</p>
+
+
+<h2 id="weight_property"><code>weight</code> field property</h2>
+
+<p>
+<code>weight</code> specifies the importancy of this field in the
+relevancy calculation if the built in <code>nativeRank</code> rank
+feature is used. See more about <a href="../ranking.html">Vespa and
+ranking</a>.
+</p>
+
+
+<h2 id="fieldset-property"><code>fieldset</code></h2>
+
+<p>
+A <code>fieldset</code> provide a way to group fields together for searching.
+Remember that the <code>indexing</code> property tells Vespa how to process a field
+during indexing and the single field is made searchable if <code>index</code> or <code>attribute</code>
+is used. Use a <code>fieldset</code> to search across multiple fields with the same search term.
+
+<p>
+When you do a search you specify the field or field set you want to search in.
+Every search term in the query goes to all fields contained in a field set.
+The name of the field or field set is specified in front of the term:
+</p>
+
+<pre class="brush: text">
+search/?query=title:sometitle default:someword
+</pre>
+
+<p>
+This query will find documents having &ldquo;sometitle&rdquo; in the
+field <em>title</em>, and &ldquo;someword&rdquo; in one or more of the fields
+in the field set <em>default</em>. If no field/field set name is given for a search term,
+the field set named <em>default</em> is searched.
+</p>
+
+
+<h1 id="definition">Document Definitions</h1>
+<p>
+Documents can be defined using a subset of the commands used in a
+search definition. The main difference is that the toplevel-tag
+is <code>document</code> instead of <code>search</code> and the only
+valid content for a field is for specifying whether it is a header or
+body-field. For more information, see the
+<a href="../reference/search-definitions.html#document-definition">document definition reference</a>.
+</p>
+
+
+<h1 id="ranking">Ranking</h1>
+<p>
+The order of documents returned by a query to Vespa is decided by the
+rank score of each document. This is a number calculated by Vespa,
+either with a built-in <a href="../ranking.html">ranking expression</a>
+or written in a <code>rank-profile</code> section in the searchdefintion.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Config Inspector</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2012" />
+  <meta name="authors" content="eirik" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the reference documentation for the command-line
+tool <code>vespa-config-status</code>.
+</p>
+
+
+<p>
+The command line tool is called <code>vespa-config-status</code>. It
+can run on any machine in a Vespa cluster and will output a list of
+all the running services which is running with an outdated application
+package.  The tool can be invoked without any arguments, or you can
+pass it optional arguments. The arguments are given below.
+</p>
+
+<dl>
+  <dt><code>-v</code></dt>
+  <dd>
+  Show all servies, even if they are up to date.
+  </dd>
+
+  <dt><code>-c host[:port]</code></dt>
+  <dd>
+  Get Vespa cluster configuration from the config server specified by
+  host and port.
+  </dd>
+</dl>
+
+<p>
+An example session with this tool may look like the following:
+</p>
+
+<pre class="brush: cli">
+$ vespa-config-status
+Subscribing to model config with config id admin/model
+search/qrsclusters/default/qrserver.0:container has the latest generation 1
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Container RPC Commands</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2009" />
+  <meta name="authors" content="tonyv" />
+</head>
+
+<body>
+<p>
+The following RPC commands are available in the <em>container</em> for
+debugging purposes:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Arguments</th>
+      <th>Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>debug.dump-query-packets</td>
+      <td>cluster-name, 0/1 (disable, enable)</td>
+      <td>Dumps query packets to
+      $VESPA_HOME/logs/vespa/qrs/qrs.&lt;server-index&gt;.&lt;cluster-name&gt;.query.dump</td>
+    </tr>
+
+    <tr>
+      <td>debug.dump-result-packets</td>
+      <td>cluster-name, 0/1 (disable, enable)</td>
+      <td>Dumps query packets to
+          $VESPA_HOME/logs/vespa/qrs/qrs.&lt;server-index&gt;.&lt;cluster-name&gt;.result.dump</td>
+    </tr>
+
+    <tr>
+      <td>debug.output-search-chain</td>
+      <td>search-chain-name</td>
+      <td>Returns a human readable description of a given search chain
+          and the search chains it forwards to.</td>
+    </tr>
+
+    <tr>
+      <td>debug.backend-statistics</td>
+      <td>cluster-name</td>
+      <td>Returns (backend, active connections, total connections)
+          tuples separated with the same order into three arrays.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+The commands can be called by using <em>invoke</em> (call it without arguments to get
+usage information). Example: output the searchers in a search chain:
+</p>
+<pre>
+  invoke -h &lt;hostname&gt;:8084 debug.output-search-chain &lt;searchChainName&gt;
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+<title>Reprocessing Documents</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="August 2013" />
+<meta name="authors" content="kraune, einarmr, humbe" />
+</head>
+<body>
+
+<p>
+  This article describes, by example, how one can identify a subset of the
+  documents in a content cluster, reprocess these, and write them back to the
+  same process.
+  As a reference, the illustration below shows feeding data into a Vespa
+  cluster. Documents move from the feeder, into a document processing cluster
+  (optional), and finally, in parallel, for instance into indexing and storage.
+</p>
+
+<figure>
+  <img src="../img/storage/reprocessing-regularfeed.png" height="200" width="400"/>
+</figure>
+
+<p>
+  Reprocessing can for instance be used to ensure documents are reindexed after
+  indexing configuration have changed, or to rewrite the document identifiers
+  or document type used by the documents to make use of new functionality.
+</p>
+
+<figure>
+  <img src="../img/storage/reprocessing-reprocessing.png"  height="200" width="400" />
+</figure>
+
+<p>
+  The illustration above shows such a use case. In short, a client initiates
+  this process by starting a visitor in the storage cluster. This visitor dumps
+  documents that match certain
+  <a href="../reference/document-select-language.html">selection criteria</a>
+  to a given
+  <a href="../routing.html">Message Bus route</a>.
+  The illustration shows a route that includes a document processing chain, and
+  both a search cluster and a storage cluster.
+</p>
+
+<h1 id="step-by-step">Step-by-Step Guide</h1>
+<p>
+It is assumed that a Vespa cluster is set up, with data.
+</p>
+
+<h2 id="cluster-setup">1. Set up Document Reprocessing Cluster</h2>
+<p>
+  Below is the source of an example document processor. This document
+  processor will do three things, mainly:
+</p>
+
+<ul>
+  <li>
+    Delete documents with an <em>artist</em> field whose value contains <em>Metallica</em>.
+  </li><li>
+    Uppercase <em>title</em> field values of all other documents.
+  </li>
+</ul>
+
+<pre class="brush: java">
+import com.yahoo.docproc.Arguments;
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.docproc.Processing;
+import com.yahoo.docproc.documentstatus.DocumentStatus;
+import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.Document;
+
+/**
+ * Example of using a document processor will modify and/or delete
+ * documents in the context of a reprocessing use case.
+ */
+public class ReProcessor extends DocumentProcessor {
+    private String deleteFieldName;
+    private String deleteRegex;
+    private String uppercaseFieldName;
+
+    public ReProcessor() {
+        deleteFieldName = "artist";
+        deleteRegex = ".*Metallica.*";
+        uppercaseFieldName = "title";
+    }
+
+    public Progress process(Processing processing) {
+        Iterator&lt;DocumentOperation&gt; it = processing.getDocumentOperations().iterator();
+        while (it.hasNext()) {
+            DocumentOperation op = it.next();
+            if (op instanceof DocumentPut) {
+                Document doc = ((DocumentPut) op).getDocument();
+
+                // Delete the current document if it matches:
+                String deleteValue = (String) doc.getValue(deleteFieldName);
+                if (deleteValue != null) {
+                    if (deleteValue.matches(deleteRegex)) {
+                        it.remove();
+                        continue;
+                    }
+                }
+
+                // Uppercase the other field:
+                String uppercaseValue = doc.getValue(uppercaseFieldName).toString();
+                if (uppercaseValue != null) {
+                    doc.setValue(uppercaseFieldName, uppercaseValue.toUpperCase());
+                }
+            }
+        }
+        return Progress.DONE;
+    }
+}</pre>
+
+<p>
+To compile this processor, see <a href="../jdisc/developing-applications.html">
+  Developing with the JDisc Container</a>.
+For more information on document processing, refer
+to <a href="../search/docproc-development.html">Document processor Development</a>.
+After having changed the Vespa setup, reload config by running:
+</p>
+<pre>
+$ deploy prepare music
+$ deploy activate
+</pre>
+<p>
+One might need to restart nodes as well to activate
+</p>
+
+
+<h2 id="document-selection">2. Define Document Selection Criteria</h2>
+<p>
+You will have to define some selection criteria for the documents that
+should be reprocessed; however, if you intend to reprocess all
+documents, omit
+the <a href="../reference/document-select-language.html">selection
+string</a>.
+For this example, let us assume that you want to reprocess all
+documents where the field <em>year</em> is greater than 1995.  A
+selection string of <code>music.year &gt; 1995</code> will accomplish
+this.
+The selection part of the reprocessing is part of the VISIT operation,
+refer to the
+<a href="feature-visiting.html">Visiting reference</a>
+and
+<a href="../reference/document-select-language.html">Document
+select language</a>.
+</p>
+
+
+<h2 id="select-route">3. Select a Route</h2>
+<p>
+As mentioned earlier, the visitor that is run on the cluster will
+send documents to a given <a href="../routing.html">Message
+Bus route</a>.  This can be any valid route, but for simplicity, some
+examples are given below:
+</p>
+
+<ul>
+<li><strong>default</strong> - Documents are sent to the default
+    route.</li>
+<li><strong>indexing</strong> - Documents are sent to indexing.</li>
+<li><strong>docproc/cluster.&lt;clustername&gt;/chain.&lt;chainname&gt;</strong>:
+    Documents are sent to the document processing
+    chain <em>chainname</em> running in
+    cluster <em>clustername</em>.</li>
+</ul>
+
+<p>
+In this example, we want to send documents from the storage node, into our
+document reprocessing chain, and ultimately, in parallel, into
+indexing and storage. A route
+of <code>docproc/cluster.reprocessing/chain.reprocessing
+[AND:storage/cluster.storage indexing]</code> would accomplish
+this. For more information,
+see <a href="../routing.html">Message Bus Routing Guide</a>.
+</p>
+
+
+<h2 id="kicking-it-off">4. Reprocess</h2>
+<p>
+At this point the system is ready to start reprocessing. Kick off the
+process by running:
+</p>
+<pre>
+$ vespavisit -v --selection "music.year &gt; 1995" --datahandler "docproc/cluster.reprocessing/chain.reprocessing [AND:storage/cluster.storage indexing]"
+</pre>
+<p>
+The '-v' option will emit progress information on standard error. If you want to be able
+to abort and resume processing later on from (approximately) the point
+you aborted, you should use the '-p' option.  Please refer to
+documentation on
+<code><a href="../reference/vespafeeder.html#vespavisit">vespavisit</a></code>
+for details on usage.
+</p>
+
+
+
+<h1 id="considerations">Important Considerations</h1>
+
+
+<h2 id="multiple-clusters">Multiple Search Clusters</h2>
+<p>
+If you have multiple search clusters with one document type each, and
+one storage cluster storing all document types, there are a few
+adjustments that must be made. A visitor on a storage node reads documents
+sequentially from disk, and sends batches of documents in messages
+over the network. If a visitor is set to visit all document types, one
+message may thus contain more than one document type. Since indexing
+is done in a separate indexing cluster for each search cluster, these
+indexing clusters can only handle documents of their own type. In the
+case where all documents regardless of document type are visited, some
+documents will thus end up in the wrong indexing cluster, and indexing
+will fail.
+</p>
+
+<p>
+In this use case, the solution is simple, though&mdash;just use a
+selection string to reprocess one document type at a time.
+</p>
+
+<h3 id="estimating-docproc-cluster-size">Estimating the Size of a Document Processing Cluster</h3>
+<p>
+Document processing can be heavy, depending on the CPU and memory
+usage. It is generally hard to recommend how many/what nodes to use,
+but a few principles apply: Performance increases linearly with number
+of nodes (assuming network is not a bottleneck). Use current nodes if
+possible (assuming they have spare capacity and/or run at low hours).
+</p>
+
+</body>
+</html>

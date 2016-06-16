@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Changing Live Search Definitions</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="August 2011" />
+  <meta name="authors" content="geirst" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes how a search definition in a live Vespa
+application can be modified, and also the procedures involved to make
+such new definitions active. The categories of changes that can be done
+are split into the following sections:
+<ol>
+  <li><a href="#no-restart-no-refeed">Changes that can be done without restart or re-feeding</a></li>
+  <li><a href="#restart-no-flush">Changes that require restart but not re-feeding</a></li>
+  <li><a href="#restart">Changes that require flush and restart but not re-feeding</a></li>
+  <li><a href="#refeed">Changes that require re-feeding</a></li>
+</ol>
+</p>
+
+<p>
+When running <code>deploy prepare</code> on a new application package, the changes
+in the search definition files are compared with the files in the current active package.
+If some of the changes require restart or re-feed, the output from <code>deploy prepare</code>
+specifies which actions are needed to make the new application package active.
+</p>
+
+<p>
+Please note that if there are changes you wish to perform on a live
+system that are not covered by this document and no output is given from <code>deploy prepare</code>,
+their impact is undefined and in no way guaranteed to allow a system to stay live until re-feeding.
+Changes not related to the search definition are discussed
+in <a href="live-changes-setup.html">Changing a live configuration</a>.
+</p>
+
+<p>
+Be aware that you should <em>always</em> try out changes in a staging
+system before applying it to your production system.
+</p>
+
+
+
+<h1 id="no-restart-no-refeed">Changes that can be done without restart or re-feeding</h1>
+<p>
+Take a look at the following list for changes that can be done without
+the need of restarting the search nodes or re-feeding data.
+</p>
+
+<p>
+To deploy such changes, run <code>deploy prepare</code> on the
+application package with the changed search definition file and then
+run <code>deploy activate</code>. The changes will take effect immediately.
+If not otherwise specified this is all that is needed.
+</p>
+
+<dl>
+  <dt>1) Adding a new document field</dt>
+  <dd>
+  You can add a new document field as index, attribute, summary or any
+  combinations of these.  Existing documents will implicitly get the
+  new field with no content.  Documents fed after the change can
+  specify the new field.
+  </dd>
+
+  <dt>2) Removing a document field</dt>
+  <dd>
+  Existing documents will no longer see the removed field, but the
+  field data is not completely removed from the search node.  If the
+  same field is re-added the existing documents will get the removed
+  field back. Removed fields will be wiped completely
+  when they get older than 2 weeks (can be tuned in proton config).
+  Note that the summary aspect of a field will not be removed by these operations,
+  and can still be resurrected later on for old documents.
+  </dd>
+
+  <dt>3) Adding or removing an existing document field from document summary</dt>
+  <dd>
+  You can add an existing field to summary or any number of summary
+  classes, and you can remove an existing field from summary or any
+  number of summary classes.
+  </dd>
+
+  <dt>4) Removing the attribute aspect from a field that is also an index field</dt>
+  <dd>
+  This is the only scenario of changing the attribute aspect of a
+  document field that is allowed without restart.
+  </dd>
+
+  <dt>5) Adding, changing or removing field sets</dt>
+  <dd>
+  You can change field sets used to group fields together for
+  searching.  Note that
+  the <a href="reference/search-definitions.html#fieldset">fieldset</a>
+  clause replaces
+  the <a href="reference/search-definitions.html#index-to">index-to</a>
+  command.
+  </dd>
+
+  <dt>6) Changing the alias or sorting attribute settings for an existing attribute field</dt>
+  <dd>
+  </dd>
+
+  <dt>7) Adding, changing or removing rank profiles</dt>
+  <dd>
+  </dd>
+
+  <dt>8) Changing one or more document field weights</dt>
+  <dd>
+  </dd>
+
+  <dt>9) Adding, changing or removing field aliases</dt>
+  <dd>
+  </dd>
+
+  <dt>10) Adding, changing or removing rank settings for a field</dt>
+  <dd>
+  Example: Adding <code>rank: filter</code> to a field.
+  </dd>
+</dl>
+
+
+<h1 id="restart-no-flush">
+  Changes that require restart but not re-feeding
+</h1>
+<p>
+The following changes require restart, but not re-feeding. Procedure:
+  <ol>
+    <li>Run <code>deploy prepare</code> on the changed application. Output specifies which restart actions are needed.
+    <li>Run <code>deploy activate</code>.</li>
+    <li>restart <code>services</code> on the services specified in the prepare output.
+  </ol>
+</p>
+
+<dl>
+  <dt>1) Changing the attribute aspect of an existing document field</dt>
+  <dd>
+    You can add or remove an existing field as attribute.
+  </dd>
+
+  <dt>2) Changing the attribute settings for an existing attribute field</dt>
+  <dd>
+  Changing one of the following attribute settings: <em>fast-search</em>, <em>fast-access</em>, <em>huge</em>.
+  </dd>
+</dl>
+
+<h2>Example</h2>
+<p>
+Lets say we have an indexed content cluster 'search' with the following search definition:
+<pre>
+search test {
+  document test {
+    field f1 type string { indexing: summary }
+  }
+}
+</pre>
+
+Then we would like to add field <code>f1</code> as an attribute:
+<pre>
+search test {
+  document test {
+    field f1 type string { indexing: attribute | summary }
+  }
+}
+</pre>
+
+In this case we get the following output from <code>deploy prepare</code>
+telling us which restart actions are needed:
+<pre>
+WARNING: Change(s) between active and new application that require restart:
+In cluster 'basicsearch' of type 'search':
+    Restart services of type 'searchnode' because:
+        1) Document type 'test': Field 'f1' changed: add attribute aspect
+</pre>
+</p>
+
+
+<h1 id="restart">
+  Changes that require flush and restart but not re-feeding
+</h1>
+<p>
+The following changes require flush and restart but not re-feeding.
+</p>
+<p>
+  The procedure to flush and restart is:
+  <ol>
+    <li>Run <code>deploy prepare</code> on the changed application.
+    <li>Run <code>deploy activate</code>.
+    <li>restart <code>services</code>.
+    <li>Trigger flush by running <code>vespa-proton-cmd --local
+      triggerFlush </code>.  Note that <code>--local</code> might need
+      to be replaced by correct service port if there are multiple
+      instances on the same host.</li>
+    <li>restart <code>services</code>
+  </ol>
+</p>
+
+</dl>
+
+
+<h1 id="refeed">Changes that require re-feeding</h1>
+<p>
+All of the changes listed below require re-feeding of all documents.
+Unless a change is listed in
+<a href="#no-restart-no-refeed">Changes that can be done without restart or re-feeding</a>,
+<a href="#restart-no-flush">Changes that require restart but not re-feeding</a> or
+<a href="#restart">Changes that require flush and restart but not re-feeding</a>,
+treat it as if it was listed here.
+</p>
+
+<p>
+The procedure to re-feed using the new search definition is:
+</p>
+<ol>
+  <li>Run <code>deploy prepare</code> on the changed application. Output specifies which re-feed actions are needed.
+  <li>Stop existing feeding</li>
+  <li>Wait until done</li>
+  <li>Stop <code>services</code> on all search nodes specified in the prepare output.</li>
+  <li>Remove the old indexes on all search nodes
+      using <code>vespa-remove-index</code>.</li>
+  <li>Run <code>deploy activate</code>.</li>
+  <li>Start <code>services</code> on all search nodes.</li>
+  <li>Re-feed all documents.</li>
+</ol>
+
+<p>
+Note that if you re-deploy your application containing changes 1) or 2) in the list,
+the search node will reject the new config
+and disable feeding until the old application package is re-deployed.
+</p>
+
+<dl>
+    <dt>1) Changing the data type or collection type of an existing document field</dt>
+    <dd>
+    There is a workaround for this type of change that does not
+    require re-feeding if you do not need the content of this field
+    for already existing documents.  First, remove the field and
+    re-deploy your application.  Then wait until the search node has wiped
+    the remains of the old removed field (tune <code>wipeoldremovedfieldsinterval</code> and
+    <code>wipeoldremovedfieldsage</code> in proton config to some low values, defaults are 6 hours and 2 weeks).
+    Finally, add the field again with the new data type
+    or collection type.  Note that existing documents will no longer
+    have any content for this field, so if you need the old content
+    then you must re-feed the existing documents using the new type
+    for this field.  There will be no automatic conversion from old to
+    new field type.
+    </dd>
+
+    <dt>2) Changing index aspect of an existing document field</dt>
+    <dd>
+    Add or remove an existing field as index.
+    </dd>
+
+    <dt>3) Changing fields from static to dynamic summary, or vice versa</dt>
+    <dd>
+    </dd>
+
+    <dt>4) Turning stemming/normalizing on or off</dt>
+    NOTE: If you don't re-feed after such change, you are still able to serve but recall will
+    be undefined as the index has been produced using a different setting than the one used when
+    doing stemming/normalizing of the query terms.
+    <dd>
+    </dd>
+
+    <dt>5) Turning bolding on or off</dt>
+    <dd>
+    </dd>
+
+    <dt>6) Adding, changing or removing match settings for a field</dt>
+    Example: Adding <code>match: word</code> to a field.
+    NOTE: If you don't re-feed after such change, you are still able to serve but recall will
+    be undefined as the index has been produced using one match mode while run-time is using a
+    different match mode.
+    <dd>
+    </dd>
+</dl>
+
+<h2>Example</h2>
+<p>
+Lets say we have an indexed content cluster 'search' with the following search definition.
+<pre>
+search test {
+  document test {
+    field f1 type string { indexing: summary }
+  }
+}
+</pre>
+
+Then we would like to add field <code>f1</code> as an index:
+<pre>
+search test {
+  document test {
+    field f1 type string { indexing: index | summary }
+  }
+}
+</pre>
+
+In this case we get the following output from <code>deploy prepare</code>
+telling us which re-feed actions are needed:
+<pre>
+WARNING: Change(s) between active and new application that require re-feed:
+Re-feed document type 'test' in cluster 'basicsearch' because:
+    1) Document type 'test': Field 'f1' changed: add index aspect, indexing script: '{ input f1 | summary f1; }' -&gt; '{ input f1 | tokenize normalize stem:"SHORTEST" | index f1 | summary f1; }'
+</pre>
+</p>
+
+
+</body>
+</html>

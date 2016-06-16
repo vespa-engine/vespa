@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="May 2013" />
+  <meta name="authors"    content="steinar" />
+  <title>How does JDisc work?</title>
+</head>
+
+<body>
+<p>
+Describing the basic flow of incoming requests in the JDisc Container from the
+network and into application specific plug-ins requires explaining the
+JDisc usage of the general terms <em>binding</em>, <em>server</em> and so on. Let's start
+with an informal data flow diagram. Click on a component to jump to an
+explanation, or start reading from the top:
+</p>
+
+<IMG SRC="img/jdisc_overview.png" alt="DFD for JDisc container" USEMAP="#jdisc_overview">
+<MAP NAME="jdisc_overview">
+<AREA COORDS="522,89,579,111" href="#binding" alt="binding">
+<AREA COORDS="527,39,574,64" href="#client" alt="client">
+<AREA COORDS="396,89,453,111" href="#binding" alt="binding">
+<AREA COORDS="401,39,448,64" href="#client" alt="client">
+<AREA COORDS="231,483,391,628" href="#requesthandler" alt="custom request handler">
+<AREA COORDS="13,483,212,628" href="#processing" alt="processing">
+<AREA COORDS="46,700,97,722" href="#processing" alt="processing request">
+<AREA COORDS="113,700,179,722" href="#processing" alt="processing response">
+<AREA COORDS="83,801,143,823" href="#processor" alt="processor">
+<AREA COORDS="83,747,143,769" href="#processor" alt="processor">
+<AREA COORDS="83,653,143,675" href="#processor" alt="processor">
+<AREA COORDS="218,382,413,417" href="#request_response" alt="JDisc request and response">
+<AREA COORDS="111,426,306,461" href="#request_response" alt="JDisc request and response">
+<AREA COORDS="7,382,202,417" href="#request_response" alt="JDisc request and response">
+<AREA COORDS="231,344,287,366" href="#binding" alt="binding">
+<AREA COORDS="147,344,204,366" href="#binding" alt="binding">
+<AREA COORDS="64,344,121,366" href="#binding" alt="binding">
+<AREA COORDS="67,177,108,199" href="#filter" alt="filter">
+<AREA COORDS="67,218,108,240" href="#filter" alt="filter">
+<AREA COORDS="67,259,108,281" href="#filter" alt="filter">
+<AREA COORDS="152,177,193,199" href="#filter" alt="filter">
+<AREA COORDS="152,218,193,240" href="#filter" alt="filter">
+<AREA COORDS="152,259,193,281" href="#filter" alt="filter">
+<AREA COORDS="237,177,278,199" href="#filter" alt="filter">
+<AREA COORDS="237,218,278,240" href="#filter" alt="filter">
+<AREA COORDS="237,259,278,281" href="#filter" alt="filter">
+<AREA COORDS="228,136,284,158" href="#binding" alt="binding">
+<AREA COORDS="144,136,201,158" href="#binding" alt="binding">
+<AREA COORDS="61,136,117,158" href="#binding" alt="binding">
+<AREA COORDS="18,43,75,65" href="#server" alt="server">
+<AREA COORDS="267,43,324,65" href="#server" alt="server">
+<AREA COORDS="143,43,199,65" href="#server" alt="server">
+</MAP>
+
+<h1 id="server">Server (ServerProvider)</h1>
+<p>
+A server, or server provider, in JDisc Context is a server protocol
+implementation. A server will usually be bound to some network port, and has the
+responsibility of creating JDisc requests from the incoming data and also
+transmitting the JDisc response back to the client in a pertinent manner. A
+server does not fetch content, that is the responsibility of a <a
+href="#processor">processor</a> or <a href="#requesthandler">request
+handler</a>.
+</p>
+
+<h1 id="binding">Binding</h1>
+
+<p>
+A binding is a pattern, or rule, matching a URI which is used to route incoming
+requests to the correct <a href="#filter">filter chain</a> or <a
+href="#requesthandler">request handler</a>, and route outgoing requests to the
+correct <a href="#client">client</a>. For instance, the binding <em>http://*/*</em>
+would match any HTTP request, while <em>http://*/processing</em> would only match that
+specific path. If several bindings match, the most specific one is chosen. </p>
+
+<h2 id="server-binding">server binding</h2>
+<p>
+A server binding is a rule for matching incoming requests to the correct
+request handler, basically the JDisc building block for implementing
+RESTful APIs.
+</p>
+
+<h2 id="client-binding">client binding</h2>
+
+<p>
+A client binding is a pattern which is used to match requests originating inside
+the container, e.g. when doing federation, to a client provider. That is, it is
+a rule which determines what code should handle a given outgoing request.
+</p>
+
+<h1 id="filter">Filter</h1>
+
+<p>
+A filter is a lightweight request checker. It may set some specific request
+property, or it may do security checking and simply block requests missing some
+mandatory property or header.
+</p>
+
+<h1 id="request_response">Requests and responses</h1>
+
+<p>Requests are modelled as key-value stores, as in many other systems,
+while responses are meta information (like HTTP status) and a binary
+stream of content (the <a href="#content-channel">ContentChannel</a> API).
+</p>
+
+<p>The response handler is passed along with the request, it is <em>the link
+back to the external client</em>, as it contains the infrastructure for passing
+binary data back to the network.
+</p>
+
+<h2 id="content-channel">content channel</h2>
+
+<p>
+A content channel is the basic I/O building block of JDisc. It is conceptually
+similar to a stream, but the basic unit is the ByteBuffer instead of the native
+byte. A content channel will take ownership of a ByteBuffer written to it.
+</p>
+
+<h1 id="requesthandler">Request handlers</h1>
+
+<p>
+A request handler accepts a request, and returns a response. All applications
+will use a request handler, either by implementing their own, or indirectly by
+using the <a href="#processing">processing framework</a>, as the processing
+handler is a request handler as well. A client provider is-a request handler.
+</p>
+
+<h1 id="processing">Processing</h1>
+
+<p>Processing is a light-weight, low latency request-response framework
+built on decomposition by chaining. It is a multi-threaded API, each
+processor must be written thread safe.</p>
+
+<h2 id="processor">Processor</h2>
+
+<p>
+As a request handler, a processor accepts a response and returns a response.
+There are two central differences in the processor API from request handler API,
+though. First of all, a processor may invoke other processors directly, as
+processors are organized in chains, like filters. Second, processing responses
+are structured trees, as opposed to a binary stream. This makes processors
+suited to both request and response transformation, as working on both the
+request and response is possible.
+</p>
+
+<h2 id="renderer">Renderer</h2>
+
+<p>As a processing response is a tree, there must be some way
+to transform that to a binary representation. To support multiple output
+formats, e.g. JSON and XML, the marshalling work is placed in the plug-in
+type Renderer.</p>
+
+<p>A default renderer is always available, this renders a simple JSON
+format.</p>
+
+<h1 id="client">Client (ClientProvider)</h1>
+
+<p>
+Clients, or client providers, are implementations of clients for different
+protocols, or special rules for given protocols. When a JDisc application acts
+as a client, e.g. fetches a web page from another host, it is a client provider
+that handles the transaction. Bindings are used, as with request handlers and
+filters, to choose the correct client, matching protocol, server, etc, and then
+hands off the request to the client provider. Obviously, there is no problem in
+using arbitrary other types of clients for external services in processors and
+request handlers.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Rank Feature Configuration</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2008" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+For some Rank Features, it is possible to set configuration variables
+deciding how the features are calculated. For features which are per
+field or attribute, the variables are set separately per
+field/attribute.
+</p>
+
+
+
+<h1 id="variables">Variables</h1>
+
+<p>
+Rank Features configuration variables are set by adding the following
+clause to the rank profile in question:
+</p>
+
+<pre class="brush: sd">
+rank-properties {
+    &lt;featurename&gt;.&lt;configuration-property&gt;: &lt;value&gt;
+}
+</pre>
+
+<p>
+Where &lt;featurename&gt; is the name of a feature class (feature name
+up to the first dot), and &lt;configuration-property&gt; is a property
+from the list below, appropriate for the feature, and &lt;value&gt; is
+either a number of a quoted string.
+</p>
+
+<p>
+For example, to set some properties on the fieldMatch feature class of
+two different fields, add
+</p>
+
+<pre class="brush: sd">
+rank-properties {
+    fieldMatch(title).maxAlternativeSegmentations: 10
+    fieldmatch(title).maxOccurrences: 5
+    fieldMatch(description).maxOccurrences: 20
+}
+</pre>
+
+<p>
+Note that rank profiles can be inherited to use the same variables in
+multiple profiles.
+</p>
+
+
+
+<h1 id="properties">Configuration Properties</h1>
+
+<p>
+This is a comprehensive list of all the configuration properties to
+all feature classes in Vespa:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Parameter</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+<tr><td><code>term</code></td><td><code>numTerms</code></td><td>5</td><td>The number of terms for which this is included
+in the rank features dump in the summary</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>proximityLimit</code></td><td>10</td><td>
+The maximum allowed gap within a segment.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>proximityTable</code></td><td>1/(2^(i/2)/3) for i in 9..0 followed by 1/2^(i/2) for i in 0..10</td><td>
+The proximity table deciding the importance of separations of various distances,
+The table must have size proximityLimit*2+1, where the first half is for reverse direction
+distances. The table must only contain values between 0 and 1, where 1 is &quot;perfect&quot; and 0 is &quot;worst&quot;.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>maxAlternativeSegmentations</code></td><td>10000</td><td>
+The maximum number of <em>alternative</em> segmentations allowed in addition to the first one found.
+This will prefer to not consider iterations on segments that are far out in the field,
+and which starts late in the query.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>maxOccurrences</code></td><td>100</td><td>
+The number of occurrences the number of occurrences of each word is normalized against.
+This should be set as the number above which additional occurrences of the term has no real significance.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>proximityCompletenessImportance</code></td><td>0.9</td><td>
+A number between 0 and 1 which determines the importancy of field completeness in relation to
+query completeness in the <code>match</code> and <code>completeness</code> metrics.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>relatednessImportance</code></td><td>0.9</td><td>
+The normalized importance of relatedness used in the <code>match</code> metric.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>earlinessImportance</code></td><td>0.05</td><td>
+The importance of the match occuring early in the query, relative to segmentProximityImportance,
+occurrenceImportance and proximityCompletenessImportance in the <code>match</code> metric.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>segmentProximityImportance</code></td><td>0.05</td><td>
+The importance of multiple segments being close to each other, relative to earlinessImportance,
+occurrenceImportance and proximityCompletenessImportance in the <code>match</code> metric.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>occurrenceImportance</code></td><td>0.05</td><td>
+The importance of having many occurrences of the query terms, relative to earlinessImportance,
+segmentProximityImportance and proximityCompletenessImportance in the <code>match</code> metric.</td></tr>
+
+<tr><td><code>fieldMatch</code></td><td><code>fieldCompletenessImportance</code></td><td>0.05</td><td>
+A number between 0 and 1 which determines the importancy of field completeness in relation to
+query completeness in the <code>match</code> and <code>completeness</code> metrics.</td></tr>
+
+<tr><td><code>fieldTermMatch</code></td><td><code>numTerms</code></td><td>5</td><td>The number of terms for which this is included
+in the rank features dump in the summary</td></tr>
+
+<tr><td><code>fieldTermMatch</code></td><td><code>numTerms.&lt;fieldName&gt;</code></td><td>5</td><td>The
+number of terms for which this is included in the rank features dump in the summary for the specified
+field</td></tr>
+
+<tr><td><code>elementCompleteness</code></td><td><code>fieldCompletenessImportance</code></td><td>0.5</td><td>Higher values favor
+field completeness, lower values favor query completeness. Adjusting this parameter will also affect which element is selected
+as the best.</td></tr>
+
+<tr><td><code>elementSimilarity</code></td><td><code>output.default</code></td><td><code>&quot;max((0.35*p+0.15*o+0.30*q+0.20*f)*w)&quot;</code></td><td>Describes
+how the default output should be calculated. The value must be on the
+form <code>aggregator(expression)</code>. The expression is used to
+combine the low-level similarity measures between the query and
+individual elements in the field. The aggregator will be used to
+aggregate the output of the expression across elements. The available
+aggregators are <code>max</code>, <code>avg</code>
+and <code>sum</code>. The available expression operators
+are <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>
+and <code>^</code>. Parenthesis may be used to override default
+operator precedence. Note that you must quote the expression using <code>&quot;expression&quot;</code>. Terminals can be numbers or any of the following
+symbols:
+<table>
+<tr><td><code>p</code></td><td>normalized <strong>proximity</strong> measure</td></tr>
+<tr><td><code>o</code></td><td>normalized term <strong>ordering</strong> measure</td></tr>
+<tr><td><code>q</code></td><td>normalized <strong>query</strong> coverage</td></tr>
+<tr><td><code>f</code></td><td>normalized <strong>field</strong> coverage</td></tr>
+<tr><td><code>w</code></td><td>element <strong>weight</strong></td></tr>
+</table>
+</td></tr>
+
+<tr><td><code>elementSimilarity</code></td><td><code>output.name</code></td><td>N/A</td><td>Define
+an additional feature output called <code>name</code>. The value
+describes how the output should be calculated and has the same syntax
+as the <code>default</code> output described above.</td></tr>
+
+<tr><td><code>attributeMatch</code></td><td><code>fieldCompletenessImportance</code></td><td>0.05</td><td>A number between 0 and 1 which
+determines the importance of field completeness in relation to
+query completeness in the <code>match</code> and <code>completeness</code> metrics.</td></tr>
+
+<tr><td><code>attributeMatch</code></td><td><code>maxWeight</code></td><td>256</td><td>The maximal weight when calculating the
+<code>attributeMatch(&lt;name&gt;).normalizedWeight</code> feature. Weights higher than this will not
+have any effect on this feature.</td></tr>
+
+<tr><td><code>closeness</code></td><td><code>maxDistance</code></td><td>9013305.0</td><td>The maximal distance when
+calculating the <code>closeness(&lt;name&gt;)</code> feature. Distances higher than this will not
+have any effect on this feature. The default is about 1000 km (1 km is about 9013.305 microdegrees).</td></tr>
+
+<tr><td><code>closeness</code></td><td><code>scaleDistance</code></td><td>45066.525</td><td>
+Deprecated; use <code>halfResponse</code> instead.
+Basic scale for distances when calculating the <code>closeness(&lt;name&gt;).logscale</code> feature.
+The default is about 5 km.</td></tr>
+
+<tr><td><code>closeness</code></td><td><code>halfResponse</code></td><td>593861.739</td>
+<td>The distance that should give an output of 0.5 when calculating the <code>closeness(&lt;name&gt;).logscale</code> feature.
+The default is about 65.89 km (must be in the range [1, maxDistance/2&gt;).
+Use this parameter to fine tune the distance range where half of the dynamics of the logscale function will be used.
+</td></tr>
+
+<tr><td><code>freshness</code></td><td><code>maxAge</code></td><td>3*30*24*60*60</td><td>The maximal age in seconds when
+calculating the <code>freshness(&lt;name&gt;)</code> feature. Ages older than this will not
+have any effect on this feature. The default is about 3 months.</td></tr>
+
+<tr><td><code>freshness</code></td><td><code>halfResponse</code></td><td>7*24*60*60</td>
+<td>The age in seconds that should give an output of 0.5 when calculating the
+<code>freshness(&lt;name&gt;).logscale</code> feature. The default is 7 days (must be in the range [1, maxAge/2&gt;).
+Use this parameter to fine tune the age range where half of the dynamics of the logscale function will be used.
+</td></tr>
+
+<tr><td><code>random</code></td><td><code>seed</code></td><td>Current time in microseconds</td><td>The random seed. </td></tr>
+
+<tr><td><code>foreach</code></td><td><code>maxTerms</code></td><td>16</td>
+<td>Specifies how many query term indices to iterate over ([0, <code>maxTerms</code>&gt;) when using dimension <code>terms</code>.</td></tr>
+
+</tbody>
+</table>
+
+</body>
+</html>

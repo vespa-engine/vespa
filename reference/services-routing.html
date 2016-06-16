@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>services.xml - 'routing'</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2012" />
+  <meta name="authors" content="musum, eirikref" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the reference documentation for all elements contained within
+the <code>&lt;routing&gt;</code> section of <em>services.xml</em>.  For
+a complete overview of all sections and elements of this file,
+please see the <a href="services.html">Reference documentation for
+<em>services.xml</em></a>.
+</p>
+
+
+
+<h1 id="summary">Summary of Elements</h1>
+
+<table class="ref-toc table table-condensed table-hover table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Element</th>
+      <th>Required</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td><a href="services-routing.html#routing"><code>&lt;routing&gt;</code></a></td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td class="indent-1"><a href="services-routing.html#routingtable"><code>&lt;routingtable&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+<tr><td class="indent-2"><a href="services-routing.html#hop"><code>&lt;hop&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+<tr><td class="indent-3"><a href="services-routing.html#recipient"><code>&lt;recipient&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+<tr><td class="indent-2"><a href="services-routing.html#route"><code>&lt;route&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+<tr><td class="indent-1"><a href="services-routing.html#services"><code>&lt;services&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+<tr><td class="indent-2"><a href="services-routing.html#service"><code>&lt;service&gt;</code></a></td><td class="required"></td><td>Zero or More</td></tr>
+
+  </tbody>
+</table>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- hop                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="hop" class="ref-param">&lt;hop&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#routingtable"><code>&lt;routingtable&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a single hop that can be used to construct one or more routes. A hop must have a name that is unique within the routing table to which it belongs. A hop contains a selector string and a list of recipient sessions.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              The name of the hop.
+              </div>
+            </li>
+                                        <li>
+              <h3>selector</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              Selector string.
+              </div>
+            </li>
+                                        <li>
+              <h3>ignore-result</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>boolean</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required"></td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              If set to <code>true</code>, specifies that the result of routing through that hop should be ignored.
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+
+      <tbody>
+                  <tr>
+            <td><a href="services-routing.html#recipient"><code>&lt;recipient&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+              </tbody>
+    </table>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;hop name=&quot;hop1&quot; selector=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot;&gt;
+      &lt;recipient session=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot; /&gt;
+    &lt;/hop&gt;
+  &lt;/routingtable&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- recipient                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="recipient" class="ref-param">&lt;recipient&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#hop"><code>&lt;hop&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a recipient session of a hop.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>session</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              <p>
+  This attribute must correspond to a running instance of a
+  service that can be routed to.
+</p>
+
+<p class="alert alert-info">
+  All session identifiers consist of a location part and a
+  name. A search node is always given a session name on the form
+  <code>search/cluster.name/g#/r#/c#/feed-destination</code>,
+  whereas a document processor service is always named
+  <code>docproc/cluster.name/docproc/#/feed-processor</code>.
+</p>
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;hop name=&quot;search/cluster.music&quot; selector=&quot;search/cluster.music/[SearchGroup]/[SearchRow]/[SearchColumn]/feed-destination&quot;&gt;
+      &lt;recipient session=&quot;search/cluster.music/g0/c0/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.music/g0/c0/r1/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.music/g1/c0/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.music/g1/c0/r1/feed-destination&quot; /&gt;
+    &lt;/hop&gt;
+  &lt;/routingtable&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- route                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="route" class="ref-param">&lt;route&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#routingtable"><code>&lt;routingtable&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a route for a message to its destination through a set of intermediate hops. If at least one hop in a route does not exist, the application will fail to start and issue an error that contains the name of that hop.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              The name of the route
+              </div>
+            </li>
+                                        <li>
+              <h3>hops</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              A whitespace-separated list of hop names, where each name must be a valid hop.
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;route name=&quot;route1&quot; hops=&quot;hop1 hop2&quot; /&gt;
+    &lt;route name=&quot;route2&quot; hops=&quot;hop3 hop4 hop5&quot; /&gt;
+  &lt;/routingtable&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- routing                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="routing" class="ref-param">&lt;routing&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services.html#services"><code>&lt;services&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  The container element for all configuration related to routing.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>version</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>1.0</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              This parameter is used to tell Vespa which version of the <code>&lt;routing&gt;</code> configuration format you are using.
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+
+      <tbody>
+                  <tr>
+            <td><a href="services-routing.html#routingtable"><code>&lt;routingtable&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+                  <tr>
+            <td><a href="services-routing.html#services"><code>&lt;services&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+              </tbody>
+    </table>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;route name=&quot;route1&quot; hops=&quot;hop1 hop2&quot; /&gt;
+    &lt;route name=&quot;route2&quot; hops=&quot;hop3 hop4 hop5&quot; /&gt;
+    &lt;hop name=&quot;hop1&quot; selector=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot;&gt;
+      &lt;recipient session=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot; /&gt;
+    &lt;/hop&gt;
+    &lt;hop name=&quot;hop2&quot; selector=&quot;search/cluster.bar/[SearchGroup]/[SearchRow]/[SearchColumn]/feed-destination&quot;&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g0/c0/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g0/c1/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g0/c0/r1/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g0/c1/r1/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g1/c0/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g1/c1/r0/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g1/c0/r1/feed-destination&quot; /&gt;
+      &lt;recipient session=&quot;search/cluster.bar/g1/c1/r1/feed-destination&quot; /&gt;
+    &lt;/hop&gt;
+  &lt;/routingtable&gt;
+  &lt;services protocol=&quot;document&quot;&gt;
+    &lt;service name=&quot;foo/bar&quot; /&gt;
+  &lt;/services&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- routingtable                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="routingtable" class="ref-param">&lt;routingtable&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#routing"><code>&lt;routing&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a routing table for a specific protocol.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>protocol</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>document</td></tr>
+                <tr><td>Default Value:</td><td>document</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              Configure which protocol to use. Currently only the protocol <code>document</code> is defined, so if you define a routing table for an unsupported protocol, the application will just log an INFO entry that contains the name of that protocol.
+              </div>
+            </li>
+                                        <li>
+              <h3>verify</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>boolean</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required"></td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+
+      <tbody>
+                  <tr>
+            <td><a href="services-routing.html#hop"><code>&lt;hop&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+                  <tr>
+            <td><a href="services-routing.html#route"><code>&lt;route&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+              </tbody>
+    </table>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;route name=&quot;route1&quot; hops=&quot;hop1 hop2&quot; /&gt;
+    &lt;hop name=&quot;hop1&quot; selector=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot;&gt;
+      &lt;recipient session=&quot;docproc/cluster.foo/docproc/*/feed-processor&quot; /&gt;
+    &lt;/hop&gt;
+  &lt;/routingtable&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- service                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="service" class="ref-param">&lt;service&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#services"><code>&lt;services&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a single known service that can not be derived from the <em>services.xml</em>.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              The name of the service
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;services protocol=&quot;document&quot;&gt;
+    &lt;service name=&quot;foo/bar&quot; /&gt;
+  &lt;/services&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- services                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="services" class="ref-param">&lt;services&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-routing.html#routing"><code>&lt;routing&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>&mdash;      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a set of services available for a specific protocol. At the moment the only supported protocol is <code>document</code>. The services specified are used by the route verification step to allow hops and routes to reference services known to exist, but that can not be derived from <em>services.xml</em>.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>protocol</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>document</td></tr>
+                <tr><td>Default Value:</td><td>&mdash;</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">&mdash;</td></tr>
+                <tr><td>Deprecated:</td><td>&mdash;</td></tr>
+              </table>
+
+              <div class="description">
+              Configure which protocol to use. Currently only the protocol <code>document</code> is defined.
+              </div>
+            </li>
+                        </ul>
+
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+
+      <tbody>
+                  <tr>
+            <td><a href="services-routing.html#service"><code>&lt;service&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or More</td>
+          </tr>
+              </tbody>
+    </table>
+
+
+
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;services protocol=&quot;document&quot;&gt;
+    &lt;service name=&quot;foo/bar&quot; /&gt;
+  &lt;/services&gt;
+&lt;/routing&gt;
+</pre>
+
+                  </div>
+  </div>
+
+</body>
+</html>

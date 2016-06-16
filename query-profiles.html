@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Query Profiles</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2009" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+A Query Profile is a named collection of search request parameters
+given in the configuration.  The search request can specify a query
+profile whose parameters will be used as parameters of that
+request. This relieves the client from having to manage and send a
+large number of parameters, and enables the request parameters to use
+for a use case to be changed without having to change the client.
+Query profiles enables <em>bucket tests</em>, where a part of the
+query stream is given some experimental treatment, as well as
+differentiating behavior based on (OEM) customer, user type, region,
+frontend type etc. This document explains how to create and use query
+profiles. See also
+the <a href="reference/query-profile-reference.html">the
+query profile reference</a> for the full syntax.
+</p>
+
+
+
+<h1 id="getting-started">Getting Started</h1>
+
+<p>
+This section describes how to create, deploy and use query
+profiles.
+</p>
+
+
+<h2 id="creating-a-query-profile">Creating a Query Profile</h2>
+<p>
+A Query Profile is an XML file containing the request parameter names
+and their values, for example:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile&quot;&gt;
+  &lt;field name=&quot;hits&quot;&gt;10&lt;/field&gt;
+  &lt;field name=&quot;unique&quot;&gt;merchantid&lt;/field&gt;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+For the full syntax,
+see <a href="reference/query-profile-reference.html#query-profiles">the
+query profile reference</a>.  Note that full property names must be
+used, aliases are only supported in requests and programmatic
+lookup. See <a href="reference/search-api.html">the search
+API</a> for a list of the built in query properties.
+</p>
+
+
+<h2 id="deploying-a-query-profile">Deploying a Query Profile</h2>
+<p>
+To deploy a query profile:
+</p>
+
+<ol>
+  <li>Create an XML file for the profile, containing the XML format
+      above, having the name <em>[my-profile-name].xml</em>,
+      e.g <em>MyProfile.xml</em> (replace any <code>/</code> in the
+      name by <code>_</code>).</li>
+  <li>Put this in the directory <em>search/query-profiles</em> under
+      the <a href="cloudconfig/application-packages.html">application package</a>
+      root directory.</li>
+  <li><a href="cloudconfig/application-packages.html#deploying-a-vespa-application">redeploy</a>
+      the application package.</li>
+</ol>
+
+<p>
+Any number of query profile files may be added to this directory.
+</p>
+
+<p>
+If the query profiles contains errors, like incorrect syntax, infite
+reference loops etc., deployment will fail.
+</p>
+
+
+<h2 id="using-a-query-profile">Using a Query Profile</h2>
+
+<p>
+To use a query profile in a search request, send the name of the
+profile as the parameter <code>queryProfile</code>:
+</p>
+
+<pre class="brush: text">
+queryProfile=MyProfile
+</pre>
+
+<p>
+The parameter values set in <em>MyProfile.xml</em> will then be used
+as if they were present directly in the search request.
+</p>
+
+<p>
+If a parameter is present both directly in the request and in a
+profile, the request value takes precedence by default.  Individual
+query profile field can be made to take priority by setting
+the <code>overridable</code> attribute to <code>false</code>.
+</p>
+
+<p>
+If the search request does not specify a query profile, the profile
+named <code>default</code> will be used.  If no <code>default</code>
+profile is configured, no profile will be used. If the queryProfile
+parameter is set but does not resolve to an existing profile an error
+message is returned.
+</p>
+
+
+<h2 id="looking-up-a-value-from-a-query-profile">Looking up a Value from a Query Profile</h2>
+<p>
+The query profile values (whether set from a configured query profile
+or by the request) is available as Query properties.  To look up a
+value from a Searcher component, use
+</p>
+
+<pre class="brush: java">
+query.properties().get(&quot;myVariable&quot;)
+</pre>
+
+<p>
+Note that property names are case sensitive.
+</p>
+
+
+
+<h1 id="query-profile-features">Query Profile Features</h1>
+
+<p>
+The following section describes the various query profile features
+available in no particular order.
+</p>
+
+
+<h2 id ="nested-structure">Nested Structure</h2>
+
+<p>
+To support structure in the set of request variables, a query profile
+value may not be a string but a reference to another query profile. In
+this case, the referenced query profile functions as a map (or struct,
+if types are used, see below) in the referencing query profile. The
+parameter names of the nested profile gets preceded by the name of the
+reference variable and a dot. For example:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile&quot;&gt;
+  &lt;field name=&quot;hits&quot;&gt;10&lt;/field&gt;
+  &lt;field name=&quot;unique&quot;&gt;merchantid&lt;/field&gt;
+  <strong>&lt;field name=&quot;user&quot;&gt;&lt;ref&gt;MyUserProfile&lt;/ref&gt;&lt;/field&gt;</strong>
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+Where the referenced profile might look like:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyUserProfile&quot;&gt;
+    &lt;field name=&quot;age&quot;&gt;20&lt;/field&gt;
+    &lt;field name="profession"&gt;student&lt;/field&gt;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+If <code>MyProfile</code> is referenced in a query now, it will
+contain the variables
+</p>
+
+<pre class="brush: text">
+hits=10
+unique=merchantid
+user.age=20
+user.profession=student
+</pre>
+
+<p>
+Of course, references can be nested to provide a deeper structure,
+producing variables having multiple dots.  The dotted variables can be
+overridden directly in the search request (using the dotted name) just
+as other parameters.
+</p>
+
+<p>
+Note that the id value of a profile reference can also be set in the
+request, making it possible to choose not just the top level profile
+but also any number of specific subprofiles in the request. For
+example, the request can contain
+</p>
+
+<pre class="brush: text">
+queryProfile=MyUserProfile&amp;user=ref:MyOtherUserprofile
+</pre>
+
+<p>
+to change the reference in the above example to some other
+subprofile. Note the <code>ref:</code> prefix which is required to
+identify this as setting user to a query profile referenced by id
+rather than setting it to a string.
+</p>
+
+
+<h2 id="inheritance">Inheritance</h2>
+<p>
+A query profile may inherit one or more other query profiles. This is
+useful when there is some common set of parameters applicable to
+multiple use cases, and a smaller set of parameters which varies
+between them.  To inherit another query profile, reference it as
+follows:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile&quot; <strong>inherits=&quot;MyBaseProfile&quot;</strong>&gt;
+  &hellip;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+The parameters of <code>MyBaseProfile</code> will be present when this
+profile is used exactly as if they were explicitly written in this
+profile.
+</p>
+
+<p>
+Multiple inheritance is supported by specifying multiple
+space-separated profile ids in the inheritance attribute.  Order
+matters in this list &mdash; if a parameter is set in more than one of
+the inherited profiles, the first one encountered in the depth first,
+left to right search order is used.
+</p>
+
+<p>
+Parameters specified in the child query profile will always override
+the same parameters in a inherited one.
+</p>
+
+
+<h2 id="value-substitution">Value Substitution</h2>
+
+<p>
+Query profile values may contain substitution strings on the form
+%{property-name} which are replaced by the value returned
+from <code>query.properties().get(&quot;property-name&quot;)</code> <em>at
+the time of the lookup</em>.  An example:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile&quot;&gt;
+  &lt;field name=&quot;message&quot;&gt;Hello %{world}!&lt;/field&gt;
+  &lt;field name=&quot;world&quot;&gt;Earth&lt;/field&gt;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+The value returned by looking up <code>message</code> will
+be <em>Hello Earth!</em>.
+</p>
+
+<p>
+As the lookups happens at query time, substituted values may be looked
+up in variants, in inherited profiles, in values set at run time and
+by following query profile references. Details:
+</p>
+
+<ul>
+  <li>No substitution will be performed <em>in</em> values set at run
+      time.</li>
+  <li>If the value referenced in a substitution returns null, the
+      reference is substituted by the empty string</li>
+  <li>Unclosed substitutions causes an error at deploy time, but
+      unknown values does not (they may exist at run time and will be
+      replaced by an empty string if not).</li>
+  <li>Recursive substitution works as expected. However, there is no
+      loop detection.</li>
+</ul>
+
+
+<h2 id="query-profile-variants">Query Profile Variants</h2>
+
+<p>
+In some cases, it is convenient to allow the values returned from a
+query profile to vary depending on the values of some properties input
+in the request. For example, a query profile may contain values which
+depends on both the market in which the request originated
+(<code>market</code>), the kind of device
+(<code>model</code>) <em>and</em> the bucket in question
+(<code>bucket</code>).
+</p>
+
+<p>
+Such variants over a set of request parameters may be represented in a
+single query profile, by defining nested variants of the query profile
+for the relevant combinations of request values. Here is a complete
+example:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;multiprofile1&quot;&gt; &lt;!-- A regular profile may define &quot;virtual&quot; children within itself --&gt;
+
+    &lt;!-- Names of the request parameters defining the variant profiles of this. Order matters as described below.
+         Each individual value looked up in this profile is resolved from the most specific matching virtual
+         variant profile --&gt;
+    &lt;dimensions&gt;region,model,bucket&lt;/dimensions&gt;
+
+    &lt;!-- Values may be set in the profile itself as usual, this becomes the default values given no matching
+         virtual variant provides a value for the property --&gt;
+    &lt;field name=&quot;a&quot;&gt;My general a value&lt;/field&gt;
+
+    &lt;!-- The &quot;for&quot; attribute in a child profile supplies values in order for each of the dimensions --&gt;
+    &lt;query-profile for=&quot;us,nokia,test1&quot;&gt;
+        &lt;field name=&quot;a&quot;&gt;My value of the combination us-nokia-test1-a&lt;/field&gt;
+    &lt;/query-profile&gt;
+
+    &lt;!-- Same as [us,*,*]  - trailing &quot;*&quot;&#x27;s may be omitted --&gt;
+    &lt;query-profile for=&quot;us&quot;&gt;
+        &lt;field name=&quot;a&quot;&gt;My value of the combination us-a&lt;/field&gt;
+        &lt;field name=&quot;b&quot;&gt;My value of the combination us-b&lt;/field&gt;
+    &lt;/query-profile&gt;
+
+    &lt;!-- Given a request which matches both the below, the one which specifies concrete values to the left
+         gets precedence over those specifying concrete values to the right
+         (i.e the first one gets precedence here) --&gt;
+    &lt;query-profile for=&quot;us,nokia,*&quot;&gt;
+        &lt;field name=&quot;a&quot;&gt;My value of the combination us-nokia-a&lt;/field&gt;
+        &lt;field name=&quot;b&quot;&gt;My value of the combination us-nokia-b&lt;/field&gt;
+    &lt;/query-profile&gt;
+    &lt;query-profile for=&quot;us,*,test1&quot;&gt;
+        &lt;field name=&quot;a&quot;&gt;My value of the combination us-test1-a&lt;/field&gt;
+        &lt;field name=&quot;b&quot;&gt;My value of the combination us-test1-b&lt;/field&gt;
+    &lt;/query-profile&gt;
+
+&lt;/query-profile&gt;
+</pre>
+
+
+<h3 id="variants-and-inheritance">Variants and Inheritance</h3>
+<p>
+It is possible to define variants across several levels in an
+inheritance hierarchy.  The variant dimensions are inherited from
+parent to child, with the usual precedence rules (depth first left to
+right), so a parent profile may define the dimensions and the child
+the values over which it should vary.
+</p>
+
+<p>
+Variant resolution within a profile has precedence over resolution in
+parents. This means e.g that a default value for a given property in a
+sub-profile will be chosen over a perfect variant match in an
+inherited profile.
+</p>
+
+<p>
+Variants may specify their own inherited profiles, as in
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;multiprofile1&quot;&gt;
+    &hellip;
+    &lt;query-profile for=&quot;us,nokia,test1&quot; inherits=&quot;parent1 parent2&quot;&gt;
+        &hellip;
+    &lt;/query-profile&gt;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+Values are resolved in this profile and inherited profiles
+&ldquo;interleaved&rdquo; by the variant resolution order (which is
+specificity by default). E.g by decreasing priority:
+</p>
+
+<pre class="brush: text">
+1.   Highest prioritized variant value
+2.   Value in inherited from highest prioritized variant
+3.   Next highest prioritized variant value
+4.   Value in inherited from next highest prioritized variant
+&hellip;
+n.   Value defined at top level in profile
+n+1. Value in inherited from query profile
+</pre>
+
+
+<h2 id="query-profile-types">Query Profile Types</h2>
+
+<p>
+The query profiles may optionally be <em>type checked</em>. Type
+checking is turned on by referencing a <em>Query Profile Type</em>
+from the query profile. The type lists the legal set of parameters of
+the query profile, whether additional parameters are allowed, and so
+on.
+</p>
+
+<p>
+A query profile type is referenced by
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile&quot; <strong>type=&quot;MyProfileType&quot;</strong>&gt;
+  &hellip;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+And the type is defined as:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile-type id=&quot;MyProfileType&quot;&gt;
+  &lt;field name=&quot;age&quot; type=&quot;integer&quot;/&gt;
+  &lt;field name=&quot;profession&quot; type=&quot;string&quot;/&gt;
+  &lt;field name=&quot;user&quot; type=&quot;query-profile:MyUserProfile&quot;&gt;
+&lt;/query-profile-type&gt;
+</pre>
+
+<p>
+This specifies that these three parameters may be present in profiles
+using this type, as well as the query profile type of
+the <code>user</code> parameter.
+</p>
+
+<p>
+It also possible to specify that parameters are mandatory, that no
+additional parameters are allowed (strict), to inherit other types and
+so on, refer to the full syntax in
+<a href="reference/query-profile-reference.html#query-profile-types">the
+query profile reference</a>. If the base profile type is strict,
+it <em>must</em> extend a built-in query profile type, see
+the <a href="reference/query-profile-reference.html#strict">reference
+documentation on strict</a>.
+</p>
+
+<p>
+A query profile type is deployed by adding an xml file
+named <em>[query-profile-type-name].xml</em> in
+the <em>search/query-profiles/types</em> directory in the search
+definition.
+</p>
+
+<p>
+Query profile types may be useful even if query profiles are not used
+to set values. As they define the names, types and structure of the
+parameters which can be accepted in the search request, they can also
+be used to define, restrict and check the content of search
+requests. For example, as the built-in search api parameters are also
+type checked if a typed query profile is used, types can be used to
+restrict the parameters that can be set in a request, or to mandate
+that some are always set. The built-in parameters are defined in a set
+of query profile types which are always present and which can be
+inherited and referenced in application-defined types. These built-in
+types are defined in
+the <a href="reference/search-api.html">search api</a>.
+</p>
+
+
+<h2 id="path-patching">Path Matching</h2>
+<p>
+By adding &lt;match path=&quot;true&quot;&gt; to a profile
+type, <em>path</em> name matching is used rather than the default
+exact matching when a profile is looked up from a name. Path matching
+interprets the profile name as a slash separated path and matches
+references which are subpaths (more specific paths) to
+super-paths. The most specific match becomes the target of the
+reference. For example:
+</p>
+
+<pre class="brush: text">
+Given the query profile names
+
+  a1
+  a1/b1
+
+then
+
+  a1/b1/c1/d1  resolves to a1/b1
+  a1/b         resolves to a1
+  a            does not resolve
+</pre>
+
+<p>
+This is useful to assign specific query profile id's to every client
+or bucket without having to create a different configuration item for
+each of these cases. If there is a need to provide a differentiated
+configuration for any such client or bucket in the future, this can be
+done without having the client change its request parameter because a
+specific id is already used.
+</p>
+
+
+<h2 id="versioning">Versioning</h2>
+<p>
+Query profiles (and types) may exist in multiple versions at the same
+time. Wherever a name of a query profile (or type) is referenced, the
+name may also append a version string, separated by a colon,
+e.g <code>MyProfile:1.2.3</code>. The version number
+is <em>resolved</em> - if no version is given the highest version
+known is used. If the version number is only partially specified, as
+in <code>my-version:1</code>, the highest version starting by 1 is
+used.
+</p>
+
+<p>
+Where a query profile (or type) is defined, the id may specify the
+version, followed by a colon:
+</p>
+
+<pre class="brush: xml">
+&lt;query-profile id=&quot;MyProfile<strong>:1.2.3</strong>&quot;&gt;
+  &hellip;
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+Any sub-number omitted is taken to mean 0 where a version is defined,
+so <code>id=&quot;MyProfile:1&quot;</code> is the same
+as <code>&quot;id=MyProfile:1.0.0&quot;</code>.
+</p>
+
+<p>
+Query profiles (and types) which specifies a version in their id, must
+use a file name which includes the same version string after the name,
+separated by a dash, e.g <em>MyProfile-1.2.3.xml</em>.
+</p>
+
+<p>
+For more information on versions,
+see <a href="jdisc/component-versioning.html">component versioning</a>.
+</p>
+
+
+<h2 id="dump-tool">Dump Tool</h2>
+
+<p>
+It can sometimes be handy to be able to dump resolved query profiles
+offline. A tool is provided for this purpose, which can be run using
+</p>
+
+<pre class="brush: cli">
+$ vespa-query-profile-dump-tool
+</pre>
+
+<p>
+Please run the tool with no arguments to get documentation on usage.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="May 2013" />
+  <meta name="authors"    content="steinar,bratseth" />
+  <title>Building a HTTP API using request handlers and processors</title>
+</head>
+
+<body>
+<p> In this tutorial we build a simple application consisting of these pieces:
+<ul>
+	<li>A custom REST API - implemented in a <em>request handler</em>.
+	<li>Two pieces of request/response processing logic - implemented as two chained <em>processors</em>.
+	<li>A <em>component</em> shared by the above processors.
+	<li>A custom output format - a <em>renderer</em>.
+</ul>
+The end result is to process incoming request of the form
+<pre>
+http://hostname:port/demo?terms=something%20completely%20different
+</pre>
+into a nested structure response produced by the processors and serialized by the renderer.</p>
+
+
+<h2 id="preparations">Preparation</h2>
+
+<p>Set up a project as described in <a href="developing-applications.html">developing
+applications</a>. Use "demo" as the name of the bundle.</p>
+
+
+<h2 id="handler">Request handler</h2>
+<p>
+The custom request handler is required to implement a custom API.
+In many cases it is not necessary to add a custom handler as the Processors can access the request data directly.
+However it is needed if e.g your application wants more control over exactly which parameters are used to route
+to a particular processing chain.</p>
+
+<p>In this case the request handler will simply add the request URI as a property and then forward to the build-in processing handler
+for processing. Refer to <a href="choosing-handler-base-class.html">selection of base classes</a> to choose
+the correct starting point for your own application, including adding an access
+log.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.util.concurrent.Executor;
+
+import com.google.inject.Inject;
+
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.processing.handler.ProcessingHandler;
+
+/**
+ * Annotate an incoming request with the URI string used to query from the
+ * network, and pass the request on to the processing handler.
+ */
+public class DemoHandler extends ThreadedHttpRequestHandler {
+
+    /** The name used by the processing handler to choose output renderer. */
+    private static final String FORMAT = "format";
+
+    /** The property name for the incoming URI as a string. */
+    public static final String REQUEST_URI = "request.uri";
+
+    private final ProcessingHandler processingHandler;
+
+    /**
+     * Constructor for use in injection. The requested objects are subclasses of
+     * component or have dedicated providers, so the container will know how to
+     * create this handler.
+     *
+     * @param executor
+     *            threadpool, provided by the container
+     * @param processingHandler
+     *            the processing handler, also automatically injected
+     */
+    @Inject
+    public DemoHandler(Executor executor, ProcessingHandler processingHandler) {
+        super(executor, null, true);
+        this.processingHandler = processingHandler;
+    }
+
+    @Override
+    public HttpResponse handle(HttpRequest request) {
+        // We have implemented #handle(HttpRequest, ContentChannel) to be
+        // able to use the ProcessingHandler, so this will never be called.
+        // An implementation is needed, though, as the method is abstract.
+        throw new UnsupportedOperationException("See #handle(HttpRequest, ContentChannel)");
+    }
+
+    @Override
+    public HttpResponse handle(HttpRequest request, ContentChannel channel) {
+        HttpRequest.Builder builder = 
+            new HttpRequest.Builder(request).put(REQUEST_URI, request.getUri().toString());
+        setFormat(builder, request);
+        return processingHandler.handle(builder.createDirectRequest(),
+                channel);
+    }
+
+    /**
+     * Set the output format to the renderer with id = "demo" in services.xml if
+     * no explicit format parameter is present. This allows using e.g. the
+     * default processing renderer by adding &lt;code&gt;&amp;amp;format=default&lt;/code&gt; to
+     * the HTTP request.
+     *
+     * @param builder
+     *            the mutable builder instance used for creating the forwarding
+     *            request
+     * @param request
+     *            the incoming HTTP request
+     */
+    private void setFormat(HttpRequest.Builder builder, HttpRequest request) {
+        if ( ! request.hasProperty(FORMAT)) {
+            builder.put(FORMAT, "demo");
+        }
+    }
+}
+</pre>
+
+<h2 id="processor">Processors</h2>
+
+<p>This application contains two processors, one for annotating the incoming
+request (using default values from config) and checking the result, and one for
+creating the result using the shared component.<p>
+
+<h3>AnnotatingProcessor</h3>
+
+<pre>
+package com.yahoo.demo;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.base.Splitter;
+import com.yahoo.yolean.chain.Before;
+import com.yahoo.yolean.chain.Provides;
+import com.yahoo.demo.DataProcessor.DemoData;
+import com.yahoo.demo.DemoConfig.Demo;
+import com.yahoo.processing.Processor;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.request.CompoundName;
+import com.yahoo.processing.request.ErrorMessage;
+import com.yahoo.processing.response.DataList;
+
+/**
+ * A processor which processes the incoming query property "terms", then checks
+ * whether there are any smurfs, i.e. DemoData instances containing the string
+ * {@link DemoComponent#SMURF}, and adds errors if that is the case.
+ */
+@Provides(AnnotatingProcessor.DemoProperty.NAME)
+@Before(DataProcessor.DemoData.NAME)
+public class AnnotatingProcessor extends Processor {
+
+    public static class DemoProperty {
+
+        public static final String NAME = "demo.property";
+        public static final CompoundName NAME_AS_COMPOUND = new CompoundName(NAME);
+
+        private final List&lt;String&gt; terms = new ArrayList&lt;&gt;();
+
+        public void add(String term) {
+            terms.add(term);
+        }
+
+        public List&lt;String&gt; terms() {
+            return terms;
+        }
+    }
+
+    private final DemoConfig defaultTermSet;
+
+    public final CompoundName TERMS = new CompoundName("terms");
+
+    private static final Splitter splitter = Splitter.on(' ').omitEmptyStrings();
+
+    public AnnotatingProcessor(DemoConfig defaultTermSet) {
+        this.defaultTermSet = defaultTermSet;
+    }
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        Response response;
+        List&lt;?&gt; d;
+        DemoProperty p = new DemoProperty();
+        String terms = request.properties().getString(TERMS);
+
+        if (terms != null) {
+            for (String s : splitter.split(terms)) {
+                p.add(s);
+            }
+        } else {
+            for (Demo demo : defaultTermSet.demo()) {
+                p.add(demo.term());
+            }
+        }
+        request.properties().set(DemoProperty.NAME_AS_COMPOUND, p);
+        response = execution.process(request);
+        d = response.data().asList();
+        traverse(d, response.data().request().errors());
+        return response;
+    }
+
+    private boolean traverse(List&lt;?&gt; list, List&lt;ErrorMessage&gt; topLevelErrors) {
+        boolean smurfFound = false;
+        // traverse the tree in the response, and react to the known types
+        for (Object data : list) {
+            if (data instanceof DataList) {
+                smurfFound = traverse(((DataList&lt;?&gt;) data).asList(),
+                        topLevelErrors);
+            } else if (data instanceof DemoData) {
+                DemoData content = (DemoData) data;
+                if (DemoComponent.SMURF.equals(content.content())) {
+                    topLevelErrors.add(new ErrorMessage("There's a smurf!"));
+                    smurfFound = true;
+                }
+            }
+            if (smurfFound) {
+                break;
+            }
+        }
+        return smurfFound;
+    }
+
+}
+</pre>
+
+<h3>DataProcessor</h3>
+
+<p>The other processor creates some structured Response Data from data handled to it in the request.
+This is done in cases where the web service is a processing service.
+In cases where the service is implementing some middleware on top of other services, similar processors
+will instead make outgoing requests to downstream web services to produce Response Data.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import com.yahoo.yolean.chain.After;
+import com.yahoo.yolean.chain.Provides;
+import com.yahoo.component.provider.ListenableFreezableClass;
+import com.yahoo.demo.AnnotatingProcessor.DemoProperty;
+import com.yahoo.processing.Processor;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.response.ArrayDataList;
+import com.yahoo.processing.response.Data;
+import com.yahoo.processing.response.DataList;
+
+/**
+ * A processor making a nested result sets of "normalized" strings from the
+ * request property {@link DemoProperty#NAME}.
+ */
+@Provides(DataProcessor.DemoData.NAME)
+@After(AnnotatingProcessor.DemoProperty.NAME)
+public class DataProcessor extends Processor {
+    public static class DemoData extends ListenableFreezableClass implements Data {
+        public static final String NAME = "DemoData";
+
+        private final Request request;
+        private final String content;
+
+        DemoData(Request request, String content) {
+            this.request = request;
+            this.content = content;
+        }
+
+        @Override
+        public Request request() {
+            return request;
+        }
+
+        public String content() {
+            return content;
+        }
+
+        public String toString() {
+            return NAME + "(\"" + content + "\")";
+        }
+    }
+
+    private final DemoComponent termChecker;
+
+    public DataProcessor(DemoComponent termChecker) {
+        this.termChecker = termChecker;
+    }
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        Response r = new Response(request);
+        @SuppressWarnings("unchecked")
+        DataList&lt;Data&gt; current = r.data();
+        DataList&lt;Data&gt; previous = null;
+        String exampleProperty = request.properties().getString(DemoHandler.REQUEST_URI);
+        Object o = request.properties().get(DemoProperty.NAME_AS_COMPOUND);
+
+
+        if (exampleProperty != null) {
+            current.add(new DemoData(request, exampleProperty));
+        }
+
+        if (o instanceof DemoProperty) {
+            // create a nested result set with a level for each term
+            for (String s : ((DemoProperty) o).terms()) {
+                String normalized = termChecker.normalize(s);
+                DemoData data = new DemoData(request, normalized);
+
+                if (current == null) {
+                    current = ArrayDataList.create(request);
+                }
+                current.add(data);
+                if (previous != null) {
+                    previous.add(current);
+                }
+                previous = current;
+                current = null;
+            }
+        }
+        return r;
+    }
+
+}
+</pre>
+
+<p>Notice how the task of the server is decomposed into separate Processing steps which can be composed
+by chaining at configuration time and which communicates through the Request and Response only.
+This structure enhances sharing, reuse and modularity and makes it easy to create variations where some
+logic encapsulated in a Processor is added, removed or modified.</p>
+
+<p>The order of the processors is decided by the @Before and @After annotations.
+Refer to the <a href="chained-components.html">chains documentation</a> for
+details.</p>
+
+
+<h3>Custom configuration</h3>
+
+<p>The default terms used by the AnnotatingProcessor are placed in user
+configuration, where the definition should reside in
+<code>src/main/resources/configdefinitions/demo.def</code> in the
+same source root as the Java components:</p>
+
+<pre>
+namespace=demo
+
+demo[].term string
+</pre>
+
+<p>In other words, a configuration class containing a single array named
+<em>demo</em>, containing a class Demo which only contains single string named
+<em>term</em>.</pre>
+
+<h2 id="renderer">Renderer</h2>
+
+<p>The responsibility of the renderer is to serialize the structured result
+into bytes for transport back to the client.</p>
+
+<p>Rendering works by first creating a single instance of the renderer,
+invoking the constructor, then cloning a new renderer for each result set to be
+rendered. <code>init()</code> will be invoked once on each new clone before
+<code>render()</code> is invoked.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+
+import com.yahoo.processing.Response;
+import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
+import com.yahoo.processing.response.Data;
+import com.yahoo.processing.response.DataList;
+
+import static com.yahoo.demo.DataProcessor.DemoData;
+
+/**
+ * Render a response as plain text. First line is whether an error occured,
+ * second rendering initialization time stamp, then each line is response data
+ * (indented according to its place in the hierarchic response), and the last
+ * line is time stamp for when the renderer was finished.
+ */
+public class DemoRenderer extends AsynchronousSectionedRenderer&lt;Response&gt; {
+
+    /**
+     * Indent size for rendering hierarchic response data.
+     */
+    public static final int INDENT_SIZE = 4;
+
+    // Response heading
+    private String heading;
+
+    // Just a utility to write strings to output stream
+    private Writer writer;
+
+    // current indent in the rendered tree
+    String indent;
+
+    /**
+     * No global, shared state to set.
+     */
+    public DemoRenderer() {
+    }
+
+    @Override
+    public void beginResponse(OutputStream stream) throws IOException {
+        writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8.newEncoder());
+        if (getResponse().data().request().errors().size() == 0) {
+            writer.write("OK\n");
+        } else {
+            writer.write("Oops!\n");
+        }
+        writer.write(heading);
+        writer.write('\n');
+    }
+
+    /**
+     * Indent {@link #INDENT_SIZE} spaces for each level in the tree.
+     */
+    @Override
+    public void beginList(DataList&lt;?&gt; list) throws IOException {
+        indent = spaces((getRecursionLevel() - 1) * INDENT_SIZE);
+    }
+
+    @Override
+    public void data(Data data) throws IOException {
+        if (!(data instanceof DemoData)) {
+            return;
+        }
+        writer.write(indent);
+        writer.write(((DemoData) data).content());
+        writer.write('\n');
+    }
+
+    private static String spaces(int len) {
+        StringBuilder s = new StringBuilder(len);
+        for (int i = 0; i &lt; len; ++i) {
+            s.append(' ');
+        }
+        return s.toString();
+    }
+
+    /**
+     * Out-dent one level if not at outermost level.
+     */
+    @Override
+    public void endList(DataList&lt;?&gt; list) throws IOException {
+        if (indent.length() == 0) {
+            return;
+        }
+        indent = spaces(indent.length() - INDENT_SIZE);
+    }
+
+    @Override
+    public void endResponse() throws IOException {
+        writer.write("Rendering finished work: " + System.currentTimeMillis());
+        writer.write('\n');
+        writer.close();
+    }
+
+    @Override
+    public String getEncoding() {
+        return StandardCharsets.UTF_8.name();
+    }
+
+    @Override
+    public String getMimeType() {
+        return "text/plain";
+    }
+
+    /**
+     * Initialize mutable, per-result set state here.
+     */
+    @Override
+    public void init() {
+        long time = System.currentTimeMillis();
+
+        super.init(); // Important! The base class needs to initialize itself.
+        heading = "Renderer initialized: " + time;
+    }
+}
+</pre>
+
+<h2 id="shared-component">Shared component</h2>
+
+<p>The responsibility of this custom component is to decouple some parts
+of the application from the searcher. This makes it possible to reconfigure
+the searcher without rebuilding the potentially costly custom component.
+</p>
+
+<p>In this case, what the component does is more than a little silly.
+More typical use would be an FSA or complex, shared helper functionality.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.text.Normalizer;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
+import com.yahoo.component.AbstractComponent;
+
+/**
+ * A shared component with an "expensive" constructor exposing a shared,
+ * thread-safe service.
+ */
+public class DemoComponent extends AbstractComponent {
+    public static final String SMURF = "smurf";
+
+    private final Set&lt;Integer&gt; illegalHashes;
+
+    public DemoComponent() {
+        illegalHashes = new HashSet&lt;Integer&gt;();
+        Random r = new Random();
+        // generate up to 1e6 unique hashes
+        for (int i = 0; i &lt; 1000 * 1000; ++i) {
+            illegalHashes.add(r.nextInt());
+        }
+    }
+
+    /**
+     * NFKC-normalize term, or replace it with "smurf" with a low probability.
+     * Will change choice for each run, but will be constant in a single run of
+     * the container.
+     *
+     * @param term
+     *            term to normalize or replace with "smurf"
+     * @return NFKC-normalized term or "smurf"
+     */
+    public String normalize(String term) {
+        String normalized = Normalizer.normalize(term, Normalizer.Form.NFKC);
+        if (illegalHashes.contains(normalized.hashCode())) {
+            return SMURF;
+        } else {
+            return normalized;
+        }
+    }
+
+}
+</pre>
+
+<h2 id="application">Application</h2>
+
+<p><em>services.xml</em> tying all these pieces together,
+could look something like this:
+
+<pre>
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;services version='1.0'&gt;
+  
+  &lt;jdisc id='default' version='1.0'&gt;
+    &lt;processing&gt;
+      &lt;chain id='default'&gt;
+        &lt;processor id='com.yahoo.demo.AnnotatingProcessor' bundle="demo"&gt;
+          &lt;config name="demo.demo"&gt;
+            &lt;demo index="0"&gt;
+              &lt;term&gt;smurf&lt;/term&gt;
+            &lt;/demo&gt;
+          &lt;/config&gt;
+        &lt;/processor&gt;
+        &lt;processor id='com.yahoo.demo.DataProcessor' bundle="demo" /&gt;
+      &lt;/chain&gt; 
+      &lt;renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="demo" /&gt;
+    &lt;/processing&gt;
+    
+    &lt;handler id="com.yahoo.demo.DemoHandler" bundle="demo"&gt;
+      &lt;binding&gt;http://*/demo&lt;/binding&gt;
+    &lt;/handler&gt;
+    
+    &lt;component id="com.yahoo.demo.DemoComponent" bundle="demo"/&gt;
+    
+  &lt;/jdisc&gt;
+
+&lt;/services&gt; 
+</pre>
+
+<h2 id="expected-output">Expected output</h2>
+
+<p>Querying <code>http://&lt;host&gt;:&lt;port&gt;/demo?terms=1%202%203%204</code>
+should give an output similar to:</p>
+
+<pre>
+OK
+Renderer initialized: 1369733374898
+http://myhost:8080/demo?terms=1%202%203%204
+1
+    2
+        3
+            4
+Rendering finished work: 1369733374902
+</pre>
+
+</body>
+</html>

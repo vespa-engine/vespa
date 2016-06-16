@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html>
+
+<head>
+  <title>Advanced Search Operators</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2014">
+  <meta name="authors" content="geirst">
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the characteristics and differences of the advanced search operators
+that are available in Vespa. The operators described are:
+<ul>
+    <li><a href="#parallel-wand">Parallel Wand</a></li>
+    <li><a href="#dot-product">Dot Product Operator</a></li>
+    <li><a href="#weighted-set">Weighted Set Operator</a></li>
+    <li><a href="#vespa-wand">Vespa Wand</a></li>
+</ul>
+</p>
+
+<h1>List of Search Operators</h1>
+<p>
+In this section the various search operators are presented. A basic description is given for each
+operator in addition to the following characteristics:
+</p>
+<ul>
+    <li><strong>Field type</strong>: What kind of field types is supported for this operator.</li>
+    <li><strong>Query model</strong>: What kind of data is passed down with the query when using this operator.</li>
+    <li><strong>Matching</strong>: What is the criteria for a document being a match.</li>
+    <li><strong>Ranking</strong>: What kind of ranking is this operator using internally (if any) and
+    what is exposed to the ranking framework.</li>
+    <li><strong>YQL operator</strong>: How is this operator used in YQL.</li>
+    <li><strong>Java Query Item</strong>: How is this operator used in the Java Query API.</li>
+</ul>
+
+
+<h2 class="refsubhead" id="parallel-wand">Parallel Wand</h2>
+<p>
+Parallel Wand is a search operator that can be used for efficient top-k retrieval.
+It implements the "Weak AND"/"Weighted AND" algorithm as described by Broder et al in
+"Efficient query evaluation using a two-level retrieval process", and is an operator that scales
+adaptively from OR to AND.
+</p>
+<p>
+Parallel Wand can be used to search for documents where weighted tokens in a field matches a subset of
+weighted tokens in the query. At the same time it calculates internally the dot product
+between token weights in the query and the field. Parallel Wand is guaranteed to return the top-k
+hits according to its internal dot product rank score.
+It is also optimized for performance when using multiple threads per search in the backend.
+Take a look at
+<a href="../reference/wand-operator.html">Wand Search Operators</a>
+reference for more information on how to use this operator.
+</p>
+<table class="refsummary">
+<tr>
+    <td>Field type</td>
+    <td>Weighted set attribute with fast-search. Note: Also supported for regular attribute or
+        index fields, but then with much weaker performance).</td>
+</tr>
+<tr>
+    <td>Query model</td>
+    <td>Weighted set with {token, weight} pairs.</td>
+</tr>
+<tr>
+    <td>Matching</td>
+    <td>Documents where the weighted set field contains at least one of the tokens in the query and
+        where the internal dot product score for this document is larger than the worst among the
+        current top-k best hits. This means that typically more than top-k documents are matched
+        and returned for ranking. Is also means that a lot of documents are skipped even though they
+        match several of the tokens in the query because the dot product score is too low.
+        This skipping is what makes Parallel Wand faster than Dot Product Operator in most cases.
+    </td>
+</tr>
+<tr>
+    <td>Ranking</td>
+    <td>Dot product score between the weights of the matched query tokens and field tokens.
+        This score is available using <code>rawScore</code> or <code>itemRawScore</code> rank features.
+        Note that the top-k best hits are only guaranteed to be returned when using this
+        internal score as the final ranking expression.
+    </td>
+</tr>
+<tr>
+    <td>YQL operator</td>
+    <td><a href="../search/yql-in-vespa.html#wand">wand()</a></td>
+</tr>
+<tr>
+    <td>Java Query Item</td>
+    <td><a href="../javadoc/index.html?com/yahoo/prelude/query/WandItem.html">WandItem</a></td>
+</tr>
+</table>
+
+<h3 id="parallel-wand-target-hits">Tuning Target Number of Hits</h3>
+<p>
+When using Parallel Wand via YQL or a Java Searcher plugin you can specify the target for minimum
+number of hits the operator should produce. The default should be setting <code>targetNumHits</code>
+equal to the number of hits you are going to display to the user, if you use additional second phase ranking with rerank-count you should not set <code>targetNumHits</code> less then the configured rank-profile's rerank-count.
+Note that if you combine Parallel Wand with a ranking expression that does not use its raw score,
+the tuning of <code>targetNumHits</code> should follow the guide lines given for Vespa Wand.
+</p>
+
+<h3 id="parallel-wand-score-threshold">Tuning Score Threshold</h3>
+<p>
+You can also specify a score threshold when using Parallel Wand. The internal dot product score for
+a document must be larger than <code>scoreThreshold</code> in order to be considered a match.
+Default value is 0.0.
+</p>
+
+
+<h2 class="refsubhead" id="dot-product">Dot Product Operator</h2>
+<p>
+Dot Product Operator is the brute force equivalent to Parallel Wand.
+They are both used to search for documents where weighted tokens in a field matches a subset of
+weighted tokens in the query. They also produce the exact same dot product score.
+In some simple cases Dot Product Operator might be preferable to Parallel Wand.
+Take a look at
+<a href="../reference/dot-product-search-operator.html">Dot Product Search Operator</a>
+reference for more information on these use cases.
+</p>
+<table class="refsummary">
+<tr>
+    <td>Field type</td>
+    <td>Weighted set attribute with fast-search. Note: Also supported for regular attribute or
+        index fields, but then with much weaker performance).</td>
+</tr>
+<tr>
+    <td>Query model</td>
+    <td>Weighted set with {token, weight} pairs</td>
+</tr>
+<tr>
+    <td>Matching</td>
+    <td>Documents where the weighted set field contains at least one of the tokens in the query.</td>
+</tr>
+<tr>
+    <td>Ranking</td>
+    <td>Dot product score between the weights of the matched query tokens and field tokens.
+        This score is available using <code>rawScore</code> or <code>itemRawScore</code> rank features.</td>
+</tr>
+<tr>
+    <td>YQL operator</td>
+    <td><a href="../search/yql-in-vespa.html#dot-product">dotProduct()</a></td>
+</tr>
+<tr>
+    <td>Java Query Item</td>
+    <td><a href="../javadoc/index.html?com/yahoo/prelude/query/DotProductItem.html">DotProductItem</a></td>
+</tr>
+</table>
+
+
+<h2 class="refsubhead" id="weighted-set">Weighted Set Operator</h2>
+<p>
+Weighted Set Operator is used to search for documents where all tokens in the searched field will
+be reverse matched against the tokens of the weighted set in the query. This means that using a Weighted Set
+Operator to search a single-value attribute field will have similar semantics to using a normal
+term to search a weighted set field.
+Take a look at
+<a href="../reference/weighted-set-term.html">Weighted Set Search Operator</a>
+reference for more information on how to use this operator.
+</p>
+<table class="refsummary">
+<tr>
+    <td>Field type</td>
+    <td>Single value or multi-value attribute or index field. (Note: Most use cases operates on a single value field).</td>
+</tr>
+<tr>
+    <td>Query model</td>
+    <td>Weighted set with {token, weight} pairs.</td>
+</tr>
+<tr>
+    <td>Matching</td>
+    <td>Documents where the field contains at least one of the tokens in the query.</td>
+</tr>
+<tr>
+    <td>Ranking</td>
+    <td>The operator will act as a single term in the back-end. The query weight is the weight
+        assigned to the operator itself and the match weight is the largest weight among matching
+        tokens from the weighted set. This operator does not produce a raw score. Due to better
+        ranking and performance we recommend using the Dot Product Operator instead.</td>
+</tr>
+<tr>
+    <td>YQL operator</td>
+    <td><a href="../search/yql-in-vespa.html#weighted-set">weightedSet()</a></td>
+</tr>
+<tr>
+    <td>Java Query Item</td>
+    <td><a href="../javadoc/index.html?com/yahoo/prelude/query/WeightedSetItem.html">WeightedSetItem</a></td>
+</tr>
+</table>
+
+
+<h2 class="refsubhead" id="vespa-wand">Vespa Wand</h2>
+<p>
+Vespa Wand is a search operator that also implements the "Weak AND"/"Weighted AND" algorithm.
+Unlike Parallel Wand, Vespa Wand can be used to search across several fields of various types,
+but it does NOT guarantee to return the top-k best number of hits.
+It can however be combined with any ranking expression, but keep in mind that this expression should
+correlate with its simple internal ranking score that uses query term weight and inverse document
+frequency for matching terms.
+</p>
+<table class="refsummary">
+<tr>
+    <td>Field type</td>
+    <td>Multiple fields of all types (both attribute and index).</td>
+</tr>
+<tr>
+    <td>Query model</td>
+    <td>Arbitrary number of query items searching across different fields.</td>
+</tr>
+<tr>
+    <td>Matching</td>
+    <td>Documents that matches at least one of the tokens in the query and where the
+        internal operator score for this document is larger than the worst among the current top-k
+        best hits. As with Parallel Wand, this means that typically more than top-k documents are matched
+        and a lot of documents are skipped.
+    </td>
+</tr>
+<tr>
+    <td>Ranking</td>
+    <td>Internal ranking score based on query term weight and inverse document frequency for
+        matching terms to find the top-k hits. This score is currently not available to the ranking
+        framework. Matching terms are exposed to the ranking framework (same as when using AND or OR),
+        so an arbitrary ranking expression can be used in combination with this operator.
+        Note that the ranking expression used should correlate with this internal ranking score.
+        <code>nativeFieldMatch</code> and <code>nativeDotProduct</code> are good starting points.
+    </td>
+</tr>
+<tr>
+    <td>YQL operator</td>
+    <td><a href="../search/yql-in-vespa.html#weak-and">weakAnd()</a></td>
+</tr>
+<tr>
+    <td>Java Query Item</td>
+    <td><a href="../javadoc/index.html?com/yahoo/prelude/query/WeakAndItem.html">WeakAndItem</a></td>
+</tr>
+</table>
+
+<h3 id="vespa-wand-target-hits">Tuning Target Number of Hits</h3>
+<p>
+When using Vespa Wand via YQL or a Java Searcher plugin you can specify the target for minimum
+number of hits the operator should produce. The effect of tuning <code>targetNumHits</code> may not
+be very intuitive. To ensure that you actually get the best hits possible with a Vespa Wand
+you may want to set the target number somewhat higher than the number of hits you are going to
+actually display to the user; setting it 10 times higher should be more than enough. The reason for
+increasing the target number is that Vespa Wand uses a very simple ranking function internally to
+filter away bad hits. If your normal rank expression correlates poorly with this internal filtering
+formula, you need to increase the target number. The easiest is probably to use the default number
+(100) and see if that gives good results, only tuning if you see a problem. Also note that if your
+rank correlated poorly with the filtering criteria, Vespa Wand may not be the appropriate operator
+for you.
+</p>
+
+<h3 id="vespa-wand-ranking">Selecting a Rank Function</h3>
+<p>
+Anything similar to classic vector model ranking will work well with Vespa Wand. We suggest using
+the <code>nativeFieldMatch</code> or <code>nativeDotProduct</code> feature as a starting point.
+Note that because Vespa Wand relies on feedback identifying which hits are used for first phase
+ranking to increase its threshold for what's considered a good hit, the special <code>unranked</code>
+rank profile (which turns off ranking completely) may cause Vespa Wand queries to become slower than
+a more normal ranking.
+</p>
+
+
+</body>
+</html>

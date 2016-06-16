@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Partial Updates: Examples</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2007" />
+  <meta name="authors" content="daljord" />
+</head>
+
+<body>
+
+<p class="ingress">
+In this article, we start with the <em>music</em> sample application
+and take you through the process of enabling it for use with partial
+updates, and also feed some updates to show you how these sub-second
+updates work.
+</p>
+
+<p>
+Clone the 'music' sample application package to your local computer and do
+the changes you need. The goal is to add a set of tags to each document, and
+then change these tags using update operations.
+</p>
+
+
+
+<h1 id="change-sd">Adding a Field to the Search Definition</h1>
+
+<p>
+First we need to add a tag field to the search definition. Edit the
+<em>src/main/application/searchdefinitions/music.sd</em> file and add the following field:
+</p>
+
+<pre class="brush: sd">
+field tags type tag {
+   indexing: attribute | summary
+   attribute: prefetch
+}
+</pre>
+
+<p>
+Now you can deploy the application as usual.
+</p>
+
+
+
+<h1 id="initial-feed">The Initial Feed</h1>
+
+<p>
+We use the standard <em>musicdata.xml</em> example feed to start with
+and add a few tags to both documents. One of the documents will then
+look like something like this:
+</p>
+
+<pre class="code">
+&lt;document documenttype=&quot;music&quot; documentid=&quot;id:music:music::http://music.yahoo.com/bobdylan/BestOf&quot;&gt;
+  &lt;url&gt;http://music.yahoo.com/bobdylan/BestOf&lt;/url&gt;
+  &lt;title&gt;Best of Bob Dylan&lt;/title&gt;
+  &lt;artist&gt;Bob Dylan&lt;/artist&gt;
+  &lt;year&gt;1997&lt;/year&gt;
+  &lt;popularity&gt;100&lt;/popularity&gt;
+  &lt;tags&gt;
+    &lt;item weight=&quot;3&quot;&gt;album&lt;/item&gt;
+    &lt;item weight=&quot;7&quot;&gt;legend&lt;/item&gt;
+  &lt;/tags&gt;
+&lt;/document&gt;
+</pre>
+
+<p>
+Feed the feed and verify that it has been indexed properly by
+searching for <code>tags:legend</code>.
+</p>
+
+
+
+<h1 id="feed-updates">Feed Updates</h1>
+
+<p>
+Now, we create an update feed where we add a new tag to the tags
+field:
+</p>
+
+<pre class="brush: xml">
+&lt;vespafeed&gt;
+  &lt;update documenttype=&quot;music&quot; documentid=&quot;id:music:music::http://music.yahoo.com/bobdylan/BestOf&quot;&gt;
+    &lt;add field=&quot;tags&quot;&gt;
+       &lt;item weight=&quot;2&quot;&gt;bobby&lt;/item&gt;
+    &lt;/add&gt;
+  &lt;/update&gt;
+&lt;/vespafeed&gt;
+</pre>
+
+<p>
+Feed the update feed using the
+<a href="vespa-http-client.html">Vespa HTTP client</a>.
+Verify that the update is visible and
+searchable by searching for <code>tags:bobby</code>.
+</p>
+
+<p>
+The syntax for the other update operations are listed
+in <a href="partial-update.html">Guide for partial updating of
+documents in Vespa</a>.
+</p>
+
+</body>
+</html>

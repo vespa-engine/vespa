@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="May 2013" />
+    <meta name="authors" content="simon" />
+    <title>Developing request handlers</title>
+  </head>
+  
+  <body>
+    <p>
+      The <code>com.yahoo.jdisc.service.RequestHandler</code>
+      (<a href="../javadoc/index.html?com/yahoo/jdisc/handler/RequestHandler.html">javadoc</a>)
+      interface defines a component that is capable of acting as a handler for a
+      Request. This document explains how to implement and deploy a custom request
+      handler.
+    </p>
+    <p>
+      All request processing in a JDisc application is done by request
+      handlers. Implementations of the <code>RequestHandler</code> interface are bound to
+      one or more URI patterns, and invoked
+      by <a href="developing-server-providers.html">server providers</a> or other request
+      handlers. Upon receiving a request, the request handler must consume its content,
+      process it, and then return a response back to the
+      provided <code>ResponseHandler</code>.
+
+      To implement a request handler, either implement the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/RequestHandler.html"><code>RequestHandler</code></a>
+      interface directly, or subclass the more convenient
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/AbstractRequestHandler.html"><code>AbstractRequestHandler</code></a>,
+      the JDisc container also has several <a href="choosing-handler-base-class.html">utility base classes</a> available.
+
+      Please note the following:
+    </p>
+    <ul>
+      <li>All request handlers need to implement some <a href="#handle-request">request
+        handling logic</a>, as well as some <a href="#dispatch-response">response dispatch
+        logic</a>.</li>
+      <li>In case a request handler needs to <a href="#dispatch-request">dispatch client
+        requests</a>, it must also implement <a href="#handle-response">response handling
+        logic</a>.</li>
+      <li>A <a href="#request-timeout">request's timeout</a> is the maximum allowed time
+        from when <code>handleRequest(Request, ResponseHandler)</code> is invoked until
+        <code>handleResponse(Response)</code> must have been called.</li>
+    </ul>
+    <p>
+      To install a request handler in a JDisc Container, use
+      the <a href="../reference/services-jdisc.html#handler">handler</a>
+      element in <em>services.xml</em>, e.g.:
+    </p>
+    <pre class="brush: xml">
+&lt;jdisc id="default" version="1.0"&gt;
+    &lt;handler id="my.package.MyRequestHandler" bundle="MyBundleSymbolicName"&gt;
+        &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;/handler&gt;
+    &lt;nodes&gt;
+        &lt;node hostalias="node1" /&gt;
+    &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+    <p>
+      Notice that the <code>binding</code> element declared within a <code>handler</code>
+      element implies a server-binding. To configure a client-binding for a request
+      handler, use the <code>clientBinding</code> element instead.
+    </p>
+
+    <h2 id="handle-request">Handling a request</h2>
+    <p>
+      A request handler is invoked by a call to its <code>handleRequest(Request,
+      ResponseHandler)</code> method. Because JDisc enforces no specific threading model,
+      this call may be performed by any thread -- even some critical IO thread that
+      belongs to one of the configured server providers. Because of this you
+      should <u>never</u> perform much work in the body of the
+      <code>handleRequest(Request, ResponseHandler)</code> method. Instead, you should
+      pass the necessary context to some known thread pool.
+
+      The <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ThreadedRequestHandler.html"><code>ThreadedRequestHandler</code></a>
+      provides an efficient implementation of such handover.
+
+      Once invoked, a request handler must create and return a <code>ContentChannel</code>
+      into which the caller can write the request's payload.
+    </p>
+    <p>
+      In no specific order, the request handler must now
+    </p>
+    <ul>
+      <li><a href="#read-content">read the content</a> of the request, and</li>
+      <li><a href="#dispatch-response">dispatch a response</a> to the given response
+        handler.</li>
+    </ul>
+
+    <h2 id="read-content">Reading from a ContentChannel</h2>
+    <p>
+      The <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentChannel.html"><code>ContentChannel</code></a>
+      provides an asynchronous interface for <code>ByteBuffer</code> handover --
+      where <em>handover</em> implies that the caller will never reuse the buffer. The
+      buffer may safely be stored and processed at some point in the future.
+
+      A content channel is required to be thread-safe, but it is the caller that is
+      expected to perform the necessary external synchronization to avoid out-of-order
+      calls; a second call to <code>write(ByteBuffer, CompletionHandler)</code> will
+      never be initiated before the first call has returned.
+    </p>
+    <p>
+      The optional (in the sense that it might be <code>null</code>)
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/CompletionHandler.html"><code>CompletionHandler</code></a>
+      provides support for asynchronous notification of the completion or failure of a
+      call to a content channel. Notice that unless your implementation of the content
+      channel throws an exception during a <code>write(ByteBuffer,
+      CompletionHandler)</code> or <code>close(CompletionHandler)</code>, it
+      is <u>required</u> that you explicitly call the corresponding completion handler at
+      some point in the future.
+    </p>
+    <p class="note">
+      Instead of developing your own <code>ContentChannel</code>, please consider using
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/BufferedContentChannel.html"><code>BufferedContentChannel</code></a>
+      if you intend to forward the content without blocking or copying, or
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ReadableContentChannel.html"><code>ReadableContentChannel</code></a>
+      if you intend to access the content yourself. Both provide convenient access to
+      the <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentInputStream.html"><code>ContentInputStream</code></a>
+      and <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentReader.html"><code>ContentReader</code></a>
+      interfaces to safely read their content.
+    </p>
+
+    <h2 id="dispatch-response">Dispatching a response</h2>
+    <p>
+      The <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ResponseHandler.html"><code>ResponseHandler</code></a>
+      is the callback to be invoked once a request has been sufficiently processed. The
+      response may be dispatched by any thread, and at any time -- even before the
+      call to the request handler returns.
+
+      The response handler is the second argument of the request
+      handler's <code>handleRequest(Request, ResponseHandler)</code> method, and it is
+      commonly a one-off object.
+
+      Notice that unless the call to the request handler throws an exception, it
+      is <u>required</u> that you call the response handler <u>exactly once</u> at some
+      point in the future.
+    </p>
+    <p>
+      Once a response has been constructed, it is dispatched by calling
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ResponseHandler.html#handleResponse(com.yahoo.jdisc.Response)"><code>responseHandler.handleResponse(Response)</code></a>.
+      The returned <code>ContentChannel</code> must then be used to asynchronously
+      <a href="#write-content">write the content</a> of the response into it. Notice
+      that unless the call to the response handler threw an exception, it is
+      <u>required</u> that you explicitly close the returned content channel at some point
+      in the future.
+    </p>
+    <p class="note">
+      Instead of explicitly managing the dispatch of a response yourself, please consider
+      using the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ResponseDispatch.html"><code>ResponseDispatch</code></a>
+      utility class to safely dispatch your response.
+    </p>
+
+    <h2 id="write-content">Writing to a ContentChannel</h2>
+    <p>
+      The <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentChannel.html"><code>ContentChannel</code></a>
+      provides an asynchronous interface for <code>ByteBuffer</code> handover --
+      where <em>handover</em> implies that you may never reuse a buffer that you
+      have written to it.
+
+      All content channels are thread-safe, but it is your responsibility to perform the
+      necessary synchronization to avoid out-of-order calls to it; a second call
+      to <code>write(ByteBuffer, CompletionHandler)</code> should never be initiated
+      before the first call has returned.
+    </p>
+    <p>
+      The optional (in the sense you are allowed to pass <code>null</code> for it)
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/CompletionHandler.html"><code>CompletionHandler</code></a>
+      provides support for asynchronous notification of the completion or failure of a
+      call to a content channel. Unless an exception is thrown in a call
+      to <code>write(ByteBuffer, CompletionHandler)</code>
+      or <code>close(CompletionHandler)</code>, you are guaranteed to have your
+      completion handler called at some point in the future.
+
+      Notice that it is <u>required</u> that you explicitly close all content channels --
+      regardless of whether some call to it threw an exception
+      or <code>failed(Throwable)</code> was invoked on some completion handler.
+    </p>
+    <p class="note">
+      Please consider using
+      the <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentOutputStream.html"><code>ContentOutputStream</code></a>
+      or <a href="../javadoc/index.html?com/yahoo/jdisc/handler/ContentWriter.html"><code>ContentWriter</code></a>
+      to safely write to a content channel.
+    </p>
+
+    <h2 id="dispatch-request">Dispatching a client request</h2>
+    <p>
+      If a request handler decides to create and dispatch a
+      <a href="../javadoc/index.html?com/yahoo/jdisc/Request.html#Request(com.yahoo.jdisc.Request,%20java.net.URI)">child-request</a>,
+      it is done through the same binding set mechanics that was used to resolve the
+      current request handler. However, where server providers resolve their dispatch
+      against server-bindings, request handlers will resolve their dispatch against
+      client-bindings. This behavior can be overriden through the use of the
+      <code><a href="../javadoc/index.html?com/yahoo/jdisc/Request.html#setServerRequest(boolean)">setServerRequest(boolean)</a></code>
+      method.
+
+      Notice that the request maintains a reference to the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/service/CurrentContainer.html"><code>CurrentContainer</code></a>,
+      and that you are <u>required</u> to release the local reference once the request has
+      been dispatched, to allow the JDisc Container to cleanly shut down at some point in
+      the future.
+    </p>
+    <p>
+      Once the child-request and a response handler has been constructed, it is dispatched
+      by calling
+      <a href="../javadoc/index.html?com/yahoo/jdisc/Request.html#connect(com.yahoo.jdisc.handler.ResponseHandler)"><code>request.connect(ResponseHandler)</code></a>.
+      The returned <code>ContentChannel</code> must then be used to asynchronously
+      <a href="#write-content">write the content</a> of the request into it. Notice that
+      unless the call to connect threw an exception, it is <u>required</u> that you
+      explicitly close the returned content channel at some point in the future.
+    </p>
+    <p class="note">
+      Instead of explicitly managing the dispatch of a request yourself, please consider
+      using the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/handler/RequestDispatch.html"><code>RequestDispatch</code></a>
+      utility class to safely dispatch requests.
+    </p>
+
+    <h2 id="handle-response">Handling a client response</h2>
+    <p>
+      As a client provider responds to a request, the response handler that was part of
+      the request dispatch is invoked.
+
+      Because JDisc enforces no specific threading model, this call may be performed by
+      any thread -- even some critical IO thread that belongs to one of the configured
+      client providers. Because of this you should <u>never</u> perform much work in the
+      body of the <code>handleResponse(Response)</code> method.
+
+      Also, because the response may be dispatched at any time, the response handler may
+      be invoked even before the call to dispatch the request returns.
+    </p>
+    <p>
+      Once invoked, a response handler must create and return a <code>ContentChannel</code>
+      into which the caller can write the response's payload. At some point in the future,
+      this payload then needs be <a href="#read-content">consumed</a> and acted upon.
+    </p>
+
+    <h2 id="request-timeout">Request timeout</h2>
+    <p>
+      A request may or may not have an assigned timeout. Such a timeout is the total amount
+      of time that a request handler may spend processing a request before the
+      corresponding call to <code>handleResponse(Response)</code> is made. If no timeout
+      is assigned to a request, there will be no timeout.
+
+      Once the allocated time has expired, unless the response handler has already been
+      called, the request handler's <code>handleTimeout(Request, ResponseHandler)</code>
+      method is invoked.
+    </p>
+    <p>
+      The <code>ResponseHandler</code> passed to the timeout method is the
+      same <code>ResponseHandler</code> that was initially passed to the
+      <code>handleRequest()</code> method.
+
+      There is a built-in guard against calling the <code>ResponseHandler</code> more than once,
+      so you do not need additional synchronization to prevent a late response from calling the
+      handler of a request that has already timed out.
+
+      The <code>handleTimeout()</code> method is called by the timeout manager's own
+      thread.
+
+      Any exception thrown in <code>handleTimeout()</code> is ignored.
+    </p>
+    <p>
+      Notice that you are <u>required</u> to call the given response handler from within
+      <code>handleTimeout(Request, ResponseHandler)</code>. Failure to do so will prevent
+      the JDisc Container from cleanly shutting down.
+    </p>
+  </body>
+</html>

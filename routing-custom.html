@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Custom Configuration of Routes</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2010" />
+  <meta name="authors" content="simon" />
+</head>
+
+<body>
+
+<p class="ingress">
+This article is a collection of examples that discuss how one can
+configure special routes using the <code>&lt;routing&gt;</code> tag
+in <a href="cloudconfig/application-packages.html#services.xml"><em>services.xml</em></a>.
+</p>
+
+<p>
+Before you embark on the task of creating custom hops and routes, make sure that
+you completely understand the <a href="routing.html">basic concepts</a> of
+routing, that you have a intimate knowledge of the
+available <a href="reference/routingpolicies.html">routing
+policies</a>, how they work and what configuration they require. You also need
+to make sure you that the component you wish to communicate with is a valid
+routable target, and finally, make <u>sure</u> that the default routes do not
+suffice for your needs.
+</p>
+
+<p>
+There is also
+a <a href="reference/services-routing.html">reference
+document</a> for the routing model available.
+</p>
+
+
+
+<h1 id="reconfigure-default">Example: Reconfiguring the Default Route</h1>
+
+<p>
+Assume that your application requires both search and storage
+capabilities, but that the default feed should only pass through to
+search. An imaginery scenario for this would be a system where there
+is a continous feed being passed into Vespa with no filtering on
+spam. You would like a minimal storage cluster that stores a URL
+blacklist that can be used by a custom document processor to block
+incoming documents from offending sites.
+</p>
+
+<p>
+Apart from the blacklist and the document processor, the following
+configuration is all you need:
+</p>
+
+<pre class="brush: xml">
+&lt;routing version=&quot;1.0&quot;&gt;
+  &lt;routingtable protocol=&quot;document&quot;&gt;
+    &lt;route name=&quot;default&quot; hops=&quot;docproc/cluster.blacklist/*/chain.blacklist indexing&quot; /&gt;
+  &lt;/routingtable&gt;
+&lt;/routing&gt;
+</pre>
+
+<p>
+This overrides the default route to pass through any available
+blacklisting document processor before being indexed. If the document
+processor decides to block a message it must respond with an
+appropriate <em>ok</em> reply, or your client software needs to accept
+whatever error reply you decide to return when blocking.
+</p>
+
+<p>
+When feeding blacklisting information to storage, your application
+need only use the already available <code>storage</code> hop</a>.
+</p>
+
+
+<h1 id="document-api">The Document API</h1>
+<p>
+With the current implementation of Document API running on Message
+bus, the configuration of the API implies configuration of the
+latter. Most clients will only ever route through this API.  To use
+the Document API you need to instantiate a class that implements
+the <code>DocumentAccess</code> interface. At the time of writing
+only <code>MessageBusDocumentAccess</code> exists, and it requires a
+parameter set for creation.  These parameters are contained in an
+instance of <code>MessageBusDocumentAccessParam</code> that looks
+somewhat like the following:
+</p>
+
+<pre class="brush: java">
+class MessageBusDocumentAccessParams {
+    String documentManagerConfigId; // The id to resolve to document manager config.
+    String oosServerPattern;        // The service pattern to resolve to fleet controller
+                                    // services.
+    String appConfigId;             // The id to resolve to application config.
+    String slobrokConfigId;         // The id to resolve to slobrok config.
+    String routingConfigId;         // The id to resolve to messagebus routing config.
+<span class="marker1">
+    String routeName;               // The name of the route to send to.
+    int    traceLevel;              // The trace level to use when sending.
+</span>
+    class SourceSessionParams {<span class="marker2">
+        int    maxPending;          // Maximum number of pending messages.
+        int    maxPendingSize;      // Maximum size of pending messages.
+        double timeout;             // Default timeout in seconds for messages
+                                    // that have no timeout set.
+        double requestTimeoutA;     // Default request timeout in seconds, using
+        double requestTimeoutB;     // the equation 'requestTimeout = a * retry + b'.
+        double retryDelay;          // Number of seconds to wait before resending.</span>
+    };
+}
+</pre>
+
+<p>
+Whereas the parameters marked in yellow are related to how Message Bus
+is invoked, those marked in green are related to how Message bus is
+configured.
+</p>
+
+<p>
+The most obvious configuration parameter is <code>routeName</code>
+which informs the <code>MessageBusDocumentAccess</code> object the
+name of the route to use when sending documents and updates. The
+second parameter is <code>traceLevel</code> which, although it has no
+operational significance, allows a client to see exactly how the data
+was transmitted.
+</p>
+
+<p class="alert alert-success">
+Tracing can be enabled on a level from 1&ndash;9, where a higher
+number means more tracing. Because the concept of tracing is not
+exposed by the Document API itself, its data will simply be printed to
+standard output when a reply arrives for the sender. This should
+therefore not be used in production, but can be very helpful when
+debugging.
+</p>
+
+<p>
+See
+the <a href="javadoc/index.html?com/yahoo/documentapi/package-summary.html">Document
+API JavaDoc</a> for complete detail on Document API.
+</p>
+
+
+
+<h1 id="vesparoute">vesparoute</h1>
+
+<p>
+Because there is so much logic going into route generation, we realize that it
+is not necessarily easy to understand all of it. For this very reason the
+binary <a href="reference/vesparoute.html">vesparoute</a> is
+available for route inspection.
+</p>
+
+</body>
+</html>

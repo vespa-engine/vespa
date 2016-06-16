@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Application package reference</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2015" />
+  <meta name="authors" content="bratseth,kraune" />
+</head>
+
+<body>
+<p>
+  This document specifies the content of Vespa <em>application packages</em>.
+  The application package is the deployment unit in Vespa.
+  To deploy an application, create an application package and <em>deploy</em> it
+  - refer to <a href="../cloudconfig/application-packages.html">application packages</a> for options.
+</p>
+
+<h1 id="structure">Application Package Structure</h1>
+<p>
+The application package consists of a directory of files and subdirectories:
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Directory/file</th>
+      <th>Description</th>
+      <th>Required</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+    <td>[application]/</td>
+    <td>The top level directory is the name of the application</td>
+    <td>Yes</td>
+</tr>
+<tr>
+    <td>[application]/<a href="services.html">services.xml</a></td>
+    <td>Describes which services to run where, and their main configuration</td>
+    <td>Yes</td>
+</tr>
+<tr>
+    <td>[application]/<a href="validation-overrides.html">validation-overrides.xml</a></td>
+    <td>Override, allowing this package to deploy even if it fails validation</td>
+    <td>No</td>
+</tr>
+<tr>
+    <td>[application]/<a href="../search/search-definitions.html">searchdefinitions</a>/</td>
+    <td>Contains the *.sd files describing the document types of the application and how they should be searched</td>
+    <td>No</td>
+</tr>
+<tr>
+    <td>[application]/<a href="../jdisc/container-components.html">components</a>/</td>
+    <td>Contains *.jar files containing searcher(s) for the JDisc Container.</td>
+    <td>No</td>
+</tr>
+<tr>
+    <td>[application]/<a href="semantic-rules.html ">rules</a>/</td>
+    <td>Contains *.sr files containing rule bases for semantic recognition and translation of the query</td>
+    <td>No</td>
+</tr>
+<tr>
+    <td>[application]/<a href="">search</a>/</td>
+    <td>Search chains config</td>
+    <td>No</td>
+</tr>
+<tr>
+    <td>[application]/<a href="">ext</a>/</td>
+    <td>Files that are guaranteed to be ignored by Vespa (i.e. they
+      will be excluded when processing the application package and
+      cannot be referenced from any other place in the application
+      package)</td>
+    <td>No</td>
+</tr>
+<tr class="alert">
+    <td>[application]/<a href="../reference/hosts.html">hosts.xml</a></td>
+    <td>The mapping from logical nodes to actual hosts</td>
+    <td>No</td>
+</tr>
+  </tbody>
+</table>
+
+<p>
+    Additional files and directories can be placed anywhere in the
+    application package. These will be not be processed explicitly by
+    Vespa when deploying the application package (i.e., they will only
+    be considered if they are referred to from within the application
+    package), but there is no guarantee to how these might be
+    processed in a future release. To extend the application package
+    in a way that is guaranteed to be ignored by Vespa in all future
+    releases, use the <em>[application]/ext/</em> directory.
+</p>
+
+
+<h1 id="versioning_application_packages">Versioning application packages</h1>
+<p>
+  An application can be given a user-defined version, available at
+  <a href="../jdisc/container-components.html#monitoring-the-active-application">/ApplicationStatus</a> view.
+  Configure the version in <a href="services.html">services.xml</a> (at top level):
+<pre>
+&lt;services&gt;
+  &lt;config name="container.handler.observability.application-userdata"&gt;
+    &lt;version&gt;42&lt;/version&gt;
+  &lt;/config&gt;
+  ...
+&lt;/services&gt;
+</pre>
+</p>
+
+
+
+<h1 id="preprocess">Preprocess directives</h1>
+<p>
+Preprocess directives can be used to:
+<ul>
+  <li><em>preprocess:properties</em>: define properties that you can refer to everywhere in <em>services.xml</em></li>
+  <li><em>preprocess:include</em>: split <em>services.xml</em> in smaller chunks</li>
+</ul>
+  In this example, <em>${qrs.port}</em> will be replaced by <em>4099</em>.
+  The contents of <em>content.xml</em> is placed at the include point.
+  This is applied recursively, so you can use preprocess directives in included files
+  as long as you define the namespaces in the top level file:
+</p>
+<pre>
+&lt;services version="1.0" <strong style="background-color: yellow;">xmlns:preprocess="properties"</strong>&gt;
+<strong style="background-color: yellow;">  &lt;preprocess:properties&gt;
+      &lt;qrs.port&gt;4099&lt;/qrs.port&gt;
+  &lt;/preprocess:properties&gt;</strong>
+  &lt;jdisc version="1.0"&gt;
+      &lt;http&gt;
+        &lt;server id="qrs" port="${qrs.port}" /&gt;
+      &lt;/http&gt;
+      &lt;search /&gt;
+  &lt;/jdisc&gt;
+<strong style="background-color: yellow;">    &lt;preprocess:include file="content.xml" /&gt;</strong>
+&lt;/services&gt;
+</pre>
+<p>
+Sample <em>content.xml</em>:
+</p>
+<pre>
+&lt;content version="1.0" &gt;
+  &lt;redundancy&gt;1&lt;/redundancy&gt;
+  &lt;documents&gt;
+    &lt;document type="music.sd" mode="index" /&gt;
+  &lt;/documents&gt;
+  &lt;nodes count="3" /&gt;
+&lt;/content&gt;
+</pre>
+
+
+</body>
+</html>

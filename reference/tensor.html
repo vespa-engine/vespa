@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+  <title>Tensor Evaluation Reference</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2015" />
+  <meta name="authors" content="geirst" />
+</head>
+
+
+<body>
+<p>
+A tensor is a set of named <em>dimensions</em> (integer or identifier) defining its <em>order</em>
+and a set of values located in the space of those dimensions:
+<ul class="semicompact">
+  <li><em>Cell</em>: A value located in the dimension space.
+    Consists of a cell address and the floating point value at that address.</li>
+  <li><em>Address</em>: A set of key-values where each key is a <em>dimension</em> from the set of dimensions of the tensor,
+    and each value is a <em>label</em> (integer or identifier) determining the cells location in that dimension.</li>
+</ul>
+The set of dimensions, cell values and cell address key-values can be of any size including zero. Background:
+<ul class="semicompact">
+  <li><a href="https://git.corp.yahoo.com/bratseth/the_sparse_tensor/blob/master/the_sparse_tensor.pdf">The Sparse Tensor</a></li>
+  <li><a href="https://docs.google.com/a/yahoo-inc.com/document/d/1jUDhnd50fweC2AiYDuqj90exy9Vk8rgT_ZjCdFqGs3I/edit">Evaluating complex denormalized models in Vespa</a></li>
+  <li><a href="https://git.corp.yahoo.com/vespa/systemtests/tree/master/tests/search/tensor_eval">Tensor Evaluation System Test</a></li>
+</ul>
+</p>
+
+<p class="alert">
+Note: Tensor features are available for experimentation and development only - the performance is not ready for production use (this is being worked on).
+</p>
+
+
+<h2>Examples</h2>
+<p>
+An empty tensor:
+<pre>
+{}
+</pre>
+A single value tensor with a single dimension:
+<pre>
+{ {dimension1:label1}:5.0 }
+</pre>
+A tensor with multiple values and dimensions:
+<pre>
+{ {dimension1:label1}:5.0, {dimension1:label1, dimension2:label2}:7.0 }
+</pre>
+</p>
+
+
+<h2>Literal Form</h2>
+The standard literal form of tensors specified in ranking expressions is as follows (expressed in EBNF):
+<pre>
+literal tensor = "{" cells "}" ;
+cells = | cell , { "," cell } ;
+cell = "{" address "}:" scalar ;
+address = | element, { "," element } ;
+element = dimension ":" label ;
+dimension = integer | string ;
+label = integer | string ;
+</pre>
+
+
+
+
+
+<h1>Operations</h1>
+The following set of tensors operations are available to use in ranking expressions.
+
+<h2>Add (tensor, tensor)</h2>
+<p>
+Returns a tensor which contains the union of cells of both argument tensors,
+where the value for any matching cell is the sum of the two possible cell values.
+The dimensions of the resulting tensor is the union of the dimensions of the argument tensors.
+</p>
+
+<p>
+Examples:
+<pre>
+{{x:1}:3} + {{x:2}:5} = {{x:1}:3,{x:2}:5}
+{{x:1}:3} + {{x:1}:5} = {{x:1}:8}
+</pre>
+</p>
+
+
+<h2>Subtract (tensor, tensor)</h2>
+<p>
+Returns a tensor which contains the union of cells of both argument tensors,
+where the value for any matching cell is the difference of the two possible cell values.
+The dimensions of the resulting tensor is the union of the dimensions of the argument tensors.
+</p>
+
+<p>
+Examples:
+<pre>
+{{x:1}:3} - {{x:2}:5} = {{x:1}:3,{x:2}:-5}
+{{x:1}:5} - {{x:1}:3} = {{x:1}:2}
+</pre>
+</p>
+
+
+<h2>Multiply (tensor, tensor)</h2>
+<p>
+Returns the sparse tensor product of the two argument tensors, <em>T1</em> and <em>T2</em>.
+This is a tensor whose dimensions are the union of the dimensions of the arguments,
+containing the set of legal cells which have as addresses the cartesian product <em>T1 x T2</em>
+of the cell addresses of <em>T1</em> with <em>T2</em>,
+having as values the product of the values of the corresponding cells of T1 and T2.
+A combination of two cell addresses is legal if for each shared dimension either both specifies the same label or both omit it.
+</p>
+
+<p>
+Examples:
+<pre>
+{{x:1}:3} * {{x:2}:5} = {}
+{{x:1}:3} * {{x:1}:5} = {{x:1}:15}
+{{x:1}:3, {x:2}:7} * {{y:1}:5} = {{x:1,y:1}:15, {x:2,y:1}:35}
+{{x:1}:5, {x:1,y:1}:1} * {{z:1}:11, {y:1,z:1}:7} = {{x:1,y:1,z:1}:7, {x:1,z:1}:55}
+</pre>
+</p>
+
+
+<h2>Match (tensor, tensor)</h2>
+<p>
+Returns the match product of the two argument tensors.
+This returns a tensor which contains the matching cells of the two tensors, with their cell values multiplied.
+Two cells match if they have the same explicit dimension-label pairs in their addresses.
+The dimensions of the resulting tensor is the union of the dimensions of the argument tensors.
+</p>
+
+<p>
+Examples:
+<pre>
+match({{x:1}:3}, {{x:2}:5}) = {}
+match({{x:1}:3}, {{x:1}:5}) = {{x:1}:15}
+match({{x:1}:3, {x:2}:3, {x:1,y:1}:1, {x:1,y:2}:6},
+      {{x:1}:5, {x:1,y:1}:7, {x:1,y:1,z:1}:6}) = {{x:1}:15, {x:1,y:1}:7}
+</pre>
+</p>
+
+
+<h2>Sum (tensor)</h2>
+<p>
+Returns the sum of all the cells of the argument tensor.
+</p>
+
+<p>
+Examples:
+<pre>
+sum({{x:1}:3, {x:2}:5}}) = 8
+sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}) = 16
+</pre>
+</p>
+
+
+<h2>Sum (tensor, dimension)</h2>
+<p>
+Returns a tensor with the given dimension removed from all cells. Overlapping cells are collapsed and contains
+the sum of the values in the removed dimension.
+The dimensions of the resulting tensor is the dimenions of the given tensor with given dimension removed.
+</p>
+
+<p>
+Examples:
+<pre>
+sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}, x) = {{y:1}:4, {y:2}:12}
+sum({{x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {x:2,y:2}:7}, y) = {{x:1}:6, {x:2}:10}
+</pre>
+</p>
+
+
+<h2>Min (tensor, tensor)</h2>
+<p>
+Returns a tensor which contains the union of cells of both argument tensors, where the value for
+any matching cell is the min of the two possible values.
+The dimensions of the resulting tensor is the union of the dimensions of the argument tensors.
+</p>
+
+<p>
+Examples:
+<pre>
+min({{x:1}:3}, {{x:2}:5}) = {{x:1}:3,{x:2}:5}
+min({{x:1}:3}, {{x:1}:5} = {{x:1}:3}
+</pre>
+</p>
+
+
+<h2>Max (tensor, tensor)</h2>
+<p>
+Returns a tensor which contains the union of cells of both argument tensors, where the value for
+any matching cell is the max of the two possible values.
+The dimensions of the resulting tensor is the union of the dimensions of the argument tensors.
+</p>
+
+<p>
+Examples:
+<pre>
+max({{x:1}:3}, {{x:2}:5}) = {{x:1}:3,{x:2}:5}
+max({{x:1}:3}, {{x:1}:5} = {{x:1}:5}
+</pre>
+</p>
+
+
+<h1>Tensor Rank Features</h1>
+<p>
+The following rank features can be used to create tensors based on document or query content.
+</p>
+<p>
+Please take a look at the following reference documentations on how use tensors in documents:
+<ul class="semicompact">
+    <li><a href="../reference/search-definitions.html#type:tensor">Tensor field in search definition</a></li>
+    <li><a href="../reference/document-json-format.html#tensor">Document JSON Format</a></li>
+</ul>
+</p>
+
+
+<h2>attribute(tensorAttribute)</h2>
+<p>
+Returns the tensor value found in the given tensor attribute.
+</p>
+
+<p>
+Take a look at <a href="../reference/search-definitions.html#type:tensor">tensor type</a> and
+<a href="../reference/search-definitions.html#tensor-type-spec">tensor-type-spec</a>
+reference doc for how to setup a tensor attribute in your search definition.
+</p>
+
+
+<h2>query(tensorFeature)</h2>
+<p>
+Returns the tensor value passed down with the query as a feature.
+</p>
+
+<p>
+In order to use this you must define the tensor type of the query feature in a query profile type.
+In the following example the tensor type is defined to have one dimension 'x' that is mapped/sparse:
+<pre>
+&lt;query-profile-type id="myProfileType"&gt;
+  &lt;field name="ranking.features.query(tensorFeature)" type="tensor(x{})" /&gt;
+&lt;/query-profile-type&gt;
+</pre>
+
+The tensor value itself must be set in a searcher using the com.yahoo.search.query.ranking.RankFeatures
+instance that is associated with an instance of com.yahoo.search.Query.
+In the following example we create a tensor with a single cell with value 500:
+<pre>
+query.getRanking().getFeatures().put("query(tensorFeature)",
+    new MapTensorBuilder().cell().label("x", "1").value(500).build());
+</pre>
+
+The verbatim version of the same tensor is:
+<pre>
+{{x:1}:500}
+</pre>
+</p>
+
+<p>
+Take a look at <a href="../reference/query-profile-reference.html#field_type">query profile field type</a>
+reference doc for more information on how to specify a field as tensor in a query profile type.
+</p>
+
+
+<h2>tensorFromWeightedSet(source, dimension)</h2>
+<p>
+Creates a tensor from the given integer or string weighted set source. The source can be either an attribute field or a query parameter.
+The <em>source</em> parameter is required and must be specified as follows:
+<ul class="semicompact">
+    <li><em>attribute(attributeName)</em>: The tensor is created based on the content of the weighted set attribute <em>attributeName</em>.</li>
+    <li><em>query(propertyName)</em>: The tensor is created based on the weighted set passed down with the query using
+    <code>&amp;ranking.properties.propertyName={k1:w1,k2:w2,...,kN:wN}</code>.</li>
+</ul>
+The <em>dimension</em> parameter is optional, where the default value is the parameter name from the source parameter.
+</p>
+
+<p>
+Example:<br>
+Assume we have the following weighted set with keys and corresponding weights, and the dimension <em>dim</em>:
+<pre>
+{k1:w1,k2:w1,...,kN:wN}
+</pre>
+The tensor representation of this weighted set has the dimension <em>dim</em> with the following content:
+<pre>
+{ {dim:k1}:w1, {dim:k2}:w2, ..., {dim:kN}:wN} }
+</pre>
+</p>
+
+
+<h2>tensorFromLabels(source, dimension)</h2>
+<p>
+Creates a tensor from the given integer or string array source. The source can be either an attribute field or a query parameter.
+The <em>source</em> parameter is required and must be specified as follows:
+<ul class="semicompact">
+    <li><em>attribute(attributeName)</em>: The tensor is created based on the content of the array attribute <em>attributeName</em>.</li>
+    <li><em>query(propertyName)</em>: The tensor is created based on the array passed down with the query using
+    <code>&amp;ranking.properties.propertyName=[v1 v2 ... vN]</code>.</li>
+</ul>
+The <em>dimension</em> parameter is optional, where the default value is the parameter name from the source parameter.
+</p>
+
+<p>
+Example:<br>
+Assume we have the following array with values and the dimension <code>dim</code>:
+<pre>
+[v1 v2 ... vN]
+</pre>
+The tensor representation of this array has the dimension <em>dim</em> with the following content:
+<pre>
+{ {dim:v1}:1.0, {dim:v2}:1.0, ..., {dim:vN}:1.0} }
+</pre>
+</p>
+
+
+<h1>Common Use Cases</h1>
+In the following section we describe som common use cases that can be solved using tensor operations.
+
+<h2>Dot Product between query and document vectors</h2>
+<p>
+Assume we have a weighted set attribute field <em>documentVector</em> with content:
+<pre>
+{k1:a,k2:b,k3:c}
+</pre>
+And a query vector passed down with the query:
+<pre>
+ranking.properties.queryVector={k1:d,k2:e,k3:f}
+</pre>
+To calculate the dot product between these two vectors (<code>a*d + b*e + c*f</code>) we would use the following expression:
+<pre>
+sum(tensorFromWeightedSet(query(queryVector),x) * tensorFromWeightedSet(attribute(documentVector),x))
+</pre>
+This is the sum over all cells of the sparse tensor product of two tensors having a single, shared dimension.
+</p>
+
+
+<h2>Matrix Product between 1d vector and 2d matrix</h2>
+<p>
+Assume we have 1x3 vector (in dimension <em>x</em>) represented in a weighted set attribute field <em>documentVector</em>:
+<pre>
+{0:a,1:b,2:c}
+</pre>
+And a 3x2 matrix (in dimensions <em>x</em> and <em>y</em>) represented as a tensor:
+<pre>
+{ {x:0,y:0}:d, {x:1,y:0}:e, {x:2,y:0}:f, {x:0,y:1}:g, {x:1,y:1}:h, {x:2,y:1}:i }
+</pre>
+To calculate the matrix product between the 1x3 vector and 3x2 matrix (to get a 1x2 vector) we would use the following expression:
+<pre>
+sum(tensorFromWeightedSet(attribute(documentVector),x)*
+{ {x:0,y:0}:d, {x:1,y:0}:e, {x:2,y:0}:f, {x:0,y:1}:g, {x:1,y:1}:h, {x:2,y:1}:i },x)
+</pre>
+This is a sparse tensor product over a shared dimension (<em>x</em>) followed by a sum over the same dimension.
+</p>
+
+
+</body>
+</html>

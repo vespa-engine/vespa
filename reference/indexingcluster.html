@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Document Indexing</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="November 2011" />
+  <meta name="authors" content="einarmr, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+Most of the indexing in Vespa is done in a document processor. Only a
+very lightweight indexer is left on the search nodes. This means that
+all Vespa search clusters must have one docproc cluster assigned as
+its indexing cluster. By default, Vespa will create this cluster,
+using the search nodes as docproc nodes. This cluster will be
+completely separate from any user-defined docproc clusters, and it
+will only run the indexer document processor.
+</p>
+
+<p>
+For most cases the default setup will work fine. However, it is also
+possible to set up an ordinary docproc cluster and use that for
+indexing.  This can be useful for e.g. reducing the load on the search
+nodes, or increasing document feed rate. It is also possible to create
+a docproc cluster consisting of both the search nodes and dedicated
+docproc nodes.  This is achieved by a combination of settings inside
+the <em>container</em> and <em>content</em> elements
+in <em>services.xml</em>.
+</p>
+
+
+
+<h1 id="custom-docproc">Custom Document Processor in the Indexing Chain</h1>
+<p>
+As described in the introduction, the indexing cluster will by default
+only run one chain containing the indexer document processor. There
+are cases where one wants to add document processors either before or
+after the indexer. This is done by declaring a chain explicitly in a
+docproc cluster (making sure it inherits the <em>indexing</em> chain),
+and adding document processors to this chain. The document processors
+should be annotated with <code>before=indexingStart</code> or
+<code>after=indexingEnd</code>.  Later, it is important to set this
+cluster and chain as the indexing chain in the content cluster.  See
+below for an example:
+</p>
+
+<pre class="brush: xml">
+&lt;!-- For CONTENT clusters: --&gt;
+&lt;content id=&quot;music&quot; version=&quot;1.0&quot;&gt;
+    &lt;!-- &hellip; --&gt;
+    &lt;document-processing cluster=&quot;apple&quot; chain=&quot;banana&quot; /&gt;
+    &lt;search&gt;
+        &lt;!-- &hellip; --&gt;
+    &lt;/search&gt;
+&lt;/content&gt;
+
+&lt;!-- For SEARCH clusters: --&gt;
+&lt;search version=&quot;2.0&quot;&gt;
+    &lt;cluster name=&quot;...&quot;&gt;
+        &lt;indexing indexingclustername=&quot;apple&quot; chain=&quot;banana&quot;/&gt;
+        &lt;!-- &hellip; --&gt;
+    &lt;/cluster&gt;
+&lt;/search&gt;
+
+&lt;jdisc id=&quot;apple&quot; version=&quot;1.0&quot;&gt;
+    &lt;document-processing&gt;
+        &lt;chain id=&quot;banana&quot; inherits=&quot;indexing&quot;&gt;
+            &lt;documentprocessor id=&quot;MyDocproc&quot;&gt;
+                &lt;before&gt;indexingStart&lt;/before&gt;
+            &lt;/documentprocessor&gt;
+            &lt;documentprocessor id=&quot;MyOtherDocproc&quot;&gt;
+                &lt;after&gt;indexingEnd&lt;/after&gt;
+            &lt;/documentprocessor&gt;
+        &lt;/chain&gt;
+    &lt;/document-processing&gt;
+    &lt;!-- &hellip; --&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+The <em>container</em> element specifies a document processing cluster
+in the usual way, with one document processing chain. It is important
+that the chain <strong>must</strong> inherit the <em>indexing</em>
+chain &mdash; otherwise it cannot be used for indexing (deployment
+fails if this requirement is not satisfied).  The <em>content</em>
+element is used to set up a content cluster, and specifies the
+document processing cluster name and chain name to be used for
+indexing.
+</p>
+
+
+
+<h1 id="custom-docproc-cluster">Custom Docproc Cluster for Indexing</h1>
+<p>
+The technique above can of course be utilized in a simpler fashion &mdash;
+in case one wants to set up a document processing cluster to be used
+for indexing, but one does not need to add any custom document
+processors to the indexing chain.  Example follows:
+</p>
+
+<pre class="brush: xml">
+&lt;!-- For CONTENT clusters: --&gt;
+&lt;content id=&quot;music&quot; version=&quot;1.0&quot;&gt;
+    &lt;!-- &hellip; --&gt;
+    &lt;document-processing cluster=&quot;tomato&quot;/&gt;
+    &lt;search&gt;
+        &lt;!-- &hellip; --&gt;
+    &lt;/search&gt;
+&lt;/content&gt;
+
+&lt;!-- For SEARCH clusters: --&gt;
+&lt;search version=&quot;2.0&quot;&gt;
+    &lt;cluster name=&quot;...&quot;&gt;
+        &lt;indexing indexingclustername=&quot;tomato&quot;/&gt;
+        &lt;!-- &hellip; --&gt;
+    &lt;/cluster&gt;
+&lt;/search&gt;
+
+&lt;jdisc id=&quot;tomato&quot; version=&quot;1.0&quot;&gt;
+    &lt;document-processing/&gt;
+    &lt;!-- &hellip; --&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+The <em>container</em> element specifies a document processing cluster
+in the usual way, but with no document processing chains. Note that it
+is still important to include the parameter-less <em>docproc</em>
+element.  The <em>content</em> element is used to set up a content
+cluster, and specifies the document processing cluster name to be used
+for indexing. Note that the chain name is not specified.
+</p>
+
+</body>
+</html>
+

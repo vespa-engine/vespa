@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>List of Ports Used by Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2011" />
+  <meta name="authors" content="kraune, musum" />
+</head>
+<body>
+
+<p class="ingress">
+The following is an overview of which ports and port ranges are used
+by the different services in a Vespa system. Please note that for
+services capable of running multiple instances on the same node, all
+instances will run within the listed port range.
+</p>
+
+<p>
+Many services are allocated ports dynamically. So even though the
+allocation is deterministic, i.e. the same system will get the same
+ports on subsequent startups, a particular service instance may get
+different ports when the overall system setup is changed through
+the <code>services.xml</code> configuration file.  Use
+the <a href="vespa-model-inspect.html">Vespa
+Model Inspector</a> to see the actual port allocations in your
+currently deployed system.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Port/portrange</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td>Config server</td><td>19070&ndash;19071</td></tr>
+    <tr><td>Config proxy</td><td>19090</td></tr>
+    <tr><td>Metrics proxy</td><td>19091</td></tr>
+    <tr><td>Filedistribution</td><td>19092&ndash;19093</td></tr>
+    <tr><td>Config-sentinel</td><td>19098</td></tr>
+    <tr><td>JDisc default port</td><td>4080</td></tr>
+    <tr><td>HTTP gateway (feeding)</td><td>19020</td></tr>
+    <tr><td>logserver</td><td>19081 and 19083</td></tr>
+    <tr><td>searchnode</td><td>dynamically allocated in 19100&ndash;19899 range</td></tr>
+    <tr><td>Clustercontroller</td><td>dynamically allocated in 19100&ndash;19899 range</td></tr>
+    <tr><td>TLD </td><td>dynamically allocated in 19100&ndash;19899 range</td></tr>
+    <tr><td>Storageserver</td><td>dynamically allocated in 19100&ndash;19899 range</td></tr>
+    <tr><td>others</td><td>19000&ndash;19899. This includes the service location broker 'slobrok'</td></tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>The number of ports used in a range depends on number of
+      instances that are running.</li>
+  <li>Not all ports within a range are used, but they are assigned
+      each service to support future extensions.</li>
+  <li>The range from 19100 is used for internal communication ports,
+      i.e. ports that are not necessary to use from an external
+      API.</li>
+  <li>See <a href="../jdisc/http-server-and-filters.html">
+Configuring Http Servers and Filters</a> for how to configure JDisc
+  ports and <a href="services.html#attr-baseport">the services.xml
+  reference</a> for how to configure other ports.</li>
+
+
+</ul>
+
+</body>
+</html>

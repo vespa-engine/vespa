@@ -1,0 +1,607 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+  <title>services.xml - 'http'</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css">
+  <meta name="date" content="December 2012">
+  <meta name="authors" content="tonyv">
+</head>
+
+<body>
+  <p class="ingress">This document explains the syntax and
+  semantics of the <code>http</code> subelement of the
+  <a href=
+  "services-jdisc.html"><code>jdisc</code></a> part
+  of <code>services.xml</code>.</p>
+
+  <p>The http block is used to configure http servers and filters</a>, and its elements are:</p>
+
+  <pre>
+&lt;<a href="#http">http</a>&gt;
+  &lt;<a href="#server">server</a> [id, port]&gt;
+    &lt;<a href="config-files.html#configuration_format_in_services.xml">config</a>&gt;
+  &lt;<a href="#filtering">filtering</a>&gt;
+    &lt;<a href=
+"#filter">filter</a> [id, class, bundle, provides, before, after]&gt;
+      &lt;<a href="#provides">provides</a>&gt;
+      &lt;<a href="#before">before</a>&gt;
+      &lt;<a href="#after">after</a>&gt;
+      &lt;<a href="config-files.html#configuration_format_in_services.xml">config</a>&gt;
+      &lt;<a href="#filter-config">filter-config</a>&gt;
+    &lt;<a href="#chain">request-/response-chain</a> [id, inherits, excludes]&gt;
+      &lt;<a href="#binding">binding</a>&gt;
+      &lt;<a href=
+"#filterinchain">filter</a> [id, class, bundle, provides, before, after]&gt;
+        &lt;<a href="#provides">provides</a>&gt;
+        &lt;<a href="#before">before</a>&gt;
+        &lt;<a href="#after">after</a>&gt;
+      &lt;<a href="#inherits">inherits</a>&gt;
+        &lt;<a href="#inheritedchain">chain</a>&gt;
+        &lt;<a href="#exclude">exclude</a>&gt;
+      &lt;<a href="#phase">phase</a> [id, before, after]&gt;
+        &lt;<a href="#before">before</a>&gt;
+        &lt;<a href="#after">after</a>&gt;
+      &lt;<a href=
+"config-files.html#configuration_format_in_services.xml">config</a>&gt;
+    &lt;<a href=
+"config-files.html#configuration_format_in_services.xml">config</a>&gt;
+</pre>
+
+<p class="alert alert-success">
+<strong>Note:</strong> If you want to bind the search handler port (i.e. queries),
+please refer to <a href="services-search.html#binding">search bindings</a>.
+</p>
+
+  <h2 id="http">http</h2>
+
+  <p>Contained in <code><a href=
+  "services-jdisc.html#jdisc">jdisc</a></code>.</p>
+
+  <p><code>http</code> is for configuring http server and filters
+     When this element is present, the default http server is
+     disabled.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None</p>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href=
+    "config-files.html#configuration_format_in_services.xml">config</a></li>
+    <li><a href="#filtering">filtering</a></li>
+    <li><a href="#server">server</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+&lt;http&gt;
+  &lt;server id='server1' port='4080' /&gt;
+  &lt;server id='server2' port='5000' /&gt;
+
+  &lt;filtering&gt;
+    &lt;filter id='request-filter1' class='com.yahoo.test.RequestFilter1' /&gt;
+    &lt;filter id='response-filter1' class='com.yahoo.test.ResponseFilter1' /&gt;
+
+    &lt;request-chain id='test-request-chain'&gt;
+      &lt;binding&gt;http://*/*&lt;/binding&gt;
+      &lt;filter id='request-filter1 '/&gt;
+      &lt;filter id='request-filter2' class='com.yahoo.test.RequestFilter2' /&gt;
+    &lt;/request-chain&gt;
+
+    &lt;response-chain id='test-response-chain'&gt;
+      &lt;binding&gt;http://*:4080/*&lt;/binding&gt;
+      &lt;binding&gt;http://*:5000/path&lt;/binding&gt;
+      &lt;filter id='response-filter1 '/&gt;
+      &lt;filter id='response-filter2' class='com.yahoo.test.ResponseFilter2' /&gt;
+    &lt;/response-chain&gt;
+  &lt;/filtering&gt;
+&lt;/http&gt;
+</pre>
+
+  <h2 id="server">server</h2>
+
+    <p>The definition of a http server. </p>
+
+    <p>Contained in <code><a href=
+        "#http">http</a></code>.</p>
+
+    <h3>Attributes:</h3>
+
+    <dl>
+        <dt>id</dt>
+
+        <dd>(required) The component ID.</dd>
+
+        <dt>port</dt>
+
+        <dd>(required) The port the server will run on.</dd>
+
+    </dl>
+
+    <h3>Sub-elements</h3>
+
+    <ul>
+        <li><a href=
+            "config-files.html#configuration_format_in_services.xml">config</a></li>
+    </ul>
+
+    <h3>Example</h3>
+
+    <pre>
+&lt;server id='server1' port='4080'&gt;
+  &lt;config name="container.jdisc.config.http-server"&gt;
+    &lt;idleConnectionTimeout&gt;90&lt;/idleConnectionTimeout&gt;
+  &lt;/config&gt;
+&lt;/server&gt;
+</pre>
+
+
+  <h2 id="filtering">filtering</h2>
+
+  <p>Contained in <code><a href="#http">http</a></code>.</p>
+
+  <p><code>filtering</code> is for configuring http filter chains.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None</p>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href="#filter">filter</a></li>
+    <li><a href="#chain">request-chain</a></li>
+    <li><a href="#chain">response-chain</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+&lt;filtering&gt;
+  &lt;filter id='request-filter1' class='com.yahoo.test.RequestFilter1' /&gt;
+  &lt;filter id='response-filter1' class='com.yahoo.test.ResponseFilter1' /&gt;
+
+  &lt;request-chain id='test-request-chain'&gt;
+    &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;filter id='request-filter1 '/&gt;
+    &lt;filter id='request-filter2' class='com.yahoo.test.RequestFilter2' /&gt;
+  &lt;/request-chain&gt;
+
+  &lt;response-chain id='test-response-chain'&gt;
+    &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;filter id='response-filter1 '/&gt;
+    &lt;filter id='response-filter2' class='com.yahoo.test.ResponseFilter2' /&gt;
+  &lt;/response-chain&gt;
+&lt;/filtering&gt;
+</pre>
+
+
+    <h2 id="chain">request-chain/response-chain</h2>
+
+  <p>Defines a chain of request filters or response filters
+  respectively. A chain is a set ordered by dependiences. Dependencies
+  are expressed through phases, which may depend upon other phases, or
+  filters.</p>
+
+  <p>Contained in <code><a href=
+  "#filtering">filtering</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <dl>
+    <dt>inherits</dt>
+
+    <dd>A space separated list of chains this chain should include
+    the contents of.</dd>
+
+    <dt>excludes</dt>
+
+    <dd>A space separated list of filters (contained in an
+    inherited chain) this chain should not include.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href="#binding">binding</a>
+    <li><a href="config-files.html#configuration_format_in_services.xml">config</a></li>
+
+    <li><a href="#inherits">inherits</a></li>
+
+    <li><a href="#phase">phase</a></li>
+  </ul>
+
+  <h3>Examples</h3>
+  <pre>
+&lt;request-chain id='default-request-filters'&gt;
+  &lt;binding&gt;http://*/*&lt;/binding&gt;
+  &lt;filter id=''com.yahoo.test.RequestFilter'/&gt;
+&lt;/request-chain&gt;
+</pre>
+
+    <pre>
+&lt;response-chain id='response-filters'&gt;
+  &lt;binding&gt;http://*:4080/*&lt;/binding&gt;
+  &lt;binding&gt;http://*:5000/path&lt;/binding&gt;
+  &lt;filter id='com.yahoo.test.ResponseFilter'/&gt;
+&lt;/response-chain&gt;
+</pre>
+
+
+  <h2 id="binding">binding</h2>
+
+    <p>Specifies that requests/responses matching the given URI
+      pattern should be sent through this chain.
+    </p>
+
+    <p>Contained in <code><a href=
+        "#chain">request-chain</a></code> and <code><a href=
+        "#chain">response-chain</a></code>.</p>
+
+    <h3>Attributes:</h3>
+      <p>None.</p>
+
+  <h3>Sub-elements:</h3>
+      <p>None.</p>
+
+
+  <h2 id="filter">filter</h2>
+
+  <p>The definition of a single filter, for referencing when
+  defining chains. If a single filter is to be used in several
+  different chains, it is in general cleaner to define it directly
+  under <code>http</code> and then refer to it with
+  <code>id</code>, than defining it inline separately for each
+  chain.</p>
+
+  <p>The following filter types are supported:
+    <ul>
+      <li>RequestFilter</li>
+      <li>ResponseFilter</li>
+      <li>SecurityRequestFilter</li>
+      <li>SecurityResponseFilter</li>
+    </ul>
+    Security[Request/Response]Filters are automatically
+    wrapped in Security[Request/Response]FilterChains.
+    This makes them behave like regular Request/Response filters
+    with respect to chaining.
+  </p>
+
+
+  <p>Contained in <code><a href=
+  "#filtering">filtering</a></code>.</p>
+
+  <h3>Attributes:</h3>
+
+  <dl>
+    <dt>id</dt>
+
+    <dd>(required) The component ID.</dd>
+
+    <dt>class</dt>
+
+    <dd>(optional) The class of the component, defaults to id.</dd>
+
+    <dt>bundle</dt>
+
+    <dd>(optional) The bundle to load the component from, defaults
+    to class or id (if no class is given).</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href=
+    "config-files.html#configuration_format_in_services.xml">config</a></li>
+
+    <li><a href="#provides">provides</a></li>
+
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+
+    <li><a href="#filter-config">filter-config</a></li>
+  </ul>
+
+  <h3>Examples</h3>
+  <pre>
+  &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+</pre>
+
+
+  <h2 id="filterinchain">filter (in chain)</h2>
+
+  <p>Reference to or inline definition of a filter in a
+  chain.</p>
+
+  <p>Contained in <code><a href="#chain">chain</a></code>.</p>
+
+  <h3>Attributes:</h3>
+
+  <dl>
+    <dt>id</dt>
+
+    <dd>(required) The component ID.</dd>
+
+    <dt>class</dt>
+
+    <dd>(optional) The class of the component, defaults to id.</dd>
+
+    <dt>bundle</dt>
+
+    <dd>(optional) The bundle to load the component from, defaults
+    to class or id (if no class is given).</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+    <ul>
+    <li><a href=
+            "config-files.html#configuration_format_in_services.xml">config</a>
+    - only allowed if this is an inline filter defnition, not a reference.</li>
+    </ul>
+  <ul>
+    <li><a href="#provides">provides</a></li>
+
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+
+    <li><a href="#filter-config">filter-config</a> - only allowed if
+    this is an inline filter definition, not a reference.</li>
+</ul>
+
+  <h3>Examples</h3>
+  <pre>
+&lt;request-chain id='default'&gt;
+  &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+&lt;/request-chain&gt;
+</pre>
+
+  <h2 id="provides">provides</h2>
+
+  <p>A name provided by a filter for phases and other filters
+  to use as dependencies.</p>
+
+  <p>Contained in <code><a href="#filter">filter</a></code>
+  and <code><a href="#filterinchain">filter</a></code> (in
+  chain).</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+  <pre>
+&lt;provides&gt;Authorization&lt;/provides&gt;
+</pre>
+
+  <h2 id="before">before</h2>
+
+  <p>The name of a phase or filter which should succeed this
+  phase or filter. Several <code>before</code> tags may be used
+  if it is necessary to define several filters or phases which
+  always should succeed this filter or phase in a chain.</p>
+
+  <p>In other words, the phase or filter defined is placed
+  <em>before</em> name in the tag.</p>
+
+  <p>Contained in <code><a href="#filter">filter</a></code>,
+  <code><a href="#filterinchain">filter</a></code> (in chain)
+  and <code><a href="#phase">phase</a></code>.</p>
+
+  <h3>Attributes</h3>None.
+
+  <h3>Sub-elements</h3>None.
+
+  <h3>Example</h3>
+  <pre>
+&lt;filter id='filter1' class='com.yahoo.test.CookieFilter1'&gt;
+  &lt;before&gt;Authorization&lt;/before&gt;
+&lt;/filter&gt;
+</pre>
+
+  <h2 id="after">after</h2>
+
+  <p>The name of a phase or filter which should precede this
+  phase or filter. Several <code>after</code> tags may be used
+  if it is necessary to define several filters or phases which
+  always should precede this filter or phase in a chain.</p>
+
+  <p>In other words, the phase or filter defined is placed
+  <em>after</em> the name in the tag.</p>
+
+  <p>Contained in <code><a href="#filter">filter</a></code>,
+  <code><a href="#filterinchain">filter</a></code> (in chain)
+  and <code><a href="#phase">phase</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+  <pre>
+&lt;filter id='filterY' class='com.yahoo.test.FilterA'&gt;
+  &lt;after&gt;Authorization&lt;/after&gt;
+&lt;/filter&gt;
+</pre>
+
+  <h2 id="inherits">inherits</h2>
+
+  <p>Wrapper tag for information about which chains, if any, a
+  chain should inherit, and how.</p>
+
+  <p>Contained in <code><a href="#chain">request-chain</a></code> and
+  <code><a href="#chain">response-chain</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li>(inherited) <a href="#inheritedchain">chain</a></li>
+
+    <li><a href="#exclude">exclude</a></li>
+  </ul>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;request-chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+    &lt;/inherits&gt;
+    &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+  &lt;/request-chain&gt;
+</pre>
+
+  <h2 id="inheritedchain">(inherited) chain</h2>
+
+  <p>The ID of a chain which this chain should inherit, i.e.
+  include all filters and phases from. Use several
+  <code>chain</code> tags if it is necessary to combine the
+  filters from several chains.</p>
+
+  <p>Contained in <code><a href=
+  "#inherits">inherits</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;request-chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+    &lt;/inherits&gt;
+    &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+  &lt;/request-chain&gt;
+</pre>
+
+
+  <h2 id="filter-config">filter-config</h2>
+  <p>
+
+  Only used to configure filters that are configured with
+  <code>com.yahoo.jdisc.http.filter.security.FilterConfig</code>. This
+  is  the case for all filters provided in JDisc
+  bundles.
+
+
+  <h2 id="exclude">exclude</h2>
+
+  <p>A filter the chain under definition should exclude from the
+  chain or chains it inherits from. Use several
+  <code>exclude</code> tags to exclude several filters.</p>
+
+  <p>Contained in <code><a href=
+  "#inherits">inherits</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;request-chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+      &lt;exclude&gt;idOfUnwantedFilter&lt;/exclude&gt;
+      &lt;exclude&gt;idOfYetAnotherUnwantedFilter&lt;/exclude&gt;
+    &lt;/inherits&gt;
+    &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+  &lt;/request-chain&gt;
+</pre>
+
+  <h2 id="phase">phase</h2>
+
+  <p>Defines a phase, which is a checkpoint to help order
+  filters. Filters and other phases may depend on a phase to
+  be able to make assumptions about the order of filters.</p>
+
+  <p>Contained in <code><a href="#chain">chain</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <dl>
+    <dt>id</dt>
+
+    <dd>(required) The ID, or name, which other phases and
+    filters may depend upon as a <a href="#before">successor</a>
+    or <a href="#after">predecessor</a>.</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or filters
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+  </ul>
+
+  <h3>Example</h3>
+
+<pre>
+&lt;request-chain id='demo'&gt;
+  &lt;phase id="CheckpointName"&gt;
+    &lt;before&gt;Authorization&lt;/before&gt;
+  &lt;/phase&gt;
+  &lt;filter id='filter2' class='com.yahoo.test.Filter2'/&gt;
+&lt;/request-chain&gt;
+</pre>
+
+</body>
+</html>

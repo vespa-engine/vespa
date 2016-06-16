@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Http Server Metrics</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2016" />
+  <meta name="authors" content="gv,kraune" />
+</head>
+
+<body>
+<h2 id="available-metrics">Available Metrics</h2>
+<p>
+The metrics from the built-in JDisc HTTP
+server are available in JSON via the built-in metrics handler:
+<pre class="brush: text">
+  http://myhost:8080/state/v1/metrics
+</pre>
+</p>
+
+<p> The JDisc HTTP server is based on Jetty. Some of the metrics are gathered from the
+Jetty <code>StatisticsHandler</code> or <code>ConnectorStatistics</code>, and they have
+names that should be familiar if you are used to working with Jetty. Other metrics are
+JDisc specific. Some of the metrics are emitted with two separate names, to enable
+compatibility with different metrics framworks.</p>
+
+<p class="note">In <em>services.xml</em> terminology, a <code>server</code> actually means a Jetty
+connector, while there is always only one Jetty server per node in a JDisc cluster.</p>
+
+
+<h3 id="server-wide-metrics">Server-wide Metrics</h3>
+
+<p>These metrics are output for the server as a whole, across all connectors, as opposed
+to the per-connector metrics listed in the next section.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Metric name</th>
+      <th>Alternative name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>serverStartedMillis</td>
+      <td>proc.uptime</td>
+      <td>Time since server started</td>
+    </tr>
+
+    <tr>
+      <td>totalMemoryBytes</td>
+      <td>mem.heap.total</td>
+      <td>Total heap size</td>
+    </tr>
+
+    <tr>
+      <td>freeMemoryBytes</td>
+      <td>mem.heap.free</td>
+      <td>Free heap size</td>
+    </tr>
+
+    <tr>
+      <td>usedMemoryBytes</td>
+      <td>mem.heap.used</td>
+      <td>Used heap size</td>
+    </tr>
+
+    <tr>
+      <td>serverThreadPoolSize</td>
+      <td></td>
+      <td>Size of the thread pool for request processing</td>
+    </tr>
+
+    <tr>
+      <td>serverActiveThreads</td>
+      <td></td>
+      <td>Number of threads that are active processing requests</td>
+    </tr>
+
+    <tr>
+      <td>serverRejectedRequests</td>
+      <td></td>
+      <td>Number of requests rejected by the thread pool</td>
+    </tr>
+
+    <tr>
+      <td>jdisc.http.requests.status</td>
+      <td></td>
+      <td>Number of requests to the built-in status handler</td>
+    </tr>
+
+    <tr>
+      <td>http.status.1xx</td>
+      <td></td>
+      <td>Number of responses with a 1xx status</td>
+    </tr>
+
+    <tr>
+      <td>http.status.2xx</td>
+      <td></td>
+      <td>Number of responses with a 2xx status</td>
+    </tr>
+
+    <tr>
+      <td>http.status.3xx</td>
+      <td></td>
+      <td>Number of responses with a 3xx status</td>
+    </tr>
+
+    <tr>
+      <td>http.status.4xx</td>
+      <td></td>
+      <td>Number of responses with a 4xx status</td>
+    </tr>
+
+    <tr>
+      <td>http.status.5xx</td>
+      <td></td>
+      <td>Number of responses with a 5xx status</td>
+    </tr>
+
+  </tbody>
+</table>
+
+
+<h3 id="per-connector-metrics">Per-connector Metrics</h3>
+
+<p>These metrics are output for each connector in the Jetty server.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Metric name</th>
+      <th>Alternative name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>serverNumConnections</td>
+      <td></td>
+      <td>See Jetty <a
+    href="http://download.eclipse.org/jetty/stable-9/apidocs/org/eclipse/jetty/server/ConnectorStatistics.html">ConnectorStatistics
+    </a></td>
+    </tr>
+
+    <tr>
+      <td>serverNumOpenConnections</td>
+      <td></td>
+      <td>See Jetty <a
+    href="http://download.eclipse.org/jetty/stable-9/apidocs/org/eclipse/jetty/server/ConnectorStatistics.html">ConnectorStatistics
+    </a></td>
+    </tr>
+
+    <tr>
+      <td>serverConnectionsOpenMax</td>
+      <td></td>
+      <td>See Jetty <a
+    href="http://download.eclipse.org/jetty/stable-9/apidocs/org/eclipse/jetty/server/ConnectorStatistics.html">ConnectorStatistics
+    </a></td>
+    </tr>
+
+    <tr>
+      <td>serverConnectionDurationMean, -Max, -StdDev</td>
+      <td></td>
+      <td>See Jetty <a
+    href="http://download.eclipse.org/jetty/stable-9/apidocs/org/eclipse/jetty/server/ConnectorStatistics.html">ConnectorStatistics
+    </a></td>
+    </tr>
+
+    <tr>
+      <td>jdisc.http.requests</td>
+      <td>http.requests, serverNumRequests</td>
+      <td>Number of requests received by the connector</td>
+    </tr>
+
+    <tr>
+      <td>serverNumSuccessfulResponses</td>
+      <td></td>
+      <td>Number of successful responses sent by the connector</td>
+    </tr>
+
+    <tr>
+      <td>serverNumFailedResponses</td>
+      <td></td>
+      <td>Number of error responses sent by the connector</td>
+    </tr>
+
+    <tr>
+      <td>serverNumSuccessfulResponseWrites</td>
+      <td></td>
+      <td>Number of HTTP response chunks that have been successfully written to the network.</td>
+    </tr>
+
+    <tr>
+      <td>serverNumFailedResponseWrites</td>
+      <td></td>
+      <td>Number of HTTP response chunks that have not been successfully written to the network,
+          due to some kind of I/O error.</td>
+    </tr>
+
+    <tr>
+      <td>serverBytesReceived</td>
+      <td>http.in.bytes</td>
+      <td>Number of bytes the connector has received</td>
+     </tr>
+
+    <tr>
+      <td>serverBytesSent</td>
+      <td>http.out.bytes</td>
+      <td>Number of bytes the connector has sent</td>
+     </tr>
+
+    <tr>
+      <td>serverTimeToFirstByte</td>
+      <td>http.out.firstbytetime</td>
+      <td>Time to first byte of response body is sent</td>
+    </tr>
+
+    <tr>
+      <td>serverTotalSuccessfulResponseLatency</td>
+      <td>http.latency</td>
+      <td>Time to complete successful responses</td>
+    </tr>
+
+    <tr>
+      <td>serverTotalFailedResponseLatency</td>
+      <td></td>
+      <td>Time to complete failed responses</td>
+    </tr>
+
+  </tbody>
+</table>
+
+</body>
+</html>

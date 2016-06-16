@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Introduction to Query Rewriting</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p>
+A search application can improve the quality of the experience it
+delivers by interpreting the intended meaning of the user
+queries. Once the meaning is guessed, the query can be rewritten to
+one that will satisfy the user better than the raw query.  Vespa
+includes a query rewriting language which makes it easy to use query
+rewriting to understand and act upon the semantics of queries.
+</p>
+
+<p>
+Some typical tasks that can be achieved using query rewriting include:
+</p>
+
+<ul>
+  <li>Query focusing: Decide an index to search for a term</li>
+  <li>Query enhancing: Add additional terms which improves the query</li>
+  <li>Stopwords: Remove terms which hurts recall or precision</li>
+  <li>Synonyms: Replace terms or phrases by others</li>
+</ul>
+
+<p>
+Of course, all these techniques can be combined to create a really
+good search experience.
+</p>
+
+<p>
+Query rewriting in Vespa is done by <em>semantic rules</em> or <em>searchers</em>.
+Semantic rules is a simple production rule language which operates on queries.
+For more complex query rewriting logic which could not be handled by simple
+rules, one could create rewriting searcher making use of the query rewriting
+framework.
+</p>
+
+
+<h1 id="rules">Rules</h1>
+
+<p>
+A simple semantic rule may look like this:
+</p>
+
+<pre>
+lotr -&gt; lord of the rings;
+</pre>
+
+<p>
+This means that whenever the term <em>lotr</em> is encountered in
+a query, replace it by the terms <em>lord of the rings</em>.
+</p>
+
+<p>
+Rules can also refer to conditions, and the produced terms can be a
+modified version of whatever is matched instead of a concrete
+term:
+</p>
+
+<pre>
+[brand] -&gt; company:[brand];
+[brand] :- sony, dell, ibm, hp;
+</pre>
+
+<p>
+This rule says that, whenever the condition named <em>brand</em> is
+matched, replace the matched term(s) by <em>the same term(s)</em>
+searching the <em>company</em> index. In addition, the
+<em>brand</em> condition is defined to match any of a list of
+brands. Note how <em>-></em> means a replacing production rule,
+<em>:-</em> means a condition and <em>,</em> separates
+alternatives.
+</p>
+
+<p>
+It is also possible to do grouping using parentheses, list multiple
+terms which must be matched in sequence, and to write <em>adding</em>
+production rules using <em>+&gt;</em> instead of
+<em>-&gt;</em>. Terms are by default added using the query
+default (as if they were written in the search box), but it is also
+possible to force them to be AND, OR, NOT or RANK using respectively
+<em>+</em>, <em>?</em>, <em>-</em> and <em>$</em>.
+</p>
+
+<p>
+Here is a more complex rule illustrating this:
+</p>
+
+<pre>
+[destination] (in, by, at, on) [place] +&gt; $name:[destination]
+</pre>
+
+<p>
+This rule boosts matches which has a destination which matches the
+<em>name</em> index followed by a preposition and a place (the
+definition of the <em>destination</em> and <em>place</em>
+conditions are not shown).  This is achieved by adding a RANK
+term&mdash;a term which do not impact whether or not a document is
+matched but which adds a relevancy boost if it is.</p>
+
+<p>The complete syntax of this language is found in the
+<a href="reference/semantic-rules.html ">semantic
+rules reference</a>.
+</p>
+
+
+
+<h1 id="rule-base">Rule bases</h1>
+
+<p>
+A collection of rules used together are collected in a <em>rule
+base</em>&mdash;a text file containing rules and condition and which
+haves the ending <em>.sr</em>; (for semantic rules).  Here is an
+example of a complete rule base:
+</p>
+
+<pre>
+# Replacements
+lotr -&gt; lord of the rings;
+colour -&gt; color;
+audi -&gt; skoda;
+
+# Stopwords
+[stopword] -&gt; ;  # (Replace them by nothing)
+[stopword] :- and, or, the, be;
+
+# Focus brands to the brand index. If we think the <em>brand</em>
+# index has high quality data, we can replace.  We use the same name
+# for the condition and the index, but this is not necessary.
+[brand] :- brand:[brand];
+[brand] :- sony, dell, ibm, hp;
+
+# Boost recognized categories
+[category] +&gt; $category:[category];
+[category] :- laptop, digital camera, camera;
+</pre>
+
+<p>
+The rules in a rule base is evaluated in order from the top down. A
+rule will be matched as many times as is possible before evaluation
+moves on to the next query. So the query <em>colour colour</em>
+will be rewritten to <em>color color</em> before moving on to the
+next rule.
+</p>
+
+
+
+<h1 id="configuring">Configuring a rule base in your application</h1>
+
+<p>
+A rule base file is placed in the <code>rules/</code> directory under
+the application package, and will be named as the file excluding the
+<em>.sr</em>. E.g. if we save the rules above
+to <code>[my-application]/rules/example.sr</code>, we will have a
+rules base available named <em>example</em>.
+</p>
+
+<p>
+To make a rule base be used by default in queries,
+add <code>@default</code> on a separate line to the rule base. To
+deactivate the default rules, add <code>rules.off</code> to the
+query.
+</p>
+
+<p>
+The rules can safely be updated at any time by
+running <code>deploy prepare</code> again. If there are errors in
+the rule bases, they will not be updated, and the errors will be
+reported on the command line.
+</p>
+
+<p>
+To see what the rules are doing,
+add <code>tracelevel.rules=[number]</code> to the query.  1-5 gives
+increasingly more detailed output.
+</p>
+
+
+
+<h1 id="using-multiple">Using multiple rule bases</h1>
+
+<p>
+It is possible to place multiple rule bases under
+the <code>[my-application]/rules/</code> directory and choose between
+them in the query, and rules may also include each other. This is
+useful to organize larger sets of rules, to experiment with variants
+of the rule set in new bases which includes the standard base, or to
+use different sets of rules for different use cases.
+</p>
+
+<p>
+To include one rule base in another,
+add <code>@include(rulebasename)</code> on a separate line, where
+<em>rulebasename</em> is the file name (with or without the
+<em>.sr</em>). The result will be the same as if the included
+rule base were copied in to the location of the include line. If a
+condition is defined in both bases, the one from the <em>including</em>
+base will be used. It is also possible to refer to the same-named
+condition in an included rule base using the <code>@super</code>
+directive as a condition. For example, this rule base adds some more
+categories to the <em>category</em> definition in
+the <code>example.sr</code> above:
+</p>
+
+<pre>
+@include(example)
+
+# Category becomes laptop, digital camera, camera, palmtop, phone
+[category] :- @super, palmtop, phone;
+</pre>
+
+<p>
+Multiple rule bases can be included, and included rule bases can
+themselves have included rule bases. All the rule bases included in
+the application package will be available when making queries. One of
+the rule bases can be made the default by adding <code>@default</code>
+on a separate line in the rule base.  To use another rule base,
+add <code>rules.rulebase=[rulebasename]</code> to the query.
+</p>
+
+
+<h2 id="using-fsa">Using a finite state automaton</h2>
+
+<p>
+When you want to match more than some thousand words or phrases in
+conditions, it becomes suboptimal, and perhaps impractical to keep
+them in a rule base. To help in such cases, it is possible to create
+a <em>finite state automaton</em> which contains the definition of some
+(or all) of the conditions of a rule base. Finite state automatas are
+very efficient in storing and making lookups in large lists of
+strings. An automata is created from a text file which lists the
+condition terms to match and the condition names separated by a tab
+(by default).  The name of the condition can be followed by a
+semicolon and additional data which will be ignored.
+</p>
+
+<p>
+This automata source file defines the same as the
+<em>stopword</em> and <em>brand</em> conditions in the
+example rule base:
+</p>
+
+<pre>
+and   stopword
+or    stopword
+be    stopword
+the   stopword
+sony  brand
+dell  brand
+ibm   brand; This text is ignored
+hp    brand
+</pre>
+
+<p>
+If this automata is included in the example rule base, the two
+conditions can be removed from the rule base file. To use the automata
+instead, the automata source file must be compiled into an automata
+file. The 'makefsa' executable is installed as part of Vespa:
+</p>
+
+<pre>
+$ makefsa -t sourcefile.txt targetfile.fsa
+</pre>
+
+<p>
+The target file is used from a rule base by
+adding <em>@automata(automatafile)</em> on a separate line in the
+rule base file (the file path is relative to <em>$VESPA_HOME</em>).
+Automata files must be added to all QRS nodes manually.
+</p>
+
+<p>
+Note that automatas are not included in others, so a rule base
+including another which uses an automata must also declare to use the
+same automata (or an automata containing any desired changes form the
+automata of the included base).
+</p>
+
+</body>
+</html>

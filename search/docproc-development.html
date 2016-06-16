@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Document Processor Development</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2011" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+
+<p class="ingress">
+The <em>Document Processing Framework</em> is the home for all global
+processing of Vespa input data (represented as Documents). It runs
+in the JDisc Container, and provides a development and
+hosting environment for processing <em>components</em>, and a model
+for composing such components developed by multiple development teams
+into a functional whole.
+</p>
+
+<p>
+This document describes how to develop and deploy Document Processor
+components.  For an introduction to the docproc framework,
+see <a href="document-processing-overview.html">Document Processing
+Design Goals and Features</a>.  To get started with development with
+the container,
+see <a href="../jdisc/developing-applications.html">Container
+developing</a>.  For reference, see
+the <a href="../javadoc/index.html?com/yahoo/docproc/package-summary.html">Document Processing
+Javadoc</a>, and
+<a href="../reference/services-docproc.html">services.xml
+syntax reference</a>.
+</p>
+
+
+
+<h1 id="document-processors">Document Processors</h1>
+
+<p>
+The components of the docproc container are called <em>document
+processors</em>. A document processor is a component (usually deployed
+as part of an OSGi bundle) which extends the
+class <code>com.yahoo.docproc.DocumentProcessor</code>. All document
+processors must implement a single method: </p>
+
+<pre class="code">
+public Progress process(Processing processing);
+</pre>
+
+<p>
+When the container receives a document operation, it will create a
+new <code>Processing</code>, and add
+the <code>DocumentPut</code>s, <code>DocumentUpdate</code>s
+or <code>DocumentRemove</code>s to the <code>List</code> accessible
+through <code>Processing.getDocumentOperations()</code>. Furthermore, the
+call stack of the document processing chain in question will
+be <em>copied</em> to <code>Processing.callStack()</code>, so that
+document processors may freely modify the flow of control for this
+processing without affecting all other processings going on. After
+creation, the <code>Processing</code> is added to an internal queue.
+</p>
+
+<p>
+A worker thread will retrieve a <code>Processing</code> from the input
+queue, and run its document operations through its call stack. A
+minimal, no-op document processor implementation is thus:
+</p>
+
+<pre class="brush: java">
+import com.yahoo.docproc.*;
+
+public class SimpleDocumentProcessor extends DocumentProcessor {
+    public Progress process(Processing processing) {
+        return Progress.DONE;
+    }
+}
+</pre>
+
+<p>
+Clearly, the <code>process()</code> method should loop through all
+document operations in <code>Processing.getDocumentOperations()</code>, do
+whatever it sees fit to them, and return a Progress. It is acceptable
+for a document processor to throw an exception out
+of <code>process()</code>.
+</p>
+
+<pre class="brush: java">
+public Progress process(Processing processing) {
+    for (DocumentOperation op : processing.getDocumentOperations()) {
+        if (op instanceof DocumentPut) {
+            DocumentPut put = (DocumentPut) op;
+            // TODO do something to 'put here
+        } else if (op instanceof DocumentUpdate) {
+            DocumentUpdate update = (DocumentUpdate) op;
+            // TODO do something to 'update' here
+        } else if (op instanceof DocumentRemove) {
+            DocumentRemove remove = (DocumentRemove) op;
+            // TODO do something to 'remove' here
+        }
+    }
+    return Progress.DONE;
+}
+</pre>
+
+<p>
+Possible outcomes of the <code>process()</code> method:
+</p>
+
+<dl>
+<dt>Progress.DONE</dt>
+<dd>Returned if a document processor has successfully processed a
+    Processing.</dd>
+
+<dt>Progress.FAILED</dt>
+<dd>Processing failed and the input message should return
+    a <em>fatal</em> failure back to the feeding application, meaning
+    that this application will not try to re-feed this document
+    operation again.</dd>
+
+<dt>Progress.LATER</dt>
+<dd>The document processor wants to release the calling thread and be
+    called again later. This is useful if e.g. calling an external
+    service with high latency. The document processor may then save
+    its state in the <code>Processing</code> and resume when called
+    again later. There are no guarantees as to
+    <em>when</em> the processor is called again with
+    this <code>Processing</code>; it is simply appended to the back of
+    the input queue.</dd>
+
+<dt>Throwing a <code>com.yahoo.docproc.TransientFailureException</code></dt>
+<dd>Processing failed and the input message should return
+    a <em>transient</em> failure back to the feeding application,
+    meaning that this application <em>may</em> try to re-feed this
+    document operation again.</dd>
+
+<dt>Throwing any other <code>RuntimeException</code></dt>
+<dd>Same behavior as for <code>Progress.FAILED</code>.</dd>
+</dl>
+
+<p>
+By the use of Progress.LATER, this is an asynchronous model, where the
+processing of a document operation does not need to consume one thread
+for its entire lifespan. Note, however, that the document processors
+themselves are shared between all processing operations in a chain,
+and must thus be implemented in
+a <a href="#keeping_state_in_docprocs">thread-safe way</a>.
+</p>
+
+
+
+<h1 id="processing-context">Processing Context Variables</h1>
+
+<p>
+The <code>Processing</code> has a map <code>String -&gt; Object</code>
+that can be used to pass information between document processors. It
+is also very useful when using <code>Progress.LATER</code>, as
+discussed above, to save the state of a processing.
+</p>
+
+<pre class="brush: java">
+/** Returns a context variable, or null if it is not set */
+public Object getVariable(String name);
+
+/** Returns an iterator of all context variables that are set */
+public Iterator&lt;Map.Entry&lt;String, Object&gt;&gt; getVariableAndNameIterator();
+
+/** Clears all context variables that have been set */
+public void clearVariables();
+
+/** Sets a context variable. */
+public void setVariable(String name, Object value);
+
+/** Removes a context variable. */
+public Object removeVariable(String name);
+
+/** Returns true if this variable is present, even if it is null */
+public boolean hasVariable(String name);
+</pre>
+
+
+
+<h1 id="docproc-chains">Document Processor Chains</h1>
+
+<p>
+The call stack mentioned above is another name for a <em>document
+processor chain</em>. Document processor chains are a special case of
+the general <a href="../jdisc/chained-components.html">component chains</a>,
+but to avoid confusion some concepts are explained here as well. A
+document processor chain is nothing more than a list of document
+processor instances, having an id, and represented as a stack. The
+document processor chains are typically not created for every
+processing, but are part of the configuration.  Multiple ones may
+exist at the same time, the chain to execute will be specified by the
+message bus destination of the incoming message. The same document
+processor instance may exist in multiple document processor chains,
+which is why the <code>CallStack</code> of the <code>Processing</code>
+is responsible for knowing the next document processor to invoke in a
+particular message.
+</p>
+
+<p>
+The execution order of the document processors in a chain are not
+ordered explicitly, but
+by <a href="../jdisc/chained-components.html#ordering_components">ordering
+constraints</a> declared in the document processors or their
+configuration.
+</p>
+
+
+
+<h1 id="getting-started">Getting Started with Document Processor Development</h1>
+
+<h2 id="setting-up-ide">Bootstrapping the IDE</h2>
+<p>
+When working on some non-trivial document processor component, most
+developers prefer to work in an IDE
+like <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or
+<a href="http://www.eclipse.org/">Eclipse</a> rather than testing by
+direct deployment due to the improved efficiency it brings.
+</p>
+
+<p>
+The best way to set up a sane development environment is
+to <a href="../jdisc/developing-applications.html">create a Maven
+project</a>, and open this using the IDE of your choice.
+</p>
+
+
+<h2 id="writing-a-docproc">Writing a Document Processor</h2>
+<p>
+Here is an example of a complete document processor:
+</p>
+
+<pre class="brush: java">
+package com.yahoo.vespatest;
+
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.docproc.Processing;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.datatypes.StringFieldValue;
+
+public class Rot13DocumentProcessor extends DocumentProcessor {
+    private static final String FIELD_NAME = &quot;title&quot;;
+
+    @Override
+    public Progress process(Processing processing) {
+        for (DocumentOperation op : processing.getDocumentOperations()) {
+            if (op instanceof DocumentPut) {
+                DocumentPut put = (DocumentPut) op;
+                Document document = put.getDocument();
+
+                StringFieldValue oldTitle = (StringFieldValue) document.getFieldValue(FIELD_NAME);
+                if (oldTitle != null) {
+                    document.setFieldValue(FIELD_NAME, rot13(oldTitle.getString()));
+                }
+            }
+        }
+        return Progress.DONE;
+    }
+
+    private static String rot13(String s) {
+        StringBuilder output = new StringBuilder();
+        for (int i = 0; i &lt; s.length(); i++) {
+            char c = s.charAt(i);
+            if (c &gt;= 'a' && c &lt;= 'm' || c &gt;= 'A' && c &lt;= 'M') {
+                c += 13;
+            } else if (c &gt;= 'n' && c &lt;= 'z' || c &gt;= 'N' && c &lt;= 'Z') {
+                c -= 13;
+            }
+            output.append(c);
+        }
+        return output.toString();
+    }
+}
+</pre>
+
+<p>
+This will compile in your IDE if the container-dev.jar is present in
+the class path.  In production, the container will create one or more
+instances of this class and place it in the desired document processor
+chain(s) to process document operations, as specified
+in <a href="#adding_the_component_to_the_vespa_application_package">the
+configuration</a>.  The container will create a new instance of this
+document processor only when it is reconfigured, so any data needed by
+the document processor can be read and prepared from a
+constructor. Constructors may also accept
+<a href="../jdisc/container-components.html#configurable_components">configuration</a>,
+as any other pluggable component.
+</p>
+
+<p>
+You can see the full API available to document processors at
+the <a href="../javadoc/index.html?com/yahoo/docproc/package-summary.html">Document Processing
+Javadoc</a>.
+</p>
+
+
+<h2 id="testing-a-docproc">Testing a Document Processor with an Application</h2>
+<p>
+    A document processor can be tested running inside a container:
+</p>
+<pre class="brush: java">
+package com.yahoo.vespatest;
+
+import com.yahoo.application.ApplicationBuilder;
+import com.yahoo.application.Networking;
+import com.yahoo.application.container.DocumentProcessing;
+import com.yahoo.application.container.JDisc;
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.ComponentSpecification;
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
+import com.yahoo.processing.execution.chain.ChainRegistry;
+import org.junit.Test;
+
+import java.io.IOException;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+public class Rot13DocprocTest {
+
+    @Test
+    public void requireThatBasicDocumentProcessingWorksForDoc() throws IOException {
+        JDisc container = new ApplicationBuilder()
+                .servicesXml(&quot;&lt;jdisc version=\&quot;1.0\&quot;&gt;\n&quot; +
+                             &quot;  &lt;document-processing&gt;\n&quot; +
+                             &quot;    &lt;chain id=\&quot;myChain\&quot;&gt;\n&quot; +
+                             &quot;      &lt;documentprocessor id=\&quot;&quot; +
+                             Rot13DocumentProcessor.class.getCanonicalName() + &quot;\&quot;/&gt;\n&quot; +
+                             &quot;    &lt;/chain&gt;\n&quot; +
+                             &quot;  &lt;/document-processing&gt;\n&quot; +
+                             &quot;&lt;/jdisc&gt;\n&quot;)
+                .documentType(&quot;music&quot;,
+                              &quot;document music {\n&quot; +
+                              &quot;  field title type string { }\n&quot; +
+                              &quot;}\n&quot;)
+                .networking(Networking.disable)
+                .build()
+                .getJDisc(&quot;jdisc&quot;);
+
+        DocumentProcessing docProc = container.documentProcessing();
+        DocumentType type = docProc.getDocumentTypes().get(&quot;music&quot;);
+
+        ChainRegistry&lt;DocumentProcessor&gt; chains = docProc.getChains();
+        assertTrue(chains.allComponentsById().containsKey(new ComponentId(&quot;myChain&quot;)));
+
+        Document doc = new Document(type, &quot;id:test:music::this:is:a:great:album&quot;);
+        doc.setFieldValue(&quot;title&quot;, &quot;Great Album!&quot;);
+        com.yahoo.docproc.Processing processing;
+        DocumentProcessor.Progress progress;
+
+        processing = new com.yahoo.docproc.Processing(doc);
+        progress = docProc.process(ComponentSpecification.fromString(&quot;myChain&quot;), processing);
+        assertThat(progress, sameInstance(DocumentProcessor.Progress.DONE));
+        assertThat(doc.getFieldValue(&quot;title&quot;).toString(), equalTo(&quot;Terng Nyohz!&quot;));
+
+        container.close();
+    }
+}</pre>
+
+<h2 id="deploying-a-docproc">Deploying a Document Processor</h2>
+<p>
+Once the document processor passes unit tests, it can be deployed to
+the Vespa system which will host it. The document processor must be
+packaged as a bundle and added to the Vespa application package, which
+is then deployed in the usual way. How to create a bundle is described
+in <a href="../jdisc/developing-osgi-bundles.html">Building OSGi bundles</a>.
+</p>
+
+<p>
+To include the document processor in <em>services.xml</em>, you need
+to define a document processing chain and add the document processor
+to it.  This is a complete services.xml doing this:
+</p>
+
+<pre class="brush: xml">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+
+  &lt;admin version=&quot;2.0&quot;&gt;
+    &lt;adminserver hostalias=&quot;node1&quot; /&gt;
+  &lt;/admin&gt;
+
+  &lt;jdisc version=&quot;1.0&quot; id=&quot;default&quot;&gt;
+    &lt;nodes&gt;
+      &lt;node hostalias=&quot;node1&quot;/&gt;
+    &lt;/nodes&gt;
+    &lt;document-processing&gt;
+      &lt;chain id=&quot;default&quot;&gt;
+        &lt;documentprocessor id=&quot;com.yahoo.vespatest.Rot13DocumentProcessor&quot;/&gt;
+      &lt;/chain&gt;
+    &lt;/document-processing&gt;
+  &lt;/docproc&gt;
+
+&lt;/services&gt;
+</pre>
+
+<p>
+In this case, we are defining the document processing
+chain <em>default</em>.
+</p>
+
+<p>
+The document processor id above is resolved to the component bundle
+jar we added by the symbolic name in the manifest, and to the right
+class within the bundle by the class name. By keeping all these three
+the same, we keep things simple, but more advanced use where this is
+possible is also supported. This will be explained in later sections.
+</p>
+
+<p>
+For a reference to these tags,
+see <a href="../reference/services-docproc.html">the
+Docproc configuration reference</a>.
+</p>
+
+<p>
+An accompanying <em>hosts.xml</em> to the above <em>services.xml</em>
+may simply be
+</p>
+
+<pre class="brush: xml">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;hosts&gt;
+  &lt;host name=&quot;localhost&quot;&gt;
+    &lt;alias&gt;node1&lt;/alias&gt;
+  &lt;/host&gt;
+&lt;/hosts&gt;
+</pre>
+
+<p>
+By creating a directory containing
+this <em>services.xml</em>, <em>hosts.xml</em>
+and <em>components/rot13docproc.jar</em>, that directory
+becomes a complete application package containing a bundle, which can
+now be deployed to a Vespa instance.
+</p>
+
+
+<h1 id="more-on-docproc-development">More on Document Processor Development</h1>
+
+
+<h2 id="execution-model">Document Processing Execution Model</h2>
+
+<p>
+In broad strokes, the Document Processing Framework works like this:
+</p>
+
+<ol>
+<li>A thread from the message bus layer appends an incoming message to
+    an internal priority queue, shared between all document processing
+    chains configured on a node. The priority is set based on the
+    message bus priority of the message. Messages of the same priority
+    are ordered FIFO.</li>
+
+<li>One worker thread from the docproc thread pool picks one message
+    from the head of the queue, deserializes it, copies the call stack
+    (chain) in question, and runs it through the document
+    processors.</li>
+
+<li>Processing finishes if <strong>(a)</strong> the document(s) has
+    passed successfully through the whole chain,
+    or <strong>(b)</strong> a document processor in the chain has
+    returned Progress.FAILED or thrown an exception.</li>
+
+<li>The same thread passes the message on to the message bus layer for
+    further transport on to its destination.</li>
+</ol>
+
+<p>
+There is a single instance of each document processor chain. In every
+chain, there is a single instance of each document processor.  (Unless
+a chain is configured with multiple, identical document processors
+&mdash; this is a rare case.)
+</p>
+
+<p>
+As is evident from the model above, multiple worker threads execute
+the document processors in a chain concurrently. Thus; many threads of
+execution can be going through the <code>process()</code> method of a
+document processor, at the same time.
+</p>
+
+<p>
+This model places a very important constraint on document processor
+classes:
+<em>instance variables are not safe.</em> They must be eliminated, or
+made thread-safe somehow.
+</p>
+
+
+<h2 id="keeping-state-in-docprocs">Keeping State in Document Processors</h2>
+<p>
+Any state we wish to keep along in the document processor for this
+particular Processing should be kept as local variables in the process
+method, while state which should be shared by all Processings should
+be kept as member variables. As the latter kind will be accessed by
+multiple threads at any one time, the state of such member variables
+must be <em>multithread safe</em>.
+</p>
+
+<p>
+This critical restriction is similar to those of e.g. the Servlet API.
+</p>
+
+<p>
+One has a limited number of options when implementing a
+multithread-safe document processor with instance variables:
+</p>
+
+<ol>
+<li>Use immutable (and preferably final) objects: they never change
+    after they are constructed; no modifications to their state occurs
+    after the DocumentProcessor constructor returns.</li>
+<li>Use a single instance of a thread-safe class.</li>
+<li>Create a single instance and synchronize access to it across all
+    threads (but this will severely limit your scalability).</li>
+<li>Arrange for each thread to have its own instance, e.g. with
+    a <code>ThreadLocal</code>.</li>
+</ol>
+
+
+<h2 id="using_later_for_async_execution">Using Progress.LATER for Asynchronous Execution</h2>
+<p>
+The execution model outlined above also shows one important
+restriction: If a document processor performs any high-latency
+operation in its process() method, a docproc worker thread will be
+occupied. With all <em>n</em> worker threads blocking on an external
+resource, throughput will be severly limited. This can be alleviated
+by saving the state in the Processing object, and returning
+Progress.LATER.
+</p>
+
+<p>
+A document processor doing a high-latency operation should use a
+pattern like this:
+</p>
+
+<ol>
+<li>Check a self-defined context variable in Processing for
+    status. Basically, <em>have we seen this Processing
+    before?</em></li>
+<li>If no:
+    <ol>
+    <li>We have been given a Processing object fresh off the network,
+        we have not seen this before. Process it up until the
+        high-latency operation.</li>
+
+    <li>Start the high-latency operation (possibly in a separate
+        thread).</li>
+
+    <li>Save the state of the operation in a self-defined context
+        variable in the Processing.</li>
+
+    <li>Return Progress.LATER. This Processing is the appended to the
+        back of the input queue, and we will be called again
+        later.</li>
+    </ol></li>
+
+<li>If yes:
+   <ol>
+   <li>Retrieve the reference that we set in our self-defined context
+       variable in Processing.</li>
+   <li>Is the high-latency operation done? If so, return
+       Progress.DONE.</li>
+   <li>Is it not yet done? Return Progress.LATER again.</li>
+   </ol></li>
+</ol>
+
+<p>
+As is evident, this will let the finite set of document processing
+threads to perform more work at the same time.
+</p>
+
+
+
+<h1 id="reconfiguring">Reconfiguring Document Processing</h1>
+
+<p>
+Consider the following configuration:
+</p>
+
+<pre class="brush: xml">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+  &lt;!-- &hellip; more config here &hellip; --&gt;
+
+  &lt;jdisc version=&quot;1.0&quot; id=&quot;default&quot;&gt;
+    &lt;!-- &hellip; more config here &hellip; --&gt;
+    &lt;document-processing&gt;
+      &lt;chain id=&quot;default&quot;&gt;
+        &lt;documentprocessor id=&quot;SomeDocumentProcessor&quot;&gt;
+          &lt;config name=&quot;foo.something&quot;&gt;
+            &lt;variable&gt;value&lt;/variable&gt;
+          &lt;/config&gt;
+        &lt;/documentprocessor&gt
+      &lt;/chain&gt;
+    &lt;/document-processing&gt;
+  &lt;/jdisc&gt;
+
+  &lt;!-- &hellip; more config here &hellip; --&gt;
+&lt;/services&gt;
+</pre>
+
+<p>
+Changing chain names, components in a chain, component configuration,
+and schema mapping all takes effect after
+a <code>deploy activate</code>.
+</p>
+
+<p>
+Changing <strong>cluster names</strong> requires a restart of docproc
+services after a <code>deploy activate</code>.
+</p>
+
+</body>
+</html>

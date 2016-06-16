@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespa-proton-cmd</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2010" />
+  <meta name="authors" content="eirikref" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the HTML version of the man page for the command line
+tool <em>vespa-proton-cmd</em>&mdash;a tool you can use to run
+administrative commands on a single Vespa search node.
+</p>
+
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vespa-proton-cmd</strong>&mdash;send commands to a single
+Vespa search node.
+</p>
+
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vespa-proton-cmd</strong> HOSTSPEC COMMAND [ARGS]
+</p>
+
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>vespa-proton-cmd</em> is a command line tool you can use to send
+commands to a single Vespa search node.
+</p>
+<p>
+The <em>hostspec</em> argument is one of (port|spec|--local|--id=name)
+</p>
+
+
+
+<h1 id="commands">Commands</h1>
+<p>
+Unless the <strong>-h</strong> or <strong>--help</strong> option is
+given one of the commands below must be present.
+</p>
+
+<dl>
+<dt><strong>die</strong></dt>
+<dd>Exit the proton application without cleanup.</dd>
+
+<dt><strong>getConfigTime</strong></dt>
+<dd>Get the oldest active config timestamp.</dd>
+
+<dt><strong>getProtonStatus</strong></dt>
+<dd>Get the current state of proton and its components.</dd>
+
+<dt><strong>getState</strong></dt>
+<dd>Get the current state of the search node.</dd>
+
+<dt><strong>listDocTypes</strong></dt>
+<dd>Get the current list of document types.</dd>
+
+<dt><strong>listSchema documentType</strong></dt>
+<dd>Get the current schema for the given document type.</dd>
+
+<dt><strong>monitor</strong></dt>
+<dd>Get search node state changes since last invocation.</dd>
+
+<dt><strong>disableSearching</strong></dt>
+<dd>Disable searching on the search node. The Top Level Dispatcher will consider the search node down after this
+and no searches will be accepted by the search node.</dd>
+
+<dt><strong>enableSearching</strong></dt>
+<dd>Enable searching on the search node (enabled by default). Searches will
+be accepted again after this.</dd>
+
+<dt><strong>triggerFlush</strong></dt>
+<dd>Tell the search node to trigger flush as soon as possible for all
+document types.</dd>
+
+<dt><strong>prepareRestart</strong></dt>
+<dd>Tell the search node to prepare for a restart by flushing a set of components to disk such that
+the time it takes to flush these components plus the time it takes to replay the transaction log after restart is as low as possible.</dd>
+
+<dt><strong>wipeHistory</strong></dt>
+<dd>Tell the search node to wipe history aka garbage collect.  Take a
+look at the <a href="document-xml-format.html#garbagecollect">garbage
+collect feed operation</a> to see the prefered way to perform garbage
+collection.</dd>
+</dl>
+
+
+
+<h1 id="environment">Environment</h1>
+<p>
+To locate the port of the rpc interface on the search node run
+the <code>vespa-model-inspect</code> tool:
+</p>
+<pre>
+$ vespa-model-inspect service searchnode
+searchnode @ mynode.myhost.com : search
+search/cluster.search/c0/r0
+tcp/mynode.myhost.com:19107 (STATUS ADMIN RTC RPC)
+tcp/mynode.myhost.com:19108 (FS4)
+tcp/mynode.myhost.com:19109 (METRICS XML HTTP)
+</pre>
+
+
+
+<h1 id="examples">Examples</h1>
+<pre>
+$ vespa-proton-cmd 19107 triggerFlush
+OK: flush trigger enabled
+</pre>
+
+
+
+</body>
+</html>

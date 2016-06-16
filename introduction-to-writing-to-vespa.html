@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Introduction to Writing Documents to Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2011" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+An introduction to writing documents to Vespa.
+</p>
+
+
+<h1 id="documents-and-operations">Documents and Document Operations</h1>
+
+<p>
+Vespa documents can be created according to
+the <a href="reference/document-json-format.html">Document JSON
+Format</a> or they can be constructed programmatically.  A set of
+documents can contain an arbitrary amount of document operations. The
+supported operations are:
+</p>
+
+<dl>
+  <dt>Add</dt>
+  <dd>This operation is a request to add the contained
+      document. A <em>document</em> is a set of (name, value) pairs
+      referred to as <em>fields</em>. The fields available for a given
+      document is given by
+      its <a href="reference/terminology.html#document_type" class="glossary">document
+      type</a>, which is in turn provided by the application's
+      <a href="search/search-definitions.html">search definition</a>. Valid field types are
+      listed <a href="reference/search-definitions.html#field">here</a>.
+  </dd>
+
+  <dt>Remove</dt>
+  <dd>This operation is a request to remove the document that
+      corresponds to the contained document identifier.
+  </dd>
+
+  <dt>Update</dt>
+  <dd>This operation is a request to update the document that
+      corresponds to the contained document identifier using the
+      contained <a href="partial-update.html">partial document
+      update</a>.
+  </dd>
+</dl>
+
+
+<h1 id="clients">Clients</h1>
+
+<p>
+Documents are sent to Vespa using a <em>client</em>.
+These options exists:
+</p>
+
+<ul>
+
+<li><a href="vespa-http-client.html">The Vespa HTTP client</a>. This is a small standalone jar which
+feeds to Vespa either through method calls in Java or by consuming a file from the command line.
+It provides a simple API while achieving high performance by using multiplexing and multiple parallel async connections.
+It is recommended in all cases you are feeding from a node outside the Vespa cluster. The HTTP gateway must be added
+to a container cluster in services.xml to use this.
+
+<li><a href="document-api-guide.html">The Document API</a>. This provides direct read-and write access to Vespa documents
+through Vespa's internal communication layer. Use this when accessing documents from Java components hosted in Vespa
+such as Searchers and document processors.
+
+<li><a href="httpgateway.html">Sending HTTP requests directly</a>. This is suitable for ad hoc and low volume writing.
+The HTTP gateway must be added to a container cluster in services.xml to use this.
+
+<li><a href="vespaspooler.html">The Vespa Spooler</a>. This is a daemon running on a Vespa node which will feed files
+dumped into a given directory.
+
+<li><a href="reference/vespafeeder.html">The vespafeeder binary</a>. This is included for completeness; prefer the
+Vespa HTTP client.
+
+</ul>
+
+</body>
+</html>

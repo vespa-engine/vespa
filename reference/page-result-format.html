@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>The Vespa Search API - Page result format</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="September 2005">
+  <meta name="authors" content="bratseth">
+</head>
+
+<body>
+
+<h1>The page result format</h1>
+
+<p>This document describes the <code>page</code> result format returned by Vespa.
+This result format is used when the <code>presentation.format</code> parameter is set to <code>page</code>.
+This format is usually used with <a href="../page-templates.html">page templates</a>.</p>
+
+<p>The tags of of the format are described below.
+Subtags will be rendered in the order listed here. The format is <em>open</em>,
+all parsers must ignore tags may contain attributes and child tags not mentioned here.</p>
+
+
+<h1 id="page">&lt;page&gt;</h1>
+<p>The root tag of a page result: The single top-level section of the page.</p>
+
+<p>Attributes:</p>
+<table>
+  <tr><th>Name</th><th>Description</th><th>Present</th></tr>
+  <tr>
+    <td>version</td>
+    <td>The version of this format - currently 1.0.</td>
+    <td>Always</td>
+  </tr>
+  <tr>
+    <td>layout</td>
+    <td>The name of the top-level layout to use for this page.</td>
+    <td>If specified in the page template used.</td>
+  </tr>
+</table>
+
+<p>For regular permissible subtags, refer to <a href="#section">section</a>.</p>
+
+
+<h1 id="section">&lt;section&gt;</h1>
+
+<p>A layout "box" in a page.
+
+<p>Attributes:</p>
+<table>
+  <tr><th>Name</th><th>Description</th><th>Present</th></tr>
+  <tr>
+    <td>id</td>
+    <td>The id of this section.</td>
+    <td>If specified in the page template used.</td>
+  </tr>
+  <tr>
+    <td>layout</td>
+    <td>The name of the top-level layout to use for this page.</td>
+    <td>If specified in the page template used.</td>
+  </tr>
+  <tr>
+    <td>region</td>
+    <td>The id of the region in the layout of the parent section where this should be placed.</td>
+    <td>If specified in the page template used.</td>
+  </tr>
+</table>
+
+<p>Subtags:</p>
+<table>
+  <tr><th>Name</th><th>Description</th><th>Present</th></tr>
+  <tr>
+    <td><a href="#section">section</a></td>
+    <td>A nested section of this page</td>
+    <td>Zero or more.</td>
+  </tr>
+  <tr>
+    <td><a href="#renderer">renderer</a></td>
+    <td>The name of the rendering to use for this section.</td>
+    <td>Zero or more.</td>
+  </tr>
+  <tr>
+    <td><a href="#source">source</a></td>
+    <td>Used to specify where to fetch the content of this section if it is not sent with this page in a content tag.</td>
+    <td>One or zero.</td>
+  </tr>
+  <tr>
+    <td><a href="#content">content</a></td>
+    <td>Contains some "payload" of this page - a set of <a href="#hit">hit</a> instances</td>
+    <td>One if this section has inlined content, zero otherwise.</td>
+  </tr>
+</table>
+
+
+<h1 id="#renderer">&lt;renderer&gt;</h1>
+
+<p>The way this section, or some of its content should be rendered.</p>
+
+<p>Attributes:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td>for<td>The name of the content source which should use this renderer<td>If this is not present, the renderer should be used for the entire section.</tr>
+</table>
+
+<p>Subtags:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td><a href="#parameter">parameter</a><td>A parameter to this renderer<td>Zero or more</tr>
+</table>
+
+
+<h1 id="#source">&lt;source&gt;</h1>
+
+<p>The source to be used to fetch the content of a section, if it is not sent as inline <a href="#content">content</a>.</p>
+
+<p>Attributes:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td>url<td>The url at which the content should be fetched.<td>Always.</tr>
+</table>
+
+<p>Subtags:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td><a href="#parameter">parameter</a><td>A parameter to use when fetching this content.<td>Zero or more</tr>
+</table>
+
+
+<h1 id="#">&lt;content&gt;</h1>
+
+<p>The content to render in a section.</p>
+
+<p>Subtags:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td><a href="#hit">hit</a><td>A content hit.<td>Zero or more.</tr>
+  <tr><td><a href="#group">group</a><td>A group of content hits.<td>Zero or more.</tr>
+</table>
+
+
+<h1 id="#hit">&lt;hit&gt;</h1>
+
+<p>A single result content item.</p>
+
+<p>Attributes:</p>
+<table>
+  <tr><th>Name<th>Description<th>Present</tr>
+  <tr><td>relevance<td>The relevance of this item - usually a normalized number between 0 and 1.<td>Always</tr>
+  <tr><td>source<td>The name of the source producing this hit.<td>Always</tr>
+  <tr><td>type<td>A space-separated list of type identifiers of this hit.<td>If a type is set in the hit.</tr>
+</table>
+
+
+<p>Subtags:</p>
+
+Hits have one subtag for every field they contains, where the field name is the name of the tag and the toString of the
+field content is the content of the tag.
+
+
+<h1 id="#group">&lt;group&gt;</h1>
+
+<p>A <a href="#hit">hit</a> which contains nested hits. Used to organize hits hierarchically.</p>
+
+<p>Has the name attributes and subtags as <a href="#hit">hit</a> but may also contain nested <a href="#hit">hit</a> and <a href="#group">group</a> tags.</p>
+
+
+<h1>Example</h1>
+
+<p>A page which should be renderer with two columns on top.
+
+<pre class="code">
+&lt;page version=&quot;1.0&quot;&gt;
+
+  &lt;renderer name=&quot;two-column&quot;/&gt;
+
+  &lt;section region=&quot;left&quot;&gt;
+    &lt;source url=&quot;http://host:port/resource/[news article id]&quot;/&gt;
+    &lt;renderer name=&quot;articleBodyRenderer&quot;&gt;
+      &lt;parameter name=&quot;color&quot;&gt;blue&lt;/parameter&gt;
+    &lt;/renderer&gt;
+  &lt;/section&gt;
+
+  &lt;section region=&quot;right&quot;&gt;
+    &lt;renderer name=&quot;multi-item-column&quot;&gt;
+      &lt;parameter name=&quot;items&quot;&gt;3&lt;/parameter&gt;
+    &lt;/renderer&gt;
+    &lt;section region=&quot;1&quot;&gt;
+      &lt;renderer for=&quot;newsImage&quot; name=&quot;newsImageRenderer&quot;/&gt;
+      &lt;renderer for=&quot;news&quot; name=&quot;articleRenderer&quot;/&gt;
+      &lt;renderer for=&quot;image&quot; name=&quot;imageRenderer&quot;/&gt;
+      &lt;content&gt;
+        &lt;hit relevance=&quot;1.0&quot; source=&quot;news&quot;&gt;
+          &lt;id&gt;news-1&lt;/id&gt;
+        &lt;/hit&gt;
+        &lt;hit relevance=&quot;0.5&quot; source=&quot;news&quot;&gt;
+          &lt;id&gt;news-2&lt;/id&gt;
+        &lt;/hit&gt;
+      &lt;/content&gt;
+    &lt;/section&gt;
+    &lt;section region=&quot;2&quot;&gt;
+      &lt;source url=&quot;http://host:port/consumption-widget&quot;/&gt;
+      &lt;renderer name=&quot;identityRenderer&quot;/&gt;
+    &lt;/section&gt;
+    &lt;section region=&quot;3&quot;&gt;
+      &lt;renderer name=&quot;htmlRenderer&quot;/&gt;
+      &lt;content&gt;
+        &lt;hit relevance=&quot;1.0&quot; source=&quot;htmlSource&quot;&gt;
+          &lt;id&gt;htmlSource-1&lt;/id&gt;
+        &lt;/hit&gt;
+      &lt;/content&gt;
+    &lt;/section&gt;
+  &lt;/section&gt;
+&lt;/page&gt;
+</pre>
+
+</body>
+</html>

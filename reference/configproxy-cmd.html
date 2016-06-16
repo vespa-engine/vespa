@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>configproxy-cmd</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2012" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the HTML version of the man page for the command line tool
+<em>configproxy-cmd</em>&mdash;a status and control tool for the config
+proxy. The config proxy is the service that runs on each node node and
+talks with one or more upstream config servers.
+</p>
+
+<p class="alert alert-success">
+Note: All options, behavior and output of this command are subject to
+change at any time and may also be changed between minor releases.
+</p>
+
+<h1 id="name">Name</h1>
+<p>
+<strong>configproxy-cmd</strong>&mdash;status and control tool for config proxy.
+</p>
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>configproxy-cmd</strong> -m method [args]
+</p>
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>configproxy-cmd</em> is a command line tool you can use to check
+status and control the config proxy in a running config system. By
+default it connects to the config proxy on localhost, and executes the
+method given.
+</p>
+
+
+<h1 id="options">Options</h1>
+<dl>
+
+<dt><strong>-m</strong></dt>
+<dd>method, available methods are: cache,gc,dumpcache,getConfig,heap,getmode,invalidatecache,cachefull,sources,statistics,setmode,updatesources
+</dd>
+
+<dt><strong>-p</strong></dt>
+<dd>port number, optional
+</dd>
+
+
+<dt><strong>-s</strong></dt>
+<dd>hostname, optional
+</dd>
+
+<dt><strong>-h</strong></dt>
+<dd>help text and usage
+</dd>
+
+</dl>
+
+<h1 id="modes">Description of the various methods (arguments to -m option)</h1>
+<p>
+Some debugging methods are not described here.
+</p>
+
+<dl>
+
+<dt><strong>cache</strong></dt>
+<dd>Output the config proxy cache content (overview)
+</dd>
+
+<dt><strong>getConfig</strong></dt>
+<dd>Get config (see <a href="getvespaconfig.html">getvespaconfig</a>)
+</dd>
+
+<dt><strong>getmode</strong></dt>
+<dd>Outputs the current mode of the config proxy
+</dd>
+
+<dt><strong>invalidatecache</strong></dt>
+<dd>Clears the current cache in config proxy
+</dd>
+
+<dt><strong>cachefull</strong></dt>
+<dd>Output the config proxy cache content (including config payload)
+</dd>
+
+<dt><strong>sources</strong></dt>
+<dd>Output the config proxy's upstream config sources
+</dd>
+
+<dt><strong>updatesources</strong></dt>
+<dd>Updates the config proxy's upstream config sources to the supplied ones
+</dd>
+
+
+</dl>
+
+
+<h1 id="return-values">Return Values</h1>
+
+<p>
+0 if success.
+</p>
+
+<h1 id="environment">Environment</h1>
+
+<h1 id="files">Files</h1>
+<p>
+Disk cache files (if any exist) are in <code>$VESPA_HOME/var/cache/vespa/config</code>.
+</p>
+
+<h1 id="examples">Examples</h1>
+<pre>
+$ configproxy-cmd -m sources
+</pre>
+
+</body>
+</html>

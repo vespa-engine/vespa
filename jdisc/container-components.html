@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+<title>JDisc Container Components</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="May 2016" />
+<meta name="authors" content="bratseth,gv" />
+</head>
+
+<body>
+
+<p>
+This document explains the common concepts necessary to develop all
+types of JDisc Container components. A basic knowledge of
+the JDisc Container is required.
+</p>
+
+
+
+<h1 id="introduction-to-the-container">Introduction to Components</h1>
+<p>
+All components must extend a base class from the JDisc Container code
+module. For example, searchers must extend the
+class <code>com.yahoo.search.Searcher</code>. The main available component
+types are:
+</p>
+<ul>
+  <li><a href="processing.html">processors</a></li>
+  <li><a href="../search/searcher-development.html">searchers</a></li>
+  <li><a href="../search/docproc-development.html">document processors</a></li>
+  <li><a href="../search/result-rendering.html">search result
+      renderers</a></li>
+  <li><a href="injecting-components.html#implement-provider">provider components</a>.</li>
+</ul>
+<p>
+Searchers and document processors belong to a subclass of components
+called <a href="chained-components.html">chained components</a>.
+</p><p>For an introduction to how the different component types interact, refer
+to the <a href="../search/component-types.html">overview of component types</a>.</p>
+<p>
+The components of the search container are usually deployed as part of
+an <a href="developing-osgi-bundles.html">OSGi bundle</a>.
+</p>
+
+
+<h2 id="concurrency">Concurrency</h2>
+<p>
+Components will be executed concurrently by multiple threads.  This
+places a very important constraint on all component classes:
+<em>non-final instance variables are not safe.</em> They must be
+eliminated, or made thread-safe somehow.
+</p>
+
+
+<h2 id="resource-management">Resource Management</h2>
+<p>
+Components that use threads, file handles or other native reources
+that needs to be released when the component falls out of scope, must
+override a method called <code>deconstruct</code>. Here is an example
+implementation from a component that uses a thread pool named
+'executor':
+</p>
+<pre class="code">
+@Override
+public void deconstruct() {
+    super.deconstruct();
+    try {
+        executor.shutdown();
+        executor.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+}
+</pre>
+<p>
+Note that it is always advisable to call the super-method first.
+</p>
+
+
+<h2 id="building-bundles-with-maven">Building Bundles with Maven</h2>
+<p>
+We recommend that you build your bundles using maven and the <a href="bundle-plugin.html">maven plugin</a>.
+</p>
+
+
+<h1 id="dependency-injection">Dependency Injection</h1>
+<p>
+Your components might need to access resources, such as other
+components or config.  These are injected directly into your
+constructor.
+The following types of constructor dependencies are allowed:
+</p>
+<ul>
+<li><a href="../configuring-components.html">Config objects</a></li>
+<li><a href="injecting-components.html">Other components</a></li>
+<li><a href="../reference/statistics-api.html">The Statistics library</a></li>
+<li>The Linguistics library</li>
+</ul>
+<p>
+Ideally, any class should have only one public constructor, but if
+your component needs more than one, you must annotate the one to be
+used by the container with <code>@Inject</code> (full name:
+<code>com.google.inject.Inject)</code>.
+</p>
+
+
+<h1 id="deploying-a-searcher">Deploying a Component</h1>
+<p>
+In production, the container will create one or more instances of the
+component, as specified
+in <a href="#adding-component-to-application-package">the
+application package</a>. The container will create a new instance of this
+component only when it is reconfigured, so any data needed by the
+component can be read and prepared from a constructor in the
+component.
+</p><p>
+You can see the full API available to components at
+the <a href="../javadoc/index.html?com/yahoo/container/package-summary.html">Container
+Javadoc</a>.
+</p>
+<p>
+Once the component passes unit tests, it can be deployed to the Vespa
+system which will host it.  The steps involved are building the component jar file,
+adding it to
+the Vespa application package and deploying the application package
+the usual way.  These steps are described in the following sections,
+using a searcher as example.
+</p>
+
+
+<h2 id="building-the-plugin-jar">Building the Plugin .jar</h2>
+<p>
+To build the plugin jar, call <code>mvn install</code> in your project
+directory.  It can then be found in the target directory, and will
+have the suffix <em>-deploy.jar</em>.
+</p><p>
+Assume for the rest of the document that the artifactId
+is <code>com.yahoo.search.example.SimpleSearcher</code> and the
+version is <code>1.0</code>. The plugin built will then have the
+name <em>com.yahoo.search.example.SimpleSearcher-1.0-deploy.jar</em>.
+</p>
+
+
+<h2 id="adding-component-to-application-package">Adding the Plugin to the Vespa Application Package</h2>
+<p>
+The previous step should produce a plugin jar file, which may now be
+deployed to Vespa by adding it to
+an <a href="../cloudconfig/application-packages.html">application package</a>: A
+directory containing at minimum <em>hosts.xml</em> and <em>services.xml</em>.
+</p>
+<ul>
+<li>placing
+    the <code>com.yahoo.search.example.SimpleSearcher-1.0-deploy.jar</code>
+    the <code>components/</code> directory under the application
+    package root</li>
+<li>Changing <code>services.xml</code> to include the Searcher</li>
+</ul>
+<p>
+To include the searcher in <em>services.xml</em>, you need to define a
+search chain and add the searcher to it. This is a complete
+services.xml doing this:
+</p>
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;services version="1.0"&gt;
+
+    &lt;admin version="2.0"&gt;
+      &lt;adminserver hostalias="node1" /&gt;
+      &lt;/configservers&gt;
+      &lt;logserver hostalias="node1" /&gt;
+    &lt;/admin&gt;
+
+    &lt;jdisc version="1.0"&gt;
+      &lt;search&gt;
+        &lt;chain id="default" inherits="vespa"&gt;
+          &lt;searcher id="com.yahoo.search.example.SimpleSearcher"/&gt;
+        &lt;/chain&gt;
+      &lt;/search&gt;
+      &lt;nodes&gt;
+        &lt;node hostalias="node1" /&gt;
+      &lt;/nodes&gt;
+    &lt;/jdisc&gt;
+
+&lt;/services&gt;
+</pre>
+<p>
+The searcher id above is resolved to the plugin jar we added by
+the <code>Bundle-SymbolicName</code>
+(<a href="developing-osgi-bundles.html">a field in the manifest of the jar
+file</a>), which is determined by the <code>artifactId</code>, and to
+the right class within the bundle by the class name.  By keeping
+the <code>searcher id</code>, <code>class name</code>
+and <code>artifactId</code> the same, we keep things simple, but more
+advanced use where this is possible is also supported. This will be
+explained in later sections.
+</p><p>
+For a reference to these tags,
+see <a href="../reference/services-search.html#sec-3.1">the search chains
+reference</a>.
+</p><p>
+An accompanying <code>hosts.xml</code> to the
+above <code>services.xml</code> may simply be
+</p>
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;hosts&gt;
+  &lt;host name="localhost"&gt;
+    &lt;alias&gt;node1&lt;/alias&gt;
+  &lt;/host&gt;
+&lt;/hosts&gt;
+</pre>
+<p>
+By creating a directory containing this <code>services.xml</code>,
+<code>hosts.xml</code>
+and <code>components/com.yahoo.search.example.SimpleSearcher-1.0-deploy.jar</code>, that directory becomes
+a complete application package containing a bundle, which can now be
+deployed to a Vespa instance.
+</p>
+
+
+<h2 id="installing-vespa">Installing Vespa</h2>
+<p>
+If you do not have a Vespa instance to which application packages can
+be deployed, follow the steps found in the
+<a href="../vespa-quick-start.html">Quick Installation Guide</a>.
+</p>
+
+
+<h2 id="deploying-the-application">Deploying the Application Package</h2>
+<p>
+Once the component and the config is added to the application package,
+it can
+be <a href="../cloudconfig/application-packages.html#deploying-a-vespa-application">deployed</a>
+the usual way, by running <code>deploy</code> These steps will copy any
+changed bundles to the nodes in the cluster which needs them and
+switch queries over to running the new component versions.
+</p><p>
+This works safely without requiring any processes to be restarted,
+even if the application package contains changes to classes which are
+already running production queries. The switch is atomic from the
+point of view of the query&mdash;all queries will execute to
+completion either using only the components of the last version of the
+application package or only the new ones, so interdependent changes in
+multiple searcher components can be deployed without problems.
+</p><p>
+The exception to this is bundles containing JNI packages. When these
+are changed, the process must be restarted before the change takes
+effect.  A warning is issued in the log in this case rather than the
+INFO message described below. To minimize this case, it is recommended
+to put JNI components in separate, minimal bundles separate from the
+rest of the code.
+</p><p>
+If there is some error in the application package, it will usually be
+detected during the <code>deploy prepare</code> step and cause an error
+message. However, some classes of errors are only detected once the
+application is deployed.  When redeploying an application, it is
+therefore recommended to watch the vespa log by running:
+</p>
+<pre>
+logfmt -N
+</pre>
+<p>
+The new application becomes active when you see the INFO message:
+</p>
+<pre>
+Switched to the latest deployed set of handlers...;
+</pre>
+<p>
+If this message does not appear after a reasonable amount of time
+after completion of <code>deploy activate</code>, you should see some errors
+or warnings instead, that will help you debug the application.
+</p>
+
+
+<h3 id="monitoring-the-active-application">Monitoring the Active Application</h3>
+<p>
+All containers also provide a built-in handler that outputs JSON
+formatted information about the active application, including its
+components and chains (it can also be configured to show <a
+href="../reference/application-packages-reference.html#versioning_application_packages">a
+user-defined version</a>). The handler answers to requests with the path
+<code>/ApplicationStatus</code>. For example, if 'localhost' runs a
+a container with HTTP configured on port 8080:
+</p>
+<pre class="code">
+http://localhost:8080/ApplicationStatus
+</pre>
+<p>
+In order to view nicely formatted output in a web browser, it might be
+necessary to install a brower extension, like e.g.
+<code>JSONView</code> for Firefox.
+</p>
+
+
+<h2 id="including-external-libraries">Including Third-Party Libraries</h2>
+<p>
+External dependencies <a href="bundle-plugin.html">can be included into the bundle.</a>
+</p>
+
+
+<h2 id="exporting-importing-and-including-packages-from-bundles">Exporting, Importing and Including Packages in Bundles</h2>
+<p>
+<a href="bundle-plugin.html">OSGi features information hiding - by default all the classes used
+inside a bundle are invisible from the outside.</a>
+</p>
+
+
+<h2 id="packagelist">Global and Exported Packages</h2>
+<p>
+The JDisc Container has one set of <em>global</em> packages. These are
+packages that are available with no import, and constitutes the
+supported API of the JDisc Container. Backwards incompatible changes
+are not made to these packages.
+</p><p>
+There is also a set of <em>exported</em> packages. These are available
+for import, and includes all legacy packages, plus extension packages
+which are not part of the core API. Note that these are not considered
+to be "public" APIs, as global packages are, and backwards
+incompatible changes <em>can</em> be made to these packages, or they
+may be removed.
+</p><p>
+The list of exported and global packages is available in the
+<a href="http://git.corp.yahoo.com/vespa/vespa/blob/master/container-core/pom.xml?view=markup">container-core
+pom.xml</a>, in <code>project/properties/exportedPackages</code>
+and <code>project/properties/globalPackages</code>.
+</p>
+
+
+<h2 id="versions">Versions</h2>
+<p>
+All the elements of the search container which may be referenced by an
+id may be <em>versioned</em>, that includes chains, components and
+query profiles. This allows multiple versions of these elements to be
+used at the same time, including multiple versions of the same
+classes, which is handy for bucket testing new versions.
+</p><p>
+An id or id reference may include a version by using the following
+syntax: <code>name:version</code>. This works with ids in search
+requests, services.xml, code and query profiles.
+</p><p>
+A version has the format:
+</p>
+<pre class="code">
+major.minor.micro.qualifier
+</pre>
+<p>
+where major, minor and micro are integers and qualifier is a string.
+Any right-hand portion of the version string may be
+skipped. In <em>versions</em>, skipped values mean "0"
+(and <em>empty</em> for the qualifier). In <em>version references</em>
+skipped values means "unspecified". Any unspecified number
+will be matched to the highest number available, while a qualifier
+specified <em>must</em> be matched exactly if it is specified
+(qualifiers are rarely used).
+</p><p>
+To specify the version of a bundle, specify version in the pom file
+(we recommend not using <em>qualifier</em>):
+</p>
+<pre>
+&lt;groupId&gt;com.yahoo.example&lt;/groupId&gt;
+&lt;artifactId&gt;MyPlugin&lt;/artifactId&gt;
+&lt;version&gt;<strong>major.minor.micro</strong>&lt;/version&gt;
+</pre>
+<p>
+This will automatically be used to set the <code>Bundle-Version</code>
+in the bundle manifest.
+</p><p>
+For more details, see <a href="component-versioning.html">component
+versioning</a>.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="February 2013" />
+  <meta name="authors"    content="steinar" />
+  <title>HTTP API use-case</title>
+</head>
+
+<body>
+
+<h1>HTTP API use-case</h1>
+
+<p class="ingress"> A tutorial in how to build a simple application with a
+custom HTTP API (using a request handler) involving a basic query transform (in
+a searcher) involving a shared component and a custom output format (a
+renderer).</p>
+
+<p>A set-up as described in “<a
+href="../jdisc/developing-applications.html">Developing applications</a>”
+is expected, though name the bundle “demo”. Also, it could be useful to refer to
+the “<a href="component-types.html">Component types tutorial</a>” for motivation
+in choice of component types.</p>
+
+<p>Basically, we want to process incoming request of the form</p>
+
+<pre>
+http://hostname:8080/demo?extraTerm=something
+</pre>
+
+<p>into search requests to Vespa.</p>
+
+<h2 id="handler">Request handler</h2>
+<p>
+The responsibility of the request handler is to convert the incoming HTTP
+GET request into something suitable for a Vespa search. Refer to this
+<a href="../jdisc/choosing-handler-base-class.html">selection
+of base classes</a> to choose the correct starting point for your own
+application. The @Inject annotation is not strictly necessary, but is
+included for clarity.
+</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.util.concurrent.Executor;
+
+import com.google.inject.Inject;
+
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.logging.AccessLog;
+import com.yahoo.search.handler.SearchHandler;
+import com.yahoo.search.query.Model;
+import com.yahoo.search.query.Presentation;
+
+/**
+ * Forward requests to search handler after adding "Red Hat" as query and "demo"
+ * as renderer ID.
+ */
+public class DemoHandler extends LoggingRequestHandler {
+
+    private final SearchHandler searchHandler;
+
+    /**
+     * Constructor for use in injection. The requested objects are subclasses of
+     * component or have dedicated providers, so the container will know how to
+     * create this handler.
+     *
+     * @param executor
+     *            threadpool, provided by Vespa
+     * @param accessLog
+     *            accesslog for incoming queries, provided by Vespa
+     * @param searchHandler
+     *            the Vespa search handler, also automatically injected
+     */
+    @Inject
+    public DemoHandler(Executor executor, AccessLog accessLog,
+            SearchHandler searchHandler) {
+	super(executor, accessLog, null, true)
+        this.searchHandler = searchHandler;
+    }
+
+    @Override
+    public HttpResponse handle(HttpRequest request) {
+        HttpRequest searchRequest = new HttpRequest.Builder(request)
+                .put(Model.QUERY_STRING, "Red Hat")
+                .put(Presentation.FORMAT, "demo").createDirectRequest();
+        HttpResponse r = searchHandler.handle(searchRequest);
+        return r;
+    }
+}
+</pre>
+
+<h2 id="searcher">Searcher</h2>
+
+<p>The responsibility of the searcher is to do a structured query transform,
+i.e. adding a few custom terms programmatically to the query.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.util.List;
+
+import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.demo.DemoConfig.Demo;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.WordItem;
+import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.PhaseNames;
+
+/**
+ * A searcher for adding a set of configured terms as AND terms, and add a
+ * single term from the request to the query tree (after running the term
+ * through a shared component).
+ */
+@After(PhaseNames.RAW_QUERY)
+@Before(PhaseNames.TRANSFORMED_QUERY)
+@Provides(DemoSearcher.DEMO_TRANSFORM)
+public class DemoSearcher extends Searcher {
+    public static final String DEMO_TRANSFORM = "com.yahoo.demo.DemoSearcher.NothingUseful";
+
+    /**
+     * The request property with this name will be filtered and added to the
+     * query as an AND term.
+     */
+    public static final CompoundName EXTRA_TERM = new CompoundName("extraTerm");
+
+    private final List&lt;Demo&gt; extraTerms;
+
+    private final DemoComponent infrastructure;
+
+    public DemoSearcher(DemoComponent infrastructure, DemoConfig extraTerms) {
+        this.extraTerms = extraTerms.demo();
+        this.infrastructure = infrastructure;
+    }
+
+    /**
+     * Programmatic query transform, add terms from config and the EXTRA_TERM
+     * request property.
+     */
+    @Override
+    public Result search(Query query, Execution execution) {
+        QueryTree q = query.getModel().getQueryTree();
+        addAndItem(q, infrastructure.normalize(
+                query.properties().getString(EXTRA_TERM)));
+        for (Demo d : extraTerms) {
+            addAndItem(q, d.term());
+        }
+        return execution.search(query);
+    }
+
+    private void addAndItem(QueryTree q, String term) {
+        Item root = q.getRoot();
+        CompositeItem compositeRoot;
+        if (root instanceof AndItem) {
+            compositeRoot = (CompositeItem) root;
+        } else {
+            compositeRoot = new AndItem();
+            compositeRoot.addItem(root);
+            q.setRoot(compositeRoot);
+        }
+        compositeRoot.addItem(new WordItem(term));
+    }
+
+}
+</pre>
+
+<p>This searcher needs some custom configuration, where the definition
+should reside in <code>demo.def</code>:</p>
+
+<pre>
+namespace=demo
+
+demo[].term string
+</pre>
+
+<p>In other words, a configuration class containing a single array named
+“demo”, containing a class Demo which only contains single string named
+“term”.</pre>
+
+<h2 id="renderer">Renderer</h2>
+<p>The responsibility of the renderer is to serialize the structured result
+into bytes for transport back to the client.</p>
+
+<p>Do note rendering works by first creating a single instance of the renderer
+(invoking the constructor), then cloning a new renderer for each result set
+rendered. <code>init()</code> will be invoked once on each new clone before
+<code>render()</code> is invoked.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Iterator;
+
+import com.yahoo.search.Result;
+import com.yahoo.search.rendering.Renderer;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
+
+/**
+ * Render result sets as plain text. First line is whether an error occured,
+ * second rendering initialization time stamp, then each line is the ID of each
+ * document returned, and the last line is time stamp for when the renderer was
+ * finished.
+ */
+public class DemoRenderer extends Renderer {
+    private String heading;
+
+    /**
+     * No global, shared state to set.
+     */
+    public DemoRenderer() {
+    }
+
+    @Override
+    protected void render(Writer writer, Result result) throws IOException {
+        if (result.hits().getErrorHit() == null) {
+            writer.write("OK\n");
+        } else {
+            writer.write("Oops!\n");
+        }
+        writer.write(heading);
+        writer.write("\n");
+        renderHits(writer, result.hits());
+        writer.write("Rendering finished work: " + System.currentTimeMillis());
+        writer.write("\n");
+    }
+
+    private void renderHits(Writer writer, HitGroup hits) throws IOException {
+        for (Iterator&lt;Hit&gt; i = hits.deepIterator(); i.hasNext();) {
+            Hit h = i.next();
+            if (h.types().contains("summary")) {
+                String id = h.getDisplayId();
+                if (id != null) {
+                    writer.write(id);
+                    writer.write("\n");
+                }
+            }
+        }
+    }
+
+    @Override
+    public String getEncoding() {
+        return "utf-8";
+    }
+
+    @Override
+    public String getMimeType() {
+        return "text/plain";
+    }
+
+    /**
+     * Initialize mutable, per-result set state here.
+     */
+    @Override
+    public void init() {
+        long time = System.currentTimeMillis();
+        heading = "Renderer initialized: " + time;
+    }
+
+}
+</pre>
+
+<h2 id="component">Shared component</h2>
+
+<p>The responsibility of this custom component is to decouple some parts
+of the application from the searcher. This makes it possible to reconfigure
+the searcher without rebuilding the potentially costly custom component.
+</p>
+
+<p>In this case, what the component does is more than a little silly.
+More typical use would be an FSA or complex, shared helper functionality.</p>
+
+<pre>
+package com.yahoo.demo;
+
+import java.text.Normalizer;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
+import com.yahoo.component.AbstractComponent;
+
+/**
+ * A shared component with an "expensive" constructor exposing a shared,
+ * thread-safe service.
+ */
+public class DemoComponent extends AbstractComponent {
+    private final Set&lt;Integer&gt; illegalHashes;
+
+    public DemoComponent() {
+        illegalHashes = new HashSet&lt;Integer&gt;();
+        Random r = new Random();
+        // generate up to 1e6 unique hashes
+        for (int i = 0; i &lt; 1000 * 1000; ++i) {
+            illegalHashes.add(r.nextInt());
+        }
+    }
+
+    /**
+     * NFKC-normalize term, or replace it with "smurf" with a low probability.
+     * Will change choice for each run, but will be constant in a single run of
+     * the container.
+     *
+     * @param term
+     *            term to normalize or replace with "smurf"
+     * @return NFKC-normalized term or "smurf"
+     */
+    public String normalize(String term) {
+        String normalized = Normalizer.normalize(term, Normalizer.Form.NFKC);
+        if (illegalHashes.contains(normalized.hashCode())) {
+            return "smurf";
+        } else {
+            return normalized;
+        }
+    }
+
+}
+</pre>
+
+<h2 id="application">Application</h2>
+
+<p>A Vespa application without a services file is just a piece of useless
+files. The <code>services.xml</code> tying all these pieces together
+could look something like this:</p>
+
+<pre>
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;services version='1.0'&gt;
+  &lt;admin version='2.0'&gt;
+    &lt;adminserver hostalias='node1'/&gt;
+  &lt;/admin&gt;
+
+  &lt;jdisc id='default' version='1.0'&gt;
+    &lt;search&gt;
+      &lt;chain inherits='vespa' id='default'&gt;
+        &lt;searcher id='com.yahoo.demo.DemoSearcher' bundle="demo"&gt;
+          &lt;config name="demo.demo"&gt;
+            &lt;demo index="0"&gt;
+              &lt;term&gt;smurf&lt;/term&gt;
+            &lt;/demo&gt;
+          &lt;/config&gt;
+        &lt;/searcher&gt;
+      &lt;/chain&gt;
+      &lt;renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="demo" /&gt;
+    &lt;/search&gt;
+
+    &lt;handler id="com.yahoo.demo.DemoHandler" bundle="demo"&gt;
+      &lt;binding&gt;http://*:8080/demo&lt;/binding&gt;
+    &lt;/handler&gt;
+
+    &lt;component id="com.yahoo.demo.DemoComponent" bundle="demo/&gt;
+
+    &lt;nodes&gt;
+      &lt;node hostalias='node1'/&gt;
+    &lt;/nodes&gt;
+  &lt;/jdisc&gt;
+
+  &lt;content id='logical' version='1.0'&gt;
+    &lt;redundancy&gt;1&lt;/redundancy&gt;
+
+    &lt;fleet-controllers&gt;
+      &lt;fleet-controller index='0' hostalias='node1'/&gt;
+    &lt;/fleet-controllers&gt;
+
+    &lt;documents&gt;
+      &lt;document mode='index' type='basic'/&gt;
+    &lt;/documents&gt;
+
+    &lt;group name='mygroup' distribution-key='0'&gt;
+      &lt;node distribution-key='0' hostalias='node1'/&gt;
+    &lt;/group&gt;
+
+    &lt;engine&gt;
+      &lt;proton&gt;
+      &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+      &lt;/proton&gt;
+    &lt;/engine&gt;
+  &lt;/content&gt;
+
+&lt;/services&gt;
+</pre>
+
+<p>The search definition used for this could be:</p>
+
+<pre>
+search basic {
+
+  document basic {
+
+    field description type string {
+      indexing: summary | index
+    }
+
+  }
+
+  fieldset default {
+    fields: description
+  }
+
+}
+</pre>
+
+<p>And, at last, a couple of synthetic documents to feed if we want to play
+around with an index:</p>
+
+<pre>
+&lt;document documenttype="basic" documentid="id:test:basic::http://demo/0/"&gt;
+  &lt;description&gt;red hat smurf demo&lt;/description&gt;
+&lt;/document&gt;
+&lt;document documenttype="basic" documentid="id:test:basic::http://demo/1/"&gt;
+  &lt;description&gt;red smurf hat demo something&lt;/description&gt;
+&lt;/document&gt;
+</pre>
+
+</body>
+</html>

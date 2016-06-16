@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Get Started Testing!</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2016" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+<p>
+Write your first tests, develop and test on your laptop.
+Familiarity with <a href="developing-applications.html">Developing Applications</a> is required.
+</p>
+
+<h1>A basic test where you can send URLs to the Container</h1>
+<p>
+<a href="developing-applications.html">Developing Applications</a> has a test that instantiates the
+Container and lets you run requests using a browser or HTTP client, by enabling the network interface:
+<pre>
+import ...
+
+public class ApplicationMain {
+
+  @Test
+  public static void main(String[] args) throws Exception {
+    try (com.yahoo.application.Application app = com.yahoo.application.Application.fromApplicationPackage(
+        FileSystems.getDefault().getPath("src/main/application"),
+        Networking.enable)) {
+      app.getClass(); // throws NullPointerException
+      Thread.sleep(Long.MAX_VALUE);
+    }
+  }
+}
+</pre>
+Run/debug this, and it will invoke your plugins as configured.
+</p>
+
+<h1>Test your logic</h1>
+<p>
+Most often will will write tests like this:
+<pre>
+import java.io.File;
+import org.junit.Test;
+import com.yahoo.application.Application;
+import com.yahoo.search.Query;
+  
+public class ApplicationTest {
+  
+  @Test
+  public void testContainerApplicationWithReferencedContentCluster() throws Exception {
+    try (Application application =
+        Application.fromApplicationPackage(new File("myapplication/"),
+        Networking.disable) ) {
+      byte[] response = application.getJDisc("foo").search().processAndRender(chainId, rendererId,
+      new Query("?query=foo"));
+      ...
+    }
+  }
+}
+</pre>
+By disabling the network interface, you eliminate port conflicts, and you can run tests in parallel.
+</p>
+
+
+</body>
+</html>

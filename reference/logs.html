@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Vespa log files</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="June 2014">
+  <meta name="authors" content="arnej, vlarsen, steinar">
+</head>
+
+<body>
+
+<h1>Vespa log files</h1>
+
+<p class="ingress">
+This reference contains an overview of how to handle Vespa logs.  All
+Vespa components use a common log module for logging. These log
+messages are added to a local logfile in <em>$VESPA_HOME/logs/vespa/</em> on each
+node and sent to the log server on the administration node. The log archive and
+rotation is explained in <a href="#log_rotation">log
+rotation</a>.
+</p>
+
+
+    <h1 id="contents">Logfile content</h1>
+
+    <p>Logfiles are in a machine-readable log format, which can be made
+    more human-readable by the <a href="logfmt.html">logfmt</a> program. Each line that is logged
+    consists of the following fields, in order, separated by a TAB (ASCII
+    9) character:</p>
+
+    <pre class="code">time host pid service component level message</pre>
+
+    <table>
+      <tr><th>Log field</th><th>Explanation</th></tr>
+      <tr><td><em><tt>time</tt></em></td><td>Time in seconds since 1970-01-01 UTC,
+      with optional fractional seconds after. E.g. 1102675319.726342</td></tr>
+      <tr><td><em><tt>host</tt></em></td><td>The hostname of the machine that
+      produced this log entry</td></tr>
+      <tr><td><em><tt>pid</tt></em></td><td>The process id, and an optional
+      thread-id of the process/thread that logged the message</td></tr>
+      <tr><td><em><tt>service</tt></em></td><td>The Vespa service name of the
+      logger</td></tr>
+      <tr><td><em><tt>component</tt></em></td><td>The component name that
+      logged. An application may have many different sub-components with their own
+      component names, usually starts with the name of the binary.</td></tr>
+      <tr><td><em><tt>level</tt></em></td><td>One of fatal, error, warning, info,
+      config, event, debug, or spam</td></tr>
+      <tr><td><em><tt>message</tt></em></td><td>The log message itself. All
+      dangerous characters are escaped (CR, NL, TAB, \, ASCII &lt; 32 and ASCII
+      128..159)</td></tr>
+    </table>
+
+
+    <p>The log levels are:</p>
+
+    <table>
+      <tr><th>Log level</th><th>Explanation</th></tr>
+      <tr><td><em><tt>fatal</tt></em></td><td>Fatal error messages. The
+      application must exit immediately, and restarting it will not
+      help.</td></tr>
+      <tr><td><em><tt>error</tt></em></td><td>Error messages. These are serious,
+      the application cannot function correctly.</td></tr>
+      <tr><td><em><tt>warning</tt></em></td><td>Warnings - the application may be
+      able to continue, but the situation should be looked into</td></tr>
+      <tr><td><em><tt>info</tt></em></td><td>Informational messages that are not
+      reporting error conditions, but should still be useful to the
+      operator.</td></tr>
+      <tr><td><em><tt>config</tt></em></td><td>Configuration settings</td></tr>
+      <tr><td><em><tt>event</tt></em></td><td>Machine-readable events. May contain
+      information about processes starting and stopping, and various
+      metrics.</td></tr>
+      <tr><td><em><tt>debug</tt></em></td><td>Debug messages. These are normally
+      suppressed and will not show up.</td></tr>
+      <tr><td><em><tt>spam</tt></em></td><td>Very low-level debug messages. These
+      are normally suppressed, and will generate massive amounts of logs quickly
+      if enabled</td></tr>
+    </table>
+
+
+
+    <h1 id="reading_logs">Reading logs</h1>
+
+    <p>Logs can be read directly, but they are usually easier to read when
+    using the <em>logfmt</em> program. This program can filter out log messages
+    from specific programs, only show certain log levels, print the time
+    in a more directly understandable format and so on.</p>
+
+    <p>The manual page <em>logfmt</em>(1) has full documentation for the
+    <em>logfmt</em> program.</p>
+
+
+
+    <h1 id="controlling_log_level">Controlling log levels</h1>
+
+    <p>Vespa programs running as services can have their active log levels modified at
+    run-time by the logctl program. Standalone programs (such as vespafeeder) will
+    instead read the environment variable <em>VESPA_LOG_LEVEL</em> on startup to
+    determine which log levels should be active.</p>
+
+    <p>The default setting for <em>VESPA_LOG_LEVEL</em> is <em>"all -debug -spam"</em>,
+    which enables all log levels except debug and spam.
+
+    <p><em>logctl</em> can alter the active log levels for a program, or for
+    parts of a program, while it is running. This is especially useful for
+    enabling debug output in parts of a live system for diagnosing problems. It
+    can also be used to silence programs that are too verbose in their
+    logging.</p>
+
+    <p><em>logctl -h</em> shows how to use the program. Programs that can be
+    controlled by logctl put log control files in
+    <em>$VESPA_HOME/var/db/vespa/logcontrol/service.logcontrol</em>.
+    If this file exists on program startup, it will be used to set the logging
+    levels. This means that log level modifications done with <em>logctl</em>
+    are sticky, and can also be performed even if the program isn't running.</p>
+
+
+
+    <h1 id="real_time">Real-time monitoring of logs</h1>
+
+    <p>
+        One of the standard plugins in the log server is the
+        <em>Replicator</em> plugin. This plugin is able to replicate log
+        messages to other interested services or parties. To use this
+        plugin, telnet to port 19083 on the log server.
+        You may use the <a href="">Vespa model inspector</a>
+        to verify that the logserver has a port tagged with
+        'telnet logtp' at 19083.
+    </p>
+
+<pre class="code">
+telnet host 19083
+</pre>
+
+    <p>
+        After telneting, you can apply a message filter. To list the
+        message filters available, simply write <code>list</code>. To
+        apply a message filter, use <code>use &lt;filter&gt;</code>, like
+        this:
+    </p>
+
+<pre class="code">
+Connected to host.
+Escape character is '^]'.
+list
+# 203 filter list
+# 204 system.all - Match all log messages
+# 204 system.metricsevents - Match all Count and Value messages
+# 204 system.allevents - Match specific log levels
+# 204 system.nometricsevents - Matches all log messages except Count and Value events
+# 204 system.mute - Matches no messages.  Mute.
+# 205 end filter list
+use system.all
+# 200 using 'com.yahoo.logserver.filter.NullFilter@62974e'
+</pre>
+
+
+    <h1 id="log_rotation">Log rotation</h1>
+
+    <p>
+        On the log server on the administration node, the <em>Archiver</em>
+        plugin will write the log messages from each
+        node to a log archive. These messages are written to the correct
+        log file based on the message timestamp. The log files are located
+        in the <code>$VESPA_HOME/logs/vespa/logarchive</code> directory.
+        The catalog structure is like this:
+    </p>
+
+<pre class="code">
+logarchive/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/&lt;hour&gt;-&lt;serial&gt;
+</pre>
+
+    <p>
+    For instance will a message logged at 2016-07-22 08:05:00 be found
+    in:
+    </p>
+
+<pre class="code">
+logarchive/2016/07/20/08-0
+</pre>
+
+    <p>
+        All dates and times are in UTC. If the log file exceeds 20 Mb,
+        the file will be rotated and the serial number will increase. These
+        files are the same that are available through the web interface.
+    </p>
+
+    <p>
+        The log archive might grow large - to disable storing of metrics in log
+        archive, set the <code>vespa_log_server.archive_metric</code> environment setting to off.
+        If you later need to debug using metric data, aggregate these by hand
+        from the individual nodes in the system.
+    </p>
+
+
+    <h1 id="queryaccesslog">QRS log file content</h1>
+
+    <p>QRS logs each query it executes in its access log.
+    The log files are named QueryAccessLog.&lt;timestamp&gt; and can be found in $VESPA_HOME/logs/vespa/qrs/ on QRS nodes.
+    Each line that is logged consists of the following fields, in order, separated by a space character:</p>
+
+    <pre class="code">SourceIP - - [Date] "HTTPRequest" HTTPReturnCode ByteCount "Referrer" "UserAgent" ProcessingTime TotalHitCount 0 HitCount</pre>
+
+    <table>
+      <tr><th>Log field</th><th>Explanation</th></tr>
+      <tr><td><em><tt>SourceIP </tt></em></td><td>IP address of client </td></tr>
+      <tr><td><em><tt>- </tt></em></td><td>Nothing </td></tr>
+      <tr><td><em><tt>- </tt></em></td><td>Nothing </td></tr>
+      <tr><td><em><tt>Date </tt></em></td><td>Timestamp (localtime) when query was executed with offset from GMT </td></tr>
+      <tr><td><em><tt>HTTPRequest </tt></em></td><td>HTTP request string </td></tr>
+      <tr><td><em><tt>HTTPReturnCode </tt></em></td><td>HTTP return
+      code for the query
+      <ul>
+          <li>200 for ok</li>
+      </ul>
+          </td></tr>
+      <tr><td><em><tt>ByteCount </tt></em></td><td>Number of bytes sent to the client </td></tr>
+      <tr><td><em><tt>Referrer </tt></em></td><td>HTTP referrer string </td></tr>
+      <tr><td><em><tt>UserAgent </tt></em></td><td>Client user agent </td></tr>
+      <tr><td><em><tt>ProcessingTime </tt></em></td><td>Time used to process the query in seconds. Including query parsing, back end execution. Does by design not include query reception from client and result set transfer time to client.</td></tr>
+      <tr><td><em><tt>TotalHitCount </tt></em></td><td>The total number of hits for the result set. </td></tr>
+      <tr><td><em><tt>0 </tt></em></td><td>Reserved for later expansion - always 0 </td></tr>
+      <tr><td><em><tt>HitCount </tt></em></td><td>Number of hits in the query result page. Note that the number of grouping results (if there are any) is included in this number </td></tr>
+    </table>
+
+    <p>
+      Example log entry (timestamp offset -0800 is equal to PST):
+    </p>
+
+    <pre class="code">127.0.0.1 - - [24/Jan/2008:05:29:04 -0800] "GET search/?query=yahoo HTTP/1.1" 200 270 ""
+   "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.12) Gecko/20050915 Firefox/1.0.7" 2.792 1 0 1</pre>
+
+    <h2 id="events-and-access-log">Time values in the access log compared to
+            metrics and log events</h2>
+
+      <p>The timing in the access log will in general be slightly off compared
+      to the timing values in the vespa.log or available from the metrics proxy.
+      The reason is the “probes” into the system are placed at slightly
+      different levels of abstraction. The explanations here are directed at
+      experienced users and troubleshooting.</p>
+
+      <h3>Definition of processing time in the access log</h3>
+
+      <p>Processing time in the access log starts when the execution is first
+      invoked from the search handler. The end is dependent on whether
+      the response is aynschronous or not. For a synchronous response, the
+      end is after the renderer has been invoked, but before the rendering
+      buffer is flushed. For an asynchronous response, e.g. a normal
+      search response, the end is defined as when the completion handler
+      is created. That means after control flow has returned from the
+      search chains, but before any network traffic or rendering has been
+      done.</p>
+
+      <h3>Definition of processing time in the vespa.log and metrics proxy</h3>
+
+      <p>StatisticsSearcher defines the metric “query_latency” and the log event
+      “mean_query_latency”. The data fed into these is identical. The start of
+      the interval is defined as when the control flow enters
+      StatisticsSearcher, the end as when the next searcher after
+      StatisticsSearcher returns from search(). This has the unfortunate side
+      effect of <i>not</i> including fill time of the result was not already
+      filled when passed on from StatisticsSearcher. This may happen if the
+      SearchHandler has to invoke fill() itself, e.g. if no searchers need to
+      access hit fields.</p>
+
+      <h3>Timing summary</h3>
+
+      <p>The access log includes everything happening before rendering, but
+      will exclude expensive rendering logic and slow networks. The query
+      latency event and metrics only covers what happens inside the search
+      chain where StatisticsSearcher is placed, and may exclude summary
+      fetching.</p>
+
+    <h2 id="zookeeper">ZooKeeper Log</h2>
+    <p>
+    The ZooKeeper log file is normally not necessary to monitor on a regular basis,
+    but is mentioned here as a possible source of information in case you
+    should ever need to debug the Vespa configuration system. Is is located at
+    <code>$VESPA_HOME/logs/vespa/zookeeper.&lt;servicename&gt;.log</code>.
+    </p>
+
+  </body>
+</html>

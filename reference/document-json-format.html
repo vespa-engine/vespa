@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Document JSON format</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="September 2014">
+  <meta name="authors" content="bratseth, steinar">
+</head>
+
+<body>
+
+<h1>Document JSON format</h1>
+
+<p class="ingress">
+This document defines the Vespa Document JSON format. This format
+defines an JSON representation of Documents, and <em>operations on
+documents</em>.
+</p>
+
+
+
+<h1 id="structure">Structure</h1>
+
+<p>
+A document feed is a JSON list of document operations, where each
+document operation is a JSON object.
+</p>
+
+<pre class="code">
+[
+  {<a href="#put">put</a>}*
+  {<a href="#remove">remove</a>}*
+  {<a href="#update">update</a>}*
+]
+</pre>
+
+<p>The operation elements (put, remove, update) may appear interleaved and in any order. The
+following sections describes each of these elements in detail. You can also refer to the
+<a href="#a-complete-example">complete example</a> at the end.</p>
+
+<h1 id="put">The Put Structure</h1>
+
+<p>The <code>put</code> object is used to add new or changed documents to Vespa.</p>
+
+<pre class="code">
+{
+    "put": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+    "fields": {
+        "songs": "Knockin on Heaven's Door; Mr. Tambourine Man",
+        "title": "Best of Bob Dylan",
+        "url": "http://music.yahoo.com/bobdylan/BestOf"
+    }
+}
+</pre>
+
+<p> The value of the "put" field is the <code><a
+href="#document-ids">documentid</a></code> which uniquely identifies the
+document and at the same time specifies the document type (matching one in the
+deployed application). Values for the document fields may be set using elements
+as shown above in the "fields" object. In this example, "songs" and "title" are
+fields specified in the document type.</p>
+
+
+<h2 id="conditional-put">Conditional puts</h2>
+<p>
+  An optional "condition" object can be added to the put operation to
+  specify a test and set condition. The value of the condition object
+  is a <a href="document-select-language.html">document selection</a>
+  encoded as a string. The put operation is only applied if the
+  condition matches an already existing document with that id.
+</p>
+
+<p>
+  Imagine the following scenario, where a yoghurt past the best-before
+  date leads to a workplace accident. If multiple sources apply this
+  feed, it only happens once, and everyone is happy.
+</p>
+
+<pre class="code">
+{
+    "put": "id:stats:stats::trondheim_office",
+    "condition": "stats.yoghurts_left_in_fridge==17",
+    "fields": {
+        "yoghurts_left_in_fridge": 16,
+        "days_since_last_accident": 0
+    }
+}
+</pre>
+
+<h2 id="array-values">Array values</h2>
+
+<p>Arrays are represented by using JSON arrays.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:arraydoctype:arraydoctype::example1",
+        "fields": {
+            "intarrayfield": [
+                123,
+                456,
+                789
+            ],
+            "stringarrayfield": [
+                "item 1",
+                "item 2",
+                "item 3"
+            ]
+        }
+    }
+]
+</pre>
+
+<h2 id="map-values">Map values</h2>
+
+<p>Maps are represented as an array of key-/value-entries. They are not
+represented as JSON maps, as the internal API puts few limitations on what a key
+may be. With complex/nested types as keys, it was deemed to have limited value
+to use maps. Also, weighted sets (below) are represented as maps.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:mapdoctype:mapdoctype::example1",
+        "fields": {
+            "inttostringmap": [
+                {
+                    "key": 123,
+                    "value": "foo"
+                },
+                {
+                    "key": 456,
+                    "value": "bar"
+                },
+                {
+                    "key": 789,
+                    "value": "foobar"
+                }
+            ]
+        }
+    }
+]
+</pre>
+
+<p>Note that map values are currently only supported by streaming search.</p>
+
+<h2 id="struct-values">Struct values</h2>
+
+<p>Structs are more or less directly represented as JSON objects. They are declared by their field name.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:structdoctype:structdoctype::example1",
+        "fields": {
+            "mystruct": {
+                "intfield": 123,
+                "stringfield": "foo"
+            }
+        }
+    }
+]
+</pre>
+
+<p>Note that struct values are currently only supported by streaming search.</p>
+
+<h2 id="weightedset-values">Weighted set values</h2>
+
+<p>Weighted sets are represented as maps where the value is the weight. Do note, even if the key is not
+a string as such, it will be represented as a string in the JSON format.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:weightedsetdoctype:weightedsetdoctype::example1",
+        "fields": {
+            "intweightedsetfield": {
+                "123": 2,
+                "456": 78
+            },
+            "stringweightedsetfield": {
+                "item 1": 143,
+                "item 2": 6
+            }
+        }
+    }
+]
+</pre>
+
+
+<h2 id="base64">base64 encoded values</h2>
+
+<p>Feeding <a href="../reference/search-definitions.html#type:raw">raw</a> fields
+are done by feeding the input data as a base64 encoded string.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:rawdoctype:rawdoctype::example1",
+        "fields": {
+            "rawfield": "VW5rbm93biBhcnRpc3QgZnJvbSB0aGUgbW9vbg=="
+        }
+    }
+]
+</pre>
+
+
+<h2 id="tensor">Tensor values</h2>
+
+<p>Feeding a <a href="../reference/search-definitions.html#type:tensor">tensor</a> field
+is done by specifying the dimensions (optional) and cells of the tensor as follows:</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:tensordoctype:tensordoctype::example1",
+        "fields": {
+            "tensorfield": {
+                "dimensions": ["x","y","z"],
+                "cells": [
+                    { "address": { "x": "label1", "y": "label2" }, "value": 2.0 },
+                    { "address": { "x": "label3" }, "value": 3.0 }
+                ]
+            }
+        }
+    }
+]
+</pre>
+
+<p>The resulting dimensions of the tensor is the union of the ones explicitly specified
+in <code>dimensions</code> and the ones mentioned on the cell addresses.</p>
+
+<p>If all dimensions are mentioned in the cell addresses, the <code>dimensions</code> key can be skipped:<p>
+
+<pre class="code">
+[
+    {
+        "put": "id:tensordoctype:tensordoctype::example2",
+        "fields": {
+            "tensorfield": {
+                "cells": [
+                    { "address": { "x": "label1", "y": "label2", "z": "label4" }, "value": 2.0 },
+                    { "address": { "x": "label3" }, "value": 3.0 }
+                ]
+            }
+        }
+    }
+]
+</pre>
+
+
+
+<h1 id="update">The Update Structure</h1>
+
+<p>Vespa supports making changes to existing document without submitting the
+entire document again. This is called <em>partial update</em>.</p>
+
+<p>A document update consists of the <code><a
+href="#document-ids">documentid</a></code> of the existing document to update,
+and the operation or operations to perform on selected fields of that
+document.</p>
+
+<p>The following update operations are supported and described in more detail in
+the next subchapters:</p>
+
+<h3>
+Valid operations for all field types
+</h3>
+
+<ul>
+    <li><code><a href="#assign">assign</a></code> (may also be used to clear fields)</li>
+</ul>
+
+<h3>
+Valid operations for numeric field types
+</h3>
+
+<ul>
+    <li><code><a href="#arithmetic">increment</a></code></li>
+    <li><code><a href="#arithmetic">decrement</a></code></li>
+    <li><code><a href="#arithmetic">multiply</a></code></li>
+    <li><code><a href="#arithmetic">divide</a></code></li>
+</ul>
+
+<h3>
+Valid operations for composite types (e.g. maps)
+</h3>
+
+<ul>
+    <li><code><a href="#add">add</a></code></li>
+    <li><code><a href="#match">match</a></code> (pick element from collection, then apply given operation to matched element) </li>
+</ul>
+
+
+<h2 id="assign"><code>assign</code></h2>
+
+<p><code>assign</code> is used to completely replace the value of a field with a
+new value. The new value is specified as an "action" for the field in the set of
+fields.</p>
+
+<p>Example assign update:</p>
+
+<pre class="code">
+[
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "title": {
+                "assign": "The best of Bob Dylan"
+            }
+        }
+    }
+]
+</pre>
+
+<p>If the field is to be cleared, assign <code>null</code> to it.</p>
+
+<h2 id="add"><code>add</code></h2>
+
+<p><code>add</code> is used to add entries to multi-value fields: Arrays, tags,
+maps, and weighted sets. If the value is already present in the weighted set, the
+weight from the update will <em>replace</em> the old weight.</p>
+
+<p>Example add update:</p>
+
+<pre class="code">
+[
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "tracks": {
+                "add": [
+                    "Lay Lady Lay",
+                    "Every Grain of Sand"
+                ]
+            }
+        }
+    }
+]
+</pre>
+
+<p>In other words, for the array field "tracks", we add the values from the
+<code>add</code> array.</p>
+
+<p>Example of an assign to a weighted set:</p>
+<pre class="code">
+[
+    {
+          "update":"id:weightedsetdoctype:weightedsetdoctype::example1",
+          "fields": {
+              "intweightedsetfield":  {
+                  "assign": {
+                      "123": 123,
+                      "456": 100
+                  }
+              }
+              "stringweightedsetfield": {
+                  "assign": {
+                      "item 1": 144,
+                      "item 2": 7
+              }
+          }
+     }
+]
+</pre>
+
+<h2 id="arithmetic"><code>increment, decrement, multiply, divide</code></h2>
+
+<p>The four arithmetic operators increment, decrement, multiply and divide are
+used to modify single value numeric values without having to look up the current
+value before applying the update.</p>
+
+<p>Example increment update:</p>
+
+<pre class="code">
+[
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "sales": {
+                "increment": 1
+            }
+        }
+    }
+]
+</pre>
+
+<p>Be aware that Vespa guarantees that an update is applied <em>once or
+more</em>. Hence, in rare cases, these operations may be applied multiple times.
+The resource cost saved from being able to update values without looking them up
+first outweights this slight inconsistency in many cases. If strict consistency
+is needed, the current value should be looked up first, and the new value set
+using <a href="#assign">assign</a>.</p>
+
+
+<h2 id="match"><code>match</code></h2>
+
+<p>If an action, like an arithmethic operation, is to be performed for a specific key
+in a composite structure, use the <code>match</code> operation.
+
+<pre class="code">
+[
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "trackPopularity": {
+                "match": {
+                    "element": "Lay Lady Lay",
+                    "increment": 1
+                }
+            }
+        }
+    }
+]
+</pre>
+
+<p>In other words, for the weighted set "trackPopularity", <code>match</code>
+the element "Lay Lady Lay", then <code>increment</code> its weight by 1.</p>
+
+<h2 id="updating-documents">Updating documents which combines values in indexing statements</h2>
+
+<p>Vespa allows flexibility in how documents are turned into index structure
+data through <em>indexing statements</em>. Using indexing statements, multiple
+document fields can be used to produce one index structure field. For example,
+this index statement</p>
+
+<pre class="code">
+input field1 . input field2 | attribute field2;
+</pre>
+
+<p>
+will combine the document fields field1 and field2 into the attribute named field2.
+</p>
+
+<p>When partially updating document which contains indexing statement which
+combines multiple fields the following rules apply:</p>
+
+<ul>
+    <li>Only attributes where <em>all</em> the source values are available in
+        the source document update will be updated</li>
+    <li>The document update will fail when indexed (only) if <em>no</em>
+        attributes end up being updated when applying the rule above</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+
+If a search definition has these indexing statements
+<pre class="code">
+input field1 | attribute field1;
+input field1 . input field2 | attribute field2;
+</pre>
+
+the following will happen for various partial updates.
+
+<table>
+  <tr><th>Partial update contains</th><th>Result</th></tr>
+  <tr><td>field1</td><td>field1 is updated</td></tr>
+
+  <tr><td>field2</td><td>The update fails</td></tr>
+  <tr><td>field1 and field2</td><td>field1 and field2 is updated</td></tr>
+</table>
+
+<h2 id="conditional-update">Conditional updates</h2>
+
+<p>
+  Like the put operation, an optional "condition" object can be added
+  to update operations to specify a test and set condition. The value
+  of the condition object is a
+  <a href="document-select-language.html">document selection</a>
+  encoded as a string. The update operation is only applied if the
+  condition matches an already existing document with that id.
+</p>
+
+<p>
+  The following example increments the <code>sales</code> field only
+  if it's already equal to 999.  The increment update operation is
+  described below. Test and set conditions can added to any update
+  operation.
+</p>
+
+<pre class="code">
+[
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "condition": "music.sales==999",
+        "fields": {
+            "sales": {
+                "increment": 1
+            }
+        }
+    }
+]
+</pre>
+
+<h1 id="remove">The Remove Structure</code></h1>
+
+<p>The <code>remove</code> operation is used to remove an existing document from Vespa.
+Remove is used for permanent removal, it is not necessary to remove a document before adding a new version.</p>
+
+<pre class="code">
+[
+    {
+        "remove": "id:music:music::http://music.yahoo.com/BritneySpears/HitMe"
+    }
+]
+</pre>
+
+<h2 id="conditional-remove">Conditional removes</h2>
+
+<p>
+  Like the put and update operations, an optional "condition" object
+  can be added to remove operations to specify a test and set
+  condition. The value of the condition object is
+  a <a href="document-select-language.html">document selection</a>
+  encoded as a string. The remove operation is only applied if the
+  document selection matches an already existing document with that
+  id.
+</p>
+
+<pre class="code">
+[
+    {
+        "remove": "id:music:music::MyMixTape",
+        "condition": "stats.songs=\"*Hit Me*\""
+    }
+]
+</pre>
+
+
+<h1 id="document-ids">Document IDs</h1>
+
+<p>Read more about document IDs in the <a
+href="../search/search-definitions.html#urischemes">search defintions
+doc</a>. Document IDs with different scheme can co-exist in a search/storage system.
+There are several formats, but the JSON format strongly depends on
+being able to derive the document type from the ID, so any format without
+information can not be used.</p>
+
+<p><a href="../content/design-overview.html#distribution">More details</a> on
+how Vespa calculates the 12-byte hash that uniquely identifies a document.</p>
+
+
+
+<h1 id="a-complete-example">A complete example</h1>
+
+<p>The following is a simple example of JSON in this format, it contains both a
+document and some document operations.</p>
+
+<pre class="code">
+[
+    {
+        "put": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "popularity": {
+                "0": 3,
+                "1": 5,
+                "2": 30
+            },
+            "songs": "Knockin on Heaven's Door; Mr. Tambourine Man",
+            "title": "Best of Bob Dylan",
+            "tracks": [
+                "Mr. Tambourine Man",
+                "Someday Baby",
+                "Blowin' In The Wind"
+            ],
+            "url": "http://music.yahoo.com/bobdylan/BestOf"
+        }
+    },
+    {
+        "remove": "id:music:music::http://music.yahoo.com/BritneySpears/HitMe"
+    },
+    {
+        "update": "id:music:music::http://music.yahoo.com/bobdylan/BestOf",
+        "fields": {
+            "title": {
+                "assign": "The Best of Bob Dylan"
+            },
+            "tracks": {
+                "add": [
+                    "Man Of Constant Sorrow"
+                ]
+            }
+        }
+    }
+]
+</pre>
+
+
+</body>
+</html>

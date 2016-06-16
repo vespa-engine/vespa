@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Document Processing</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2012" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+Vespa document processing is a flexible framework that allows one to
+create reusable components (called <em>document processors</em>), that
+read and modify document operations, and compose chains of many such
+components to carry out the total processing needs of an application.
+</p>
+
+<p>
+This has many use cases. The most common case is where a property has
+some input data that is to be stored in Vespa Storage, or indexed in
+Vespa Search, or both.
+</p>
+
+<p>
+The input source, typically a crawler, a stream of incoming mail, data
+generated from user actions, or basically anything else, is able to
+split the input data into logical units, called <em>documents</em>. A
+<a href="../introduction-to-writing-to-vespa.html">feeder application</a>
+will then send these documents into a document processing chain.
+</p>
+
+<p>
+This chain is basically an ordered list of document processors, where
+each processor has one specific task. This can be anything - examples
+range from things like language detection, HTML removal and natural
+language processing to mail attachment processing, character set
+transcoding and image thumbnailing.
+</p>
+
+<p>
+At the end of the processing chain, extracted data will typically be
+set in some fields in the document, which will continue into Vespa
+Search or Vespa Storage.
+</p>
+
+
+
+<h2 id="design-goals">Document Processing Framework Design Goals</h2>
+
+<p>
+The framework is designed to meet these goals:
+</p>
+
+<ul>
+  <li><p>
+      <strong>Developer friendliness</strong>. It must be so simple to
+      write a simple processor that anybody can do it. This is a
+      complete processor:
+      </p>
+
+<pre class="brush: java">
+import com.yahoo.document.*;
+import com.yahoo.docproc.*;
+
+public class ExampleDocumentProcessor extends DocumentProcessor {
+
+    public Progress process(Processing processing) {
+        for (DocumentOperation op : processing.getDocumentOperations()) {
+            if (op instanceof DocumentPut) {
+                Document document = ((DocumentPut) op).getDocument();
+                //TODO do something to 'document' here
+            } else if (base instanceof DocumentUpdate) {
+                DocumentUpdate update = (DocumentUpdate) op;
+                //TODO do something to 'update' here
+            } else if (base instanceof DocumentRemove) {
+                DocumentRemove remove = (DocumentRemove) op;
+                //TODO do something to 'remove' here
+            }
+        }
+        return Progress.DONE;
+    }
+}
+</pre></li>
+
+
+<li><strong>Gradual learning</strong>. More advanced concepts needed
+    for processing multiple documents or document updates, making
+    control decisions and so on builds on, and extends naturally the
+    basic concepts learned when doing simple processing.</li>
+
+<li><strong>Scaling</strong>. The framework must allow cheap scaling
+    by document size, document count and document processing clock
+    time. The document processing framework uses a completely
+    asynchronous architecture to allow scaling in several of these
+    dimensions at the same time.</li>
+
+<li><strong>Simplicity</strong>. The core framework consists of less
+    than ten classes totaling less than thousand lines of source. It
+    has one dependency - to a minimal document model (a few more
+    classes) modelling documents as a named map of fields.</li>
+
+<li><strong>Embedding</strong>. The framework does not make any
+    assumptions about the context in which it will run. It can be
+    embedded in another application which handles the thread
+    management, configuration and so on.</li>
+
+<li><strong>Vespa integration.</strong> The framework may also run as
+    a Vespa service. Configuration through Vespa, logging to Vespa and
+    remote capabilities are handled by optional add-on packages.</li>
+
+<li><strong>Plugin support</strong>. Document processors developed by
+    applications can be deployed and undeployed in the framework, run
+    without compromising the framework instance even if they contain
+    errors, and be binary compatible across different versions of the
+    framework. This is handled by developing the framework in Java and
+    loading the document processors as OSGi components.</li>
+</ul>
+
+
+<h2 id="core-features">Document Processing Core Framework Features</h2>
+
+<p>
+The framework core supports asynchronous processing, processing one or
+multiple documents or document updates at the same time, document
+processors that makes dynamic decisions about the processing flow and
+passing of information between processors outside the document or
+document update:
+</p>
+
+<ul>
+  <li>One or more named <strong>Docproc Services</strong> may be
+      created. One of the services is the <em>default</em>.</li>
+
+  <li>A service accepts subclasses of <strong>DocumentOperation</strong>
+      for processing, which currently
+      means <strong>DocumentPuts</strong>, <strong>DocumentUpdates</strong>
+      and <strong>DocumentRemoves</strong>. It has a <strong>Call
+      Stack</strong> which lists the calls to make to
+      various <strong>Document Processors</strong> to process each
+      DocumentOperation handed to the service.</li>
+
+  <li>Call Stacks consist of <strong>Calls</strong>, which refer to
+      the Document Processor instance to call.</li>
+
+  <li>DocumentPuts and document updates are processed asynchronously, the
+      state is kept in a Processing for its duration (instead of in a
+      thread or process). A Document Processor may make some
+      asynchronous calls (typically to remote services) and return to
+      the framework that it should be called again later for the same
+      Processing to handle the outcome of the calls.</li>
+
+  <li>A processing contains its own copy of the Call Stack of the
+      Docproc Service to keep track of what to call next.  Document
+      Processors may modify this Call Stack to dynamically decide the
+      processing steps required to process a DocumentOperation.</li>
+
+  <li>A Processing may contain one or more DocumentOperations to be
+      processed as a unit.</li>
+
+  <li>A Processing has a <em>context</em>, which is a Map of named
+      values which can be used to pass arguments between
+      processors.</li>
+
+  <li>Processings are prepared to be stored to disk to allow a very
+      high number of ongoing long-term processings per node.</li>
+</ul>
+
+</body>
+</html>

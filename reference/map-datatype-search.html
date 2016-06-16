@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Search Using the Map Data Type</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2010" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+
+<p class="ingress">
+The map data type is available for streaming search only. The data
+type introduces a new syntax for searching, which is covered in this
+document.
+</p>
+
+
+
+<h1 id="searching">Search in Maps</h1>
+
+<p>
+Map search introduces the
+<a href="document-field-path.html">field path</a>
+syntax for searching in map keys and values.  Currently, this syntax
+is only supported using the <a href="querycombinator.html">
+querycombinator</a> searcher.
+</p>
+
+<p>
+The following query will search for the value &ldquo;bar&rdquo; in
+all <code>mymap</code> map entries that have &ldquo;foo&rdquo; as a
+key:
+</p>
+
+<pre class="brush: text">
+defidx.q1=mymap{&quot;foo&quot;}&amp;query.q1=bar
+</pre>
+
+<p>
+The following query will search for a specific key:
+</p>
+
+<pre class="brush: text">
+defidx.q1=mymap.key&amp;query.q1=bar
+</pre>
+
+<p>
+The following query will search for a specific value in all keys:
+</p>
+
+<pre class="brush: text">
+defidx.q1=mymap.value&amp;query.q1=bar
+</pre>
+
+<p>
+See the <a href="document-field-path.html">field
+path</a> documentation for more use-cases of the map data type.
+</p>
+
+
+
+<h1 id="output">Default Output Format</h1>
+
+<p>
+In the result output, a map is represented in the same way as in the
+Document XML:
+</p>
+
+<pre class="brush: xml">
+&lt;field name=&quot;mymap&quot;&gt;
+  &lt;item&gt;&lt;key&gt;foo&lt;/key&gt;&lt;value&gt;bar&lt;/value&gt;&lt;/item&gt;
+  &lt;item&gt;&lt;key&gt;fuz&lt;/key&gt;&lt;value&gt;baz&lt;/value&gt;&lt;/item&gt;
+&lt;/field&gt;
+</pre>
+
+</body>
+</html>

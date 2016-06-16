@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Query Language Syntax</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2005">
+  <meta name="authors" content="vlarsen, mathiasm">
+</head>
+
+<body>
+
+<p class="ingress">
+This article describes the syntax of Vespa's
+<a href="#simple">simple query language</a>. A high-level
+introduction to using the query language is given
+in <a href="../how-to-search.html">Searching with Vespa</a>.
+</p>
+
+
+<p class="ingress">The simple query language is implemented as a heuristic parser
+intended for end user input. If you are looking for implementing application logic with structured
+queries, use <a href="../search/query-language.html">YQL</a> instead.</p>
+
+
+<h1 id="simple">Simple query language</h1>
+
+<p>The simple query type has four subtypes:</p>
+
+<ul>
+<li><strong><code>all</code></strong> - All the words of the query must match a
+    document for it to be a match. This is the default.</li>
+<li><strong><code>web</code></strong> - Like the all type, but
+    with the following differences:
+    <ul>
+      <li><code>+</code> in front of a term means &ldquo;search for
+          this term as-is&rdquo;</li>
+      <li><code>term1 OR term2</code> (capital OR) means match either
+          term1 or term2</li>
+      <li>The special syntax for url matching used in the other
+          languages is not supported</li>
+    </ul>
+<li><strong><code>any</code></strong> - It is enough that one of the words of
+    the query matches for it to be a match. Set <code>type=any</code>
+    to use this.</li>
+<li><strong><code>phrase</code></strong> - The words of the query should be
+    treated as a phrase, the words must match in the exact order given
+    for it to be a match, and colon, plus and so on is ignored. Set
+    <code>type=phrase</code> to use this.</li>
+</ul>
+
+
+<h2 id="simple-syntax">Simple Query Syntax</h2>
+<pre class="code">
+Query      ::= Expr ( SPACE Expr )*
+Expr       ::= Term | Prefix? '(' SimpleTerm+ ')'
+Term       ::= Prefix? Field? CoreTerm Weight?
+SimpleTerm ::= Field? CoreTerm Weight?
+Prefix     ::= '+' | '-'
+Field      ::= ID ':'                              /* A valid field name or alias */
+Weight     ::= '!'+ | '!' NUM                      /* NUM is a percentage. */
+CoreTerm   ::= WORD | Phrase | NumTerm | PrefixTerm | SubstringTerm | SuffixTerm
+Phrase     ::= '"' WORD+ '"'
+NumTerm    ::= NUM | '&lt;' NUM | '&gt;' NUM | '[' NUM? ';' NUM? ';' HITLIMIT? ']'
+                                                   /* NUM is any numeric type including floating point */
+                                                   /* HITLIMIT is a optional count of many hits you want as minimum from this range */
+PrefixTerm    ::= WORD '*'
+SubstringTerm ::= '*' WORD '*'
+SuffixTerm    ::= '*' WORD
+</pre>
+
+
+<h2 id="prefix-searching">Prefix searching</h2>
+<p>
+Prefix searching is only available for streaming and attributes.
+A prefix search term (e.g. 'car*') behaves like a pattern match on the
+given field: Documents that have at least one word beginning with the
+given prefix are returned (or not returned if the '-' syntax is
+used). A prefix search term does not add or change the ranking of the
+documents in the result set.
+</p>
+
+<p>
+If match:prefix is specified in the search definition, then this is the
+default match mode for this field. If it is not specified, then tokenized
+search is the default matching mode for streaming, and exact match for
+attributes.
+</p>
+
+<p>
+An example of using prefix search with streaming:
+</p>
+
+<pre class="code">car* golf</pre>
+
+<p>
+This query will get all documents with words beginning with
+&ldquo;car&rdquo;, and also containing the word &ldquo;golf&rdquo;.
+</p>
+
+
+<h2 id="substring-searching">Substring searching</h2>
+<p>
+Substring searching is only available for streaming.  When
+using a substring search term (e.g '*esp*') documents that have at
+least one word where a prefix of a suffix of the word equals the
+substring term are returned. A substring search term does not add or
+change the ranking of the documents in the result set.
+</p>
+
+<p>
+The match type of the field does not have to be substring in order to
+use substring searching. By specifying a substring search term in the
+query you override the match type.
+</p>
+
+<p>
+An example of using substring search:
+</p>
+
+<pre class="code">*esp*</pre>
+
+<p>
+This query will return all documents with words containing
+&ldquo;esp&rdquo;, for instance &ldquo;vespa&rdquo;.
+</p>
+
+
+<h2 id="suffix-searching">Suffix searching</h2>
+<p>
+Suffix searching is only available for streaming.  When
+using a suffix search term (e.g '*spa') documents that have at least
+one word where a suffix of the word equals the suffix term are
+returned. A suffix search term does not add or change the ranking of
+the documents in the result set.
+</p>
+
+<p>
+The match type of the field does not have to be suffix in order to use
+suffix searching. By specifying a suffix search term in the query you
+override the match type.
+</p>
+
+<p>
+An example of using suffix search:
+</p>
+
+<pre class="code">*spa</pre>
+
+<p>
+This query will return all documents with words ending with
+&ldquo;spa&rdquo;, for instance &ldquo;vespa&rdquo;.
+</p>
+
+
+<h2 id="term-weight">Term weight</h2>
+<p>
+The weight is either one or more ! characters, or a ! followed by an
+integer. The integer is a fixed point scaling number with decimal
+factor 100, i.e. it can be regarded as a percentage. When using
+repeated ! characters, the weight is increased with 50 (from a default
+value of 100) for each !. A weight expression may also be applied to a
+phrase.
+</p>
+
+<p>
+A term weight is used to modify the relative importance of the terms
+in your query. The term score is only one part of the overall rank
+calculation, but by adding weight to the most important terms, you can
+ensure that they contribute more. For more details on rank
+calculation, see <a href="../ranking.html">Ranking guide</a>.
+</p>
+
+
+<h2 id="numerical-terms">Numerical terms</h2>
+<p>
+<code>[x;y]</code> matches any number between <em>x</em> and
+<em>y</em>, including the endpoints <em>x</em> and
+<em>y</em>. Note that <code>&gt;number</code> is the same as
+<code>[number+1;]</code> and <code>&lt;number</code> is the same
+as <code>[;number-1]</code>.
+</p>
+
+<p>
+A few examples using numerical terms:
+</p>
+
+<pre class="code">perl size:&lt;100</pre>
+
+<p>
+This query will get all documents with the word &ldquo;perl&rdquo; and
+with size less than 100Kb.
+</p>
+
+<pre class="code">chess kasparov -karpov date:[19990101;19991231]</pre>
+
+<p>
+This query will get all documents last modified in 1999 containing
+&ldquo;chess&rdquo; and &ldquo;kasparov&rdquo;, but not
+&ldquo;karpov&rdquo;.
+</p>
+
+<h3 id="fast-range-search">Advanced range search</h3>
+<p>In order to quickly fetch the best documents given a simple range you can do
+that very efficently using capped range search. For it to be efficient it requires that
+you use <a href="search-definitions.html#attribute">fast-search</a> on the attribute
+used for range search.</p>
+</p>It is fast becuase it will start only scan enough terms in the dictionary
+to satisfy the number of documents requested. A postive number will start from the
+left of your range and work its way right. A negative number will start from right and go left.</p>
+<pre class="code">date:[0;21000101;10]</pre>
+<p>Will give your the atleast 10 first documents since the birth of Jesus.</p>
+
+<pre class="code">date:[0;21000101;-10]</pre>
+<p>Will give your the atleast 10 last documents since the birth of Jesus.</p>
+
+
+<h2 id="simple-grouping">Grouping in the simple query language</h2>
+<p>
+There is only one level of parentheses supported; any use of
+additional parentheses within the expression will be ignored. In
+addition, note that the terms within should not be prefixed with + or
+-.
+</p>
+
+<p>
+When the parentheses are prefixed by a + (may be excluded
+for <code>all </code> type, because expressions are + by default), the
+search requires that at least one of the included terms is present in
+the document. This effectively gives you a way of having alternative
+terms expressing the same intent, while requiring that the concept is
+covered in the document.
+</p>
+
+<p>
+When the parentheses are prefixed by a -, the search excludes all
+documents that include all the terms, but allows documents that only
+use some of the terms in the expression. It is a bit more difficult to
+find good use for this syntax; it could for instance be used to remove
+documents that compare two different products, while still allowing
+documents only discussing one of them.
+</p>
+
+<p>
+More examples using simple query language can be seen
+in <a href="../how-to-search.html">Searching with Vespa</a>.
+</p>
+
+
+
+<h1 id="url_field">Search in URL fields</h1>
+
+<p>
+You create a URL-field in the index by creating a field of type 'uri'
+in your search definition. The input value must be a valid URL else
+the value is not indexed at all and the indexer will report an ERROR
+in the log.
+</p>
+
+<p>
+Searches in URL fields use a slightly different syntax in order to
+enable searches in the individual components of the URL. The field
+name for the URL can be suffixed by a specifier selecting the
+different parts of the URL. The possible queries are:
+</p>
+
+<dl>
+<dt>field:</dt>
+<dd>
+  <p>
+  Search all parts of the url. This can be used to find URLs having a
+  particular substring, or to find all documents that exactly match a
+  full url.
+  </p>
+
+  <p>
+  Note however that finding documents matching a full URL does not
+  behave like exact matching in ie. string fields, but more like
+  substring matching.  A search
+  for <code>myurlfield:http://www.mydomain.com/</code> will match
+  documents where <em>myurlfield</em> is set to
+  both <em>http://www.mydomain.com/</em>, <em>http://www.mydomain.com/test</em>,
+  and <em>http://redirect.com/?goto=http://www.mydomain.com/</em> alike.
+  </p>
+</dd>
+
+<dt>field.scheme:</dt>
+<dd>
+  Search in the url-scheme, for instance to find all documents from an
+  https-url.
+</dd>
+
+<dt>field.hostname:</dt>
+<dd>
+  Search in the hostname-part of a url. Hostname-searches support
+  anchoring at start and end.
+</dd>
+
+<dt>field.port:</dt>
+<dd>
+  Search for explicit port numbers in the url. Note that the standard
+  http/https port numbers (80 and 443) are never indexed, so they
+  cannot be searched for. Also note that this is a text-index, which
+  means that range-searches are not supported.
+</dd>
+
+<dt>field.path:</dt>
+<dd>
+  Search in the full path of a url. For HTTP-GET URLs, this is
+  everything after the host:port and before the question-mark (if the
+  URL has a query part).
+</dd>
+
+<dt>field.query:</dt>
+<dd>
+  Search in the query-part of a url. This is for instance the
+  parameters of a http-get request, following the question-mark in the
+  URL.
+</dd>
+
+<dt>field.fragment:</dt>
+<dd>
+  Search in the fragment-part of a url. This is the part after
+  <code>#</code>, used to refer to anchors within a web-page.
+</dd>
+
+</dl>
+
+<p>
+Hostname searches have an anchoring mechanism to limit which URLs
+match. By default, queries are anchored in the end, which means that a
+search for <code>mydomain.com</code> will
+match <code>www.mydomain.com</code>, but not
+<code>mydomain.com.au</code>. Adding a ^ (caret) to the start will
+turn on anchoring at the start, meaning that the query will only
+return exact matches. Adding a <code>*</code> at the end will
+turn off anchoring at the end. The query
+<code>^mydomain.com*</code> will match <code>mydomain.com.au</code>,
+but not <code>www.mydomain.com</code>.
+</p>
+
+
+<h1 id="map-syntax">Field Path Syntax</h1>
+<p>
+Streaming search supports
+the <a href="document-field-path.html">field path</a>
+syntax of the <a href="document-select-language.html">
+document selection language</a> when searching structs and
+maps. Special for the map type is the ability to select a subset of
+map entries to search using the <code>mymap{"foo"} </code> syntax. See
+the <a href="map-datatype-search.html">map search</a> documentation for details
+on how to search a map type.
+</p>
+
+
+<h1 id="removing-syntax-characters">Removing syntax characters from queries</h1>
+<p>
+It will sometimes be more robust to remove characters which are used
+in the query syntax from a user's search terms. An example could be
+URLs containing parentheses. Comma (&quot;,&quot; ASCII 0x2C) may be
+used as a safe replacement character in these cases.
+</p>
+
+<pre class="code">(x url:http://site.com/a)b) y</pre>
+<p>
+The URL <code>http://site.com/a)b</code> in this example could be
+quoted as following:
+</p>
+
+<pre class="code">(x url:http://site.com/a,b) y</pre>
+
+</body>
+</html>

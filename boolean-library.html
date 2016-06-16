@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Using the Boolean Search Java Library</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="February 2015" />
+<meta name="authors" content="magnarn, bjorncs" />
+</head>
+
+<body>
+<p class="ingress">
+The rationale for Boolean Search is described in the document
+<a href="boolean-search.html">Using Boolean Search with
+Vespa</a>. Vespa also has a standalone Java library for performing
+boolean search, for the case where you want the boolean matching
+tightly integrated with your Java program, e.g. running on the grid.
+The performance is similar to Vespa boolean search.
+</p>
+
+<h1>Using the library</h1>
+<p>
+The library is distributed as a Maven artifact and can be declared as a dependency in your pom.xml:
+<pre class="code">
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+        &lt;artifactId&gt;predicate-search&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+</pre>
+</p>
+
+<p class="alert alert-success">
+Consult the <a href="javadoc/index.html?com/yahoo/search/predicate/package-summary.html">javadoc</a>
+for more detailed API documentation. Code examples are available in the vespa samples apps. <!-- ToDo: add link here -->
+</p>
+
+<h1>Building an index</h1>
+<h2>Indexing documents</h2>
+<p>
+Unlike Vespa boolean search, which has dynamic indexes, the Java
+library requires the entire index to be built before any searches are
+performed. Once built, the index cannot be changed. Building an index is performed using an instance of
+<code>PredicateIndexBuilder</code>.<br/> Use its <code>indexDocument(id, predicate)</code> method to index documents.
+This method takes two arguments, a 32-bit document id and the document itself (in form of a <code>Predicate</code> object).
+Once all documents are index, create the index by invoking <code>build()</code>. This method returns a <code>PredicateIndex</code> object.
+</p>
+
+<p class="alert alert-success">
+Use <code><a href="javadoc/index.html?com/yahoo/document/predicate/Predicate.html">
+Predicate.fromString()</a></code> to parse predicate expressions from strings.
+The expressions uses the <a href="boolean-search.html#predicates">Vespa predicate syntax</a>.
+</p>
+
+<h2>Index configuration</h2>
+<p>
+Just as with Vespa boolean search, you can specify the <a href="boolean-search.html#index_size">arity</a> and
+<a href="boolean-search.html#upper_lower_bound">upper- and lower bounds</a> for your index, to make the index more
+efficient and trade index size for query performance. This is set when
+you create a <code>PredicateIndexBuilder</code> object, and cannot be changed
+without creating a new <code>PredicateIndexBuilder</code>.
+Consult the javadoc for the <code>Config</code> class for more information on other
+configuration parameters.
+</p>
+
+<h2>Serializing the index</h2>
+<p>
+The predicate index supports serialization. Use the <code>PredicateIndex.writeToOutputStream(out)</code> to serialize the index
+to an output stream, and the <code>PredicateIndex.fromInputStream(in)</code> to deserialize an index from an input stream.
+Deserializing an index is significantly faster than creating a new index through <code>PredicateIndexBuilder</code>.
+</p>
+
+<h1>Searching an index</h1>
+<h2>Creating a searcher</h2>
+<p>
+<code>PredicateIndex</code> has a method called <code>searcher()</code>, which creates a new searcher object.
+The searcher exposes one methods, <code>search(query)</code>, which performs a search on the index.
+The index itself is thread-safe, but a searcher is not. When searches are performed from multiple threads,
+make sure to create a separate searcher object for each thread.
+</p>
+
+<h2>Creating a query</h2>
+<p>
+A query is represented as a <code>PredicateQuery</code>
+object. The <code>PredicateQuery</code> object contains a set of
+features with <code>String</code> values, and a set of range features
+with <code>long</code> values. Each feature in the query may have a
+64-bit sub-query bitmap set.
+</p>
+
+<h2>Executing a query</h2>
+<p>
+The <code>search()</code> method on <code>PredicateIndex.Searcher</code>
+returns a stream object which lazily evaluates the query when the
+results are needed. Each <code>Hit</code> in the result stream
+contains the document id for the hit, as well as a sub-query bitmap
+indicating which sub-queries the hit was a match for.
+The hits are returned in the order they were indexed.
+</p>
+
+<h1>Performance</h1>
+<p>
+As with Vespa, the arity and upper- and lower bound configuration impacts on the performance and index size.
+E.g, increasing the arity increases QPS at a cost of a larger index.
+</p>
+
+<p>
+The library may cache common posting lists to increase performance.
+The cache consists the most expensive posting list based on their size
+and their prevalence in queries. The cache is disabled by default and
+must be build manually using the <code>PredicateIndex.rebuildPostingListCache()</code> method.
+It is recommended to rebuild the cache regulary for optimal performance,
+for instance every 1 millionth query or every 30 minutes. The cache rebuild operation is thread-safe
+and can be executed safely during concurrent search operations.
+</p>
+
+</body>
+</html>

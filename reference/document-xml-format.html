@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Document XML format</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="reviewdate" content="March 2016">
+  <meta name="authors"    content="bratseth">
+</head>
+
+<body>
+<p class="ingress">
+This document defines the Vespa Document XML format. This format
+defines an XML representation of Documents, and <em>operations on
+documents</em>.
+</p>
+
+<p class="alert-success">The <a href="document-json-format.html">JSON document
+format</a> should be prefered over XML.</p>
+
+
+<h1 id="structure">Structure</h1>
+<p>
+The structure of a Vespa Document is as follows:
+</p>
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;vespafeed&gt;
+  <a href="#document">&lt;document&gt;</a>*
+  <a href="#remove">&lt;remove&gt;</a>*
+  <a href="#update">&lt;update&gt;</a>*
+  <a href="#garbagecollect">&lt;garbagecollect&gt;</a>*
+&lt;/vespafeed&gt;
+</pre>
+<p>The operation elements (document, remove, update) may appear interleaved and in any order. The
+following sections describes each of these elements in detail. You can also refer to the
+<a href="#a-complete-example">complete example</a> at the end.</p>
+
+
+<h1 id="document"><code>document</code></h1>
+<p>The <code>document</code> element is used to add new or changed documents to Vespa.</p>
+<pre class="code">
+&lt;document documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;url&gt;http://music.yahoo.com/bobdylan/BestOf&lt;/url&gt;
+  &lt;songs&gt;Knockin on Heaven's Door; Mr. Tambourine Man&lt;/songs&gt;
+  &lt;title&gt;Best of Bob Dylan&lt;/title&gt;
+&lt;/document&gt;
+</pre>
+
+<p>Each document to add must have a specified <code>documenttype</code>, matching one in the deployed application, and a
+<code><a href="#document-ids">documentid</a></code> which uniquely identifies the document.
+Values for the document fields may be set using elements as shown above. In this example, "songs" and "title" are fields specified in the document type.</p>
+
+<h2 id="conditional-put">Conditionally replace document</h2>
+<p>
+  An optional "condition" attribute can be added to the document put
+  operation to specify a test and set condition. The value of the
+  condition object is
+  a <a href="document-select-language.html">document selection</a>
+  encoded as a string. The operation is only applied if the condition
+  matches an already existing document with that id.
+</p><p>
+  Imagine the following scenario, where a yoghurt past the best-before
+  date leads to a workplace accident. If multiple sources apply this
+  feed, it only happens once, and everyone is happy.
+</p>
+<pre class="code">
+&lt;document documenttype="stats" documentid="id:stats:stats::trondheim_office" condition="stats.yoghurts_left_in_fridge==17"&gt;
+  &lt;yoghurts_left_in_fridge&gt;16&lt;/yoghurts_left_in_fridge&gt;
+  &lt;days_since_last_accident&gt;0&lt;/days_since_last_accident&gt;
+&lt;/document&gt;
+</pre>
+
+
+<h2 id="array-values">Array values</h2>
+<p>Array values are represented by enclosing each array element in an <code>item</code> element:
+<pre class="code">
+&lt;vespafeed&gt;
+  &lt;document documenttype="arraydoctype" documentid="id:arraydoctype:arraydoctype::example1"&gt;
+    &lt;intarrayfield&gt;
+      &lt;item&gt;123&lt;/item&gt;
+      &lt;item&gt;456&lt;/item&gt;
+      &lt;item&gt;789&lt;/item&gt;
+    &lt;/intarrayfield&gt;
+    &lt;stringarrayfield&gt;
+      &lt;item&gt;item 1&lt;/item&gt;
+      &lt;item&gt;item 2&lt;/item&gt;
+      &lt;item&gt;item 3&lt;/item&gt;
+    &lt;/stringarrayfield&gt;
+  &lt;/document&gt;
+&lt;/vespafeed&gt;
+</pre>
+
+
+<h2 id="map-values">Map values</h2>
+<p>Map values are represented by an item tag for each element, where the item
+tag has a key and a value tag (both required).</p>
+<pre class="code">
+&lt;vespafeed&gt;
+  &lt;document documenttype="mapdoctype" documentid="id:mapdoctype:mapdoctype::example1"&gt;
+    &lt;inttostringmap&gt;
+      &lt;item&gt;&lt;key&gt;123&lt;/key&gt;&lt;value&gt;foo&lt;/value&gt;&lt;/item&gt;
+      &lt;item&gt;&lt;key&gt;456&lt;/key&gt;&lt;value&gt;bar&lt;/value&gt;&lt;/item&gt;
+      &lt;item&gt;&lt;key&gt;789&lt;/key&gt;&lt;value&gt;foobar&lt;/value&gt;&lt;/item&gt;
+    &lt;/inttostringmap&gt;
+  &lt;/document&gt;
+&lt;/vespafeed&gt;
+</pre>
+<p>Note that map values are currently only supported by VDS/Streaming search.</p>
+
+
+<h2 id="struct-values">Struct values</h2>
+<p>Structs are represented in much the same way as documents - each struct field is declared by
+its field name:</p>
+<pre class="code">
+&lt;vespafeed&gt;
+  &lt;document documenttype="structdoctype" documentid="id:structdoctype:structdoctype::example1"&gt;
+    &lt;mystruct&gt;
+       &lt;stringfield&gt;foo&lt;/stringfield&gt;
+       &lt;intfield&gt;123&lt;/intfield&gt;
+    &lt;/mystruct&gt;
+  &lt;/document&gt;
+&lt;/vespafeed&gt;
+</pre>
+<p>Note that struct values are currently only supported by VDS/Streaming search.</p>
+
+
+<h2 id="weightedset-values">Weighted set values</h2>
+<p>Array values are represented by enclosing each weighted set value in an <code>item</code> element with the weight as
+attribute:
+<pre class="code">
+&lt;vespafeed&gt;
+  &lt;document documenttype="weightedsetdoctype" documentid="id:weightedsetdoctype:weightedsetdoctype::example1"&gt;
+    &lt;intweightedsetfield&gt;
+      &lt;item weight="2"&gt;123&lt;/item&gt;
+      &lt;item weight="78"&gt;456&lt;/item&gt;
+      &lt;item&gt;789&lt;/item&gt;
+    &lt;/intweightedsetfield&gt;
+    &lt;stringweightedsetfield&gt;
+      &lt;item weight="143"&gt;item 1&lt;/item&gt;
+      &lt;item weight="6"&gt;item 2&lt;/item&gt;
+      &lt;item&gt;item 3&lt;/item&gt;
+    &lt;/stringweightedsetfield&gt;
+  &lt;/document&gt;
+&lt;/vespafeed&gt;
+</pre>
+<p>If no weight is given, 1 is used.</p>
+
+
+<h2 id="base64">base64 encoded values</h2>
+<p>The Document XML format has support for base64 encoded field values in order to support feeding binary data.
+base64 encoding is specified by adding <code>binaryencoding="base64"</code>
+to the field attribute like this:</p>
+<pre class="code">
+&lt;vespafeed&gt;
+  &lt;document documenttype="rawdoctype" documentid="id:rawdoctype:rawdoctype::example1"&gt;
+    &lt;rawfield binaryencoding="base64"&gt;VW5rbm93biBhcnRpc3QgZnJvbSB0aGUgbW9vbg==&lt;/rawfield&gt;
+  &lt;/document&gt;
+&lt;/vespafeed&gt;
+</pre>
+<p>base64 encoding can only be set for <a href="../search/search-definitions.html#type:content">content</a> and
+<a href="../search/search-definitions.html#type:raw">raw</a> fields.</p>
+
+
+<h2 id="tensor">Tensor values (not supported in XML)</h2>
+<p>Use the <a href="../reference/document-json-format.html#tensor">Document JSON Format</a> for tensors.</p>
+
+
+<h1 id="update"><code>update</code></h1>
+<p>Vespa supports making changes to existing document without submitting the entire document again.
+This is called <em>partial update</em>.
+</p><p>A document update consists of the <code>documenttype</code> and <code><a href="#document-ids">documentid</a></code>
+of the existing document to update, and the operation or operations to perform on selected fields
+of that document.</p>
+<p>The following update operations are supported:
+<ul>
+<li><code><a href="#assign">assign</a></code>
+<li><code><a href="#add">add</a></code>
+<li><code><a href="#arithmetic">increment</a></code>
+<li><code><a href="#arithmetic">decrement</a></code>
+<li><code><a href="#remove-partial-update">remove</a></code>
+</ul>
+
+
+<h2 id="assign"><code>assign</code></h2>
+<p><code>assign</code> is used to completely replace the value of a field with a new value. The new value is specified between
+<code>&lt;assign field="FieldName"&gt;</code> and <code>&lt;/assign&gt;</code> in the same way as regular attributes in the
+initial document that was fed.</p>
+<p>Example assign update:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;assign field="title"&gt;The best of Bob Dylan&lt;/assign&gt;
+&lt;/update&gt;
+</pre>
+<p>
+For VDS, one can use a field path assignment update instead. This has more powerful features, including the ability to operate
+on structured fields.
+</p><p>Example assign updates with field path:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;assign fieldpath="stringval"&gt;New value&lt;/assign&gt;
+  &lt;assign fieldpath="mymap{title}.stringval"&gt;New value&lt;/assign&gt;
+  &lt;assign fieldpath="intval"&gt;($value + 3) / 2&lt;/assign&gt;
+  &lt;assign fieldpath="intval"&gt;(music.intval2 + $value ) / music.intval3&lt;/assign&gt;
+  &lt;assign fieldpath="intval"&gt;(music.intarray[0] + music.intarray[1] + music.intarray[2] + $value) / 4&lt;/assign&gt;
+  &lt;assign where="music.mymap{$x}.intval > 3" fieldpath="mymap{$x}.stringval"&gt;New value&lt;/assign&gt;
+  &lt;assign fieldpath="weightedset{myvalue}" removeifzero="true" createmissingpath="false"&gt;$value - 1&lt;assign&gt;
+&lt;/update&gt;
+</pre>
+<p>
+The first example shows an equivalent assignment as the regular one. The second example shows that we can
+use a <a href="document-field-path.html">field path</a> to dig into the document, in this case selecting a key from the map field "mymap", mapping
+from a string to a struct, and the struct field "stringval" inside that value. Note that if either mymap, the key "title" or the field stringval
+is not set, the update will create all of them and insert "New value". Examples three through five show how we can use arithmetic. $value is
+a special variable that denotes the previous value of the field. One can also use other field paths in the expression. The sixth example shows
+how you can use a where clause to modify only parts of a map. In this case, the stringval field is modified for all values in the map where intval is
+higher than 3. The last example shows how to use this with weighted set. The removeifzero attribute specifies that if the resulting value of the operation
+is 0, the entry is removed from the set. This is valid for any assignment, but is probably most useful for weighted sets. If createmissingpath
+is set to false, we also don't create any parts of the field path that may be missing from the document.
+</p>
+
+<h2 id="add"><code>add</code></h2>
+<p><code>add</code> is used to add entries to multi-value fields - arrays, tags and weighted sets. The new value(s) to add is/are specified between
+<code>&lt;add field="FieldName"&gt;</code> and <code>&lt;/add&gt;</code> in the same way as regular attributes in the initial document that was fed.
+For add operations on weighted sets where no weight is specified in the update, a default weight of 1 is used. If the value is already present in the
+weighted set, the weight from the update will <em>replace</em> the old weight.</p>
+<p>Example add update:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;add field="tracks"&gt;
+    &lt;item&gt;Lay Lady Lay&lt;/item&gt;
+  &lt;/add&gt;
+&lt;/update&gt;
+</pre>
+<p>
+For VDS, one can also use add updates with field paths. Also, the add operation is only valid for arrays, not weighted sets.
+The syntax is the same as above, except for the fact that field is replaced with fieldpath, and you can have a where clause.
+</p>
+<p>Example add update:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;add fieldpath="tracks"&gt;
+    &lt;item&gt;Lay Lady Lay&lt;/item&gt;
+   &lt;/add&gt;
+&lt;/update&gt;
+</pre>
+
+
+<h2 id="arithmetic"><code>increment, decrement, multiply, divide</code></h2>
+<p>The four arithmetic operators increment, decrement, multiply and divide are used to modify
+single value numeric values, and the weights of weighted sets,
+without having to look up the current value before applying the update.</p>
+<p>An increment/decrement XML element has a <code>by</code> attribute which is used to specify the change in weight.
+<code>by</code> may be a negative number. For weighted sets, a set of <code>key</code> elements are specified inside the increment/decrement
+XML element to indicate what values in the weighted set the change should be applied to.</p>
+<p>Example increment update:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;increment field="popularity" by="2"&gt;
+    &lt;key&gt;The best of Bob Dylan&lt;/key&gt;
+  &lt;/increment&gt;
+  &lt;increment field="popularity" by="5"&gt;
+    &lt;key&gt;Lay Lady Lay&lt;/key&gt;
+  &lt;/increment&gt;
+&lt;/update&gt;
+</pre>
+<p>Be aware that Vespa guarantees that an update is applied <em>once or more</em>. Hence, in rare cases, these operations may be applied
+multiple times. The resource cost saved from being able to update values without looking them up first outweights this slight inconsistency
+in many cases. If strict consistency is needed, the current value should be looked up first, and the new value set using
+<a href="#assign">assign</a>.</p>
+<p>If you are not using indexed search, we suggest you use the fieldpath assignment operator instead.</p>
+
+
+<h2 id="remove-partial-update"><code>remove</code></h2>
+<p><code>remove</code> is used to remove values from an array or a weighted set.
+The items to remove are subelements of the remove operation.</p>
+<p>Example remove update removing an entry from a weighted set field:</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;remove field="tracks"&gt;
+    &lt;item&gt;Someday Baby&lt;/item&gt;
+  &lt;/remove&gt;
+&lt;/update&gt;
+</pre>
+<p>
+There is also a field path equivalent of this, to be used in VDS. It has no content in its element, but works
+using where clauses and field path. Also, it works on any struct field or collection element.
+Some examples:
+</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+  &lt;remove fieldpath="tracks[$x]" where="music.tracks[$x] == &amp;quot;Someday Baby&amp;quot;"/&gt;
+  &lt;remove fieldpath="tracks"/&gt;
+  &lt;remove fieldpath="mymap{mykey}"/&gt;
+&lt;/update&gt;
+</pre>
+<p>
+The first example is equivalent to the old remove example above. The second example removes the entire tracks field.
+The third example removes the "mykey" key from a map field.
+</p>
+
+
+<h2 id="updating-documents">Updating documents which combines values in indexing statements</h2>
+<p>Vespa allows flexibility in how documents are turned into index structure data through <em>indexing statements</em>. Using indexing statements, multiple
+document fields can be used to produce one index structure field. For example, this index statement
+<pre class="code">
+input field1 . input field2 | attribute field2;
+</pre>
+will combine the document fields field1 and field2 into the attribute named field2.
+</p>
+<p>When partially updating document which contains indexing statement which combines multiple fields
+the following rules apply:</p>
+<ul>
+	<li>Only attributes where <em>all</em> the source values are available in the source document update
+		will be updated
+	<li>The document update will fail when indexed (only) if <em>no</em> attributes end up being updated
+		when applying the rule above
+</ul>
+<p><strong>Example:</strong> If a search definition has these indexing statements</p>
+<pre class="code">
+input field1 | attribute field1;
+input field1 . input field2 | attribute field2;
+</pre>
+<p>
+the following will happen for various partial updates:
+</p>
+<table>
+	<tr><th>Partial update contains</th><th>Result</th></tr>
+	<tr><td>field1</td><td>field1 is updated</td></tr>
+
+	<tr><td>field2</td><td>The update fails</td></tr>
+	<tr><td>field1 and field2</td><td>field1 and field2 is updated</td></tr>
+</table>
+
+
+<h2 id="conditional-update">Conditional updates</h2>
+<p>
+  Like document, an optional "condition" atribute can be added to
+  update operations to specify a test and set condition. The value of
+  the condition object is a
+  <a href="document-select-language.html">document selection</a>
+  encoded as a string. The update operation is only applied if the
+  condition matches an already existing document with that id.
+</p><p>
+  The following example increments the <code>sales</code> field only
+  if it's already equal to 999.  The increment update operation is
+  described below. Test and set conditions can added to any update
+  operation. The only limit is your imagination.
+</p>
+<pre class="code">
+&lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt; condition="music.sales==999"
+  &lt;increment field="sales" by="1"/&gt;
+&lt;/update&gt;
+</pre>
+
+
+<h1 id="remove"><code>remove</code></h1>
+<p>The <code>remove</code> operation is used to remove an existing document from Vespa.
+Remove is used for permanent removal, it is not necessary to remove a document before adding a new version.</p>
+<pre class="code">
+&lt;remove documentid="id:music:music::http://music.yahoo.com/BritneySpears/HitMe"/&gt;
+</pre>
+
+
+<h2 id="conditional-remove">Conditional removes</h2>
+<p>
+  Like the document and update operations, an optional "condition"
+  object can be added to remove operations to specify a test and set
+  condition. The value of the condition object is
+  a <a href="document-select-language.html">document selection</a>
+  encoded as a string. The remove operation is only applied if the
+  document selection matches an already existing document with that
+  id.
+</p>
+<pre class="code">
+&lt;remove documentid="id:music:music::MyMixTape" condition="music.songs=\"*Hit Me*\""/&gt;
+</pre>
+
+
+<h1 id="xml-considerations">XML considerations</h1>
+<p>Remember that XML fields have restrictions on the data they can contain. First, XML elements cannot contain
+the characters '&amp;', '&lt;' and '&gt;'. These must be escaped to &amp;amp;, &amp;lt; and &amp;gt;, respectively.
+If you don't want to escape characters, you can also use a CDATA block:
+</p>
+<pre class="code">
+&lt;url&gt;&lt;![CDATA[http://www.yahoo&amp;åøæ.no/]]&gt;&lt;/url&gt;
+</pre>
+
+<p>Another option is to encode the data in <a href="#base64">base64</a>. This is necessary if non-printable characters are used, such
+as 0-bytes. Typically, we use this for binary data.</p>
+
+<p>Second, the fields should contain printable UTF-8 characters only. If you need to use other character sets,
+the following element should be added to the start of the XML:
+</p>
+<pre class="code">
+&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
+</pre>
+
+<p>In this case, we declare that the encoding of fields in the document is iso-8859-1.
+</p>
+
+
+
+<h1 id="document-ids">Document IDs</h1>
+<p>Read more about document IDs in the <a
+href="../search/search-definitions.html#urischemes">search defintions
+doc</a>. Document IDs with different scheme can co-exist in a search/storage system.</p>
+<p><a href="../content/design-overview.html#distribution">More details</a> on
+how Vespa calculates the 12-byte hash that uniquely identifies a document.</p>
+
+
+
+<h1 id="a-complete-example">A complete example</h1>
+<p>The following is a simple example of XML in this format, it contains both a document and some document operations.</p>
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;vespafeed&gt;
+
+ &lt;document documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+   &lt;url&gt;http://music.yahoo.com/bobdylan/BestOf&lt;/url&gt;
+   &lt;songs&gt;Knockin on Heaven's Door; Mr. Tambourine Man&lt;/songs&gt;
+   &lt;title&gt;Best of Bob Dylan&lt;/title&gt;
+   &lt;popularity&gt;
+     &lt;item weight="3"&gt;0&lt;/item&gt;
+     &lt;item weight="5"&gt;1&lt;/item&gt;
+     &lt;item weight="30"&gt;2&lt;/item&gt;
+     &lt;item weight="26"&gt;3&lt;/item&gt;
+   &lt;/popularity&gt;
+   &lt;tracks&gt;
+     &lt;item&gt;Mr. Tambourine Man&lt;/item&gt;
+     &lt;item&gt;Someday Baby&lt;/item&gt;
+     &lt;item&gt;Blowin' In The Wind&lt;/item&gt;
+   &lt;/tracks&gt;
+  &lt;/document&gt;
+
+ &lt;remove documentid="id:music:music::http://music.yahoo.com/BritneySpears/HitMe"/&gt;
+
+ &lt;update documenttype="music" documentid="id:music:music::http://music.yahoo.com/bobdylan/BestOf"&gt;
+   &lt;assign field="title"&gt;The Best of Bob Dylan&lt;/assign&gt;
+   &lt;add field="tracks"&gt;
+     &lt;item&gt;Man Of Constant Sorrow&lt;/item&gt;
+   &lt;/add&gt;
+ &lt;/update&gt;
+
+&lt;/vespafeed&gt;
+</pre>
+
+
+<p class="footer">
+<a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+</p>
+
+</body>
+</html>

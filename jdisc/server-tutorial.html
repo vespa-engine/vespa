@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Server Tutorial</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2016" />
+  <meta name="authors" content="steinar" />
+</head>
+
+<body>
+<p>
+How to run an arbitrary server in the container. Familiarity with the
+<a href="developing-applications.html">JDisc Container Tutorial</a>
+is assumed.
+</p>
+
+
+<h1 id="intro">JDisc servers</h1>
+<p>JDisc servers are the most abstract level in JDisc, they are an arbitrary
+service with a life cycle. JDisc will start the service and stop the service
+as required, but what the service actually does is fully up to the user.
+JDisc only handles basic infrastructure in this case, and makes no assumptions
+about what a service is.</p>
+
+<h1 id="server">The server class</h1>
+<p>
+Set up a project as in the basic <a href="developing-applications.html">tutorial</a>,
+then create <code>hello_world/components/src/main/java/com/mydomain/demo/HelloWorldServer.java</code>:
+
+<pre class="brush: java">
+package com.mydomain.demo;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.Charset;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import com.yahoo.jdisc.service.AbstractServerProvider;
+import com.yahoo.jdisc.service.CurrentContainer;
+
+/**
+ * Dummy server sort of compatible with HTTP.
+ */
+public class HelloWorldServer extends AbstractServerProvider {
+    private final Logger logger = Logger.getLogger(HelloWorldServer.class.getName());
+    private Listener daemon;
+    private final int port;
+    private final byte[] response;
+    private static final Charset charset = Charset.forName("utf-8");
+    private static final byte[] header = ("HTTP/1.1 200 OK\r\n"
+            + "Connection: close\r\n"
+            + "Content-Type: text/html\r\n"
+            + "\r\n").getBytes(charset);
+    private final ServerSocket serverSocket;
+
+    private class Listener implements Runnable {
+        private final Logger logger = Logger.getLogger(Listener.class.getName());
+        private final ServerSocket server;
+        private volatile boolean shutdown = false;
+        private final byte[] response;
+
+        public Listener(ServerSocket s, byte[] response) {
+            server = s;
+            this.response = response;
+        }
+
+        public void run() {
+            while (!shutdown) {
+                Socket clientSocket;
+                try {
+                    clientSocket = server.accept();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Failure while accepting connection.", e);
+                    continue;
+                }
+                try {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(),
+                            charset));
+                    OutputStream out = clientSocket.getOutputStream();
+
+                    in.readLine();
+                    out.write(header);
+                    out.write(response);
+                    out.flush();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Could not write to client.", e);
+                } finally {
+                    try {
+                        clientSocket.close();
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error while closing client socket.", e);
+                    }
+                }
+            }
+        }
+
+
+        public void stop() {
+            shutdown = true;
+            try {
+                server.close();
+            } catch (IOException e) {
+                // just ignore it
+            }
+        }
+
+    }
+
+    public HelloWorldServer(CurrentContainer container, HelloWorldServerConfig config) {
+        super(container);
+        port = config.port();
+        response = config.response().getBytes(charset);
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void start() {
+        daemon = new Listener(serverSocket, response);
+        Thread daemonThread = new Thread(daemon);
+        daemonThread.setDaemon(true);
+        daemonThread.start();
+    }
+
+    @Override
+    public void close() {
+        if (daemon == null) {
+            logger.log(Level.ERROR, "HelloWorldServer.close() invoked without successful start()");
+        } else {
+            daemon.stop();
+        }
+    }
+
+}
+</pre>
+
+<p>The important part is the class
+<code>com.yahoo.jdisc.service.AbstractServerProvider</code>. This provides
+wiring so it is possible for JDisc to do life cycle management, while the example
+is left to implement the actual server. A server is defined by the interface
+<code>com.yahoo.jdisc.service.ServerProvider</code>, it contains only two
+methods: <code>void start()</code> and <code>void close()</code>. A server can
+in other words be pretty much anything, the container just makes life cycle
+management, reconfiguration and so on available as needed. </p>
+
+<h1 id="config">The configuration class</h1>
+
+<p>The demo server requires a custom configuration class, it is defined in
+<code>components/src/main/resources/configdefinitions/hello-world-server.def</code>:
+</p>
+
+<pre>
+namespace=demo
+
+response string default="No config value given."
+port int
+</pre>
+
+<p>Notice how hyphens in the file name are converted to camel casing in the
+generated class name.</p>
+
+<h1 id="app">The application</h1>
+
+<pre class="brush: xml">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;jdisc version="1.0"&gt;
+    &lt;server id="com.mydomain.vespatest.HelloWorldServer" bundle="hello_world"&gt;
+        &lt;config name="demo.hello-world-server"&gt;
+            &lt;response&gt;Hello, world!
+            &lt;/response&gt;
+            &lt;port&gt;16889&lt;/port&gt;
+        &lt;/config&gt;
+    &lt;/server&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>Everything is pretty much the same as when writing a basic handler, though,
+as the server is not directly connected to HTTP, it has no binding. Our
+custom configuration tells the HelloWorldServer to bind to port 16889,
+so when doing</p>
+
+<pre class="brush: cli">
+$ cd hello_world
+$ mvn install
+$ sudo jdisc_container_start target/application
+</pre>
+
+<p>... it should be possible to query port 16889 and get the configured
+response:</p>
+
+<pre class="brush: cli">
+$ curl localhost:16889/dummystring
+Hello, world!
+</pre>
+</body>
+</html>

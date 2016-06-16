@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>VespaSpooler</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2009" />
+  <meta name="authors" content="thomasg, vegardh" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the VespaSpooler, a pluggable spool-based
+Vespa job control interface. VespaSpooler is also used when doing
+<a href="#multicolo">multi-colo feeding</a>.
+</p>
+
+
+
+<h1 id="usage">Usage</h1>
+<p>
+Using Vespa often entails starting some pretty large jobs, such as
+feeding large numbers of documents, moving or deleting data to other
+places, and so on.  VespaSpooler is a tool to initiate those kinds of
+jobs and provide a reliable way to keep track of their progress and
+failures (if any).
+</p>
+
+<p>
+VespaSpooler works by reading <em>job files</em> from a spool
+directory. The job files can be identified by
+a file parser which then assumes control over the job file. Examples of
+job files include Vespa XML feed files, a list of users to delete from
+a VDS system, or a MIME-encoded e-mail to feed into Vespa.
+</p>
+
+<p>
+VespaSpooler can be configured to use any spool directory (see the
+example <a href="#vespasetup">Multi-Colo Feeding Configured in
+Vespa</a> below), but by default <em>$VESPA_HOME/var/spool/vespa</em> is
+used. The spool directory contains the following directories:
+</p>
+
+<ul>
+<li><strong>inbox</strong>: Input files are moved here to be processed
+    by the file parsers. Files are processed in ascending order based
+    on last modified timestamp of each file.</li>
+<li><strong>work</strong>: After being identified by a file parser,
+    the files are moved here, and the file parser starts working on
+    the file(s) in its own thread</li>
+<li><strong>failures</strong>: If an error occurs while parsing a
+    file, being either a syntax error with the file, or a
+    communication error with Vespa, the file in question is moved here
+    for safekeeping. Files here are retried periodically if the
+    spooler is otherwise idle.</li>
+<li><strong>fatalfailures</strong>: Files are moved here if the
+    spooler detects that feeding them won't ever be successful. Users
+    should monitor this directory for misuse or bugs in document
+    processing etc.</li>
+<li><strong>successes</strong>(Optional): VespaSpooler can be
+    configured to move all successfully parsed files here, instead of
+    deleting them. Use the
+    attribute <code>keepsuccess=&quot;true&quot;</code>
+    for <code>&lt;spooler&gt;</code>, see below.</li>
+</ul>
+
+<p>
+Typical usage of VespaSpooler entails creating a file in
+<em>$VESPA_HOME/var/spool/vespa/</em>. When the file has been written
+successfully, it can then be moved to the <em>inbox/</em>
+directory. Note that files should not be created directly in
+the <em>inbox/</em> directory, as they will be only partially read by
+the parsers.
+</p>
+
+
+
+<h1 id="configuration">Configuration</h1>
+<p>
+To add a VespaSpooler to your application, add spoolers to
+the <a href="reference/services-clients.html#clients">clients</a>
+element in your <em>services.xml</em> file. The following
+example shows how to do this:
+</p>
+
+<pre class="brush: xml">
+&lt;spoolers&gt;
+  &lt;spooler hostalias=&quot;node0&quot;&gt;
+    &lt;parsers&gt;
+      &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot;/&gt;
+      &lt;parser type=&quot;com.yahoo.mail.vespa.MailFileParser&quot;/&gt;
+      &lt;parser type=&quot;com.yahoo.mail.vespa.UserDeleteParser&quot;&gt;
+         &lt;parameter key=&quot;mykey&quot; value=&quot;myvalue&quot;/&gt;
+      &lt;/parser&gt;
+    &lt;/parsers&gt;
+  &lt;/spooler&gt;
+&lt;/spoolers&gt;
+</pre>
+
+<p>
+The example above enables three File Parsers, one built-in
+(<code>XMLFileParser</code>) and two added by the user. Each
+FileParser is referenced by its full Java class name, and can have its
+own configuration as set by the <em>parameter</em> elements.
+</p>
+
+
+
+<h1 id="prioritazion">Prioritization Using Directories</h1>
+<p>
+The spooler inbox allows a recursive set of subdirectories. These
+subdirectories can be used to prioritize incoming messages. The
+prioritization works by recursively traversing the directories in
+lexigraphical order. As an example, take the following directory
+structure:
+</p>
+
+<ul>
+<li>file0.xml</li>
+<li>a/file1.xml</li>
+<li>a/file2.xml</li>
+<li>a/a/file3.xml</li>
+<li>a/b/file4.xml</li>
+<li>b/file5.xml</li>
+<li>b/a/file6.xml</li>
+<li>b/a/a/file7.xml</li>
+<li>b/a/b/file8.xml</li>
+</ul>
+
+<p>
+The files will be processed in the order above, first processing the
+root directory (<em>file0.xml</em>), then processing the first
+subdirectory's root, then its subdirectories, and so on.
+</p>
+
+
+
+<h1 id="multicolo">Multi-Colo Feeding</h1>
+<p>
+Feeding data to multiple data centers (colos) can be achieved by using
+the parser <code>CrossColoParser</code>.  Spoolers will pick up feeds
+in the inbox, and feed them to its configured remote colo using
+a <a href="httpgateway.html">HTTP Gateway</a> at the remote end. One
+spooler should be used per remote colo.
+</p>
+
+<p>
+It is possible to run the spooler as part of a Vespa installation at
+the sending end, or run it standalone if you wish to feed from a node
+running some other content system and do not want to install Vespa
+Search.
+</p>
+
+
+<h2 id="vespasetup">Multi-Colo Feeding Configured in Vespa</h2>
+<p>
+Configure the HTTP file parser as shown in the following snippet
+from <em>services.xml</em>. Two spoolers are configured for two remote
+HTTP Gateway hosts. The spoolers need different directory settings.
+</p>
+
+<pre class="brush: xml">
+&lt;spoolers&gt;
+  &lt;spooler hostalias=&quot;node0&quot; directory=&quot;$VESPA_HOME/var/spool/vespa/remote1&quot; threads=&quot;10&quot;&gt;
+    &lt;parsers&gt;
+      &lt;parser type=&quot;com.yahoo.vespaspooler.crosscolo.CrossColoParser&quot;&gt;
+        &lt;parameter key=&quot;remoteHost&quot; value=&quot;remoteHost1&quot; /&gt;
+        &lt;parameter key=&quot;remotePort&quot; value=&quot;19020&quot; /&gt;
+      &lt;/parser&gt;
+    &lt;/parsers&gt;
+  &lt;/spooler&gt;
+  &lt;spooler hostalias=&quot;node0&quot; directory=&quot;$VESPA_HOME/var/spool/vespa/remote2&quot; threads=&quot;10&quot;&gt;
+    &lt;parsers&gt;
+      &lt;parser type=&quot;com.yahoo.vespaspooler.crosscolo.CrossColoParser&quot;&gt;
+        &lt;parameter key=&quot;remoteHost&quot; value=&quot;remoteHost2&quot; /&gt;
+        &lt;parameter key=&quot;remotePort&quot; value=&quot;19020&quot; /&gt;
+        &lt;parameter key=&quot;serializeDocIds&quot; value=&quot;true&quot; /&gt;
+      &lt;/parser&gt;
+    &lt;/parsers&gt;
+  &lt;/spooler&gt;
+&lt;/spoolers&gt;
+</pre>
+
+<p>
+The directory names are arbitrary, but they must be
+under <em>$VESPA_HOME/var/spool/vespa/</em>. remoteHost1 and remoteHost2
+are the host names, whereas 19020 is the default port used by the HTTP
+Gateway.
+</p>
+
+
+<h2 id="feedfiles">Feed Files</h2>
+<p>
+For a feed file to be picked up and sent to the remote colo, it must
+be put in both
+directories <em>$VESPA_HOME/var/spool/vespa/remote1/inbox</em>
+and <em>$VESPA_HOME/var/spool/vespa/remote2/inbox</em>. You can
+alternatively use the utility <code>spoolmaster</code>. You configure
+it to run on a node using the following
+in <em>services.xml</em>:
+</p>
+
+<pre>
+&lt;spoolers&gt;
+  &lt;spoolmaster hostalias=&quot;node0&quot;/&gt;
+  &hellip; etc as above
+</pre>
+
+<p>
+When running, it will monitor the
+directory <em>$VESPA_HOME/var/spool/master/inbox</em> for feed files, and
+put them in the inbox of each existing VespaSpooler inbox, such as the
+two in our example. It will remove the files from the master inbox
+when every spooler have taken them from its inbox for processing.
+</p>
+
+<p>
+Since the parser will start reading a file at the moment it appears in
+the inbox, you should take care of writing the files to the files
+system first and then moving the file to the inbox, to make sure that
+the parser does not read only the first part of a file and yout get a
+parser exception.
+</p>
+
+<p>
+The <code>CrossColoParser</code> can feed XML files ending
+with <code>.xml</code> and binary files ending
+with <code>.docs</code>.
+</p>
+
+
+<h2 id="standalone">Multi-Colo Feeding Configured Standalone</h2>
+<p>
+Run your spoolers this way if you want them to run without running the
+rest of Vespa Search. Copy the
+file <em>$VESPA_HOME/lib/jars/vespaclient-java-jar-with-dependencies.jar</em> from
+a Vespa node.  For each remote colo, run a spooler like this:
+</p>
+
+<pre class="brush: cli">
+sudo java -Xmx512m -cp $VESPA_HOME/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespaspooler.VespaSpooler --configid file:/path/to/1st/spooler.cfg --standalone
+</pre>
+
+<p>
+The <code>mx</code> (max heap size) setting of 512m can possibly be
+reduced if you are not using the <code>serializeDocIds</code> setting,
+see below.
+</p>
+
+<p>
+The file <em>spooler.cfg</em> looks like this:
+</p>
+
+<pre>
+directory &quot;$VESPA_HOME/var/spool/vespa/remote1&quot;
+threads 10
+parsers[1]
+parsers[0].classname &quot;com.yahoo.vespaspooler.crosscolo.CrossColoParser&quot;
+parsers[0].parameters[2]
+parsers[0].parameters[0].key &quot;remoteHost&quot;
+parsers[0].parameters[0].value &quot;remoteHost1&quot;
+parsers[0].parameters[1].key &quot;remotePort&quot;
+parsers[0].parameters[1].value &quot;19020&quot;
+</pre>
+
+<p>
+The other spooler(s) need different <em>spooler.cfg</em> files with
+different directory and remoteHost settings. spoolmaster can be used
+the same way as described above, just copy the binary from a Vespa
+node.
+</p>
+
+<p>
+The spoolmaster can be run on the command line like this:
+</p>
+
+<pre class="brush: cli">
+sudo spoolmaster
+</pre>
+
+
+<h2 id="parameters">Configuration Parameters</h2>
+<p>
+The configuration parameters that can be set for multi-colo feeding,
+either in <em>services.xml</em> or in <em>spooler.cfg</em> (see
+examples above for syntax).
+</p>
+
+<ul>
+<li><code>remoteHost</code>: remote host where HTTP Gateway is
+    running.</li>
+<li><code>remotePort</code>: port number for HTTP Gateway running on
+    remote host.</li>
+<li><code>serializeDocIds</code>: When true, makes sure that documents
+    with same document id arrrive at remote host in the same order as
+    they were written to file.  Documents with same document id in
+    more than one file have no guarantee of being delivered in any
+    particular order, however (consider using one thread in such a
+    scenario).  Default false.</li>
+<li><code>gzipCompression</code>: When true, compress data when
+    sending over HTTP, default false</li>
+<li><code>httpConnectionTimeout</code>: HTTP connection timeout in
+    milliseconds, default is 20000.</li>
+<li><code>httpReadTimeout</code>: HTTP read timeout in milliseconds,
+    default is 60000.</li>
+<li><code>transientFailureIdleTime</code>: idle time between retries
+    when there is no connection to HTTP in milliseconds, default is
+    30000.</li>
+<li><code>docType</code>: the document type that should be used when
+    sending binary data to Vespa
+    (see <a href="search/search-definitions.html">documents
+    overview</a>).</li>
+<li><code>docField</code>: the document field that should be used when
+    sending binary data to Vespa.</li>
+<li><code>contentType</code>: the content type that should be used
+    when sending binary data to Vespa.</li>
+<li><code>route</code>: the route to be used by the HTTP Gateway when
+    feeding documents to Vespa.</li>
+<li><code>maxFileSize</code>: the maximum file size in bytes for feed
+    files. Files larger than this value will fail to be
+    processed. Default value is 10 Mb.</li>
+<li><code>useOldPaths</code>: use old paths for HTTP Gateway (Vespa
+    versions 4.2 and older or setups that use 'clients' version 1.0
+    config in services.xml).</li>
+<li><code>useStreamingParser</code>: When true, use a streaming XML
+    parser for parsing XML files when <code>serializeDocIds</code> is true.
+    Default value is true.</li>
+</ul>
+
+
+<h2 id="threads">Thread-Related Considerations</h2>
+<p>
+The number of threads in the spooler can be set with the
+attribute <code>threads</code> to the <code>&lt;spooler&gt;</code>
+element in <em>services.xml</em>, or in the <em>spooler.cfg</em>
+file when running standalone.
+</p>
+
+<p>
+If using more than one thread, you should set
+the <code>serializeDocIds</code> parameter to <code>true</code> for
+the CrossColoParser to make sure that the feeds arrive at the remote
+gateways in the same order you posted them in the inbox (or else you
+could end up posting a put and a remove for the same document and not
+knowing if the document is or is not available after those two
+operations).  When bulk putting new data, say a crawler dump, it would
+be advisable to use multiple threads and setting
+the <code>serializeDocIds</code> parameter to <code>false</code>, to
+increase throughput.
+</p>
+
+
+<h2 id="security">Securing the Cross-Colo Traffic</h2>
+
+<p>
+It is recommended that traffic between data centers is secured. This
+can be achieved by setting up an <code>stunnel</code> between the node
+running the spoolers and each of the remote gateway hosts. In this
+setting, the spoolers are typically configured to use localhost as
+remote gateway, and the tunneled port number.
+</p>
+
+
+<h1 id="parsers">File Parsers</h1>
+<p>
+VespaSpooler includes a couple of built-in File Parsers. They are:
+</p>
+
+<ul>
+<li><strong>XMLFileParser</strong>: Parses files
+    containing <a href="reference/document-xml-format.html">Vespa
+    XML</a> and feeds the document operations to Vespa. The files must
+    have the <code>.xml</code> file extension.</li>
+<li><strong>BinaryDocumentFileParser</strong>: Parses files containing
+    serialized document objects and feeds them to Vespa.</li>
+<li><strong>CrossColoParser</strong>: Similar to XMLFileParser, but uses HTTP to
+    emit the documents, useful for multi-colo feeding.
+    See <a href="#multicolo">multi-colo feeding</a> section for more
+    on this.</li>
+</ul>
+
+<p>
+It is possible to add your own spooler extensions, but this is not a
+public API at the moment.  If you think it could be useful to create
+your own parser extensions, please contact Vespa support.
+</p>
+
+</body>
+</html>

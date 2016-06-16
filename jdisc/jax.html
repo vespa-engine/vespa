@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <link rel="stylesheet" type="text/css"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="September 2013" />
+  <meta name="authors" content="gv" />
+  <title>XML Processing</title>
+</head>
+
+<body>
+
+<p>
+When working with XML libraries like
+<a href="https://jaxp.java.net">JAXP</a> and <a href="https://jaxb.java.net">JAXB</a>, we
+can easily run into classloading issues. These libraries were not designed to run
+smoothly in an OSGi environment. Problems occur when a library is trying to load classes
+from the bootstrap or context classloaders, or when two different versions of a class is
+provided runtime. For details, see <a href="osgi-classloading.html">OSGi
+troubleshooting</a>.
+
+
+<h1 id="injecting-factories">Injecting the built-in XML factories</h2>
+
+<p>To simplify development of components that need to process XML, the JDisc container
+provides the most commonly used XML factories as built-in components. These factories can
+be directly injected to your components, by adding them as constructor arguments. The
+container will provide a new factory instance for each component, so developers do not
+have to worry about sharing factories between different components.
+
+<p>Below is an example of injecting the <code>DocumentBuilderFactory</code> for working
+with DOM structures.
+
+<pre class="brush: java">
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+public class MyComponent {
+
+    public final DocumentBuilderFactory factory;
+
+    @Inject
+    public MyComponent(<span style="background: yellow">DocumentBuilderFactory factory</span>) {
+        this.factory = factory;
+    }
+
+    public void parse(...) {
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        ...
+</pre>
+
+
+<p>Below is a list of all available built-in factories, and the corresponding implementation class that
+will be provided by the JDisc Container:
+
+<table cellspacing="0" cellpadding="0" border="1">
+  <thead>
+    <tr>
+      <th>Constructor argument type</th>
+      <th>Implementation class that will be injected</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>javax.xml.datatype.DatatypeFactory</td>
+      <td>com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.parsers.DocumentBuilderFactory</td>
+      <td>com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.parsers.SAXParserFactory</td>
+      <td>com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.stream.XMLEventFactory</td>
+      <td>com.sun.xml.internal.stream.events.XMLEventFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.stream.XMLInputFactory</td>
+      <td>com.sun.xml.internal.stream.XMLInputFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.stream.XMLOutputFactory</td>
+      <td>com.sun.xml.internal.stream.XMLOutputFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.transform.TransformerFactory</td>
+      <td>com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl</td>
+    </tr>
+    <tr>
+      <td>javax.xml.validation.SchemaFactory</td>
+      <td>com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory</td>
+    </tr>
+    <tr>
+      <td>javax.xml.xpath.XPathFactory</td>
+      <td>com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p> Note that all factories provided by the JDisc Container are the default
+implementations, provided in the Java SDK. If you need other implementations, you must
+include the relevant libraries to your bundle, and deal with the issues as they come.
+
+
+<h1 id="jaxb">JAXB</h1>
+
+<p>The observant eye will have noticed that the table above does not mention
+<code>JAXBContext</code>. JAXB needs knowledge to the <em>context path</em>, which is a
+list of java package names of the generated classes derived from the user defined xml
+schemas. Instead of injecting a JAXBContext directly, we have created a <a
+ href="../javadoc/index.html?com/yahoo/container/xml/bind/JAXBContextFactory.html"><code>JAXBContextFactory</code></a>
+that can be injected. This factory has a <code>newInstance</code> method that takes a
+varargs list of class objects. Call this method with one class from each package in the
+context path to get a valid <code>JAXBContext</code> object. Here is an example with two
+generated packages:
+
+<pre class="brush: java">
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import com.yahoo.container.xml.bind.JAXBContextFactory;
+import com.yahoo.test.jaxb.MyGeneratedType;
+import com.yahoo.test.jaxb2.OtherGeneratedType;
+
+public class JaxbComponent {
+    public final JAXBContext jaxbContext;
+
+    @Inject
+    public JaxbComponent(<span style="background: yellow">JAXBContextFactory factory</span>) {
+        jaxbContext = factory.newInstance(MyGeneratedType.class, OtherGeneratedType.class);
+    }
+
+    public void unmarshal(...) {
+        Unmarshaller u = jaxbContext.createUnmarshaller();
+        ...
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="level" content="basic" />
+    <meta name="audience" content="developers" />
+    <meta name="date" content="June 2013" />
+    <meta name="authors" content="simon" />
+    <title>Developing metric consumers</title>
+  </head>
+  
+  <body>
+    <p>
+      The JDisc <code>Metric</code> interface provides an API for writing metric data to a
+      configurable <code>MetricConsumer</code>. This document explains how to implement
+      and deploy such a consumer.
+
+      Please note that the JDisc Container ships with a metric consumer that integrates
+      with the <a href="../cloudconfig/config-introduction.html">Cloud Config
+      System</a>. When you deploy a custom consumer, the built-in one will be disabled.
+    </p>
+    <p>
+      JDisc provides a minimal metric API that consists
+      of the <code>com.yahoo.jdisc.Metric</code> producer API
+      (<a href="../javadoc/index.html?com/yahoo/jdisc/Metric.html">javadoc</a>)
+      and the configurable <code>com.yahoo.jdisc.application.MetricConsumer</code>
+      (<a href="../javadoc/index.html?com/yahoo/jdisc/application/MetricConsumer.html">javadoc</a>).
+      Any component that wishes to output metric data simply declares <code>Metric</code>
+      to be among its <a href="injecting-components.html">constructor dependencies</a>,
+      and it may start writing to it.
+
+      Because calls to <code>Metric</code> are forwarded to thread-local instances of the
+      configured <code>MetricConsumer</code>, a consumer implementation does not need to
+      be thread-safe.
+    </p>
+    <p>
+      To implement a custom consumer, you must implement the <code>MetricConsumer</code>
+      interface, as well as provide a factory for your implementation. This factory needs
+      to be an implementation of the
+      <code>com.yahoo.container.jdisc.MetricConsumerFactory</code> (<a href="../javadoc/index.html?com/yahoo/container/jdisc/MetricConsumerFactory.html">javadoc</a>)
+      interface in order for the JDisc Container to find it.
+
+      Because there will be one consumer instance per thread, and many threads will be
+      updating the same metrics, most implementations will require a registry of sorts to
+      manage the aggregation of metrics across consumers.
+    </p>
+    <p>
+      To install a <code>MetricConsumerFactory</code> in a JDisc Container, use
+      the <a href="../reference/services-jdisc.html#component">component</a>
+      element in <em>services.xml</em>, e.g.:
+    </p>
+    <pre class="brush: xml">
+&lt;jdisc id="default" version="1.0"&gt;
+    &lt;component id="my.package.MyMetricConsumerFactory" bundle="MyBundleSymbolicName" /&gt;
+    &lt;nodes&gt;
+        &lt;node hostalias="node1" /&gt;
+    &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+  </body>
+</html>
+

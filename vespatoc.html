@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html>
+
+<head>
+  <title>Vespa Documentation table of content</title>
+  <link rel="stylesheet" type="text/css" href="/css/bootstrap.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="/css/bs-vespacorp.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="/css/mathquill.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="/css/sh.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="/css/prettify.css" />
+  <link type="text/css" rel="stylesheet" media="print" href="/css/print.css" />
+  <link rel="icon" href="/favicon2.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="/favicon2.ico" type="image/x-icon" />
+</head>
+
+<body>
+
+<h1>Vespa 6 Documentation</h1>
+      
+
+<h2>1. Getting Started</h2>
+
+<ul>
+  <li><a href="introduction-to-documentation.html">Introduction to the Documentation</a></li>
+  <li><a href="features.html">Features</a></li>
+  <li><a href="overview.html">An Overview of Vespa</a></li>
+  <li><b><a href="vespa-quick-start.html">Getting Started</a></b> - a qucik step by step to building your first application</li>
+  <li><a href="tutorial.html">Tutorial</a></li>
+</ul>
+
+
+<h2>2. Vespa Applications</h2>
+
+
+<h3>Creating applications</h3>
+
+<ul>
+  <li><a href="jdisc/index.html">Developing application components in Java</a></li>
+  <li><a href="../javadoc/6/">JavaDoc</a></li>
+  <li><a href="cloudconfig/application-packages.html">Application Package Basics</a></li>
+  <li><a href="indexing-modes.html">Indexing Modes</a></li>
+</ul>
+
+
+<h3>Search Definitions - Creating Data Schemas</h3>
+
+<ul>
+  <li><a href="search/search-definitions.html">Documents and Search Definitions</a></li>
+  <li><a href="indexing-language.html">Indexing Language</a></li>
+  <li><a href="document-ids.html">Document Identifier Schemes</a></li>
+  <li><a href="changing-live-searchdefinitions.html">Changing Live Search Definitions</a></li>
+  <li><a href="multiple-search-definitions.html">Multiple Search Definitions</a></li>
+</ul>
+
+
+<h2>3. Configuration</h2>
+
+<ul>
+  <li><a href="cloudconfig/config-introduction.html">The Cloud Configuration System</a></li>
+  <li><a href="cloudconfig/configuration-server.html">Config Servers</a></li>
+</ul>
+
+
+<h3>Cloud Config programmatic API's</h3>
+
+<ul>
+  <li><a href="cloudconfig/configapi-dev.html">Using the Cloud Config API</a></li>
+  <li><a href="cloudconfig/configapi-dev-java.html">Using the Java Cloud Config API</a></li>
+  <li><a href="cloudconfig/configapi-dev-cpp.html">Using the C++ Cloud Config API</a></li>
+  <li><a href="cloudconfig/cloudconfig-model-plugins.html">Developing Cloud Config Model Plugins</a></li>
+</ul>
+
+
+<h3>Cloud Config REST API</h3>
+
+<ul>
+  <li><a href="cloudconfig/config-rest-api-v2.html">REST API for getting config</a></li>
+  <li><a href="cloudconfig/deploy-rest-api-v2.html">REST API for deploying application packages</a></li>
+</ul>
+
+
+<h2>4. Performance</h2>
+
+<ul>
+  <li><a href="performance/attribute-memory-usage.html">Attribute Memory Usage</a></li>
+  <li><a href="performance/sizing-search.html">Sizing a Vespa Search Cluster</a></li>
+  <li><a href="performance/vespa-benchmarking.html">Benchmarking</a></li>
+  <li><a href="performance/jvm-tuning.html">Tuning Vespa JVMs</a></li>
+  <li><a href="performance/profiling-search-container.html">Profiling the Search Container</a></li>
+  <li><a href="performance/fbench.html">fbench</a></li>
+  <li><a href="performance/profiling.html">Profiling</a></li>
+</ul>
+
+
+<h2>5. Writing To Vespa</h2>
+
+
+<h3>Writing Documents to Vespa</h3>
+
+<ul>
+  <li><a href="introduction-to-writing-to-vespa.html">Introduction</a></li>
+  <li><a href="vespa-http-client.html">High performance writing: The Vespa HTTP client</a></li>
+  <li><a href="document-api-guide.html">Data access from components running in Vespa: The Document API</a></li>
+  <li><a href="httpgateway.html">Sending HTTP requests directly: Using the HTTP Gateway</a></li>
+  <li><a href="vespaspooler.html">Feeding files form a directory: The Vespa Spooler</a></li>
+</ul>
+
+
+<h3>Document Processing</h3>
+
+<ul>
+  <li><a href="search/docproc-development.html">Document Processor Development</a></li>
+  <li><a href="search/container-intro.html">The JDisc Container</a></li>
+  <li><a href="jdisc/developing-applications.html">Developing with the JDisc Container</a></li>
+  <li><a href="jdisc/container-components.html">Components for the JDisc Container</a></li>
+  <li><a href="search/component-types.html">Component Types in the JDisc Container</a></li>
+  <li><a href="jdisc/injecting-components.html">Components using other components</a></li>
+  <li><a href="jdisc/bundle-plugin.html">The Maven Bundle Plugin</a></li>
+  <li><a href="jdisc/processing.html">Minimal Request-Response Processing Framework</a></li>
+  <li><a href="chains-in-vespa.html">Chains of Components</a></li>
+  <li><a href="jdisc/component-versioning.html">Versioning in the JDisc Container</a></li>
+  <li><a href="performance/docproc-tuning.html">Tuning Docproc throughput and memory usage</a></li>
+  <li><a href="annotations.html">Document Annotations</a></li>
+  <li><a href="splitterjoiner.html">Processing several documents as a single unit</a></li>
+  <li><a href="search/document-processing-overview.html">Document Processing Design Goals and Features</a></li>
+</ul>
+
+
+<h3>Routing</h3>
+
+<ul>
+  <li><a href="routing.html">Introduction and Overview of Routing</a></li>
+  <li><a href="routing-custom.html">Custom Configuration of Routes</a></li>
+</ul>
+
+
+<h3>Partial Updates</h3>
+
+<ul>
+  <li><a href="partial-update.html">Introduction to Partial Updates</a></li>
+  <li><a href="partial-update-example.html">Partial Updates Example</a></li>
+</ul>
+
+
+<h2>6. Querying Vespa</h2>
+
+
+<h3>The Search API - making searches/selects</h3>
+
+<ul>
+  <li><a href="how-to-search.html">How to Search with Vespa</a></li>
+  <li><a href="query-profiles.html">Introduction to Query Profiles</a></li>
+  <li><a href="query-rewriting.html">Introduction to Query Rewriting</a></li>
+  <li><a href="attributes.html">Introduction to Attributes</a></li>
+  <li><a href="text-processing.html">Adding Support for Special Tokens</a></li>
+  <li><a href="boolean-search.html">Boolean Search</a></li>
+</ul>
+
+
+<h3>Grouping and Aggregating Information in Results</h3>
+
+<ul>
+  <li><a href="grouping.html">Grouping</a></li>
+</ul>
+
+
+<h3>Result Formats</h3>
+
+<ul>
+  <li><a href="multiple-summaries.html">Using Multiple Document Summaries</a></li>
+  <li><a href="search/result-rendering.html">Search Result Renderers</a></li>
+  <li><a href="page-templates.html">Introduction to Page Templates</a></li>
+</ul>
+
+
+<h3>Ranking - Getting the most relevant selected data</h3>
+
+<ul>
+  <li><a href="ranking.html">Ranking with Vespa</a></li>
+  <li><a href="nativerank.html">Ranking Results Using nativeRank</a></li>
+</ul>
+
+
+<h3>Geographical Searches</h3>
+
+<ul>
+  <li><a href="distance-sorting.html">Sorting by Distance</a></li>
+  <li><a href="distance-to-path.html">Searching Along Paths</a></li>
+</ul>
+
+
+<h3>Linguistics</h3>
+
+<ul>
+  <li><a href="linguistics.html">Linguistics in Vespa</a></li>
+  <li><a href="stemming.html">Introduction to Stemming</a></li>
+</ul>
+
+
+<h2>7. The JDisc Container</h2>
+
+<ul>
+  <li><a href="jdisc/index.html">The JDisc Container</a></li>
+  <li><a href="jdisc/developing-applications.html">Developing applications</a></li>
+  <li><a href="developing-web-services.html">Developing web service applications</a></li>
+  <li><a href="jdisc/container-components.html">Components for the JDisc Container</a></li>
+  <li><a href="search/component-types.html">Component Types in the JDisc Container</a></li>
+  <li><a href="search/handler-tutorial.html">HTTP API Use Case Tutorial</a></li>
+  <li><a href="jdisc/injecting-components.html">Components using other components</a></li>
+  <li><a href="jdisc/developing-osgi-bundles.html">Building OSGi bundles</a></li>
+  <li><a href="jdisc/bundle-plugin.html">The Maven Bundle Plugin</a></li>
+  <li><a href="jdisc/chained-components.html">Chains of Components</a></li>
+  <li><a href="search/searcher-development.html">Searcher Development</a></li>
+  <li><a href="jdisc/component-versioning.html">Versioning in the Container</a></li>
+  <li><a href="configuring-search-chains.html">How to Configure Search Chains</a></li>
+</ul>
+
+
+<h3>Federation</h3>
+
+<ul>
+  <li><a href="federation-platform.html">The Federation Platform</a></li>
+  <li><a href="federation.html">How to Configure Federation</a></li>
+</ul>
+
+
+<h3>Using FSAs</h3>
+
+<ul>
+  <li><a href="query-phrasing.html">Use Case: Query Phrasing</a></li>
+</ul>
+
+
+<h2>8. The Content Layer</h2>
+
+<ul>
+  <li><a href="content/content-layer-overview.html">Overview</a></li>
+</ul>
+
+
+<h3>Setting up and configuring applications</h3>
+
+<ul>
+  <li><a href="content/setup-tuning.html">Tuning</a></li>
+  <li><a href="content/setup-documents.html">Document types and identifiers</a></li>
+  <li><a href="content/setup-throttling.html">Throttling</a></li>
+</ul>
+
+
+<h3>Administrating content clusters</h3>
+
+<ul>
+  <li><a href="operations/admin-monitoring.html">Monitoring cluster</a></li>
+  <li><a href="operations/admin-procedures.html">Administrative procedures</a></li>
+  <li><a href="content/admin-states.html">Cluster and node states</a></li>
+  <li><a href="content/admin-automatic.html">Automatically detected issues</a></li>
+  <li><a href="content/admin-manual.html">Issues that content layer do not automatically solve</a></li>
+  <li><a href="content/admin-loadtypes.html">Using load types to improve monitoring</a></li>
+  <li><a href="content/inter-cluster-data-migration.html">Migrate or copy data between clusters</a></li>
+</ul>
+
+
+<h3>Programming services and applications</h3>
+
+<ul>
+  <li><a href="content/api-state-rest-api.html">State Rest API</a></li>
+</ul>
+
+
+<h3>Architecture</h3>
+
+<ul>
+  <li><a href="content/design-overview.html">Architecture</a></li>
+  <li><a href="content/idealstate.html">The distribution algorithm</a></li>
+  <li><a href="content/buckets-and-distribution.html">Document to bucket mapping</a></li>
+  <li><a href="content/data-placement.html">Hierarchical distribution</a></li>
+  <li><a href="content/design-clustercontroller.html">Cluster controller</a></li>
+</ul>
+
+
+<h2>9. Operations and Procedures</h2>
+
+
+<h3>Installing and Upgrading</h3>
+
+<ul>
+  <li><a href="operations/install-multinode.html">Setting up a multinode system</a></li>
+  <li><a href="jdisc/index.html">JDisc Container</a></li>
+</ul>
+
+
+<h3 id="config">Configuration</h3>
+
+<ul>
+  <li><a href="cloudconfig/configuration-server-ops.html">Configuration Server Operations</a></li>
+</ul>
+
+
+<h3>Logging</h3>
+
+<ul>
+  <li><a href="reference/logs.html">Vespa Log Files</a></li>
+  <li><a href="reference/monitoring-log-events.html">Monitoring Log Events</a></li>
+  <li><a href="log-events.html">Understanding Log Events</a></li>
+</ul>
+
+
+<h3>Files and ports</h3>
+
+<ul>
+  <li><a href="reference/portlist.html">Ports Used by Vespa</a></li>
+  <li><a href="reference/files-and-processes.html">Directories, Files and Processes</a></li>
+</ul>
+
+
+<h3>Data Recovery</h3>
+
+<ul>
+  <li><a href="reference/vespa-remove-index.html">Removing Old Indexes</a></li>
+</ul>
+
+
+<h3>Troubleshooting</h3>
+
+<ul>
+  <li><a href="operations/ops-scenarios.html">Troubleshooting Commmon Ops Issues</a></li>
+  <li><a href="inspecting-java-services.html">Inspecting Vespa Java Services</a></li>
+  <li><a href="operations/content-cluster-resource-limits.html">Content Cluster Resource Limits</a></li>
+</ul>
+
+
+<h3>Security</h3>
+
+<ul>
+  <li><a href="jdisc/secure-http.html">Secure the HTTP interface</a></li>
+</ul>
+
+
+<h2>10. Reference</h2>
+
+<ul>
+  <li><a href="reference/terminology.html">Terminology</a></li>
+</ul>
+
+
+<h3>Application packages</h3>
+
+<ul>
+  <li><a href="reference/application-packages-reference.html">Application Package Reference</a></li>
+  <li><a href="reference/search-definitions.html">Search Definitions</a></li>
+  <li><a href="reference/advanced-indexing-language.html">Indexing Language</a></li>
+  <li><a href="reference/services.html">services.xml</a></li>
+  <li><a href="reference/services-admin.html">services.xml: admin</a></li>
+  <li><a href="reference/services-clients.html">services.xml: clients</a></li>
+  <li><a href="content/setup-reference.html">services.xml: content</a></li>
+  <li><a href="reference/services-jdisc.html">services.xml: jdisc</a></li>
+  <li><a href="reference/services-routing.html">services.xml: routing</a></li>
+</ul>
+
+
+<h3>Command Line Tools</h3>
+
+<ul>
+  <li><a href="reference/configproxy-cmd.html">configproxy-cmd</a></li>
+  <li><a href="reference/getvespaconfig.html">getvespaconfig</a></li>
+  <li><a href="operations/container-rpc-commands.html">invoke</a></li>
+  <li><a href="reference/logfmt.html">logfmt</a></li>
+  <li><a href="reference/vespa-check-hosts.html">vespa-check-hosts</a></li>
+  <li><a href="reference/vespa-model-inspect.html">vespa-model-inspect</a></li>
+  <li><a href="reference/vespa-proton-cmd.html">vespa-proton-cmd</a></li>
+  <li><a href="reference/vespa-remove-index.html">vespa-remove-index</a></li>
+  <li><a href="reference/vespadestination.html">vespadestination</a></li>
+  <li><a href="reference/vespafeeder.html">vespafeeder</a></li>
+  <li><a href="reference/vespaget.html">vespaget</a></li>
+  <li><a href="reference/vesparoute.html">vesparoute</a></li>
+  <li><a href="content/feature-visiting.html#command-line">vespavisit</a></li>
+  <li><a href="content/feature-visiting.html#command-line">vespavisittarget</a></li>
+</ul>
+
+
+<h3>Configuration</h3>
+
+<ul>
+  <li><a href="reference/config-files.html">Configuration File Reference</a></li>
+  <li><a href="reference/internal-config-files.html">Internal Configuration File Reference</a></li>
+</ul>
+
+
+<h3 id="reference/docproc">Document Processing</h3>
+
+<ul>
+  <li><a href="reference/docproc.html">Vespa Document Processing Framework Design</a></li>
+  <li><a href="reference/indexingcluster.html">Document indexing</a></li>
+</ul>
+
+
+<h3>The Document API</h3>
+
+<ul>
+  <li><a href="reference/document-field-path.html">Document Field Path Syntax</a></li>
+  <li><a href="reference/fieldsets.html">Document Field Set Syntax</a></li>
+  <li><a href="reference/document-select-language.html">Document Selector Language</a></li>
+  <li><a href="reference/document-xml-format.html">Document JSON Format</a></li>
+  <li><a href="reference/document-xml-format.html">Document XML Format</a></li>
+</ul>
+
+
+<h3>Queries and Results</h3>
+
+<ul>
+  <li><a href="reference/search-api.html">The Search API</a></li>
+  <li><a href="reference/query-language-syntax.html">Query Language Syntax</a></li>
+  <li><a href="reference/query-profile-reference.html">Query Profiles</a></li>
+  <li><a href="reference/semantic-rules.html">Query Rewriting - Semantic Rules Syntax</a></li>
+  <li><a href="reference/equiv.html">The EQUIV Operator</a></li>
+  <li><a href="reference/wand-operator.html">The WAND Operator</a></li>
+  <li><a href="reference/weighted-set-term.html">WeightedSetItem terms</a></li>
+  <li><a href="reference/dot-product-search-operator.html">Dot Product Search Operator</a></li>
+  <li><a href="reference/map-datatype-search.html">Searching the Map Data Type</a></li>
+  <li><a href="reference/grouping-syntax.html">Grouping results</a></li>
+  <li><a href="reference/sorting-syntax.html">Sorting results</a></li>
+  <li><a href="reference/default-result-format.html">Default Result Output</a></li>
+  <li><a href="reference/page-templates-syntax.html">Page Templates Syntax</a></li>
+</ul>
+
+
+<h3>Relevance</h3>
+
+<ul>
+  <li><a href="reference/nativerank.html">nativeRank Reference</a></li>
+  <li><a href="reference/ranking-expressions.html">Ranking Expressions</a></li>
+  <li><a href="reference/rank-types.html">Rank Types</a></li>
+  <li><a href="reference/string-segment-match.html">String Segment Match Algorithm and Configuration</a></li>
+  <li><a href="reference/rank-features.html">Rank Feature Reference</a></li>
+  <li><a href="reference/rank-feature-configuration.html">Rank Feature Configuration</a></li>
+</ul>
+
+
+<h3>Data flow and Routing</h3>
+
+<ul>
+  <li><a href="reference/information-flow.html">Information Flow in Vespa</a></li>
+  <li><a href="reference/routingpolicies.html">Routing Policies</a></li>
+  <li><a href="reference/vesparoute.html">vesparoute binary</a></li>
+</ul>
+
+
+<h3>Vespa Document Storage</h3>
+
+<ul>
+  <li><a href="content/feature-visiting.html">Visiting</a></li>
+</ul>
+
+
+</body>
+</html>

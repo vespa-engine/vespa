@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Tuning Document Processor Throughput and Memory Usage</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="April 2016" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document walks you through how to tune throughput and memory
+usage for Document Processors in Vespa.
+</p>
+
+<h1 id="introduction">Throughput and resource usage</h1>
+<h2 id="throughput">Throughput and concurrency</h2>
+
+<p>Throughput of document processing is normally a factor of your code and how many threads are doing the work.
+Number of threads are by deafult set identical to number of cores. You should write code that is efficient and
+especially does not wait. If you need to wait use <code>Progress.LATER</code>.
+</p>
+
+<h2 id="resources">Resources and concurrency</h2>
+<p>Are you using to much memory or other resources that normaly means that you have configured too many threads.
+</p>
+<h2 id="advanced">Tuning</h2>
+
+<p>
+The docproc framework will use a thread pool with a fixed number of threads.
+The number of threads is set by these rules:
+</p>
+
+<ul>
+<li>The number is calculated as the number of CPU cores.</li>
+<li>If the maximum number of threads is specified in config, this
+    value will be used, overriding the above rules (see example
+    below).</li>
+</ul>
+
+<p>
+To override the maximum number of threads, configure like so:
+</p>
+
+<pre class="brush: xml">
+  &lt;jdisc&gt;
+    &lt;config name=&quot;config.docproc.docproc&quot;&gt;
+      &lt;numthreads&gt;96&lt;/numthreads&gt;
+    &lt;/config&gt;
+    &lt;document-processing&gt;
+      &lt;cluster name=&quot;default&quot;&gt;
+        &lt;nodes&gt;
+          &lt;node hostalias=&quot;node1&quot;/&gt;
+        &lt;/nodes&gt;
+      &lt;/cluster&gt;
+    &lt;/document-processing&gt;
+  &lt;/jdisc&gt;
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Query profile reference</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="level"      content="basic">
+  <meta name="audience"   content="all">
+  <meta name="lastupdate" content="$Date: 2009-06-25 10:55:29 $">
+  <meta name="reviewdate" content="April 2009">
+  <meta name="authors"    content="bratseth">
+</head>
+
+<body>
+
+<h1>Query profile reference</h1>
+
+<p class="ingress">
+This is a reference to the full format of <a
+href="#query_profiles">Query Profile</a> and <a
+href="#query_profile_types">Query Profile Type</a> configuration files.
+For an introduction to query profiles, please see <a
+href="../query-profiles.html">query profiles</a>.
+</p>
+
+
+
+<h1 id="query_profiles">Query Profiles</h1>
+
+<p>
+A query profile defines a named set of search request parameters with
+values. It has the following structure:
+</p>
+
+<pre class="code">
+&lt;query-profile id="<a href="#id">[id]</a>" <a href="#optional_query_profile_attributes">[optional attributes]</a>&gt;
+
+    &lt;<a href="#description">description</a>&gt;&lt;/description&gt; ?
+
+    &lt;<a href="#dimensions">dimensions</a>&gt;&lt;/dimensions&gt; ?
+
+    &lt;<a href="#query_profile_field">field</a> name="<a href="#field_name">[name]</a>" <a href="#optional_field_attributes">[optional attributes]</a>&gt;<a href="#field_value">[value]</a>&lt;/field&gt; *
+
+    &lt;<a href="#query_profile_nested">query-profile</a> for="<a href="#query_profile_nested_for_attribute">[dimension values]</a> <a href="#optional_query_profile_attributes">[optional attributes]</a>&gt;
+        &lt;<a href="#query_profile_field">field</a> name="<a href="#field_name">[name]</a>"&gt;<a href="#field_value">[value]</a>&lt/field&gt; *
+    &lt;/query-profile&gt; *
+
+&lt;/query-profile&gt;
+</pre>
+
+<p>
+where <code>?</code> means optional and <code>*</code> means
+repeatable tag. These items are described in the following sections.
+</p>
+
+
+<h2 id="id">id</h2>
+
+<p>The id has the format</p>
+
+<pre class="code">
+id        ::= name(:major(.minor(.micro(.qualifier)?)?)?)?
+name      ::= <em><a href="#identifiers">identifier</a></em>
+major     ::= <em>integer</em>
+minor     ::= <em>integer</em>
+micro     ::= <em>integer</em>
+qualifier ::= <em><a href="#identifiers">identifier</a></em>
+</pre>
+
+<p>
+Any omitted numeric version component missing is taken to mean 0,
+while a missing qualifier is taken to mean the empty string.
+</p>
+
+<p>
+If the name is exactly <code>default</code>, this profile will be the
+special default one.  If there are multiple profiles named
+<code>default</code>, the newest version is the default.
+</p>
+
+
+<h2 id="optional_query_profile_attributes">Optional <code>query-profile</code> attributes</h2>
+
+<p>
+The optional <code>query-profile</code> attributes are:
+</p>
+
+<table>
+<tr><th>Name</th><th>Description</th><th>Default</th></tr>
+<tr><td>type</td><td>The id of a query profile type which defines the possible content of this query profile</td><td><em>No type checking</em></td></tr>
+<tr><td>inherits</td><td>A space-separated list of id's of the query profiles whose fields should be included in this profile.
+The fields are included exactly as if they were present in this profile. Order matters: If a field is present in multiple
+inherited profiles, the first one found in a depth first, left to right search will be used. Fields present in this profile always
+overrides the same field name in an inherited profile.</td><td><em>No inclusion</em></td></tr>
+</table>
+
+
+<h2 id="description">Description</h2>
+
+<p>
+A textual description of the purpose of this. Used for
+documentation.
+</p>
+
+
+<h2 id="query_profile_field">Query profile <code>field</code></h2>
+
+<p>
+A field in a query profile defines a key-value pair.
+</p>
+
+<p>
+If the value is a primitive (string, number) then this key value will
+be available from the Query exactly as if it was submitted with the
+search request as a parameter (if it is set both ways, the search
+request takes priority).
+</p>
+
+<p>
+If the value is a reference to another query profile, the key-values
+of the referenced profile will be available from the Query exactly as
+if they were submitted with the search request as a parameter, with
+the key of this value and a dot prepended to each key in the nested
+profile, i.e
+<code>keyNameInReferringProfile.keyNameInReferencedProfile=value</code>.
+</p>
+
+
+<h2 id="field_name"><code>field</code> name</h2>
+
+<p>
+The name of the field, must be a valid <a
+href="#identifiers">identifier</a>.
+</p>
+
+
+<h2 id="optional_field_attributes">Optional <code>field</code> attributes</h2>
+
+<p>
+The optional <code>field</code> attributes are:
+</p>
+
+<table>
+<tr><th>Name</th><th>Description</th><th>Default</th></tr>
+<tr><td>overridable</td><td><code>true</code> or <code>false</code>. If this is <code>true</code>, this field can be overridden by a
+parameter of the same name in the search request. If it is <code>false</code>, it can not be overridden in the request. This attribute
+overrides the overridable setting in the field definition for this field (if any). If a non overridable value is attempted assigned
+a value later, the assignment will <em>not</em> cause an error, but will simply be ignored.</td><td><code>true</code></td></tr>
+</table>
+
+
+<h2 id="field_value"><code>field</code> value</h2>
+
+<p>
+This value of the field, may be either
+</p>
+
+<ul>
+	<li>a primitive, encoded as any (XML escaped) string, or</li>
+	<li>a reference to another query profile encoded as &lt;ref&gt;[query-profile-id]&lt/ref&gt;</li>
+</ul>
+
+<p>
+If this field is defined in the query profile type referenced by this
+query profile, then the value must be the legal value type defined by
+that query type field definition.
+</p>
+
+
+<h2 id="dimensions">Dimensions</h2>
+
+A comma-separated list of dimensions over which variants of this profile may be created as
+<a href="#query_profile_nested">nested query profiles</a>.
+The names of the dimensions are the names of request parameters which, when received in the request, will trigger
+the matching profile variants.
+
+
+<h2 id="query_profile_nested">Query profile (nested)</h2>
+
+A nested query profile defines variants of values returned from the enclosing query profile, which are returned
+for variable requests where this variant is the most specific match to the request properties named by the
+<a href="#dimensions">dimensions</a> as defined by its <a href="#query_profile_nested_for_attribute">for attribute</a>.
+No other attributes may be set in nested query profiles.
+
+
+<h2 id="query_profile_nested_for_attribute">Query profile (nested) <code>for</code> attribute</h2>
+
+This attribute defines the values of the <a href="#dimensions">dimensions</a> of the enclosing profile for
+which this nested profile defined alternative values, as a comma-separated list.
+<p>
+The values are defined in the same order as the dimensions are defined. Dimensions for which
+this should match any value may be denoted by a "*". One or more trailing "*" may be omitted. E.g
+
+<pre class="code">
+ for="a,b,*,c,*,*"
+ for="a,b,*,c"      // equivalent to the above
+</pre>
+
+
+
+
+<h1 id="query_profile_types">Query Profile Types</h1>
+
+<p>
+A query profile type defines a set of legal, typed values for a query
+profile. It has the following structure:
+</p>
+
+<pre class="code">
+&lt;query-profile-type id="<a href="#id">[id]</a>" <a href="#optional_query_profile_type_attributes">[optional attributes]</a>&gt;
+
+    &lt;<a href="#description">description</a>&gt;&lt;/description&gt; ?
+
+    &lt;<a href="#match">match path="true"</a>/&gt; ?
+
+    &lt;<a href="#strict">strict</a>/&gt; ?
+
+    &lt;<a href="#query_profile_type_field">field</a> name="<a href="#field_name">[name]</a>" type="<a href="#field_type">[type]</a>" <a href="#optional_field_definition_attributes">[optional attributes]</a>/&gt; *
+
+&lt;/query-profile-type&gt;
+</pre>
+
+<p>
+where <code>?</code> means optional tag and <code>*</code> means
+repeatable tag. These items are described in the following sections.
+</p>
+
+
+<h2 id="optional_query_profile_type_attributes">Optional <code>query-profile-type</code> attributes</h2>
+
+<p>
+The optional <code>query-profile-type</code> attributes are:
+</p>
+
+<table>
+<tr><th>Name</th><th>Description</th><th>Default</th></tr>
+<tr><td>inherits</td><td>A space-separated list of id's of the query profile types whose field definitions should be included in this profile.
+The fields are included exactly as if they were present in this profile type. matters: If a field definition is present in multiple
+inherited profiles, the first one found in a depth first, left to right search will be used. A field definition in this type always
+overrides inherited ones. The same rules apply to other elements than fields.</td><td><em>No inclusion</em></td></tr>
+</table>
+
+
+<h2 id="match"><code>match</code></h2>
+
+<p>
+If &lt;match path=&quot;true&quot;&gt; is added to the query profile
+type, the name of the profile will be understood as a slash separated
+path name during matching of a query profile name to an actual
+profile. If the query profile name is a <em>path component prefix</em>
+of the query profile name reference, the profile matches the
+reference. The profile having the most specific match is used as the
+target of the reference.
+</p>
+
+<p>
+If <code>match</code> is not specified in the profile type, exact name
+matching is used.  The syntax is as specified for future
+extensions.
+</p>
+
+<p>
+The match setting is inherited from supertypes to subtypes.<
+/p>
+
+
+<h2 id="strict"><code>strict</code></h2>
+
+<p>
+If this element is added to a query profile type, then that profile
+can only contain values explicitly defined in the profile, whether
+that value is provided by a query profile, the search request or
+programmatically.
+</p>
+
+<p>
+It is possible to add strict sub-profiles to a non-strict profile and
+vice-versa, making it possible to create respectively &quot;structs in
+maps&quot; and &quot;maps in structs&quot;.
+</p>
+
+<p>
+A profile which inherits a strict profile will also be strict, i.e
+<code>strict</code> is inherited.
+</p>
+
+<p>
+Some rules to note when using a top-level profile type which is
+declared as strict:
+</p>
+
+<ul>
+<li>If the top-level profile is of a strict type, that type should usually inherit the <code>native</code> type to allow the built-in
+parameters to be passed in. This profile type and the subtypes it references are always available. See <a href="search-api.html">the search api</a>
+for a full reference of these types.</li>
+<li>Non-primitive model objects are permitted to be added to the query profiles even if the top level profile is strict, but primitives
+(strings, numbers, booleans) are <em>not</em> permitted but must either be declared in the strict profile type, or wrapped in a proper model object</li>
+<li>Feature specific properties like <code>select</code> are not automatically permitted, the parameters of the features which should
+be exposed must be declared explicitly in a strict top level type.</li>
+</ul>
+
+
+<h2 id="query_profile_type_field">Query profile type <code>field</code></h2>
+
+<p>
+This defines the name and type of a field of query profiles of this
+type.
+</p>
+
+
+<h2 id="field_type"><code>field</code> type</h2>
+
+<p>
+This defines the type of this field. The type is one of
+</p>
+
+<table>
+<tr><th>Type name</th><th>Description</th></tr>
+<tr><td>string</td><td>Any string</td></tr>
+<tr><td>integer</td><td>A signed 32-bit whole number</td></tr>
+<tr><td>long</td><td>A signed 64-bit whole number</td></tr>
+<tr><td>float</td><td>A signed 32-bit float</td></tr>
+<tr><td>double</td><td>A signed 64-bit float</td></tr>
+<tr><td>boolean</td><td>A boolean value, <code>true</code> or <code>false</code></td></tr>
+<tr><td><a href="../reference/search-definitions.html#tensor-type-spec">[tensor-type-spec]</a></td><td>A tensor type spec</td></tr>
+<tr><td>query-profile</td><td>A reference to a query profile of any type</td></tr>
+<tr><td>query-profile:[query-profile-type-id]</td><td>A reference to a query profile of the given type</td></tr>
+</table>
+
+
+<h2 id="optional_field_definition_attributes">Optional <code>field</code> definition attributes</h2>
+
+<p>
+The optional <code>field</code> definition attributes are:
+</p>
+
+<table>
+<tr><th>Name</th><th>Description</th><th>Default</th></tr>
+<tr><td>mandatory</td><td><code>true</code> or <code>false</code>. If this is <code>true</code>, this field <em>must</em> be present in either
+the query profile of this type or explicitly in the request referencing it</td><td><code>false</code></td></tr>
+<tr><td>overridable</td><td><code>true</code> or <code>false</code>. If this is <code>true</code>, instances of this field can be overridden by a
+parameter of the same name in the search request. If it is <code>false</code>, it can not be overridden in the request.</td><td><code>true</code></td></tr>
+<tr><td>alias<td>One or more space-separated aliases of the field name. Unlike field names, aliases are case insensitive.<td><em>None</em></tr>
+<tr><td>description</td><td>A textual description of the purpose of this field. Used for documentation.</td><td><em>None</em></td></tr>
+</table>
+
+
+<h2 id="identifiers">Identifiers</h2>
+
+<p>
+An identifier is a string matches the pattern <code>[a-zA-Z_/][a-zA-Z0-9_/]*</code>.
+</p>
+
+<p class="footer"><a mailto:"bratseth@yahoo-inc.com">Jon Bratseth</a>, April 2009</p>
+
+</body>
+</html>

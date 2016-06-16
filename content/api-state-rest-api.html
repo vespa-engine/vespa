@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>State Rest API</title>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="humbe,kraune" />
+</head>
+<body>
+
+<p>
+    The cluster controller has a RESTful API for viewing and modifying
+    the state of a content cluster.
+    To find the URL use when accessing the State API, you need to look at
+    identify the cluster controller services in your
+    application. Only the master cluster controller will be able to respond.
+    The master cluster controller is the cluster controller alive that has the
+    lowest index. Thus, you will typically use cluster controller 0, but if you fail
+    to contact it, you need to try number 1 and so on.
+    Using the <em>vespa-model-inspect</em> command line tool:
+</p>
+<pre class="brush: cli">
+$ vespa-model-inspect service -u container-clustercontroller
+container-clustercontroller @ hostname.domain.com : admin
+admin/cluster-controllers/0
+    http://hostname.domain.com:19050/ (STATE EXTERNAL QUERY HTTP)
+    http://hostname.domain.com:19117/ (EXTERNAL HTTP)
+    tcp/hostname.domain.com:19118 (MESSAGING RPC)
+    tcp/hostname.domain.com:19119 (ADMIN RPC)
+</pre>
+<p>
+    In this example, there is only one clustercontroller, and the State Rest API is
+    available on the port marked STATE and HTTP, namely 19050 in this example. This
+    information can also be retrieved through the model config in the config server.
+</p>
+
+<h2>Types</h2>
+<table>
+<tr>
+    <th>Type</th>
+    <th>Spec</th>
+    <th>Example</th>
+    <th>Description</th>
+</tr>
+<tr>
+    <td><nobr>cluster</nobr></td>
+    <td><nobr><em>&lt;identifier&gt;</em></nobr></td>
+    <td><nobr>music</nobr></td>
+    <td>
+        The name given to a content cluster in a Vespa application.
+    </td>
+</tr>
+<tr>
+    <td><nobr>description</nobr></td>
+    <td><nobr><em>.*</em></nobr></td>
+    <td>Some \"JSON escaped\" text</td>
+    <td>
+        Description can contain anything as that is valid JSON. However, as the
+        information is presented in various interfaces, some which may present reasons
+        for all the states in a cluster or similar, keeping it short and to the
+        point makes it easier to fit the information neatly into a table and get a
+        better cluster overview.
+    </td>
+</tr>
+<tr>
+    <td><nobr>group-spec</nobr></td>
+    <td><nobr><em>&lt;identifier&gt;</em>(\.<em>&lt;identifier&gt;</em>)*</nobr></td>
+    <td><nobr>asia.switch0</nobr></td>
+    <td>
+        The hierarchical group assignment of a given content node. This is a
+        dot separated list of identifiers given in the application services.xml
+        configuration.
+    </td>
+</tr>
+<tr>
+    <td><nobr>node</nobr></td>
+    <td><nobr>[0-9]+</nobr></td>
+    <td><nobr>0</nobr></td>
+    <td>
+        The index or distribution key identifying a given node within the
+        context of a content cluster and a service type.
+    </td>
+</tr>
+<tr>
+    <td><nobr>partition</nobr></td>
+    <td><nobr>[0-9]+</nobr></td>
+    <td><nobr>0</nobr></td>
+    <td>
+        The index of a partition within the context of a content cluster, a
+        service type and a node.
+    </td>
+</tr>
+<tr>
+    <td><nobr>service-type</nobr></td>
+    <td><nobr>(distributor|storage)</nobr></td>
+    <td><nobr>distributor</nobr></td>
+    <td>
+        The type of the service to look at state for, within the context of a given
+        content cluster.
+    </td>
+</tr>
+<tr>
+    <td><nobr>state-disk</nobr></td>
+    <td><nobr>(up|down)</nobr></td>
+    <td><nobr>up</nobr></td>
+    <td>
+        One of the valid disk states.
+    </td>
+</tr>
+<tr>
+    <td><nobr>state-generated</nobr></td>
+    <td><nobr>(initializing|up|down|retired|maintenance)</nobr></td>
+    <td><nobr>up</nobr></td>
+    <td>
+        One of the valid node generated states.
+    </td>
+</tr>
+<tr>
+    <td><nobr>state-unit</nobr></td>
+    <td><nobr>(initializing|up|stopping|down)</nobr></td>
+    <td><nobr>up</nobr></td>
+    <td>
+        One of the valid node unit states.
+    </td>
+</tr>
+<tr>
+    <td><nobr>state-user</nobr></td>
+    <td><nobr>(up|down|retired|maintenance)</nobr></td>
+    <td><nobr>up</nobr></td>
+    <td>
+        One of the valid node user states.
+    </td>
+</tr>
+</table>
+
+<h2>Errors</h2>
+<p>
+    Errors will be indicated using the HTTP status codes. An error response from the
+    State API will include a JSON encoded error response with extra information. As a
+    request may fail outside of the State API, we can not guarantuee that such a JSON
+    representation exist though. To make it simpler for clients, all errors they need
+    to handle specifically should be specified in HTTP error codes. Thus the content
+    of the JSON error report, if it exist, can be left unspecified, and just used to
+    improve an error report if needed.
+    <em>Note: Do not depend on the JSON content for anything other than improving
+    error reports - contents may change at any time</em>
+</p>
+
+<h4>Cluster controller not master - master known</h4>
+<p>
+    This error means you are talking to the wrong cluster controller. This will give
+    you a standard HTTP redirect, so your HTTP client may automatically redo the
+    request on the correct cluster controller. If it does not you might want to handle
+    this specifically.
+</p>
+<p>
+    Note though, that since we know the cluster controller available with the
+    lowest index will be the master, you will typically try to query the
+    cluster controllers in index order, in which case you are unlikely to ever
+    get this error, but rather fail to connect to the cluster controller if it
+    is not the current master. 
+</p>
+<pre class="code">
+    HTTP/1.1 303 See Other
+    Location: http://<em>&lt;master&gt;</em>/<em>&lt;current-request&gt;</em>
+    Content-Type: application/json
+
+    {
+        "message" : "Cluster controller <em>index</em> not master. Use master at index <em>index</em>.
+    }
+</pre>
+
+<h4>Cluster controller not master - unknown or no master</h4>
+<p>
+    This error will be used if the cluster controller asked is not master, and
+    it doesn't know who the master is. This can happen, for instance in a network
+    split where cluster controller 0 no longer can reach cluster controller 1 and 2,
+    in which case cluster controller 0 knows it is not master as it can't see the
+    majority, and cluster controller 1 and 2 will vote 1 to master.
+</p>
+<pre class="code">
+    HTTP/1.1 503 Service Unavailable
+    Content-Type: application/json
+
+    {
+        "message" : "No known master cluster controller currently exist."
+    }
+</pre>
+
+
+<h2>Recursive mode</h2>
+<p>
+    To use recursive mode, specify the <em>recursive</em> URL parameter, and
+    give it a numeric value for number of levels.
+    A value of <em>true</em> is also valid, this returns all levels.
+    Examples: Use <em>recursive=1</em> for a node request
+    to also see all the partition data, use <em>recursive=2</em>
+    to see all the node data within each
+    service type, without getting all the partition information too.
+</p>
+<p>
+    In recursive mode, you will see the same output as you find in the spec below,
+    however, where there is a <em>{ "link" : "&lt;url-path&gt;" }</em> element, this
+    element will be replaced by the content of that request, given a recursive value
+    of one less than the request above.
+</p>
+
+<h2>Functions</h2>
+<p>
+    Here follows a list of all the available functions. Note that more headers than
+    the ones specified will exist. All requests with content will obviously have a
+    content length for instance.
+</p>
+
+<h3>List the existing content clusters</h3>
+<p>
+    While users typically know what cluster they want to query, having a way to
+    list the existing clusters seems good in order to easily be able to create
+    something generic on top of the Rest API to search through the content.
+</p>
+<pre class="code">
+    HTTP GET /cluster/v2
+</pre>
+<p>Example success result:</p>
+<pre class="code">
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "cluster" : {
+            "music" : {
+                "link" : "/cluster/v2/music"
+            },
+            "books" : {
+                "link" : "/cluster/v2/books"
+            }
+        }
+    }
+</pre>
+
+<h3>Get cluster state and list the various service types within the cluster</h3>
+<pre class="code">
+    HTTP GET /cluster/v2/<em>&lt;cluster&gt;</em>
+</pre>
+<p>Example success result:</p>
+<pre class="code">
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "state" : {
+            "generated" : {
+                "state" : "<em>&lt;state-generated&gt;</em>",
+                "reason" : "<em>&lt;description&gt;</em>"
+            }
+        }
+        "service" : {
+            "distributor" : {
+                "link" : "/cluster/v2/mycluster/distributor"
+            },
+            "storage" : {
+                "link" : "/cluster/v2/mycluster/storage"
+            }
+        {
+    }
+</pre>
+
+<h3>List the nodes of a given service type for a cluster</h3>
+<pre class="code">
+    HTTP GET /cluster/v2/<em>&lt;cluster&gt;</em>/<em>&lt;service-type&gt;</em>
+</pre>
+<p>Example success result:</p>
+<pre class="code">
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "node" : {
+            "0" : {
+                "link" : "/cluster/v2/mycluster/storage/0"
+            },
+            "1" : {
+                "link" : "/cluster/v2/mycluster/storage/1"
+            }
+        }
+    }
+</pre>
+
+<h3>Get node state</h3>
+<pre class="code">
+    HTTP GET /cluster/v2/<em>&lt;cluster&gt;</em>/<em>&lt;service-type&gt;</em>/<em>&lt;node&gt;</em>
+</pre>
+<p>Example success result:</p>
+<pre class="code">
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "attributes" : {
+            "hierarchical-group" : "<em>&lt;group-spec&gt;</em>"
+        },
+        "partition" : {
+            "0" : {
+                "link" : "/cluster/v2/mycluster/storage/0/0"
+            }
+        },
+        "state" : {
+            "unit" : {
+                "state" : "<em>&lt;state-unit&gt;</em>",
+                "reason" : "<em>&lt;description&gt;</em>"
+            },
+            "generated" : {
+                "state" : "<em>&lt;state-generated&gt;</em>",
+                "reason" : "<em>&lt;description&gt;</em>"
+            },
+            "user" : {
+                "state" : "<em>&lt;state-user&gt;</em>",
+                "reason" : "<em>&lt;description&gt;</em>"
+            }
+        }
+    }
+</pre>
+
+<h3 id="partition-state">Get partition state</h3>
+<pre class="code">
+    HTTP GET /cluster/v2/<em>&lt;cluster&gt;</em>/<em>&lt;service-type&gt;</em>/<em>&lt;node&gt;</em>/<em>&lt;partition&gt;</em>
+</pre>
+<p>Example success result:</p>
+<pre class="code">
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "metrics" : {
+            "bucket-count" : <em>&lt;integer&gt;</em>,
+            "unique-document-count" : <em>&lt;integer&gt;</em>,
+            "unique-document-total-size" : <em>&lt;integer&gt;</em> 
+        },
+        "state" : {
+            "generated" : {
+                "state" : "<em>&lt;state-disk&gt;</em>",
+                "reason" : "<em>&lt;description&gt;</em>"
+            },
+        }
+    }
+</pre>
+
+<h3>Set node user state</h3>
+<pre class="code">
+    HTTP PUT /cluster/v2/<em>&lt;cluster&gt;</em>/<em>&lt;service-type&gt;</em>/<em>&lt;node&gt;</em>
+    Content-Type: application/json
+
+    {
+        "state" : {
+            "user" : {
+                "state" : "retired",
+                "reason" : "This colo will be removed soon"
+            }
+        }
+    }
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Custom State API for Search Nodes</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2015" />
+  <meta name="authors" content="geirst" />
+</head>
+
+<body>
+
+<p class="ingress">
+This article describes the custom extensions of the state API for searchnode services in Vespa.
+</p>
+
+
+<h1 id="component">Component API</h1>
+<p>
+Component status can be found by HTTP GET at <code>http://host:stateport/state/v1/custom/component</code>.
+This gives an overview of the relevant search node components and their internal state.
+Note that this is not a stable API and it will expand and change between releases.
+</p>
+
+<h2 id="component-example">Example (state/v1/custom/component)</h2>
+
+<pre class="brush: js">
+{
+    "documentdb": {
+        "mydoctype": {
+            "documentType": "mydoctype",
+            "status": {
+                "state": "ONLINE",
+                "configState": "OK"
+            },
+            "documents": {
+                "active": 10,
+                "indexed": 10,
+                "stored": 10,
+                "removed": 0
+            },
+            "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype"
+        }
+    },
+    "matchengine": {
+        "status": {
+            "state": "ONLINE"
+        },
+        "url": "http://host:stateport/state/v1/custom/component/matchengine"
+    },
+    "flushengine": {
+        "url": "http://host:stateport/state/v1/custom/component/flushengine"
+    },
+    "tls": {
+        "url": "http://host:stateport/state/v1/custom/component/tls"
+    }
+}
+</pre>
+
+
+<h2 id="component-example">Example (state/v1/custom/component/documentdb/mydoctype)</h2>
+
+<pre class="brush: js">
+{
+    "documentType": "mydoctype",
+    "status": {
+        "state": "ONLINE",
+        "configState": "OK"
+    },
+    "documents": {
+        "active": 10,
+        "indexed": 10,
+        "stored": 10,
+        "removed": 0
+    },
+    "subdb": {
+        "removed": {
+            "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype/subdb/removed"
+        },
+        "ready": {
+            "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype/subdb/ready"
+        },
+        "notready": {
+            "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype/subdb/notready"
+        }
+    },
+    "maintenancecontroller": {
+        "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype/maintenancecontroller"
+    },
+    "session": {
+        "url": "http://host:stateport/state/v1/custom/component/documentdb/mydoctype/session"
+    }
+}
+</pre>
+
+</body>
+</html>

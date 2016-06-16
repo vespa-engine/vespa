@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Using the Java Cloud config API</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2016" />
+  <meta name="authors" content="vegardh" />
+</head>
+
+<body>
+
+<h1 id="developing">Developing with the Java Config API</h1>
+
+<p>We are assuming you have created a <a href="configapi-dev.html">def
+file</a> which is the schema for one of your configs.  You should
+place it in <code>src/main/resources/configdefinitions/</code>.
+</p>
+
+<p>
+To generate source code for the def-file, invoke the
+<code>config-class-plugin</code> from your Maven POM file, under
+the <code>&lt;build&gt;</code>, <code>&lt;plugins&gt;</code> section:
+</p>
+
+<pre>
+&lt;plugin&gt;
+  &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+  &lt;artifactId&gt;config-class-plugin&lt;/artifactId&gt;
+  &lt;version&gt;${vespa.version}&lt;/version&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;id&gt;config-gen&lt;/id&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;config-gen&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;
+</pre>
+
+<p>
+The generated classes will be saved to
+<code>target/generated-sources/vespa-configgen-plugin</code>, when the
+<code>generate-sources</code> phase of your build is executed. For
+this tutorial, the def-file <a
+ href="configapi-dev.html"><code>motd.def</code></a> was used, and a
+class called <code>MotdConfig</code> was generated (in the package
+<code>myproject</code>). It is a subtype of
+<code>ConfigInstance</code>.
+</p>
+
+<p>
+When using only the config system (and not other parts of Vespa or
+the JDisc container), pull in that by using this in your
+POM:
+</p>
+
+<pre class="code">
+&lt;dependency&gt;
+  &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+  &lt;artifactId&gt;config&lt;/artifactId&gt;
+  &lt;version&gt;${vespa.version}&lt;/version&gt;
+  &lt;scope&gt;provided&lt;/scope&gt;
+&lt;/dependency&gt;
+</pre>
+
+<h2 id="subscribing">Subscribing and getting config</h2>
+
+<p>
+To retrieve the config in your application, you must create a
+<code>ConfigSubscriber</code>. A <code>ConfigSubscriber</code> is
+capable of subscribing to one or more configs. The example shown here
+uses simplified error handling:
+</p>
+
+<pre class="code">
+ConfigSubscriber subscriber = new ConfigSubscriber();
+ConfigHandle&lt;MotdConfig&gt; handle = subscriber.subscribe(MotdConfig.class, "motdserver2/0");
+if (!subscriber.nextConfig()) throw new RuntimeException("Config timed out.");
+if (handle.isChanged()) {
+  String message = handle.getConfig().message();
+  int port = handle.getConfig().port();
+}
+</pre>
+
+<p>
+Note that <code>isChanged()</code> always will be true after the first call to <code>nextConfig()</code>,
+it is included here to illustrate the API.
+</p>
+
+<p>
+In many cases you will do this from a thread which loops the
+<code>nextConfig()</code> call, and reconfigures your application if
+<code>isChanged()</code> is true.
+</p>
+
+<p>
+The meaning of <code>motdserver2/0</code>, the second parameter to
+<code>subscribe()</code>, config id, is explained in the <a
+href="configapi-dev.html">main config API doc</a>.
+</p>
+
+<p>
+The <a href="../javadoc/index.html?com/yahoo/config/package-summary.html">javadoc</a> for the
+<code>com.yahoo.config</code> package has all the details of the
+API.
+</p>
+
+<p>
+If one <code>ConfigSubscriber</code> subscribes to multiple configs,
+<code>nextConfig()</code> will only return true if the configs are of
+the same generation, i.e. they are "in sync". See the javadoc for
+details. An example follows:
+</p>
+
+<pre class="code">
+ConfigSubscriber subscriber = new ConfigSubscriber();
+ConfigHandle&lt;MotdConfig&gt; motdHandle = subscriber.subscribe(MotdConfig.class, "motdserver2/0");
+ConfigHandle&lt;AnotherConfig&gt; anotherHandle = subscriber.subscribe(AnotherConfig.class, "motdserver2/0");
+if (!subscriber.nextConfig()) throw new RuntimeException("Config timed out.");
+// We now have a synchronized new generation for these two configs.
+if (motdHandle.isChanged()) {
+  String message = motdHandle.getConfig().message();
+  int port = motdHandle.getConfig().port();
+}
+if (anotherHandle.isChanged()) {
+  String myfield = anotherHandle.getConfig().getMyField();
+}
+</pre>
+
+<h2 id="simplified-subscription">Simplified subscription</h2>
+
+<p>
+In cases like the first example above, where you only subscribe to one config, you may also subscribe using the
+<code>ConfigSubscriber.SingleSubscriber</code> interface. In this case, you define a <code>configure()</code>
+method from the interface, and call a special <code>subscribe()</code>. The method will start a dedicated config
+fetcher thread for you. The method will throw an exception in the user thread if initial configuration fails,
+and print a warning in the config thread if it fails afterwards. Example:
+</p>
+
+<pre>
+public class MyConfigSubscriber implements ConfigSubscriber.SingleSubscriber&lt;MotdConfig&gt; {
+
+  public MyConfigSubscriber(String configId) {
+    new ConfigSubscriber().subscribe(this, MotdConfig.class, configId);
+  }
+
+  @Override
+  public void configure(MotdConfig config) {
+    // configuration logic here
+  }
+}
+</pre>
+
+<p>
+The disadvantage to using this is that you cannot implement your own error handling or otherwise track config changes. If you need that,
+use the generic method above.
+</p>
+
+<h2 id="unit-testing">Unit testing config</h2>
+
+<p>
+When you instantiate a <code>ConfigSubscriber</code>, you may
+optionally give it a <code>ConfigSource</code> (see the javadoc for
+details). One such source is a <code>ConfigSet</code>. It consists of
+a set of <code>Builder</code>s. Here is an example
+of instantiating a subscriber using this, see link to full example
+below.  It uses 2 types of config, that were generated from files
+<code>app.def</code> and <code>string.def</code>:
+</p>
+
+<pre class="code">
+ConfigSet myConfigs = new ConfigSet();
+AppConfig.Builder a0builder = new AppConfig.Builder().message("A message, 0").times(88);
+AppConfig.Builder a1builder = new AppConfig.Builder().message("A message, 1").times(89);
+myConfigs.add("app/0", a0builder);
+myConfigs.add("app/1", a1builder);
+myConfigs.add("bar", new StringConfig.Builder().stringVal("StringVal"));
+ConfigSubscriber subscriber = new ConfigSubscriber(myConfigs);
+</pre>
+
+<p>
+To help with unit testing, each config type has a corresponding
+builder type. The <code>Builder</code> is mutable whereas the
+<code>ConfigInstance</code> is not. Use this to set up config fixtures
+for your unit tests.  </p>
+
+<p>
+The <code>ConfigSubscriber</code> has a <code>reload()</code> method
+which is used in tests to force the subscriptions into a new
+generation. It emulates a <code>deploy activate</code> operation after
+you have updated the <code>ConfigSet</code>.
+</p>
+
+<p>
+A full example can be found in <em>ConfigSetSubscriptionTest.java</em>.
+</p>
+
+</body>
+</html>

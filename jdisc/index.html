@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Java Data Intensive Serving Container</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2013" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+<p>
+JDisc is Vespa's Java-container, optimized for a quick and easy dev-to-prod cycle.
+It is fully integrated with the Cloud Config System,
+allowing for live reconfiguration without service interruption.
+The container exposes a servlet-like API for query processing
+that allows you to build RESTful web-services,
+and a storm-like API to do document processing.
+It exposes APIs for simple and performant federation across heterogeneous data sources.
+</p>
+
+
+<h1 id="getting-started">Get Started</h1>
+<ol>
+  <li>Implement "Hello, World!" using the
+    <a href="developing-applications.html">application development</a> tutorial
+  </li>
+  <li>
+    Learn the <a href="../cloudconfig/application-packages.html">application package</a> basics, 
+	<a href="how-does-jdisc-work.html">how JDisc
+    works</a>, and go build your project!
+  </li>
+</ol>
+
+<h1>Develop JDisc Components</h1>
+<ul>
+  <li>
+    Develop <a href="developing-rest-apis.html">RESTful APIs using Jersey</a>.
+  </li>
+  <li>
+    Run Servlets on JDisc. <!-- ToDo: link to sample apps here -->
+  </li>
+  <li>
+    JDisc provides a framework for processing requests and responses,
+    aptly named "Processing". Its building blocks are:
+    <ul>
+      <li>
+        <a href="chained-components.html">Chains</a>
+        of other components that are to be executed serially, with
+        each providing some service or transform.
+      </li>
+      <li>
+        <a href="processing.html">Processors</a>
+        that change the request and / or the response. They may also
+        make multiple forward requests, in series or parallel, or
+        manufacture the response content themselves.
+      </li>
+      <li>
+        <a href="processing.html#response-rendering">Renderers</a>
+        that are used to serialize a Processor's response before
+        returning it to a client.
+      </li>
+      <li>
+        Use case: <a href="http-api-tutorial.html">Building an HTTP API</a> using request handlers and processors
+      </li>
+    </ul>
+  </li>
+  <li>
+    Application Lifecycle and unit testing:
+    <ul>
+      <li>
+        <a href="../configuring-components.html">Configuring components</a>
+        with custom configuration.
+      </li>
+      <li>
+        <a href="injecting-components.html">Component injection</a> allows components
+        to access other application components.
+      </li>
+      <li>
+        Learn how to <a href="developing-osgi-bundles.html">build OSGi bundles</a> and
+        how to <a href="osgi-classloading.html">troubleshoot</a> classloading issues.
+      </li>
+      <li>
+        <a href="jax.html">XML processing</a> with JAXB and JAXP (DOM, SAX, StAX).
+      </li>
+      <li>
+        Using <a href="pluggable-frameworks.html">Libraries for Pluggable Frameworks</a> from
+        your component may result in class loading issues that require some extra setup in your
+        application.
+      </li>
+      <li>
+        <a href="get-started-testing.html">Get started testing</a> and
+        <a href="testing-configurable-components.html">Unit testing configurable
+          components</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+    Handlers and filters:
+    <ul>
+      <li>
+        <a href="http-server-and-filters.html">Http servers and
+          security filters</a> for incoming connections on HTTP and HTTPS.
+      </li>
+      <li>
+        <a href="developing-request-handlers.html">Request handlers</a>
+        to process incoming requests and generate responses.
+      </li>
+      <li>
+        <a href="secure-http.html">Security - SSL</a>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h1>Metrics and logging</h1>
+<ul>
+  <li>
+    <a href="metrics.html">Getting Metrics from an Application</a>
+  </li>
+  <li>
+    <a href="http-server-metrics.html">Metrics from the built-in HTTP server</a>
+  </li>
+  <li>
+    Building and deploying a <a href="developing-metric-consumers.html">custom
+    metric consumer</a>.
+  </li>
+</ul>
+
+<h1>JDisc with Vespa and other backends</h1>
+<ul>
+  <li>
+    <a href="../developing-web-services.html">Designing RESTful web
+    services</a> as JDisc components
+  </li>
+  <li><a href="vip.html">Using JDisc with VIP</a></li>
+  <li><a href="../search/container-intro.html">JDisc in Vespa</a></li>
+  <li><a href="../search/component-types.html">Vespa JDisc component types</a></li>
+  <li><a href="../search/handler-tutorial.html">HTTP API use case tutorial</a></li>
+  <li><a href="../search/search-definitions.html">Documents and Search Definitions</a></li>
+  <li><a href="../search/searcher-development.html">Searcher</a> and
+    <a href="../search/result-rendering.html">search result renderer</a>
+    development</li>
+  <li><a href="../search/document-processing-overview.html">Document processing</a>,
+      <a href="../search/docproc-development.html">development</a>,
+      <a href="../performance/docproc-tuning.html">tuning</a></li>
+</ul>
+
+<h1>Reference</h1>
+<ul>
+  <li><a href="../reference/services-jdisc.html">services.xml syntax</a></li>
+</ul>
+
+<h1>Appendices</h1>
+<ul>
+  <li><a href="component-versioning.html">Versioning Components</a></li>
+  <li>
+  <a href="developing-client-providers.html">Client providers</a>
+  are capable of connecting to and forwarding requests to a
+  remote server on a specific protocol, e.g. the <code>HttpClient</code>
+  is a client provider for HTTP and HTTPS.
+  </li>
+  <li>
+  If you need to accept incoming connection on other protocols
+  than HTTP/HTTPS, you can also develop your own
+  <a href="developing-server-providers.html">server providers</a>
+  starting with our <a href="server-tutorial.html">tutorial</a></li>
+  <li><a href="chain-builder.html">The Chain Builder API</a></li>
+  <li><a href="config-bridge.html">Configuring legacy components with a cloud config bridge.</a> <b>TODO:</b> links to the now dead tutorial </li>
+</ul>
+
+</body>
+</html>

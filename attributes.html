@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Introduction to In-Memory Data: Attributes</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="simon, bergum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document is an introduction to in-memory document fields in
+Vespa, so-called <em>attributes</em>.
+</p>
+
+
+
+<h1 id="creating-attributes">Creating Attributes</h1>
+<p>
+Although the word <em>attribute</em> has been used throughout this
+documentation to discuss various facets of a data structures and tags
+of an XML element, it is also a unique keyword in search definitions
+(see <a href="reference/search-definitions.html">search
+definitions</a>) when specifying the indexing steps to perform on a
+document field (see <a href="indexing-language.html">indexing
+language</a> and
+<a href="reference/advanced-indexing-language.html">the advanced
+indexing language</a> doc).
+</p>
+
+<p>
+The <em>attribute</em> keyword when given as part of the
+<em>indexing</em> command informs Vespa that the field should reside
+in memory instead of on disk. If no <em>index</em> keyword is part of
+the same <em>indexing</em> command it is solely an in-memory
+field. However, if the field is also indexed, it will co-exist on
+disk.
+</p>
+
+<p>
+The behaviour of an attribute can be modified by
+the <em>attribute</em> keyword in a search definition.
+</p>
+
+<p class="alert alert-success">
+All data stored in attributes are kept in memory at all times. It is
+therefore crucial that the user avoids storing excessive amounts of
+data as attributes, this is even more important when using string
+attributes. See <a href="attribute-memory-usage.html">attribute sizing
+guide</a> for details.  If too much data is stored as attributes and the node
+starts swapping you are likely to see errors and search latency spikes.
+</p>
+
+
+
+<h1 id="benefits">The Benefits of Using Attributes</h1>
+<p>
+The immediate benefit of marking a field as an attribute is that it
+can be used for sorting and grouping in the backbone of the system
+instead of using valuable CPU time on the QRS
+nodes. See <a href="reference/grouping-syntax.html">Query
+result grouping</a> for an in-depth explanation of how to perform
+result grouping using attribute fields, fields that are defined as
+attributes are also available as <a href="ranking.html">ranking
+features</a>.
+</p>
+
+<p>
+It is the possible to update only parts of an already existing
+document without refeeding the entire document. Instead one needs only
+to supply the document identifier and the necessary update data. The
+update value will reside in memory until the normal indexing procedure
+pushes it into the on-disk index. However, these updates are only
+available on attribute fields.
+</p>
+
+
+</body>
+</html>

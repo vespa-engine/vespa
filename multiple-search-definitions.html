@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Using Multiple Search Definitions</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2011" />
+  <meta name="authors" content="bratseth, gv, kraune" />
+</head>
+
+<body>
+<p class="ingress" data-annotation="Rewrite">
+This article is an overview of how to use multiple search definitions
+in a Vespa system.
+</p>
+
+<p>
+Some applications need to search more than one kind of data, each
+described by its own search definition. There are two ways to do this
+with Vespa:
+</p>
+
+<ol>
+<li>Deploy multiple search definitions to one indexed content cluster</li>
+<li>Deploy each search definition in a separate indexed content cluster</li>
+</ol>
+
+<p>
+In both solutions the QRS will be used to blend results for searches
+that query multiple search definitions. This document describes the
+pros and cons of each approach as well as how to set it up to work
+correctly.  Note that Vespa storage can store multiple document types
+by just adding search definition files.
+</p>
+
+
+
+<h1 id="multiple-search-definitions-one-search-cluster">Multiple Search Definitions in One Indexed Content Cluster</h1>
+
+<p>
+Vespa is able to serve multiple search definitions (document types) from the same
+indexed content cluster (this is not supported for streaming indexing mode).
+This is done inside the Vespa search core, but it still behaves in
+most ways as a collection of clusters each serving one document type;
+so a search that queries multiple search definitions will still be
+split before it is sent from the QRS, even if the same search core
+process will handle several types.
+</p>
+
+<ul>
+<li>You need to manage only one instance of the set of search
+    processes regardless of the number of search definitions.</li>
+<li>You can no longer start, stop, or otherwise manage the serving for
+    the different search definitions independently, since they are
+    running in the same process.</li>
+<li>Even if you want different physical clusters at runtime it may be
+    convenient to use this feature during development as it makes it
+    easier to develop and test on a single node.</li>
+</ul>
+
+<p>
+To use this feature, just configure more than one search definition (document type)
+in the Vespa setup configuration and ensure that your indexed content cluster
+receives the configuration, here is an example:
+</p>
+
+<pre class="brush: xml">
+&lt;documents&gt;
+  &lt;document mode=&quot;index&quot; type=&quot;book&quot; /&gt;
+  &lt;document mode=&quot;index&quot; type=&quot;pc&quot; /&gt;
+  &lt;document mode=&quot;index&quot; type=&quot;sock&quot; /&gt;
+&lt;/documents&gt;
+</pre>
+
+
+
+<h1 id="multiple-search-clusters">Multiple Indexed Content Clusters</h1>
+
+<p>
+Vespa can query multiple indexed content clusters for each search and do
+customizable blending of the results at the QRS level. Each indexed content
+cluster can be configured with its own search definition (document type).
+The consequences of this, compared to the method above, are as
+follows:
+</p>
+
+<ul>
+<li>You will need to manage one instance of the entire set of search
+    processes for each kind of search definition.</li>
+<li>You can separate different types of loads on different machines
+    (say one search definitions has big documents and needs lots of
+    disk space, another has many small documents with attributes that
+    just need memory).</li>
+<li>You can manage the processes separately (so you can stop serving
+    one document type and delete the indexes for it without impacting
+    the other types).</li>
+</ul>
+
+<p>
+If you need more machines than you have search definitions, you should
+probably use this feature in production.
+</p>
+
+<p>
+To use this feature, configure multiple indexed content clusters, each having
+one search definition and selecting one kind of document. Below is an
+example of a Vespa setup configuration using three nodes to set up
+three indexed content clusters:
+</p>
+
+<pre class="brush: xml">
+&lt;content version=&quot;1.0&quot; id=&quot;book&quot;&gt;
+  &lt;redundancy&gt;1&lt;/redundancy&gt;
+  &lt;documents&gt;
+    &lt;document mode=&quot;index&quot; type=&quot;book&quot;/&gt;
+  &lt;/documents&gt;
+  &lt;group&gt;
+    &lt;node distribution-key=&quot;0&quot; hostalias=&quot;HOST1&quot;/&gt;
+  &lt;/group&gt;
+  &lt;engine&gt;
+    &lt;proton&gt;
+      &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+    &lt;/proton&gt;
+  &lt;/engine&gt;
+&lt;/content&gt;
+&lt;content version=&quot;1.0&quot; id=&quot;pc&quot;&gt;
+  &lt;redundancy&gt;1&lt;/redundancy&gt;
+  &lt;documents&gt;
+    &lt;document mode=&quot;index&quot; type=&quot;pc&quot;/&gt;
+  &lt;/documents&gt;
+  &lt;group&gt;
+    &lt;node distribution-key=&quot;0&quot; hostalias=&quot;HOST2&quot;/&gt;
+  &lt;/group&gt;
+  &lt;engine&gt;
+    &lt;proton&gt;
+      &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+    &lt;/proton&gt;
+  &lt;/engine&gt;
+&lt;/content&gt;
+&lt;content version=&quot;1.0&quot; id=&quot;sock&quot;&gt;
+  &lt;redundancy&gt;1&lt;/redundancy&gt;
+  &lt;documents&gt;
+    &lt;document mode=&quot;index&quot; type=&quot;sock&quot;/&gt;
+  &lt;/documents&gt;
+  &lt;group&gt;
+    &lt;node distribution-key=&quot;0&quot; hostalias=&quot;HOST3&quot;/&gt;
+  &lt;/group&gt;
+  &lt;engine&gt;
+    &lt;proton&gt;
+      &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+    &lt;/proton&gt;
+  &lt;/engine&gt;
+&lt;/content&gt;
+</pre>
+
+<p>
+It is also perfectly fine to combine these two methods, having some
+clusters serving one large search definition each in combination with
+other clusters serving many small search definitions.
+</p>
+
+
+
+<h1 id="document-inheritance">Document Inheritance</h1>
+
+<p>
+Regardless of how you choose to deploy your search definitions, its
+likely that some of them will contain some fields that are common
+across some or all of your documents. Vespa supports <em>document
+inheritance</em> to allow you to collect those documents in one or more
+super-documents. In fact, if you want to search across different
+search definitions with one search, you
+<em>should</em> define common fields in superclasses. The result is not
+well defined when you search a field that is defined independently by
+two different search definitions.
+</p>
+
+
+<h2 id="how-to-inherit">How to Inherit</h2>
+<p>
+To let a document inherit another, just add <code>inherits
+[document-name]</code> after the document name. Multiple inheritance
+is also supported, for example:
+</p>
+
+<pre class="brush: sd">
+  document cod inherits food, fish {
+    &hellip;
+  }
+</pre>
+
+<p>
+Multiple levels of inheritance works as well, fish may inherit animal
+and so on.
+</p>
+
+
+<h2 id="overriding-superfields">Overriding Super-Fields</h2>
+<p>
+Overriding super-fields is not allowed. However there are other ways
+you can do this.  Keep in mind that only documents are inherited. The
+adviced way is to separate the definition of the field and the search
+specific stuff. Create an external field which takes the physical
+field as input and does the search spcific stuff.  This can be done in
+both base and inherited type. This leves full freedom to do whatever
+you like.
+</p>
+
+
+<h2 id="sharing-superdocuments">Sharing Super-Documents Across Indexed Content Clusters</h2>
+<p>
+If you have multiple indexed content clusters, you may want to have search
+definitions containing documents which should be available for
+inheriting in multiple indexed content clusters. To do this, you need to list
+them in the <code>documents</code> tag, along with the other search definitions.
+For example:
+</p>
+
+<pre class="brush: xml">
+&lt;content version=&quot;1.0&quot; id=&quot;myid&quot;&gt;
+  &lt;documents&gt;
+    &lt;document mode=&quot;index&quot; type=&quot;base&quot; /&gt;
+  &lt;/documents&gt;
+  &hellip;
+&lt;/content&gt;
+</pre>
+
+
+
+<h1 id="searching-multiple-document-types">Searching Multiple Document Types</h1>
+
+<p>
+When you have an installation with multiple types of data, you need to
+decide which data to search in each query. The following rules always
+apply:
+</p>
+
+<ul>
+<li>Vespa will as default search all document types and all clusters
+    in parallel, and blend results based on relevancy. So a given
+    query may end up with just hits of one type, or some mixture of
+    different data, depending on which type had the most relevant
+    results for this query. It is possible to define different ranking
+    for each search definition, and Vespa will apply the correct
+    ranking for each hit depending on the document type.</li>
+<li><p>
+    If you want to limit the search to a subset of the types
+    inside indexed content clusters, set the <code>restrict</code> query
+    parameter to a comma-separated list of search definition (document
+    type) names, for example:
+    </p>
+
+<pre>
+/search/?query=lotr&amp;restrict=music,book
+</pre>
+
+    <p>
+    This is typically used when you have multiple document types in
+    one cluster (method 1).
+    </p></li>
+<li><p>
+    If you want to limit the search to a subset of the indexed content
+    clusters, set the <code>sources</code> query parameter to a
+    comma-separated list of indexed content cluster names, for example:
+    </p>
+
+<pre>
+/search/?query=lotr&amp;sources=music_cluster,book_cluster
+</pre>
+    <p>
+    This is typically used when you have multiple clusters with one
+    document type in each (method 2).
+    </p></li>
+<li>If you want to specify the number of results to return of each
+    type instead of letting this be decided by relevancy, you need to
+    either submit one request per type or write your own QRS
+    plug-in.</li>
+<li>The blending of hits from different sources is limited to simple
+    relevancy blending. If you want more sophisticated blending, for
+    example, include a minimum number of hits of each type, prefer
+    some type of results over others for certain queries and so on,
+    you should write your own QRS plug-in.</li>
+<li>Searches to indexes that are only present in some of the sources
+    will not return results from other sources (that is, this works as
+    expected).</li>
+<li>The behavior of Vespa is undefined if you make a search for an
+    index which has the same name, <em>but different attributes</em>
+    across multiple search definitions (you will not get entirely
+    correct results). It is legal to change relevancy boosts and
+    relevancy type.</li>
+<li>In addition to blending the hits, Vespa will also unify grouping
+    information about the same field from multiple document
+    types.</li>
+</ul>
+
+<p>
+The above is true regardless of whether you use multiple document
+types in one cluster (method 1) or multiple clusters (method 2). A
+search entering a Vespa installation having multiple clusters is
+dispatched to all (selected) clusters in parallel. When multiple types
+are deployed on one cluster (method 1) it behaves just the same, the
+search is dispatched in parallel multiple times (one for each selected
+document type), now to the same indexed content cluster.
+</p>
+
+</body>
+</html>

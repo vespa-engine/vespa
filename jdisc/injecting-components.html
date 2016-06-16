@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css" 
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="May 2016" />
+    <meta name="authors" content="gv,tonyv,kraune" />
+    <title>Injecting components</title>
+  </head>
+  <body>
+
+<p>
+JDisc implements a dependency injection framework that allows
+components to declare arbitrary dependencies on configuration and other components
+in the application. This document explains how to write a JDisc component
+that depends on another component.
+</p>
+
+<p>
+JDisc relies on auto-injection instead of Guice modules. All components
+declared in the JDisc cluster are available for injection, and the dependent component
+only needs to declare the dependency as a constructor parameter. In general, dependency injection involves at least three elements:
+    </p>
+    <ul>
+      <li>a dependent consumer,</li>
+      <li>a declaration of a component's dependencies,</li>
+      <li>an injector that creates instances of classes that implement a given dependency on request.</li>
+    </ul>
+
+    <p>
+      The dependent object describes what software component it depends on to do its
+      work. The injector decides what concrete classes satisfy the requirements of the
+      dependent object, and provides them to the dependent.
+
+      The JDisc Container encapsulates the injector, and the consumer and all its
+      dependencies are considered to be components.
+      
+      For those versed in dependency injection, the JDisc Container only supports
+      constructor injection (i.e. all dependencies must be declared in a component's
+      constructor).
+    </p>
+    
+    <p class="note alert-success">
+      The JDisc Container does not support circular dependencies.
+    </p>
+
+    <h2 id="implementing-consumer">Depending on another component</h2>
+    <p>
+      A component that depends on another is considered to be a <em>consumer</em>. A
+      component's dependencies is whatever its <code>@Inject</code>-annotated
+      constructor declares as arguments. E.g. the component
+    </p>
+
+<pre class="brush: java">
+package com.yahoo.example;
+import com.google.inject.Inject;
+
+public class MyComponent {
+
+    private final MyDependency dependency;
+
+    @Inject
+    public MyComponent(MyDependency dependency) {
+        this.dependency = dependency;
+    }
+}  
+</pre>
+    <p>
+      has a dependency on the class <code>com.yahoo.example.MyDependency</code>. To
+      successfully deploy <code>MyComponent</code>, you also need to register 
+      <code>MyDependency</code> in your application's <code>services.xml</code>:
+    </p>
+<pre class="brush: xml">
+&lt;jdisc version="1.0"&gt;
+    &lt;component id="com.yahoo.example.MyComponent" /&gt;
+    &lt;component id="com.yahoo.example.MyDependency" /&gt;
+&lt;/jdisc&gt;
+</pre>
+    
+    <p> Upon deployment, the JDisc Container will first instantiate
+      <code>MyDependency</code>, and then pass that instance to the constructor of
+      <code>MyComponent</code>. Multiple consumers can, of course, take the same
+      dependency. Note that you can also <a href="../configuring-components.html">inject
+      configuration</a> to components in a similar way, via the Cloud Config System
+      integration</a>.
+    </p>
+
+    <p class="note alert-success">
+      Components will be reconstructed only when one of its dependencies, configuration,
+      or its class changes -- all which only occurs when you re-deploy your application
+      package. Reconstruction is transitive; if component A depends on component B, and
+      component B depends on component C, then a reconfiguration of component B causes a
+      reconfiguration of A but not of C. Reconfiguration of C causes a reconstruction of
+      both A and B.
+    </p>
+    
+        <h3 id="component-in-bundle">Specify the bundle</h3>
+        <p>
+        The example above assumes the bundle name can be deducted from the class name.
+        This is not always the case, and you will get class loading problems like:
+        </p>
+<pre>
+Caused by: java.lang.IllegalArgumentException: Could not create a component with id
+'com.yahoo.example.My'.
+Tried to load class directly, since no bundle was found for spec:
+com.yahoo.example.Dependency
+</pre>
+        <p>
+        To remedy this, specify the jar file (i.e. bundle) with the component:
+        </p>
+<pre class="brush: xml">
+&lt;jdisc version="1.0"&gt;
+    &lt;component id="com.yahoo.example.MyDependency" bundle="otherexample" /&gt;
+&lt;/jdisc&gt;
+</pre>
+        
+    <h2 id="same-type-components-dependency">Depending on all components of a specific type</h2>
+    <p>
+      Consider the use-case where a component chooses between various strategies, and each
+      strategy is implemented as a separate component. Since the number and type of
+      strategies is unknown when implementing the consumer, it is impossible to make a
+      constructor that lists all of them. This is where the <code>ComponentRegistry</code>
+      comes into play. E.g. the following component:
+    </p>
+<pre class="brush: java">
+package com.yahoo.example;
+
+public class MyComponent {
+
+    private final ComponentRegistry&lt;Strategy&gt; strategies;
+
+    @Inject
+    public MyComponent(ComponentRegistry&lt;Strategy&gt; strategies) {
+        this.strategies = strategies;
+    }
+}
+</pre>
+    <p>
+      declares a dependency on the set of all components registered
+      in <code>services.xml</code> that are instances of the class <code>Strategy</code>
+      (including subclasses). The <code>ComponentRegistry</code> class provides accessors
+      for components based
+      on their <a href="../reference/services-jdisc.html#component">component id</a>.
+    </p>
+
+
+<h2 id="implement-provider">Special Components</h2>
+
+<p>There are cases where a component cannot be directly injected to its consumers - for
+example: </p>
+
+<ul>
+  <li>The component must be instantiated via a factory method instead of its
+  constructor.
+  <li>Each consumer must have a unique instance of the dependency class.</li>
+  <li>The component uses native resources that must be cleaned up when the component goes
+  out of scope.</li>
+</ul>
+
+<p>For these situations, JDisc supports injection, and optional deconstruction,
+via its <code>Provider</code> interface:
+</p>
+
+<pre class="brush: java">
+public interface Provider&lt;T&gt; {
+    T get();
+    void deconstruct();
+}
+</pre>
+
+<p>The <code>get()</code> method is called by JDisc each time it needs to instantiate the
+specific component type. The <code>deconstruct()</code> method is only called after
+reconfiguring the system with a new application where the current provider instance is
+either removed or replaced due to modified dependencies.  </p>
+
+<p> Following the earlier example, let us declare a provider for the
+<code>MyDependency</code> class that returns a new instance for each consumer: </p>
+
+<pre class="brush: java">
+package com.yahoo.example;
+import com.yahoo.container.di.componentgraph.Provider;
+
+public class MyDependencyProvider implements Provider&lt;MyDependency&gt; {
+
+    @Override
+    public MyDependency get() {
+        return new MyDependency();
+    }
+
+    @Override
+    public void deconstruct() { }
+}
+</pre>
+
+<p>
+Using this provider we may now create a <code>services.xml</code> that has
+two instances of <code>MyComponent</code>, each getting a unique instance of
+<code>MyDependency</code>:
+</p>
+
+<pre class="brush: xml">
+&lt;jdisc version="1.0"&gt;
+    &lt;component id="com.yahoo.example.MyDependencyProvider" /&gt;
+    &lt;component id="my-component-1" class="com.yahoo.example.MyComponent" /&gt;
+    &lt;component id="my-component-2" class="com.yahoo.example.MyComponent" /&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p> Upon deployment, the JDisc Container will first instantiate
+<code>MyDependencyProvider</code>, and then invoke <code>MyDependencyProvider.get()</code>
+for each instantiation of <code>MyComponent</code>.
+</p>
+
+<p class="note alert-success">
+A provider can declare constructor dependencies, just like any other component.
+</p>
+
+</body>
+</html>

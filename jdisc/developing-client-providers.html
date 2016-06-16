@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="May 2016" />
+    <meta name="authors" content="simon" />
+    <title>Developing client providers</title>
+  </head>
+  <body>
+    <p>
+      The <code>com.yahoo.jdisc.service.ClientProvider</code>
+      (<a href="../javadoc/index.html?com/yahoo/jdisc/service/ClientProvider.html">javadoc</a>)
+      interface defines a component that is capable of acting as a client to an external
+      server. This document explains how to implement and deploy a custom client provider.
+    </p>
+    <p>
+      The client providers of a JDisc application manage all outgoing requests made to
+      remote services. Upon receiving a <code>com.yahoo.jdisc.Request</code>, it initiates
+      a corresponding connection to the appropriate remote server. Once the remote server
+      responds, the client provider instantiates and dispatches a corresponding
+      <code>com.yahoo.jdisc.Response</code>.
+
+      To implement a client provider, either implement the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/service/ClientProvider.html"><code>ClientProvider</code></a>
+      interface directly, or subclass the more convenient
+      <a href="../javadoc/index.html?com/yahoo/jdisc/service/AbstractClientProvider.html"><code>AbstractClientProvider</code></a>.
+
+      Please note the following:
+    </p>
+    <ul>
+      <li>The code necessary to handle a request and its content is the same as
+        for <a href="developing-request-handlers.html#handle-request">handling a
+        request</a> in a request handler.</li>
+      <li>The code necessary to dispatch a response and write its content into the
+        returned <code>ContentChannel</code> is the same as for
+        <a href="developing-request-handlers.html#dispatch-response">dispatching a
+        response</a> from a request handler.</li>
+    </ul>
+    <p>
+      To install a client provider in a JDisc Container, use
+      the <a href="../reference/services-jdisc.html#client">client</a>
+      element in <em>services.xml</em>, e.g.:
+    </p>
+    <pre class="brush: xml">
+&lt;jdisc id="default" version="1.0"&gt;
+    &lt;client id="my.package.MyClientProvider" bundle="MyBundleSymbolicName"&gt;
+        &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;/client&gt;
+    &lt;nodes&gt;
+        &lt;node hostalias="node1" /&gt;
+    &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+    <p>
+      Notice that the <code>binding</code> element declared within a <code>client</code>
+      element implies a client-binding. To configure a server-binding for a client, use
+      the <code>serverBinding</code> element instead.
+    </p>
+  </body>
+</html>

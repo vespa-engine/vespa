@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>HTTP Gateway</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"     content="March 2016" />
+  <meta name="authors"  content="thomasg" />
+</head>
+
+<body>
+
+<p class="ingress">
+The HTTP Gateway refers to a <a href="jdisc/index.html">Vespa
+Container</a> running a fixed set
+of handlers and searchers
+that provide functionality for feeding and retrieving data for Vespa
+content clusters. For ease of use, the HTTP Gateway is configured using
+a <a href="reference/services-clients.html">separate
+configuration</a> from the regular container setup.
+</p>
+
+<p>
+Feeding data with the HTTP Gateway does not require any files to be
+stored on disk, and the intended use case is POST requests submitted
+from a program that also have access to the data directly, for example
+through database calls or a live feed. For
+simplicity, <code>curl</code> will be used in the examples, but note
+that this tool is inferior in performance compared to the example
+clients.
+</p>
+
+<p>
+Retrieval of documents is done with an HTTP GET request.
+</p>
+
+
+
+<h1 id="configuration">Configuration</h1>
+<p>
+A simple configuration for the HTTP Gateway is shown below. All
+possible configuration options are described in the
+<em><a href="reference/services-documentapi.html">services.xml
+reference</a></em>.
+</p>
+
+<pre class="brush: xml">
+&lt;jdisc version="1.0"&gt;
+  &lt;document-api /&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias="node1" /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+
+
+<h1 id="request-params">Request Parameters</h1>
+
+<p>
+The HTTP Gateway integrates with Message Bus/Document API to
+communicate with Vespa.  The configuration of the HTTP Gateway
+determines how the communication occurs, but some parameters can be
+overriden per request. These are:
+</p>
+
+<ul>
+  <li><em>abortondocumenterror</em>: Only applicable for POSTed XML
+      feeds. If set to <em>false</em>, and a malformed document
+      is found, the feed is not aborted.</li>
+  <li><em>timeout</em>: The timeout of messagebus messages sent</li>
+  <li><em>route</em>: The messagebus route to send messages to</li>
+  <li><em>priority</em>: The <a href="content/setup-throttling.html">priority</a>
+      to set on messages</li>
+  <li><em>loadtype</em>:
+      The <a href="content/setup-throttling.html#load-types">load type</a>
+      to set on messages</li>
+</ul>
+
+<p>
+Example using the abortondocumenterror parameter:
+</p>
+
+<pre class="brush: cli">
+$ curl --header "Content-Type: application/xml" \
+--data-binary @myfeed.xml \
+"http://[host]:[port]/feed?abortondocumenterror=true"
+</pre>
+
+
+
+<h1 id="feeding">Submitting Feeds</h1>
+
+<p>
+XML feeds are submitted to the HTTP Gateway with a POST request. A
+simplified example using <code>curl</code> to feed the
+file <em>myfeed.xml</em> would look like this:
+</p>
+
+<pre class="brush: cli">
+$ curl --header "Content-Type: application/xml" \
+--data-binary @myfeed.xml \
+"http://[host]:[port]/feed/"
+</pre>
+
+<p>
+Feeds POSTed this way must be in the
+<a href="reference/document-xml-format.html">document
+XML</a> format.  For feeds that contain documents with location
+modifiers in their ids (n= or g=), the HTTP Gateway will try to
+optimize the feed by grouping together concurrent operations to the
+same user or group. This results in <em>MultiOperationMessages</em>
+being created rather than puts, removes or updates.
+</p>
+
+<p>
+Vespa supports POSTing feeds <em>asynchronously</em> here as well,
+using the <code>&amp;asynchronous</code> query parameter. If
+specified, the Gateway will return immediately after posting the read
+messages to message bus, rather than waiting for the replies to those
+messages. Note that this means that any messages not sent to Vespa
+will be lost if the Gateway goes down, and any errors will be
+detectable only through the metrics in the Gateway.
+</p>
+
+
+
+<h1 id="retrieving">Retrieving Documents</h1>
+
+<p>
+Retrieving documents are done with a HTTP GET request. Example
+with <code>curl</code> on the command-line:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/get?id=id:test:type::0"
+</pre>
+
+<p>
+The query part of the URL has a key <strong>id</strong> that takes a
+value that must be a valid document ID. If the request is successful,
+the document XML is returned, otherwise an error message is produced.
+</p>
+
+<p>
+We also support retrieving multiple documents with one request. To do
+so, the parameters to the request must continuously enumerated, as the
+example below shows:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/get?id[0]=id:test:type::foo&amp;id[1]=id:test:type::base&amp;id[2]=id:test:type::zap"
+</pre>
+
+<p>
+Finally, you can POST a newline-separated list of document ids to the
+same URI to remove larger lists of documents.
+</p>
+
+<p>
+To retrieve only parts of the documents, add
+<code>&amp;fieldset=</code> with the appropriate field set to your query.
+Please see the <a href="reference/fieldsets.html">field set</a> documentation
+for syntax.
+</p>
+
+<p>
+Please note that specifying <em>fieldset</em> does not give the same
+result as specifying <em>field</em>
+(see <a href="#binary-data">Handling Binary
+Data</a>). <em>fieldset</em> is used in the persistence backend to
+more efficiently fetch the subset of data that is actually desired
+while <em>field</em> is used in the Gateway to render a result from an
+already fetched document. The two may be used in conjunction, but
+there is no implicit setting of the field set based on field alone
+(this is because non-builtin field sets require us to know the
+document type in advance, something <em>field</em> doesn't specify or
+need - as mentioned it works on returned documents, at which point
+we know all the details).
+</p>
+
+<p>
+The result returned contains documents in
+the <a href="reference/document-xml-format.html">document
+XML</a> format.  If a document is not found in Vespa, it will not show
+up in the returned list, but will also not cause an error.
+</p>
+
+<p>
+See the <a href="httpgateway-getsearcher.html">get searcher</a> doc for more
+details on retrieving documents through the HTTP gateway.
+</p>
+
+<h1 id="visiting">Retrieving Documents Using a Visitor</h1>
+
+<p>
+If you want to retrieve multiple documents from a content cluster, you
+can use a <a href="content/feature-visiting.html">visitor</a>. This request
+will retrieve a limited set of data from the content cluster (by
+default, the contents of
+one <a href="content/buckets-and-distribution.html">bucket</a>).
+If there is more data to be visited, a <em>continuation token</em> is
+also returned. This token can be used to continue the visitor at a
+later time.
+</p>
+
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/visit?visit.selection=id.user=1234"
+</pre>
+
+<p>Add <code>&amp;format=json&amp;populatehitfields=true</code> to the request
+URL to get the output as JSON instead of XML. Note that this does not currently
+support properly rendering document removes when the
+<code>visit.visitRemoves</code> parameter is specified&mdash;removes will be
+rendered as if they were empty documents, containing only an ID.</p>
+
+<p>
+Note that it is possible to use external data handlers, meaning that
+the data sent from the visitor will be sent to another messagebus
+route. This is useful for reprocessing or migration cases.
+</p>
+
+<p>
+The most important visiting parameters are:
+</p>
+
+<ul>
+  <li><strong>visit.selection</strong>: Limits the data you visit
+      using
+      a <a href="reference/document-select-language.html">document
+      selection expression</a>.</li>
+  <li><strong>visit.continuation</strong>: Set to the value of a
+      continuation token returned by a previous call to visiting. The
+      visitor will then skip the buckets that were previously
+      visited.</li>
+  <li><strong>visit.fieldSet</strong>:
+      A <a href="reference/fieldsets.html">field set</a> representing
+      the fields you want returned.</li>
+  <li><strong>visit.dataHandler</strong>: A route to send data to
+      instead of returning it as results.</li>
+</ul>
+
+<p>
+Other parameters:
+</p>
+
+<ul>
+  <li><strong>visit.maxPendingVisitors</strong>: The maximum number of
+      client visitors to send in parallel from this request (default:
+      1)</li>
+  <li><strong>visit.maxBucketsPerVisitor</strong>: The maximum number
+      of buckets to visit per client visitor spawned by this request
+      (default: 1)</li>
+  <li><strong>visit.maxPendingMessagesPerVisitor</strong>: The maximum
+      number of messages we can have pending from each storage visitor
+      (default: 32).
+  <li><strong>visit.approxMaxDocs</strong>: Abort the request when we
+      have received at least this many documents (default: 1). Note
+      that we will always return all documents from a bucket we've
+      started to visit, so the actual number of documents returned is
+      likely to be in the hundreds.</li>
+  <li><strong>visit.fromTimestamp</strong>: Visit only documents that
+      were modified after this timestamp. This timestamp is given as
+      microseconds after the epoch.</li>
+  <li><strong>visit.toTimestamp</strong>: Visit only documents that
+      were modified before this timestamp. This timestamp is given as
+      microseconds after the epoch.</li>
+  <li><strong>visit.visitInconsistentBuckets</strong>: If a bucket has
+      inconsistent copies and no trusted ones, we will by default wait
+      until that problem is fixed. Enable this to allow for visiting
+      anyway.</li>
+  <li><strong>visit.visitRemoves</strong>: Visit remove entries as
+      well as PUT entries.</li>
+  <li><strong>visit.cluster</strong>: Visit using the given content
+      cluster or route.</li>
+</ul>
+<p>
+Be aware that the current implementation buffers <em>all</em> received data in
+memory before finally rendering to the client, so take care when altering
+parameters that can potentially increase the amount of data received at
+the gateway node. In particular, increasing <code>visit.maxPendingVisitors</code>,
+<code>visit.maxBucketsPerVisitor</code> and/or <code>visit.approxMaxDocs</code>
+can greatly increase the amount of data that must be buffered.
+</p>
+
+<h1 id="removing">Removing Documents</h1>
+
+<p>
+Single documents can be removed using a shortcut with a HTTP GET
+request. This is an alternative to submitting a document XML feed that
+contains remove operations. Example with <code>curl</code> on the
+command-line:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/remove/?id=id:test:type::0"
+</pre>
+
+<p>
+There is also support for removing multiple documents with one
+request. To do so, the parameters to the request must be continuously
+enumerated, as the example below shows:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/remove/?id[0]=id:test:type::foo&amp;id[1]=id:test:type::bar&amp;id[2]=id:test:type::zap"
+</pre>
+
+<p>
+Finally, you can POST a newline-separated list of document ids to the
+same URI to remove larger lists of documents.
+</p>
+
+
+
+<h1 id="remove-location">Removing Users or Groups from Storage</h1>
+
+<p>
+Storage supports removing sets of documents belonging to a user or a
+group. To perform such a remove operation, use
+the <em>removelocation</em> command:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/removelocation/?user=1234"
+</pre>
+
+<p>
+The above example removes the user <em>1234</em> from Storage. In
+addition, we support removing groups using the group parameter, or
+removing subsets of documents using the selection parameter. In the
+latter case, the value of the parameter must be a valid document
+selection statement that matches only documents for one user or group,
+but can be more restrictive. For example:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/removelocation/?selection=id.group='foo' AND music.date &lt; 123456789"
+</pre>
+
+<p>
+Only one of "user", "group" or "selection" can be specified.
+</p>
+
+
+
+<h1 id="internal-components">Internal Components</h1>
+
+<p>
+The HTTP Gateway handlers are named as follows:
+</p>
+
+<ul>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandler</strong>:
+      Inserts, removes or updates documents using Vespa XML (serves
+      /feed)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerBinary</strong>:
+      Inserts a single document by POSTing a binary blob as field
+      content (serves (/binaryfeed)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerRemove</strong>:
+      Removes one or more documents by providing their document IDs
+      (serves /remove)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation</strong>:
+      Removes an entire user or group (serves /removelocation)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerStatus</strong>:
+      Shows metrics about all of the other HTTP Gateway handlers
+      configured (serves /status)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerGet</strong>:
+      Redirects /get to the GetSearcher (see GET and VISIT below)</li>
+  <li><strong>com.yahoo.feedhandler.VespaFeedHandlerVisit</strong>:
+      Redirects /visit to the VisitSearcher (see GET and VISIT
+      below)</li>
+</ul>
+
+
+<h2 id="get-and-visit">GET and VISIT</h2>
+<p>
+The read operations GET and VISIT are implemented as searchers rather
+than handlers. This is because we want to be able to include them in
+search chains, and to apply result transformations and templates to
+them. To simplify the use, we have created two handlers
+(VespaFeedHandlerGet and VespaFeedHandlerVisit) that redirect requests
+to the search handler, and specifically search chains named,
+respectively, <code>vespaget</code> and <code>vespavisit</code>.
+</p>
+
+<ul>
+  <li>searchchain: vespaget
+    <ul><li>searcher: com.yahoo.storage.searcher.GetSearcher</li></ul></li>
+  <li>searchchain: vespavisit
+    <ul><li>searcher: com.yahoo.storage.searcher.VisitSearcher</li></ul></li>
+</ul>
+
+
+<p>
+Since these are added to regular search chains, you can modify
+requests in a results in a straightforward manner by adding your own
+searchers to the same chains.
+</p>
+
+
+
+<h1 id="status-page">HTTP Gateway Status Page</h1>
+
+<p>
+To view status of ongoing feeds, as well as statistical data, you can
+use the following URL:
+</p>
+
+<pre class="brush: text">
+http://[host]:[port]/feedstatus
+</pre>
+
+
+
+<h1 id="status">Checking Alive Status</h1>
+
+<p>
+As a handler running in the search container, the HTTP Gateway service
+uses the same way of indicating it is alive, by serving a status.html
+file:
+</p>
+
+<pre class="brush: cli">
+$ curl "http://[host]:[port]/status.html"
+</pre>
+
+
+
+<h1 id="errors">Error Handling</h1>
+<p>
+If the HTTP Gateway gets an error while processing the request, it
+will return a HTTP result code other than 200. The contents of the
+result may also contain a human-readable text with more detail about
+the error. This text should not be considered an external API, and
+could change without notice.
+</p>
+
+
+
+<h1 id="http-content-encoding">HTTP Content Encoding</h1>
+
+<p>
+The HTTP Gateway supports gzip content encoding for POST requests, and
+for GET /get/ requests.  This means that if you POST a feed gzip-ed
+using Content-Encoding: gzip, it will work, and if you send
+Accept-Encoding: gzip for GET /get/, the resulting document will be
+gzip encoded and the Content-Encoding header will be gzip.
+</p>
+
+</body>
+</html>

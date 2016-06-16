@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Load Types</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2013"/>
+  <meta name="authors" content="humbe"/>
+</head>
+<body>
+
+<p>
+  The content layer supports a set of operations, like for instance put and get.
+  However, there may be many different types of operations that reuse the same
+  request types. For instance, a put operation may be an insertion of data for
+  a user waiting for the data to be entered, or a background migration of data
+  between clusters, where it doesn't matter if the operation takes a second or
+  a day.
+</p><p>
+  The content layer can thus not know how important an operation is just by
+  looking at its type. Users can explicitly provide priorities for operations,
+  solving that specific problem, but the users are then likely to hardcode these
+  priorities into their clients, and changing them become tedious. Also, tracked
+  metrics for operation latencies will then have low value, as latencies for
+  latency critical and non-latency critical operations are tracked in the same
+  metric.
+</p><p>
+  Load types exist, such that all types of operations can be marked into
+  configurable groups. Priorities can then be configured in the application
+  rather than being specified in the clients. The load type typically does not
+  change. With distinguishable load types, the content layer may also log
+  metrics separately per load type, increasing the value of the metrics. Now
+  administrators are able to view latency metrics for the latency critical
+  operations separately.
+</p><p>
+  Load types must be specified in the client requests to the content layer.
+  Refer to doc for the client you are using to see how to
+  set the load type.
+</p>
+
+<h1 id="metrics">Metrics</h1>
+<p>
+  Certain components in Vespa have <em>load type metrics</em>. These metrics
+  will categorize their values by the configured load types, so that you can
+  have one metric per load type, as well as a <code>default</code> value for
+  load types other than the configured ones (or unspecified load types), and a
+  sum of all of the load types. This will create metrics like this:
+</p>
+
+<pre class="brush: xml">
+&lt;get&gt;
+  &lt;default&gt;
+    &lt;count count=&quot;1&quot;/&gt;
+    &lt;latency average=&quot;0.125977&quot; last=&quot;0.125977&quot; min=&quot;0.125977&quot; max=&quot;0.125977&quot; count=&quot;1&quot;/&gt;
+    &lt;not_found count=&quot;1&quot;/&gt;
+  &lt;/default&gt;
+  &lt;foo&gt;
+    &lt;count count=&quot;1&quot;/&gt;
+    &lt;latency average=&quot;0.25708&quot; last=&quot;0.25708&quot; min=&quot;0.25708&quot; max=&quot;0.25708&quot; count=&quot;1&quot;/&gt;
+  &lt;/foo&gt;
+  &lt;sum&gt;
+    &lt;count count=&quot;2&quot;/&gt;
+    &lt;latency average=&quot;0.191528&quot; last=&quot;0.25708&quot; min=&quot;0.125977&quot; max=&quot;0.25708&quot; count=&quot;2&quot;/&gt;
+    &lt;not_found count=&quot;1&quot;/&gt;
+  &lt;/sum&gt;
+&lt;/get&gt;
+</pre>
+
+</body>
+</html>

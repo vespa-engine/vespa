@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Indexing Modes</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="July 2015" />
+<meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p>
+Vespa documents can be stored two different indexing modes, <em>realtime</em>
+and <em>streaming</em>. The indexing mode is defined in services.xml for each document type,
+realtime is default.
+</p>
+
+<p class="note">
+Note that switching indexing modes requires refeeding your data.
+</p>
+
+<h1 id="real-time">Index mode</h1>
+
+<p>
+For document corpuses in <code>index</code> mode, Vespa maintains reverse indexes
+which supports low latency searches across a large corpus - a core
+feature of search engines. Indexes in Vespa can be updated synchronously.
+</p>
+
+
+<h1 id="streaming">Streaming mode</h1>
+
+<p>
+<code>streaming</code> mode is useful in the case where the document corpus is statically split
+into many subsets and all searches go to just one (or a few) of the small subsets,
+the canonical example being personal indexes where a user only searches his own data.
+In streaming mode Vespa only stores the raw data of the documents and do the work
+of finding matches by streaming through them, similar to a grep.
+This is too costly for a global search but works fine for searching small subsets of the
+data, and means Vespa can avoid the overhead of maintaining reverse indexes.
+Streaming mode is suitable when subsets are <i>on average</i> very small compared
+to the entire corpus. Vespa will maintain low latency also for the occasional large
+subset (say, users with huge amounts of data) by automatically sharding the data
+of such users over many content nodes searched in parallel.
+</p>
+
+<p>
+Streaming search uses the same implementation of most features in Vespa including
+ranking, matching and grouping and supports the same features. However, streaming search does
+not support stemming but supports a wider range of term matching options, which can
+be specified either at query time or at configuration time:
+
+<table>
+  <thead>
+    <tr>
+      <td>Feature</td>
+      <td>Query language syntax</td>
+      <td>Search definition syntax</td>
+      <td>Example</td>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>substring</td>
+      <td><a href="reference/query-language-syntax.html#substring-searching"><code>*bla*</code></a></td>
+      <td><a href="reference/search-definitions.html#match"><code>match:substring</code></a></td>
+      <td><code>/search/?query=*bla*</code></td>
+    </tr>
+    <tr>
+      <td>prefix</td>
+      <td><a href="reference/query-language-syntax.html#prefix-searching"><code>bla*</code></a></td>
+      <td><a href="reference/search-definitions.html#match"><code>match:prefix</code></a></td>
+      <td><code>/search/?query=bla*</code></td>
+    </tr>
+    <tr>
+      <td>suffix</td>
+      <td><a href="reference/query-language-syntax.html#suffix-searching"><code>*bla</code></a></td>
+      <td><a href="reference/search-definitions.html#match"><code>match:suffix</code></a></td>
+      <td><code>/search/?query=*bla</code></td>
+    </tr>
+    <tr>
+      <td>exact</td>
+      <td><a href="javadoc/index.html?com/yahoo/prelude/query/ExactstringItem.html">Exact string item</a></td>
+      <td><a href="reference/search-definitions.html#match"><code>match:exact</code></a></td>
+      <td>Here is a the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/ExactMatchSearcher.java?view=markup">searcher</a> that we use to test the feature. You can also find the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/exactmatch.sd?view=markup">searchdefinition</a>, the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/feed.xml?view=markup">feed</a>, and the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/exactmatch_streaming.rb?view=markup">test</a></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2 id="using-streaming-mode">Using streaming mode</h2>
+
+<p>
+To use streaming mode, add an attribute to the document type in question in the
+appropriate content cluster:
+</p>
+<pre>
+  &lt;content id="mycluster" version="1.0"&gt;
+    &lt;documents&gt;
+      &lt;document type="mytype" <b>mode="streaming"</b> /&gt;
+    &lt;/documents&gt;
+    ...
+  &lt;/content&gt;
+</pre>
+
+<p>For good query performance you should also tell the engine to reorder documents in bucket order in the background:
+
+<pre>
+  &lt;content id="mycluster" version="1.0"&gt;
+    &lt;config name="vespa.config.search.core.proton"&gt;
+      &lt;summary&gt;
+        &lt;compact2buckets&gt;true&lt;/compact2buckets&gt;
+      &lt;/summary>
+    &lt;/config>
+    ...
+  &lt;/content&gt;
+</pre>
+
+<p>
+To run a streaming search query you need to
+
+<ul>
+<li>specify the subset group membership of every document in the document id, see groupname in <a href="document-ids.html">document ids</a>.
+<li>specify the group to search in every query using the query request attribute <a href="reference/search-api.html#streaming.groupname">streaming.groupname</a>
+</ul>
+
+</body>
+</html>

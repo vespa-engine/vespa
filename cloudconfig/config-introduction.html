@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>The Cloud Configuration System</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="January 2012" />
+  <meta name="authors" content="musum, bratseth, lulf" />
+</head>
+
+<body>
+
+<p>
+This document gives an overview of the Cloud Config System (CCS)
+The problem of configuring cloud nodes can be divided into three
+parts, each addressed by different solutions:
+</p>
+<ul>
+  <li><strong>Node system level configuration:</strong> Configure OS
+  level settings such as time zone as well as user privileges on the
+  node.</li>
+  <li><strong>Package management</strong>: Ensure that the correct
+  set of software packages is installed on the nodes. This
+  functionality is provided by three tools working together.</li>
+  <li><strong>Cloud configuration:</strong> Starts the configured
+  set of processes on each node with their configured startup
+  parameters and provides dynamic configuration to the modules run by
+  these services.<em>Configuration</em> here is any data which
+    <ul>
+       <li> Can not be fixed at compile time.</li>
+       <li> Is static most of the time.</li>
+    </ul>
+  </li>
+</ul>
+<p>
+Note that by these definitions we may allow all the cloud nodes to
+have the same software packages (disregarding version differences,
+discussed later) because variations in what services are run on each
+node and in their behavior can be achieved entirely by using CCS. This
+allows us to manage the complexity of node variations completely
+within the cloud configuration system rather than across multiple
+systems.
+</p>
+<p>
+CCS makes the following assumptions about the nodes using it:
+</p>
+<ul>
+   <li> Each node has the software packages needed to run the
+   configuration system and any services which will be configured to
+   run on the node. This usually means that all nodes have the same
+   software, although this is not a requirement.</li>
+   <li> Each node has set <a href="../setting-vespa-variables.html">VESPA_CONFIGSERVERS</a>
+     listing the active configuration servers.</li>
+   <li>Each node knows its fully qualified domain name.</li>
+</ul>
+
+
+
+<h1 id="configuration">Cloud Configuration</h1>
+<p>
+The responsibility of configuring a system can be divided into two largely
+independent parts
+</p>
+<ul>
+   <li> <strong>Configuration delivery:</strong> Definition of
+   individual configurations, API's for requesting and accessing
+   configuration, and the mechanism for delivering configurations from
+   their source to the receiving components.</li>
+   <li> <strong>Configuration assembly:</strong> Assembly of a complete
+   set of configurations for delivery from the inputs provided by the
+   parties involved in configuring the system. </li>
+ </ul>
+<p> 
+This division allows the problem of reliable configuration delivery in
+large distributed systems to be addressed in configuration delivery
+while the complexities of assembling complete configurations in the
+cloud environment can be treated as a vm-local design problem.
+</p>
+<p>  
+An important feature of CCS is the nature of the interface between the delivery
+and assembly subsystems. The assembly subsystem creates as output a (Java)
+object model of the desired distributed system. The delivery subsystem queries
+this model to obtain concrete configurations of all the components of the
+system. This allows the assembly subsystem to accept higher level and simpler to
+use abstractions as input and automatically derive detailed configurations with
+the correct interdependencies. This division insulates the external interface
+and the components being configured from changes in each other. In addition the
+system model provides the home for logic implementing node/component instance
+variations of configuration.
+</p>
+<p> 
+The next two sections will discuss the delivery and assembly
+subsystems separately.
+</p>
+
+
+
+<h2 id="delivery">Configuration Delivery</h2>
+<p>
+Configuration delivery encompasses the following aspects:
+</p>
+<ul>
+  <li> Definition of configurations</li>
+  <li> The component view (API) of configuration</li>
+  <li> Configuration delivery mechanism</li>
+</ul>
+<p>     
+These aspects work together to realize the following goals:
+</p>
+<ul>
+  <li> Eliminate inconsistency between code and configuration.</li>
+  <li> Eliminate inconsistency between the desired configuration and
+   the state on each node.</li>
+  <li> Limit temporal inconsistencies after reconfiguration.</li>
+</ul>
+<p>
+The next three subsections discusses the three aspects above, followed
+by subsections on two special concerns - bootstrapping and system
+upgrades.
+</p>
+
+
+<h3 id="config-definitions">Configuration Definitions</h3>
+<p>
+A <em>configuration</em> is a set of simple or array key-values with a
+name and a type which can possibly be nested. For example:
+</p>
+   
+<pre>
+myProperty &quot;myvalue&quot;
+myArray[1]
+myArray[0].key1 &quot;someValue&quot;
+myArray[0].key2 1337 
+</pre>
+
+<p>   
+The <em>type definition</em> (or class) of a configuration object
+defines and documents the set of fields a configuration may contain
+with their types and default values. It has a name as well as a
+namespace. For example, the above config instance may have this
+definition:
+</p>
+   
+<pre>
+namespace=foo.bar
+
+# Documentation of this key
+myProperty string default=&quot;foo&quot;
+
+# etc.
+myArray[].key1 string
+myArray[].key2 int default=0
+</pre>
+
+<p>
+An individual config typically contains a coherent set of settings
+regarding some topic, such as "logging" or "indexing". A complete
+system consists of many instances of many config types.
+</p>
+
+
+<h3 id="component-view">The Component View of Configuration</h3>
+<p>
+Individual components of a system consumes one or more such configs and
+use their values to influence their behavior.  APIs are needed for
+<em>requesting</em> configs and for <em>accessing</em> the values of
+those configs as they are provided.
+</p>
+<p>
+<strong>Access</strong> to configs happens through a (Java or C++) class
+generated from the config definition file. This ensures that any
+inconsistency between the fields declared in a config type and the
+expectations of the code accessing it are caught at compile time. The
+config definition is best viewed as another class with an alternative
+form of source syntax belonging to the components consuming it. A
+Maven target is provided for generating such classes from config
+definition types.
+</p>
+<p>   
+Components may use two different methods for
+<strong>requesting</strong> configurations (only Java code is shown,
+here see the <a href="configapi-dev-cpp.html">Developing with the C++
+Config API</a> doc for how to do this in C++):
+</p>
+<ul>
+  <li>
+    <p>
+    <strong>Subscription:</strong> The component sets up
+    <em>ConfigSubscriber</em>, then subscribes to one or more
+    configs. This is the simple approach, there
+    are <a href="configapi-dev-java.html">other ways of</a> getting
+    configs too.
+    </p>
+<pre>
+ConfigSubscriber subscriber = new ConfigSubscriber();
+ConfigHandle&lt;MydConfig&gt; handle = subscriber.subscribe(MyConfig.class, &quot;myId&quot;); 
+if (!subscriber.nextConfig()) throw new RuntimeException(&quot;Config timed out.&quot;);
+if (handle.isChanged()) {
+  String message = handle.getConfig().myKey();
+  # &hellip;consume the rest of this config
+}
+</pre>
+  </li>
+  <li>
+  <p>
+  <strong>Dependency injection:</strong> The component declares its
+  config dependencies in the constructor and subscriptions are set up
+  on its behalf. When changed configs are available a new instance of
+  the component is created. The advantage of this method is that
+  configs are immutable throughout the lifetime of the component such
+  that no thread coordination is required. This method is currently
+  only available in Java using the jdisc container.
+  </p>
+<pre>
+public MyComponent(MyConfig config) {
+  String myKey = config.myKey();
+  # &hellip;consume the rest of this config
+}
+</pre>
+  </li>
+</ul>
+<p>
+For unit testing <a
+href="configapi-dev-java.html#unit-testing">configs can be created
+with Builders</a>, submitted directly to components.
+</p>
+
+
+<h3 id="delivery-mechanism">Config Delivery Mechanism</h3>
+<p>
+The config delivery mechanism is responsible for ensuring that a new
+config instance is delivered to each subscribing component in a timely
+fashion each time there is a change to the system model causing that
+config instance to change. A config subscription is identified by two
+parameters, the config definition name and namespace and the config id
+used to identify the particular component instance making the
+subscription. The in-process config library will forward these
+subscription requests to a node local config proxy which provides
+caching and fan-in from processes to node. The proxy in turn issues
+these subscriptions to a node in the configuration server cluster,
+each of which hosts a copy of the system model and resolves config
+requests by querying the system model. To provide config server
+failover the config subscriptions are implemented as long-timeout gets
+which are immediately resent when they time out, but conceptually this
+is best understood as push subscriptions.
+</p>
+<img src="img/CloudConfigControlFlowSmaller.png" alt="CloudConfigControlFlowSmaller.png" />
+<p>
+As configs are not stored as files locally on the nodes there is no
+possibility of inconsistencies due to local edits, or of nodes coming
+out of maintenance with a stale configuration.  As configuration
+changes are pushed as soon as the config server cluster allows, time
+inconsistencies during reconfigurations are minimized, although not
+avoided as there is no global transaction.
+</p>
+
+
+<h3 id="bootstrapping">Bootstrapping</h3>
+<p>
+Until now we have described systems in their steady state, but how do
+a set of processes, hosting a set of components, each initiating
+subscriptions using their own unique config id's come to be? This is
+the bootstrapping process.
+</p>
+<p>
+At the outset, a single <em>sentinel</em> process is started on all nodes.
+This process gets the config server names from <a href="../setting-vespa-variables.html">
+VESPA_CONFIGSERVERS</a> and issues a subscription
+for a process list config using the host name as the config id. This
+config lists the processes to be started on the node along with the
+config id to assign to each, typically the logical name of that
+service instance. Those processes can then in turn instantiate
+internal components, each assigned the same or another config id, and
+instantiating further components, etc. This cascade of events brings
+the system into steady state from an initial state where all nodes are
+the same and only knows the names of the config servers.
+</p>
+
+
+<h3 id="upgrades">System upgrades</h3>
+<p>
+The configuration server will up/downgrade between config versions on
+the fly on minor upgrades which causes discrepancies between the
+config definitions requested from those produced by the
+configuration model. Major upgrades which involve incompatible changes
+to the configuration protocol or the system model, however, requires a
+special procedure. A configured node can be
+<strong>detached</strong> from the configuration system. On detachment,
+the node will stop listening to the config server and instead keep
+serving its current config from its local snapshot. To avoid losing
+the snapshot on restart, the proxy will save the config snapshot on
+disk during detachment.
+</p>
+<p>
+With this operation available, the procedure goes as follows: Detach
+all nodes, upgrade the config server and reassemble its
+configuration. Upgrade and reattach the configured nodes one by one.
+</p>
+
+
+
+<h2 id="configuration-assembly">Configuration Assembly</h2>
+<p>
+Config assembly is the process of turning the configuration input
+sources into an object model of the desired system which can respond
+to queries for configs given a name and config id. Config
+assembly for cloud systems can become complex, because it involves
+merging information owned by multiple parties into a coherent whole:
+</p>
+<ul>
+   <li> <strong>Cloud operations</strong> own the machines on the
+   cloud and controls assignment of nodes to
+   services/applications.</li>
+   <li> <strong>Cloud service providers</strong> own services which
+   hosts multiple applications running on the cloud.</li>
+   <li> <strong>Cloud applications</strong> define the final
+   applications running on cloud nodes and shared services.</li>
+</ul>
+<p>
+The current config model assembly procedure uses a single source
+- the <strong>application package</strong>. The application package, owned by the
+application, is a directory structure containing some defined files
+and sub-directories which together completely defines the system -
+including which nodes belong in the system, which services they should
+run and the configuration of these services and their components. When
+the application deployer wants to change the application, a <strong>deploy</strong>
+command is issued to a config server, with the application package as
+argument.
+</p>
+<p>
+At this point the system model is assembled and validated
+and any feedback is issued to the deployer. If the deployer decides to
+make the new configuration active a <strong>commit</strong> command is then issued,
+causing the config server cluster to switch to the new system model
+and respond with new configs on any active subscriptions where the new
+system model caused the config to change. This ensures that
+subscribers gets new configs timely on changes, and that the changes
+propagated are the minimal set such that small changes to an
+application package causes correspondingly small changes to the
+system.
+</p>
+<img src="img/VespaAssemblySmaller.png" alt="VespaAssemblySmaller.png" />
+<p>
+The config model itself is pluggable, so that cloud service providers may write
+plugins for assembling a particular service. The plugins are written in Java,
+and is installed together with the CCS. Service plugins define their own syntax
+for specifying services that may be configured by cloud applications. This
+allows the applications to be specified in an abstract manner, decoupled from
+the configuration that is delivered to the components.
+</p>
+
+
+<h2 id="reference">Reference</h2>
+<p>
+Further information in the <a href="configapi-dev.html">reference doc</a>
+</p>
+
+</body>
+</html>

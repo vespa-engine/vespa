@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Distance to Path</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="April 2008" />
+<meta name="authors" content="simon" />
+</head>
+
+<body>
+
+<p class="ingress" data-annotation="Rewrite. Make more clear and concise, and remove the nick name part">
+This article provides an overview of the Vespa rank feature
+<em>DistanceToPath</em>. This feature matches
+<a href="distance-sorting.html">document locations</a> to a path given
+with the query. Not only does this feature return the closest distance
+for each document to the path, but it also includes the length
+traveled <em>along</em> the path before reaching the closest point, or
+&ldquo;intersection&rdquo;. This feature has been nick named the
+&ldquo;gas&rdquo; feature because of its obvious use case of finding
+gas stations along a planned trip.
+</p>
+
+
+
+<h1 id="scenario">Scenario</h1>
+
+<p>
+Let us first review the problems that exist today. In this scenario we
+have been traveling from the US to Bangalore, and we
+are now planning our trip back. We have decided to rent a car in
+Bangalore that we are to return upon arrival at the airport in
+Chennai. We are already quite hungry and wish to stop for a meal once
+we are outside of town. To avoid having to pay an additional fueling
+premium, we also wish to refuel just before reaching the airport. We
+need to figure out what roads to take, what restaurants are available
+outside of Bangalore, and what fuel stations are available once we get
+close to Chennai.
+</p>
+
+<figure>
+  <img src="img/geo/path1.png" />
+  <figcaption>
+    Figure 1: Planned trip from Bangalore to Chennai.
+  </figcaption>
+</figure>
+
+<p>
+In <em>figure 1</em> we have plotted our trip from
+Bangalore to the airport. If we search for restaurants along the path,
+we only see a small subset of all restaurants present in the window of
+our quite large map. In <em>figure 2</em> you see how the most
+relevant results are actually all in Bangalore or Chennai.
+</p>
+
+<figure>
+  <img src="img/geo/path1.png" />
+  <figcaption>
+    Figure 2: Searching for restaurants along the planned trip without
+    the DistanceToPath feature.
+  </figcaption>
+</figure>
+
+<p>
+In order to find the appropriate results we need to move the map
+window to just about where we expect to be eating, and there redo the
+search (see <em>figure 3</em>). This has to be done similarly for
+finding a gas station near the airport.
+</p>
+
+<p>
+In this document we outline how the new <em>DistanceToPath</em>
+feature can be used to quickly and easily improve this type of
+planning to be more convenient for the user.
+</p>
+
+<figure>
+  <img src="img/geo/path2.png" />
+  <figcaption>
+    Figure 3: Searching for restaurants in a smaller window along the
+    planned trip without the <em>DistanceToPath</em> feature.
+  </figcaption>
+</figure>
+
+
+
+<h1 id="requirements">Requirements and Setup</h1>
+
+<p>
+The nature of this feature requires that the search corpus contains
+documents with positions data. A
+<a href="search/searcher-development.html">searcher component</a> needs to be
+written that is able to pass paths with the queries that lie in the
+same coordinate space as the searchable documents. Finally,
+a <a href="ranking.html">rank-profile</a> needs to defined that scores
+documents according to how they match some target distance traveled
+and at the same time lies close &quot;enough&quot; to the path.
+</p>
+
+
+<h2 id="syntax">Query Syntax</h2>
+<p>
+This document does not describe how to write a searcher plugin for the
+JDisc Container, instead we refer to
+the <a href="search/searcher-development.html#getting_started_with_searcher_development">container
+documentation</a> on this.  However, let us review the syntax expected
+by the <em>DistanceToPath</em> feature. As noted in the
+the <a href="reference/rank-features.html">rank features
+reference</a>, the path is supplied as a query parameter by name of
+the feature and the <code>path</code> keyword:
+</p>
+
+<pre class="code">
+query=<em>(&hellip;)</em>&amp;rankproperty.distanceToPath(<em>name</em>).path=(x1,y1,x2,y2,&hellip;,xN,yN)
+</pre>
+
+<p>
+Here <code>name</code> has to match the name of the position attribute that
+holds the positions data.
+</p>
+
+<p>
+The path itself is parsed as a list of <code>N</code> coordinate pairs
+that together form <code>N-1</code> line segments:
+</p>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">
+    (x_1,y_1) \rightarrow (x_2,y_2), (x_2,y_2) \rightarrow (x_3,y_3), (&hellip;), (x_{N-1},y_{N-1}) \rightarrow (x_N,y_N)
+  </div>
+</figure>
+
+<p class="alert alert-success">
+The path is <em>not</em> in a readable (longitude, latitude) format,
+but is a pair of integers in the internal format (degrees multiplied
+by 1 million).  If a transform is required from geographic coordinates
+to this, the QRS plugin must do it; note that the first number in each
+pair (the &quot;x&quot;) is longitude (degrees East or West) while the
+second (&quot;y&quot;) is latitude (degrees North or South),
+corresponding to the usual orientation for maps
+&mdash; <em>opposite</em> to the usual order of latitude/longitude.
+</p>
+
+
+<h2 id="rank-profile">Rank profile</h2>
+<p>
+If we were to disregard our scenario for a few moments, we could
+suggest the following rank profile:
+</p>
+
+<pre class="code">
+rank-profile default {
+    first-phase {
+        expression: nativeRank
+    }
+    second-phase {
+        expression: firstPhase * if (distanceToPath(ll).distance &lt; 10000, 1, 0)
+    }
+}</pre>
+
+<p>
+This profile will first rank all documents according to Vespa's
+<em>nativeRank</em> feature, and then do a second pass over the top 100
+results and order these based on their distance to our path. It is
+very simple; if a document lies within 100 metres of our path it
+retains its relevancy, otherwise its relevancy is set to 0.  Such a
+rank profile would indeed solve the current problem,
+but Vespa's ranking model allows for us to take this a lot
+further.
+</p>
+
+<p>
+The following is a very simple rank profile that ranks documents
+according to a query-specified target distance to path and distance
+traveled:
+</p>
+
+<pre class="code">
+rank-profile default {
+    first-phase {
+        expression {
+            max(0,    $distance - distanceToPath(ll).distance) *
+            (1 - fabs($traveled - distanceToPath(ll).traveled))
+        }
+    }
+}
+</pre>
+
+<p>
+The expression is two-fold; a first component determines a rank based
+on the document's distance to the given path as compared to
+the <a href="reference/ranking-expressions.html">query parameter</a>
+<code>$distance</code>. If the allowed distance is exceeded, this
+component's contribution is 0. The distance contribution is then
+multiplied by the difference of the actual distance traveled as
+compared to the query parameter <code>$traveled</code>. In short, this
+profile will include all documents that lie close enough to the path,
+ranked according to their actual distance and traveled measure.
+</p>
+
+<p class="alert alert-success">
+<em>DistanceToPath</em> is only compatible
+with <a href="distance-sorting.html">2D coordinates</a> because
+pathing in 1 dimension makes no sense.
+</p>
+
+
+
+<h1 id="results">Results</h1>
+
+<p>
+For the sake of this article, let us assume that we have implemented a
+QRS path searcher that is able to pass the path found by the user's
+initial directions query to Vespa's <a href="#syntax">query
+syntax</a>.  There are then two more parameters that must be supplied
+by the user; <code>$distance</code> and <code>$traveled</code>. Vespa
+expects these parameters to be supplied in a scale compatible with the
+feature's output, and should probably also be mapped by the QRS
+plugin. The feature's &ldquo;distance&rdquo; output is given in
+Vespa's internal resolution, which is approximately 10 units per
+meter. The &ldquo;traveled&rdquo; output is a normalized number
+between 0 and 1, where 0 represents the beginning of the path, and 1
+is the end of the path.
+</p>
+
+<p>
+<em>Figures 4a and 4b</em> illustrate how these parameters can be used to return
+the most appropriate hits for our scenario. Note that the figures only
+show the top hit for each query.
+</p>
+
+<figure>
+  <img src="img/geo/path3.png" />
+  <img src="img/geo/path4.png" />
+  <figcaption>
+    Figure 4: a) Searching for restaurants with the DistanceToPath
+    feature. <code>$distance = 1000, $traveled = 0.1</code> b)
+    Searching for gas stations with the DistanceToPath
+    feature. <code>$distance = 1000, $traveled = 0.9</code>
+  </figcaption>
+</figure>
+
+
+<p class="alert alert-success">
+The configuration and use suggested herein is not necessarily
+production ready, and should, as any other new setup, be run through
+staging and verification on your own platform.
+</p>
+
+</body>
+</html>

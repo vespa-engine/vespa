@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>REST API for creating, listing and deleting tenants</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2013" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+
+<p>
+  This is the API specification with examples for the HTTP REST API for
+  <a href="#list-tenants">listing</a>,
+  <a href="#create-tenant">creating</a> and
+  <a href="#delete-tenant">deleting</a> tenants,
+  which can further be used to <a href="deploy-rest-api-v2.html">deploy</a> applications.
+</p><p>
+  A tenant is property or product within an organization.
+  Each tenant can have several applications deployed to multiple environments and regions.
+</p>
+
+<p>
+The API is available on port 19071 on any host where a config server
+is running - example:
+<em>http://myconfigserver.corp.yahoo.com:19071/application/v2/tenant/</em>
+</p>
+
+
+
+<h1 id="apispec">API Specification</h1>
+
+
+<h2 id="general-notes">General Notes</h2>
+
+<h3 id="version-number">Version Number</h3>
+<p>
+The current API version is 2.
+</p>
+
+<h3 id="tenant">Tenant</h3>
+<p>
+Legal tenant names may only contain word characters: <em>[a-zA-Z_0-9]</em>
+</p>
+
+<h3 id="error-handling">Error Handling</h3>
+<p>
+Errors are returned using standard HTTP error codes. Any additional
+info is included in the body of the return call, JSON-formatted.
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>400</td>
+      <td>Bad request. Client error. The error message should indicate the cause.</td>
+    </tr>
+    <tr>
+      <td>404</td>
+      <td>Not found. For example using a session id that doesn't exist.</td>
+    </tr>
+    <tr>
+      <td>405</td>
+      <td>Method not implemented. E.g. using GET where only POST or PUT is allowed.</td>
+    </tr>
+    <tr>
+      <td>500</td>
+      <td>Internal server error. Generic error. The error message should indicate the cause.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2 id="list-tenants">GET /application/v2/tenant/</h2>
+<p>
+Lists the tenants handled by this configserver.
+</p>
+
+<h3 id="list-tenants-get-params">Parameters</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Default value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<h3 id="list-tenants-body">Request body</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Required</th>
+      <th>Content</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>N/A</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="list-tenants-response">Response</h3>
+<p>
+A response will include:
+</p>
+<ul>
+  <li>A list of <a href="#tenant">tenant names</a> handled by this server.</li>
+</ul>
+
+<h3 id="list-tenants-example">Sample Response: GET /application/v2/tenant/</h3>
+<pre>
+[
+    "foo",
+    "bar",
+    "baz"
+]
+</pre>
+
+
+<h2 id="get-tenant">GET /application/v2/tenant/[<a href="#tenant">tenant name</a>]</h2>
+<p>
+Get the tenant.
+</p>
+
+<h3 id="get-tenant-get-params">Parameters</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Default value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<h3 id="get-tenant-body">Request body</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Required</th>
+      <th>Content</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>N/A</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3 id="get-tenant-response">Response</h3>
+<p>
+A response will include:
+</p>
+<ul>
+  <li>A message with the <a href="#tenant">tenant name</a>.</li>
+</ul>
+
+<h3 id="get-tenant-example">Sample Response: GET /application/v2/tenant/[<a href="#tenant">tenant name</a>]</h3>
+<pre>
+{
+    "message": "Tenant 'default' exists."
+}
+</pre>
+
+
+<h2 id="create-tenant">PUT /application/v2/tenant/[<a href="#tenant">tenant name</a>]</h2>
+<p>
+Creates a new tenant with the name given in the URL.
+Note: this operation is asynchronous, it will eventually propagate to all config servers.
+</p>
+
+<h3 id="create-tenant-get-params">Parameters</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Default value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  </tbody>
+</table>
+
+<h3 id="create-tenant-body">Request body</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Required</th>
+      <th>Content</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>N/A</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="create-tenant-response">Response</h3>
+<p>
+A response will include:
+</p>
+<ul>
+  <li>A message with the <a href="#tenant">tenant name</a> of the tenant that was created.</li>
+</ul>
+
+<h3 id="create-tenant-example">Sample Response: PUT /application/v2/tenant/mytenant</h3>
+<pre>
+{
+    "message" : "Tenant mytenant created."
+}
+</pre>
+
+
+<h2 id="delete-tenant">DELETE /application/v2/tenant/[<a href="#tenant">tenant name</a>]</h2>
+<p>
+Deletes a tenant with name given in URL.
+</p>
+<p>
+Note: this operation is asynchronous, it will eventually propagate to all config servers.
+</p>
+
+<h3 id="delte-tenant-get-params">Parameters</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Default value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  </tbody>
+</table>
+
+<h3 id="delete-tenant-body">Request body</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Required</th>
+      <th>Content</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>N/A</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3 id="delete-tenant-response">Response</h3>
+<p>
+A response will include:
+</p>
+<ul>
+<li>A message with the <a href="#tenant">tenant name</a> of the tenant that was deleted.</li>
+</ul>
+
+<h3 id="delete-tenant-example">Sample Response: PUT /application/v2/tenant/mytenant</h3>
+<pre>
+{
+    "message" : "Tenant mytenant deleted."
+}
+</pre>
+
+</body>
+</html>

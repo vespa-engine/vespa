@@ -1,0 +1,975 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html>
+
+<head>
+  <title>Vespa Search API</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2010">
+  <meta name="authors" content="bratseth">
+</head>
+
+<body>
+
+<h1>Vespa Search API</h1>
+
+<p>
+This is the Vespa search API reference.
+</p>
+
+<h1>Query Profiles and Parameter Names</h1>
+<p>
+All the search request parameters listed below can be set in query
+profiles. The first four blocks of properties are also modeled as
+query profile types. These types can be referred from query profiles
+(and inheriting types) to provide type checking on the parameters.
+</p>
+
+<p>
+These parameters often have both a full name - which includes the
+path from the root query profile - and one or more abbreviated
+names. Both names can be used in search requests, while only full
+names can be used in query profiles. The full names are case
+sensitive, while the abbreviated names are case insensitive.
+</p>
+
+<p>
+The parameters modeled as query profiles are also available through
+get methods as Java objects from the Query to Searcher components.
+</p>
+
+
+
+<h1>Index</h1>
+
+<dl class="refindex">
+<dt>Native Execution Parameters</dt>
+<dd>
+  <ul>
+    <li><a href="#hits">hits</a> [<em>count</em>]</li>
+    <li><a href="#nocache">nocache</a></li>
+    <li><a href="#groupingSessionCache">groupingSessionCache</a></li>
+    <li><a href="#offset">offset </a>[<em>start</em>]</li>
+    <li><a href="#queryProfile">queryProfile</a></li>
+    <li><a href="#searchChain">searchChain</a></li>
+    <li><a href="#timeout">timeout</a></li>
+    <li><a href="#tracelevel">tracelevel</a></li>
+  </ul>
+</dd>
+
+<dt>Query Model Parameters</dt>
+<dd>
+  <ul>
+    <li><a href="#model.defaultIndex">model.defaultIndex</a> [<em>def-idx, default-index</em>]</li>
+    <li><a href="#model.encoding">model.encoding</a> [<em>encoding</em>]</li>
+    <li><a href="#model.filter">model.filter</a> [<em>filter</em>]</li>
+    <li><a href="#model.language">model.language</a> [<em>lang, language</em>]</li>
+    <li><a href="#model.queryString">model.queryString</a> [<em>query</em>]</li>
+    <li><a href="#model.restrict">model.restrict</a> [<em>restrict</em>]</li>
+    <li><a href="#model.searchPath">model.searchPath</a> [<em>path</em>]</li>
+    <li><a href="#model.sources">model.sources</a> [<em>search, sources</em>]</li>
+   <li><a href="#model.type">model.type</a> [<em>type</em>]</li>
+  </ul>
+</dd>
+
+<dt>Ranking</dt>
+<dd>
+  <ul>
+    <li><a href="#ranking.location">ranking.location</a> [<em>location</em>]</li>
+    <li><a href="#ranking.features">ranking.features</a> [<em>rankfeature</em>]</li>
+    <li><a href="#ranking.listFeatures">ranking.listFeatures</a> [<em>rankfeatures</em>]</li>
+    <li><a href="#ranking.profile">ranking.profile</a> [<em>ranking</em>]</li>
+    <li><a href="#ranking.properties">ranking.properties</a> [<em>rankproperty</em>]</li>
+    <li><a href="#ranking.sorting">ranking.sorting</a> [<em>sorting</em>]</li>
+    <li><a href="#ranking.freshness">ranking.freshness</a></li>
+    <li><a href="#ranking.queryCache">ranking.queryCache</a></li>
+    <li><a href="#ranking.matchPhase">ranking.matchPhase</a></li>
+  </ul>
+</dd>
+
+<dt>Presentation</dt>
+<dd>
+  <ul>
+    <li><a href="#presentation.bolding">presentation.bolding</a> [<em>bolding</em>]</li>
+    <li><a href="#presentation.format">presentation.format</a> [<em>format</em>]</li>
+    <li><a href="#presentation.template">presentation.template</a></li>
+    <li><a href="#presentation.reportcoverage">presentation.reportcoverage</a> [<em>reportcoverage</em>]</li>
+    <li><a href="#presentation.summary">presentation.summary</a> [<em>summary</em>]</li>
+    <li><a href="#presentation.timing">presentation.timing</a></li>
+  </ul>
+</dd>
+
+<dt>Grouping</dt>
+<dd>
+  <ul>
+    <li><a href="#select">select</a></li>
+    <li><a href="#collapse.summary">collapse.summary</a></li>
+    <li><a href="#collapsefield">collapsefield</a></li>
+    <li><a href="#collapsesize">collapsesize</a></li>
+  </ul>
+</dd>
+
+<dt>Geographical Searches</dt>
+<dd>
+  <ul>
+    <li><a href="#pos.ll">pos.ll</a></li>
+    <li><a href="#pos.radius">pos.radius</a>,</li>
+    <li><a href="#pos.attribute">pos.attribute</a></li>
+    <li><a href="#pos.bb">pos.bb</a></li>
+  </ul>
+</dd>
+
+<dt>Streaming Search</dt>
+<dd>
+  <ul>
+    <li><a href="#streaming.userid">streaming.userid</a></li>
+    <li><a href="#streaming.groupname">streaming.groupname</a></li>
+    <li><a href="#streaming.selection">streaming.selection</a></li>
+    <li><a href="#streaming.headersonly">streaming.headersonly</a></li>
+    <li><a href="#streaming.priority">streaming.priority</a></li>
+    <li><a href="#streaming.maxbucketspervisitor">streaming.maxbucketspervisitor</a></li>
+  </ul>
+</dd>
+
+<dt>Semantic Rules</dt>
+<dd>
+  <ul>
+    <li><a href="#rules.off">rules.off</a></li>
+    <li><a href="#rules.rulebase">rules.rulebase</a></li>
+    <li><a href="#tracelevel.rules">tracelevel.rules</a></li>
+  </ul>
+</dd>
+
+<dt>Other</dt>
+<dd>
+  <ul>
+    <li><a href="#recall">recall</a></li>
+    <li><a href="#user">user</a></li>
+    <li><a href="#nocachewrite">nocachewrite</a></li>
+    <li><a href="#hitcountestimate">hitcountestimate</a></li>
+    <li><a href="#yql">yql</a></li>
+  </ul>
+</dd>
+
+</dl>
+
+
+
+<h1 id="params" data-annotation="The name is not very informative (eirikref)">Native Execution Parameters</h1>
+
+<p>
+These parameters are defined in the <code>native</code> query profile
+type.
+</p>
+
+
+<h2 class="refsubhead" id="hits">hits</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>count</td></tr>
+<tr><td>Values</td>
+    <td>
+      A positive integer, or 0. The sum of <code>offset</code> and
+      <code>hits</code> should be lower than the configured maxoffset
+      value, and will be adjusted to fit. See also comment
+      at <code>offset</code>.
+    </td>
+</tr>
+<tr><td>Default</td><td>10</td></tr>
+</table>
+
+<p>
+The maximum number of hits to return out of all hits matching the
+query.  Fewer hits may be returned, though never more. Must be lower
+than <code>maxHits</code>, which is either set in the 'default'
+query profile, or a predefined value in Vespa (currently 400).
+</p>
+
+
+<h2 class="refsubhead" id="nocache">nocache</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td>
+    <td>
+      True or false
+    </td>
+</tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+
+<p>
+Set to true to avoid the result being fetched from cache, and avoid
+writing the result to cache after fetching it.
+</p>
+
+
+<h2 class="refsubhead" id="groupingSessionCache">groupingSessionCache</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td>
+    <td>
+      True or false
+    </td>
+</tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+
+<p>
+Set to true to store intermediate grouping results in the search back ends when
+using multi level grouping expressions in order to speed up grouping at a
+potential loss of accuracy. See the <a
+href="grouping-syntax.html#sessionCache">grouping reference</a> for more
+details.
+</p>
+
+
+<h2 class="refsubhead" id="offset">offset</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>start</td></tr>
+<tr><td>Values</td>
+    <td>
+      Any positive integer, including 0.
+    </td>
+</tr>
+<tr><td>Default</td><td>0</td></tr>
+</table>
+
+<p>
+The index of the first hit to return from the result set.
+Must be lower than <code>maxOffset</code>, which is
+either set in the 'default' query profile, or a predefined value in
+Vespa (currently 1000).
+</p>
+
+<h2 class="refsubhead" id="queryProfile">queryProfile</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td><em>None</em></td></tr>
+<tr><td>Values</td>
+    <td>
+      A query profile id  -  name:version, where version can be omitted
+      or partially specified, e.g "myprofile:2.1"
+    </td>
+</tr>
+<tr><td>Default</td><td><code>default</code></td></tr>
+</table>
+
+<p>
+The <a href="../query-profiles.html">Query profile</a> containing
+default properties to use for this query.
+</p>
+
+
+<h2 class="refsubhead" id="searchChain">searchChain</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td>
+    <td>
+      A search chain id  -  name:version, where version can be
+      omitted or partially specified, e.g "mychain:2.1.3".
+    </td>
+</tr>
+<tr><td>Default</td><td><code>default</code></td></tr>
+</table>
+
+<p>
+The search chain initially invoked when processing this query. This
+search chain may invoke other chains.
+</p>
+
+
+<h2 class="refsubhead" id="timeout">timeout</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td>
+    <td>
+      Positive floating point number with an optional unit. Default unit
+      is seconds (s), valid unit strings are e.g. <em>ms</em> and <em>s</em>. To set
+      a timeout of one minute, the argument could be set to <em>60 s</em>.
+      Space between the number and the unit is optional.
+    </td>
+</tr>
+<tr><td>Default</td><td>Undefined, but guaranteed to be at least 5000 milliseconds. This default can be overridden by configuring timeout in a <a href="../query-profiles.html">query profile.</a></td></tr>
+</table>
+
+<p>The query timeout.</p>
+
+
+<h2 class="refsubhead" id="tracelevel">tracelevel</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td>
+    <td>
+      Any positive number
+    </td>
+</tr>
+<tr><td>Default</td><td><em>No tracing</em></td></tr>
+</table>
+
+<p>
+Set to a positive number to collect trace information for debugging
+when running a query. Higher numbers give
+progressively more detail on query transformations and searcher
+execution.
+</p>
+
+<h1 id="query-model">Query Model Parameters</h1>
+
+<h2 class="refsubhead" id="model.defaultIndex">model.defaultIndex [<em>def-idx, default-index</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>def-idx, default-index</td></tr>
+<tr><td>Values</td><td>An index name</td></tr>
+<tr><td>Default</td><td><code>default</code></td></tr>
+</table>
+
+<p>
+The field which is searched for query terms which doesn't explicitly specify an index.
+</p>
+
+
+<h2 class="refsubhead" id="model.encoding">model.encoding [<em>encoding</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>encoding</td></tr>
+<tr><td>Values</td><td>Encoding names or aliases defined in the <a href="http://www.iana.org/assignments/character-sets">IANA character sets</a></td></tr>
+<tr><td>Default</td><td>utf-8</td></tr>
+</table>
+
+<p> Sets the encoding to use when returning a result. The encodings <em>big5</em>,
+<em>euc-jp</em>, <em>euc-kr</em>, <em>gb2312</em>, <em>iso-2022-jp</em> and <em>shift-jis</em>
+also influences how
+tokenization is done in the absence of an explicit language setting. </p>
+
+<p>The query is always encoded as UTF-8,
+independently of how the result will be encoded. </p>
+
+<h2 class="refsubhead" id="model.filter">model.filter [<em>filter</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>filter</td></tr>
+<tr><td>Values</td><td>Any allowed collection of filter terms</td></tr>
+<tr><td>Default</td><td><em>Not set</em></td></tr>
+</table>
+
+<p>
+Sets a filter to be combined with the query. Typical use of a filter
+is to add machine generated or preferences based filter terms to a raw
+user query. The filter is parsed the same way as a query of type any,
+the full syntax is available. The positive terms (preceded by +) and
+phrases act as AND filters, the negative terms (preceded by -) act as
+NOT filters, while the unprefixed terms will be used to RANK the
+results. Unless the query has no positive terms, the filter will only
+restrict and influence ranking of the result set, never cause more
+matches than the query.
+</p>
+
+
+<h2 class="refsubhead" id="model.language">model.language [<em>lang, language</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>language, lang</td></tr>
+<tr><td>Values</td><td>Ref. RFC 3066</td></tr>
+<tr><td>Default</td><td></em>Unspecified</em></td></tr>
+</table>
+
+<p>
+  Informs Vespa about the natural language of the query. Please see
+  <a href="../linguistics.html">linguistics</a> for details.
+  This attribute should always be set when it is known. If this
+  parameter is not set, it will be guessed from the query and encoding, and
+  default to english if it cannot be guessed.
+</p>
+
+<h2 class="refsubhead" id="model.queryString">model.queryString [<em>query</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>query</td></tr>
+<tr><td>Values</td><td>Any HTTP encoded legal Vespa query language string</td></tr>
+<tr><td>Default</td><td><em>Not set</em></td></tr>
+</table>
+
+<p>The <a href="query-language-syntax.html">Vespa Query Language</a> query string specifying which documents to match in this query.</p>
+
+
+<h2 class="refsubhead" id="model.restrict">model.restrict [<em>restrict</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>restrict</td></tr>
+<tr><td>Values</td><td>A comma delimited list of document type names.</td></tr>
+<tr><td>Default</td><td><em>Search unrestricted</em></td></tr>
+</table>
+
+<p>
+The document types to restrict the search to when different document
+types share the same search cluster.
+</p>
+
+
+
+<h2 class="refsubhead" id="model.searchPath">model.searchPath [<em>path</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>searchpath</td></tr>
+<tr><td>Values</td><td><ul>
+      <li>searchpath::ELEMENT [';' ELEMENT]*</li>
+      <li>ELEMENT::PART ['/' ROW]</li>
+      <li>PART::EXP [',' EXP]*</li>
+      <li>EXP::NUM | RANGE</li>
+      <li>ROW::NUM</li>
+      <li>RANGE::'['NUM ',' NUM ' &gt;'</li>
+  </ul></td></tr>
+<tr><td>Default</td><td><em>Whole cluster</em></td></tr>
+</table>
+
+<p>
+Specification of which path to send the query to. Used to select which set of search nodes in the cluster should be used.
+Only meant for debugging/monitoring.
+</p>
+
+<p>
+Examples:
+Note that in an indexed content cluster with flat distribution we have 1 implicit row and each search node represents a part.
+<ul>
+  <li>'7/3' = part 7, row 3.</li>
+  <li>'7/' = part 7, any row.</li>
+  <li>'7,1,9/0' = parts 1,7 and 9, row 0.</li>
+  <li>'1,[3,9&gt;/0' = parts 1,3,4,5,6,7,8, row 0.</li>
+</ul>
+</p>
+
+<p>
+In a cluster with a multi-level dispatch setup we must specify a search path element for each level.
+Lets say we have a setup with 2 mid-level dispatch groups, each containing 3 search nodes (and 3 dispatchers):
+<ul>
+  <li>'0/;2/' = dispatch group (part) 0, any of the dispatchers (row); search node (part) 2, any row (of 1 present).</li>
+  <li>'0/1;2/0' = dispatch group (part) 0, dispatcher (row) 1; search node (part) 2, row 0 (of 1 present).</li>
+</ul>
+</p>
+
+
+
+<h2 class="refsubhead" id="model.sources">model.sources [<em>search, sources</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>search, sources</td></tr>
+<tr><td>Values</td><td>A comma separated list of search cluster names or other source names</td></tr>
+<tr><td>Default</td><td><em>Search unrestricted</em></td></tr>
+</table>
+
+<p>
+The names of the sources to search, e.g one or more search clusters and/or federated sources.
+</p>
+
+
+<h2 class="refsubhead" id="model.type">model.type [<em>type</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>type</td></tr>
+<tr><td>Values</td><td>web, all, any, phrase, adv, yql</td></tr>
+<tr><td>Default</td><td>all</td></tr>
+</table>
+
+<p>
+Chooses the query language syntax of the <code>query</code> parameter. See Vespa Query Language for details.
+</p>
+
+
+
+<h1 id="ranking">Ranking</h1>
+
+<h2 class="refsubhead" id="ranking.location">ranking.location [<em>location</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>location</td></tr>
+<tr><td>Values</td><td>See <a href="/5.1/documentation/distance-sorting.html">distance sorting doc</a></td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>Point (one or two dimensional) location to use as base for location ranking. For geographical locations, it is recommended to add the location through the more user friendly pos.ll parameter shown below.</p>
+
+
+<h2 class="refsubhead" id="ranking.features">ranking.features.<em>featurename</em> [<em>rankfeature.</em>featurename]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>rankfeature.featurename</td></tr>
+<tr><td>Values</td><td>Any string</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>Set a rank feature to a value. This works for any key name <code>query(anyname)</code> (query features), and also as a way to override all existing (match and document) features. Example: query=foo&amp;ranking.features.query(userage)=42&amp;ranking.features.fieldMatch(title)=0.65</p>
+
+
+<h2 class="refsubhead" id="ranking.listFeatures">ranking.listFeatures [<em>rankfeatures</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>rankfeatures</td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+<p>Set to true to request "all" rank features to be calculated and returned. The rank features will be returned in the summary field rankfeatures. This option is typically used for MLR training, should not to be used for production.</p>
+
+
+<h2 class="refsubhead" id="ranking.profile">ranking.profile [<em>ranking</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>ranking</td></tr>
+<tr><td>Values</td><td>Any rank profile name</td></tr>
+<tr><td>Default</td><td><code>default</code></td></tr>
+</table>
+<p>Sets the name of the rank profile to use for assigning relevancy scores. The default rank profile will be used for back-ends which does not have the given rank profile.</p>
+
+
+<h2 class="refsubhead" id="ranking.properties">ranking.properties.<em>propertyname</em> [<em>rankproperty.propertyname</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>rankproperty.propertyname</td></tr>
+<tr><td>Values</td><td>Any string</td></tr>
+<tr><td>Default</td><td><em>None</em></td></tr>
+</table>
+<p>Set a rank property that is passed to, and used by a feature executor for this query. Example: query=foo&amp;ranking.properties.dotProduct.X={a:1,b:2}</p>
+
+
+<h2 class="refsubhead" id="ranking.sorting">ranking.sorting [<em>sorting</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>sorting</td></tr>
+<tr><td>Values</td><td>A valid <a href="sorting-syntax.html">sort specification</a></td></tr>
+<tr><td>Default</td><td>None - order by relevance</td></tr>
+</table>
+<p>A specification of how to sort the result. Fields you want to sort on must be stored as document attributes in the index structure by adding attribute to the indexing statement.</p>
+
+
+<h2 class="refsubhead" id="ranking.freshness">ranking.freshness</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td><code>[integer]</code>, an absolute time in seconds since epoch, or <code>now-[number]</code>, to use a time [integer] seconds into the past, or <code>now</code> to use the current time</td></tr>
+<tr><td>Default</td><td>None - use the current time on each node.</td></tr>
+</table>
+<p>Sets the time which will be used as "now" during execution.</p>
+
+<h2 class="refsubhead" id="ranking.queryCache">ranking.queryCache</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+<p>Turns query cache on or off. Search is a two-phase process. If the
+query cache is on, the query is stored on the search nodes between the
+first and second phase, saving network bandwidth and also query setup
+time, at the expense of using more memory.</p>
+
+<h2 class="refsubhead" id="ranking.matchPhase">ranking.matchPhase</h2>
+
+<p>Settings which control Vespa's behavior during the match phase.
+If these are set in the query they will override any match-phase setting
+in the rank profile.</p>
+
+<dt></dt>
+<dd>
+  <ul>
+    <li><a href="#ranking.matchPhase.maxHits">ranking.matchPhase.maxHits</a> the max number of hits that should be generated during the match phase</li>
+    <li><a href="#ranking.matchPhase.attribute">ranking.matchPhase.attribute</a> the attribute to limit matches by if more than maxHits hits will be generated</li>
+    <li><a href="#ranking.matchPhase.ascending">ranking.matchPhase.ascending</a> whether to keep the documents having the highest (default) or lowest values of the attribute</li>
+    <li><a href="#ranking.matchPhase.diversity.attribute">ranking.matchPhase.diversity.attribute</a> the attribute to use to guarantee diversity. </li>
+    <li><a href="#ranking.matchPhase.diversity.minGroups">ranking.matchPhase.diversity.minGroups</a> the minimum number of groups grouped by the diversity attribute. </li>
+  </ul>
+</dd>
+
+<h2 class="refsubhead" id="ranking.matchPhase.maxHits">ranking.matchPhase.maxHits</h2>
+
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>long</td></tr>
+<tr><td>Default</td><td>If sorting and not ranking: max(10000, maxhits+maxoffset). Otherwise: <i>none</i>.</td></tr>
+</table>
+
+The max hits the engine should attempt to produce in the match phase on each partition.
+If it is determined during matching that many more hits than this will be generated, the matching will fall back to
+take the best (highest or lowest) values of the attribute given by ranking.matchPhase.attribute.
+<p>
+By default, this will be turned on only when sorting is used and grouping is not.
+If sorting is used, the primary sort attribute will be used as the match phase attribute if it has fast-search set.
+In that case the default can be overridden by setting this value explicitly.
+
+<h2 class="refsubhead" id="ranking.matchPhase.attribute">ranking.matchPhase.attribute</h2>
+
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>An attribute name</td></tr>
+<tr><td>Default</td><td><i>none</i></td></tr>
+</table>
+
+The attribute to decide which documents are a match if the match phase estimates that there will be more than maxHits matches.
+This attribute should have fast-search set and should correlate with the order which would be produced by a full evaluation.
+
+<h2 class="refsubhead" id="ranking.matchPhase.ascending">ranking.matchPhase.ascending</h2>
+
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+
+Whether the attribute should be sorted in ascending or descending (default) order to determined which documents to keep as matches.
+
+<h2 class="refsubhead" id="ranking.matchPhase.diversity.attribute">ranking.matchPhase.diversity.attribute</h2>
+
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>An attribute name</td></tr>
+<tr><td>Default</td><td>none.</td></tr>
+</table>
+<p>
+The attribute to be used for producing the desired diversity.
+Also see <a href="search-definitions.html#diversity-attribute">attribute</a>.
+</p>
+
+<h2 class="refsubhead" id="ranking.matchPhase.diversity.minGroups">ranking.matchPhase.diversity.minGroups</h2>
+
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>long</td></tr>
+<tr><td>Default</td><td>none</td></tr>
+</table>
+<p>
+The minimum number of groups that should be returned from the match phase grouped by the diversity attribute.
+Also see <a href="search-definitions.html#diversity-min-groups">min-groups</a>.
+</p>
+
+<h1 id="presentation">Presentation</h1>
+
+<h2 class="refsubhead" id="presentation.bolding">presentation.bolding [<em>bolding</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>bolding</td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>true</td></tr>
+</table>
+<p>Whether or not to bold search terms in <a href="search-definitions.html">search definition</a> fields defined with
+  <a href="search-definitions.html#bolding"><code>bolding: on</code></a> or <a href="search-definitions.html#dynamic"><code>summary: dynamic</code></a>.</p>
+
+
+<h2 class="refsubhead" id="presentation.format">presentation.format [<em>format</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>format</td></tr>
+<tr><td>Values</td><td>
+  <a href="default-result-format.html">default</a>,
+  <a href="default-result-format.html#default-json">json</a>,
+  <a href="default-result-format.html#default-xml">xml</a>,
+  <a href="page-result-format.html">page</a> or the name of an application defined format.</td></tr>
+<tr><td>Default</td><td>default</td></tr>
+</table>
+<p>The name of the format in which results should be returned.</p>
+
+<p data-annotation="Raw copy from the old document, need to clean up text">
+The format in which results are returned are selected by
+the <code>presentation.format</code> parameters. The following options
+are supported:
+</p>
+
+<table>
+  <tr><th>presentation.format value</th><th>Description</th></tr>
+  <tr>
+    <td><em>No value</em> or <code><a href="default-result-format.html">default</a></code></td>
+    <td>The default, builtin Json format</td>
+  </tr>
+  <tr>
+    <td><code><a href="default-result-format.html#default-json">json</a></code></td>
+    <td>Builtin Json format</td>
+  </tr>
+    <tr>
+    <td><code><a href="default-result-format.html#default-xml">xml</a></code></td>
+    <td>Deprecated, builtin XML format</td>
+  </tr>
+  <tr>
+    <td><code><a href="page-result-format.html">page</a></code></td>
+    <td>Alternative deprecated XML format which is suitable for use with <a href="../page-templates.html">page templates</a>.</td>
+  </tr>
+  <tr>
+    <td><em>Any other value</em></td>
+    <td>A custom <a href="../search/result-rendering.html">result renderer</a> supplied by the application
+  </tr>
+</table>
+
+<p>
+For legacy reasons the format parameter can also be supplied as the
+url <em>path</em>. This should be avoided if possible.
+</p>
+
+
+
+<h2 class="refsubhead" id="presentation.reportcoverage">presentation.reportcoverage [<em>reportcoverage</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>reportcoverage</td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+<p>Request coverage information from the backend. This will be exposed in the XML rendering of the default result set as a number of attributes: coverage-docs (the number of documents searched), coverage-nodes (the number of search instances which participated in the query), coverage-full (whether this result set has full coverage). coverage (the percentage of blended result sets which had full coverage), results-full (the actual number of blended result sets with full coverage), results (the total number of blended result sets for this query). Refer to the QRS javadoc for the class com.yahoo.prelude.Coverage for further details. Note that reportcoverage is not supported in streaming search mode.</p>
+
+
+<h2 class="refsubhead" id="presentation.summary">presentation.summary [<em>summary</em>]</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td>summary</td></tr>
+<tr><td>Values</td><td>The name of a summary class</td></tr>
+<tr><td>Default</td><td>The default summary class of the search definition.</td></tr>
+</table>
+<p>The name of the summary class to use when presenting hits.</p>
+
+
+<h2 class="refsubhead" id="presentation.template">presentation.template</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Any id specification of a deployed page template.</td></tr>
+<tr><td>Default</td><td></td></tr>
+</table>
+<p>The id of the page template to use for this result. This should be used with the <a href="page-result-format.html">page</a> result format.</p>
+
+
+<h2 class="refsubhead" id="presentation.timing">presentation.timing</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>boolean</td></tr>
+<tr><td>Default</td><td>false</td></tr>
+</table>
+<p>Whether a result renderer should try to add optional timing information
+to the rendered page.</p>
+
+<h1 id="">Grouping and Aggregation</h1>
+
+<h2 class="refsubhead" id="select">select</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A valid grouping specification.</td></tr>
+<tr><td>Default</td><td>No grouping</td></tr>
+</table>
+<p>Requests specific multi-level result set statistics and/or hit groups to be returned in the result. Fields you want to retrieve statistics or hit groups for must be stored as document attributes in the index structure by adding attribute to the indexing statement. See the grouping guide.</p>
+
+
+<h2 class="refsubhead" id="collapse.summary">collapse.summary</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A valid name of a document summary class.</td></tr>
+<tr><td>Default</td><td>Use default summary or attributes.</td></tr>
+</table>
+<p>If doing QRS level collapsing, use this summary class to fetch the field used for collapsing.</p>
+
+
+<h2 class="refsubhead" id="collapsefield">collapsefield</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Any document summary field name</td></tr>
+<tr><td>Default</td><td>No field collapsing</td></tr>
+</table>
+<p>The field on which to do QRS level collapsing, see the collapsing guide.</p>
+
+
+<h2 class="refsubhead" id="collapsesize">collapsesize</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A positive integer</td></tr>
+<tr><td>Default</td><td>1</td></tr>
+</table>
+<p>The number of hits to keep in each collapsed bucket</p>
+
+
+
+
+<h1 id="position">Geographical Searches</h1>
+
+<h2 class="refsubhead" id="pos.attribute">pos.attribute</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Any attribute that has zcurve encoded positions as a long attribute.</td></tr>
+<tr><td>Default</td><td>Random choice among the ones declared as position in the searchdefinition.</td></tr>
+</table>
+<p>Which attribute to use for the position. Can be both single- or multi-value.</p>
+
+
+<h2 class="refsubhead" id="pos.ll">pos.ll</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Lat long pair</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+
+<p>
+Position given in latitude and longitude. Latitude is prefixed by N or S,
+and longitude is prefixed by E or W. The angular measurement can either
+be expressed as degrees with a decimal fraction (this is the recommended
+way), or as degrees subdivided in minutes and seconds. It is also legal
+to express minutes with a decimal fraction, supporting the normal GPS
+output format. A semicolon is used as separator between latitude and
+longitude. (Remember to URL encode the semicolon as %3B when constructing
+the URL manually). Small letter o may be used as a replacement for the
+degrees sign.
+</p>
+
+<p>
+Examples:
+S22.4532;W123.9887
+N72o20.92;E26o08.54
+N72°23'52;E26°04'22
+</p>
+
+
+<h2 class="refsubhead" id="pos.radius">pos.radius</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td></td></tr>
+<tr><td>Default</td><td>50km</td></tr>
+</table>
+
+<p>
+Radius of the circle used for filtering. Legal units of measurement are km, m and mi.
+</p>
+
+<p>
+Examples:
+pos.radius=100m
+pos.radius=42mi
+pos.radius=4km
+You can also specify just a number (internal units, micro-degrees), but this is not recommended.
+</p>
+
+<h2 class="refsubhead" id="pos.bb">pos.bb</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Two lat long pairs</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+
+<p>
+Bounding box for positions, given as latitude and longitude boundaries.
+The four boundaries must be specifed as N, S, E, W, with degrees as
+a decimal fraction.  Degrees south of equator or west of Greenwich are
+input as negative numbers.
+</p>
+
+<p>
+Examples:
+<br>
+n=37.44899,s=37.3323,e=-121.98241,w=-122.06566
+<br>
+s=40.183868,w=-74.819519,n=40.248291,e=-74.728798
+</p>
+
+
+<h1 id="">Streaming Search</h1>
+
+<h2 class="refsubhead" id="streaming.userid">streaming.userid</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>An integer in decimal notation in the range [0, 2^64></td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>Restricts streaming search to only stream through documents with document ids having the n=&lt;number&gt; modifier and the userid part matches the supplied value. This can be used for grouping documents on a 64 bit integer. This feature is only supported for streaming search.</p>
+
+
+<h2 class="refsubhead" id="streaming.groupname">streaming.groupname</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A string</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>Restricts streaming search to only stream through documents with document ids having the g=&lt;groupname&gt; modifier and the groupname part matches the supplied value. This can be used for grouping documents on a string. This feature is only supported for streaming search.</p>
+
+
+<h2 class="refsubhead" id="streaming.selection">streaming.selection</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A string</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>Restricts streaming search to the supplied document selection string. This can be used for selecting a subset of documents based on an advanced expression. This feature is only supported for streaming search.</p>
+
+
+<h2 class="refsubhead" id="streaming.headersonly">streaming.headersonly</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Boolean</td></tr>
+<tr><td>Default</td><td>False</td></tr>
+</table>
+<p>Search in header fields only. This is more efficient than searching in the entire document. Summary fields based on body fields will not be filled with data. This feature is only supported for streaming search.</p>
+
+
+<h2 class="refsubhead" id="streaming.priority">streaming.priority</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Priority class name. See the priority documentation for a list of classes</td></tr>
+<tr><td>Default</td><td>VERY_HIGH</td></tr>
+</table>
+<p>Priority of the streaming search visitor. Having a high priority visitor helps maintain low latencies even when the system is under load. This feature is only supported for streaming search.</p>
+
+
+<h2 class="refsubhead" id="streaming.maxbucketspervisitor">streaming.maxbucketspervisitor</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>int</td></tr>
+<tr><td>Default</td><td>1 (if ordering is set), or infinite</td></tr>
+</table>
+<p>If set, visit only this many buckets at a time. Combine with ordering to reduce visiting time for large users/groups.</p>
+
+
+
+<h1 id="">Semantic Rules</h1>
+
+<h2 class="refsubhead" id="rules.off">rules.off</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Boolean</td></tr>
+<tr><td>Default</td><td>True</td></tr>
+</table>
+<p>Turn rule evaluation off for this query</p>
+
+
+<h2 class="refsubhead" id="rules.rulebase">rules.rulebase</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>String</td></tr>
+<tr><td>Default</td><td>A rule base name</td></tr>
+</table>
+<p>The name of the rule base to use for these queries</p>
+
+
+<h2 class="refsubhead" id="tracelevel.rules">tracelevel.rules</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>int</td></tr>
+<tr><td>Default</td><td>1-5 (?)</td></tr>
+</table>
+<p>The amount of rule evaluation trace output to show, higher number means more details. This is useful to see a trace from rule evaluation without having to see trace from all other searchers at the same time</p>
+
+
+<h1 id="">Other</h1>
+
+<h2 class="refsubhead" id="recall">recall</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Any allowed collection of recall terms</td></tr>
+<tr><td>Default</td><td>No recall</td></tr>
+</table>
+<p>Sets a recall parameter to be combined with the query. This is identical to the "filter" parameter,
+except that recall terms are not exposed to the ranking framework in the search backend and thus not ranked.
+As such, one can not use unprefixed terms; they must either by positive or negative.</p>
+
+
+<h2 class="refsubhead" id="user">user</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>A string</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>The id of the user making the query. The contents of the argument are made available to the search chain, but it triggers no features in Vespa apart from being propagated to the QRS access log.</p>
+
+
+<h2 class="refsubhead" id="nocachewrite">nocachewrite</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Boolean</td></tr>
+<tr><td>Default</td><td>False</td></tr>
+</table>
+<p>Set to true to avoid the result being written to cache when fetched.</p>
+
+
+<h2 class="refsubhead" id="hitcountestimate">hitcountestimate</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>Boolean</td></tr>
+<tr><td>Default</td><td>False</td></tr>
+</table>
+<p>Make this an estimation query. No hits will be returned, and total hit count will be set to an estimate of what executing the query as a normal query would give.</p>
+
+<h2 class="refsubhead" id="yql">yql</h2>
+<table class="refsummary">
+<tr><td>Alias</td><td></td></tr>
+<tr><td>Values</td><td>String</td></tr>
+<tr><td>Default</td><td>None</td></tr>
+</table>
+<p>A valid YQL query, this may reference the conventional query. The YQL query
+will be parsed and executed in the backend. Only simple YQL programs are
+supported, refer to the <a href="../search/yql-in-vespa.html">YQL in Vespa</a>
+reference for details or the <a href="../search/query-language.html">YQL
+introduction</a>.</p>
+</body>
+</html>

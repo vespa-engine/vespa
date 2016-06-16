@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="level" content="basic" />
+    <meta name="audience" content="developers" />
+    <meta name="date" content="November 2015" />
+    <meta name="authors" content="tonyv,gv,kraune" />
+    <title>Configuring components</title>
+  </head>
+  <body>
+
+<p>
+  Any component might require some sort of configuration, be it simple strings or
+  integers, or more complex structures. Because of all the
+  boilerplate code that commonly goes into classes to hold such configuration, we often
+  see this degenerate into a collection of key-value string pairs (e.g. <a
+   href="http://docs.oracle.com/javaee/6/api/javax/servlet/FilterConfig.html"><code>javax.servlet.FilterConfig</code></a>). This article explains how you can leverage Vespa to
+  deliver custom, type-safe configuration to your JDisc components.  Configuration should
+  be used for all state which is assumed to stay constant for the <em>lifetime of the component instance</em>.
+  Read the document on
+  <a href="jdisc/developing-applications.html">developing applications</a>
+  to get started.
+</p>
+
+<p>In a nutshell:</p>
+<ul>
+  <li>The developer provides a config schema text file - .def</li>
+  <li>Use the Vespa maven plugin to generate a config class from .def</li>
+  <li>Inject config objects in your code</li>
+</ul>
+<p>Hence, the application code is interfacing with config through generated code - code and config is always in sync!</p>
+
+<h2>Config definition - .def</h2>
+<p>
+  Write
+  a <a href="cloudconfig/config-introduction.html#config-definitions">config
+  definition</a> file
+  (see <a href="reference/config-files.html#config_definition_files">reference</a>)
+  and place it in your
+  application's <code>src/main/resources/configdefinitions/</code> directory.
+  E.g. <code>src/main/resources/configdefinitions/my-component.def</code>:
+<pre class="code">
+namespace=example
+
+myCode     int     default=42
+myMessage  string  default=""
+</pre>
+</p>
+
+<h2>Generate config class</h2>
+<p>
+  To generate Java config classes, run:
+<pre class="brush: cli">
+$ mvn generate-resources
+</pre>
+  This generates the config classes in <code>target/generated-sources/vespa-configgen-plugin/</code>.
+</p>
+<p>
+  In this example, the config definition file was named <em>my-component.def</em>, and the namespace used was <em>example</em> - this translates to a java class in <em>com.yahoo.example.MyComponentConfig</em>
+</p>
+<p>
+  It is a good idea to generate the config classes first, <em>then</em> resolve dependencies and compile in the IDE.
+</p>
+
+<h2>Use config in code</h2>
+<p>
+  The generated config class is now available for your component through <a
+   href="jdisc/injecting-components.html">constructor injection</a>, which means that your
+  component can declare the generated class as one of its constructor
+  arguments:
+</p>
+
+<pre class="brush: java">
+package com.yahoo.example;
+
+public class MyComponent {
+
+    private final int code;
+    private final String message;
+
+    @Inject
+    public MyComponent(MyComponentConfig config) {
+        code = config.myCode();
+        message = config.myMessage();
+    }
+}
+</pre>
+
+<p>
+  The JDisc Container will take care of creating and injecting the config instance.  To
+  override the default values of the config, you <a
+   href="reference/config-files.html#configuration_format_in_services.xml">specify</a>
+  your own values in <code>src/main/application/services.xml</code>. Following the above example, you
+  would write:
+</p>
+
+<pre class="code">
+&lt;jdisc version="1.0"&gt;
+    &lt;component id="com.yahoo.example.MyComponent"&gt;
+        &lt;config name="example.my-component"&gt;
+            &lt;myCode&gt;132&lt;/myCode&gt;
+            &lt;myMessage&gt;Hello, World!&lt;/myMessage&gt;
+        &lt;/config&gt;
+    &lt;/component&gt;
+&lt;/jdisc&gt;
+</pre>
+<p>
+  and your deployed instance of <code>MyComponent</code> will be constructed using a
+  corresponding instance of <code>MyComponentConfig</code>.
+</p>
+
+
+<h2 id="unit-testing-configurable-components">Unit Testing a Configurable Component</h2>
+
+<p>
+The generated config class provides a builder API that makes it easy to create your
+own config objects for unit testing. Below is an example that sets up a unit test for the
+<code>MyComponent</code> class from the previous example: </p>
+
+<pre class="brush: java">
+import static com.yahoo.example.MyComponentConfig.*;
+
+public class MyComponentTest {
+
+    @Test
+    public void requireThatMyComponentGetsConfig() {
+        MyComponentConfig.Builder builder = new MyComponentConfig.Builder();
+        builder.myCode(668)
+               .myMessage("Neighbour of the beast");
+        MyComponentConfig config = new MyComponentConfig(builder);
+        MyComponent component = new MyComponent(config);
+        &hellip;
+   }
+}
+</pre>
+
+<p> The config class used here is very simple, so we have also provided a separate example
+of <a href="jdisc/testing-configurable-components.html">building a complex configuration
+object</a>.
+
+
+<h2 id="files">Adding Files to the Component Configuration</h2>
+
+<p> This section describes what to do if your component needs larger configuration objects
+that are stored in files, e.g. automata or large tables. Before you proceed, you
+should take a look at how to create <a
+ href="jdisc/injecting-components.html#implement-provider">provider components</a>.  Instead of
+integrating large objects into e.g. a searcher or processor, you might be better off by
+splitting the resource-demanding part of your component's configuration into a separate
+provider component. The procedure described below can be applied to any component type.
+</p>
+
+<p>Files can be transferred via Vespa's file distribution system by adding the
+files to your application package, and adding corresponding <code>path</code>
+parameters to your def file. See <a
+ href="reference/config-files.html">the
+config file reference</a> for details about the <code>path</code> config type.
+</p>
+
+<p>
+Assume we have this config definition, named <code>my-component.def</code>:
+</p>
+
+<pre class="code">
+namespace=example
+
+myFile path
+</pre>
+
+<p> The file must reside in the application package, and the path (relative to
+the application package root) must be given in the component's configuration in
+<code>services.xml</code>: </p>
+
+<pre>
+&lt;jdisc version="1.0"&gt;
+    &lt;component id="com.yahoo.example.MyComponent"&gt;
+        &lt;config name="example.my-component"&gt;
+            &lt;myFile&gt;my-files/my-file.txt&lt;/myFile&gt;
+        &lt;/config&gt;
+    &lt;/component&gt;
+&lt;/jdisc&gt;
+</pre>
+<p>
+Here is an example component that uses the file:
+</p>
+
+<pre class="brush: java">
+package com.yahoo.example;
+import java.io.File;
+
+public class MyComponent {
+    private final File file;
+
+    public MyComponent(MyComponentConfig config) {
+        file = config.myFile().toFile();
+    }
+}
+</pre>
+
+<p> The <code>myFile()</code> getter returns a <code>java.nio.Path</code> object. The
+container framework guarantees that the file is fully transferred and present at
+the given location before the component constructor is invoked. Hence, the component can
+access the file contents right away.</p>
+
+
+<h2 id="notes">Notes</h2>
+<p>
+If you are migrating an existing application to the JDisc Container, it might not
+be feasible to change all your components at once for Vespa config. For such
+components you need to provide a <a href="jdisc/config-bridge.html">config bridge</a> from
+Vespa config to your proprietary config classes.
+</p>
+<p> More on Vespa config in <a
+  href="cloudconfig/config-introduction.html">Cloud
+  Config System</a>.
+</p>
+
+</body>
+</html>

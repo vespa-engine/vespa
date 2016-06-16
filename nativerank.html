@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Ranking with nativeRank</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2009" />
+  <meta name="authors" content="bergum" />
+</head>
+
+<body>
+
+<p class="ingress">
+The <em>nativeRank</em> text match score is a reasonably good text
+rank score which is computed at an acceptable performance by Vespa. It
+computes a normalized rank score which tries to capture how well query
+terms matched the set of searched index fields.
+</p>
+
+<p>
+The <em>nativeRank</em> feature is computed as a linear combination of
+three other matching
+features: <em>nativeFieldMatch</em>, <em>nativeProximity</em>
+and <em>nativeAttributeMatch</em>,
+see <a href="reference/nativerank.html">the nativeRank
+reference for details</a>. Ranking signals that might be usefull like
+freshness (the age of the document compared to the time of the query)
+or any other document or query features is <strong>NOT</strong> a part
+of the <em>nativeRank</em> calculation and needs to be added to the
+final ranking function depending on the vertical
+specifics. The <em>nativeRank</em> is a pure text match ranking
+function and should be used in combination with other vertical
+specific features to produce the final optimal rank score.
+</p>
+
+
+
+<h1 id="ranking-expressions-and-rank-features">Ranking Expressions and nativeRank</h1>
+
+<p>
+Vespa allows the final rank score number to be calculated by a
+configured mathematical expression
+called <a href="reference/ranking-expressions.html">ranking
+expression</a>.  Ranking expressions looks like straightforward
+mathematical expressions and supports the usual mathematical operators
+and functions allowing the user to configure any rank function,
+including usage of the <em>nativeRank</em> text matching feature.
+</p>
+
+<p>
+The primitive values which are combined by ranking expressions are
+called <strong>rank features</strong>.  The rank features are numbers
+which say something about the query, the document or how well the
+query matched this particular document. The query features can be sent
+as http query parameters or set in searchers, the document features
+are the attributes (indexing:attribute) specified in the search
+definition, and the match features are calculated by Vespa from the
+index during matching. The <em>nativeRank</em> feature is one example
+of a built in match feature, which only concerns the query/document
+matching. The final rank score should also utilize other signals that
+are vertical specific, for instance document age (freshness), quality
+of the document (number of inlinks in a web context, maybe ratings and
+reviews in social applications) and user personalization (user age,
+gender etc). See
+the <a href="reference/rank-features.html">rank feature
+list</a> for details about built-in rank-features in Vespa.
+</p>
+
+
+
+<h1 id="demo">Using nativeRank</h1>
+
+<p>
+In this section we describe a blog search application that
+uses <em>nativeRank</em> as the core text matching rank feature, in
+combination with other signals that could be important for a blog
+search type of application.
+</p>
+
+<pre class="brush: sd">
+search blog {
+  document blog {
+    field title type string {
+      indexing: summary | index
+    }
+    field body type string {
+      indexing: summary | index
+    }
+    #The quality of the source in the range 0 - 1.0
+    field sourcequality type float {
+      indexing: summary | attribute
+    }
+    #seconds since epoch
+    field timestamp type long {
+      indexing: summary | attribute
+    }
+    field url type uri {
+      indexing: summary
+    }
+  }
+  fieldset default {
+    fields: title, body
+  }
+}
+</pre>
+
+<p>
+In addition to the core text match feature (<em>nativeRank</em>) we
+have a pre-calculated document feature which indicates the quality of
+the document represented by the field sourcequality of type float. The
+sourcequality field has
+the <a href="reference/search-definitions.html#attribute">attribute</a>
+property which is required to refer that field in a ranking
+expression: <em>attribute(name)</em>. The sourcequality score could be
+calculated from webmap, or any other source and is outside the scope
+of this document. We also know when the documented was published
+(timestamp) and this document attribute can be used to calculate the
+age of the document. To summarize we have three main rank signals that
+we would like our blog ranking function to consist of:
+</p>
+
+<ul>
+<li>How well the query match the document text, where we use
+    the <em>nativeRank</em> feature score</li>
+<li>How fresh the document is, where we use the
+    built-in <em>age(name)</em> feature to built our own feature
+    score</li>
+<li>The quality of the document, calculated outside of Vespa and
+    referenced in a ranking expression
+    by <em>attribute(name)</em></li>
+</ul>
+
+<h1 id="native-tuning">Tuning nativeRank</h1>
+<p>
+We tune the index field weight in the rank-profile, this is done by
+the <a href="reference/search-definitions.html#weight">field
+weight</a> configuration parameter. We claim that a hit in the title
+is more relevant then a hit in the body so we have configured a weight
+of 200 for the title, and 100 (default) for the body. There are
+several other <a href="reference/nativerank.html">tuning
+parameters of the nativeRank feature</a>, like:
+</p>
+
+<ul>
+<li>The weight of the 3 nativeRank components that nativeRank consist
+    of: nativeFieldMatch, nativeProximity and
+    nativeAttributeMatch</li>
+<li>The shape the boosting tables for core statistics like term
+    frequency and proximity between terms in the field.</li>
+<li>Per field configuration supported, can have different term
+    frequency boosting (or any other of the core statistics) for text
+    with different characteristics, e.g title compared to body</li>
+</ul>
+
+<p>
+<a href="reference/nativerank.html#configuration-properties">See
+the comprehensive list of all the configuration properties of
+nativeRank</a>.
+</p>
+
+
+
+<h1 id="demo-freshness">Designing Our Own Blog Freshness Ranking Function</h1>
+
+<p>
+Vespa has
+several <a href="reference/rank-features.html">built in
+rank-features</a> that we can use directly or we can design our own as
+well if the built in features doesn't meet our requirements. The built
+in <em>freshness(name)</em> rank-feature is linearly decreasing from 0
+age (now) to the configured max age. Ideally we would like to have a
+different shape for our blog application, we define the followign
+feature which has the characteristic we want
+</p>
+
+<pre class="brush: sd">
+    macro freshness() {
+      expression: exp(-1 * age(timestamp)/(3600*12))
+    }
+</pre>
+
+<p>
+Our timestamp resolution is seconds, so we divide by 3600 to go to an
+hour resolution an further we divide with 12 to control the slope of
+the freshness function. Below is a plot of two freshness functions
+with different slope numbers for comparision.
+</p>
+
+<figure>
+  <img src="img/relevance/blog-freshness.png" />
+</figure>
+
+<p>
+The beauty is that we can control and experiment with the freshness
+rank score given the document age. We can define any shape over any
+resolution that we think will fit the exact vertical requirements. In
+our case we would like to have a none-linear relationship between the
+age of the document and the freshness score. We achieve this with a
+exponential decreasing function (exp(-x)), where the sensivity of x is
+higher when the document is really fresh compared to a old blog post
+(24 hours).
+</p>
+
+
+
+<h1 id="demo-expression">Putting Our Features Together Into a Ranking
+Expression</h1>
+
+<p>
+We now need to put our three main ranking signals together into one
+ranking expression. We would like to control the weight of each
+component at query time so we can at query time do analysis to figure
+out if a certain signal should be weighted more then others. We chose
+to combine our three signals into a normalized weighted sum of the
+three signals. The shape of each of the three signals might be tuned
+individually as we have seen with design of our own freshness feature
+and <em>nativeRank</em> tuning. Below is the final blog rank-profile
+with all relevant settings (properties) and ranking expressions.
+</p>
+
+<pre class="brush: sd">
+rank-profile blog inherits default {
+    weight title: 200
+    weight body: 100
+    rank-properties {
+      $textMatchWeight: 0.4 #pre-configured weigths, can be overriden at query time
+      $qualityWeigth: 0.3
+      $deservesFreshness: 0.3
+      nativeFieldMatch.occurrenceCountTable.title: &quot;linear(0,1)&quot; #Example of nativeRank tuning, override the occurrence boost shape to be flat
+    }
+
+    #our freshness rank feature
+    macro freshness() {
+      expression: exp(-1 * age(timestamp)/(3600*12))
+    }
+
+    #our quality rank feature
+    macro quality() {
+      expression: attribute(sourcequality)
+
+    #normalization factor for the weighted sum
+    macro normalization() {
+      expression: $textMatchWeight + $qualityWeight + $deservesFreshness
+    }
+
+    #ranking function that runs over all matched documents, determined by the boolean query logic
+    first-phase {
+      expression: (query(textMatchWeight) * (nativeRank(title,body) + query(qualityWeight) * quality +  query(deservesFreshness) * freshness))/normalization
+    }
+
+    summary-features: nativeRank(title,body) age(date) rankingExpression(freshness@) rankingExpression(quality@)
+  }
+}
+</pre>
+
+<p>
+We can override the weight of each signal at query time with
+the <a href="reference/search-api.html">search api</a>,
+passing down the weights to the search core by:
+</p>
+
+<pre class="code">
+/search/?query=vespa+ranking&amp;datetime=now&amp;iranking.profile=blog&amp;ranking.features.query(textMatchWeight)=0.1&amp;ranking.features.query(deservesFreshness)=0.85
+</pre>
+
+<p>
+It is also possible to override these user defined rank-features in a
+custom qrs searcher plugin, note that we also use
+the <em>datetime</em> parameter to be able to calculate the age of the
+document.
+</p>
+
+<p>
+The <a href="reference/search-definitions.html#summaryfeatures">summary-features</a>
+allows us to have access to the individual ranking signals along with
+the hit's summary fields.
+</p>
+
+
+
+<h1 id="demo-tiering">An alternative approach with tiering</h1>
+
+<p>
+After some research we figured that we would like to have a tiered
+ranking function, where the freshness signal is only applied to
+documents that are from thrustworthy blog sites. A suggested approach
+is given below:
+</p>
+
+<pre class="code">
+rank-profile blog inherits default {
+    weight title: 200
+    weight body: 100
+    rank-properties {
+      $textMatchWeight: 0.4 #pre-configured weigths, can be overriden at query time
+      $qualityWeigth: 0.3
+      $deservesFreshness: 0.3
+      $qualityLimit: 0.4
+      nativeFieldMatch.occurrenceCountTable.title: &quot;linear(0,1)&quot; #Example of nativeRank tuning, override the occurrence boost shape to be flat
+    }
+
+    #our freshness rank feature
+    macro freshness() {
+      expression: exp(-1 * age(timestamp)/(3600*12))
+    }
+
+    #our quality rank feature
+    macro quality() {
+      expression: attribute(sourcequality)
+
+    #normalization factor for the weighted sum
+    macro normalization() {
+      expression: $textMatchWeight + $qualityWeight + $deservesFreshness
+    }
+
+    macro normalrank() {
+      expression: (nativeRank(title,body) + query(qualityWeight) * quality
+    }
+
+    #ranking function that runs over all matched documents, determined by the boolean query logic
+    first-phase {
+      expression: if(quality &lt; query(qualityLimit), normalrank/normalization, (normalrank + query(deservesFreshness) * freshness))/normalization)
+    }
+
+    summary-features: nativeRank(title,body) age(date) rankingExpression(freshness@) rankingExpression(quality@)
+  }
+}
+</pre>
+
+<p>
+Here we use the conditional <em>if</em> operator to implement a tiered
+ranking function, where only documents from quality sources are given
+freshness boost. The quality limit is passed down with the user query,
+so it can be subject to tuning and changes without re-indexing or
+re-configuration.
+</p>
+
+</body>
+</html>

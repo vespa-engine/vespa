@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Troubleshooting character encoding</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="April 2015" />
+<meta name="authors" content="steinar" />
+</head>
+
+<body>
+
+<p class="ingress">
+If you are an old hand at troubleshooting Unicode and I18N problems, you already
+know everything in this document. If you are new to I18N and Unicode, this
+document aims to help you recognize the most common problems.
+</p>
+
+<h1 id="definitions">Definitions</h1>
+
+<p>
+UTF-8 is a Unicode specific encoding where each letter (code point) is encoded as
+one to four 8 bit bytes. The UTF-8 schema can technically use more bytes, but
+Unicode is defined as having approximately 1 million code points (partly on cause
+of limitations of UTF-16), and more than four bytes are then never necessary.
+</p>
+
+<p>
+A string in Java is stored as UTF-16, a series of 16 bits char(acter)s. All
+code points in Unicode baseplane, the first 64k code points, is represented as a
+single char, while higher code points is represented using surrogate pairs. A
+surrogate pair is a pair of char from a reserved range.
+</p>
+
+<p>
+Accessing a code point in a Java string is done using e.g. String.codePointAt(),
+which then returns a 32 bit integer representing the code point (basically
+UCS-4). If you traverse a string in Java, you <em>must</em> use codePointAt +
+offsetByCodePoints or String.codePoints() or similar methods. If your
+applications conceptually handles letters, using String.charAt() will most of
+the time be a bug. To calculate buffer sizes for UTF-8 buffers with UTF-16
+inputs without doing speculative encoding, Vespa has a toolbox,
+<code>com.yahoo.text.Utf8</code>, with static helper methods.
+</p>
+
+<h1 id="patterns">Visual pattern matching of encoding bugs</h1>
+
+<dl>
+<dt>Input</dt>
+    <dd>hôtel</dd>
+<dt>Correctly URL quoted (Vespa always uses UTF-8 there)</dt>
+    <dd>h%C3%B4tel</dd>
+<dt>Encoded as ISO-8859-1 (ISO Latin-1), then URL quoted</dt>
+    <dd>h%F4tel</dd>
+<dt>Encoded as UTF-16 (as in Java strings), then URL quoted (yes, it has been
+        done)</dt>
+    <dd>%00h%00%F4%00t%00e%00l</dd>
+<dt>For completeness, little endian UTF-16, including byte order marker</dt>
+    <dd>%FF%FEh%00%F4%00t%00e%00l%00</dd>
+</dl>
+
+<p>
+What we are looking for is single bytes outside ASCII, i.e. ordinal above 127.
+Given UTF-8, there should always be sequences of two or more of these when a
+code point is outside ASCII. The first byte for each code point will have the
+two most significant bits set, in other words hex C to hex F. The rest of the
+bytes for that codepoint will have the most significant bit set, and the second
+most unset, in other words hex 8 to hex B.
+</p>
+
+<p>
+From here, we move on to the two most common de-/encoding errors.
+</p>
+
+<table summary="each row represents an error, each column a view of that error">
+<tr>
+    <td>Error</td>
+    <td>Hex dump of code points</td>
+    <td>Rendered</td>
+</tr>
+<tr>
+    <td>UTF-8 input decoded as if it were ISO-8859-1</td>
+    <td>h\xc3\xb4tel</td>
+    <td>hÃ´tel</td>
+</tr>
+<tr>
+    <td>UTF-8 input re-encoded as UTF-8, then decoded as UTF-8 again</td>
+    <td>h\xc3\xb4tel</td>
+    <td>hÃ´tel</td>
+</tr>
+</table>
+
+<p>
+Note how these two bugs create exactly the same byte sequences. This is
+because the first 256 code points of Unicode are identical to ISO-8859-1.
+What we are looking for is line noise in-between normal ASCII, as both
+ISO-8859-1 and Unicode are ASCII compatible.
+</p>
+
+<p>
+Trying to decode valid ISO-8859-1 input with a UTF-8 decoder will usually make
+the decoder report the input as invalid if there are code points outside ASCII.
+Valid ISO-8859-1 rarely end up conforming to the required bit patterns of valid
+UTF-8, though it sometimes happens.
+</p>
+
+<p>
+You should <em>never</em> try to debug encoding problems with a web browser.
+Always use a hexdump tool. <code>xxd</code> is a very nice utility which is
+included with vim, which avoids several of the endianness headaches associated
+with some UNIX alternatives.
+</p>
+
+<p>
+Also, remember Windows 1252 is <em>not</em> the same as ISO-8859-1, no matter
+what Microsoft tries to tell you.
+</p>
+
+</body>
+</html>

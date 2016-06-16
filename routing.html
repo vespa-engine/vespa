@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>An Introduction and Overview of Routing</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2011" />
+  <meta name="authors" content="simon" />
+</head>
+<body>
+
+<p class="ingress">
+The concept of <em>routing</em> is an integral part of how documents
+and document updates move around in a Vespa application. This article
+briefly explains how and why routes are available, and gives a
+light-weight introduction to its concepts.
+</p>
+
+<p>
+There are other, more in-depth, articles on routing:
+</p>
+
+<ul>
+  <li><a href="reference/vesparoute.html">vesparoute</a>
+      utility reference. This tool allows you to inspect routes and
+      services of a Vespa application.</li>
+
+  <li><a href="reference/routingpolicies.html">Routing
+      policies</a> is a reference for the various policies available
+      (see <a href="#routingpolicy">But what, then, are routing
+      policies?</a>  below). This is a necessary read if you are
+      writing more complex routes or if you wish to understand the
+      default routing.</li>
+
+  <li><a href="routing-custom.html">Custom routing</a> is an in-depth
+      study of how one can configure special routes in
+      the <a href="reference/services-routing.html">routing</a>
+      tag of <em>services.xml</em>.</li>
+</ul>
+
+
+
+<h1 id="how-come">How Come Routes are Available?</h1>
+
+<p>
+In Vespa there is a transport layer and a programming interface that
+is available to clients that wish to communicate with a Vespa
+application. The transport layer is <em>Message Bus</em>, whose design
+is somewhat obvious from its name, and the API is
+<a href="javadoc/index.html?com/yahoo/documentapi/package-summary.html">documentapi</a>
+which has been implemented on top of Message Bus.  Configuring the
+interface therefore exposes some of the features available in Message
+Bus.
+</p>
+
+<p class="alert alert-success">
+Most feeder applications are implemented using the Document API, and
+as a result of this some of the features in both the interface and
+Message Bus are exposed to the user.  See figure 1.
+</p>
+
+<figure>
+  <img src="img/routing/documentapi.png" />
+  <figcaption>
+    <strong>Figure 1:</strong> The Document API is implemented on top of Message
+    Bus and used extensively by the bundled Vespa client software.
+  </figcaption>
+</figure>
+
+
+
+<h1 id="hopsandroutes">But What Exactly are Hops and Routes?</h1>
+
+<h2 id="route">A Route is a Sequence of Hops</h2>
+<p>
+The sequence of hosts, routers, bridges, gateways, and other devices
+that network traffic takes, or could take, from its source to its
+destination is what is classically termed a <em>route</em>. As a verb
+<em>to route</em> means to determine the link down which to send a
+packet, that will minimize its total journey time according to some
+routing algorithm.
+</p>
+
+<p>
+In Vespa, a route is simply a sequence of named hops. Instead of
+leaving selection logic to a route, the responsibility of resolving
+recipients is given to
+the <a href="#hop">hops</a>' <a href="#selector">selectors</a>. A hop
+can do more or less whatever it wants to change a message's journey
+through your application; it can slightly alter itself by choosing
+among some predefined recipients, it can change itself completely by
+either rewriting or looking up another hop, or it can even modify the
+the entire route from that branch onwards. In effect, a route can end
+up branching at several points along its path, resulting in very
+complex routes such as the one in figure 2. As the figure suggests,
+Message Bus supports
+both <a href="http://en.wikipedia.org/wiki/Unicast">unicasting</a>
+and <a href="http://en.wikipedia.org/wiki/Multicast">multicasting</a>.
+</p>
+
+<figure>
+  <img src="img/routing/routetree.png" />
+  <figcaption>
+    <strong>Figure 2:</strong> Message Bus allows for arbitrarily
+    complex routes. Each node in the above graph represents a Vespa
+    service.
+  </figcaption>
+</figure>
+
+
+<h2 id="hop">A Hop is a Point-to-Point Transmission</h2>
+<p>
+In telecommunication, a <em>hop</em> is one step, from one router to
+the next, on the path of a packet on an Internet Protocol network. It
+is a direct host-to-host connection forming part of the route between
+two hosts in a routed network such as the Internet. In more general
+terms, a hop is a point-to-point transmission in a series required to
+get a message from point A to point B.
+</p>
+
+<figure>
+  <img src="img/routing/subscriptions.png" />
+  <figcaption>
+    <strong>Figure 3:</strong> Config identifiers can be found in
+    Vespa's administration interface.
+  </figcaption>
+</figure>
+
+<p>
+With Message Bus the concept of hops were introduced as the smallest
+steps of the transmission of a message.  A hop consists of a
+<em>name</em> that is used by the messaging clients to select it, a list
+of <em>recipient</em> services that it may transmit to, and a
+<em>selector</em> that is used to select among those recipients. Unlike
+traditional hops, in Vespa a hop is a transmission from one sender to
+many recipients.
+</p>
+
+<p>
+Well, the above is only partially true; it is the easiest way to
+understand the hop concept. In fact, a hop's recipient list is nothing
+more than a configured list of strings that is made available to all
+<a href="#routingpolicy">routing policies</a> that are named in the
+selector string. See <a href="#selector">selection logic</a> below for
+more detail.
+</p>
+
+<p id="servicename">
+A hop's recipient is the service name of a Message Bus client that has
+been registered in Vespa's service location broker (slobrok). These
+names are well defined once their derivation logic is understood; they
+are &quot;/&quot;-separated sets of address-components whose values
+are given by a service's role in the application. An example of a
+recipient is:
+</p>
+
+<pre class="brush: text">
+<span class="marker1">search/cluster.foo/c0/r0/</span>feed-destination
+</pre>
+
+<p>
+The marked components of the above
+recipient, <code>/search/cluster.foo/r0/c0</code>, resolves to a
+host's symbolic name. This is the name with which a Message Bus
+instance was configured. The unmarked
+component, <code>feed-destination</code>, is the local name of the
+running service that the hop transmits to, i.e. the name of
+the <em>session</em> created on the running Message Bus instance.
+</p>
+
+<div class="alert alert-success">
+<p>
+The Active Configuration page in Vespa's administration interface
+gives an insight into what symbolic names exist for any given
+application by looking at its current configuration subscriptions. All
+available Message Bus services use their <code>ConfigId</code> as
+their host's symbolic name (the tree in the left-most column in figure
+3). See <a href="reference/vesparoute.html">vesparoute</a>
+for how to inspect this.
+</p>
+
+<p id="asterisk">
+A service identifier may include the special character &quot;*&quot;
+as an address component.  A recipient that contains this character is
+a request for the network to choose <u>any one</u> service that
+matches it.
+</p>
+
+<p>
+A hop may be prefixed using the special character &quot;?&quot; to
+force it to behave as if
+its <a href="reference/services-routing.html#hop">ignore-result</a>
+attribute was configured to &quot;true&quot;.
+</p>
+</div>
+
+
+
+<h1 id="routingpolicy">But what, then, are Routing Policies?</h1>
+
+<p>
+A routing policy is a protocol-specific algorithm that chooses among a
+list of candidate recipients for a single address component
+(see <a href="#hop">hop description</a> above). These policies are
+designed and implemented as key parts of a Message Bus
+protocol. E.g. for the &quot;Document&quot; protocol these are what
+make up the routing behavior for document transmission. Without
+policies a hop would only be able to match verbatim to a recipient,
+and thus the only advanced selection logic would be that of
+the <a href="#asterisk">special asterisk character</a>.
+</p>
+
+<p>
+In addition to implementing a selection algorithm, a routing policy
+must also implement a merging algorithm that combines the replies
+returned from each selected recipient into a single sensible
+reply. This is needed because a client does not necessarily know
+whether a message has been sent to one or multiple recipients, and
+<u>Message Bus guarantees a single reply for every message</u>.
+</p>
+
+<p>
+More formally a routing policy is an arbitrarily large (or small),
+named, stand-alone piece of code registered with a Message Bus
+protocol. As discussed <a href="#selector">above</a>, an instance of a
+policy is run both when resolving a route to recipients, and when
+merging replies. The policy is passed a <code>RoutingContext</code>
+object that pretty much allows it to do whatever
+it pleases to the route and replies. The same policy object and the
+same context object is used for both selection and merging.
+</p>
+
+<p>
+For a complete routing policy reference,
+see <a href="reference/routingpolicies.html">this
+article</a>.
+</p>
+
+<p>
+<strong>Disclaimer:</strong> The Message Bus' code documentation is an
+internal Vespa document - it is not complete or production-ready, and
+it may not even be in sync with your version of the software. It is
+simply provided to help clarify any questions you feel left unanswered
+by this article.
+</p>
+
+
+
+<h1 id="selector">Recipient Selection Logic</h1>
+
+<p>
+When Message Bus is about to route a message, at the very last
+possible time, it inspect the <u>first</u> hop of the message's route
+to resolve a set of recipients. First, all of
+its <a href="#policydirective">policies are resolved</a>. Second, the
+output service name is matched to the routing table to see if it maps
+to another <a href="#routedirective">hop or route</a>. Finally, the
+message is <a href="#send">sent</a> to all chosen recipient
+services. Because each policy can select multiple recipients, this can
+give rise to an arbitrarily complex routing tree. There are, of
+course, safe-guards within Message Bus to prevent inifinite recursions
+due to circular dependencies or misconfiguration.
+</p>
+
+<p class="alert alert-success">
+It <u>is</u> possible to develop a different protocol with other
+policies to run in your application, but since all of Vespa's
+component only support the &quot;Document&quot; protocol it makes no
+sense in doing so.
+</p>
+
+
+<h2 id="policydirective">1. Resolve Policy Directives</h2>
+<p>
+The logic run at this step is actually very simple; as long as the hop
+string contains a policy directive, i.e. some arbitrary string
+enclosed in square brackets, Message Bus will create and run an
+instance of that policy for the protocol of the message being routed.
+</p>
+
+<pre class="brush: text">
+Name:        storage/cluster.backup
+Selector:    storage/cluster.backup/distributor/[Distributor]/default
+Recipients:  -
+</pre>
+
+<p>
+The above hop is probably the simplest hop you will encounter in
+Vespa; it has a single policy directive contained in a string that
+closely resembles <a href="#sevicename">service names</a> discussed
+above, and it has no recipients. When resolving this hop, Message Bus
+creates an instance of the &quot;DocumentRouteSelector&quot; policy
+and invokes its <code>select()</code> method.  The
+&quot;Distributor&quot; policy will replace its own directive with a
+proper distributor identifier, yielding a hop string that is now an
+unambigous service identifier.
+</p>
+
+<pre class="brush: text">
+Name:        indexing
+Selector:    [DocumentRouteSelector]
+Recipients:  search/cluster.music
+             search/cluster.books
+</pre>
+
+<p>
+This hop has a selector which is nothing more than a single policy
+directive, &quot;[DocumentRouteSelector]&quot;, and it has two
+configured recipients, &quot;search/cluster.music&quot; and
+&quot;search/cluster.books&quot;.  This policy expands the hop to
+zero, one or two <u>new</u> routes by replacing its own directive with
+the content of the recipient routes. Each of these routes may have one
+or more hops themselves. In turn, these will be processed
+independently. When replies are available from all chosen recipients,
+the policy's <code>merge()</code> method is invoked, and the resulting
+reply is passed upwards.
+</p>
+
+<pre class="brush: text">
+Name:        default
+Selector:    [AND:indexing storage/cluster.backup]
+Recipients:  -
+</pre>
+
+<p>
+This hop has a selector but no recipients. The reason for this is best
+explained in
+the <a href="reference/routingpolicies.html">policies
+article</a>, but it serves as an example of a hop that has no
+configured recipients. Notice how the policy directive contains a
+colon (&quot;:&quot;) which denotes that the remainder of the
+directive is a paramter to the policy constructor. This policy
+replaces the whole route of the message with the set of routes named
+in the parameter string.
+</p>
+
+<p class="alert alert-success">
+What routing policies are available depends on what protocol is
+currently running. As of this version the only supported protocol is
+&quot;Document&quot;. This offers a set of routing policies discussed
+in <a href="reference/routingpolicies.html">this
+article</a>.
+</p>
+
+
+<h2 id="routing-directive">2. Resolve Hop- and Route Names</h2>
+
+<p>
+As soon as all policy directives have been resolved, Message Bus makes
+sure that the resulting string is, in fact, a service name and not the
+name of another hop or route (in that order) configured for the
+running protocol. The outcome is either:
+</p>
+
+<ol>
+  <li>The string is recognized as a hop name &mdash; The current hop
+      is replaced by the named one, and processing returns
+      to <a href="#policydirective">step 1</a>.</li>
+
+  <li>The string is recognized as a route name &mdash; The current
+      route, including all the hops following this, is replaced by the
+      named one. Processing returns to <a href="#policydirective">step
+      1</a>.</li>
+
+  <li>The string is accepted as a service name &mdash; This terminates
+      the current branch of the routing tree. If all branches are
+      terminated, processing proceeds to <a href="#send">step
+      3</a>.</li>
+</ol>
+
+<p class="alert alert-success">
+Because hop names are checked before route names, Message Bus also
+supports a &quot;route:&quot; prefix that forces the remainder of the
+string to resolve to a configured route or fail.
+</p>
+
+
+<h2 id="send">3. Send to Services</h2>
+<p>
+When the route resolver reaches this point, the first hop of the
+message being sent has been resolved to an arbitrarily complex routing
+tree. Each leaf of this tree represents a service that is to receive
+the message, unless some policy has already generated a reply for
+it. No matter how many recipients are chosen the message is serialized
+only once, and the network transmission is able to share the same
+chunk of memory between all recipients.
+</p>
+
+<p>
+As replies to the message arrive at the sender they are handed over to
+the corresponding leaf nodes of the routing tree, but merging will not
+commence until all leaf nodes are ready.
+</p>
+
+<div class="alert alert-success">
+<p>
+Route resolving happens just before network transmission, after all
+resending logic. This means that if the route configuration changes
+while there are messages scheduled for resending, these will adhere to
+the new routes.
+</p>
+
+<p>
+If the resolution of a recipient passed through a hop that was
+configured
+to <a href="reference/services-routing.html#hop">ignore
+results</a>, the network layer will reply immediately with a synthetic
+&quot;OK&quot;.
+</p>
+</div>
+
+</body>
+</html>

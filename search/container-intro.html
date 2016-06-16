@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>The JDisc Container</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="February 2016" />
+<meta name="authors" content="steinar, bratseth" />
+</head>
+
+<body>
+<p class="ingress">
+The JDisc Container is the home of all application specific plug-ins in Vespa.
+It can also be used to build standalone server applications, but in Vespa it is
+the basis of the search container and document processing. As the <em>Search
+Container</em>, it handles all incoming queries, and returns results. As the
+<em>Document Processor Container</em>, all documents fed passes through it. In
+both cases, this allows plug-ins to process or modify all queries, results and
+documents globally.
+</p>
+
+<p>
+The JDisc Container has also been known as the Middleware Container
+(MWC for short). The <em>Search Container</em>, where all global
+processing of user actions (represented as queries) and their results
+is done, is also known as QRS. When hosting document processors, the
+JDisc Container is sometimes called docproc for short, though this may
+also refer to a single document processor, or the cluster of document
+processing nodes.
+</p>
+
+<p>
+The JDisc Container provides a development and hosting environment for
+processing <em>components</em>, and a model for composing such components
+developed by multiple development teams into a functional whole. The goal is to
+allow query, result and document processing to grow to great levels of
+sophistication by providing a strong component model including isolation, while
+still providing great development ergonomics to allow developers to experiment
+with new functionality.
+</p>
+
+<p>
+The main features of the JDisc Container are:
+</p>
+
+<ul>
+<li>An <a href="../jdisc/developing-osgi-bundles.html">OSGi</a> based component model which
+    allows deployment and undeployment of components to a cluster of running
+    instances, as well as isolation and controlled sharing of classes between
+    components</li>
+<li>A general model of Documents, Queries, Results and the
+    components processing them</li>
+<li>A composition mechanism – <em><a
+    href="../jdisc/chained-components.html">chains</a></em> – for building applications
+    from components and managing the execution order dependencies</li>
+</ul>
+
+<p>
+The JDisc Container comes bundled with a framework
+for <em>federating</em> applications – the
+<a href="../federation-platform.html">federation platform</a>.  It is run
+by all the <strong>JDisc nodes</strong> in a Vespa installation.
+</p>
+
+
+
+<h1 id="plugins">Plug-ins</h1>
+
+<p>
+The plug-ins in a container may be a general component, just using
+the OSGi integration of the container to deploy arbitrary application
+specific components, or it may be one of the types of components
+defined by Vespa itself.  The plug-ins used by Vespa are <em><a
+ href="searcher-development.html">searchers</a></em>, <em><a
+ href="docproc-development.html">document processors</a></em>
+(<em>docprocs</em>), <em>handlers</em> and <em><a
+ href="result-rendering.html">renderers</a></em>. Searchers are result
+and query processors. Document processors transform or analyse all
+documents fed to Vespa. Handlers are used to handle user requests
+which should not be processed directly by any searcher, e.g. building
+web services which then generate searches. Renderers are used to render
+result pages when responding to a request; renderers supersede
+templates which were used in earlier versions of Vespa.
+</p>
+
+<p>
+Searchers and document processors are executed in chains. A query is passed from
+searcher to searcher in a chain. The searchers are executed in a synchronous
+fashion, each taking ownership of the query passed to them. Searcher order is in
+other words execution order, a searcher which is before some other searchers,
+gets the query before these searchers. Since the result is returned through the
+same chain, a searcher early in the chain, will be late to access the result.
+Document processor chains do not return any kind of results, they only pass on
+the processed documents to the next component.
+</p>
+
+<p>
+All kinds of components are usually deployed as OSGi bundles in the Vespa
+application package.
+</p>
+
+</body>
+</html>

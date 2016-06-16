@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Ranking Expressions</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2008" />
+  <meta name="authors" content="steinar, bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document is a complete reference to the <strong>ranking
+expressions</strong> used to configure application specific ranking
+functions in Vespa. For an overview of how to use ranking expressions,
+see the <a href="../ranking.html">ranking overview
+document</a>.
+</p>
+
+<p>
+Ranking expressions are written in a simple language quite similar to
+ordinary functional notation. The atoms in ranking expressions
+are <a href="#rank-features">rank features</a> and
+and <a href="#constants">constants</a>. These atoms can be combined
+by <a href="#arithmetic-operations">arithmetic operations</a> and
+<a href="#built-in-functions">built-in functions</a>.
+</p>
+
+
+
+<h1 id="atoms">Atoms</h1>
+
+<p>
+The atoms of ranking expressions are rank features and constants.
+</p>
+
+
+<h2 id="rank-features">Rank Features</h2>
+<p>
+A rank feature is a named value calculated or looked up by vespa for
+each query/document combination.  See the
+<a href="rank-features.html">rank feature reference</a>
+for a list of all the rank features available to ranking expressions.
+</p>
+
+
+<h2 id="constants">Constants</h2>
+<p>
+A constant is either a floating point number, or a quoted
+string. Strings are only useful for equality comparison in the if
+function.
+</p>
+
+
+
+<h1 id="arithmetic-operations">Arithmetic operations</h1>
+
+<p>
+The four basic operations, addition, subtraction, multiplication and
+division are expressed in in-fix notation.
+</p>
+
+<pre class="brush: text">
+a + b - c * d / (e + f)
+</pre>
+
+<p>
+Multiplication and division has higher precedence than addition and
+subtraction. Terms can be ordered using parentheses when it is
+necessary to override default precedence.
+</p>
+
+
+
+<h1 id="built-in-functions">Built-in Functions</h1>
+
+<p>
+The built-in functions is the usual mathematical set, as well as a
+special if function useful to create non-linear functions like
+decision trees.
+</p>
+
+
+<h2 id="mathematical-functions">Mathematical Functions</h2>
+
+<table>
+  <caption>Built-in mathematical functions</caption>
+  <tbody>
+<tr><td>cosh(<em>x</em>)</td> <td>Hyperbolic cosine of <em>x</em></td></tr>
+<tr><td>sinh(<em>x</em>)</td> <td>Hyperbolic sine of <em>x</em></td></tr>
+<tr><td>tanh(<em>x</em>)</td> <td>Hyperbolic tangent of <em>x</em></td></tr>
+<tr><td>cos(<em>x</em>)</td> <td>Cosine of <em>x</em></td></tr>
+<tr><td>sin(<em>x</em>)</td> <td>Sine of <em>x</em></td></tr>
+<tr><td>tan(<em>x</em>)</td> <td>Tangent of <em>x</em></td></tr>
+<tr><td>acos(<em>x</em>)</td> <td>Inverse cosine of <em>x</em></td></tr>
+<tr><td>asin(<em>x</em>)</td> <td>Inverse sine of <em>x</em></td></tr>
+<tr><td>atan2(<em>y</em>, <em>x</em>)</td> <td>Inverse tangent of <em>y / x</em>, using signs of both arguments to determine correct quadrant.</td></tr>
+<tr><td>atan(<em>x</em>)</td> <td>Inverse tangent of <em>x</em></td></tr>
+<tr><td>exp(<em>x</em>)</td> <td>Base-e expontial function.</td></tr>
+<tr><td>ldexp(<em>x</em>, <em>exp</em>)</td> <td>Multiply <em>x</em> by 2 to the power of <em>exp</em></td></tr>
+<tr><td>log10(<em>x</em>)</td> <td>Base-10 logaritm of <em>x</em></td></tr>
+<tr><td>log(<em>x</em>)</td> <td>Base-e logaritm of <em>x</em></td></tr>
+<tr><td>pow(<em>x</em>, <em>y</em>)</td> <td>Return <em>x</em> raised to the power of <em>y</em></td></tr>
+<tr><td>sqrt(<em>x</em>)</td> <td>Square root of <em>x</em></td></tr>
+<tr><td>ceil(<em>x</em>)</td> <td>Lowest integral value not less than <em>x</em></td></tr>
+<tr><td>fabs(<em>x</em>)</td> <td>Absolute value of (floating-point) number <em>x</em></td></tr>
+<tr><td>floor(<em>x</em>)</td> <td>Largest integral value not greater than <em>x</em></td></tr>
+<tr><td>isNan(<em>x</em>)</td> <td>Returns 1.0 if <em>x</em> is NaN, 0.0 otherwise</td></tr>
+<tr><td>fmod(<em>x</em>, <em>y</em>)</td> <td>Remainder of <em>x / y</em></td></tr>
+<tr><td>min(<em>x</em>, <em>y</em>)</td> <td>Smaller of <em>x</em> and <em>y</em></td></tr>
+<tr><td>max(<em>x</em>, <em>y</em>)</td> <td>Larger of <em>x</em> and <em>y</em></td></tr>
+  </tbody>
+</table>
+
+<p>
+<code>x</code> and <code>y</code> here may be any ranking expression.
+</p>
+
+
+
+<h2 id="the-if-function">The if Function</h2>
+
+<p>
+The <code>if</code> function chooses between two sub-expressions based
+on the truth value of a condition.
+</p>
+
+
+<pre class="brush: text">
+if (expression1 <a href="#conditional_operators">operator</a> expression2, trueExpression, falseExpression)
+</pre>
+
+<p>
+If the condition given in the first argument is true, the expression
+in argument 2 is used, otherwise argument 3. The four expressions may
+be any ranking expression.
+</p>
+
+
+<h3 id="conditional-operators">Conditional Operators</h3>
+
+<table>
+  <caption>Conditional operators in ranking expression if functions</caption>
+  <tbody>
+    <tr><td>&lt;=</td> <td>Less than or equal</td></tr>
+    <tr><td>&lt;</td> <td>Less than</td></tr>
+    <tr><td>==</td> <td>Equal</td></tr>
+    <tr><td>~=</td> <td>Approximately equal</td></tr>
+    <tr><td>&gt;=</td> <td>Greater than or equal</td></tr>
+    <tr><td>&gt;</td> <td>Greater than</td></tr>
+  </tbody>
+</table>
+
+<h3 id="membership-operator">Membership Operator</h3>
+
+<p>
+The <code>in</code> conditional operator uses a slightly modified if-syntax;
+</p>
+<pre class="brush: text">
+if (expression1 in [expression2, expression3, ..., expressionN], trueExpression, falseExpression)
+</pre>
+<p>
+If expression1 is equal to either of expression1 through expressionN, then trueExpression is used,
+otherwise falseExpresion.
+</p>
+
+<h2 id="the-foreach-function">The foreach Function</h2>
+<p>
+The foreach function is not really part of the expression language but
+implemented as
+a <a href="rank-features.html#foreach">rank
+feature</a>.
+</p>
+
+
+
+<h1 id="examples">Examples</h1>
+
+<p>
+Some example ranking functions.
+</p>
+
+<h2 id="example1">Example 1</h2>
+<p>
+If the user is underage, assign 0 to adult content and use the average
+of match quality in the title field and popularity among kids. If the
+user is not, use the match quality in the title field.
+</p>
+
+<pre class="brush: text">
+if ( query(userage) &lt; 18,
+     if ( attribute(adultness) > 0.1, 0 , (fieldMatch(title)+attribute(kidspopularity)) / 2 ),
+     fieldMatch(title) )
+</pre>
+
+
+<h2 id="example2">Example 2</h2>
+<p>
+Use a weighted average of the match quality in some fields, multiplied
+by 1-exp of the document age.
+</p>
+
+<pre class="brush: text">
+( 10*fieldMatch(title) + 5*fieldMatch(description) +
+  7*attributeMatch(tags).normalizedWeight ) /22 * ( 1 - age(creationtime) )
+</pre>
+
+</body>
+</html>

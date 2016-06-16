@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>General query result sorting</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="April 2009">
+  <meta name="authors" content="steinar, balder">
+</head>
+
+<body>
+
+<h1>General query result sorting</h1>
+
+
+    <p class="ingress">
+      This document provides a description of how to sort results in Vespa.
+    </p>
+
+    <p>
+      A sorting specification in a query consists of one or more
+      sorting expressions. Each sorting expression is an optional sort order
+      followed by an attribute name or a function over an attribute.
+      Multiple expressions are separated by a single SPACE character.
+    </p>
+
+    <p>
+      Using more than one sort expression will give you multilevel
+      sorting. In this case, the most significant expression is the
+      first, while subsequent expressions detail sorting within groups
+      of equal values for the previous expression.
+    </p>
+
+    <pre class="code">
+Sorting       ::= SortExpr ( ' ' SortExpr )*
+SortExpr      ::= [SortOrder] SortObject
+SortObject    ::= SortAttribute | Function
+Function      ::= LOWERCASE '(' SortAttribute ')' |
+                  RAW '(' SortAttribute ')' |
+                  UCA '(' SortAttribute [ ',' Locale [ ',' Strength] ] ')'
+LOWERCASE     ::= 'lowercase'
+UCA           ::= 'uca'
+RAW           ::= 'raw'
+Locale        ::= An identifier following <a href="http://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers">unicode locale identifiers,</a> fx 'en_US'.
+Strength      :: 'PRIMARY' | 'SECONDARY' | 'TERTIARY' | 'QUATERNARY' | 'IDENTICAL'
+SortOrder     ::= '+' | '-'
+SortAttribute ::= ID                          /* A valid attribute name */</pre>
+
+
+
+    <h1 id="sort-order">Sorting order</h1>
+    <p>
+      For sort order, <code>+</code> denotes ascending sorting order,
+      while <code>-</code> gives descending order.
+    </p>
+
+    <p>
+      Ascending order is defined as lowest values first for numerical
+      attributes. Strings are sorted according to the sort function chosen.
+      Descending order is the reverse of ascending order.
+    </p>
+
+    <p>
+      If +/- is omitted, the default will be used, either the system wide default of <code>+</code>
+      or any override in <a href="search-definitions.html#sorting">searchdefinition</a>.
+      Also note that when composing the query URL, <code>+</code> has to be encoded as %2B.
+      For consistency, <code>-</code> can be encoded as %2D.
+    </p>
+
+    <h2 id="default-sort-order">Default sorting order</h2>
+    <p>
+      Default sort order is <code>+</code> or ascending, except for the special builtin <code>[rank]</code> which has <code>-</code> or descending.
+    </p>
+
+    <h1 id="sort-attribute">Sorting attribute</h1>
+    <p>
+      The sorting attribute in a sort expression is the name of an
+      attribute in the index. Attribute names will often be the same
+      as field names. In the search definition, an attribute is
+      indicated by the indexing language fragment for a field having
+      an <a href="search-definitions.html#attribute">attribute</a>
+      statement.
+    </p>
+
+    <p>
+      When sorting on attributes, it is recommended to use the built
+      in <em>unranked</em> rank-profile, this allows the search kernel
+      to execute the query significantly faster then execution the
+      ranking framework for many hits and then finally ignore this
+      score and sort by the specificed sorting specification.
+   </p>
+
+    <h1 id="sort-function">Sorting function</h1>
+    <p>
+      It is possible to specify how sorting should be done.
+      The default depends on configuration of attributes and
+      language, if specified in query.  Fallback when no
+      sorting could be done is using the order that
+      the documents were indexed in (on the backend search node).
+
+      You can specify that you want to sort on raw binary values, or a
+      simple and cheap lowercase, but usually the more expensive, but
+      linguistically correct
+      <a href="http://www.unicode.org/unicode/reports/tr10/">UCA</a>
+      sorting will be used.
+    </p>
+
+
+    <h2 id="raw">Raw byteorder</h2>
+    <p>
+      Here a simple and fast ordering based on memcmp of utf8 for
+      strings and correct sort order compliant binary rep for other
+      fields is done. However that is not correct for anything except
+      computers looking only at the binary representation.
+    </p>
+
+
+    <h2 id="lowercase">Lowercase</h2>
+    <p>
+      This improves the sorting by first lowercasing and normalising the strings before sorting. This is
+      slightly more correct and might be enough for what you want. It is not that much more costly than raw sort.
+    </p>
+
+    <h2 id="uca">UCA</h2>
+    <p>
+      This sorting is based on the
+      <a href="http://site.icu-project.org/">icu</a> library that follows the
+      <a href="http://www.unicode.org/unicode/reports/tr10/">Universal Collation Algorithm</a>.
+      The specification of
+      <a href="http://icu-project.org/apiref/icu4j/com/ibm/icu/util/ULocale.html#ULocale(java.lang.String)">locale</a>
+      and <a href="http://icu-project.org/apiref/icu4j/com/ibm/icu/text/Collator.html">strength</a>
+      are identical to
+      how <a href="http://site.icu-project.org/">icu</a> specifies
+      them. The default is strength <code>PRIMARY</code> which only
+      sorts on primary differentiating characteristics; this means that
+      letters in uppercase/lowercase or with differences in accents
+      only are considered equal.
+    </p>
+    <p>
+      Note that both locale and strength are optional, but that if you
+      need to set strength you must also specify locale.
+    </p>
+
+    <h3>Default sort locale</h3>
+    <p>
+      Locale is default derived from query unless overriden in
+      <a href="search-definitions.html#sorting">searchdefinition</a>,
+      or given explicitly in sortspec.  Note that if neither the query
+      sortspec, nor the searchdefinition, nor the query itself
+      specifies a language or locale then UCA sorting won't be used by
+      default anymore; in this case the fallback is to use the
+      lowercase function instead.
+    </p>
+
+    <h3>Default sort strength</h3>
+    <p>
+      Strength is <code>PRIMARY</code> unless overriden
+      in <a href="search-definitions.html#sorting">searchdefinition</a>,
+      or given explicitly in sortspec.
+    </p>
+
+
+    <h2 id="default-sort-function">Default sort function</h2>
+    <p>
+      Numeric fields are sorted based on their numerical value. This is the only option.
+    </p>
+    <p>
+      Default for strings are <code>uca</code> unless overriden in
+      <a href="search-definitions.html#sorting">searchdefinition</a>,
+      or given explicitly in sortspec.
+    </p>
+
+    <h1 id="special-sorting-attributes">Special sorting attributes</h1>
+    <p>
+      Three special attributes are available for sorting in addition to
+      the index specific attributes:
+    </p>
+    <dl>
+      <dt>[relevance]</dt>
+      <dd>
+        The document's relevance score for this query. This
+        is the same as the default ordering when no sort specification
+        is given ([rank] is a legacy alias for the same thing).
+      </dd>
+
+      <dt>[source]</dt>
+      <dd>
+        The document's source name. This is only relevant when querying multiple sources.
+      </dd>
+
+      <dt>[docid]</dt>
+      <dd>
+        The document's identification in the search back end. This will
+        typically give you the documents in indexing order. <strong>Keep in mind that this id is unique
+        only to the backend node where the document resides</strong>. The same document might have different id
+        on a different node. The same way a different document might have the same id on another node.
+        This is just intended as a cheap way of getting an almost stable sort order.
+      </dd>
+    </dl>
+
+    <p>
+      These special attributes are most useful as secondary sort
+      expressions in a multilevel sort. This will allow you to sort
+      groups of equal values for the primary expression in either
+      relevancy or indexing order. Without this additional sort
+      expression, the order within each equal group is not
+      deterministic.
+    </p>
+
+    <h1 id="limitations">Limitations</h1>
+
+    <p>
+      <strong>Note that it is only possible to sort on attributes</strong>. Trying
+      to sort on a plain field, without an associated attribute, will
+      not work. Trying to sort on a multivalued attribute will also
+      not work; the sort expression will be ignored.
+    </p>
+
+    <h1 id="examples">Examples</h1>
+    <pre class="code">+surname</pre>
+    <p>
+      Sort the hits according to the surname attribute in ascending
+      order.
+    </p>
+
+    <pre class="code">+lowercase(surname)</pre>
+    <p>
+      Sort the hits according to the surname attribute in ascending
+      order after lowercasing the surname.
+    </p>
+
+    <pre class="code">+uca(surname,en_US)</pre>
+    <p>
+      Sort the hits according to the surname attribute in ascending
+      English US locale collation order.
+    </p>
+
+    <pre class="code">+uca(surname,nb_NO)</pre>
+    <p>
+      Sort the hits according to the surname attribute in ascending
+      Norwegian 'Bokm&aring;l' locale collation order.
+    </p>
+
+    <pre class="code">+uca(surname,nb_NO,TERTIARY)</pre>
+    <p>
+      Sort the hits according to the surname attribute in ascending
+      Norwegian 'Bokm&aring;l' locale collation order, but more attributes
+      of a character are used to distinguish. Now it is case sensitive and
+      'aa' and 'å' are different.
+    </p>
+
+    <pre class="code">+surname -yearofbirth</pre>
+    <p>
+      Sort the hits on surnames alphabetically, with the youngest ones
+      first when the names are equal.
+    </p>
+
+    <pre class="code">+yearofbirth -[rank]</pre>
+    <p>
+      Sort the hits in ascending birthyear groups, and sort by
+      relevancy within each group of equal values with the highest rank
+      first.
+    </p>
+
+
+    <h1 id="yql">Sorting in YQL</h1>
+
+    <p>
+      Refer to <a href="../search/yql-in-vespa.html#sorting">YQL Vespa
+      reference</a> for how to set sorting parameters in YQL.
+    </p>
+
+    <h1 id="example-queries">Example queries</h1>
+    <p>
+      See the sorting examples in the <a href="../tutorial.html#sorting">Tutorial</a>.
+    </p>
+
+  </body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Monitoring cluster</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="June 2016"/>
+  <meta name="authors" content="humbe"/>
+</head>
+<body>
+
+  <h1>Latency of latency critical requests</h1>
+  <p>
+    One of the most natural aspects to monitor is the latency of critical
+    requests. Services typically have SLAs, for instance wanting a 95 percentile
+    latency below a given amount of milliseconds.
+  </p>
+  <p>
+    The content layer has metrics tracking latency of various operations within
+    the layer. However, as these metrics are tracked within the layer itself, it
+    does not contain the entire period seen from the client. It is recommended
+    for applications to track latency themselves to have a metric that doesn't
+    hide any time periods. Examples:
+  </p>
+  <ul>
+    <li>
+      A lot of higher priority requests are currently consuming resources.
+      Priority partition queue should show that requests of this load type are
+      being queued. Refer to
+      <a href="admin-procedures.html#detecting-overload">procedure</a>
+      for detecting overload.
+    </li><li>
+      Some specific requests are expensive to serve for the backend. This might
+      or might not be intuitive by looking at the request. Finding the specific
+      queries and rerunning them with
+      <a href="../reference/search-api.html#tracelevel">tracing</a>
+      may help identify root cause.
+    </li><li>
+      Request have high consistency requirements and are currently targeting
+      bucket in a bad state, causing it to wait for maintenance operations to
+      complete. (Visiting not allowing inconsistent buckets for instance)
+    </li><li>
+      Requests are being temporarily failed a lot, causing many requests to be
+      resent. While latency for each attempt may be small, the total latency
+      will be large. In these cases some requests are likely to fail due to
+      timing out with temporary failures. These errors can be looked at to
+      hopefully see what is causing the issue. A cluster with distributors
+      going up and down a lot may cause such failures. May be caused by bad
+      nodes with an issue not catched automatically.
+    </li>
+  </ul>
+
+  <h1>External requests failing</h1>
+  <p>
+    When a request fail, a failure message is delivered with the reply. In
+    timeout cases this reply may be unable to show anything useful, but for
+    other failures this message is very helpful to detect what is happening.
+    Your application should ensure that failures are available. If the failure
+    message does not allow you to figure out going on yourself, it will be a
+    great help to the support team when trying to help you sort out what's
+    happening.
+  </p>
+  <p>
+    Logging every failure, including per message failures that may be caused by
+    bad requests, would add a lot of log to the content layer logs.
+    Additionally, the log entries would easily be duplicated as many different
+    parts of the cluster would end up logging the same failures. To prevent
+    this, failures related to a specific request is not logged if it is
+    returned with the reply, leaving it up to the client whether to log the
+    failure or not. Consequently, it is important that clients do log errors,
+    otherwise there may be no information to go on, trying to detect what is
+    happening. Examples:
+  </p>
+  <ul>
+    <li>
+      Invalid requests or cluster configuration. For instance a request trying
+      to use a document type not configured in the backend. Invalid requests
+      will persistently fail, usually with decent error descriptions, and are
+      usually easy to identify.
+    </li><li>
+      Timeouts due to temporary overload. Equally or higher prioritized
+      operations are using so much resources that there hasn't been time to
+      process this request within the timeout. Typically indicated by queing in
+      the service layer.
+    </li><li>
+      Low timeout coupled with temporary failures. For instance, a distributor
+      ownership transfer is likely to temporary fail some operations in the
+      transition. If requests have a low timeout, there will not be enough time
+      left to resend the request and it will fail.
+    </li>
+  </ul>
+
+  <h1>Low priority operations seems to have stalled</h1>
+  <p>
+    Examples:
+  </p>
+  <ul>
+    <li>A low priority visitor job, like moving documents between clusters or
+        document reprocessing doesn't appear to get anywhere.</li>
+    <li>The cluster is out of ideal state, but doesn't seem to get closer to the
+        ideal state.</li>
+  </ul>
+  <p>
+    Typically such situations are caused by higher prioritized operations using
+    up most or all the resources in the cluster.
+  </p><p>
+    In the visiting case, the default behavior is to wait for inconsistent
+    buckets to become consistent before visiting them. However, external
+    operations, and many other maintenance operations have higher priority than
+    fixing inconsistent buckets, and the visitors can thus end up waiting for
+    quite a while. To get away from this, one can either up the priority of the
+    visitor, or one can flag it to visit inconsistent bucket copies. This may
+    lead to a bit more duplicates returned and a bit more resoures used to visit
+    the duplicates, but that is probably not an issue. Especially since a
+    visitor is never guaranteed to not return duplicates anyhow.
+  </p><p>
+    There is currently no good way of checking why a visitor is stalled.
+    Partition queues can be inspected on the cluster nodes through the content
+    layer status pages, and currently inconsistent buckets can be viewed through
+    distributor status pages, but these are all undocumented debug interfaces,
+    and it is hard to tell which exact bucket the visitor client is waiting for.
+    It would be good for this information to be available in the visitor client.
+  </p>
+
+  <h1>Check whether cluster capacity needs to be changed</h1>
+  <p>
+    When sizing a cluster, one sizes to accommodate:
+  </p>
+  <ul>
+    <li>
+      Current external load, including load spikes.
+    </li><li>
+      Expected short term external load growth.
+    </li><li>
+      Some free capacity should be free for maintenance traffic to not be
+      starved.
+    </li><li>
+      Some free capacity should be free to allow one or more nodes to go down
+      while still being able to serve all required load.
+    </li>
+  </ul>
+  <p>
+    The more extra resources are available, the longer the cluster can run by
+    itself before administrators have to look at it, given no critical failures
+    that cannot be handled automatically.
+  </p><p>
+    The administrators should have a feeling for how many nodes the cluster
+    needs to have minimally before capacity needs to be increased, and use
+    alarms or regularily monitor to verify that this amount of nodes are still
+    available. Changes in external load should also be monitored as this will
+    change the required node count.
+  </p><p>
+    It is also good to ensure some extra capacity during software upgrades, as
+    the upgrade may entail some extra maintenance traffic, or some performance
+    parts may have been changed, causing some operations to be more expensive.
+  </p><p>
+    When capacity has been reached, the cluster needs to have nodes fixed or
+    added to get back into a good state.
+  </p>
+  
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Search Chain Configuration</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="February 2010" />
+<meta name="authors" content="tonyv" />
+</head>
+
+<body>
+
+<p class="ingress">
+A <em>search chain</em> is an ordered list of searchers.  This
+document explains how you can create new search chains, and how you
+can configure which searchers are part of those chains.
+</p>
+
+<h1 id="creating_a_new_search_chain">Creating a new Search Chain</h1>
+<p>
+We can create a new search chain called &ldquo;simple&rdquo; as
+follows:
+</p>
+
+<pre class="code">
+  &lt;searchchain id=&quot;simple&quot; /&gt;
+</pre>
+
+<p>
+If you try to send a query to this search chain, you get an empty
+result set back.
+</p>
+
+<p>
+To make things more interesting, we can add a searcher to this search
+chain:
+</p>
+
+<pre class="code">
+&lt;searchchain id=&quot;simple&quot;&gt;
+  <strong>&lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot; /&gt;</strong>
+&lt;/searchchain&gt;
+</pre>
+
+<p>
+The searcher element inside the search chain says:
+</p>
+
+<ol>
+<li>Create a new instance of the class
+    com.yahoo.example.AddHitSearcher, and call this instance
+    &ldquo;AddHitSearcher&rdquo;.</li>
+<li>This searcher shall be used in the search chain
+    &ldquo;simple&rdquo;.</li>
+</ol>
+
+<p>
+If the id and the full class name are the same, the class attribute
+can be omitted for brevity.
+</p>
+
+<p>
+Now let us add another search chain, &ldquo;elementary&rdquo;, that
+looks just like &ldquo;simple&rdquo;:
+</p>
+
+<pre class="code">
+<strong>&lt;searchchain id=&quot;elementary&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot; /&gt;
+&lt;/searchchain&gt;</strong>
+
+&lt;searchchain id=&quot;simple&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot; /&gt;
+&lt;/searchchain&gt;
+</pre>
+
+<p>
+How many searcher instances are created now?  Each searcher element
+above causes a single instantiation, so the answer is two; one for
+each search chain.
+</p>
+
+<p>
+To actually verify that two separate instances are created,
+we would like each of the instances to generate different looking hits.
+Luckily, there is a general mechanism in vespa to
+<a href="jdisc/container-components.html#configurable_components">configure
+searchers.</a>  For AddHitSearcher we have defined a config called
+&ldquo;hit-title&rdquo;, that allows us to specify the title of the
+hit that is added:
+</p>
+
+<pre class="code">
+&lt;searchchain id=&quot;elementary&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    <strong>&lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the elementary search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;</strong>
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=&quot;simple&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    <strong>&lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the simple search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;</strong>
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+</pre>
+
+
+
+
+<h1 id="search_chain_inheritance">Search Chain Inheritance</h1>
+
+<p>
+How can we use searcher instances from another search chain instead of
+creating new instances? The answer is by using inheritance:
+</p>
+
+<pre class="code">
+&lt;searchchain id=&quot;base&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the base search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+
+  &lt;searcher id=&quot;com.yahoo.prelude.statistics.StatisticsSearcher&quot; /&gt;
+  &lt;searcher id=&quot;com.yahoo.search.searchchain.example.ExampleSearcher&quot; /&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=&quot;derived&quot; <strong>inherits=&quot;base&quot;</strong>&gt;
+  &lt;searcher id=&quot;AddAnotherHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddAnotherHitSearcher in the derived search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+</pre>
+
+<p>
+The search chain &ldquo;derived&rdquo; will contain the
+&ldquo;AddAnotherHitSearcher&rdquo; and all the searchers from the
+&ldquo;base&rdquo; search chain.  Only two instances of
+&ldquo;com.yahoo.example.AddHitSearcher&rdquo; will exist;
+&ldquo;base&rdquo; will use one of them and &ldquo;derived&rdquo; will
+use both.
+</p>
+
+
+<h2 id="overriding_searchers">Overriding Searchers</h2>
+
+<p data-annotation="Deliberate oversimplification">
+Now suppose that you want to replace one of the searchers inherited
+from the parent chain with another that plays the same
+role&mdash;analogous to overriding a method inherited from a parent
+class in object oriented programming.  A searcher <em>overrides</em>
+all the searchers with the <em>same name</em> (the name is here the
+same as the id) in any parent search chains:
+</p>
+
+<pre class="code">
+&lt;searchchain id=&quot;base&quot;&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcher&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the base search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+
+  &lt;searcher id=&quot;com.yahoo.prelude.statistics.StatisticsSearcher&quot; /&gt;
+  &lt;searcher id=&quot;com.yahoo.search.searchchain.example.ExampleSearcher&quot; /&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=&quot;derived&quot; inherits=&quot;base&quot;&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcher&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the derived search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+</pre>
+
+<p>
+The search chain &ldquo;derived&rdquo; will contain a single searcher
+called &ldquo;AddHitSearcher&rdquo;, namely the one defined inside of
+it. As a side note, a search chain can never contain more than one
+searcher with a given name.
+</p>
+
+
+<h2 id="excluding_searchers">Excluding Searchers</h2>
+
+<p>
+If you just want to remove a searcher, and not replace it with another
+that fills a similar role, excluding it is the way to go:
+</p>
+
+<pre class="code">
+&lt;searchchain id=&quot;base&quot;&gt;
+  &lt;searcher id=&quot;AddHitSearcher&quot; class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the base search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+
+  &lt;searcher id=&quot;com.yahoo.prelude.statistics.StatisticsSearcher&quot; /&gt;
+  &lt;searcher id=&quot;com.yahoo.search.searchchain.example.ExampleSearcher&quot; /&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=&quot;derived&quot; inherits=&quot;base&quot; <strong>excludes=&quot;AddHitSearcher com.yahoo.prelude.statistics.StatisticsSearcher&quot;</strong> /&gt;
+</pre>
+
+<p>
+The search chain &ldquo;derived&rdquo; will now only contain the
+ExampleSearcher.
+</p>
+
+
+<h2 id="multiple_inheritance">Multiple Inheritance</h2>
+
+<p>
+A search chain can of course inherit from multiple search chains.  But
+what if different searchers from different parent search chains have
+the same name? We remember from earlier that a search chain can not
+contain multiple searchers with the same name. You must therefore
+manually resolve the conflict by overriding the conflicting searchers:
+</p>
+
+<pre class="code">
+&lt;searchchain id=<strong>&quot;base1&quot;</strong>&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcher&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the base1 search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=<strong>&quot;base2&quot;</strong>&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcher&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the base2 search chain&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+
+&lt;searchchain id=&quot;derived&quot; <strong>inherits=&quot;base1 base2&quot;</strong>&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcher&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by AddHitSearcher in the derived search chain.
+          Overrides AddHitSearcher in base1 and base2&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/searchchain&gt;
+</pre>
+
+<p>
+Alternatively, if you just want to keep the searcher from base1, you can easily make a new chain base2_exclude
+that excludes AddHitSearcher and inherit from that instead of base2:
+</p>
+<pre class="code">
+&lt;searchchain id=<strong>&quot;base2_exclude&quot;</strong> inherits=&quot;base2&quot; <strong>excludes=&quot;AddHitSearcher</strong> /&gt;
+&lt;searchchain id=&quot;derived&quot; inherits=&quot;base1 <strong>base2_exclude</strong>&quot;/&gt;
+</pre>
+
+<h1 id="outer_searchers">Outer Searchers</h1>
+
+<p>
+What if you want to share a searcher between multiple search chains,
+but can not be bothered by creating an extra search chain just to
+achieve this?  The solution is defining the searcher outside any
+search chains:
+</p>
+
+<pre class="code">
+&lt;searchchains&gt;
+  &lt;searcher id=<strong>&quot;AddHitSearcherOuter&quot;</strong> class=&quot;com.yahoo.example.AddHitSearcher&quot;&gt;
+    &lt;config name=&quot;example.hit-title&quot;&gt;
+      &lt;hitTitle&gt;Produced by the outer AddHitSearcher&lt;/hitTitle&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+
+  &lt;searchchain id=&quot;referenceChain&quot;&gt;
+    &lt;searcher idref=<strong>&quot;AddHitSearcherOuter&quot;</strong> /&gt;
+  &lt;/searchchain&gt;
+
+  &lt;searchchain id=&quot;referenceChain2&quot;&gt;
+    &lt;searcher idref=<strong>&quot;AddHitSearcherOuter&quot;</strong> /&gt;
+  &lt;/searchchain&gt;
+&lt;/searchchains&gt;
+</pre>
+
+<p>
+For clarity, we have included the enclosing searchchains element in
+this example to emphasize the correct location for outer searchers.
+By referring to the outer searcher, the search chains
+&ldquo;referenceChain&rdquo; and &ldquo;referenceChain2&rdquo; will
+then contain the outer searcher &ldquo;AddHitSearcherOuter&rdquo;.
+</p>
+
+<p>
+Outer searchers can not have the same name as any inner searchers.
+This restriction is in place mainly due to backward compatibility.
+</p>
+
+</body>
+</html>

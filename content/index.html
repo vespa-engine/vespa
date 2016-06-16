@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Vespa Content Distribution Layer</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="May 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+
+<body>
+  <p>
+    The Vespa Content Distribution Layer, called the content layer for short,
+    turns a single node stateful service into a multi-node service, allowing
+    elastic capacity scaling and loss of nodes without availability loss.
+    Get started reading the <a href="content-layer-overview.html">overview</a>
+  </p>
+
+  <h1 id="setup">Configure applications</h1>
+  <p>
+    Details on what you may want to look into when setting up and configuring
+    applications.
+  </p>
+  <ul>
+    <li><a href="setup-documents.html">Document types and identifiers</a></li>
+    <li><a href="setup-throttling.html">Throttling</a></li>
+    <li><a href="setup-reference.html">Setup reference</a></li>
+    <li><a href="setup-tuning.html">Tuning</a></li>
+  </ul>
+
+  <h1 id="admin">Administrating content clusters</h1>
+  <p>
+    Documentation intended for people administrating applications.
+  </p>
+  <ul>
+    <li><a href="../operations/admin-monitoring.html">Monitoring </a></li>
+    <li><a href="../operations/admin-procedures.html">Administrative procedures</a></li>
+    <li><a href="admin-states.html">Cluster and node states</a></li>
+    <li><a href="admin-automatic.html">Automatically detected issues</a></li>
+    <li><a href="admin-manual.html">Issues the content layer does not solve</a></li>
+    <li><a href="admin-loadtypes.html">Load type metrics</a></li>
+  </ul>
+
+  <h1 id="programming">Programming applications</h1>
+  <p>
+    Applications using the content layer need to program with the external interfaces.
+  </p>
+  <ul>
+    <li><a href="../introduction-to-writing-to-vespa.html">Introduction</a></li>
+    <li><a href="../document-api-guide.html">The Document API</a></li>
+    <li><a href="../httpgateway.html">The HTTP Gateway</a></li>
+    <li><a href="../vespa-http-client.html">The Vespa HTTP Java Feed API</a></li>
+    <li><a href="../vespaspooler.html">The Vespa Spooler</a></li>
+    <li><a href="api-state-rest-api.html">State Rest API</a></li>
+  </ul>
+
+  <h1 id="design-reference">Content layer design reference</h1>
+  <p>
+    References to content layer design and detailed explanations of how
+    features have been implemented. Most users should not need to worry about
+    the contents of this. Reference is kept for Vespa developers, advanced
+    users using layer for new use cases, or curious users wondering how issues
+    are resolved.
+  </p>
+  <ul>
+    <li><a href="feature-crudops.html">CRUD operations</a></li>
+    <li><a href="feature-visiting.html">Visiting</a></li>
+    <li><a href="../remove-by-date.html">Garbage collection</a></li>
+    <li><a href="design-overview.html">Content layer architecture</a></li>
+    <li><a href="idealstate.html">The Distribution algorithm</a></li>
+    <li><a href="buckets-and-distribution.html">Document to bucket mapping</a></li>
+    <li><a href="data-placement.html">Hierarchical distribution</a></li>
+    <li><a href="design-clustercontroller.html">Cluster Controller</a></li>
+  </ul>
+
+</body>
+</html>

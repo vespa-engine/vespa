@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Developing web services</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="may 2013" />
+<meta name="authors" content="bratseth, steinar" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document explains how to develop (REST) web service type applications on
+the JDisc container - design options, accessing the request path, returning a
+status code etc.</p>
+
+<h1 id="design_options">Design options</h1>
+
+There are two types of web service API's:
+<ol>
+    <li>Fine-grained API's with closed semantics – for example <i>return the
+    number of stars of an article</i>.</li>
+
+    <li>Coarse-grained API's with open semantics – for example <i>return a page
+    containing the most relevant mixture of stuff for this user and
+    action</i>.</li>
+</ol>
+
+<p>With fine-grained APIs the container can help map the various requests to
+method calls through exposing an implementation of <a
+href="javadoc/index.html?com/yahoo/jdisc/jersey/JerseyHandler.html">JAX-RS
+(Jersey)</a>.
+With coarse-grained APIs it can help dealing with the complexity typically
+involved in the implementation of such API's by providing a way to compose and
+federate components contributing to processing the request and provide and
+modify the returned data, and a way to allow such requests to start returning
+before they are finished to reduce latency with large responses. This is the <a
+href="jdisc/processing.html">processing</a> framework (or, in the case of
+search-like application, the <a href="search/searcher-development.html">searcher</a>
+specialization). </p>
+
+<p>In addition, <a href="jdisc/how-does-jdisc-work.html">JDisc</a> features a
+generic mechanism which allows a <a
+href="jdisc/how-does-jdisc-work.html#requesthandler">Handler</a> component to be
+<a href="jdisc/how-does-jdisc-work.html#binding">bound</a> to a URL and invoked
+to handle all requests matching that URL. This is useful where there is neither
+a large fine-grained API nor any need to handle complexity and/or federation of
+various kinds of data in the response (and of course both the approaches above
+are implemented as provided Handlers).</p>
+
+<p>Of course, many web service API's have both fine-grained and coarse-grained
+elements, and in some cases going one way or the other is a design choice. In
+such cases choosing one of the above approaches is a design problem. Some hybrid
+approaches are possible. A custom Handler may be written to parse the url
+path/method and dispatch to an appropriate chain of processing components, and
+of course a "main" processing chain may be written to do the same by dispatching
+to other chains.</p>
+
+<p>The simplest way to invoke a specific chain of processors is to forward
+a query to the <code>ProcessingHandler</code> with the request property
+<code>chain</code> set to the name of the chain you want to invoke.</p>
+
+<pre class="code">
+import com.google.inject.Inject;
+
+public class DemoHandler extends com.yahoo.container.jdisc.ThreadedHttpRequestHandler {
+
+...
+
+    @Inject
+    public DemoHandler(Executor executor, ProcessingHandler processingHandler) {
+        super(executor);
+        this.processingHandler = processingHandler;
+    }
+
+...
+
+    @Override
+    public HttpResponse handle(HttpRequest request) {
+        HttpRequest processingRequest = new HttpRequest.Builder(request)
+                .put(com.yahoo.processing.Request.CHAIN, "theProcessingChainIWant")
+                .createDirectRequest();
+        HttpResponse r = processingHandler.handle(processingRequest);
+        return r;
+    }
+
+...
+
+}
+</pre>
+
+<h1 id="accessing_the_http_request">Accessing the HTTP request</h1>
+
+<p>In a general JDisc <a href="jdisc/developing-request-handlers.html">request
+handler</a> the <code>com.yahoo.jdisc.Request</code> can be cast to an instance
+of <code>com.yahoo.jdisc.http.HttpRequest</code> when the request is over HTTP.
+Web service handlers should usually extend
+<code>com.yahoo.container.jdisc.ThreadedHttpRequestHandler</code> (or the
+<code>com.yahoo.container.jdisc.LoggingRequestHandler</code> subclass which also
+does access logging), which provides to subclasses a
+<code>com.yahoo.container.jdisc.HttpRequest</code> which contains both the core
+HttpRequest and the associated properties and request data.</p>
+
+<p>In <a href="jdisc/processing.html">Processing</a>, one is given a
+<code>com.yahoo.processing.Request</code> which contains the HTTP URL parameters
+as well as the entire container request as a member variables. So to access the
+HttpRequest data in Processing, use</p>
+
+<pre class="code">
+// url parameters are added to properties
+String urlParameter = request.properties().get("urlParameterName");
+
+// jdisc request context is added with prefix context
+Object contextValue = request.properties().get("context.contextKey");
+
+// or, to access path, HTTP method or data, get the whole HTTP request:
+com.yahoo.container.jdisc.HttpRequest httpRequest =
+        (com.yahoo.container.jdisc.HttpRequest) request.properties().get("jdisc.request");
+// Then POST data inputstream would be:
+InputStream in = httpRequest.getData();
+// And the HTTP method:
+Method method = httpRequest.getMethod();
+</pre>
+
+<h1 id="controlling_the_http_response">Controlling the HTTP response</h1>
+
+<h2 id="setting-the-HTTP-status-and-http-headers">Setting the HTTP status and HTTP headers</h2>
+
+<p>
+In Processing, the return status can be set by adding a special Data item to the Response:
+</p>
+
+<pre class="code">
+response.data().add(new com.yahoo.processing.handler.ResponseStatus(404, request));
+</pre>
+
+<p>If no such data element is present, the status will be determined by the container.
+If it contains renderable data it will be 200, otherwise it will be determined by any
+ErrorMessage's present in the response.</p>
+
+
+<h2 id="setting-response-headers-from-processors">Setting response headers from Processors</h2>
+
+<p>Response headers may be added to any Response by adding instances of
+<code>com.yahoo.processing.handler.ResponseHeaders</code> to the Response (ResponseHeaders is a kind of response Data).
+Multiple instances of this may be added to the Response, and the complete set of headers returned is the superset of all such objects.
+Example Processor:
+
+<pre class="brush: java">
+processingResponse.data().add(new com.yahoo.processing.handler.ResponseHeaders(myHeaders, request));
+</pre>
+
+<p>Request handlers may in general set their return status, and manipulate headers directly on the HttpRequest.</p>
+
+
+<h2>Search queries and the Vespa platform</h2>
+
+<p>Sometimes all that is needed is letting the standard search framework in
+Vespa reply for more paths than standard. This is possible by adding extra
+<code>binding</code>s directly inside the <code>&lt;search&gt;</code> tag in
+<code>services.xml</code>. Writing a custom <a
+href="jdisc/developing-request-handlers.html">request handler</a> is recommended
+if the application is a standalone HTTP API, and especially if there are
+properties used with the same name as those in the <a
+href="reference/search-api.html">Vespa search API</a>. A request handler may <a
+href="jdisc/search-queries-in-search-containers.html">query the search
+components</a> running in the same container with any appreciable overhead.</p>
+
+</body>
+</html>

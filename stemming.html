@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Introduction to Stemming</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2014" />
+  <meta name="authors" content="wada, daljord, vlarsen, arnej" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the stemming feature in Vespa and how to use
+it.
+</p>
+
+<p>
+Stemming means to translate a word to its base form (singular forms
+for nouns, infinitive for verbs), using a
+<a href="http://en.wikipedia.org/wiki/Stemmer">stemmer</a>. Use of
+stemming increases recall when searching because the searcher is
+usually interested in documents containing query words regardless of
+the word form used. Stemming in Vespa is symmetric, i.e. words are
+converted to stems both when indexing and searching.
+</p>
+
+<p>
+Examples of this is when text is indexed, the stemmer will convert the
+noun <em>reports</em> (plural) to <em>report</em>, and the latter will
+be stored in the index. Likewise, before searching, <em>reports</em>
+will be stemmed to <em>report</em>. Another example is
+that <em>am</em>, <em>are</em> and <em>was</em> all will be stemmed
+to <em>be</em> both in queries and indexes.
+</p>
+
+<p>
+When bolding is enabled, all forms of the query term will be bolded.
+I.e. when searching for <em>reports</em>,
+both <em>report</em>, <em>reported</em> and <em>reports</em> will be
+bolded.
+</p>
+
+<h1 id="theory">Theory of stemming</h1>
+<p>
+From a matching point of view, stemming takes all possible token strings
+and maps them into equivalence classes.  So in the example above, the set
+of tokens { "report", "reports", "reported" } are in an equivalence class.
+To represent the class the linguistics library should pick the shortest
+element in the class.  At query time, the text typed by a user will be tokenized,
+and then each token should be mapped to the most likely equivalence class,
+again represented by the shortest element that belongs to the class.
+</p>
+<p>
+While the theory sounds pretty simple, in practice it is not always possible
+to figure out which equivalence class a token should belong to.  A typical
+example is the string "number".  In most cases we would guess this to
+mean a numerical entity of some kind, and the equivalence class would be
+{ "number", "numbers" } - but it could also be a verb, with a different
+equivalence class { "number", "numbered", "numbering" } for example.  These are of course
+closely related, and in practice they will be merged, so we'll have a slightly
+larger equivalence class { "number", "numbers", "numbered", "numbering" } and
+be happy with that.
+However, in a sentence such as "my legs keep getting number every day"
+the "number" token clearly does not have the semantics of a numerical entity, but
+should be in the equivalence class { "numb", "number", "numbest", "numbness" } instead.
+But blindly assigning "number" to the equivalence class "numb" is clearly
+not right, since the "more numb" meaning is much less likely than the
+"numerical entity" meaning.
+</p>
+<p>
+The approach currently taken by the low-level linguistics library
+will often lead to problems in the "number"-like cases as described above.
+To give better recall, Vespa has implemented a "multiple" stemming option.
+</p>
+
+
+<h1 id="configuration">Configuring</h1>
+
+<p>
+By default, all words are stemmed to their shortest form in Vespa. To change this, you must
+alter the <a href="reference/search-definitions.html#stemming">search
+definition</a> file by adding the following line:
+</p>
+
+<pre class="brush: text">
+stemming: [stemming-type]
+</pre>
+
+<p>
+Several different stemming types are available:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td><code>none</code></td>
+      <td>No stemming</td>
+    </tr>
+    <tr>
+      <td><code>shortest</code></td>
+      <td>Stem all words to their shortest form</td>
+    </tr>
+    <tr>
+      <td><code>all</code></td>
+      <td>Stem all words.  This is the same as "shortest" (for historical reasons).</td>
+    </tr>
+    <tr>
+      <td><code>multiple</code></td>
+      <td>Use multiple stems.  This retains not only the shortest form, but also any other stems returned by the linguistics library.  When indexing, this will also index the original form of the word.
+    </tr>
+  </tbody>
+</table>
+
+
+<p>
+In the example below, stemming is turned off for the field
+<code>title</code>.
+</p>
+
+<pre class="brush: sd">
+field title type string {
+   indexing: summary | index
+   stemming: none
+}
+</pre>
+
+<p>
+Stemming could be set either for a field, a fieldset or as a default for all fields, see
+the <a href="reference/search-definitions.html">search
+definition reference</a>.
+</p>
+
+<p class="alert alert-success">
+If you combine multiple fields in a field set they should all use the same stemming setting.
+</p>
+
+
+
+<h1 id="languages">Languages</h1>
+
+<p>
+Stemming is currently available for the following languages: English,
+German, French, Spanish, Italian, Portuguese, Korean and Japanese.
+</p>
+
+
+
+<h2 id="custom-dictionaries">Creating your Own Dictionaries</h2>
+
+<p>
+If you need to customize the way specific words are stemmed, this can
+be achieved by creating a custom dictionary.
+</p>
+
+<p>
+Now you can verify that your new dictionary works as it should by
+querying with one of your entries and tracelevel set to 2.
+</p>
+
+<pre class="brush: text">
+http://HOST:4080/search/?query=blues&amp;tracelevel=2
+</pre>
+
+<p>
+The above will then output this in the trace:
+</p>
+
+<pre class="brush: text">
+&lt;p&gt;Stemming: [blues]&lt;/p&gt;
+</pre>
+
+<p class="alert alert-success">
+After creating the new dictionary you have to do a full reindexing.
+</p>
+
+
+</body>
+</html>

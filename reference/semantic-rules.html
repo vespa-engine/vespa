@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Semantic Rule Language</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2007" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the reference for the semantic rule language in Vespa.  For a
+guide on using this language,
+see <a href="../query-rewriting.html">query rewriting</a>.
+</p>
+
+
+
+<h1 id="rule-bases">Rule bases</h1>
+
+<p>
+Semantic rules are collected in files called <em>rule bases</em>. The
+name of these files are <em>[rule-base-name].sr</em> They must be
+placed in <em>[application-package]/rules/</em> to be deployed.
+</p>
+
+
+
+<h1 id="basic-syntax">Basic syntax</h1>
+
+<p>
+A rule base may contain any number of the following four constructs,
+explained in the rest of this document:
+</p>
+
+<ul>
+  <li><a href="#directives">directives</a></li>
+  <li><a href="#production_rules">production rules</a></li>
+  <li><a href="#named_conditions">named conditions</a></li>
+  <li>comments, starting by # and ending by newline.</li>
+</ul>
+
+<p>
+Production rules and named conditions are <em>statements</em>.
+Statements may span multiple lines and are terminated
+by <code>;</code>.
+</p>
+
+
+
+<h1 id="directives">Directives</h1>
+
+<p>
+A directive is a &ldquo;meta-level&rdquo; statement which is not used
+during rule evaluation, but tells the rule engine how to use the rule
+base. A statement starts by <code>@</code> and ends by newline. They
+may take parameters. These directives exists:</p>
+
+<table>
+  <thead>
+    <tr><th>Statement</th><th>Usage</th><th>Location</th></tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>@default</td>
+      <td>Make this rule base the default, to be used with all queries</td>
+      <td>Anywhere outside other statements</td>
+    </tr>
+
+    <tr>
+      <td>@automata(&lt;automata-filename&gt;)</td>
+      <td>Use an automata file with this base</td>
+      <td>Anywhere outside other statements</td>
+    </tr>
+
+    <tr>
+      <td>@include(&lt;rulebase-name&gt;)</td>
+      <td>Include all the statements of another rule base in this</td>
+      <td>Anywhere outside other statements</td>
+    </tr>
+
+    <tr>
+      <td>@super</td>
+      <td>Include the conditions of the same-named conditions from the included rule base</td>
+      <td>In a condition</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<h1 id="production-rules">Production Rules</h1>
+
+<p>
+A production rule is of the form
+</p>
+
+<pre class="brush: text">
+<a href="#conditions">&lt;condition&gt;</a> &lt;operator&gt; <a href="#production_list">&lt;production-list&gt;</a>;
+</pre>
+
+<p>
+This performs the production as defined by the operator if the
+condition matches.  There are two kinds of production rules (and two
+operators), replacing and adding:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rule kind</th>
+      <th>Operator</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Replacing</td>
+      <td>-&gt;</td>
+      <td><em>Replace</em> the matched terms by the production</td>
+    </tr>
+
+    <tr>
+      <td>Adding</td>
+      <td>+&gt;</td>
+      <td><em>Add</em> the production to the matched terms</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<h1 id="namespaces">Namespaces</h1>
+
+<p>
+A namespace is a collection of facts which can be read from conditions
+and changed by productions.  Namespaces may be positional (sequences),
+or not. A positional namespace will track the current fact and match
+and insert at the current position, while non-positional namespaces
+will match any fact against any condition.
+</p>
+
+<p>
+There is a default namespace which does not need an explicit
+reference.  For query rules, the default namespace is the query
+terms.
+</p>
+
+<p>
+To determine the namespace used to read from conditions or change in
+productions, use
+</p>
+
+<pre class="brush: text">
+&lt;namespace&gt;.<a href="#conditions">&lt;condition&gt;</a>
+&lt;namespace&gt;.<a href="#production">&lt;production&gt;</a>
+</pre>
+
+<p>
+There are two namespaces defined during query processing:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Namespace</th>
+      <th>Syntax</th>
+      <th>Positional</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Query</td>
+      <td></td>
+      <td>Yes</td>
+      <td>The default namespace. References the terms of the
+          query. The condition value returned will be the term
+          itself.</td>
+    </tr>
+
+    <tr>
+      <td>Parameter</td>
+      <td><code>parameter.</code></td>
+      <td>No</td>
+      <td>References the parameter of the query.  Conditions will be
+          true if the parameter is set in the query.  The value
+          returned from conditions is the value of the parameter.
+          Productions will need both a key and value specified to set
+          a parameter value.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<h1 id="named-conditions">Named Conditions</h1>
+
+<p>
+A named condition is on the form
+</p>
+
+<pre class="brush: text">
+[condition-name] :- <a href="#conditions">&lt;condition&gt;</a>;
+</pre>
+
+<p>
+This simply assigns a name to the condition on the right, so it can be
+referred to the conditions in rules and other named conditions.
+</p>
+
+
+<h1 id="conditions">Conditions</h1>
+
+<p>
+A condition is an expression which evaluates to true or false over
+the <em>facts</em> of a <a href="#namespaces">namespace</a>.  If the
+namespace is <em>positional</em> (a <em>sequence</em>) evaluation
+starts at the <em>current position</em> in the namespace.  When
+evaluated true, conditions will also return a value which can be
+referenced by comparison conditions.
+</p>
+
+<p>
+Conditions may be preceded by a reference name and a label:
+</p>
+
+<pre class="brush: text">
+(<a href="#reference-name">&lt;reference-name&gt;</a>/)?(<a href="#condition-label">&lt;label&gt;</a>:)?<a href="#condition">&lt;condition&gt;</a>
+</pre>
+
+
+<h2 id="reference-name">Reference Name</h2>
+
+<p>
+The reference name allow an explicit name to be set from which the
+terms matched by the condition can be referred in a condition. This is
+useful when multiple conditions of the same type are used in the
+condition of the same rule.
+</p>
+
+<p>
+If no reference name is given, the text standing between the square
+brackets of the condition is used as reference name.
+</p>
+
+
+<h2 id="condition-label">Label</h2>
+
+<p>
+If a label is specified, the condition will only match terms having
+that label (the label is the index in query terms).  If a label is not
+set, the term will match if a label is not set, or if it is
+<code>default</code>.
+</p>
+
+
+<h2 id="condition">Condition</h2>
+
+<p>
+These are the supported kinds of conditions:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Condition</th>
+      <th>Syntax</th>
+      <th>Meaning</th>
+      <th>Returned value</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Term</td>
+      <td>&lt;term&gt;</td>
+      <td>True if this is the term at the current position</td>
+      <td>Determined by the <a href="#namespaces">namespace</a></td>
+    </tr>
+
+    <tr>
+      <td>Reference</td>
+      <td>[&lt;condition-name&gt;]</td>
+      <td>Evaluate a named condition</td>
+      <td>The matched term(s)</td>
+    </tr>
+
+    <tr>
+      <td>Sequence</td>
+      <td>&lt;condition&gt; &lt;condition&gt;</td>
+      <td>Match both conditions by consecutive terms in the right order in the sequence</td>
+      <td>The last nested condition value</td>
+    </tr>
+
+    <tr>
+      <td>Choice</td>
+      <td>&lt;condition&gt;, &lt;condition&gt;</td>
+      <td>Match any one of the conditions, each one tried at the current position</td>
+      <td>The last nested condition value</td>
+    </tr>
+
+    <tr>
+      <td>Group</td>
+      <td>(&lt;condition&gt;)</td>
+      <td>Evaluate the condition inside the grouping as a unit</td>
+      <td>The last nested condition value</td>
+    </tr>
+
+    <tr>
+      <td>Ellipsis</td>
+      <td>&hellip;</td>
+      <td>Matches any sequence to make the overall condition match</td>
+      <td>The matched sequence</td>
+    </tr>
+
+    <tr>
+      <td>Referable ellipsis</td>
+      <td>[&hellip;]</td>
+      <td>An ellipsis where the matched sequence can be referenced from the production</td>
+      <td>The matched sequence</td>
+    </tr>
+
+    <tr>
+      <td>Not</td>
+      <td>!&lt;condition&gt;</td>
+      <td>Matches if the condition does not match</td>
+      <td>Nothing</td>
+    </tr>
+
+    <tr>
+      <td>And</td>
+      <td>&lt;condition&gt; &amp; &lt;condition&gt;</td>
+      <td>Matches if all the conditions matches at the (same) current position</td>
+      <td>The last nested condition value</td>
+    </tr>
+
+    <tr>
+      <td>Comparison</td>
+      <td>&lt;condition&gt; <a href="#operator">&lt;operator&gt;</a> &lt;condition&gt;</td>
+      <td>True if the comparison is true for the values returned from the conditions</td>
+      <td>The last nested condition value</td>
+    </tr>
+
+    <tr>
+      <td>Literal</td>
+      <td>'&lt;literal&gt;'</td>
+      <td>Returns a value for comparison. This always evaluates to true.</td>
+      <td>The literal value</td>
+    </tr>
+
+    <tr>
+      <td>Start anchor</td>
+      <td>. &lt;condition&gt;</td>
+      <td>Matches condition only if it matches the query from the start</td>
+      <td>The matched sequence</td>
+    </tr>
+
+    <tr>
+      <td>End anchor</td>
+      <td>&lt;condition&gt; .</td>
+      <td>Matches condition only if it matches the query to the end</td>
+      <td>The matched sequence</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2 id="operator">Comparison Condition Operators</h2>
+
+<p>
+The possible operators of a comparison condition are
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operator</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td>=</td><td>Left and right values are equal</td></tr>
+    <tr><td>&lt;=</td><td>Left value is smaller or equal</td></tr>
+    <tr><td>&gt;=</td><td>Left value is larger or equal</td></tr>
+    <tr><td>&lt;</td><td>Left value is smaller</td></tr>
+    <tr><td>&gt;</td><td>Left value is larger</td></tr>
+    <tr><td>=~</td><td>Left value contains right value as a substring</td></tr>
+  </tbody>
+</table>
+
+
+
+<h1 id="production-list">Production List</h1>
+
+<p>
+A production list consists of a space-separated list
+of <em>productions</em> which are carried out when the production of a
+rule is matched.  A production can be preceded by the type of term to
+produce, a label (index in queries), and followed by the weight
+(importance) of the produced value:
+</p>
+
+<pre class="brush: text">
+(<a href="#term-type">&lt;term-type&gt;</a>)?(<a href="#production-label">&lt;label&gt;</a>:)?<a href="#production">&lt;production&gt;</a>(!<a href="#weight">&lt;weight&gt;</a>)?
+</pre>
+
+
+<h2 id="term-type">Term Type</h2>
+
+<p>
+The default term type is the term type of the context which the term
+is added to.  The possible explicit term types are
+</p>
+
+<table>
+  <thead>
+    <tr><th>Syntax</th><th>Meaning</th></tr>
+    </thead>
+
+  <tbody>
+    <tr><td>?</td><td>Insert as an OR term</td></tr>
+    <tr><td>+</td><td>Insert as an AND term</td></tr>
+    <tr><td>$</td><td>Insert as a value (RANK) term</td></tr>
+    <tr><td>-</td><td>Insert as a NOT term</td></tr>
+  </tbody>
+</table>
+
+
+<h2 id="production-label">Label</h2>
+<p>
+If included, the label decides the label the produced term(s) will
+have in the namespace. This is the index in the query namespace.
+</p>
+
+
+<h2 id="production">Production</h2>
+<p>
+There are three types of productions:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Production</th><th>Syntax</th><th>Meaning</th></tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Literal term</td>
+      <td>&lt;term&gt;</td>
+      <td>Produce this term literally</td>
+    </tr>
+
+    <tr>
+      <td>Literal term with value</td>
+      <td>&lt;term&gt;='&lt;value&gt;'</td>
+      <td>Produce this term and value literally.</td>
+    </tr>
+
+    <tr>
+      <td>Reference</td>
+      <td>[&lt;condition-reference&gt;]</td>
+      <td>Produce the terms matched by the referenced condition. The
+        reference name is either the name of a named condition used in
+        the condition, an
+        ellipsis&mdash;<code>&hellip;</code>&mdash;or an explicit
+        condition reference name.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2 id="weight">Weight</h2>
+<p>
+The weight is a percentage integer denoting the importance of the
+produced term. The default is 100.  In the query namespace the weight
+becomes the term weight, determining the relevance contribution of the
+term.
+</p>
+
+</body>
+</html>

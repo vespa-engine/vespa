@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Adding support for special tokens</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="November 2012" />
+  <meta name="authors" content="mathiasm, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes some additional features for doing extra
+processing of text during indexing and query processing.
+</p>
+
+
+<h2 id="document-processing">Document Processing</h2>
+<p>
+Before indexing the input documents, it is possible to modify the data
+using the <a href="search/docproc-development.html">document processing
+framework</a>. It is highly recommended you look at this if you want
+to handle problems as reformatting/stripping/splitting data, or any
+kind of transforms. The framework handles load balancing, error
+handling, and makes it easy to to the processing on the document
+level.
+</p>
+
+
+<h2 id="specialtoken-support">Specialtoken support</h2>
+<p>
+Normally, each token that is possible to search for is found by
+considering blocks of consecutive word characters. For some
+applications it may desirable to allow a few extra tokens containing
+non-word characters. By enabling the Specialtoken Support, you will be
+able to both index and search for such tokens.
+</p>
+
+<p>
+In addition, for some tokens there may be several different ways of
+writing essentially the same thing. Using the Specialtoken Support,
+you may add replacements to the tokens, allowing you to map them to
+arbitrary strings, for instance a common base form or a form without
+non-word characters.
+</p>
+
+<h3 id="configuration">Configuration</h3>
+
+<p>
+Add a <a href="reference/services.html#generic-config">generic
+config</a> for specialtokens to <em>services.xml</em> in the
+application package. The config should specify a token list called
+"default", with a list of tokens. For each token you may also specify
+an optional replacement, that is used to translate the specified token
+to an actual query term.  Look at the <a
+ href="configdefinitions/specialtokens.html">config definition</a> for
+details.  </p> <p> An example configuration is given below:
+</p>
+
+<pre class="code">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;services version='1.0'&gt;
+  &lt;config name='vespa.configdefinition.specialtokens'&gt;
+     &lt;tokenlist&gt;
+       &lt;item&gt;
+         &lt;name&gt;default&lt;/name&gt;
+         &lt;tokens&gt;
+           &lt;item&gt;
+             &lt;token&gt;c++&lt;/token&gt;
+           &lt;/item&gt;
+           &lt;item&gt;
+             &lt;token&gt;wal-mart&lt;/token&gt;
+             &lt;replace&gt;walmart&lt;/replace&gt;
+           &lt;/item&gt;
+           &lt;item&gt;
+             &lt;token&gt;.net&lt;/token&gt;
+           &lt;/item&gt;
+       &lt;/item&gt;
+    &lt;/tokenlist&gt;
+  &lt;/config&gt;
+
+  ...
+
+&lt;/services&gt;
+</pre>
+
+<p class="alert alert-success">
+Please not that all special tokens must be lower-cased.
+</p>
+
+<h3 id="using-special-tokens">Using Special Tokens</h3>
+<p>
+When <em>specialtokens</em> config is present, it is used behind the
+scenes both during indexing and query processing. There is no need to
+enable it for particular fields, or indicate the need for special
+token handling during query input.
+</p>
+
+
+
+<h2 id="query-phrasing">Query Phrasing</h2>
+
+<p>
+Another option for processing text is to use query phrasing to make it
+possible to search on phrases, i.e. <em>New York</em> and <em>Rolling
+Stones</em>. This is described in
+the <a href="query-phrasing.html">query phrasing guide</a>.
+</p>
+
+</body>
+</html>

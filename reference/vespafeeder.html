@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespafeeder</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2006" />
+  <meta name="authors" content="thomasg" />
+</head>
+
+<body>
+
+<p class="ingress" data-annotation="Rewrite entire document to match the other command-line tool documents">
+This page provides the reference documentation on
+the <code>vespafeeder</code> tool.
+</p>
+
+
+
+<h1 id="vespafeeder">vespafeeder</h1>
+
+<p>
+The vespafeeder binary is a feeding client that parses XML and JSON input as
+Vespa document operations and sends them to your Vespa
+installation. All input files to be parsed must be
+in <a href="document-xml-format.html">Document
+XML</a> format or
+<a href="document-json-format.html">Document JSON format</a>. File
+type is auto-detected.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td>--abortondataerror &lt;yes|no&gt;</td><td>Whether or not to abort if the xml input has errors.</td></tr>
+    <tr><td>--abortonsenderror &lt;yes|no&gt;</td><td>Whether or not to abort if an error occured while sending operations to Vespa.</td></tr>
+    <tr><td>--configid &lt;string&gt;</td><td>The identifier to use when subscribing to configuration.</td></tr>
+    <tr><td>--file &lt;string&gt;</td><td>The name of the input files to read. These can also be passed as arguments without
+        the option prefix. If none is given, this tool parses identifiers from standard in.</td></tr>
+    <tr><td>--help</td><td>Shows this help page.</td></tr>
+    <tr><td>--noretry</td><td>Turns off retries of recoverable failures.</td></tr>
+    <tr><td>--retrydelay &lt;number&gt;</td><td>The time (in seconds) to wait between retries of a failed operation.</td></tr>
+    <tr><td>--route &lt;string&gt;</td><td>The name of the route to send to (from services.xml).</td></tr>
+    <tr><td>--timeout &lt;number&gt;</td><td>The time (in seconds) allowed for sending operations.</td></tr>
+    <tr><td>--trace &lt;number&gt;</td><td>The trace level of network traffic.</td></tr>
+    <tr><td>--validate</td><td>Run validation tool on input files instead of feeding them.</td></tr>
+    <tr><td>--verbose</td><td>Enabled verbose output of progress.</td></tr>
+    <tr><td>--weight</td><td>The relative weight of this feeder, used by Vespa to share capacity among clients.</td></tr>
+    <tr><td>--create-if-non-existent</td><td>Enable setting of create-if-non-existent to true on all document updates in the given xml feed.</td></tr>
+  </tbody>
+</table>
+
+<p>
+The typical use of vespafeeder is:
+</p>
+
+<pre class="brush: cli">
+$ vespafeeder mydocs.xml
+</pre>
+
+<p>
+The binary parses the content of the input sequentially, and feeds
+each operation in the order in which they are written. However, since
+many operations will be pending at any one time, and because the
+processing time of an operation varies, there is no guarantee as to
+which order operations reach the backend. Because this can be very
+important when it comes to operations that apply to the same document
+id, there is logic in place to never send an operation for a document
+id to which there is already a pending operation.
+</p>
+
+<p class="alert alert-success">
+The most important option to note is <code>--abortondataerror</code>
+which you might want to set to <code>no</code> in case you know that
+your input XML has issues. You will be notified about any parsing
+errors at the end of the feed, but the feeder will not abort.
+</p>
+
+<p>
+vespafeeder prints a report on the activity performed by it at the end
+of the feed. If you want to print this report regularly (once per
+minute), you can do this by turning on the --verbose option.
+</p>
+<p>
+Example of vespafeeder output:
+</p>
+<pre class="brush: cli">
+Messages sent to vespa (route default) :
+----------------------------------------
+PutDocument: ok: 999997 msgs/sec: 411.38 failed: 0 ignored: 0 latency(min, max, avg): 2, 4360, 99
+</pre>
+<p>
+The number of ok/failed documents and the min/max/average latencies of these should hopefully be
+self-explanatory. The <em>ignored</em> value reports the number of documents that could not be
+routed to any content clusters because they did not match any of the
+<a href="../content/setup-reference.html#documents">configured document types</a> or selections.
+Some examples of why this could happen are:
+</p>
+<ul>
+  <li>You have removed a document type from your clusters and your feed file contains documents with this type</li>
+  <li>You have configured one or more selection expressions that restrict the documents the cluster will accept and your feed file contains documents that are excluded by all these. E.g. you have a selection that says the cluster will only accept or store documents that are less than 30 days old and your feed file contains documents that are 30+ days old.</li>
+</ul>
+
+</body>
+</html>

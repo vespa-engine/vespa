@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="May 2016" />
+  <meta name="authors"    content="steinar,kraune" />
+  <title>Getting Metrics from an Application</title>
+</head>
+
+<body>
+
+<p>
+A step by step description on how to emit metrics from your components:
+<ol>
+    <li>Add a MetricReceiver (<a
+    href="../javadoc/index.html?com/yahoo/metrics/simple/MetricReceiver.html">com.yahoo.metrics.simple.MetricReceiver</a>)
+    instance to the constructor of the component in question. It will be
+    injected by the container.</li>
+
+    <li>Declare the gauges and counters you will need using the <em>declare</em>
+    methods on the metric receiver. You can optionally set arbitrary metric
+    dimensions to default values at declaration time (Refer to javadoc).</li>
+
+    <li>Each time there is some data to measure, invoke the <em>sample</em> method on
+    gauges or the <em>add</em> method on counters. When sampling data, any dimensions
+    can optionally be set.</li>
+</ol>
+</p><p>
+The gauges and counters you declare are inherently thread safe.
+</p>
+
+
+<h1 id="example">Example</h1>
+<pre>
+package com.yahoo.example;
+
+import java.util.Optional;
+import com.yahoo.metrics.simple.Gauge;
+import com.yahoo.metrics.simple.MetricSettings;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.searchchain.Execution;
+
+public class HitCountSearcher extends Searcher {
+    private static final String LANGUAGE_DIMENSION_NAME = "query_language";
+    private static final String EXAMPLE_METRIC_NAME = "example_hitcounts";
+    private final Gauge hitCountMetric;
+
+    public HitCountSearcher(MetricReceiver receiver) {
+        this.hitCountMetric = receiver.declareGauge(EXAMPLE_METRIC_NAME, Optional.empty(),
+                new MetricSettings.Builder().histogram(true).build());
+    }
+
+    @Override
+    public Result search(Query query, Execution execution) {
+        Result result = execution.search(query);
+        hitCountMetric
+                .sample(result.getTotalHitCount(),
+                        hitCountMetric.builder()
+                                .set(LANGUAGE_DIMENSION_NAME, query.getModel().getParsingLanguage().languageCode())
+                                .build());
+        return result;
+    }
+}
+</pre>
+<p>You can then look at <em>http://host:port/state/v1/metrics</em> where the new
+event <em>example_hitcounts</em> should be available in the list of metrics. The
+histograms for the last five minutes of logged data are available as CSV per
+dimension at <em>http://host:port/state/v1/metrics/histograms</em> In our
+example, that would include the estimated total hit counts for queries, grouped
+by language. The underlying implementation of the histograms is
+<a href="http://hdrhistogram.org/">HdrHistogram</a>, and the CSV is simply what
+that library generates itself.</p>
+
+</body>
+</html>

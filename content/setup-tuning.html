@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Tuning</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+  <h1 id="redundancy">Redundancy</h1>
+  <p>
+    The redundancy factor sets how many backend instances stores copies of the
+    same data. Having many copies allows for more nodes to go down without
+    data loss or loss of availability. Additionally, there are usecases where
+    several copies of the same data is wanted to be able to use more CPU or
+    memory resources to process the same data in parallel.
+  </p>
+  <p>
+    The content layer is designed to cope with R-1 simultaneous node errors,
+    where R is the redundancy. The content layer assumes that there are several
+    copies, such that a short downtime period for one copy will not cause
+    availability issues. A redundancy value of 1 is supported, but is not
+    handled ideally. It is recommended to always use a redundancy of at least 2.
+  </p>
+  <p>
+    Normally write operations will wait for replies from every copy and fail if
+    less than redundancy copies are written successfully. Optionally, one can
+    specify to reply to client as soon as a given number of copies are written
+    successfully. This may help latency if all copies are not kept local to
+    each other, and may reduce resources consumption due to reverts. If
+    remaining pending writes fail, the bucket will be inconsistent, and the
+    cluster will keep attempting to self-correct until this is resolved.
+  </p>
+
+  <h1 id="distributionkey">Distribution keys</h1>
+  <p>
+    Distribution keys are used to identify nodes and groups for the
+    distribution algorithm. If a node changes distribution key, the distribution
+    algorithm will think of it as a new node, and distribution will thus change
+    drastically. When combining several clusters into one bigger cluster you
+    may need to change some distribution keys. If you do, the backend
+    implementation may need to get files or directories renamed to fit with the
+    new key. Refer to specific documentation for the backend you are using.
+  </p>
+  <p>
+    To calculate what bucket should be on what node, the distribution algorithm
+    seeds a pseudo random number generator with the bucket identifier, and then
+    picks a random number for each unit to distribute to. The distribution key
+    decides what number in the order a given unit use. If the biggest
+    distribution key in your cluster is 500, then the distribution algorithm
+    need to calculate 501 random numbers to calculate the correct target. It is
+    thus recommended to not leave too many gaps in the distribution key range.
+  </p>
+  <p>
+    Content nodes need unique distribution keys across the whole
+    cluster, as the key is also used as a node identifier where group
+    information is not specified. Group distribution keys only need to be
+    unique among groups that share the same parent group.
+  </p>
+
+  <h1>Number of threads per backend partition - Latency or throughput</h1>
+  <p>
+    The service layer runs a number of threads to process requests found in the
+    per partition priority queue. Using many threads, many requests can be
+    processed in parallel, creating a high throughput, allowing more load before
+    the cluster is overloaded. However, processing many operations in parallel,
+    each operation may take longer. If lower priority tasks are executed at the
+    same time as high priority tasks, the higher priority tasks may be
+    affected, increasing their latency.
+  </p>
+  <p>
+    The default settings try to find a decent compromise. Do some operations in
+    parallel, but not too many. However, the model setting up the configuration
+    knows not how many CPU cores or disks are available for the backend. The
+    default values may thus not be a good fit to your hardware.
+  </p>
+  <p>
+    Having more threads than CPU cores will add to latency if CPU is a
+    bottleneck in the cluster.
+  </p>
+  <p>
+    Having many threads issuing IO requests to the same hard drives, the drive
+    firmware may reorder the requests for optimal throughput, but unless it
+    knows that a given operation have higher priority than another, high
+    priority operations will be delayed.
+  </p>
+
+  <h1>Reserving threads for high priority operations</h1>
+  <p>
+    It is possible to set up threads reserved for messages above a given
+    priority boundary. As requests can not be paused/resumed or aborted, if all
+    threads are busy, a new request have to wait until one of them
+    finish, independent of its priority. A common setup may be to only allow
+    very low priority messages in few threads. Allow normal priority in some,
+    and reserve one or two for really high priority messages.
+  </p>
+  <p>
+    While reserving threads for higher priority tasks make them able to start
+    immediately, there may still be low priority operations already running
+    using the same resource. As there is no pause/resume functionality
+    this cannot be avoided, however, one can configure that no new low priority
+    tasks are scheduled for a given partition, while a high priority operation
+    is running. This is specified through the
+    <i>lowest-priority-to-block-others</i> and <i>highest-priority-to-block</i>
+    settings.
+  </p>
+  <p>
+    Refer to the <a href="setup-throttling.html">throttling doc</a> for details
+    on what priorities exist.
+  </p>
+
+  <h1>Bucket split sizes</h1>
+  <p>
+    The content layer tries to ensure there is a suitable amount of buckets to
+    divide among the nodes. All documents are divided into buckets in the
+    client, used to calculate distributor to talk to. At this level, enough
+    buckets should exist to give a decent distribution among the distributors.
+    The distributors may split buckets further to keep bucket sizes at levels
+    suitable for the backend, or to ensure more units to split among the
+    backends and their partitions.
+  </p>
+  <p>
+    The distribution to distributors typically have less requirements for
+    an even distribution, as they use small amounts of resources. But to allow
+    read traffic only one network jump from client, it is preferred to map
+    buckets equally to service layer nodes, such that distributors have one
+    local copy of all data.
+  </p>
+  <p>
+    Different backends may have different demands for even distribution and
+    bucket sizes. The best values for a backend may also depend a lot on what
+    kind of load is most important for a given application.
+  </p>
+  <p>
+    Keeping small buckets, the distribution will be very even and bucket
+    operations will be small in size. Keeping large buckets, little memory is
+    needed for metadata operations, and bucket splitting and joining will happen
+    less often.
+  </p>
+
+  <h1>Elasticity tuning</h1>
+  <h2>Transition time</h2>
+  <p>
+    The transition time states how long a node will be in maintenance mode
+    during what looks like a controlled restart. Keeping a node in maintenance
+    mode during a restart allows a restart to happen without the cluster trying
+    to create new copies of all the data immediately. If the node have not
+    started initializing or got back up within the transition time, the node is
+    set down, in which case, new full bucket copies will be created.
+  </p>
+
+  <h2>Removing unstable nodes</h2>
+  <p>
+    Nodes that keep crashing may cause issues for a cluster. See
+    <a href="admin-automatic.html#constantly_crashing">automatically handled doc</a>
+    for details. To automatically remove such hardware, one can configure
+    how many times a node is allowed to crash before it will automatically be
+    removed. If the node has been up or down continuously for more than the
+    <i>stable state time period</i> the crash count is reset. If the crash
+    count ever goes above the <i>max premature crashes</i> setting the node will
+    be permanently disabled by the content layer, until an administrator have
+    time to look at it, and possibly fix or replace it.
+  </p>
+
+  <h2>Minimal amount of nodes required to be available</h2>
+  <p>
+    A cluster is typically sized to handle a given amount of load. A given
+    percentage of the cluster resources are required for normal operations, and
+    the remainder is the available resources that can be used if some of the
+    nodes are no longer usable.
+    If the cluster loses enough hardware, to become smaller than the minimal
+    needed to handle normal operations, it will be overloaded:
+  </p>
+  <ul>
+    <li>Remaining nodes may create disk full situation. This will likely fail a
+        lot of write operations, and if disk is shared with OS it may also stop
+        the OS from being able to perform as usual.</li>
+    <li>Partition queues will grow to maximum size. As queues are
+        processed in FIFO order, a lot of operations are likely to get long
+        latencies.</li>
+    <li>Many operations may time out while being processed, causing the
+        operation to be resent, adding more load to the cluster.</li>
+    <li>When new hardware is introduced to help, it cannot serve any requests
+        before data is moved to the new nodes from the already overloaded
+        nodes.  Moving data puts even more load on the existing nodes, and as
+        moving data is typically not high priority this may never actually
+        happen.</li>
+  </ul>
+  <p>
+    To configure what the minimal cluster size is, the
+    <i>min-distributor-up-ratio</i> and <i>min-storage-up-ratio</i> tuning
+    parameters may be set. The default values are to require half
+    the distributors and two thirds of the service layer nodes to be available,
+    though always allowing at least one node down for small clusters.
+  </p>
+  
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Sorting by Distance</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="June 2009" />
+<meta name="authors" content="arnej" />
+</head>
+
+<body>
+
+<p class="ingress" data-annotation="Still needs better wording; make it sound more sexy.">
+When you define your documents, a field can be assigned the special
+role of <em>position</em>. This enables the user to limit hits to
+within a particular area, or even to use the distance from a
+particular point as an additional criteria for calculating relevancy.
+</p>
+
+<p>
+Your typical search definition will look like this:
+</p>
+
+<pre class="brush: sd">
+search local {
+    document local {
+        field title type string {
+            indexing: index
+        }
+        field latlong type position {
+            indexing: attribute
+        }
+    }
+    fieldset default {
+        fields: title
+    }
+}
+</pre>
+
+<p>
+And the document will look like this:
+</p>
+
+<pre class="brush: xml">
+&lt;document documenttype=&quot;local&quot; documentid=&quot;id:local:local::abc123&quot;&gt;
+    &lt;title&gt;some random pizza place&lt;/title&gt;
+    &lt;latlong&gt;N37.401;W121.996&lt;/latlong&gt;
+&lt;/document&gt;
+</pre>
+
+<p>
+To add a geographical position to your search, use
+the <a href="reference/search-api.html#position">pos.ll</a>
+parameter in the query:
+</p>
+
+<pre class="code">
+&hellip;search/?query=pizza&amp;pos.ll=N37.416383%3BW122.024683
+</pre>
+
+<p>
+By default, this will limit the hits otherwise returned by the given
+query to those having a position within 50km of the Yahoo!  HQ offices
+in Sunnyvale.
+Since 50km is probably too far to go just to get some
+pizza, a more realistic example would add a radius of e.g. 5 miles:
+</p>
+
+<pre class="code">
+&hellip;search/?query=pizza&amp;pos.ll=N37.416383%3BW122.024683&amp;pos.radius=5mi
+</pre>
+
+<p>
+The <code>pos.radius</code> parameter accepts distances in kilometers
+(km), miles (mi), and meters (m).
+</p>
+
+<p>
+Each search result will have an additional summary entry that contains
+the distance from the given geographical position, in millionths of a
+degree&mdash;about 10 cm. The new entry gets the name of the search
+definition field and the suffix &ldquo;distance&rdquo;:
+<code>&lt;fieldname&gt;.distance</code>. In the examples above, the
+name would be <code>latlong.distance</code>. For documents with multiple
+positions in the attribute, the distance to the nearest position will be returned.
+</p>
+
+<p>
+The corresponding rank feature for this example would
+be <code>distance(latlong)</code> or <code>closeness(latlong)</code>
+or <code>closeness(latlong).logscale</code> &mdash; the last is probably the
+most useful when combining distance ranking with textual relevance
+ranking.
+</p>
+
+<h2>Summary fields and x/y format</h2>
+For historical reasons, when querying with a position you can
+get up to three summary fields.  If your searchdefinition looks
+like this:
+<pre class="code">
+    field mygeo type position {
+      indexing: attribute | summary
+    }
+</pre>
+you'll get output which in the default rendering looks like this:
+<pre class="code">
+    &lt;field name="mygeo"&gt;
+      &lt;struct-field name="y"&gt;37374821&lt;/struct-field&gt;
+      &lt;struct-field name="x"&gt;-122057174&lt;/struct-field&gt;
+    &lt;/field&gt;
+    &lt;field name="mygeo.position"&gt;&lt;position x="-122057174" y="37374821" latlong="N37.374821;W122.057174" /&gt;&lt;/field&gt;
+    &lt;field name="mygeo.distance"&gt;48921&lt;/field&gt;
+</pre>
+
+<p>
+The first summary field here ("latlong") is only generated if you
+specify "summary" in the indexing statement.  It is mostly intended for
+programmatic use in a result processor (a Searcher).
+
+<p>
+The second summary field is generated as XML in the back-end, with XML
+attributes for x/y and also a "latlong" attribute with the same format
+as the input (feeding) format.
+
+<p>
+Note that the numbers used for "x" and "y" in the above two fields are
+integers - it's a direct representation of the internal x/y struct used
+for position.  These are in millionths of a degree, so it's quite easy
+to convert.  Also note which is which of "x" and "y":
+<img src="img/Mercator_projection.jpg">
+
+<p>
+It's just putting a normal coordinate system on top of the world map,
+so "x" is the longitude (east-west) and "y" the latitude (north-south).
+
+<p>
+The third summary field is the distance, also as an integer, and also in
+millionths of degrees.  When converting to internal units (millionths
+of degrees), the Earth polar radius is used, so
+<code>degrees = 180.0 * meters / (Math.PI * 6356752.0);</code>
+is the basic conversion formula.
+
+<h2>Speficying a bounding box</h2>
+When searching for all documents that has a location in a given
+map view, it is most convenient to speficy a bounding box instead
+of searching for all documents within a radius from a point.
+This can be achived using the <code>pos.bb</code> parameter in
+the query:
+</p>
+
+<pre class="code">
+&hellip;search/?query=pizza&amp;pos.bb=n=37.44899,s=37.3323,e=-121.98241,w=-122.06566
+</pre>
+
+The format is a simplified version of the XML format returned by GWS such as by
+<a href="http://gws.maps.yahoo.com/findlocation?q=sunnyvale,ca&flags=X">
+http://gws.maps.yahoo.com/findlocation?q=sunnyvale,ca&flags=X
+</a> and it's also simple to transform a bounding box such as given by geoplanet:
+<a href="http://developer.yahoo.com/geo/geoplanet/guide/api-reference.html#api-place">
+http://developer.yahoo.com/geo/geoplanet/guide/api-reference.html#api-place
+</a> which returns something like this:
+<pre class="code">
+  &lt;boundingBox&gt;
+    &lt;southWest&gt;
+      &lt;latitude&gt;40.183868&lt;/latitude&gt;
+      &lt;longitude&gt;-74.819519&lt;/longitude&gt;
+    &lt;/southWest&gt;
+    &lt;northEast&gt;
+      &lt;latitude&gt;40.248291&lt;/latitude&gt;
+      &lt;longitude&gt;-74.728798&lt;/longitude&gt;
+    &lt;/northEast&gt;
+  &lt;/boundingBox&gt;
+</pre>
+here you have (in order) south/west corner, north/east corner, which is simple to use in a query like this:
+<pre class="code">
+&hellip;search/?query=pizza&amp;pos.bb=s=40.183868,w=-74.819519,n=40.248291,e=-74.728798
+</pre>
+
+For convenience, the directions S/W/N/E can appear in any order, and be speficied
+in lower or upper case, but you must have N>=S and E>=W.
+
+
+<h2>Using several position fields</h2>
+<p>
+For some applications, it can be useful to have several position
+attributes that may be searched.  For example an address book
+application could use positions for home address and work address.
+This is possible to declare without any special considerations in the
+search definition file, but needs some extra handling on the query
+side.  A single query can only search in one of the position
+attributes, and must specify which attribute with
+a <a href="reference/search-api.html#pos.attribute">pos.attribute</a>
+query parameter.  If you want to have some searches that spans several
+fields you must make a combined field (outside vespa or in a document
+processor before indexing) that holds them all.
+</p>
+<p>
+Example:
+<pre class="brush: sd">
+search address {
+    document address {
+        field homeaddress type string {
+            indexing: summary | index
+        }
+        field homelatlong type position {
+            indexing: attribute
+        }
+        field workaddress type string {
+            indexing: summary | index
+        }
+        field worklatlong type position {
+            indexing: attribute
+        }
+        field bothlatlong type array<position> {
+            indexing: attribute
+        }
+    }
+    field bothaddress type string {
+        indexing: input homeaddress . " " . input workaddress | index
+    }
+}
+</pre>
+Here we assume that the home fields will contain the address and
+position of your house, the work fields the address and position of
+your workplace, while the "bothlatlong" field is assumed to be filled
+with the positions of both house and workplace somehow.  In a query
+it's then possible to say
+<pre class="code">
+?query=homeaddress:sunnyvale&pos.attribute=homelatlong&pos.ll=N37.416383%3BW122.024683&pos.radius=5km
+</pre>
+which is unlikely to give very many hits, since it's mostly a business district around Yahoo! headquarters, while
+<pre class="code">
+?query=workaddress:sunnyvale&pos.attribute=worklatlong&pos.ll=N37.416383%3BW122.024683&pos.radius=5km
+</pre>
+would show lots of people working in Sunnyvale; use
+"pos.attribute=bothlatlong" for cases where it's uncertain if home
+address or work address position was wanted.
+</body>
+</html>

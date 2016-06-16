@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>services.xml - 'search/tuning'</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016">
+  <meta name="authors" content="geirst">
+</head>
+
+<body>
+
+<p>
+This document lists the syntax and content of the element <code>&lt;tuning&gt;</code> found
+within <a href="setup-reference.html#proton"><code>&lt;content&gt&lt;engine&gt;&lt;proton&gt;</code></a>
+in <em>services.xml</em> and all its sub elements.
+</p>
+
+
+<h1 class="param" id="tuning">tuning</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="setup-reference.html#proton"><code>&lt;proton&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to specify tune settings for the search nodes in an indexed content cluster
+using proton as engine, and is for advanced Vespa users.
+</p>
+
+<h2>Sub Elements</h2>
+<table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+    <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    </tbody>
+</table>
+
+<pre class="code">
+&lt;content&gt;
+  &lt;engine&gt;
+    &lt;proton&gt;
+      &lt;tuning&gt;
+        &lt;searchnode&gt;
+        &lt;/searchnode&gt;
+      &lt;/tuning&gt;
+    &lt;/proton&gt;
+  &lt;/engine&gt;
+&lt;/content&gt;
+</pre>
+
+
+<h1 class="param" id="tuningsearchnode">searchnode</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuning"><code>&lt;tuning&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to specify tune settings for all search nodes in
+an indexed content cluster.
+</p>
+
+<h2>Sub Elements</h2>
+<table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+    <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr>
+        <td><a href="#tuningrequestthreads"><code>&lt;requestthreads&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    <tr>
+        <td><a href="#tuningflushstrategy"><code>&lt;flushstrategy&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    <tr>
+        <td><a href="#tuningresizing"><code>&lt;resizing&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    <tr>
+        <td><a href="#tuningindex"><code>&lt;index&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    <tr>
+        <td><a href="#tuningattribute"><code>&lt;attribute&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    <tr>
+        <td><a href="#tuningsummary"><code>&lt;summary&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
+    </tbody>
+</table>
+
+<pre class="code">
+&lt;tuning&gt;
+    &lt;searchnode&gt;
+        &lt;requestthreads&gt;&lt;/requestthreads&gt;
+        &lt;flushstrategy&gt;&lt;/flushstrategy&gt;
+        &lt;resizing&gt;&lt;/resizing&gt;
+        &lt;index&gt;&lt;/index&gt;
+        &lt;attribute&gt;&lt;/attribute&gt;
+        &lt;summary&gt;&lt;/summary&gt;
+    &lt;/searchnode&gt;
+&lt;/tuning&gt;
+</pre>
+
+<h1 class="param" id="tuningrequestthreads">requestthreads</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune the number of request threads used on a
+search node.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+  <li><code>search</code>: The number of search threads
+      (default=64).</li>
+  <li><code>persearch</code>: The number of search threads used per search
+      (default=1).</li>
+  <li><code>summary</code>: The number of summary threads
+      (default=16).</li>
+</ul>
+</p>
+
+<pre class="code">
+&lt;requestthreads&gt;
+    &lt;search&gt;64&lt;/search&gt;
+    &lt;persearch&gt;1&lt;/persearch&gt;
+    &lt;summary&gt;16&lt;/summary&gt;
+&lt;/requestthreads&gt;
+</pre>
+
+
+<h1 class="param" id="tuningflushstrategy">flushstrategy</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune the strategy used for deciding when and
+which components to flush to disk.  We are using the terms memory gain
+and disk gain when describing the the tune settings.  In this context
+memory gain is how much memory we can free by flushing a component,
+and disk gain is how much disk space we can free by flushing a
+component (typically by using compaction).
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>native</code>:
+    <ul>
+        <li><code>total</code>
+        <ul>
+            <li><code>maxmemorygain</code>:
+            The total maximum memory gain (in bytes) among all components before running flush (default=4294967296 (4 GB)).
+            </li>
+            <li><code>diskbloatfactor</code>:
+            Trigger flush if the total disk gain (in bytes) among all components is larger than the
+            given factor times the current total disk usage (default=0.2)
+            </li>
+        </ul>
+        </li>
+        <li><code>component</code>
+        <ul>
+            <li><code>maxmemorygain</code>:
+            The maximum memory gain (in bytes) by a single component before running flush (default=1073741824 (1 GB)).
+            </li>
+            <li><code>diskbloatfactor</code>:
+            Trigger flush if the disk gain (in bytes) by a single component is larger than the
+            given factor times the current disk usage by that component (default=0.2).
+            </li>
+            <li><code>maxage</code>:
+            The maximum age (in seconds) of unflushed content for a single component before running flush (default=86400 (24h)).
+            </li>
+        </ul>
+        </li>
+        <li><code>transactionlog</code>
+        <ul>
+            <li><code>maxentries</code>:
+            The maximum number of entries in the transaction log for a document type before running flush (default=1000000 (1 M)).
+            </li>
+            <li><code>maxsize</code>:
+            The total maximum size (in bytes) of transaction logs for all document types before running flush (default=21474836480 (20 GB)).
+            </li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;flushstrategy&gt;
+    &lt;native&gt;
+        &lt;total&gt;
+            &lt;maxmemorygain&gt;4294967296&lt;/maxmemorygain&gt;
+            &lt;diskbloatfactor&gt;0.2&lt;/diskbloatfactor&gt;
+        &lt;/total&gt;
+        &lt;component&gt;
+            &lt;maxmemorygain&gt;1073741824&lt;/maxmemorygain&gt;
+            &lt;diskbloatfactor&gt;0.2&lt;/diskbloatfactor&gt;
+            &lt;maxage&gt;86400&lt;/maxage&gt;
+        &lt;/component&gt;
+        &lt;transactionlog&gt;
+            &lt;maxentries&gt;1000000&lt;/maxentries&gt;
+            &lt;maxsize&gt;21474836480&lt;/maxsize&gt;
+        &lt;/transactionlog&gt;
+    &lt;/native&gt;
+&lt;/flushstrategy&gt;
+</pre>
+</p>
+
+<h1 class="param" id="tuningresizing">resizing</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune settings that deal with resizing of data structures to handle more documents.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>initialdocumentcount</code>:
+    The data structures used by the search node will be initialized to handle this amount of documents before
+    the need for resizing. Setting this value can help speed up the initial feed of documents (default=1024).
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;resizing&gt;
+    &lt;initialdocumentcount&gt;1024&lt;/initialdocumentcount&gt;
+&lt;/resizing&gt;
+</pre>
+</p>
+
+
+<h1 class="param" id="tuningindex">index</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune various aspect with the handling of disk and memory indexes.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>io</code>
+    <ul>
+        <li><code>write</code>:
+        Controls io write options used during index dump and fusion (values={normal,directio}, default=directio).
+        </li>
+        <li><code>read</code>:
+        Controls io read options used during index dump and fusion (values={normal,directio}, default=directio).
+        </li>
+        <li><code>search</code>:
+        Controls io read options used during searching in disk index (values={normal,directio,mmap,mlock}, default=mmap).
+        </li>
+    </ul>
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;index&gt;
+    &lt;io&gt;
+        &lt;write&gt;directio&lt;/write&gt;
+        &lt;read&gt;directio&lt;/read&gt;
+        &lt;search&gt;mmap&lt;/search&gt;
+    &lt;/io&gt;
+&lt;/index&gt;
+</pre>
+</p>
+
+
+<h1 class="param" id="tuningattribute">attribute</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune various aspect with the handling of attribute vectors.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>io</code>
+    <ul>
+        <li><code>write</code>:
+        Controls io write options used during flushing of attribute vectors (values={normal,directio}, default=directio).
+        </li>
+    </ul>
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;attribute&gt;
+    &lt;io&gt;
+        &lt;write&gt;directio&lt;/write&gt;
+    &lt;/io&gt;
+&lt;/attribute&gt;
+</pre>
+</p>
+
+
+<h1 class="param" id="tuningsummary">summary</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune various aspect with the handling of document summary.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>io</code>
+    <ul>
+        <li><code>write</code>:
+        Controls io write options used during flushing of stored documents (values={normal,directio}, default=directio).
+        </li>
+        <li><code>read</code>:
+        Controls io read options used during reading of stored documents (values={normal,directio,mmap,mlock}, default=mmap).
+        </li>
+    </ul>
+    </li>
+    <li><code>store</code>
+    <ul>
+        <li><code>cache</code>: Used to tune the cache used by the document store. Not in use by default.
+        <ul>
+            <li><code>maxsize</code>:
+            The maximum size of the cache in bytes (default=0).
+            </li>
+            <li><code>compression</code>
+            <ul>
+                <li><code>type</code>:
+                The compression type of the documents while in the cache (values={none,lz4}, default=lz4).
+                </li>
+                <li><code>level</code>:
+                The compression level of the documents while in cache (default=9).
+                </li>
+            </ul>
+            </li>
+        </ul>
+        </li>
+        <li><code>logstore</code>: Used to tune the actual document store implementation (log-based).
+        <ul>
+            <li><code>maxfilesize</code>:
+            The maximum size (in bytes) per summary file on disk (default=1000000000).
+            </li>
+            <li><code>maxdiskbloatfactor</code>:
+            When compacting the document store, this will be done until the disk bloat of the summary store
+            is less than the total disk usage of the summary store times the given factor (default=0.1).
+            </li>
+            <li><code>chunk</code>
+            <ul>
+                <li><code>maxsize</code>:
+                The maximum size (in bytes) of a chunk (default=65536).
+                </li>
+                <li><code>maxentries</code>:
+                The maximum number of documents in a chunk (default=256).
+                </li>
+                <li><code>compression</code>
+                <ul>
+                    <li><code>type</code>:
+                    The compression type of the documents in the summay store (values={none,lz4}, default=lz4).
+                    </li>
+                    <li><code>level</code>:
+                    The compression level of the documents in the summay store (default=9).
+                    </li>
+                </ul>
+                </li>
+            </ul>
+            </li>
+        </ul>
+        </li>
+    </ul>
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;summary&gt;
+    &lt;io&gt;
+        &lt;write&gt;directio&lt;/write&gt;
+        &lt;read&gt;mmap&lt;/read&gt;
+    &lt;/io&gt;
+    &lt;store&gt;
+        &lt;cache&gt;
+            &lt;maxsize&gt;0&lt;/maxsize&gt;
+            &lt;compression&gt;
+                &lt;type&gt;lz4&lt;/type&gt;
+                &lt;level&gt;9&lt;/level&gt;
+            &lt;/compression&gt;
+        &lt;/cache&gt;
+        &lt;logstore&gt;
+            &lt;maxfilesize&gt;1000000000&lt;/maxfilesize&gt;
+            &lt;maxdiskbloatfactor&gt;0.1&lt;/maxdiskbloatfactor&gt;
+            &lt;chunk&gt;
+                &lt;maxsize&gt;65536&lt;/maxsize&gt;
+                &lt;maxentries&gt;256&lt;/maxentries&gt;
+                &lt;compression&gt;
+                    &lt;type&gt;lz4&lt;/type&gt;
+                    &lt;level&gt;9&lt;/level&gt;
+                &lt;/compression&gt;
+            &lt;/chunk&gt;
+        &lt;/logstore&gt;
+    &lt;/store&gt;
+&lt;/summary&gt;
+</pre>
+</p>
+
+
+</body>
+</html>
+
+

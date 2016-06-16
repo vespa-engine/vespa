@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Cluster and node states</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="humbe,kraune" />
+</head>
+<body>
+
+<p>
+  Clients route requests to distributors using the distribution algorithm.
+  Node states are input to the algorithm.
+  Distributors use the distribution algorithm to keep bucket copies on correct
+  storage nodes. To do this, it needs to know which storage nodes are available
+  to hold copies and what their capacities are.
+  Service layer nodes may split requests between different partitions, in which
+  case it needs to know what partitions are available.
+  To achieve this, state is tracked for all the major components of the content
+  layer.
+</p>
+
+<h1 id="service-layer-state">Service layer node state</h1>
+<dl>
+  <dt>Up</dt>
+  <dd>The node is up and available to keep buckets and serve requests.</dd>
+
+  <dt>Down</dt>
+  <dd>The node is not available, and can not be used. The distribution algorithm
+      will not consider this node for bucket placement.</dd>
+
+  <dt>Initializing</dt>
+  <dd>The node is starting up. It knows what buckets it stores data for, and may
+      serve requests, but it does not know the metadata for all its buckets yet,
+      such as checksums and document counts. The distribution algorithm will
+      consider this node as available when calculating bucket placement.
+  </dd>
+
+  <dt>Stopping</dt>
+  <dd>This node is stopping and is expected to be down soon. This state is
+      typically only exposed to the cluster controller to tell why the node
+      stopped. The cluster controller will expose the node as down or in
+      maintenance mode for the rest of the cluster. This state is thus not seen
+      by the distribution algorithm.
+  </dd>
+
+  <dt>Maintenance</dt>
+  <dd>This component is temporarily unavailable. The distribution algorithm will
+      count this node as available for bucket placement, causing less than
+      redundancy copies to be available. This mode is typically used to mask a
+      down state during controlled node restarts, or by an administrator that
+      need to do some short maintenance work, like upgrading software or restart
+      the node. Using this mode, new copies of the documents stored on this node
+      will not be created, allowing the node to be down with less of a performance
+      impact on the rest of the cluster.
+  </dd>
+  <dt>Retired</dt>
+  <dd>This node is available and can serve requests. The distribution algorithm
+      will assume this node is unavailable when calculating bucket placement.
+      This mode may be used when you want to remove nodes from the cluster, but
+      not temporarily lose redundancy. By setting node in retired mode, it will
+      keep serve its share of the load for the buckets it has, but when there
+      are free resources in the cluster, buckets will be moved to other nodes.
+      Eventually there will be no more buckets left on this node.
+  </dd>
+</dl>
+
+<h1 id="distributor-state">Distributor state</h1>
+<p>
+  The distributors use similar node states as the service layer nodes. However,
+  maintenance currently makes little sense as there is only one distributor able
+  to handle requests for a given bucket. Setting a distributor in maintenance
+  mode will make the subset owned by that distributor unavailable, and is thus
+  not recommended to be used for distributors. The cluster controller will not,
+  by default, mask distributors restarting as in maintenance mode. This will
+  change when distributor redundancy is implemented.
+</p>
+<p>
+  Retired mode also makes little sense for distributors, as ownership transfer
+  happens quickly at any distributor state change anyhow. A retired distributor
+  will not be used by any clients.
+</p>
+
+<h1 id="partition-state">Partition state</h1>
+<p>
+  The content layer allows service layer nodes to be split into multiple
+  partitions, allowing parts of a service layer node to be unavailable. If the
+  backend is actually using a JBOD disk setup, and a disk is unusable, it can
+  mark it unavailable, without causing all the capacity on the entire node to be
+  lost.
+</p>
+<p>
+  The partitions can currently only be in up or down states, and changing state
+  entails restarting the service layer node.
+</p>
+
+<h1 id="cluster-state">Cluster state</h1>
+<p>
+  The cluster controller generates a cluster state by combining node and
+  partition states for all the nodes. Each time the state is altered in a way that
+  has an effect on the cluster, the cluster state version is upped, and the
+  new cluster state is broadcasted to all the distributor and service layer nodes,
+  provided a minimum time has passed since last time a new state was created.
+</p>
+<p>
+  The cluster controller have settings for how big a percentage of distributor
+  and service layer nodes need to be available for the cluster to be available.
+  If too many nodes are unavailable, allowing load to the remaining nodes will
+  overload the nodes and completely fill them with data. This will not give a
+  good user experience, and the cluster will use quite some time to recover
+  from this afterwards. Thus, if a cluster is missing too many nodes to perform
+  decently, the entire cluster is considered down. While this sounds drastic, it
+  allows building a failover solution, or at the
+  very least, the cluster will get back to a usable state faster once enough
+  nodes are available again.
+</p>
+<p>
+  Note, that if a cluster has so many nodes unavailable that it is considered
+  down, the state of the individual nodes are irrelevant to the cluster, and thus
+  new cluster states will not be created and broadcasted before enough nodes are
+  back for the cluster to come back up. A cluster state indicating the entire
+  cluster is down, may thus have outdated data on the node level.
+</p>
+
+<h1 id="state-types">State viewed from different contexts</h1>
+<p>
+  State are viewed in different contexts:
+</p>
+
+<h2 id="reported">State reported by the nodes on requests to fetch state.</h2>
+<p>
+  The cluster controller fetches node states from every node. It attempts to always
+  have a pending node state request to every node, such that any node state change
+  can be reported back to the cluster controller immediately. These states
+  are called <em>unit states</em>.
+  States reported from the nodes themselves are either initializing, up or
+  stopping. If the node can not be reached, a down state is assumed.
+</p>
+
+<h2 id="wanted">Preferred node state</h2>
+<p>
+  By default, it is assumed that all the nodes in the cluster are preferred to be
+  up and available. Several other cases exist though:
+</p>
+<ul>
+  <li>If you want to retire a node from a cluster, you want it to be in
+      retiring mode to get buckets moved elsewhere</li>
+  <li>If you want to do quick maintenance work on the node you might want it to
+      be in maintenance mode to avoid the rest of the cluster spending
+      resources to create more copies of buckets now having one less available
+      copy.</li>
+  <li>A node with bad hardware or corrupt files may cause havoc in the cluster.
+      In such cases, the cluster is better of not using the node at all. The
+      cluster controller might detect this, or administrators looking into issues
+      may find issues and manually want to mark the node not to be used.</li>
+</ul>
+<p>
+  Administrators or cluster controller logic may alter the preferred node state
+  for a node. Preferred states must be one of up, down, maintenance or retired.
+  These are called <em>user states</em>.
+</p>
+<p>
+  Preferred node states are stored in a ZooKeeper cluster run by the configuration
+  servers. A ZooKeeper database can corrupt itself in disk full situations, so if
+  you want to not lose preferred node states due to having to delete your
+  zookeeper data, keep the zookeeper data on a partition not prone to fill up
+  with logs, cores, user data or similar. Keeping multiple zookeeper instances,
+  and not filling disks on all at the same time may also save the information.
+</p>
+
+<h2 id="current">Node states in cluster state</h2>
+<p>
+  When viewing node states from a cluster state, you see a state calculated based
+  on reported states, preferred states and historic knowledge kept of the node
+  by the cluster controller.
+</p>
+<p>
+  The cluster controller will typically mask a down reported state with a
+  maintenance state for a short time if it has seen a stopping state indicating
+  a controlled restart. Assuming the node will soon be initializing again,
+  masking it as maintenance will stop distributors from creating new copies of
+  buckets during that time window. If the node fails to come back quickly
+  though, the state will become down.
+</p>
+<p>
+  Nodes that come back up, reporting themselves as initializing, may be masked as
+  down by the cluster controller. The cluster controller might suspect it of
+  stalling or crashing during initialization due to historic events, and may
+  keep it unused for the time being to avoid the cluster to be interrupted again.
+</p>
+<p>
+  Node states seen through the currently active cluster state
+  are called <em>generated states</em>.
+</p>
+
+<h1 id="inspect">Inspecting and modifying states</h1>
+<p>
+  State information is available through the
+  <a href="api-state-rest-api.html">State Rest API</a>. This interface can
+  also be used to set user states for nodes.
+  For convenience, use the
+  command line tools. See the <code>--help</code> pages for
+  <code>vespa-get-cluster-state</code>, <code>vespa-get-node-state</code>
+  and <code>vespa-set-node-state</code>.
+</p><p>
+  More detailed information is available in the cluster controller status pages.
+  They can change at any time, and the output of these pages may require a
+  good knowledge of content layer design to make sense. Find the status pages
+  on the STATE port used by the cluster controller component at
+  <code>/clustercontroller-status/v1/</code>.
+</p>
+
+</body>
+</html>

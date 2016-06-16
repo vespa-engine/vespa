@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+<title>Component Versioning</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+<meta name="date"    content="May 2016" />
+<meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p>
+Any code component, as well as many other artifacts in the container
+can be versioned.  This document explains the format and semantics of
+these versions and how they are referred.
+</p>
+
+
+<h1 id="version-format">Version Format</h1>
+<p>
+Versions are on the form
+</p>
+<pre>
+version ::=    major [ "." minor [ "." micro [ "." qualifier ]]]
+</pre>
+
+<p>
+Where <code>major</code>, <code>minor</code>, and <code>micro</code>
+are integers and <code>qualifier</code> is any string.
+</p><p>
+A version is appended to an id separated by a colon. In cases where a
+file is created for each component version, the colon is replaced by a
+dash in the file name.
+</p>
+
+
+<h1 id="version-ordering">Version Ordering</h1>
+<p>
+Versions are ordered first by major, then minor, then micro and then
+by doing a lexical ordering on the qualifier.  This means
+that <code>a:1 &lt; a:1.0 &lt; a:1.0.0 &lt; a:1.1 &lt; a:1.1.0 &lt;
+a:2</code>
+</p>
+
+
+<h1 id="referencing-versioned-component">Referencing a Versioned Component</h1>
+<p>
+Whenever component is referenced by id (in code or configuration), a
+fully or partially specified version may be included in the reference
+by using the form <code>id:versionSpecification</code>.
+</p><p>
+Such references are resolved using the following rules:
+</p>
+
+<ul>
+<li>An id without any version specification resolves to the highest
+version not having a qualifier</li>
+<li>A partially or full version specification resolves to the highest
+version not having a qualifier which matches the specification.</li>
+<li>Versions with qualifiers are matched only by exact match.</li>
+</ul>
+
+<p>
+<strong>Example</strong>: Given a component with id <code>a</code> having these
+versions: <code>[1.1, 1.2, 1.2, 1.3.test, 2.0]</code>
+</p>
+
+<ul>
+<li>The reference <code>a</code> will resolve to <code>a:2.0</code></li>
+<li>The reference <code>a:1</code> will resolve to <code>a:1.2</code></li>
+<li>The only way to resolve to the "test" qualified version is by using the exact reference <code>a:1.3.test</code></li>
+<li>These references will not resolve: <code>a:1.3</code>, <code>a:3</code>, <code>1.2.3</code></li>
+</ul>
+
+
+<h1 id="merging-specifications-for-chained-components">Merging Specifications for Chained Components</h1>
+<p>
+In some cases, there is a need for merging multiple references into
+one.  An example is inheritance of chains of version references, where
+multiple inherited chains may reference the same component.
+</p><p>
+Two version references are said to be <em>compatible</em> if one is a
+prefix of the other.  In this case the most specific version is used.
+If they are not compatible they are <em>conflicting</em>.
+</p>
+
+
+<h2 id="example">Example</h2>
+<pre>
+&lt;searchchains&gt;
+    &lt;searcher id="Searcher:2.3" class="com.yahoo.search.example.Searcher"/&gt;
+    &lt;searcher id="Searcher:2.4" class="com.yahoo.search.example.Searcher"/&gt;
+    &lt;searchchain id="parenta"&gt;
+        &lt;searcher id="Searcher:2"&gt;&lt;/searcher&gt;
+    &lt;/searchchain&gt;
+    &lt;searchchain id="parentb"&gt;
+        &lt;searcher id="Searcher:2.3"&gt;&lt;/searcher&gt;
+    &lt;/searchchain&gt;
+    &lt;searchchain id="parentc"&gt;
+        &lt;searcher id="Searcher:2.4"&gt;&lt;/searcher&gt;
+    &lt;/searchchain&gt;
+
+    &lt;!-- This searchchain will get Searcher:2.3 --&gt;
+    &lt;searchchain id="childa" inherits="parenta parentb" /&gt;
+
+    &lt;!-- This will cause an error as Searcher:2.3 and Searcher:2.4 are conflicting--&gt;
+    &lt;searchchain id="childb" inherits="parentb parentc" /&gt;
+&lt;/searchchains&gt;
+</pre>
+
+</body>
+</html>

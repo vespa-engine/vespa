@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+<meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>services.xml - 'document-api'</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css">
+  <meta name="date" content="September 2012">
+  <meta name="authors" content="musum, eirikref">
+</head>
+
+<body><br>
+
+<p class="ingress">
+This is the reference documentation for all elements contained within
+the <code>&lt;document-api&gt;</code> section of <em>services.xml</em>.  For
+a complete overview of all sections and elements of this file,
+please see the <a href="services.html">Reference documentation for
+<em>services.xml</em></a>.
+</p>
+
+
+
+<h1 id="summary">Summary of Elements</h1>
+
+<table class="ref-toc table table-condensed table-hover table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Element</th>
+      <th>Required</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+
+  <tbody>
+
+
+      <tr>
+<td class="indent-2"><a href="#document-api"><code>&lt;document-api&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+
+        <tr>
+<td class="indent-3"><a href="#binding"><code>&lt;binding&gt;</code></a></td>
+<td><br></td>
+<td>One or more</td></tr>
+        <tr>
+<td class="indent-3"><a href="#abortondocumenterror"><code>&lt;abortondocumenterror&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#maxpendingbytes"><code>&lt;maxpendingbytes&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#maxpendingdocs"><code>&lt;maxpendingdocs&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#mbusport"><code>&lt;mbusport&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#retrydelay"><code>&lt;retrydelay&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#retryenabled"><code>&lt;retryenabled&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#route"><code>&lt;route&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#timeout"><code>&lt;timeout&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+        <tr>
+<td class="indent-3"><a href="#tracelevel"><code>&lt;tracelevel&gt;</code></a></td>
+<td><br></td>
+<td>One</td></tr>
+  </tbody>
+</table>
+
+
+<h1 id="document-api" class="ref-param">&lt;document-api&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="services-jdisc.html#jdisc"><code>&lt;jdisc&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Add document api operations to this JDisc cluster.
+  </p>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- binding                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="binding" class="ref-param">&lt;binding&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>text - must end with a '/'</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>http://*/</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One or more</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    The URI to map the document-api handlers to. The default binding is
+    http://*/. Multiple elements are allowed.
+  </p>
+
+  <p>
+    Note that each document-api handler will get its individual binding by adding a
+    suffix, e.g. the feed handler will add 'feed/', the remove handler will add 'remove/'
+    and so on. See also the example below.
+  </p>
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;binding&gt;http://*/document-api/&lt;/binding&gt;
+  &lt;binding&gt;https://*/document-api/&lt;/binding&gt;
+&lt;/document-api&gt;
+</pre>
+
+  <p>
+    With these configured bindings, the feed handler will be available at
+    <code>http://*/document-api/feed/</code> and
+    <code>https://*/document-api/feed/</code>. For other handlers, just replace
+    'feed/' with the appropriate suffix, e.g. 'get/', 'remove/' etc.
+  </p>
+</div>
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- abortondocumenterror                                             -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="abortondocumenterror" class="ref-param">&lt;abortondocumenterror&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>xsd:boolean</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>true</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Controls whether or not to abort the entire feed if a
+    document-related error occurs, ie. if a document contains an
+    unknown field. Setting this field to <code>true</code> will abort
+    the feed on such errors, while setting it to <code>false</code>
+    will cause Vespa to simply skip to the next document in the feed.
+  </p>
+
+  <p class="alert alert-info">
+    Note that malformed XML in the input will abort the feed
+    regardless of this setting.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;abortondocumenterror&gt;false&lt;/abortondocumenterror&gt;
+  &lt;timeout&gt;60&lt;/timeout&gt;
+&lt;/document-api&gt;
+</pre>
+
+</div>
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- maxpendingbytes                                                  -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="maxpendingbytes" class="ref-param">&lt;maxpendingbytes&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One<br></td>
+    </tr>
+  </tbody></table>
+
+
+  <p class="fixme" data-fixme="Rewrite into something user-friendly">
+    The maximum number of pending
+    bytes. If <code>&lt;maxpendingdocs&gt;</code> is 0 and this is set
+    to 0, this defaults to 100
+    MB. If <code>&lt;maxpendingdocs&gt;</code> is more than 0, and
+    this is set to 0, the send window is only limited by number of
+    messages sent, not the memory footprint.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;maxpendingbytes&gt;1048576&lt;/maxpendingdocs&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- maxpendingdocs                                                   -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="maxpendingdocs" class="ref-param">&lt;maxpendingdocs&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>Automatically adjusted</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    The maximum number of pending documents the client can have. By
+    default, the client will dynamically adjust the window size based
+    on the latency of the performed operations. If the parameter is
+    set, dynamic window sizing will be turned off in favor of the
+    configured value.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;maxpendingdocs&gt;1000&lt;/maxpendingdocs&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- mbusport                                                         -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="mbusport" class="ref-param">&lt;mbusport&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td class="fixme" data-fixme="Find the default">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p class="fixme" data-fixme="Find out what this is and add description">
+    Adjust the mbusport parameter.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;mbusport&gt;1234&lt;/mbusport&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- retrydelay                                                       -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="retrydelay" class="ref-param">&lt;retrydelay&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-double">Double</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Delay in seconds between retries.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;retrydelay&gt;5.5&lt;/retrydelay&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- retryenabled                                                     -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="retryenabled" class="ref-param">&lt;retryenabled&gt;</h1>
+<div class="ref-param-container fixme" data-fixme="TEXT? Shouldn't it be bool? Oh, and we need a better description">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td><a href="services.html#type-string">String</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td class="fixme" data-fixme="Find the default value">&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Enable or disable the Spooler to retry sending documents that have
+    failed.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;retryenabled&gt;false&lt;/retryenabled&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- route                                                            -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="route" class="ref-param">&lt;route&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td><a href="services.html#type-string">String</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>default</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Configure the route you want to feed documents to.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;route&gt;default&lt;/route&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- timeout                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="timeout" class="ref-param">&lt;timeout&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-double">Double</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>180.0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Configure the timeout value in seconds for an operation.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;timeout&gt;250.5&lt;/timeout&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- tracelevel                                                       -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="tracelevel" class="ref-param">&lt;tracelevel&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tbody>
+<tr>
+      <td>Contained in:</td>
+      <td><a href="#document-api"><code>&lt;document-api&gt;</code></a><a href="#document-api"><code></code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>0-9</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </tbody></table>
+
+
+  <p>
+    Confiugre the level of which to trace messages sent by the
+    Spooler. The higher the level, the more detailed descriptions will
+    be returned in the case of failures.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+  <h2>Examples</h2>
+<pre class="code">&lt;document-api&gt;
+  &lt;tracelevel&gt;3&lt;/tracelevel&gt;
+&lt;document-api&gt;
+</pre>
+
+</div>
+
+</body></html>

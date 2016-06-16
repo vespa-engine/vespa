@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Chained Components</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="steinar,bratseth,kraune" />
+</head>
+
+<body>
+
+<p >
+<a href="processing.html">Processors</a> are chained
+components. They are executed serially, with each providing some
+service or transform, and other optionally depending on these. In
+other words, a chain is a set of components with dependencies.
+</p><p>
+  Javadoc:
+  <code><a href="../javadoc/index.html?com/yahoo/component/chain/Chain.html">com.yahoo.component.chain.Chain</a></code>
+</p>
+
+<p>
+A chained component has three basic differences from a component in general:
+</p>
+<ol>
+  <li>The named services it <em>provides</em> to other components in
+  the chain.</li>
+
+  <li>The list of services or checkpoints which the component itself
+  should be <em>before</em> in a chain, in other words, its
+  dependants.</li>
+
+  <li>The list of services or checkpoints which the component itself
+  should be <em>after</em> in a chain, in other words, its
+  dependencies.</li>
+</ol>
+
+<p>
+What a component should be placed before, what it should be placed
+after and what itself provides, may be either defined using Java
+annotations directly on the component class, or it may be added
+specifically to the component declarations
+in <em><a href="../reference/services-jdisc.html">services.xml</a></em>. In
+general, the implementation should have as many of the necessary
+annotations as practical, leaving the application specific
+configuration clean and simple to work with.
+</p>
+
+
+<h2 id="ordering-components">Ordering Components</h2>
+<p>
+The execution order of the components in a chain is not defined by the
+order of the components in the configuration.  Instead the order is
+defined by adding the <em>ordering constraints</em> to the components:
+</p>
+<ul>
+  <li>Any component may declare that it <code>@Provides</code> some
+  named functionality (the names are just labels that have no meaning
+  to the container).</li>
+
+  <li>Any component may declare that it must be placed
+  <code>@Before</code> some named functionality,</li>
+
+  <li>or that it must be placed <code>@After</code> some
+  functionality.</li>
+</ul>
+
+<p>
+The container will pick any ordering of a chain consistent with the
+constraints of the components in the chain.
+</p><p>
+Dependencies can be added in two ways. Dependencies which are due to
+the code should be added as annotations in the code:
+</p>
+<pre class="code">
+import com.yahoo.processing.*;
+
+<strong>@Provides("SourceSelection")
+@Before("Federation")
+@After("IntentModel")</strong>
+public class SimpleProcessor extends Processor {
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        //TODO: Implement this
+    }
+}
+</pre>
+
+<p>
+Multiple functionality names may be specified by using the
+syntax <code>@Provides/Before/After({"A",
+"B"})</code>.
+</p><p>
+Annotations which do not belong in the code may be added in the
+<a href="../reference/services-jdisc.html">configuration</a>:
+</p>
+<pre class="code">
+&lt;jdisc version="1.0"&gt;
+
+  &lt;processing&gt;
+    &lt;processor id="processor1" class="com.yahoo.test.Processor1" /&gt;
+    &lt;chain id="default"&gt;
+      &lt;processor idref="processor1"/&gt;
+      &lt;processor id="processor2" class="com.yahoo.test.Processor2"&gt;
+        <strong>&lt;after&gt;com.yahoo.test.Processor1&lt;/after&gt;</strong>
+      &lt;/processor&gt;
+    &lt;/chain&gt;
+  &lt;/processing&gt;
+
+  &lt;nodes&gt;
+    &lt;node hostalias="node1" /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+For convenience, components always <code>Provides</code> their own
+fully qualified class name (the package and simple class name
+concatenated, e.g.
+<code>com.yahoo.example.SimpleProcessor</code>) and their
+simple name (that is, only the class name, like
+<code>SimpleProcessor</code> in our searcher case), so it is always
+possible to declare that one must execute before or after some
+particular component. This goes for both general processors, searchers
+and document processors.
+</p>
+
+<p>
+Finally, note that ordering constraints are just that; in particular
+they are not used to determine if a given search chain, or set of
+search chains, is &ldquo;complete&rdquo;.
+</p>
+
+<h2 id="chain-inheritance">Chain Inheritance and Definition</h2>
+<p>
+As implied by examples above, chains may inherit other chains
+in <em>services.xml</em>.
+</p>
+<pre class="code">
+&lt;jdisc version="1.0"&gt;
+  &lt;processing&gt;
+    &lt;chain id="foo"&gt;
+      &lt;processor id="com.yahoo.example.ConnexityProcessor"/&gt;
+      &lt;processor id="com.yahoo.example.IteratingProcessor"/&gt;
+      &lt;processor id="com.yahoo.example.SignificanceProcessor" /&gt;
+    &lt;/chain&gt;
+    &lt;chain id="bar" inherits="foo" excludes="com.yahoo.example.IteratingProcessor"&gt;
+      &lt;processor id="com.yahoo.example.ReverseProcessor" /&gt;
+    &lt;/chain&gt;
+  &lt;/processing&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias="node1" /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+<p>
+A chain will include all components from the chains named in the
+optional <code>inherits</code> attribute, exclude from that set all
+components named in the also optional
+<code>excludes</code> attribute and add all the components listed
+inside the defining tag. Both <code>inherits</code> and
+<code>excludes</code> are space delimited lists of reference
+names.
+</p>
+
+</body>
+</html>

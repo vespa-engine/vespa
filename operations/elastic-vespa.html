@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Elastic Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2016" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+<h1 id="add-remove-nodes">Add or Remove Nodes</h1>
+<p>
+The procedure for adding and removing nodes depends on node type,
+and the type specific procedures are outlined in separate
+sections below.
+</p><p>
+When <em>adding</em> new nodes to the system, install
+Vespa on the new nodes before proceeding with the lists below. Ensure
+that the new nodes are installed with <em>the same Vespa
+version</em> as the rest of the system.
+</p>
+
+
+
+<h2 id="add-remove-content-node">Add a content node</h2>
+<p>
+Adding a content node is done simply by adding a
+<em>&lt;node&gt;</em>-element to the <em>&lt;group&gt;</em>-element in <em>services.xml</em>
+and adding the new host in <em>hosts.xml</em>.
+Refer to <a href="install-multinode.html">setup information</a> for details.
+It is crucial that
+the indices of the new nodes are either set to replace another node,
+or set higher than the highest existing index. Also note that a
+non-empty content node can not be used as another index than what it
+was previously used for unless the existing data is erased.
+</p><p>
+After adding the content node, the Vespa will start
+moving data to the new node. <em>There is no need to
+re-feed</em>. While working on it, the
+performance of the system will be somewhat decreased, but all
+operations may be used normally.
+</p><p class="alert alert-success">
+<strong>Note - Remove old data if appropriate:</strong>
+The content clusters typically keep <em>remove-entries</em> (removed documents)
+for a configurable amount of time (two weeks by default).
+After this, remove-entries will be removed. If a node has been down for two weeks,
+and comes back up, it may reintroduce documents that have been removed, but where this knowledge is lost.
+To avoid reintroduction of old documents, nodes that have been down longer
+than the recovery time period needs to be cleared for old data first.
+</p><p class="alert alert-success">
+<strong>Note - Restart qrserver and topleveldispatch:</strong>
+When changing the capacity, or modifying hosts (say a host was swapped, so IP address changes),
+restart these services on the nodes running the container to allow them to
+detect the modified host. In a multi-level dispatch setup, restart topleveldispatch
+on the content nodes.
+</p><p>
+The cluster will auto-rebalance. Refer to the
+<a href="admin-procedures.html#ideal-state-distance">ideal state distance</a>
+procedure for details on how to track progress. As long as the next change
+is a safe change, waiting to start it may use additional resources compared to
+do it in one operation. For instance, by adding nodes one and one, Vespa
+moves documents to the new node, that will later be moved to the next
+new node. It is just as safe to add many nodes at the same time. Also, if
+removing nodes in a safe manner through retirement, it is safe to remove
+many nodes at the same time.
+</p>
+
+
+
+<h2 id="remove-node">Remove a content node</h1>
+<p>
+Nodes can be removed with various degrees of safety.
+</p>
+<ol>
+  <li>
+    The safest, and thus recommended way, is to put the node into the
+    <em>retired</em> state, and wait for it to stop being used before
+    actually removing it. Details below.
+  </li><li>
+    It is also possible to just rip a node out by stopping services or
+    configuring it out of the application straight away. Doing so temporarily
+    decreases redundancy, leaving the cluster at higher risk of losing documents if
+    other incidents happen at the same time. As seen in the
+    <a href="../content/content-layer-overview.html#distribution">content layer distribution overview</a>,
+    copies are stored on random nodes. If removing several nodes at a time,
+    one may end up removing all copies of some documents, or at least several
+    copies of some documents. Using the <em>retired</em>-strategy suggested above, one
+    can safely remove many nodes at a time.
+  </li><li>
+    If <a href="../content/data-placement.html">hierarchical distribution</a>
+    is used to control where copies are, one can eliminate nodes in groups.
+  </li>
+</ol>
+<p>
+Before doing 2, ensure the cluster is in a good state with multiple copies of all documents.
+Refer to the <a href="admin-procedures.html#ideal-state-distance">ideal state distance</a>
+procedure for details.
+</p>
+
+
+
+<h2 id="remove-node-retire">Removing nodes through retirement</h2>
+<p>
+Retiring nodes is the recommended way of removing nodes.
+When doing so, the nodes are still available to serve requests, but the
+cluster will start to create copies elsewhere when it has free resources.
+The retired node will get bucket copies removed as soon as new ones have been
+created. When it has none left, it will have nothing to serve and can safely
+be removed. <em>Note: this is different when using groups, where nodes will not
+decrease document count.</em>
+</p><p>
+Using retirement is even more important if the cluster is close to being
+overloaded. In these cases it may take some time before new copies have been
+created for all the buckets, giving a long time frame for other incidents to
+happen at the same time.
+</p><p>
+It is safe to retire as many nodes as wanted at the same time, providing the
+remaining nodes have enough capacity to serve all the requests. Procedure:
+</p>
+<dl>
+  <dt>Mark retired nodes</dt><dd>
+    Refer to
+    <a href="../content/admin-states.html#inspect">states</a>
+    documentation for details of how node states work, and how these can be
+    changed.
+  </dd>
+  <dt>Track progress</dt><dd>
+    <ul>
+      <li>
+        Check <a href="admin-procedures.html">Administration procedures</a>
+        for metrics for ideal state.
+      </li><li>
+        For programmatic detection, one can use the
+        <a href="../content/api-state-rest-api.html#partition-state">partition metrics</a>
+        in the State Rest API. This API lists the number of buckets stored on
+        each partition on a given node. When no partitions have any buckets left,
+        the node is completely retired. It is recommended to use the bucket count
+        rather than the document count, as remove entries should also be
+        transferred to prevent old documents from being reintroduced.
+        To track retirement progress, compare the bucket count
+        with the average bucket count on other nodes.
+      </li><li>
+        Manual detection can be done using ideal state metrics.
+      </li><li>
+        Content node <a href="admin-procedures.html#internal-status-pages">status pages</a>.
+      </li><li>
+        Used disk space is a good indicator.
+      </li>
+    </ul>
+  </dd>
+  <dt>Remove node from the application</dt><dd>
+    Reverse the work done to add a node, then redeploy the application.
+  </dd>
+  <dt>Clean the node</dt><dd>
+    The config server setting should be removed, to
+    ensure that the node is not accidentally affecting the cluster it used to
+    be a member of later. Vespa services can be stopped. No documents should
+    remain on the node, but there may be some leftovers from the backend which
+    can be removed.
+  </dd>
+</dl>
+
+
+
+<h2 id="merge">Merge clusters</h2>
+<p>
+There are multiple ways to merge clusters, based on requirements to availability
+and effort. <em>Important: Ensure distribution keys are unique when adding nodes.</em>
+</p>
+
+
+
+<h2 id="add-remove-qrs">QRS / Top Level Dispatchers (TLD) / Document Processor nodes</h2>
+<p>
+Add or remove nodes.
+<ol>
+  <li>Edit <em>services.xml</em> and <em>hosts.xml</em></li>
+  <li><code>deploy prepare &amp;&amp; deploy activate</code></li>
+  <li>Start <code>services</code> on the new nodes</li>
+</ol>
+</p>
+
+
+
+<h2 id="add-remove-configserver">Configserver nodes</h2>
+<p>
+ToDo
+</p>
+
+</body>
+</html>

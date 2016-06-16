@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Configuration proxy</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2014" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes how the configuration proxy works and the
+different modes it can be run in.
+</p>
+
+
+
+<h1 id="basics">Basics</h1>
+
+<p>
+Read the <a href="../cloudconfig/config-introduction.html">config introduction</a>
+for an overview of the cloud config system. The config proxy runs on
+every node that needs config.  It has a set of config servers, defined
+with the environment variable
+<code>services.addr_configserver</code>.
+</p>
+
+<h1 id="operation">How the config proxy works</h1>
+
+<p>
+The config proxy will act as a proxy for config clients on the same machine,
+so that all clients can ask for config on <em>localhost:19090</em>.
+The <em>config source</em> that the config proxy uses is set by the
+environment variable <code>services.addr_configserver</code> and
+may consist of one or more config sources (usually config servers, but
+may be other config proxies).
+</p>
+
+<p>
+The proxy has a memory cache that is used to serve configs if it is
+possible.  In default mode, the proxy will have an outstanding request
+to the config server that will return when the config has changed (a
+new generation of config). This means that every time config changes
+on the config server, the proxy will get a response, update its cache
+and respond to all its clients with the changed config.
+</p>
+
+
+<h1 id="modes">Modes</h1>
+
+<p>
+The config proxy has three modes:
+</p>
+
+<ul>
+  <li>default &mdash; gets config from server and stores in memory
+  cache. Serves from cache if possible. Always uses a config source.</li>
+  <li>memorycache &mdash; serves config from memory cache (a restart
+      will lose all cached configs). Never uses a config source.</li>
+  <li>diskcache &mdash; serves config from disk cache (a restart
+      will <em>not</em> lose cached configs). Never uses a config source</li>
+</ul>
+
+<p>
+The mode can be set with:
+</p>
+
+<pre class="brush: cli">
+$ configproxy-cmd -m setmode &lt;mode&gt;
+</pre>
+
+
+<h2 id="mode-default">Default Mode</h2>
+<p>
+The config proxy will be started in <em>default</em> mode, unless the
+environment variable <code>services.configproxy_mode</code> is set.  If
+restarted in default mode, it will lose all configs that were cached
+in memory.
+</p>
+
+<h2 id="mode-memorycache">Memorycache Mode</h2>
+<p>
+Setting the mode to <em>memorycache</em> will make all applications on
+the node where this is done work as before (given that they have
+previously been running, and hence, requested config), since the
+config proxy will serve config from cache and work without any
+connection to the config server.  Applications on this node will not
+work if the config proxy stops or crashes.
+</p>
+
+
+<h2 id="mode-diskcache">Diskcache Mode</h2>
+<p>
+Setting the mode to <em>diskcache</em> will firsts write all configs
+that are in the memory cache to disk.  As for <em>memorycache</em>
+mode, all applications on this node that have previously been running
+will work as before, getting config from disk cache.  In this mode,
+the config proxy will never try to get new config from the config
+server. If the config proxy stops or crashes, it will be in default
+mode when restarted.  Setting it to <em>diskcache</em> mode will make
+it start using configs from disk cache again.
+</p>
+
+</body>
+</html>

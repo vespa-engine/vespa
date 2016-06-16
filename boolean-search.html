@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Using Boolean Search with Vespa</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="January 2016" />
+<meta name="authors" content="magnarn, lesters, bjorncs" />
+</head>
+
+<body>
+
+<p class="ingress">
+Boolean Search is a way to match queries to a set of <em>boolean
+constraints</em>. The typical use case for Boolean Search is to have a
+set of boolean constraints representing advertisments, specifying
+their target groups. Then we query the system with a set of
+impressions, i.e. specific values for a given user, to find out which
+ads can be shown to this user. When configuring boolean search there
+are some trade-offs between index size and query performance.
+</p>
+
+<h1 id="constraints">Boolean Constraints</h1>
+<p>
+A boolean constraint specifies a target area for queries to land
+in. Its attributes may be simple true/false criteria, subsets of sets
+to match, or ranges of values. In Vespa, boolean constraints are
+specified as predicates.
+</p>
+
+<h2 id="predicates">Predicates</h2>
+<p>
+A predicate is a specification of a boolean constraint in the form of
+a boolean expression. For example, the predicate <code>gender in
+[Female] and age in [20..30] and pos in [1..4]</code> can specify that
+an ad requires target users to be women between 20 and 30 years of
+age, and that the ad must be placed in one of the top four positions.
+The valid expressions are described by the following grammar.
+
+<blockquote>
+<pre>predicate   = disjunction <EOF> ;
+disjunction = conjunction [ 'or' disjunction ] ;
+conjunction = ( leaf  | [ 'not' ], '(', disjunction, ')' ) [ 'and' conjunction ] ;
+leaf        = value, [ 'not' ], 'in', ( value | multivalue | range )
+            | 'true'
+            | 'false' ;
+
+value       = alphanum { alphanum } | string ;
+multivalue  = '[' value, { ',', value } ']' ;
+range       = '[' [ integer ] '..' [ integer ] ']' ;
+
+alphanum    = alpha | digit | '_';
+string      = '\'', { stdchars_1 | escape_1 }, '\''
+            | '"', { stdchars_2 | escape_2 }, '"' ;
+
+integer     = [ '-' | '+' ], ( posdigit, { digit } | '0' );
+
+alpha       = ? ASCII characters in the range a-z and A-Z ? ;
+digit       = '0' | posdigit ;
+posdigit    = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;
+stdchars_1  = ? All unicode chars except '\\' and '\'' ? ;
+stdchars_2  = ? All unicode chars except '\\' and '"' ? ;
+escape_1    = '\\', ( '\\' | 't' | 'n' | 'f' | 'r' | '\'' | '\\x', hexdigit, hexdigit )
+escape_2    = '\\', ( '\\' | 't' | 'n' | 'f' | 'r' | '"' | '\\x', hexdigit, hexdigit )
+hexdigit    = digit | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' ;</pre>
+</blockquote>
+</p>
+
+
+<h2 id="attributes">Attributes</h2>
+<p>
+In Vespa, the variables in predicates are known as <em>attributes</em>. There are two types of attributes:
+<ul>
+  <li><b>Regular attributes</b>. Regular attributes take string values.
+  You can specify in the predicate that a regular attribute must have one value of multiple alternatives.
+  E.g. <code>hobby in [Music, Hiking]</code> evaluates true if hobby is assigned to either <code>Music</code> or <code>Hiking</code> (or both).</li>
+  <li><b>Range attributes</b>. Range attributes take integer values and may only be used in range expressions.
+  A range expression specifies either a lower bound, an upper bound or both:
+  <ol>
+    <li><code>age in [10..]</code> - age must be 10 or higher.</li>
+    <li><code>age in [..10]</code> - age must be 10 or lower.</li>
+    <li><code>age in [10..15]</code> - age must be between 10 and 15, inclusive.</li>
+  </ol>
+  </li>
+</ul>
+</p>
+
+<div class="alert alert-success">
+Note: The attribute concept in boolean search is unrelated to <a href="attributes.html">attribute document fields in search definitions</a>.
+</div>
+
+<h2>Predicate Samples</h2>
+The subset expression evaluates to true if the regular attribute is assigned to any of the values listed in the brackets:
+<pre>hobby in [Music, Hiking, Biking]</pre>
+The range expression evalutes to true if the range attribute is in the specified range (bondaries are inclusive):
+<pre>age in [20..29]</pre>
+It's also possible to specify only the lower or upper bound for a range expression:
+<pre>age in [..29]</pre>
+Use the <code>or</code> operator to create disjunctions:
+<pre>age in [..29] or hobby in [Music, Biking]</pre>
+Similarly, use the <code>and</code> operator to create conjunctions:
+<pre>age in [20..29] and hobby in [Music]</pre>
+Parenthesis can be used to create more complex predicates:
+<pre>(age in [20..29] and gender in [Male]) or (age in [30..39] and gender in [Female])</pre>
+The subset and range expression can be negated using the <code>not</code> operator:
+<pre>age not in [20..29] and hobby not in [Music]</pre>
+<pre>not age in [20..29] and not hobby in [Music]</pre>
+The <code>not</code> operator can also be combined with parenthesis:
+<pre>not (age in [20..29] or hobby in [Music])</pre>
+Attributes and values containing non-alphanumeric letters must be surrounded with quotes:
+<pre>"profile.gender" in ['Male', "Female"]</pre>
+If a string surrounded with double-quotes contains a double-quote, escape it with backslash.
+Same rule applies for single quotes in single-quoted strings.
+Double quotes in single-quoted strings and single quotes in double-quoted string shall not be escaped.
+<pre>"single'quote" in ["double\"quote", 'double"quote', 'single\'quote']</pre>
+Set the predicate to the value <code>true</code> to make it always a match.
+Setting the predicate to <code>false</code> will ensure that it's never a match.
+<pre>true</pre>
+<pre>false</pre>
+
+<h2>Document Example</h2>
+<p>
+To feed a predicate to Vespa you must enter a valid boolean expression in a field of type <code>predicate</code>.
+In a datatype <code>example</code> containing a single
+field <code>predicate_field</code>, a complete document could look like
+this:
+<pre>
+&lt;document documenttype="example" documentid="id:boolean-search:example::1"&gt;
+  &lt;predicate_field&gt;gender in [Female] and age in [20..30] and pos in [1..4]&lt;/predicate_field&gt;
+&lt;/document&gt;
+</pre>
+</p>
+
+<h1 id="queries">Queries</h1>
+<p>
+A boolean query represents a set of concrete values for attributes,
+which may fall within the target area drawn up by one or more sets of
+boolean constraints. Queries are specified by two lists of attributes
+with values. One list holds regular attributes, each with one or more
+discrete values, while the other list holds range attributes with a
+single value each.
+</p>
+
+<h2>How to Search Using YQL+</h2>
+<p>
+Boolean queries are made using the <code>predicate</code> function of
+YQL+. The predicate function takes three parameters: The predicate
+field, a map of regular attribute key/value pairs, and a map of range
+attribute key/value pairs.
+
+<pre>select * from sources * where predicate(predicate_field, {"gender":"Female", "gender":"Male", hobby":"Hiking"}, {"age":20L, "pos":2L});</pre>
+
+You can also use empty maps when specifying attributes.
+<pre>select * from sources * where predicate(predicate_field, {}, {"age":20L});</pre>
+
+When specifying multiple values for the same key, it is possible to
+use an array as the value.
+<pre>select * from sources * where predicate(predicate_field,{"gender":["Female","Male"], "hobby":"Hiking"}, {"age":20L});</pre>
+</p>
+
+<h2 id="subqueries">Subqueries</h2>
+<p>
+For efficiency reasons it is possible to specify multiple queries at
+once. This is done by providing a bitmap with each term, where the
+bitmap represents which (out of 64) subqueries the term is a part
+of. A typical use case for this is when we want to find ads for
+multiple positions on a page. Then the user profile information will
+be part of every subquery while the ad placement varies. Remember that
+all subqueries are used every time, which means that empty subqueries
+also can get matches.
+</p>
+
+<h3>Specifying Subqueries in YQL+</h3>
+<p>
+Subqueries are specified as maps where the key is a string
+representation of either a hex number or a list of bit numbers, and
+the value is a map of attribute key/value pairs. The two queries below demonstrates the
+two different methods of mapping attributes to subqueries.
+
+<pre>select * from sources * where predicate(predicate_field, {"0x3":{"gender":"Female"}, "0x1":{"hobby":["music","hiking"]}}, {"0x2":{"age":23L}})</pre>
+<pre>select * from sources * where predicate(predicate_field, {"[0,1]":{"gender":"Female"}, "[0]":{"hobby":["music","hiking"]}}, {"[1]":{"age":23L}})</pre>
+
+The queries above is constructed from the following two queries:
+
+<pre>
+select * from sources * where predicate(predicate_field, {"gender":"Female", "hobby":["music","hiking"]},{})
+select * from sources * where predicate(predicate_field, {"gender":"Female"}, {"age":23L})
+</pre>
+
+Note that the subquery bit numbers use zero-based numbering, e.g. first subquery has index <code>0</code>. Highest valid subquery has index <code>63</code>.<br/>
+Any value <code>0x1</code>-<code>0xFFFFFFFFFFFFFFFF</code> is a valid subquery bitmap.
+
+</p>
+<div class="alert alert-success">
+When no subquery mapping is specified, the attribute is applied to all subqueries.
+</div>
+
+<h3>Identifying Subqueries in Results</h3>
+<p>
+When using subqueries you need to add the <code>subqueries</code>
+summary feature to your search definition. For each hit, the subqueries
+are reported in two different summary features, one for the lower 32
+bits, named <code>lsb</code>, and one for the upper 32 bits,
+named <code>msb</code>.
+</p>
+<p>
+See the <em>boolean search sample app</em> <!-- ToDo: add link here -->
+for how to configure a custom <em>searcher</em>, <em>services.xml</em> and the <em>search definition</em> required to
+retrieve the subquery bitmap of each hit.
+</p>
+
+<h3>Example</h3>
+<p>
+A typical use case for the subquery feature is when we want to find ads for
+multiple positions on a page. The user profile information will
+be identical for every subquery while the ad placement varies. The following example uses 3 different attributes;
+<code>age</code>, <code>gender</code> and <code>pos</code>. The 2 former attributes represents the user profile,
+while the <code>pos</code> attribute determines the ad placement.
+</p>
+
+<p>Assume the following 3 documents are index:
+<pre>
+[
+   {
+      "fields" : {
+         "target" : "age in [20..30] and gender in [Female, Male] and pos in [1]"
+      },
+      "put" : "id:test:ad::1"
+   },
+   {
+      "fields" : {
+         "target" : "gender in [Male] and pos in [1, 2]"
+      },
+      "put" : "id:test:ad::2"
+   },
+   {
+      "fields" : {
+         "target" : "age in [20..] and gender in [Female, Male] and pos in [2]"
+      },
+      "put" : "id:test:ad::3"
+   }
+]
+</pre>
+</p>
+
+<p>
+We want to find all ads that target males at age 25 for ad placement 1 and 2.
+To do that that we construct a query consisting of two subqueries, one for placement 1 and the other for placement 2:
+<pre>select * from sources * where predicate(target, {"[0,1]":{"gender":"Male"}, "[0]":{"pos": "1"}, "[1]":{"pos": "2"}}, {"[0,1]":{"age":25L}})</pre>
+Note that each subquery has a separate value for <code>pos</code>, while the <code>gender</code> and <code>age</code> values are common for both subqueries.
+</p>
+
+<p>
+The query will return 3 hits, one for each document. Each document will have a <em>summary feature</em> with the subquery bitmap (64-bit).
+This is assuming that the <code>SubqueriesSearcher</code> from the sample app is used. If not so, each document will have two summary features,
+one for the lower 32-bit and one for the upper 32-bit of the subquery bitmap.
+<ul>
+<li>The document with id <code>id:test:ad::1</code> will have subquery bitmap of <code>0x1</code>; the lowest bit set to 1 as the document is a hit for subquery #1.</li>
+<li>The document with id <code>id:test:ad::2</code> is a hit for both subqueries and has the two lowest bits set to 1, giving <code>0x3</code> as subquery bitmap.</li>
+<li>Following the same principle, the subquery bitmap of <code>id:test:ad::3</code> is <code>0x2</code>.</li>
+</ul>
+</p>
+
+
+<h1 id="configuration">Configuration</h1>
+
+<div class="alert alert-warning">
+It's highly recommended that you contact Vespa support for performance tuning.
+Boolean search is complex and tuning the configuration for performance requires
+insight in the underlying algorithms.
+</div>
+
+<p>
+Boolean search is specified in the search definition as a field of
+type <code>predicate</code>. A predicate field requires an index definition
+with a mandatory parameter, <code>arity</code>, a value which trades index size
+for query complexity. See <a href="#index_size">Index Size</a> for more
+details. Fields of type predicate also accept three other optional parameters:
+<code>lower-bound</code>, <code>upper-bound</code> and <code>dense-posting-list-threshold</code>.
+These properties are helpful in optimizing query performance and index size. The two former parameters
+sets the lower and upper bounds on values of range attributes. The latter value determines how the boolean index
+is structured, trading index size for potentially better query performance.
+
+<h2>Search Definition for Boolean Search</h2>
+
+<p>
+The following search definition example sets up an attribute predicate field
+including the mandatory arity parameter.
+</p>
+
+<pre class="code">
+search example {
+    document example {
+
+        field predicate_field type predicate {
+            indexing: attribute
+            index {
+                arity: 2  # mandatory
+                lower-bound: 3
+                upper-bound: 200
+                dense-posting-list-threshold: 0.25
+            }
+        }
+
+    }
+
+    # For subquery reporting:
+    rank-profile default {
+        summary-features: subqueries(predicate_field).lsb subqueries(predicate_field).msb
+    }
+}
+
+</pre>
+
+<h2 id="upper_lower_bound">Upper and Lower Bounds</h2>
+
+<p>
+The <code>upper-bound</code> and <code>lower-bound</code> parameters
+specify the range of values that the boolean expressions are expected
+to operate on. Queries with values outside this range are
+rejected. The index is optimized based on the bounds, so if the bounds
+are changed, the index needs to be rebuilt.
+</p>
+
+<h2 id="dense_posting_list_threshold">Dense Posting List Threshold</h2>
+<p>
+The <code>dense-posting-list-threshold</code> parameter is a threshold that impacts how the
+boolean index is structured in memory. The boolean index consists of several sparse data structures
+(B-tree based posting lists). The largest posting lists are also stored in a dense vector based structure.
+The dense posting lists are faster for searching, but may increase the overall index size significantly.
+Only posting lists with relative size above the threshold are stored in the dense format
+(for a corpus of 1mill documents and threshold=0.5, all posting lists of size >500k will be stored as vector).
+The optimal value depends on corpus characteristics and will lay somewhere between 0.15 - 0.50.
+A too low threshold will have large, negative impact on both query performance and index size,
+while a too large threshold may slightly decrease the query performance.
+</p>
+<p>
+The default value is 0.40. Valid range is (0, 1].
+</p>
+
+<h2 id="index_size">Index Size</h2>
+<p>
+When using range attributes, the attributes are expanded to a set of
+attributes for sub-ranges that together covers the entire range. The
+granularity of the sub-ranges are controlled by the parameter
+<code>arity</code>. A low arity will make smaller indexes, but
+require more terms in the queries. Conversely, a high arity makes for
+large indexes but fewer query terms.
+</p>
+<p>
+Also impacting index size is the size of intervals that are accepted
+in the boolean constraints. A typical case is intervals with infinite
+endpoints, i.e. match every number greater than <em>x</em>. Using 2^63
+as infinity makes the intervals large, and impacts index size. A lower
+max-value reduces the index size. The max-values can be easily
+controlled with the <code>upper-bound</code>
+and <code>lower-bound</code> parameters.
+</p>
+<p>
+The <code>dense-posting-list-threshold</code> parameter has an inverse impact on the index size.
+Increasing the threshold is beneficial if a smaller index size is preferred over query performance.
+<p>
+The following figure shows how the number of terms for a single
+document grows with increasing arity and range limit.
+
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+      function drawVisualization() {
+        // Create and populate the data table.
+        var data = google.visualization.arrayToDataTable([
+      [     'Bound (2^k)', 'Arity 2', 'Arity 4', 'Arity 8', 'Arity 16', 'Arity 32', 'Arity 64', 'Arity 128'],
+      [    10 , 12, 18, 20, 30, 43, 27, 12 ],
+      [    11 , 13, 19, 22, 34, 44, 43, 20 ],
+      [    12 , 14, 21, 26, 42, 46, 75, 36 ],
+      [    13 , 15, 22, 27, 43, 50, 76, 68 ],
+      [    14 , 16, 24, 29, 45, 58, 78, 132 ],
+      [    15 , 17, 25, 33, 49, 74, 82, 133 ],
+      [    16 , 18, 27, 34, 57, 75, 90, 135 ],
+      [    17 , 19, 28, 36, 58, 77, 106, 139 ],
+      [    18 , 20, 30, 40, 60, 81, 138, 147 ],
+      [    19 , 21, 31, 41, 64, 89, 139, 163 ],
+      [    20 , 22, 33, 43, 72, 105, 141, 195 ],
+      [    21 , 23, 34, 47, 73, 106, 145, 259 ],
+      [    22 , 24, 36, 48, 75, 108, 153, 260 ],
+      [    23 , 25, 37, 50, 79, 112, 169, 262 ],
+      [    24 , 26, 39, 54, 87, 120, 201, 266 ],
+      [    25 , 27, 40, 55, 88, 136, 202, 274 ],
+      [    26 , 28, 42, 57, 90, 137, 204, 290 ],
+      [    27 , 29, 43, 61, 94, 139, 208, 322 ],
+      [    28 , 30, 45, 62, 102, 143, 216, 386 ],
+      [    29 , 31, 46, 64, 103, 151, 232, 387 ],
+      [    30 , 32, 48, 68, 105, 167, 264, 389 ],
+      [    31 , 33, 49, 69, 109, 168, 265, 393 ],
+      [    32 , 34, 51, 71, 117, 170, 267, 401 ],
+      [    33 , 35, 52, 75, 118, 174, 271, 417 ],
+      [    34 , 36, 54, 76, 120, 182, 279, 449 ],
+      [    35 , 37, 55, 78, 124, 198, 295, 513 ],
+      [    36 , 38, 57, 82, 132, 199, 327, 514 ],
+      [    37 , 39, 58, 83, 133, 201, 328, 516 ],
+      [    38 , 40, 60, 85, 135, 205, 330, 520 ],
+      [    39 , 41, 61, 89, 139, 213, 334, 528 ],
+      [    40 , 42, 63, 90, 147, 229, 342, 544 ],
+      [    41 , 43, 64, 92, 148, 230, 358, 576 ],
+      [    42 , 44, 66, 96, 150, 232, 390, 640 ],
+      [    43 , 45, 67, 97, 154, 236, 391, 641 ],
+      [    44 , 46, 69, 99, 162, 244, 393, 643 ],
+      [    45 , 47, 70, 103, 163, 260, 397, 647 ],
+      [    46 , 48, 72, 104, 165, 261, 405, 655 ],
+      [    47 , 49, 73, 106, 169, 263, 421, 671 ],
+      [    48 , 50, 75, 110, 177, 267, 453, 703 ],
+      [    49 , 51, 76, 111, 178, 275, 454, 767 ],
+      [    50 , 52, 78, 113, 180, 291, 456, 768 ],
+      [    51 , 53, 79, 117, 184, 292, 460, 770 ],
+      [    52 , 54, 81, 118, 192, 294, 468, 774 ],
+      [    53 , 55, 82, 120, 193, 298, 484, 782 ],
+      [    54 , 56, 84, 124, 195, 306, 516, 798 ],
+      [    55 , 57, 85, 125, 199, 322, 517, 830 ],
+      [    56 , 58, 87, 127, 207, 323, 519, 894 ],
+      [    57 , 59, 88, 131, 208, 325, 523, 895 ],
+      [    58 , 60, 90, 132, 210, 329, 531, 897 ],
+      [    59 , 61, 91, 134, 214, 337, 547, 901 ],
+      [    60 , 62, 93, 138, 222, 353, 579, 909 ],
+      [    61 , 63, 94, 139, 223, 354, 580, 925 ],
+      [    62 , 64, 96, 141, 225, 356, 582, 957 ],
+      [    63 , 65, 97, 145, 229, 360, 586, 1021 ]
+        ]);
+
+        // Create and draw the visualization.
+        new google.visualization.LineChart(document.getElementById('visualization')).
+            draw(data, {curveType: "none",
+                        title: 'Index size vs. range limit and arity',
+                        width: 700, height: 600,
+                        vAxis: {title: 'Term count', maxValue: 10},
+                        hAxis: {title: 'Range limit, 2^k'}}
+                );
+      }
+
+
+      google.setOnLoadCallback(drawVisualization);
+    </script>
+<div id="visualization" style="position: relative; "><div style="position: relative; width: 700px; height: 600px; " dir="ltr"><div style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; "><svg width="700" height="600" style="overflow: hidden; "><defs id="defs"><clipPath id="_ABSTRACT_RENDERER_ID_0"><rect x="134" y="115" width="433" height="371"></rect></clipPath></defs><rect x="0" y="0" width="700" height="600" stroke="none" stroke-width="0" fill="#ffffff"></rect><g><text text-anchor="start" x="134" y="89.9" font-family="Arial" font-size="14" font-weight="bold" stroke="none" stroke-width="0" fill="#000000">Index size vs. range limit and arity</text></g><g><rect x="581" y="115" width="105" height="152" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><rect x="581" y="115" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="126.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 2</text></g><rect x="581" y="115" width="14" height="14" stroke="none" stroke-width="0" fill="#3366cc"></rect></g><g><rect x="581" y="138" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="149.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 4</text></g><rect x="581" y="138" width="14" height="14" stroke="none" stroke-width="0" fill="#dc3912"></rect></g><g><rect x="581" y="161" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="172.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 8</text></g><rect x="581" y="161" width="14" height="14" stroke="none" stroke-width="0" fill="#ff9900"></rect></g><g><rect x="581" y="184" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="195.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 16</text></g><rect x="581" y="184" width="14" height="14" stroke="none" stroke-width="0" fill="#109618"></rect></g><g><rect x="581" y="207" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="218.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 32</text></g><rect x="581" y="207" width="14" height="14" stroke="none" stroke-width="0" fill="#990099"></rect></g><g><rect x="581" y="230" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="241.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 64</text></g><rect x="581" y="230" width="14" height="14" stroke="none" stroke-width="0" fill="#0099c6"></rect></g><g><rect x="581" y="253" width="105" height="14" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g><text text-anchor="start" x="600" y="264.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#222222">Arity 128</text></g><rect x="581" y="253" width="14" height="14" stroke="none" stroke-width="0" fill="#dd4477"></rect></g></g><g><rect x="134" y="115" width="433" height="371" stroke="none" stroke-width="0" fill-opacity="0" fill="#ffffff"></rect><g clip-path="url(#_ABSTRACT_RENDERER_ID_0)"><g><rect x="216" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="297" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="379" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="460" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="542" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="134" y="485" width="433" height="1" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="134" y="393" width="433" height="1" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="134" y="300" width="433" height="1" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="134" y="208" width="433" height="1" stroke="none" stroke-width="0" fill="#cccccc"></rect><rect x="134" y="115" width="433" height="1" stroke="none" stroke-width="0" fill="#cccccc"></rect></g><g><rect x="134" y="115" width="1" height="371" stroke="none" stroke-width="0" fill="#333333"></rect><rect x="134" y="485" width="433" height="1" stroke="none" stroke-width="0" fill="#333333"></rect></g><g><path d="M134.5,481.8L142.6509433962264,481.4916666666667L150.80188679245282,481.18333333333334L158.95283018867923,480.875L167.10377358490567,480.56666666666666L175.25471698113208,480.2583333333333L183.4056603773585,479.95L191.5566037735849,479.64166666666665L199.70754716981133,479.3333333333333L207.85849056603774,479.025L216.00943396226415,478.71666666666664L224.16037735849056,478.40833333333336L232.31132075471697,478.1L240.46226415094338,477.7916666666667L248.6132075471698,477.48333333333335L256.7641509433962,477.175L264.91509433962267,476.8666666666667L273.066037735849,476.55833333333334L281.2169811320755,476.25L289.3679245283019,475.94166666666666L297.5188679245283,475.6333333333333L305.6698113207547,475.325L313.8207547169811,475.01666666666665L321.97169811320754,474.7083333333333L330.12264150943395,474.4L338.2735849056604,474.09166666666664L346.42452830188677,473.78333333333336L354.57547169811323,473.475L362.7264150943396,473.1666666666667L370.87735849056605,472.85833333333335L379.02830188679246,472.55L387.1792452830189,472.2416666666667L395.3301886792453,471.93333333333334L403.4811320754717,471.625L411.6320754716981,471.31666666666666L419.7830188679245,471.0083333333333L427.9339622641509,470.7L436.08490566037733,470.39166666666665L444.2358490566038,470.0833333333333L452.3867924528302,469.775L460.5377358490566,469.46666666666664L468.688679245283,469.1583333333333L476.83962264150944,468.85L484.99056603773585,468.5416666666667L493.14150943396226,468.23333333333335L501.29245283018867,467.925L509.4433962264151,467.6166666666667L517.5943396226414,467.30833333333334L525.7452830188679,467L533.8962264150944,466.69166666666666L542.0471698113208,466.3833333333333L550.1981132075472,466.075L558.3490566037735,465.76666666666665L566.5,465.4583333333333" stroke="#3366cc" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,479.95L142.6509433962264,479.64166666666665L150.80188679245282,479.025L158.95283018867923,478.71666666666664L167.10377358490567,478.1L175.25471698113208,477.7916666666667L183.4056603773585,477.175L191.5566037735849,476.8666666666667L199.70754716981133,476.25L207.85849056603774,475.94166666666666L216.00943396226415,475.325L224.16037735849056,475.01666666666665L232.31132075471697,474.4L240.46226415094338,474.09166666666664L248.6132075471698,473.475L256.7641509433962,473.1666666666667L264.91509433962267,472.55L273.066037735849,472.2416666666667L281.2169811320755,471.625L289.3679245283019,471.31666666666666L297.5188679245283,470.7L305.6698113207547,470.39166666666665L313.8207547169811,469.775L321.97169811320754,469.46666666666664L330.12264150943395,468.85L338.2735849056604,468.5416666666667L346.42452830188677,467.925L354.57547169811323,467.6166666666667L362.7264150943396,467L370.87735849056605,466.69166666666666L379.02830188679246,466.075L387.1792452830189,465.76666666666665L395.3301886792453,465.15L403.4811320754717,464.84166666666664L411.6320754716981,464.225L419.7830188679245,463.9166666666667L427.9339622641509,463.3L436.08490566037733,462.9916666666667L444.2358490566038,462.375L452.3867924528302,462.06666666666666L460.5377358490566,461.45L468.688679245283,461.14166666666665L476.83962264150944,460.525L484.99056603773585,460.21666666666664L493.14150943396226,459.6L501.29245283018867,459.2916666666667L509.4433962264151,458.675L517.5943396226414,458.3666666666667L525.7452830188679,457.75L533.8962264150944,457.44166666666666L542.0471698113208,456.825L550.1981132075472,456.51666666666665L558.3490566037735,455.9L566.5,455.59166666666664" stroke="#dc3912" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,479.3333333333333L142.6509433962264,478.71666666666664L150.80188679245282,477.48333333333335L158.95283018867923,477.175L167.10377358490567,476.55833333333334L175.25471698113208,475.325L183.4056603773585,475.01666666666665L191.5566037735849,474.4L199.70754716981133,473.1666666666667L207.85849056603774,472.85833333333335L216.00943396226415,472.2416666666667L224.16037735849056,471.0083333333333L232.31132075471697,470.7L240.46226415094338,470.0833333333333L248.6132075471698,468.85L256.7641509433962,468.5416666666667L264.91509433962267,467.925L273.066037735849,466.69166666666666L281.2169811320755,466.3833333333333L289.3679245283019,465.76666666666665L297.5188679245283,464.5333333333333L305.6698113207547,464.225L313.8207547169811,463.60833333333335L321.97169811320754,462.375L330.12264150943395,462.06666666666666L338.2735849056604,461.45L346.42452830188677,460.21666666666664L354.57547169811323,459.9083333333333L362.7264150943396,459.2916666666667L370.87735849056605,458.05833333333334L379.02830188679246,457.75L387.1792452830189,457.1333333333333L395.3301886792453,455.9L403.4811320754717,455.59166666666664L411.6320754716981,454.975L419.7830188679245,453.7416666666667L427.9339622641509,453.43333333333334L436.08490566037733,452.81666666666666L444.2358490566038,451.5833333333333L452.3867924528302,451.275L460.5377358490566,450.6583333333333L468.688679245283,449.425L476.83962264150944,449.1166666666667L484.99056603773585,448.5L493.14150943396226,447.26666666666665L501.29245283018867,446.9583333333333L509.4433962264151,446.34166666666664L517.5943396226414,445.10833333333335L525.7452830188679,444.8L533.8962264150944,444.18333333333334L542.0471698113208,442.95L550.1981132075472,442.64166666666665L558.3490566037735,442.025L566.5,440.7916666666667" stroke="#ff9900" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,476.25L142.6509433962264,475.01666666666665L150.80188679245282,472.55L158.95283018867923,472.2416666666667L167.10377358490567,471.625L175.25471698113208,470.39166666666665L183.4056603773585,467.925L191.5566037735849,467.6166666666667L199.70754716981133,467L207.85849056603774,465.76666666666665L216.00943396226415,463.3L224.16037735849056,462.9916666666667L232.31132075471697,462.375L240.46226415094338,461.14166666666665L248.6132075471698,458.675L256.7641509433962,458.3666666666667L264.91509433962267,457.75L273.066037735849,456.51666666666665L281.2169811320755,454.05L289.3679245283019,453.7416666666667L297.5188679245283,453.125L305.6698113207547,451.89166666666665L313.8207547169811,449.425L321.97169811320754,449.1166666666667L330.12264150943395,448.5L338.2735849056604,447.26666666666665L346.42452830188677,444.8L354.57547169811323,444.4916666666667L362.7264150943396,443.875L370.87735849056605,442.64166666666665L379.02830188679246,440.175L387.1792452830189,439.8666666666667L395.3301886792453,439.25L403.4811320754717,438.01666666666665L411.6320754716981,435.55L419.7830188679245,435.2416666666667L427.9339622641509,434.625L436.08490566037733,433.39166666666665L444.2358490566038,430.925L452.3867924528302,430.6166666666667L460.5377358490566,430L468.688679245283,428.76666666666665L476.83962264150944,426.3L484.99056603773585,425.9916666666667L493.14150943396226,425.375L501.29245283018867,424.14166666666665L509.4433962264151,421.675L517.5943396226414,421.3666666666667L525.7452830188679,420.75L533.8962264150944,419.51666666666665L542.0471698113208,417.05L550.1981132075472,416.7416666666667L558.3490566037735,416.125L566.5,414.89166666666665" stroke="#109618" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,472.2416666666667L142.6509433962264,471.93333333333334L150.80188679245282,471.31666666666666L158.95283018867923,470.0833333333333L167.10377358490567,467.6166666666667L175.25471698113208,462.68333333333334L183.4056603773585,462.375L191.5566037735849,461.7583333333333L199.70754716981133,460.525L207.85849056603774,458.05833333333334L216.00943396226415,453.125L224.16037735849056,452.81666666666666L232.31132075471697,452.2L240.46226415094338,450.9666666666667L248.6132075471698,448.5L256.7641509433962,443.56666666666666L264.91509433962267,443.2583333333333L273.066037735849,442.64166666666665L281.2169811320755,441.4083333333333L289.3679245283019,438.94166666666666L297.5188679245283,434.0083333333333L305.6698113207547,433.7L313.8207547169811,433.0833333333333L321.97169811320754,431.85L330.12264150943395,429.3833333333333L338.2735849056604,424.45L346.42452830188677,424.14166666666665L354.57547169811323,423.525L362.7264150943396,422.2916666666667L370.87735849056605,419.825L379.02830188679246,414.89166666666665L387.1792452830189,414.5833333333333L395.3301886792453,413.9666666666667L403.4811320754717,412.73333333333335L411.6320754716981,410.26666666666665L419.7830188679245,405.3333333333333L427.9339622641509,405.025L436.08490566037733,404.4083333333333L444.2358490566038,403.175L452.3867924528302,400.7083333333333L460.5377358490566,395.775L468.688679245283,395.4666666666667L476.83962264150944,394.85L484.99056603773585,393.6166666666667L493.14150943396226,391.15L501.29245283018867,386.2166666666667L509.4433962264151,385.9083333333333L517.5943396226414,385.29166666666663L525.7452830188679,384.05833333333334L533.8962264150944,381.5916666666667L542.0471698113208,376.6583333333333L550.1981132075472,376.35L558.3490566037735,375.73333333333335L566.5,374.5" stroke="#990099" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,477.175L142.6509433962264,472.2416666666667L150.80188679245282,462.375L158.95283018867923,462.06666666666666L167.10377358490567,461.45L175.25471698113208,460.21666666666664L183.4056603773585,457.75L191.5566037735849,452.81666666666666L199.70754716981133,442.95L207.85849056603774,442.64166666666665L216.00943396226415,442.025L224.16037735849056,440.7916666666667L232.31132075471697,438.325L240.46226415094338,433.39166666666665L248.6132075471698,423.525L256.7641509433962,423.21666666666664L264.91509433962267,422.6L273.066037735849,421.3666666666667L281.2169811320755,418.9L289.3679245283019,413.9666666666667L297.5188679245283,404.1L305.6698113207547,403.79166666666663L313.8207547169811,403.175L321.97169811320754,401.94166666666666L330.12264150943395,399.475L338.2735849056604,394.54166666666663L346.42452830188677,384.675L354.57547169811323,384.3666666666667L362.7264150943396,383.75L370.87735849056605,382.51666666666665L379.02830188679246,380.05L387.1792452830189,375.1166666666667L395.3301886792453,365.25L403.4811320754717,364.94166666666666L411.6320754716981,364.325L419.7830188679245,363.09166666666664L427.9339622641509,360.625L436.08490566037733,355.69166666666666L444.2358490566038,345.825L452.3867924528302,345.51666666666665L460.5377358490566,344.9L468.688679245283,343.66666666666663L476.83962264150944,341.2L484.99056603773585,336.26666666666665L493.14150943396226,326.4L501.29245283018867,326.0916666666667L509.4433962264151,325.475L517.5943396226414,324.2416666666667L525.7452830188679,321.775L533.8962264150944,316.8416666666667L542.0471698113208,306.975L550.1981132075472,306.66666666666663L558.3490566037735,306.04999999999995L566.5,304.81666666666666" stroke="#0099c6" stroke-width="2" fill-opacity="1" fill="none"></path><path d="M134.5,481.8L142.6509433962264,479.3333333333333L150.80188679245282,474.4L158.95283018867923,464.5333333333333L167.10377358490567,444.8L175.25471698113208,444.4916666666667L183.4056603773585,443.875L191.5566037735849,442.64166666666665L199.70754716981133,440.175L207.85849056603774,435.2416666666667L216.00943396226415,425.375L224.16037735849056,405.64166666666665L232.31132075471697,405.3333333333333L240.46226415094338,404.7166666666667L248.6132075471698,403.48333333333335L256.7641509433962,401.01666666666665L264.91509433962267,396.0833333333333L273.066037735849,386.2166666666667L281.2169811320755,366.48333333333335L289.3679245283019,366.175L297.5188679245283,365.55833333333334L305.6698113207547,364.325L313.8207547169811,361.85833333333335L321.97169811320754,356.92499999999995L330.12264150943395,347.05833333333334L338.2735849056604,327.325L346.42452830188677,327.01666666666665L354.57547169811323,326.4L362.7264150943396,325.16666666666663L370.87735849056605,322.7L379.02830188679246,317.76666666666665L387.1792452830189,307.9L395.3301886792453,288.16666666666663L403.4811320754717,287.85833333333335L411.6320754716981,287.2416666666667L419.7830188679245,286.0083333333333L427.9339622641509,283.54166666666663L436.08490566037733,278.60833333333335L444.2358490566038,268.7416666666667L452.3867924528302,249.00833333333333L460.5377358490566,248.7L468.688679245283,248.08333333333331L476.83962264150944,246.85L484.99056603773585,244.38333333333333L493.14150943396226,239.45L501.29245283018867,229.58333333333331L509.4433962264151,209.84999999999997L517.5943396226414,209.54166666666663L525.7452830188679,208.925L533.8962264150944,207.69166666666666L542.0471698113208,205.22499999999997L550.1981132075472,200.29166666666663L558.3490566037735,190.425L566.5,170.69166666666666" stroke="#dd4477" stroke-width="2" fill-opacity="1" fill="none"></path></g></g><g></g><g><g><text text-anchor="middle" x="216.00943396226415" y="506.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">20</text></g><g><text text-anchor="middle" x="297.5188679245283" y="506.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">30</text></g><g><text text-anchor="middle" x="379.02830188679246" y="506.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">40</text></g><g><text text-anchor="middle" x="460.5377358490566" y="506.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">50</text></g><g><text text-anchor="middle" x="542.0471698113208" y="506.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">60</text></g><g><text text-anchor="end" x="120" y="490.4" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">0</text></g><g><text text-anchor="end" x="120" y="397.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">300</text></g><g><text text-anchor="end" x="120" y="305.4" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">600</text></g><g><text text-anchor="end" x="120" y="212.9" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">900</text></g><g><text text-anchor="end" x="120" y="120.4" font-family="Arial" font-size="14" stroke="none" stroke-width="0" fill="#444444">1,200</text></g></g></g><g><g><text text-anchor="middle" x="350.5" y="559.4" font-family="Arial" font-size="14" font-style="italic" stroke="none" stroke-width="0" fill="#222222">Range limit, 2^k</text></g><g><text text-anchor="middle" x="46.9" y="300.5" font-family="Arial" font-size="14" font-style="italic" transform="rotate(-90 46.9 300.5)" stroke="none" stroke-width="0" fill="#222222">Term count</text></g></g><g></g></svg></div></div><div style="display: none; position: absolute; top: 610px; left: 710px; white-space: nowrap; font-family: Arial; font-size: 14px; font-weight: bold; ">259</div><div></div></div>
+
+</body>
+</html>

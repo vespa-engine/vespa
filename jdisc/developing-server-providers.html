@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="May 2013" />
+    <meta name="authors" content="simon" />
+    <title>Developing server providers</title>
+  </head>
+  <body>
+    <p>
+      The <code>com.yahoo.jdisc.service.ServerProvider</code>
+      (<a href="../javadoc/index.html?com/yahoo/jdisc/service/ServerProvider.html">javadoc</a>)
+      interface defines a component that is capable of acting as a server for an external
+      client. This document explains how to implement and deploy a custom server provider.
+    </p>
+    <p>
+      All requests that are processed in a JDisc application are created by server
+      providers. These are the parts of the JDisc Container that accept incoming
+      connections.
+
+      Upon accepting a request from an external client, the server provider must create
+      and dispatch a corresponding <code>com.yahoo.jdisc.Request</code> instance. Upon
+      receiving the <code>com.yahoo.jdisc.Response</code>, the server needs to respond
+      back to the client.
+
+      To implement a server provider, either implement the
+      <a href="../javadoc/index.html?com/yahoo/jdisc/service/ServerProvider.html"><code>ServerProvider</code></a>
+      interface directly, or subclass the more convenient
+      <a href="../javadoc/index.html?com/yahoo/jdisc/service/AbstractServerProvider.html"><code>AbstractServerProvider</code></a>.
+
+      Please note the following:
+    </p>
+    <ul>
+      <li>All server providers require a local reference
+        to <code>CurrentContainer</code>. Declare that as a constructor argument (which
+        triggers <a href="injecting-components.html">injection</a>), and store it
+        locally.</li>
+      <li>All requests dispatched by a server provider should be "server" requests (i.e.
+        requests whose <code>isServerRequest()</code> method returns <code>true</code>).
+        To create such a request, use
+        <a href="../javadoc/index.html?com/yahoo/jdisc/Request.html#Request(com.yahoo.jdisc.service.CurrentContainer,%20java.net.URI)">this constructor</a>.</li>
+      <li>The code necessary to dispatch a request and write its content into the
+        returned <code>ContentChannel</code> is the same as for
+        <a href="developing-request-handlers.html#dispatch-request">dispatching a client
+        request</a> from a request handler.</li>
+      <li>The code necessary to handle the response and its content is the same
+        as for <a href="developing-request-handlers.html#handle-response">handling a
+        client response</a> in a request handler.</li>
+    </ul>
+    <p>
+      To install a server provider in a JDisc Container, use
+      the <a href="../reference/services-jdisc.html#server">server</a>
+      element in <em>services.xml</em>, e.g.:
+    </p>
+    <pre class="brush: xml">
+&lt;jdisc id="default" version="1.0"&gt;
+    &lt;server id="my.package.MyServerProvider" bundle="MyBundleSymbolicName" /&gt;
+    &lt;nodes&gt;
+        &lt;node hostalias="node1" /&gt;
+    &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+  </body>
+</html>

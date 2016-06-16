@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Automatically detected issues</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+  <h1>Automatically detected issues</h1>
+  <p>
+    The content layer attempts to automatically detect and handle many common
+    issues. Depending on the issue, it may be handled with no ill effect at
+    all. Some issues generate temporary unavailability issues. One of goals of
+    the content layer, is to handle as many issues as possible automatically,
+    with as little effect as possible seen for clients.
+  </p>
+  <p>
+    As these issues are handled automatically administrators may not need to care
+    that much about them. However, handling them may create some temporary
+    issues. If these issues aren't known it may trigger administrators to think
+    that there's something else wrong with the cluster. Especially in large
+    clusters with high availability requirements, these issues, and how they
+    are handled, should be known.
+  </p>
+
+  <h2>Distributor or service layer node not existing.</h2>
+  <p>
+    When a content cluster is configured, a set of nodes is configured within a
+    cluster. These nodes are expected to register themself in a naming service
+    called slobrok on startup. If the nodes have not been set up at all, or
+    they have failed to start up required processes, the naming service will
+    not know about the nodes, and they will be assumed to be unavailable as
+    there is no way to contact them.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    Calculations for how big percentage of a cluster that is available will
+    include these nodes even if they never have been seen. If many nodes are
+    configured to exist, but really doesn't, default values for when to set the
+    entire cluster down will be too high. If nodes do exist, but processes have
+    not been started, resources are left unused and wasted.
+  </p>
+
+  <h2 id="noresponse">Distributor or service layer node not available on the network.</h2>
+  <p>
+    The slobrok naming service will require clients to ping them periodically.
+    If clients stop to do that, they will be removed from the service. There is
+    a time window where nodes may be in the slobrok service while not being
+    available anymore though. Additionally, slobrok lookups can be cached for a
+    little while, allowing the slobrok service itself to restart without
+    interrupting the cluster. With the node not responding at all, or the OS
+    frozen on the box, no response may be created to the TCP requests. A TCP
+    timeout will eventually tell the cluster controller that the node is not
+    available. To be able to shorten the detection time, the cluster controller
+    sends requests with a configurable timeout. However, as the cluster
+    controller want to keep a pending node state request at all times, the
+    timeout cannot be too short.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    This happens when operating system dies due to kernel panic or similar.
+    Pending requests to this node may never get a response. Requests will
+    eventually time out. Automatic resending from client will typically not
+    kick in, as all time within timeout has already passed. Application
+    resending will work, but the latency of the affected requests will be high.
+  </p>
+
+  <h2>Distributor node restarting</h2>
+  <p>
+    When a distributor stops, whether it is from a crash or controlled shut down,
+    it will try to respond to any pending cluster state request first. If none
+    happen to be pending, one should be incoming very soon, which will return
+    immediately, as the socket is no longer accepting requests. Cluster
+    controllers will thus detect processes stopping almost immediately.
+  </p>
+  <p>
+    The cluster state will be updated with the new state internally in the
+    cluster controller. Then the cluster controller will wait for a short
+    configurable time period before publishing the new state. (Typically a few
+    milli seconds to allow several node state changes happening at the same
+    time to all be included in the new cluster state)
+  </p>
+  <p>
+    The cluster controller have the option of setting states to make other
+    distributors take over ownership of buckets, or mask the change, making the
+    buckets owned by the distributor restarting unavailable for the time being.
+    Distributors restart fast, so the restarting distributor may transition
+    directly from up to initializing. If it doesn't, current default behavior
+    is to set it down immediately.
+  </p>
+  <p>
+    If transitioning directly from up to initializing, requests going through
+    the remaining distributors will be unaffected. The requests going through
+    the restarting distributor will immediately fail when it shuts down, being
+    resent automatically by the client. The distributor typically restart
+    within seconds, and syncs up with the service layer nodes to get metadata on
+    buckets it owns, in which case it is ready to serve requests again.
+  </p>
+  <p>
+    If the distributor transition from up to down, and then later to initializing,
+    other distributors will request metadata from the service layer node to take
+    over ownership of buckets previously owned by the restarting distributor.
+    Until the distributors have gathered this new metadata from all the service
+    layer nodes, requests for these buckets can not be served, and will fail
+    back to client. When the restarting node comes back up and is marked
+    initializing or up in the cluster state again, the additional nodes will
+    dump knowledge of the extra buckets they previously aquired.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    For request with timeouts of several seconds, the transition should hopefully
+    be invisible due to automatic client resending. Requests with a lower timeout
+    will just fail, and it is up to the application whether to resend or cope with
+    a failing request.
+  </p>
+  <p>
+    Requests to buckets not owned by the restarting distributor should remain
+    virtually unaffected, even if other distributors starts grabbing ownership
+    of new buckets. The other distributors will start to do some work though,
+    affecting latency, and distributors will refetch metadata for all buckets
+    they own, not just the additional buckets, which may cause some disturbance.
+  </p>
+
+  <h2>Service layer node restarting</h2>
+  <p>
+    When a service layer node restarts in a controlled fashion, it marks itself
+    in the stopping state. Then it starts rejecting new requests. Finally it
+    attempts to process its current request queue before continuing to shut
+    down. Consequently, client requests are typically unaffected by service layer
+    node restarts. The currently pending requests will typically be completed
+    normally. New copies of buckets will be created on other nodes, to store new
+    requests in appropriate redundancy. This happens whether node transitions
+    through down or maintenance state. The difference being that if transitioning
+    through maintenance state, the distributor will not start any effort of
+    synchronizing new copies with existing copies. They will just store the new
+    requests until the maintenance node comes back up.
+  </p>
+  <p>
+    When coming back up, service layer nodes will start with gathering information
+    on what buckets it has data stored for. While this is happening, the
+    service layer will expose that it is initializing, but not done with the
+    bucket list stage. During this time, the cluster controller will not mark it
+    initializing in cluster state yet. Once the service layer node knows what
+    buckets it has, it reports that it is calculating metadata for the buckets,
+    at which time the node may become visible as initializing in cluster state.
+    At this time it may start process requests but as bucket checksums have not
+    been calculated for all buckets yet, there will exist buckets where the
+    distributor doesn't know if they are in sync with other copies or not.
+  </p>
+  <p>
+    The background load to calculate bucket checksums is low priority, but load
+    received will automatically create metadata for used buckets. With an
+    overloaded cluster, the initializing step may not finish before all buckets
+    have been initialized by requests. With a cluster close to max capacity,
+    initializing may take quite some time.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    Cluster is mostly unaffected. During the initializing stage, bucket metadata
+    is unknown. Distributors will assume other copies are more appropriate for
+    serving read requests. If all copies of a bucket are in an initializing state
+    at the same time, read requests may be sent to a bucket copy that does not
+    have the most updated state to process it.
+  </p>
+
+  <h2>Distributor or service layer node crashing</h2>
+  <p>
+    A crashing node restarts in much the same node as a controlled restart.
+  </p>
+  <p>
+    A service layer node will likely be unable to finish processing the
+    currently pending requests though, causing some failed requests. Client
+    resending should hopefully hide these failures though, as the distributor
+    should be able to process the resent request quickly, using other copies
+    than the recently lost one.
+  </p>
+  <h2>Trashing nodes</h2>
+  <p>
+    Nodes have been observed trashing. An example is OS disk using excessive
+    amount of time to complete IO requests. Ends up with maximum number of
+    files open, and as the OS is so dependent on the filesystem, it ends being
+    able to do not much at all.
+  </p>
+  <p>
+    After seeing the example issue above, the get node state requests were altered
+    to fetch some node metrics from /proc and write this report to a temp
+    directory on the OS disk before replying to the request. This caused this
+    trashing node example to make node state requests to time out, tagging the
+    node down in the cluster state. However, other cases of trashing may still
+    exist that will still allow node state requests to be responded to, while the
+    node itself is in a really poor state to perform requests.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    If detected, will have the same effects like the
+    <a href="#noresponse">not available on network</a> issue. If not detected,
+    availability for the entire cluster may be lost, as we end up in the
+    <a href="admin-manual.html#inaccurate_capacity">inaccurate capacity</a>
+    case that must be manually fixed.
+  </p>
+
+  <h2 id="constantly_crashing">Constantly restarting distributor or service layer node</h2>
+  <p>
+    A broken node may end up with processes constantly restarting. It may die
+    during initialization due to accessing corrupt files, or it may die when it
+    starts receiving external requests of a given type triggering some node
+    local bug. This is especially sad for distributor nodes, as these restarts
+    create constant ownership transfer between distributors, causing a lot of
+    windows where some buckets are unavailable.
+  </p>
+  <p>
+    The cluster controller has functionality for detecting such nodes. If a node
+    restarts in a way that is not detected as a controlled shutdown, and it does
+    this more than a configurable amount of times within a time period, the
+    cluster controller will adjust the wanted state of this node to be down, to
+    prevent it from further affecting the cluster.
+  </p>
+  <p>
+    Detecting a controlled restart is currently a bit tricky. A controlled restart
+    is typically initiated by sending a TERM signal to the process. Not having
+    any other sign, the content layer has to assume that all TERM signals are
+    the cause of controlled shutdowns. Thus, if the process keep being killed by
+    kernel due to using too much memory, this will look like controlled shutdowns
+    to the content layer.
+  </p>
+
+  <h2>Disabling a backend partition</h2>
+  <p>
+    The backend may notify the service layer that one of its partitions are no
+    longer useful. The service layer node will then restart, not accessing the
+    partition no longer usable on startup. This is done for safety reasons, to
+    avoid the process having any open IO references to disks no longer usable
+    for instance.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    The effects happening when restarting service layer node will still be valid.
+    However, the request queue for the partition that has been failed, will be
+    failed back immediately. The request queue for the other partitions will
+    attempt to complete processing though. When the node is back up, the partition
+    will be marked down. The bucket copies that existed on the now unavailable
+    partition will be divided equally among all partitions on other nodes.
+  </p>
+
+  <h2>Backend reporting that a bucket have become corrupt</h2>
+  <p>
+    The backend may also notify the service layer that the metadata for a bucket
+    have changed for any reason. This will cause the distributors to detect that
+    the bucket is out of sync with the other copies, and a merge operations will
+    be started, to send documents to copies that doesn't have them.
+  </p>
+  <p>
+    For this to automatically be handled, the corruption can not be permanent.
+    For instance, if a bucket becomes corrupt due to a file on the disk that
+    cannot be read, the backend must ensure that it is able to work around the
+    issue. If not it has no option but disabling the partition or the node, to
+    avoid requests to persistently keep failing.
+  </p>
+  <p>
+    <b>Effect on cluster:</b>
+    Requests already pending to the corrupt copy, may be processed giving an
+    inconsistent response back to the client. As soon as the distributor knows
+    the copy has changed though, it will prefer the other copies to serve read
+    requests.
+  </p>
+  
+</body>
+</html>

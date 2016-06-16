@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespa-model-inspect</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="November 2012" />
+  <meta name="authors" content="arnej, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+
+This is the HTML version of the man page for the command line
+tool <em>vespa-model-inspect</em> &mdash; a tool for inspecting
+the topology and services of a Vespa system.
+
+</p>
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vespa-model-inspect</strong> &mdash; inspect a model of the
+running system.
+</p>
+
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vespa-model-inspect</strong> [-<strong>c <em>host</em> |
+<em>host:port</em></strong>] [-<strong>t <em>tag</em></strong>]
+[-<strong>h</strong>] [-<strong>u</strong>] [-<strong>v</strong>]
+<em>command</em>
+</p>
+
+<h1 id="description">Description</h1>
+<p>
+<em>vespa-model-inspect</em> is a command line tool for inspecting the
+topology and services of a Vespa system. Hosts, services, clusters,
+ports, URLs and config ids can be inspected.  It can run on any
+machine in a Vespa cluster that is running a Vespa configuration
+server.
+</p>
+
+
+<h1 id="commands">Commands</h1>
+<p>
+  You invoke <em>vespa-model-inspect</em> with a command, and an argument to that command. The
+  commands are:
+</p>
+<dl>
+  <dt><code>hosts</code></dt>
+  <dd>
+    Show hostnames of all hosts in your Vespa system.
+  </dd>
+
+  <dt><code>services</code></dt>
+  <dd>
+    Show a list of all servicetypes in your Vespa system.
+  </dd>
+
+  <dt><code>clusters</code></dt>
+  <dd>
+    Show a list of all named clusters in your Vespa system.
+  </dd>
+
+  <dt><code>configids</code></dt>
+  <dd>
+    Show a list of all config ids in your Vespa system.
+  </dd>
+
+  <dt><code>host</code> <em>hostname</em></dt>
+  <dd>
+    Show details of a given host: What services are running, and what
+    ports have they allocated.
+  </dd>
+
+  <dt><code>service</code> <em>servicename</em></dt>
+  <dd>
+    Show details for a particular service type: What instances of the
+    service are running, on what hosts, and what ports have they
+    allocated.
+  </dd>
+
+  <dt><code>cluster</code> <em>clustername</em></dt>
+  <dd>
+    Show all services in the named cluster, with details on hostname
+    and allocated ports.
+  </dd>
+
+  <dt><code>configid</code> <em>configid</em></dt>
+  <dd>
+    Show all services using this configid.
+  </dd>
+
+</dl>
+
+
+
+<h1 id="options">Options</h1>
+
+<dl>
+
+<dt><strong>-c <em>host</em> | <em>host:port</em></strong></dt>
+<dd>
+Specify host and port (or just host) to use for getting the config
+that this tool displays. Default is to use the configserver.
+You might want to use localhost:19090 if you are on a host with
+a running Vespa system without a config server.
+</dd>
+
+<dt><strong>-h</strong></dt>
+<dd>
+Show usage.
+</dd>
+
+<dt><strong>-t <em>tag</em></strong></dt>
+<dd>
+to filter on a port tag
+</dd>
+
+<dt><strong>-u</strong></dt>
+<dd>
+Show URLs for services.
+</dd>
+
+<dt><strong>-v</strong></dt>
+<dd>
+Verbose mode.
+</dd>
+
+</dl>
+
+
+<h1 id="examples">Examples</h1>
+<p>
+  An example session with this tool may look like the following:
+</p>
+<pre class="brush: cli">
+$ vespa-model-inspect hosts
+mynode.moydomain.com
+
+$ vespa-model-inspect services
+adminserver
+clustercontroller
+config-sentinel
+configproxy
+configserver
+container-clustercontroller
+container-httpgateway
+docprocservice
+filedistributorservice
+logd
+logserver
+metricsproxy
+qrserver
+searchnode
+slobrok
+topleveldispatch
+transactionlogserver
+
+$ vespa-model-inspect -u service qrserver
+qrserver @ mynode.mydomain.com :
+search/qrsclusters/default/qrserver.0
+    http://mynode.mydomain.com:8080/ (STATE EXTERNAL QUERY HTTP)
+    http://mynode.mydomain.com:8081/ (EXTERNAL STATUS HTTP)
+    tcp/mynode.mydomain.com:8082 (MESSAGING RPC)
+    http://mynode.mydomain.com:8083/ (EXTERNAL FILESERVER HTTP)
+    tcp/mynode.mydomain.com:8084 (ADMIN RPC)
+    tcp/mynode.mydomain.com:8085 (RMIREGISTRY RMI)
+    tcp/mynode.mydomain.com:8086 (JMX RMI)
+
+$ vespa-model-inspect cluster storage
+storagenode @ mynode.mydomain.com : storage
+storage/cluster.storage/storage/0
+    tcp/mynode.mydomain.com:19100 (MESSAGING)
+    tcp/mynode.mydomain.com:19101 (STATUS RPC)
+    tcp/mynode.mydomain.com:19102 (STATUS HTTP)
+fleetcontroller @ mynode.mydomain.com : storage
+storage/cluster.storage/fleetcontroller/0
+    tcp/mynode.mydomain.com:19103 (STATUS ADMIN HTTP)
+    tcp/mynode.mydomain.com:19104 (STATUS ADMIN RPC)
+distributor @ mynode.mydomain.com : storage
+storage/cluster.storage/distributor/0
+    tcp/mynode.mydomain.com:19105 (MESSAGING)
+    tcp/mynode.mydomain.com:19106 (STATUS RPC)
+    tcp/mynode.mydomain.com:19107 (STATUS HTTP)
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Service Location Broker (Slobrok)</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+<meta name="date"    content="July 2006" />
+<meta name="authors" content="arnej" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the <em>Service Location Broker (Slobrok)</em>
+service in Vespa.
+</p>
+
+<p>
+Slobrok is an acronym for <em>Service Location Broker</em>, and it is
+a name service used in Vespa. The service listens on a specific
+port. Use
+the <a href="reference/vespa-model-inspect.html">Vespa
+Model Inspector</a> to find out what port number
+the <code>Slobrok</code> service has.
+</p>
+
+<p>
+Clients (like the Document API), will try to do lookups toward any of the
+nodes the service location broker is running on. The Slobrok process
+looks like this: <code>ps ax|grep slobrok</code>:
+</p>
+
+<pre class="code">
+93906  ??  SJ     2:31.52 $VESPA_HOME/bin/slobrok -p 19100 -c slobrok.0
+</pre>
+
+<p>
+The Slobrok is running on the administration node as well as one or
+two other random nodes for redundancy. As the service requires minimal
+system resources, it should not disturb other services running on the
+same node.
+</p>
+
+</body>
+</html>

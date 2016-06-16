@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+    <meta name="date" content="May 2016"/>
+    <meta name="authors" content="tonyv,gv,kraune"/>
+    <title>Configuring Http Servers and Filters</title>
+</head>
+<body>
+
+<p>
+    This document explains how to set up http servers and filters in the JDisc Container. Before proceeding, you should
+    be familiar with <a href="developing-applications.html">Developing applications</a>.
+</p>
+
+<h1 id="setting-up-http-servers">Set up Http Servers</h1>
+<p>
+To accept http requests on e.g. port 8090, add an <code>http</code> section with a
+server to <em>services.xml</em>:
+<pre class="brush: xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;jdisc version="1.0"&gt;
+  &lt;http&gt;
+    &lt;server port="8090" id="main-server" /&gt;
+  &lt;/http&gt;
+&lt;/jdisc&gt;
+</pre>
+</p><p>
+    To verify that the new server is running, check the default handler on the root
+    path, which will return a list of all http servers:
+</p>
+<pre class="brush: cli">
+$ curl localhost:8090/
+</pre>
+<p class="note">
+    Adding an <code>http</code> section to <em>services.xml</em> <strong>disables the default http server</strong> at port 8080.
+</p><p>
+    Binding to privileged ports (&lt; 1024) is supported. Note that this <strong>only</strong>
+    works when running as a standalone container, and <strong>not</strong> when running as a JDisc/Vespa cluster.
+</p>
+
+
+<h2 id="configuring-jetty-server">Configure the HTTP Server</h2>
+<p>
+    Configuration settings for the server can be modified by setting values for the <code>jdisc.http.connector</code>
+    config inside the <code>server</code> element, like this:
+</p>
+<pre class="brush: xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;jdisc version="1.0" jetty="true"&gt;
+  &lt;http&gt;
+    &lt;server port="8090" id="main-server" &gt;
+      &lt;config name="jdisc.http.connector"&gt;
+        &lt;tcpNoDelay&gt;false&lt;/tcpNoDelay&gt;
+      &lt;/config&gt;
+    &lt;/server&gt;
+  &lt;/http&gt;
+&lt;/jdisc&gt;
+</pre>
+<p>
+    Note that it is not allowed to set the <code>listenPort</code> in the http-server config, as it conflicts with the
+    port that is set in the <em>port</em> attribute in the <em>server</em> element. For a complete list of configuration fields that
+    can be set, refer to the config definition schema in <em>jdisc.http.connector.def</em>.
+</p>
+
+<h1 id="setting-up-filter-chains">Setting up Filter Chains</h1>
+<p>
+    There are two main types of filters; request filters and response filters. Request filters run before the handler
+    that processes the request, and response filters run after. They are used for tasks such as authentication, error
+    checking and modifying headers.
+</p>
+
+<h2 id="using-filter-chains">Using Filter Chains</h2>
+<p>
+    Filter chains are set up by using the <code>request-chain</code> and <code>response-chain</code> elements inside the
+    <a href="../reference/services-http.html#filtering"><code>filtering</code></a> element. Below is an example setting
+    up two request filter chains, and one respone filter chain.
+</p>
+<pre class="brush: xml">
+&lt;http&gt;
+  &lt;filtering&gt;
+    &lt;filter id='request-filter1' class='com.yahoo.test.RequestFilter1' bundle='demo-bundle'/&gt;
+
+    &lt;request-chain id='test-request-chain'&gt;
+      &lt;filter id='request-filter1' /&gt;
+      &lt;filter id='request-filter2' class='com.yahoo.test.RequestFilter2' /&gt;
+    &lt;/request-chain&gt;
+
+    &lt;request-chain id='other-request-chain'&gt;
+      &lt;filter id='request-filter1' /&gt;
+    &lt;/request-chain&gt;
+
+    &lt;response-chain id='test-response-chain'&gt;
+      &lt;filter id='response-filter' class='com.yahoo.test.ResponseFilter' /&gt;
+    &lt;/response-chain&gt;
+  &lt;/filtering&gt;
+  &lt;server port="4080" id="main-server" /&gt;
+&lt;/http&gt;
+</pre>
+<p>
+    Filters that should be used in more than one chain, must be defined directly under the <code>filtering</code>
+    element, as shown with <code>request-filter1</code> in the example above.
+</p>
+<p>
+    To actually use a filter chain, we have to add one or more URI
+    <a href="../reference/services-http.html#binding">bindings</a>:
+</p>
+<pre class="brush: xml">
+&lt;http&gt;
+  &lt;filtering&gt;
+    &lt;request-chain id='test-request-chain'&gt;
+      &lt;filter id='request-filter' class='com.yahoo.test.RequestFilter' /&gt;
+      &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;/request-chain&gt;
+
+    &lt;response-chain id='test-response-chain'&gt;
+      &lt;filter id='response-filter' class='com.yahoo.test.ResponseFilter' /&gt;
+      &lt;binding&gt;http://*/*&lt;/binding&gt;
+    &lt;/response-chain&gt;
+  &lt;/filtering&gt;
+  &lt;server port="4080" id="main-server" /&gt;
+&lt;/http&gt;
+</pre>
+<p>
+    These bindings say that both the request chain and the response chain should be used when the request URI matches
+    <code>http://*/*</code>. So both a request filter chain and a response filter chain can be used on a single request.
+    However, only one request chain will be used if there are multiple request chains that have a binding that matches a
+    request. And vice versa for response chains. For information about which chain that will be used in such cases,
+    please refer to the <a href="../javadoc/index.html?com/yahoo/jdisc/application/UriPattern.html">javadoc</a>.
+</p>
+<p>
+    In order to bind a filter chain to a specific <em>server</em>, just add the server port to the binding:
+</p>
+<pre class="brush: xml">
+&lt;request-chain id='test-request-chain'&gt;
+  &lt;filter id='request-filter' class='com.yahoo.test.RequestFilter' /&gt;
+  &lt;binding&gt;http://*:8080/*&lt;/binding&gt;
+  &lt;binding&gt;http://*:9000/*&lt;/binding&gt;
+&lt;/request-chain&gt;
+</pre>
+
+
+<h3 id="excluding-filters">Excluding Filters from an Inherited Chain</h3>
+<p> Say you have a request filter chain that you are binding to most of your URIs. Now,
+you want to run almost the same chain on another URI, but you need to exclude one of the
+filters. This is done by adding <code>excludes</code>, which takes a space separated list
+of filter ids, to the <a href="../reference/services-http.html#chain">chain
+element</a>. Below, an example where a security filter is excluded from an
+inherited chain for <em>status.html</em>:
+<pre>
+  &lt;request-chain id="request-chain-with-excludes"
+            inherits="request-chain-with-security"
+            excludes="com.yahoo.jdisc.http.filter.security.MyFilter"&gt;
+    &lt;binding&gt;http://*/status.html&lt;/binding&gt;
+  &lt;/request-chain&gt;
+</pre>
+
+
+<h2 id="creating-a-filter">Creating your own Filter</h2>
+<p>
+    <a href="developing-applications.html#create-application">Create an application package</a> with artifactId
+    <code>filter-bundle</code>. Create a new file <code>filter-bundle/components/src/main/java/com/yahoo/demo/TestRequestFilter.java</code>
+    with the following:
+</p>
+<pre class="brush: java">
+package com.yahoo.demo;
+
+import com.yahoo.jdisc.*;
+import com.yahoo.jdisc.handler.*;
+import com.yahoo.jdisc.http.*;
+import com.yahoo.jdisc.http.filter.RequestFilter;
+
+import java.net.*;
+import java.nio.ByteBuffer;
+
+public class TestRequestFilter extends AbstractResource implements RequestFilter  {
+    @Override
+    public void filter(HttpRequest httpRequest, ResponseHandler responseHandler) {
+        if (isLocalAddress(httpRequest.getRemoteAddress())) {
+            rejectRequest(httpRequest, responseHandler);
+        } else {
+            httpRequest.context().put("X-NOT-LOCALHOST", "true");
+        }
+    }
+
+    private boolean isLocalAddress(SocketAddress socketAddress) {
+        if (socketAddress instanceof InetSocketAddress) {
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+            return address.isAnyLocalAddress() || address.isLoopbackAddress();
+        } else {
+            return false;
+        }
+    }
+
+    private void rejectRequest(HttpRequest request, ResponseHandler responseHandler) {
+        HttpResponse response = HttpResponse.newInstance(request, Response.Status.FORBIDDEN);
+        ContentChannel channel = responseHandler.handleResponse(response);
+        channel.write(ByteBuffer.wrap("Not accessible by localhost.".getBytes()), null);
+        channel.close(null);
+    }
+}
+</pre>
+<p>
+    Build a bundle, and place it in the <code>components</code> directory of your application package.
+</p>
+
+</body>
+</html>

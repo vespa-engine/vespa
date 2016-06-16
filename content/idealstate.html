@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Distribution algorithm</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+<p>
+  The distribution algorithm decides what nodes should be responsible for a
+  given bucket. This is used directly in the clients to calculate distributor
+  to talk to. Content nodes need time to move buckets when the distribution is
+  changing, so routing to content nodes is done using tracked current state.
+  The distribution algorithm decides which content nodes is wanted to store the
+  bucket copies though, and due to this, the algorithm is also referred to as
+  the ideal state algorithm.
+</p>
+
+<h1 id="overview">Overview</h1>
+<p>
+  The input to the distribution algorithm is a bucket identifier, together with
+  knowledge about what nodes are available, and what their capacities are.
+</p>
+<p>
+  The output of the distribution algorithm is a sorted list of the available
+  nodes. The first node in the order is the node most preferred to handle a
+  given bucket. Currently, the highest order distributor node will be the
+  owning distributor and the redundancy factor decides how many of the highest
+  order content nodes are preferred to store copies for a bucket.
+</p>
+<p>
+  To enable minimal transfer of buckets when the list of available nodes
+  changes, the removal or addition of nodes should not alter the sort order of
+  the remaining nodes.
+</p>
+
+<h1 id="desired">Desired qualities</h1>
+<p>
+    There are a number of desirable qualities for the ideal state algorithm. It
+    might not be possible or practical to fulfill all of them though.
+</p>
+
+<dl>
+  <dt>Minimal reassignment on cluster state change.</dt><dd>
+    <ul>
+      <li>If a node goes down, only buckets that resided on that node should be
+          reassigned.</li>
+      <li>If a node comes up, only buckets that are moved to the new node should
+          relocate.</li>
+      <li>Increasing the capacity of a single node should only move buckets to
+          that node.</li>
+      <li>Reducing the capacity of a single node should only move buckets away
+          from that node.</li>
+    </ul>
+  </dd>
+  <dt>No skew in distribution.</dt><dd>
+    Nodes should get an amount of data relative to their capacity.
+  </dd>
+  <dt>Lightweight</dt><dd>
+    A simple algorithm that is easy to understand is a plus. Being lightweight
+    to calculate is also a plus, giving more options of how to use it, without
+    needing to cache results.
+  </dd>
+</dl>
+
+<h1 id="cpucost">Computational cost</h1>
+<p>
+  When considering how efficient the algorithm have to be, it is important to
+  consider how often we need to calculate the ideal locations. Calculations are
+  needed for the following tasks.
+<ul>
+  <li>
+    A client needs to map buckets to the distributors. If there are few buckets
+    existing, all the results can be cached in clients, but for larger clusters,
+    a lot of buckets may need to exist to create an even distribution, and
+    caching becomes more memory intensive. Preferrably the computational cost
+    is cheap enough, such that no caching is needed. Currently, no caching is
+    done by clients, but there is typically less than a million buckets, so
+    caching all results would still have been viable.
+  </li><li>
+    Distributors need to calculate ideal state for a single bucket to verify
+    that incoming operations are mapped to the correct distributor (client have
+    cluster state matching the distributor). This could be eliminated for
+    buckets pre-existing in the bucket database, which would be true in most
+    all cases. Currently calculation is done for all requests.
+  </li><li>
+    Distributors need to calculate correct content nodes to create bucket
+    copies on when operations to currently non-existing buckets come in. This
+    is typically only something happening at the very start of the cluster
+    lifetime though. Normally buckets are created through splitting or joining
+    existing buckets.
+  </li><li>
+    Distributors need to calculate ideal state to check if any maintenance
+    operations needs to be done for a bucket.
+  </li><li>
+    Content nodes need to calculate ideal state for a single bucket to verify
+    that the correct distributor sent the request. This could be cached or
+    served through bucket database but currently there is no need.
+  </li>
+</ul>
+
+<p>
+  As long as the algorithm is cheap, we can avoid needing to cache the result.
+  The cache will then not limit scalability, and we have less dependencies and
+  complexity within the content layer. The current algorithm has shown itself
+  cheap enough, such that very little caching has been needed.
+</p>
+
+<h1 id="modulo">A simple example: Modulo</h1>
+<p>
+  A very simple approach would be to use a modulo operation to find the most
+  preferred node, and then just order the nodes in configured order from there,
+  skipping nodes that are currently not available.
+</p>
+<pre>
+  most preferred node = bucket % nodecount
+</pre>
+
+<h2 id="modulo_prop">Properties</h2>
+<ul>
+  <li>Very computational lightweight and easy to understand</li>
+  <li>Perfect distribution among nodes.</li>
+  <li>Total redistribution on state change.</li>
+</ul>
+<p>
+  By just skipping currently unavailable nodes, nodes can go down and up with
+  minimal movement. However, if the number of configured nodes change,
+  practically all buckets will be redistributed. As the content layer is
+  intended to be very scalable, this breaks with one of the intentions and this
+  algorithm has thus not been considered.
+</p>
+
+<h1 id="random">Weighted random election</h1>
+<p>
+  This is the algorithm that is currently used for distribution in the content
+  layer, as it fits our usecase well.
+</p>
+<p>
+  To avoid a total redistribution on state change, the mapping can not be
+  heavily dependent on the number of nodes in the cluster. By using random
+  numbers we can distribute the buckets randomly between the nodes, in such a
+  fashion that altering the cluster state has a small impact. As we need the
+  result to be reproducable, we obviously need to use a pseudo-random number
+  generator and not real random numbers.
+</p>
+<p>
+  The idea is as follows. To find the location of a given bucket, seed a random
+  number generator with the bucket identifier, when draw one number for each
+  node. The drawn numbers will then decide upon the preferred node order for
+  that specific bucket.
+</p>
+<p>
+  For this to be reproducable, all nodes need to draw the same numbers each
+  time. Each node is assigned a distribution key in the configuration. This
+  key decides what random number the node will be assigned. For instance, a node
+  with distribution key 13, will be assigned the 14th random number generated.
+  (As the first will go to the node with key 0). The existance of this node then
+  also requires us to always generate at least 14 random numbers to do the
+  calculation.
+</p>
+<p>
+  Thus, one may end up calculating random numbers for nodes that are currently
+  not available, either because they are temporarily down, or because the
+  configuration have left holes in the distribution key space. It is
+  recommended to not leave too large holes in the distribution key space to
+  not waste too much resources here.
+</p>
+<p>
+  Using this approach, if you add another node to the cluster, it will roll for
+  each bucket. It should thus steal ownership of some of the buckets. As all
+  the numbers are random, it will steal buckets from all the other nodes, thus,
+  given that the bucket count is large compared to the number of nodes, it will
+  steal on average 1/n of the buckets from each pre-existing node, where n is
+  the number of nodes in the current cluster.  Likewise, if a node is removed
+  from the cluster, the remaining nodes will divide the extra load between them.
+</p>
+
+<h2 id="random_weights">Weighting nodes</h2>
+<p>
+  By enforcing all the numbers drawn to be floating point numbers between 0 and
+  1, we can introduced node weights using the following formula:
+</p>
+<pre>
+  r ^ (1/c)
+</pre>
+<p>
+  Where r is the floating point number between 0 and 1 that was drawn for a
+  given node, and c is the node capacity, which is the weight of the node.
+  Proof not included here, but this will end up giving each node on average an
+  amount of data that is relative to its capacity. That is, among any nodes
+  there are two nodes X and Y, where the number of buckets given to X should be
+  equal to the number of buckets given to Y multiplied by
+  capacity(X)/capacity(Y). (Given perfect random distribution)
+</p>
+<p>
+  Altering the weight in a running system will also create a minimal
+  redistribution of data. If we reduce the capacity, all the nodes number will
+  be reduced, and some of its buckets will be taken over by the other nodes,
+  and vice versa if the capacity is increased.
+</p>
+
+<h2 id="random_prop">Properties</h2>
+<ul>
+  <li>Minimum data movement on state changes</li>
+  <li>Some skew, depending on how good the random number generator is, the
+      amount of nodes we have to divide buckets between, and the number of
+      buckets we have to divide between them.</li>
+  <li>Fairly cheap to compute given a reasonable amount of nodes, and an
+      inexpensive pseudo-random number generator.</li>
+</ul>
+
+<h2 id="skew">Distribution skew</h2>
+<p>
+  The algorithm does generate a bit of skew in the distribution, as it is
+  essentially random. The following attributes decrease the skew:
+</p>
+
+<ul>
+  <li>Having more buckets to distribute.</li>
+  <li>Having less targets (nodes and partitions) to distribute buckets to.</li>
+  <li>Having a more uniform pseudo-random function.</li>
+</ul>
+
+<p>
+  The more buckets exist, the more metadata needs to be tracked in the
+  distributors though, and operations that wants to scan all the buckets will
+  take longer. Additionally, the backend may want buckets above a given size
+  to improve performance, storage efficiency or similar. Consequently, we
+  typically want to enforce enough buckets for a decent distribution, but not
+  any more.
+</p>
+<p>
+  Then the number of nodes increase, more buckets need to exist to keep the
+  distribution even. If the amount of nodes are doubled, the number of buckets
+  must typically more than double to keep the distribution equally even. Thus,
+  this scales worse than linear. It does not scale much worse though, and this
+  has not proved to be a practical problem for the cluster sizes we have used
+  up until now. (A cluster size of a thousand nodes does not seem to be any
+  issue here)
+</p>
+<p>
+  Having a very good and uniform psuedo-random function makes the distribution
+  more even. However, this may require more computationally heavy generators.
+  Currently we are using a simple and fast algorithm and it has proved more
+  than sufficient for our needs.
+</p>
+<p>
+  The distribution to distributors are done to create an even distribution
+  between the nodes. The distributors are free to split the buckets further
+  if the backend wants buckets to contain less data. They can not use less
+  buckets than are needed for distribution though. By using a minimum amount
+  of buckets for distribution, the distributors have more freedom to control
+  sizes of buckets.
+</p>
+
+<h2 id="waste">Distribution waste</h2>
+<p>
+  To measure how many buckets are needed to create a decent distribution a
+  metric is needed. We have defined a waste metric for this purpose as follows:
+</p>
+<p>
+  Distribute the buckets to all the units. Assume the size of all units are
+  identical. Assume the unit with the most units assigned to it is at 100%
+  capacity. The wasted space is the percentage of unused capacity compared to
+  the used capacity.
+</p>
+<p>
+  This definition seems useful as a cluster is considered at full capacity ones
+  one of its partitions is at full capacity. Having one node with more buckets
+  than the rest is thus very damaging, while having one node with less buckets
+  than the rest is just fine.
+</p>
+<p>
+  Example: There are 4 nodes distributing 18 units. The node with the most
+  units have 6. Distribution waste is
+  <code>100% * (4 * 6 - 18) / (4 * 6) = 25%</code>.
+</p>
+<p>
+  Below we have calculated waste based on number of nodes and the amount of
+  buckets to distribute between them. Bits refer to distribution bits used.
+  A distribution bit count of 16 indicates that there will be 2^16 buckets.
+</p>
+<p>
+  The calculations assume all buckets have the same size. This is normally close
+  to true as documents are randomly assigned to buckets. There will be lots of
+  buckets per node too, so a little variance typically evens out fairly well.
+</p>
+<p>
+  The tables below assume only one partition exist on each node. If you have 4
+  partitions on 16 nodes, you should rather use the values for <code>4 * 16 =
+  64</code> nodes.
+</p>
+<p>
+  A higher redundancy factor indicates more buckets to distribute between the
+  same amount of nodes, resulting in a more even distribution. Doubling the
+  redundancy has the same effect as adding one to the distribution bit count.
+  To get values for redundancy 4, the redundancy 2 values can be used, and then
+  the waste will be equal to the value with one less distribution bit used.
+</p>
+
+<h2 id="calceddistributions">Calculated waste from various cluster sizes</h2>
+<p>
+  A value of 1 indicates 100% waste. A value of 0.1 indicates 10% waste.
+  A waste below 1 % is shown green, below 10% as yellow and below 30% as orange.
+  Red indicates more than 30% waste.
+</p>
+
+<strong>Distribution with redundancy 1:
+</strong><table border="1">
+<tr>
+  <th><nobr>Bits \ Nodes</nobr></th>
+  <td>1</td>
+  <td>2</td>
+  <td>3</td>
+  <td>4</td>
+  <td>5</td>
+  <td>6</td>
+  <td>7</td>
+  <td>8</td>
+  <td>9</td>
+  <td>10</td>
+  <td>11</td>
+  <td>12</td>
+  <td>13</td>
+  <td>14</td>
+  <td>15</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.6000</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.7143</td>
+  <td bgcolor="red">0.7500</td>
+  <td bgcolor="red">0.7778</td>
+  <td bgcolor="red">0.8000</td>
+  <td bgcolor="red">0.8182</td>
+  <td bgcolor="red">0.8333</td>
+  <td bgcolor="red">0.8462</td>
+  <td bgcolor="red">0.8571</td>
+  <td bgcolor="red">0.8667</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.5556</td>
+  <td bgcolor="red">0.6000</td>
+  <td bgcolor="red">0.6364</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.6923</td>
+  <td bgcolor="red">0.7143</td>
+  <td bgcolor="red">0.7333</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.6190</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.8222</td>
+  <td bgcolor="red">0.8400</td>
+  <td bgcolor="red">0.8545</td>
+  <td bgcolor="red">0.8333</td>
+  <td bgcolor="red">0.6923</td>
+  <td bgcolor="red">0.7143</td>
+  <td bgcolor="red">0.7333</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.3600</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.7778</td>
+  <td bgcolor="red">0.8000</td>
+  <td bgcolor="red">0.8182</td>
+  <td bgcolor="red">0.8095</td>
+  <td bgcolor="red">0.6923</td>
+  <td bgcolor="red">0.7143</td>
+  <td bgcolor="red">0.6444</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0588</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.2727</td>
+  <td bgcolor="#ffa500">0.2889</td>
+  <td bgcolor="red">0.4074</td>
+  <td bgcolor="#ffa500">0.2381</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.8129</td>
+  <td bgcolor="red">0.8316</td>
+  <td bgcolor="red">0.8469</td>
+  <td bgcolor="red">0.8519</td>
+  <td bgcolor="red">0.8359</td>
+  <td bgcolor="red">0.8367</td>
+  <td bgcolor="red">0.8359</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="#ffa500">0.1579</td>
+  <td bgcolor="#ffa500">0.1467</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1688</td>
+  <td bgcolor="red">0.3846</td>
+  <td bgcolor="red">0.7037</td>
+  <td bgcolor="red">0.7217</td>
+  <td bgcolor="red">0.7470</td>
+  <td bgcolor="red">0.7460</td>
+  <td bgcolor="red">0.7265</td>
+  <td bgcolor="red">0.6952</td>
+  <td bgcolor="red">0.6718</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="yellow">0.0519</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.2050</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.4530</td>
+  <td bgcolor="red">0.4667</td>
+  <td bgcolor="red">0.5152</td>
+  <td bgcolor="red">0.5152</td>
+  <td bgcolor="red">0.4530</td>
+  <td bgcolor="red">0.3905</td>
+  <td bgcolor="red">0.3436</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0078</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="yellow">0.0922</td>
+  <td bgcolor="#ffa500">0.1293</td>
+  <td bgcolor="#ffa500">0.1351</td>
+  <td bgcolor="#ffa500">0.1634</td>
+  <td bgcolor="#ffa500">0.1742</td>
+  <td bgcolor="#ffa500">0.1688</td>
+  <td bgcolor="#ffa500">0.2381</td>
+  <td bgcolor="#ffa500">0.2426</td>
+  <td bgcolor="#ffa500">0.2967</td>
+  <td bgcolor="red">0.3173</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0039</td>
+  <td bgcolor="yellow">0.0192</td>
+  <td bgcolor="#ffa500">0.1467</td>
+  <td bgcolor="#ffa500">0.1607</td>
+  <td bgcolor="#ffa500">0.1203</td>
+  <td bgcolor="#ffa500">0.1080</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1380</td>
+  <td bgcolor="#ffa500">0.1322</td>
+  <td bgcolor="#ffa500">0.1218</td>
+  <td bgcolor="#ffa500">0.1795</td>
+  <td bgcolor="#ffa500">0.1962</td>
+  <td bgcolor="#ffa500">0.2381</td>
+  <td bgcolor="#ffa500">0.2580</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td bgcolor="yellow">0.0275</td>
+  <td bgcolor="yellow">0.0922</td>
+  <td bgcolor="yellow">0.0898</td>
+  <td bgcolor="yellow">0.0623</td>
+  <td bgcolor="yellow">0.0741</td>
+  <td bgcolor="yellow">0.0922</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1018</td>
+  <td bgcolor="#ffa500">0.1218</td>
+  <td bgcolor="#ffa500">0.1203</td>
+  <td bgcolor="#ffa500">0.1438</td>
+  <td bgcolor="#ffa500">0.1688</td>
+  <td bgcolor="#ffa500">0.1675</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td bgcolor="yellow">0.0234</td>
+  <td bgcolor="yellow">0.0430</td>
+  <td bgcolor="yellow">0.0385</td>
+  <td bgcolor="yellow">0.0248</td>
+  <td bgcolor="yellow">0.0248</td>
+  <td bgcolor="yellow">0.0483</td>
+  <td bgcolor="yellow">0.0636</td>
+  <td bgcolor="yellow">0.0648</td>
+  <td bgcolor="yellow">0.0737</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="yellow">0.0894</td>
+  <td bgcolor="yellow">0.0800</td>
+  <td bgcolor="yellow">0.0958</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0121</td>
+  <td bgcolor="yellow">0.0285</td>
+  <td bgcolor="yellow">0.0282</td>
+  <td bgcolor="yellow">0.0121</td>
+  <td bgcolor="yellow">0.0149</td>
+  <td bgcolor="yellow">0.0571</td>
+  <td bgcolor="yellow">0.0577</td>
+  <td bgcolor="yellow">0.0562</td>
+  <td bgcolor="yellow">0.0549</td>
+  <td bgcolor="yellow">0.0412</td>
+  <td bgcolor="yellow">0.0510</td>
+  <td bgcolor="yellow">0.0439</td>
+  <td bgcolor="yellow">0.0616</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0074</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td bgcolor="#adff2f">0.0070</td>
+  <td bgcolor="yellow">0.0177</td>
+  <td bgcolor="yellow">0.0304</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0337</td>
+  <td bgcolor="yellow">0.0189</td>
+  <td bgcolor="yellow">0.0252</td>
+  <td bgcolor="yellow">0.0358</td>
+  <td bgcolor="yellow">0.0409</td>
+  <td bgcolor="yellow">0.0501</td>
+  <td bgcolor="yellow">0.0385</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0041</td>
+  <td bgcolor="#adff2f">0.0024</td>
+  <td bgcolor="#adff2f">0.0037</td>
+  <td bgcolor="#adff2f">0.0027</td>
+  <td bgcolor="yellow">0.0145</td>
+  <td bgcolor="#adff2f">0.0073</td>
+  <td bgcolor="yellow">0.0101</td>
+  <td bgcolor="yellow">0.0130</td>
+  <td bgcolor="yellow">0.0220</td>
+  <td bgcolor="yellow">0.0234</td>
+  <td bgcolor="yellow">0.0290</td>
+  <td bgcolor="yellow">0.0248</td>
+  <td bgcolor="yellow">0.0195</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td bgcolor="#adff2f">0.0021</td>
+  <td bgcolor="#adff2f">0.0036</td>
+  <td bgcolor="#adff2f">0.0083</td>
+  <td bgcolor="#adff2f">0.0059</td>
+  <td bgcolor="#adff2f">0.0056</td>
+  <td bgcolor="yellow">0.0101</td>
+  <td bgcolor="#adff2f">0.0097</td>
+  <td bgcolor="yellow">0.0123</td>
+  <td bgcolor="yellow">0.0163</td>
+  <td bgcolor="yellow">0.0150</td>
+  <td bgcolor="yellow">0.0186</td>
+  <td bgcolor="yellow">0.0173</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0010</td>
+  <td bgcolor="#adff2f">0.0007</td>
+  <td bgcolor="#adff2f">0.0010</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="#adff2f">0.0049</td>
+  <td bgcolor="#adff2f">0.0039</td>
+  <td bgcolor="#adff2f">0.0085</td>
+  <td bgcolor="#adff2f">0.0072</td>
+  <td bgcolor="#adff2f">0.0097</td>
+  <td bgcolor="yellow">0.0108</td>
+  <td bgcolor="yellow">0.0135</td>
+  <td bgcolor="yellow">0.0141</td>
+  <td bgcolor="yellow">0.0115</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="#adff2f">0.0033</td>
+  <td bgcolor="#adff2f">0.0024</td>
+  <td bgcolor="#adff2f">0.0036</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="#adff2f">0.0055</td>
+  <td bgcolor="#adff2f">0.0091</td>
+  <td bgcolor="yellow">0.0135</td>
+  <td bgcolor="yellow">0.0156</td>
+  <td bgcolor="yellow">0.0143</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0029</td>
+  <td bgcolor="#adff2f">0.0027</td>
+  <td bgcolor="#adff2f">0.0043</td>
+  <td bgcolor="#adff2f">0.0040</td>
+  <td bgcolor="#adff2f">0.0066</td>
+  <td bgcolor="#adff2f">0.0061</td>
+  <td bgcolor="#adff2f">0.0060</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0021</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="#adff2f">0.0023</td>
+  <td bgcolor="#adff2f">0.0031</td>
+  <td bgcolor="#adff2f">0.0042</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0029</td>
+  <td bgcolor="#adff2f">0.0025</td>
+  <td bgcolor="#adff2f">0.0037</td>
+  <td bgcolor="#adff2f">0.0044</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0026</td>
+  <td bgcolor="#adff2f">0.0035</td>
+  <td bgcolor="#adff2f">0.0040</td>
+</tr>
+</table>
+<strong>Distribution with redundancy 2:
+</strong><table border="1">
+<tr>
+  <th><nobr>Bits \ Nodes</nobr></th>
+  <td>1</td>
+  <td>2</td>
+  <td>3</td>
+  <td>4</td>
+  <td>5</td>
+  <td>6</td>
+  <td>7</td>
+  <td>8</td>
+  <td>9</td>
+  <td>10</td>
+  <td>11</td>
+  <td>12</td>
+  <td>13</td>
+  <td>14</td>
+  <td>15</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.6000</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.5556</td>
+  <td bgcolor="red">0.6000</td>
+  <td bgcolor="red">0.6364</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.6923</td>
+  <td bgcolor="red">0.7143</td>
+  <td bgcolor="red">0.7333</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.5556</td>
+  <td bgcolor="red">0.6000</td>
+  <td bgcolor="red">0.6364</td>
+  <td bgcolor="red">0.6667</td>
+  <td bgcolor="red">0.6923</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.4667</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.4286</td>
+  <td bgcolor="red">0.5000</td>
+  <td bgcolor="red">0.7037</td>
+  <td bgcolor="red">0.7333</td>
+  <td bgcolor="red">0.7576</td>
+  <td bgcolor="red">0.7778</td>
+  <td bgcolor="red">0.7949</td>
+  <td bgcolor="red">0.7714</td>
+  <td bgcolor="red">0.7333</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#adff2f">0.0000</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.3469</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.7460</td>
+  <td bgcolor="red">0.7714</td>
+  <td bgcolor="red">0.7762</td>
+  <td bgcolor="red">0.7778</td>
+  <td bgcolor="red">0.7949</td>
+  <td bgcolor="red">0.7714</td>
+  <td bgcolor="red">0.7630</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="#ffa500">0.1579</td>
+  <td bgcolor="#ffa500">0.2471</td>
+  <td bgcolor="#ffa500">0.2381</td>
+  <td bgcolor="#ffa500">0.2967</td>
+  <td bgcolor="#ffa500">0.2727</td>
+  <td bgcolor="red">0.7265</td>
+  <td bgcolor="red">0.7538</td>
+  <td bgcolor="red">0.7673</td>
+  <td bgcolor="red">0.7778</td>
+  <td bgcolor="red">0.7949</td>
+  <td bgcolor="red">0.7922</td>
+  <td bgcolor="red">0.7968</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0519</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1742</td>
+  <td bgcolor="#ffa500">0.1467</td>
+  <td bgcolor="#ffa500">0.2050</td>
+  <td bgcolor="#ffa500">0.2381</td>
+  <td bgcolor="red">0.6908</td>
+  <td bgcolor="red">0.7023</td>
+  <td bgcolor="red">0.7016</td>
+  <td bgcolor="red">0.7117</td>
+  <td bgcolor="red">0.7265</td>
+  <td bgcolor="red">0.7229</td>
+  <td bgcolor="red">0.7247</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0154</td>
+  <td bgcolor="yellow">0.0340</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="red">0.4921</td>
+  <td bgcolor="red">0.4880</td>
+  <td bgcolor="red">0.4828</td>
+  <td bgcolor="red">0.4797</td>
+  <td bgcolor="red">0.5077</td>
+  <td bgcolor="red">0.4622</td>
+  <td bgcolor="red">0.4667</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0078</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0248</td>
+  <td bgcolor="yellow">0.0623</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="yellow">0.0970</td>
+  <td bgcolor="#ffa500">0.1322</td>
+  <td bgcolor="#ffa500">0.1049</td>
+  <td bgcolor="#ffa500">0.1293</td>
+  <td bgcolor="#ffa500">0.1620</td>
+  <td bgcolor="#ffa500">0.1873</td>
+  <td bgcolor="#ffa500">0.2242</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td bgcolor="yellow">0.0266</td>
+  <td bgcolor="yellow">0.0519</td>
+  <td bgcolor="yellow">0.0466</td>
+  <td bgcolor="yellow">0.0682</td>
+  <td bgcolor="yellow">0.0791</td>
+  <td bgcolor="yellow">0.0824</td>
+  <td bgcolor="yellow">0.0519</td>
+  <td bgcolor="yellow">0.0691</td>
+  <td bgcolor="yellow">0.0519</td>
+  <td bgcolor="yellow">0.0623</td>
+  <td bgcolor="yellow">0.0741</td>
+  <td bgcolor="yellow">0.0898</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0063</td>
+  <td bgcolor="yellow">0.0173</td>
+  <td bgcolor="yellow">0.0154</td>
+  <td bgcolor="yellow">0.0275</td>
+  <td bgcolor="yellow">0.0116</td>
+  <td bgcolor="yellow">0.0340</td>
+  <td bgcolor="yellow">0.0558</td>
+  <td bgcolor="yellow">0.0294</td>
+  <td bgcolor="yellow">0.0452</td>
+  <td bgcolor="yellow">0.0466</td>
+  <td bgcolor="yellow">0.0567</td>
+  <td bgcolor="yellow">0.0501</td>
+  <td bgcolor="yellow">0.0584</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0078</td>
+  <td bgcolor="#adff2f">0.0049</td>
+  <td bgcolor="yellow">0.0154</td>
+  <td bgcolor="yellow">0.0177</td>
+  <td bgcolor="yellow">0.0149</td>
+  <td bgcolor="yellow">0.0210</td>
+  <td bgcolor="yellow">0.0275</td>
+  <td bgcolor="yellow">0.0177</td>
+  <td bgcolor="yellow">0.0252</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0305</td>
+  <td bgcolor="yellow">0.0344</td>
+  <td bgcolor="yellow">0.0317</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0073</td>
+  <td bgcolor="yellow">0.0112</td>
+  <td bgcolor="yellow">0.0192</td>
+  <td bgcolor="yellow">0.0231</td>
+  <td bgcolor="yellow">0.0312</td>
+  <td bgcolor="yellow">0.0296</td>
+  <td bgcolor="yellow">0.0177</td>
+  <td bgcolor="yellow">0.0278</td>
+  <td bgcolor="yellow">0.0358</td>
+  <td bgcolor="yellow">0.0245</td>
+  <td bgcolor="yellow">0.0312</td>
+  <td bgcolor="yellow">0.0385</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0061</td>
+  <td bgcolor="#adff2f">0.0049</td>
+  <td bgcolor="#adff2f">0.0096</td>
+  <td bgcolor="yellow">0.0112</td>
+  <td bgcolor="yellow">0.0201</td>
+  <td bgcolor="yellow">0.0218</td>
+  <td bgcolor="#adff2f">0.0088</td>
+  <td bgcolor="#adff2f">0.0077</td>
+  <td bgcolor="yellow">0.0199</td>
+  <td bgcolor="yellow">0.0138</td>
+  <td bgcolor="yellow">0.0304</td>
+  <td bgcolor="yellow">0.0317</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0059</td>
+  <td bgcolor="#adff2f">0.0058</td>
+  <td bgcolor="#adff2f">0.0058</td>
+  <td bgcolor="#adff2f">0.0057</td>
+  <td bgcolor="#adff2f">0.0092</td>
+  <td bgcolor="yellow">0.0128</td>
+  <td bgcolor="#adff2f">0.0082</td>
+  <td bgcolor="yellow">0.0139</td>
+  <td bgcolor="#adff2f">0.0081</td>
+  <td bgcolor="#adff2f">0.0096</td>
+  <td bgcolor="yellow">0.0199</td>
+  <td bgcolor="yellow">0.0213</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0014</td>
+  <td bgcolor="#adff2f">0.0039</td>
+  <td bgcolor="#adff2f">0.0052</td>
+  <td bgcolor="#adff2f">0.0034</td>
+  <td bgcolor="#adff2f">0.0051</td>
+  <td bgcolor="#adff2f">0.0085</td>
+  <td bgcolor="#adff2f">0.0044</td>
+  <td bgcolor="#adff2f">0.0072</td>
+  <td bgcolor="yellow">0.0107</td>
+  <td bgcolor="yellow">0.0101</td>
+  <td bgcolor="#adff2f">0.0082</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0016</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="#adff2f">0.0026</td>
+  <td bgcolor="#adff2f">0.0036</td>
+  <td bgcolor="#adff2f">0.0065</td>
+  <td bgcolor="#adff2f">0.0051</td>
+  <td bgcolor="#adff2f">0.0061</td>
+  <td bgcolor="#adff2f">0.0084</td>
+  <td bgcolor="#adff2f">0.0065</td>
+  <td bgcolor="#adff2f">0.0083</td>
+  <td bgcolor="#adff2f">0.0100</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0010</td>
+  <td bgcolor="#adff2f">0.0020</td>
+  <td bgcolor="#adff2f">0.0028</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0040</td>
+  <td bgcolor="#adff2f">0.0049</td>
+  <td bgcolor="#adff2f">0.0067</td>
+  <td bgcolor="#adff2f">0.0071</td>
+  <td bgcolor="#adff2f">0.0062</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0032</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0024</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0034</td>
+  <td bgcolor="#adff2f">0.0056</td>
+  <td bgcolor="#adff2f">0.0041</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0025</td>
+  <td bgcolor="#adff2f">0.0018</td>
+  <td>-</td>
+</tr>
+</table>
+<strong>Distribution with redundancy 2:
+</strong><table border="1">
+<tr>
+  <th><nobr>Bits \ Nodes</nobr></th>
+  <td>16</td>
+  <td>20</td>
+  <td>32</td>
+  <td>48</td>
+  <td>64</td>
+  <td>100</td>
+  <td>128</td>
+  <td>160</td>
+  <td>200</td>
+  <td>256</td>
+  <td>350</td>
+  <td>500</td>
+  <td>800</td>
+  <td>1000</td>
+  <td>5000</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td bgcolor="#ffa500">0.2000</td>
+  <td bgcolor="red">0.3081</td>
+  <td bgcolor="#ffa500">0.2727</td>
+  <td bgcolor="red">0.5152</td>
+  <td bgcolor="red">0.5294</td>
+  <td bgcolor="red">0.5733</td>
+  <td bgcolor="red">0.6364</td>
+  <td bgcolor="red">0.7091</td>
+  <td bgcolor="red">0.7673</td>
+  <td bgcolor="red">0.8000</td>
+  <td bgcolor="red">0.8537</td>
+  <td bgcolor="red">0.8862</td>
+  <td bgcolor="red">0.8933</td>
+  <td bgcolor="red">0.8976</td>
+  <td bgcolor="red">0.9659</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="#ffa500">0.2242</td>
+  <td bgcolor="#ffa500">0.1795</td>
+  <td bgcolor="#ffa500">0.1795</td>
+  <td bgcolor="red">0.3043</td>
+  <td bgcolor="red">0.3173</td>
+  <td bgcolor="red">0.3846</td>
+  <td bgcolor="red">0.5077</td>
+  <td bgcolor="red">0.5345</td>
+  <td bgcolor="red">0.6364</td>
+  <td bgcolor="red">0.7340</td>
+  <td bgcolor="red">0.7952</td>
+  <td bgcolor="red">0.8400</td>
+  <td bgcolor="red">0.8720</td>
+  <td bgcolor="red">0.9317</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td bgcolor="yellow">0.0725</td>
+  <td bgcolor="#ffa500">0.1322</td>
+  <td bgcolor="#ffa500">0.1233</td>
+  <td bgcolor="#ffa500">0.2099</td>
+  <td bgcolor="#ffa500">0.1579</td>
+  <td bgcolor="#ffa500">0.2415</td>
+  <td bgcolor="red">0.3333</td>
+  <td bgcolor="red">0.5733</td>
+  <td bgcolor="red">0.4611</td>
+  <td bgcolor="red">0.5789</td>
+  <td bgcolor="red">0.6558</td>
+  <td bgcolor="red">0.7269</td>
+  <td bgcolor="red">0.8293</td>
+  <td bgcolor="red">0.8425</td>
+  <td bgcolor="red">0.8976</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td bgcolor="yellow">0.0340</td>
+  <td bgcolor="yellow">0.0857</td>
+  <td bgcolor="yellow">0.0922</td>
+  <td bgcolor="#ffa500">0.1111</td>
+  <td bgcolor="#ffa500">0.1233</td>
+  <td bgcolor="#ffa500">0.1969</td>
+  <td bgcolor="#ffa500">0.2558</td>
+  <td bgcolor="red">0.5937</td>
+  <td bgcolor="red">0.5643</td>
+  <td bgcolor="red">0.5897</td>
+  <td bgcolor="red">0.5965</td>
+  <td bgcolor="red">0.6099</td>
+  <td bgcolor="red">0.6587</td>
+  <td bgcolor="red">0.7591</td>
+  <td bgcolor="red">0.8830</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td bgcolor="yellow">0.0448</td>
+  <td bgcolor="yellow">0.0385</td>
+  <td bgcolor="yellow">0.0623</td>
+  <td bgcolor="#ffa500">0.1065</td>
+  <td bgcolor="yellow">0.0986</td>
+  <td bgcolor="#ffa500">0.1285</td>
+  <td bgcolor="red">0.3725</td>
+  <td bgcolor="red">0.3831</td>
+  <td bgcolor="red">0.4064</td>
+  <td bgcolor="red">0.4074</td>
+  <td bgcolor="red">0.4799</td>
+  <td bgcolor="red">0.4880</td>
+  <td bgcolor="red">0.5124</td>
+  <td bgcolor="red">0.8328</td>
+  <td bgcolor="red">0.8976</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td bgcolor="yellow">0.0340</td>
+  <td bgcolor="yellow">0.0328</td>
+  <td bgcolor="yellow">0.0554</td>
+  <td bgcolor="yellow">0.0699</td>
+  <td bgcolor="yellow">0.0623</td>
+  <td bgcolor="yellow">0.0948</td>
+  <td bgcolor="#ffa500">0.1049</td>
+  <td bgcolor="#ffa500">0.2183</td>
+  <td bgcolor="#ffa500">0.2344</td>
+  <td bgcolor="red">0.3191</td>
+  <td bgcolor="red">0.3498</td>
+  <td bgcolor="red">0.4539</td>
+  <td bgcolor="red">0.5733</td>
+  <td bgcolor="red">0.6656</td>
+  <td bgcolor="red">0.8870</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td bgcolor="yellow">0.0140</td>
+  <td bgcolor="yellow">0.0189</td>
+  <td bgcolor="yellow">0.0376</td>
+  <td bgcolor="yellow">0.0452</td>
+  <td bgcolor="yellow">0.0466</td>
+  <td bgcolor="yellow">0.0717</td>
+  <td bgcolor="yellow">0.0986</td>
+  <td bgcolor="#ffa500">0.1057</td>
+  <td bgcolor="#ffa500">0.1047</td>
+  <td bgcolor="#ffa500">0.2242</td>
+  <td bgcolor="#ffa500">0.2853</td>
+  <td bgcolor="#ffa500">0.2798</td>
+  <td bgcolor="red">0.4064</td>
+  <td bgcolor="red">0.4959</td>
+  <td bgcolor="red">0.8830</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td bgcolor="#adff2f">0.0094</td>
+  <td bgcolor="yellow">0.0118</td>
+  <td bgcolor="yellow">0.0385</td>
+  <td bgcolor="yellow">0.0268</td>
+  <td bgcolor="yellow">0.0331</td>
+  <td bgcolor="yellow">0.0638</td>
+  <td bgcolor="yellow">0.0708</td>
+  <td bgcolor="yellow">0.0775</td>
+  <td bgcolor="yellow">0.0898</td>
+  <td bgcolor="#ffa500">0.1322</td>
+  <td bgcolor="#ffa500">0.2133</td>
+  <td bgcolor="#ffa500">0.2104</td>
+  <td bgcolor="red">0.3550</td>
+  <td bgcolor="red">0.4446</td>
+  <td bgcolor="red">0.8752</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td bgcolor="#adff2f">0.0097</td>
+  <td bgcolor="#adff2f">0.0081</td>
+  <td bgcolor="yellow">0.0380</td>
+  <td bgcolor="yellow">0.0303</td>
+  <td bgcolor="yellow">0.0362</td>
+  <td bgcolor="yellow">0.0577</td>
+  <td bgcolor="yellow">0.0501</td>
+  <td bgcolor="yellow">0.0627</td>
+  <td bgcolor="yellow">0.0717</td>
+  <td bgcolor="#ffa500">0.1033</td>
+  <td bgcolor="#ffa500">0.1733</td>
+  <td bgcolor="#ffa500">0.1678</td>
+  <td bgcolor="#ffa500">0.2586</td>
+  <td bgcolor="red">0.3101</td>
+  <td bgcolor="red">0.8511</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td bgcolor="#adff2f">0.0075</td>
+  <td bgcolor="#adff2f">0.0066</td>
+  <td bgcolor="yellow">0.0346</td>
+  <td bgcolor="yellow">0.0293</td>
+  <td bgcolor="yellow">0.0154</td>
+  <td bgcolor="yellow">0.0258</td>
+  <td bgcolor="yellow">0.0466</td>
+  <td bgcolor="yellow">0.0546</td>
+  <td bgcolor="yellow">0.0704</td>
+  <td bgcolor="#ffa500">0.1041</td>
+  <td bgcolor="#ffa500">0.1469</td>
+  <td bgcolor="#ffa500">0.1983</td>
+  <td bgcolor="#ffa500">0.2702</td>
+  <td bgcolor="#ffa500">0.2972</td>
+  <td bgcolor="red">0.7740</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td bgcolor="#adff2f">0.0053</td>
+  <td bgcolor="#adff2f">0.0057</td>
+  <td bgcolor="#adff2f">0.0098</td>
+  <td bgcolor="#adff2f">0.0098</td>
+  <td bgcolor="yellow">0.0122</td>
+  <td bgcolor="yellow">0.0149</td>
+  <td bgcolor="yellow">0.0238</td>
+  <td bgcolor="yellow">0.0300</td>
+  <td bgcolor="yellow">0.0394</td>
+  <td bgcolor="yellow">0.0353</td>
+  <td bgcolor="yellow">0.0434</td>
+  <td bgcolor="yellow">0.0553</td>
+  <td bgcolor="yellow">0.0611</td>
+  <td bgcolor="#ffa500">0.1782</td>
+  <td bgcolor="red">0.6334</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0022</td>
+  <td bgcolor="#adff2f">0.0050</td>
+  <td bgcolor="yellow">0.0162</td>
+  <td bgcolor="#adff2f">0.0098</td>
+  <td bgcolor="yellow">0.0133</td>
+  <td bgcolor="yellow">0.0149</td>
+  <td bgcolor="yellow">0.0220</td>
+  <td bgcolor="yellow">0.0242</td>
+  <td bgcolor="yellow">0.0252</td>
+  <td bgcolor="yellow">0.0333</td>
+  <td bgcolor="yellow">0.0398</td>
+  <td bgcolor="yellow">0.0495</td>
+  <td bgcolor="yellow">0.0999</td>
+  <td bgcolor="red">0.5145</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0030</td>
+  <td bgcolor="yellow">0.0107</td>
+  <td bgcolor="#adff2f">0.0088</td>
+  <td bgcolor="#adff2f">0.0098</td>
+  <td bgcolor="yellow">0.0144</td>
+  <td bgcolor="yellow">0.0140</td>
+  <td bgcolor="yellow">0.0148</td>
+  <td bgcolor="yellow">0.0203</td>
+  <td bgcolor="yellow">0.0195</td>
+  <td bgcolor="yellow">0.0255</td>
+  <td bgcolor="yellow">0.0348</td>
+  <td bgcolor="#ffa500">0.1133</td>
+  <td bgcolor="red">0.4481</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0043</td>
+  <td bgcolor="#adff2f">0.0063</td>
+  <td bgcolor="#adff2f">0.0051</td>
+  <td bgcolor="#adff2f">0.0074</td>
+  <td bgcolor="#adff2f">0.0079</td>
+  <td bgcolor="#adff2f">0.0085</td>
+  <td bgcolor="#adff2f">0.0086</td>
+  <td bgcolor="yellow">0.0113</td>
+  <td bgcolor="yellow">0.0147</td>
+  <td bgcolor="yellow">0.0170</td>
+  <td bgcolor="yellow">0.0237</td>
+  <td bgcolor="#ffa500">0.1068</td>
+  <td bgcolor="red">0.4422</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0026</td>
+  <td bgcolor="#adff2f">0.0035</td>
+  <td bgcolor="#adff2f">0.0037</td>
+  <td bgcolor="#adff2f">0.0082</td>
+  <td bgcolor="#adff2f">0.0061</td>
+  <td bgcolor="#adff2f">0.0077</td>
+  <td bgcolor="#adff2f">0.0087</td>
+  <td bgcolor="yellow">0.0101</td>
+  <td bgcolor="yellow">0.0134</td>
+  <td bgcolor="yellow">0.0193</td>
+  <td bgcolor="#ffa500">0.1140</td>
+  <td bgcolor="red">0.4635</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0019</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0026</td>
+  <td bgcolor="#adff2f">0.0080</td>
+  <td bgcolor="#adff2f">0.0055</td>
+  <td bgcolor="#adff2f">0.0056</td>
+  <td bgcolor="#adff2f">0.0057</td>
+  <td bgcolor="#adff2f">0.0063</td>
+  <td bgcolor="#adff2f">0.0096</td>
+  <td bgcolor="yellow">0.0155</td>
+  <td bgcolor="#ffa500">0.1294</td>
+  <td bgcolor="red">0.4982</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0013</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0074</td>
+  <td bgcolor="#adff2f">0.0060</td>
+  <td bgcolor="#adff2f">0.0058</td>
+  <td bgcolor="#adff2f">0.0053</td>
+  <td bgcolor="#adff2f">0.0049</td>
+  <td bgcolor="#adff2f">0.0068</td>
+  <td bgcolor="yellow">0.0112</td>
+  <td bgcolor="yellow">0.0471</td>
+  <td bgcolor="red">0.3219</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0043</td>
+  <td bgcolor="#adff2f">0.0043</td>
+  <td bgcolor="#adff2f">0.0058</td>
+  <td bgcolor="#adff2f">0.0067</td>
+  <td bgcolor="yellow">0.0512</td>
+  <td bgcolor="#ffa500">0.2543</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0040</td>
+  <td bgcolor="#adff2f">0.0042</td>
+  <td bgcolor="#adff2f">0.0043</td>
+  <td bgcolor="#adff2f">0.0051</td>
+  <td bgcolor="yellow">0.0210</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td>-</td>
+  <td bgcolor="#adff2f">0.0028</td>
+  <td bgcolor="yellow">0.0157</td>
+  <td bgcolor="yellow">0.0814</td>
+</tr>
+</table>
+
+<h2 id="currdistbits">Default number of distribution bits used</h2>
+<p>
+  Note that changing the amount of distribution bits used will change what
+  buckets exist, which will change the distribution considerably. We thus do
+  not want to alter the distribution bit count too often.
+</p>
+<p>
+  Ideally, the users would be allowed to configure minimal and maximal
+  acceptable waste, and the current amount of distribution bits could then just
+  be calculated on the fly. But as computing the waste values above are
+  computational heavy, especially with many nodes and many distribution bits,
+  currently only a couple of profiles are available for you to configure.
+</p>
+
+<h3 id="strict">Strict mode (Default for memfile persistence provider)</h3>
+<p>
+  The strict mode attempts to keep the waste below 1.0 %. When it needs to
+  increase the bit count it increases the bit count significantly to allow
+  considerable more growth before having to adjust the count again.
+</p>
+<table>
+<tr>
+  <th>Node count</th>
+  <td>1-4</td>
+  <td>5-14</td>
+  <td>15-199</td>
+  <td>200-799</td>
+  <td>800-1499</td>
+  <td>1500-4999</td>
+  <td>5000-&gt;</td>
+</tr>
+<tr>
+  <th>Distribution bit count</th>
+  <td>8</td>
+  <td>16</td>
+  <td>21</td>
+  <td>25</td>
+  <td>28</td>
+  <td>30</td>
+  <td>32</td>
+</tr>
+<tr>
+  <th>Max calculated waste *)</th>
+  <td><nobr>3 %</nobr></td>
+  <td><nobr>0.83 %</nobr></td>
+  <td><nobr>0.86 %</nobr></td>
+  <td><nobr>0.67 %</nobr></td>
+  <td><nobr>?</nobr></td>
+  <td><nobr>?</nobr></td>
+  <td><nobr>?</nobr></td>
+</tr>
+<tr>
+  <th>Minimum buckets/node **)</th>
+  <td>256 - 64</td>
+  <td>13107 - 4681</td>
+  <td>139810 - 10538</td>
+  <td>167772 - 41995</td>
+  <td>335544 - 179076</td>
+  <td>715827 - 214791</td>
+  <td>858993 -</td>
+</tr>
+</table>
+
+<p><font size="-1">
+    *) Max calculated waste, given redundancy 2 and the max node count in the
+    given range, as shown in the table above. (Note that this assumes equal
+    sized buckets, and that every possible bucket exist. In a real system there
+    will be random variation).
+</font></p>
+
+<p><font size="-1">
+    **) Given a node count and distribution bits, there is a minimum number of
+    buckets enforced to exist. However, splitting due to bucket size may increase this
+    count beyond this number. This value shows the maximum value of the minimum. (That is
+    the number of buckets per node enforced for the lowest node count in the range)
+    Ideally one wants to have few buckets enforced by distribution and rather let bucket
+    size split buckets, as that leaves more freedom to users.
+</font></p>
+
+<h3 id="loose">Loose mode (Default for search provider)</h3>
+<p>
+  The loose mode allows for more waste, allowing the amount of nodes to
+  change considerably without altering the distribution bit counts. A transition
+  between 4 and 5 nodes are kept, to enable creating tests that crosses the
+  line without using too many nodes.
+</p>
+<table>
+<tr>
+  <th>Node count</th>
+  <td>1-4</td>
+  <td>5-199</td>
+  <td>200-&gt;</td>
+</tr>
+<tr>
+  <th>Distribution bit count</th>
+  <td>8</td>
+  <td>16</td>
+  <td>24</td>
+</tr>
+<tr>
+  <th>Max calculated waste *)</th>
+  <td><nobr>3.03 %</nobr></td>
+  <td><nobr>7.17 %</nobr></td>
+  <td><nobr>?</nobr></td>
+</tr>
+<tr>
+  <th>Minimum buckets/node **)</th>
+  <td>256 - 64</td>
+  <td>13108 - 329</td>
+  <td>83886 -</td>
+</tr>
+</table>
+
+</body>
+</html>

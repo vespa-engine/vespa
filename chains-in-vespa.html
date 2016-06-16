@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Chained Components in Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2012" />
+  <meta name="authors" content="einarmr, steinar, bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document contains various Vespa-specific information
+regarding <a href="jdisc/chained-components.html">chained
+components</a>, which can be either
+<a href="jdisc/processing.html">processors</a>,
+<a href="search/searcher-development.html">searcher plug-ins</a> and
+<a href="search/docproc-development.html">document processors</a>
+in a Vespa system.<br/><br/>
+Please read <a href="jdisc/chained-components.html">Chained Components</a>
+first, and then come back here for information on running these
+components in a JDisc container in Vespa.
+</p>
+
+<p>
+In addition to <a href="jdisc/processing.html">processors</a> which are mentioned
+in <a href="jdisc/chained-components.html">Chained Components</a>,
+Vespa also supports chaining
+<a href="search/searcher-development.html">searcher plug-ins</a> and
+<a href="search/docproc-development.html">document processors</a>.
+</p>
+
+<h2 id="config-example">Configuration Examples</h2>
+
+<p>
+Annotations which do not belong in the code may be added in the
+configuration, here a simple example
+with <a href="reference/services-search.html#sec-3.1">search
+chains</a>:
+</p>
+
+<pre class="code">
+&lt;jdisc version=&quot;1.0&quot;&gt;
+  &lt;search&gt;
+    &lt;chain id=&quot;default&quot; inherits=&quot;vespa&quot;&gt;
+      &lt;searcher id=&quot;simpleSearcher&quot;/&gt;
+    &lt;/chain&gt;
+    &lt;searcher id=&quot;simpleSearcher&quot; class=&quot;com.yahoo.search.example.SimpleSearcher&quot;&gt;
+      <strong>&lt;before&gt;Cache&lt;/before&gt;
+      &lt;after&gt;Statistics&lt;/after&gt;
+      &lt;after&gt;Logging&lt;/after&gt;
+      &lt;provides&gt;SimpleTest&lt;/provides&gt;</strong>
+    &lt;/searcher&gt;
+  &lt;/search&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias=&quot;node1&quot; /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+And for <a href="reference/services-docproc.html">document
+processor chains</a>, it becomes:
+</p>
+
+<pre class="code">
+&lt;jdisc version=&quot;1.0&quot;&gt;
+  &lt;document-processing&gt;
+    &lt;chain id=&quot;default&quot;&gt;
+      &lt;documentprocessor id=&quot;ReplaceInFieldDocumentProcessor&quot;&gt;
+        <strong>&lt;after&gt;TextMetrics&lt;/after&gt;</strong>
+    &lt;/chain&gt;
+  &lt;/document-processing&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias=&quot;node1&quot;/&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+For searcher plugins the
+class <a href="javadoc/index.html?com/yahoo/search/searchchain/PhaseNames.html"><code>com.yahoo.search.searchchain.PhaseNames</code></a>
+defines a set of checkpoints third party searchers may use to help
+order themselves when extending the Vespa search chains.
+</p>
+
+<p>
+Note that ordering constraints are just that; in particular
+they are not used to determine if a given search chain, or set of
+search chains, is &ldquo;complete&rdquo;.
+</p>
+
+
+<h2 id="passing-information">Passing Information Between Components</h2>
+
+<p>
+When different searchers or document processors depend on shared
+classes or field names,it is good practice to define the name only in
+a single
+place. An <a href="search/searcher-development.html#passing-information-between-searchers">
+example</a> in the searcher development introduction illustrates an
+easy way to do that.
+</p>
+
+
+<h2 id="unit-tests">Unit Tests</h2>
+
+<p>
+A component should be unit tested in a chain containing the components
+it depends on. It is not necessary to run the dependency handling
+framework to achieve that, as
+the <code>com.yahoo.component.chain.Chain</code> class has several
+constructors which are easy to use while testing.
+</p>
+
+<pre class="code">
+Chain&lt;Searcher&gt; c = new Chain(new UselessSearcher(&quot;first&quot;),
+        new UselessSearcher(&quot;second&quot;),
+        new UselessSearcher(&quot;third&quot;));
+Execution e = new Execution(c, Execution.Context.createContextStub(null));
+Result r = e.search(new Query());
+</pre>
+
+<p>
+The above is a rather useless test, but it illustrates how the basic
+workflow can be simulated. The constructor will create a chain with
+supplied searchers in the given order (it will not analyze any
+annotations).
+</p>
+
+
+<h2 id="chain-inheritance">Chain Inheritance and Definition</h2>
+
+<p>
+For search chains, there are two built-in
+search chains which are especially useful to inherit
+from <code>native</code> and <code>vespa</code>.
+<code>native</code> is a very basic search chain, containing the
+basic functionality most systems will need anyway,
+<code>vespa</code> inherits from <code>native</code> and adds a
+few extra searchers which most installations containing Vespa
+backends will need.
+</p>
+
+<pre class="code">
+&lt;jdisc version=&quot;1.0&quot;&gt;
+  &lt;search&gt;
+    &lt;chain id=&quot;default&quot; inherits=&quot;vespa&quot; excludes=&quot;com.yahoo.prelude.querytransform.StemmingSearcher com.yahoo.prelude.querytransform.NormalizingSearcher&quot;&gt;
+      &lt;searcher id=&quot;com.yahoo.example.ConnexitySearcher&quot; /&gt;
+      &lt;searcher id=&quot;com.yahoo.example.SignificanceSearcher&quot; /&gt;
+      &lt;searcher id=&quot;com.yahoo.example.ReverseSearcher&quot; /&gt;
+    &lt;/chain&gt;
+  &lt;/search&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias=&quot;node1&quot; /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+A chain will include all components from the chains named in the
+optional <code>inherits</code> attribute, exclude from that set all
+components named in the also optional
+<code>excludes</code> attribute and add all the components listed
+inside the defining tag. Both <code>inherits</code> and
+<code>excludes</code> are space delimited lists of reference
+names.
+</p>
+
+<pre class="code">
+&lt;jdisc version=&quot;1.0&quot;&gt;
+  &lt;document-processing&gt;
+    &lt;chain id=&quot;example&quot;&gt;
+        &lt;documentprocessor id=&quot;com.yahoo.vespatest.WorstMusicDocProc&quot; /&gt;
+    &lt;/chain&gt;
+    &lt;chain id=&quot;example2&quot; inherits=&quot;example&quot;&gt;
+        &lt;documentprocessor id=&quot;com.yahoo.vespatest.BestMusicDocProc&quot; /&gt;
+    &lt;/chain&gt;
+  &lt;/document-processing&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias=&quot;node1&quot; /&gt;
+  &lt;/nodes&gt;
+&lt;/docproc&gt;
+</pre>
+
+
+<h2 id="invoking-chain">Invoking a Specific Search Chain</h2>
+
+<p>
+The search chain to use can be selected in the request, by adding the
+request parameter:
+</p>
+
+<pre class="code">
+  searchChain=myChain
+</pre>
+
+<p>
+If no chain is selected in the query, the chain called
+<code>default</code> will be used. If no chain called
+<code>default</code> has been configured, the chain called
+<code>native</code> will be used. The <em>native</em> chain is
+always present and contains a basic set of searchers needed in
+most applications. Custom chains will usually inherit the native
+chain to include those searchers.
+</p>
+
+<p>
+Of course, the search chain to use can also be set in a
+<a href="query-profiles.html">query profile</a>.
+</p>
+
+</body>
+</html>

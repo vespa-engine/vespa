@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Metrics and Health API</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2014" />
+  <meta name="authors" content="humbe, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This article describes the API for health and metrics for a service in Vespa.
+</p>
+
+
+<h1 id="health">Health API</h1>
+Health status can be found by HTTP GET at <code>http://host:healthport/state/v1/health</code>
+
+
+<h2 id="health-example">Example</h2>
+
+<pre class="brush: js">
+{
+  &quot;status&quot; : {
+    &quot;code&quot; : &quot;up&quot;,
+    &quot;message&quot; : &quot;Everything ok here&quot;
+  }
+}
+</pre>
+
+<h2 id="status">Status</h2>
+<p>
+The status code can either be <code>up</code> or
+<code>down</code>. Status <code>up</code> means that it is fully up,
+ready for serving traffic. If the page cannot be
+downloaded, a state of down is typically assumed.
+</p>
+
+<p>
+The message part is optional. Typically it is empty if the service is
+up, while it is set to a textual reason for why it is unavailable if
+that is the case.
+</p>
+
+
+<h1 id="metrics">Metrics API</h1>
+
+
+<h2 id="metrics-example">Example</h2>
+
+<pre class="brush: js">
+{
+  &quot;status&quot; : {
+    &quot;code&quot; : &quot;up&quot;,
+    &quot;message&quot; : &quot;Everything ok here&quot;
+  },
+  &quot;metrics&quot; : {
+    &quot;snapshot&quot; : {
+      &quot;from&quot; : 1334134640.089,
+      &quot;to&quot; : 1334134700.088,
+    },
+    &quot;values&quot; : [
+      {
+        &quot;name&quot; : &quot;queries&quot;,
+        &quot;description&quot; : &quot;Number of queries executed during snapshot interval&quot;,
+        &quot;values&quot; : {
+          &quot;count&quot; : 28,
+          &quot;rate&quot; : 0.4667
+        },
+        &quot;dimensions&quot; : {
+          &quot;searcherid&quot; : &quot;x&quot;
+        }
+      },
+      {
+        &quot;name&quot; : &quot;query_hits&quot;,
+        &quot;description&quot; : &quot;Number of documents matched per query during snapshot interval&quot;,
+        &quot;values&quot; : {
+          &quot;count&quot; : 28,
+          &quot;rate&quot; : 0.4667,
+          &quot;average&quot; : 128.3,
+          &quot;min&quot; : 0,
+          &quot;max&quot; : 10000,
+          &quot;sum&quot; : 3584,
+          &quot;median&quot; : 124.0,
+          &quot;std_deviation&quot;: 5.43
+        },
+        &quot;dimensions&quot; : {
+          &quot;searcherid&quot; : &quot;x&quot;
+        }
+      }
+    ]
+  }
+}
+</pre>
+
+
+
+
+<h2 id="snapshot">Snapshot</h2>
+
+<p>
+Metrics are reported in snapshots, where the snapshot specifies the
+time window the metrics
+are gathered from. Typically, the service will aggregate metrics as
+they are reported, and after each snapshot period, a snapshot is taken
+of the current values and they are reset. Using this approach, we can
+also track min and max values, and possibly more advanced values like
+95% percentile for each complete snapshot period.
+</p>
+
+<p>
+A sliding window would of course be preferrable so one always got the
+metric values from now and some time back, but aggregating metrics on
+the fly is more complex and occupies more memory. Typically a
+non-sliding window is used, so the service should report its last full
+window snapshot.
+</p>
+
+<p>
+The from and to times are specified in seconds since
+1970. Milliseconds or even microseconds can be added as decimals if
+wanted.
+</p>
+
+<p>
+If you include metrics from other sources where you are not in control
+of the snapshot window, ideally you would aggregate and convert so you
+get values for the same snapshot window. But for practical purposes
+you can likely fake the values.
+</p>
+
+
+<h2 id="values">Values</h2>
+<p>
+A flat list of metrics are sent. Each metric value reported by a user
+should be a separate metric. If you have related metrics, current best
+practice is to prefix metric names with common parts and dot separate
+the names. For instance <code>memory.free</code>
+and <code>memory.virtual</code>. Each metric have one or more values
+set. The currently possible values are as follows:
+</p>
+
+<dl>
+  <dt>count</dt>
+  <dd>Number of times metric has been set. For instance in a count
+      metric counting number of operations done, it will annotate the
+      number of operations added for that snapshot period. For a value
+      metric, for instance setting latency of operations, the count
+      will set how many times latencies have been added to the
+      metric.</dd>
+
+  <dt>average</dt>
+  <dd>The average of all the values gotten during a snapshot
+      period. Typically sum divided by count.</dd>
+
+  <dt>rate</dt>
+  <dd>count/s Superfluous metric. But metrics proxy for some reasons
+      did not manage to calculate this itself.</dd>
+
+  <dt>min</dt>
+  <dd>The smallest value seen in this snapshot period.</dd>
+
+  <dt>max</dt>
+  <dd>The largest value seen in this snapshot period.</dd>
+
+  <dt>sum</dt>
+  <dd>The total value seen in this snapshot period.</dd>
+</dl>
+
+</body>
+</html>

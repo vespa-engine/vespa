@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Observable Log Events</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2013" />
+  <meta name="authors" content="vlarsen, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document provides a reference list over the observable events in
+a Vespa system.
+</p>
+
+
+<h1 id="event-logging">Logging and central archiving of events</h1>
+
+
+<p>
+Events are logged to <code>vespa.log</code> on each node and not sent
+to the log server by default. Configuring the events to be sent to the
+log server can be done by adding this to <code>services.xml</code>:
+</p>
+
+<pre>
+&lt;services&gt;
+...
+&lt;config name="logd"&gt;
+  &lt;loglevel&gt;
+    &lt;event&gt;
+      &lt;forward&gt;true&lt;/forward&gt;
+    &lt;/event&gt;
+  &lt;/loglevel&gt;
+&lt;/config&gt;
+...
+</pre>
+
+<p>
+If configured as above, the events are sent to the log server from all
+nodes of a system in real-time and stored in the logarchive. This
+archive can be found under <em>$VESPA_HOME/logs/vespa/logarchive/</em> on the
+admin node.
+</p>
+
+
+<p>
+Events are divided into two separate categories. State events
+show processes starting, stopping and reporting internal
+state-changes. Metrics events show specific values
+for a large number of internal metrics.
+</p>
+
+
+
+<h1 id="state-events">State events</h1>
+
+<p>
+These events are common to most components of Vespa, and are used to
+track the running of the entire cluster.
+</p>
+
+<dl>
+  <dt>STARTING</dt>
+  <dd>A controller process is attempting to start a child process</dd>
+
+  <dt>STARTED</dt>
+  <dd>A child process has successfully started</dd>
+
+  <dt>STOPPING</dt>
+  <dd>A child process is attempting to stop</dd>
+
+  <dt>STOPPED</dt>
+  <dd>A controlling process reports on a child process having
+      stopped. There event includes the exit code from the child
+      process.</dd>
+
+  <dt>CRASH</dt>
+  <dd>A controlling process reports on a child with an abnormal
+      exit. Exitcode included.</dd>
+
+  <dt>PROGRESS</dt>
+  <dd>A batch processing job reports on progress periodically. The
+      message may include information about the extent of the job
+      performed so far.</dd>
+
+  <dt>STATE</dt>
+  <dd>The specific component has entered a particular named internal
+      state</dd>
+</dl>
+
+
+
+<h1 id="metric-events">Metrics Events</h1>
+
+<p>
+Metrics are used to report on internal variables detailing the
+processing performed by a particular component. VALUES are numbers
+with momentarily signifficance, such as queue lengths and
+latencies. COUNTER are number increasing monotonically with each
+processing step, such as number of documents processes, or number of
+queries.
+</p>
+
+</body>
+</html>

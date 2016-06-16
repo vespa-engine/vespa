@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="May 2016" />
+  <meta name="authors"    content="steinar,kraune" />
+  <title>Using the JDisc Container with VIP</title>
+</head>
+
+<body>
+
+<p class="ingress">There are several ways making the JDisc container
+interact with VIP service rotation, this document covers the default
+strategy used when deploying a Vespa application.
+</p>
+
+  
+<h1 id="default">Default behavior</h1>
+
+<p>
+By default, a search application will configure an instance of <code>com.yahoo.container.handler.VipStatusHandler</code>
+to answer <code>/status.html</code>. If there are no Vespa search backends,
+it will return HTTP OK. If there are one or more Vespa clusters connected,
+it will require at least one search node online before it will return HTTP OK.
+</p>
+
+<p>To disable the server using the state of Vespa search clusters to determine
+whether it should be included in rotation, add the following configuration
+override inside the <em>jdisc</em> tag in services.</p>
+
+<pre>
+&lt;config name="container.core.vip-status"&gt;
+  &lt;noSearchBackendsImpliesOutOfService&gt;false&lt;/noSearchBackendsImpliesOutOfService&gt;
+&lt;/config&gt;
+</pre>
+
+<p>The container will then ignore the state of search backends, and always
+stay in rotation unless a status file is used (see below).</p>
+
+<h1 id="file">Taking a container out of service</h1>
+
+<p>
+To be able to remove a container from VIP rotation, it is necessary to override
+the config <code>container.core.vip-status</code> to make the status handler
+look at a single file on disk instead of using the hardcoded response.
+</p>
+
+<pre>
+&lt;config name="container.core.vip-status"&gt;
+  &lt;accessdisk&gt;true&lt;/accessdisk&gt;
+  &lt;statusfile&gt;/full-path-to/status-response.html&lt;/statusfile&gt;
+&lt;/config&gt;
+</pre>
+
+<p>
+The status handler is now instructed to look at the file system by the
+boolean value <code>accessdisk</code>, the file to serve is located at
+the path given by <code>statusfile</code>. Note, this path is completely
+independent from the path in the URI. If the file exists, its contents
+will be served on the URI path <code>/status.html</code>, otherwise
+a pertinent error message will be generated. So, to remove a container from
+service, simply delete or rename the file to serve.
+</p>
+
+<h1 id="path">Serve a response using alternative or multiple paths</h1>
+
+<p>
+The VIP status handler only looks at a single file path, but since this
+is independent from the URI path, it is possible to configure multiple
+handler instances to serve alternative or custom messages.
+</p>
+
+<pre>
+&lt;handler id="vipFreshness" class="com.yahoo.container.handler.VipStatusHandler"&gt;
+  &lt;binding&gt;http://*:*/docproc/freshness-data.xml&lt;/binding&gt;
+  &lt;config name="container.core.vip-status"&gt;
+    &lt;accessdisk&gt;true&lt;/accessdisk&gt;
+    &lt;statusfile&gt;/full-path-to/freshness-data.xml&lt;/statusfile&gt;
+  &lt;/config&gt;
+&lt;/handler&gt;
+&lt;handler id="vipClustering" class="com.yahoo.container.handler.VipStatusHandler"&gt;
+  &lt;binding&gt;http://*:*/docproc/ClusteringDocproc.status&lt;/binding&gt;
+  &lt;config name="container.core.vip-status"&gt;
+    &lt;accessdisk&gt;true&lt;/accessdisk&gt;
+    &lt;statusfile&gt;/full-path-to/ClusteringDocproc.status&lt;/statusfile&gt;
+  &lt;/config&gt;
+&lt;/handler&gt;
+</pre>
+
+<p>
+In this example the paths <code>/docproc/freshness-data.xml</code> and
+<code>/docproc/ClusteringDocproc.status</code> will serve the files located at
+<code>/full-path-to/freshness-data.xml</code> and
+<code>/full-path-to/ClusteringDocproc.status</code>,
+respectively. As the handler instances are completely independent of each other,
+a container can be taken out of one type of rotation without affecting another,
+for instance.
+</p>
+
+
+
+</body>
+</html>

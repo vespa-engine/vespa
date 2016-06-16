@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Test: Rendering of LaTeX formulas</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2010" />
+  <meta name="authors" content="eirikref" />
+</head>
+<body>
+
+<p class="ingress">
+LaTeX is nice.
+</p>
+
+
+<h1 id="simple">Simple Formula</h1>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">
+    z=\sqrt{x^2+y^2}
+  </div>
+</figure>
+
+
+
+<h1 id="advanced">Advanced Formula</h1>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">
+    \lim_{x\to 0}{\frac{e^x-1}{2x}}\overset{\left[\frac{0}{0}\right]}{\underset{\mathrm{H}}{=}}\lim_{x\to 0}{\frac{e^x}{2}}={\frac{1}{2}}
+  </div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">e^{i\pi}+1=0</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">\frac{d}{dx}\sqrt{x} = \frac{d}{dx}x^{\frac{1}{2}} = \frac{1}{2}x^{-\frac{1}{2}} = \frac{1}{2\sqrt{x}}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">z=\sqrt{x^2+y^2}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">\lim_{x\to 0}{\frac{e^x-1}{2x}}\overset{\left[\frac{0}{0}\right]}{\underset{\mathrm{H}}{=}}\lim_{x\to 0}{\frac{e^x}{2}}={\frac{1}{2}}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">\sqrt{x^2+y^2}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">\sqrt{\editable{x^2+y^2}}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}</div>
+</figure>
+
+<figure class="latex">
+  <div class="mathquill-embedded-latex">The Quadratic Equation is $x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$</div>
+</figure>
+
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Internal Configuration File Reference</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="July 2009" />
+  <meta name="authors" content="gv" />
+</head>
+
+<body>
+
+<p class="ingress">
+This reference describes the configuration file format used by Vespa
+internally.
+</p>
+
+
+<h2 id="internal-configuration-file-syntax">Internal Configuration File Format</h2>
+
+<p>
+Configuration files (<em>.cfg</em>) contain lines on the form
+</p>
+
+<pre>
+configuration-variable configuration-value
+</pre>
+
+<p>
+A simple example of a file containing an integer and a string:
+</p>
+
+<pre>
+myInt 3
+myString &quot;Hello&quot;  # Strings must always be enclosed in quotation marks.
+</pre>
+
+
+<h3 id="advanced-data-structures">Arrays</h3>
+
+<p>
+Arrays start with a line declaring the number of items in the
+array. Each following line will contain the array name again, the
+array offset (0-base) in square brackets and the value at this
+position. For example, an array called "myArray" with 3 items:
+</p>
+
+<pre class="code">
+myArray[3]
+myArray[0] firstvalue
+myArray[1] secondvalue
+myArray[2] thirdvalue
+</pre>
+
+<p>
+When an array value contains a child array, dots act as a separator
+between the parent value and the child array. For example, to set a
+table with two rows, the first with two columns and the second having
+one column (provided the table structure is defined in the
+accompanying .def file):
+</p>
+
+<pre class="code">
+row[2]
+row[0].column[2]
+row[0].column[0] value0_0
+row[0].column[1] value0_1
+row[1].column[1]
+row[1].column[0] value1_0
+</pre>
+
+
+</body>
+</html>

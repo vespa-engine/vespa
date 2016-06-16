@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>services.xml - 'clients'</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2012" />
+  <meta name="authors" content="musum, eirikref" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the reference documentation for all elements contained within
+the <code>&lt;clients&gt;</code> section of <em>services.xml</em>.  For
+a complete overview of all sections and elements of this file,
+please see the <a href="services.html">Reference documentation for
+<em>services.xml</em></a>.
+</p>
+
+
+
+<h1 id="summary">Summary of Elements</h1>
+
+<table class="ref-toc table table-condensed table-hover table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Element</th>
+      <th>Required</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td><a href="#clients"><code>&lt;clients&gt;</code></a></td><td></td><td>One</td></tr>
+    <tr><td class="indent-1"><a href="#load-types"><code>&lt;load-types&gt;</code></a></td><td></td><td>One</td></tr>
+      <tr><td class="indent-2"><a href="#type"><code>&lt;type&gt;</code></a></td><td></td><td>Zero or more</td></tr>
+    <tr><td class="indent-1"><a href="#spoolers"><code>&lt;spoolers&gt;</code></a></td><td></td><td>One</td></tr>
+      <tr><td class="indent-2"><a href="#spoolmaster"><code>&lt;spoolmaster&gt;</code></a></td><td></td><td>Zero or more</td></tr>
+      <tr><td class="indent-2"><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#abortondocumenterror"><code>&lt;abortondocumenterror&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#maxpendingbytes"><code>&lt;maxpendingbytes&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#maxpendingdocs"><code>&lt;maxpendingdocs&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#mbusport"><code>&lt;mbusport&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#retrydelay"><code>&lt;retrydelay&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#retryenabled"><code>&lt;retryenabled&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#route"><code>&lt;route&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#timeout"><code>&lt;timeout&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#tracelevel"><code>&lt;tracelevel&gt;</code></a></td><td></td><td>One</td></tr>
+      <tr><td class="indent-2"><a href="#spooler"><code>&lt;spooler&gt;</code></a></td><td>If parent is set</td><td>One or more</td></tr>
+        <tr><td class="indent-3"><a href="#abortondocumenterror"><code>&lt;abortondocumenterror&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#maxpendingbytes"><code>&lt;maxpendingbytes&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#maxpendingdocs"><code>&lt;maxpendingdocs&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#mbusport"><code>&lt;mbusport&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#retrydelay"><code>&lt;retrydelay&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#retryenabled"><code>&lt;retryenabled&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#route"><code>&lt;route&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#timeout"><code>&lt;timeout&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#tracelevel"><code>&lt;tracelevel&gt;</code></a></td><td></td><td>One</td></tr>
+        <tr><td class="indent-3"><a href="#parsers"><code>&lt;parsers&gt;</code></a></td><td></td><td>One</td></tr>
+          <tr><td class="indent-4"><a href="#parser"><code>&lt;parser&gt;</code></a></td><td>If parent is set</td><td>One or more</td></tr>
+            <tr><td class="indent-5"><a href="#parameter"><code>&lt;parameter&gt;</code></a></td><td></td><td>Zero or more</td></tr>
+  </tbody>
+</table>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- abortondocumenterror                                             -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="abortondocumenterror" class="ref-param">&lt;abortondocumenterror&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>xsd:boolean</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>true</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Controls whether or not to abort the entire feed if a
+    document-related error occurs, ie. if a document contains an
+    unknown field. Setting this field to <code>true</code> will abort
+    the feed on such errors, while setting it to <code>false</code>
+    will cause Vespa to simply skip to the next document in the feed.
+  </p>
+
+  <p class="alert alert-info">
+    Note that malformed XML in the input will abort the feed
+    regardless of this setting.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;abortondocumenterror&gt;false&lt;/abortondocumenterror&gt;
+  &lt;timeout&gt;60&lt;/timeout&gt;
+&lt;/feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- clients                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="clients" class="ref-param">&lt;clients&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services.html#services"><code>&lt;services&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    The container element for defining the <code>&lt;clients&gt;</code>
+    section of your <em>services.xml</em>.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li>
+      <h3>version</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td>2.0</td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required">Yes</td></tr>
+      </table>
+      <p>
+        This parameter is used to tell Vespa which version of the
+        <code>&lt;clients&gt;</code> configuration format you are
+        using.
+      </p>
+    </li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#load-types"><code>&lt;load-types&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#spoolers"><code>&lt;spoolers&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;clients version=&quot;2.0&quot;&gt;
+  &lt;load-types&gt;
+    &lt;type name=&quot;foo&quot; default-priority=&quot;VERY_HIGH&quot; /&gt;
+  &lt;/load-types&gt;
+  &lt;spoolers&gt;
+    &lt;spooler hostalias=&quot;node1&quot; /&gt;
+      &lt;parsers&gt;
+        &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot; /&gt;
+      &lt;/parsers&gt;
+    &lt;/spooler&gt;
+  &lt;/spoolers&gt;
+&lt;/clients&gt;
+</pre>
+
+</div>
+
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- feederoptions                                                    -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="feederoptions" class="ref-param">&lt;feederoptions&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#spoolers"><code>&lt;spoolers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Set feeder options that apply to <em>all</em> Spoolers contained
+    within the same <code>&lt;spoolers&gt;</code> container element.
+  </p>
+
+  <p>
+    Options may be individually overriden for each Spooler by adding
+    configuration under the <code>&lt;spooler&gt;</code> element.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#abortondocumenterror"><code>&lt;abortondocumenterror&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#docprocchain"><code>&lt;docprocchain&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#maxpendingbytes"><code>&lt;maxpendingbytes&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#maxpendingdocs"><code>&lt;maxpendingdocs&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#mbusport"><code>&lt;mbusport&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#retryenabled"><code>&lt;retryenabled&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#retrydelay"><code>&lt;retrydelay&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#route"><code>&lt;route&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#timeout"><code>&lt;timeout&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#tracelevel"><code>&lt;tracelevel&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;timeout&gt;60&lt;/timeout&gt;
+  &lt;retrydelay&gt;5&lt;/retrydelay&gt;
+  &lt;tracelevel&gt;2&lt;/tracelevel&gt;
+&lt;/feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- maxpendingbytes                                                  -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="maxpendingbytes" class="ref-param">&lt;maxpendingbytes&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Required:</td>
+      <td class="required">Yes</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">No</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+      <td class="deprecated"></td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td><!-- One/Zero or more/One or more --></td>
+    </tr>
+  </table>
+
+
+  <p>
+    The maximum number of pending
+    bytes. If <code>&lt;maxpendingdocs&gt;</code> is 0 and this is set
+    to 0, this defaults to 100
+    MB. If <code>&lt;maxpendingdocs&gt;</code> is more than 0, and
+    this is set to 0, the send window is only limited by number of
+    messages sent, not the memory footprint.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;maxpendingbytes&gt;1048576&lt;/maxpendingdocs&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- maxpendingdocs                                                   -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="maxpendingdocs" class="ref-param">&lt;maxpendingdocs&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>Automatically adjusted</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    The maximum number of pending documents the client can have. By
+    default, the client will dynamically adjust the window size based
+    on the latency of the performed operations. If the parameter is
+    set, dynamic window sizing will be turned off in favor of the
+    configured value.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;maxpendingdocs&gt;1000&lt;/maxpendingdocs&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- mbusport                                                         -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="mbusport" class="ref-param">&lt;mbusport&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-int">Integer</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Adjust the mbusport parameter.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;mbusport&gt;1234&lt;/mbusport&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- parameter                                                        -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="parameter" class="ref-param">&lt;parameter&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#parser"><code>&lt;parser&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>Zero or more</td>
+    </tr>
+  </table>
+
+
+  <p>
+    <code>FileParser</code> classes may be configured using the
+    parameters set using this element.  The specified parameters may
+    be accessed using the <code>getParameters()</code> method.  Each
+    parameter consists of a key-value pair, described in the below
+    list of attributes.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li>
+      <h3>key</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td>A non-zero length <a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required">Yes</td></tr>
+      </table>
+      <p>
+        The name of the parameter.
+      </p>
+    </li>
+    <li>
+      <h3>value</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td>A non-zero length <a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required">Yes</td></tr>
+      </table>
+      <p>
+        The value of the parameter.
+      </p>
+    </li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <!--
+  <h2>See Also</h2>
+  <ul>
+    <li>{$link}</li>
+  </ul>
+  -->
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;parser type=&quot;com.yahoo.mail.vespa.MigrationParser&quot;&gt;
+    &lt;parameter key=&quot;route&quot; value=&quot;docproc storage&quot; /&gt;
+&lt;/parser&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- parser                                                           -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="parser" class="ref-param">&lt;parser&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#parsers"><code>&lt;parsers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Required:</td>
+      <td class="required">Yes</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One or more</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Used for configuring a Spooler to use a specific parser. Parsers
+    can either be built-in (found
+    in <code>com.yahoo.vespaspooler.*</code>) or be part of a JAR file
+    located in <em>$VESPA_HOME/libexec/vespa/plugins/spooler</em>.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li>
+      <h3>type</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><td><a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required">Yes</td></tr>
+      </table>
+      <p>
+        Sets the parser type. This must be the full class name of the
+        FileParser class.
+      </p>
+    </li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#parameter"><code>&lt;parameter&gt;</code></a></td>
+        <td class="required"></td>
+        <td>Zero or more</td></tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;parsers&gt;
+  &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot; /&gt;
+  &lt;parser type=&quot;com.yahoo.mail.vespa.MigrationParser&quot;&gt;
+    &lt;parameter key=&quot;route&quot; value=&quot;docproc storage&quot; /&gt;
+  &lt;/parser&gt;
+&lt;/parsers&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- parsers                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="parsers" class="ref-param">&lt;parsers&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Container element for one or more <code>&lt;parser&gt;</code>
+    elements.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#parser"><code>&lt;parser&gt;</code></a></td>
+        <td class="required">Yes</td>
+        <td>One or more</tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;spooler&gt;
+  &lt;parsers&gt;
+    &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot; /&gt;
+  &lt;/parsers&gt;
+&lt;spooler&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- retrydelay                                                       -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="retrydelay" class="ref-param">&lt;retrydelay&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-double">Double</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Delay in seconds between retries.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;retrydelay&gt;5.5&lt;/retrydelay&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- retryenabled                                                     -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="retryenabled" class="ref-param">&lt;retryenabled&gt;</h1>
+<div>
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td><a href="services.html#type-string">String</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Enable or disable the Spooler to retry sending documents that have
+    failed.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;retryenabled&gt;false&lt;/retryenabled&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- route                                                            -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="route" class="ref-param">&lt;route&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td><a href="services.html#type-string">String</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>default</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Configure the route you want to feed documents to.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;route&gt;default&lt;/route&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- spooler                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="spooler" class="ref-param">&lt;spooler&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#spoolers"><code>&lt;spoolers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Required:</td>
+      <td class="required">Yes</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One or more</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Configure a VespaSpooler.
+  </p>
+
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes fixme" data-fixme="Fill out details">
+    <li>
+      <h3>directory</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+      </table>
+      <p>
+        The directory used by this spooler. See
+        the <a href="../vespaspooler.html#usage">VespaSpooler
+        Usage</a> documentation for more in-depth information.
+      </p>
+    </li>
+    <li>
+      <h3>id</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+      </table>
+      <p>
+        Enter description
+      </p>
+    </li>
+    <li>
+      <h3>keepsuccess</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-boolean">Boolean</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+      </table>
+      <p>
+        Toggle whether to keep all successfully parsed files in
+        the <em>successes/</em> subdirectory or not.
+      </p>
+    </li>
+    <li>
+      <h3>maxfailuresize</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-int">Integer</a></td></tr>
+        <tr><td>Default Value:</td><td>Unlimited</td></tr>
+      </table>
+      <p>
+        Configure the maximum number of bytes that may be stored in
+        the <em>failure/</em> directory. If this is exceeded, failures
+        will only be logged. By default all failures are kept.
+      </p>
+    </li>
+    <li class="fixme" datas-fixme="Find the actual details and fill in. Right now I'm just guessing">
+      <h3>maxfatalfailuresize</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-int">Integer</a></td></tr>
+        <tr><td>Default Value:</td><td>Unlimited(?)</td></tr>
+      </table>
+      <p>
+        Configure the maximum number of bytes that may be stored for
+        failures of type <code>FATAL</code>.  This allows you to only
+        save a certain amount of failure (by setting
+        the <code>maxfailuresize</code> above) bu still keep all
+        failures that are fatal.
+      </p>
+    </li>
+    <li>
+      <h3>maxretries</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-int">Integer</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+      </table>
+      <p>
+        The number of retries in case of transient errors when feeding
+        to the Vespa backend.
+      </p>
+    </li>
+    <li>
+      <h3>threads</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-int">Integer</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+      </table>
+      <p>
+        Configure the number of threads to use.
+      </p>
+    </li>
+
+    <li><h3><a href="services.html#attr-baseport">baseport</a></h3></li>
+    <li><h3><a href="services.html#attr-hostalias">hostalias</a></h3></li>
+    <li><h3><a href="services.html#attr-jvmargs">jvmargs</a></h3></li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#abortondocumenterror"><code>&lt;abortondocumenterror&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#docprocchain"><code>&lt;docprocchain&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#maxpendingbytes"><code>&lt;maxpendingbytes&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#maxpendingdocs"><code>&lt;maxpendingdocs&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#mbusport"><code>&lt;mbusport&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="parsers"><code>&lt;parsers&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#retryenabled"><code>&lt;retryenabled&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#retrydelay"><code>&lt;retrydelay&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#route"><code>&lt;route&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#timeout"><code>&lt;timeout&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+      <tr>
+        <td><a href="#tracelevel"><code>&lt;tracelevel&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</td></tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;spooler hostalias=&quot;node1&quot;&gt;
+  &lt;timeout&gt;60&lt;/timeout&gt;
+  &lt;parsers&gt;
+      &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot; /&gt;
+  &lt;/parsers&gt;
+&lt;/spooler&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- spoolers                                                         -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="spoolers" class="ref-param">&lt;spoolers&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#clients"><code>&lt;clients&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Container element for a list of one or more VespaSpoolers.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li><h3><a href="services.html#attr-jvmargs">jvmargs</a></h3></li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <table class="sub-elements table table-condensed table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Element</th>
+        <th>Required</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a></td>
+        <td class="required"></td>
+        <td>One</tr>
+      </tr>
+      <tr>
+        <td><a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+        <td class="required">Yes</td>
+        <td>One or more</tr>
+      </tr>
+     <tr>
+        <td><a href="#spoolmaster"><code>&lt;spoolmaster&gt;</code></a></td>
+        <td class="required"></td>
+        <td>Zero or more</tr>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;spoolers;&gt;
+  &lt;spooler hostalias=&quot;node1&quot;&gt;
+    &lt;timeout&gt;60&lt;/timeout&gt;
+    &lt;parsers&gt;
+        &lt;parser type=&quot;com.yahoo.vespaspooler.XMLFileParser&quot; /&gt;
+    &lt;/parsers&gt;
+  &lt;/spooler&gt;
+  &lt;spooler hostalias=&quot;node2&quot; /&gt;
+  &lt;spooler hostalias=&quot;node3&quot; /&gt;
+&lt;/spoolers&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- spoolmaster                                                      -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="spoolmaster" class="ref-param">&lt;spoolmaster&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#spoolers"><code>&lt;spoolers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>Zero or more</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Add description
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li><h3><a href="services.html#attr-baseport">baseport</a></h3></li>
+    <li><h3><a href="services.html#attr-hostalias">hostalias</a></h3></li>
+    <li><h3><a href="services.html#attr-jvmargs">jvmargs</a></h3></li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;spoolers;&gt;
+  &lt;spooler hostalias=&quot;node1&quot;&gt;
+  &lt;spooler hostalias=&quot;node2&quot; /&gt;
+  &lt;spoolmaster hostalias=&quot;node1&quot; /&gt;
+&lt;/spoolers&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- timeout                                                          -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="timeout" class="ref-param">&lt;timeout&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>Any positive <a href="services.html#type-double">Double</a></td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>180.0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Configure the timeout value in seconds for an operation.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;timeout&gt;250.5&lt;/timeout&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- tracelevel                                                       -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="tracelevel" class="ref-param">&lt;tracelevel&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#feederoptions"><code>&lt;feederoptions&gt;</code></a> or <a href="#spooler"><code>&lt;spooler&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>0-9</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Confiugre the level of which to trace messages sent by the
+    Spooler. The higher the level, the more detailed descriptions will
+    be returned in the case of failures.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;feederoptions&gt;
+  &lt;tracelevel&gt;3&lt;/tracelevel&gt;
+&lt;feederoptions&gt;
+</pre>
+
+</div>
+
+
+
+<!-- ---------------------------------------------------------------- -->
+<!-- type                                                             -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="type" class="ref-param">&lt;type&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="#load-types"><code>&lt;load-types&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Quantity:</td>
+      <td>Zero or more</td>
+    </tr>
+  </table>
+
+
+  <p>
+    Configure a
+    specific <a href="#load-types"><code>&lt;load-types&gt;</code></a>
+    element.
+  </p>
+
+
+  <h2>Attributes</h2>
+  <ul class="ref-param-attributes">
+    <li>
+      <h3>name</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td><a href="services.html#type-string">String</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required">Yes</td></tr>
+      </table>
+      <p>
+        The name of the load-type.
+      </p>
+    </li>
+    <li>
+      <h3>default-priority</h3>
+      <table class="param-summary table table-condensed table-striped table-bordered">
+        <tr><td>Value:</td><td>A valid <a href="../content/setup-throttling.html">priority</a></td></tr>
+        <tr><td>Default Value:</td><td>&mdash;</td></tr>
+        <tr><td>Required:</td><td class="required"></td></tr>
+      </table>
+      <p>
+        The default priority of the load-type.
+      </p>
+    </li>
+  </ul>
+
+
+  <h2>Sub Elements</h2>
+  <p>
+    None.
+  </p>
+
+
+  <h2>Examples</h2>
+<pre class="code">
+&lt;load-types&gt;
+  &lt;type name=&quot;foo&quot; default-priority=&quot;VERY_HIGH&quot; /&gt;
+&lt;/load-types&gt;
+</pre>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+
+<html lang="en">
+<head>
+  <title>services.xml - 'processing'</title>
+  <link rel="stylesheet" type="text/css" href=
+  "http://vespa.corp.yahoo.com/css/vespadoc-standalone.css">
+  <meta name="date" content="June 2012">
+  <meta name="authors" content="steinar,einarmr">
+</head>
+
+<body>
+  <p class="ingress">This document explains the syntax and
+  semantics of the <code>processing</code> subelement of the
+  <a href=
+  "services-jdisc.html"><code>jdisc</code></a> part
+  of <code>services.xml</code>.</p>
+
+  <p>The processing block is used to configure <a
+  href="../jdisc/processing.html">processors</a>, and its elements are:</p>
+
+  <pre>
+&lt;<a href="#processing">processing</a>&gt;
+  &lt;<a href="#binding">binding</a>&gt;
+  &lt;<a href=
+"#processor">processor</a> [id, class, bundle, provides, before, after]&gt;
+    &lt;<a href="#provides">provides</a>&gt;
+    &lt;<a href="#before">before</a>&gt;
+    &lt;<a href="#after">after</a>&gt;
+    &lt;<a href=
+"config-files.html#configuration_format_in_services.xml">config</a>&gt;
+  &lt;<a href="#renderer">renderer</a> [id, class, bundle]&gt;
+    &lt;<a href="config-files.html#configuration_format_in_services.xml">config</a>&gt;
+  &lt;<a href="#chain">chain</a> [id, inherits, excludes]&gt;
+    &lt;<a href=
+"#processorinchain">processor</a> [idref, id, class, bundle, provides, before, after]&gt;
+      &lt;<a href="#provides">provides</a>&gt;
+      &lt;<a href="#before">before</a>&gt;
+      &lt;<a href="#after">after</a>&gt;
+    &lt;<a href="#inherits">inherits</a>&gt;
+      &lt;<a href="#inheritedchain">chain</a>&gt;
+      &lt;<a href="#exclude">exclude</a>&gt;
+    &lt;<a href="#phase">phase</a> [id, before, after]&gt;
+      &lt;<a href="#before">before</a>&gt;
+      &lt;<a href="#after">after</a>&gt;
+    &lt;<a href=
+"config-files.html#configuration_format_in_services.xml">config</a>&gt;
+  &lt;<a href=
+"config-files.html#configuration_format_in_services.xml">config</a>&gt;
+</pre>
+
+  <h2 id="processing">processing</h2>
+
+  <p>Contained in <code><a href=
+  "services-jdisc.html#jdisc">jdisc</a></code>.</p>
+
+  <p><code>processing</code> is for configuring a pure <a href=
+  "../jdisc/processing.html">request-response processing</a> application,
+  with no particular dependency to search or query handling.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None</p>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href=
+    "config-files.html#configuration_format_in_services.xml">config</a></li>
+
+    <li><a href="#chain">chain</a></li>
+
+    <li><a href="#processor">processor</a></li>
+    <li><a href="#renderer">renderer</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+&lt;processing&gt;
+  &lt;processor id='processor1' class='com.yahoo.test.Processor1' /&gt;
+  &lt;chain id='default'&gt;
+    &lt;processor idref='processor1'/&gt;
+    &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+  &lt;/chain&gt;
+  &lt;renderer id='renderer1' class='com.yahoo.test.Renderer1' /&gt;
+&lt;/processing&gt;
+</pre>
+
+
+  <h2 id="binding">binding</h2>
+  <p>
+    The URI to map the ProcessingHandler to. The default binding is
+  <code>http://*/processing/*</code>. Multiple elements are allowed.
+  </p>
+  <p>
+   Example:
+  <pre>
+&lt;binding&gt;http://*/processing/*&lt;/binding&gt;
+</pre>
+  </p>
+
+  <h2 id="chain">chain</h2>
+
+  <p>An element for defining a chain of processors. A chain is a
+  set ordered by dependiences. Dependencies are expressed through
+  phases, which may depend upon other phases, or processors.</p>
+
+  <p>For an incoming request from the network, the chain
+  named “default” will be invoked.</p>
+
+  <p>Contained in <code><a href=
+  "#processing">processing</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <dl>
+    <dt>inherits</dt>
+
+    <dd>A space separated list of chains this chain should include
+    the contents of.</dd>
+
+    <dt>excludes</dt>
+
+    <dd>A space separated list of processors (contained in an
+    inherited chain) this chain should not include.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href=
+    "config-files.html#configuration_format_in_services.xml">config</a></li>
+
+    <li><a href="#inherits">inherits</a></li>
+
+    <li><a href="#phase">phase</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+&lt;chain id='default'&gt;
+  &lt;processor idref='processor1'/&gt;
+  &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+&lt;/chain&gt;
+</pre>
+
+  <h2 id="processor">processor</h2>
+
+  <p>The definition of a single processor, for referencing when
+  defining chains. If a single processor is to be used in several
+  different chains, it is in general cleaner to define it directly
+  under <code>processing</code> and then refer to it with
+  <code>idref</code>, than defining it inline separately for each
+  chain.</p>
+
+  <p>Contained in <code><a href=
+  "#processing">processing</a></code>.</p>
+
+  <h3>Attributes:</h3>
+
+  <dl>
+    <dt>id</dt>
+
+    <dd>(required) The component ID.</dd>
+
+    <dt>class</dt>
+
+    <dd>(optional) The class of the component, defaults to id.</dd>
+
+    <dt>bundle</dt>
+
+    <dd>(optional) The bundle to load the component from, defaults
+    to class or id (if no class is given).</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href=
+    "config-files.html#configuration_format_in_services.xml">config</a></li>
+
+    <li><a href="#provides">provides</a></li>
+
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+  &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+</pre>
+    <h2 id="renderer">renderer</h2>
+
+    <p>The definition of a renderer, for use by a Handler. </p>
+
+    <p>Contained in <code><a href=
+        "#processing">processing</a></code>.</p>
+
+    <h3>Attributes:</h3>
+
+    <dl>
+        <dt>id</dt>
+
+        <dd>(required) The component ID.</dd>
+
+        <dt>class</dt>
+
+        <dd>(optional) The class of the component, defaults to id.</dd>
+
+        <dt>bundle</dt>
+
+        <dd>(optional) The bundle to load the component from, defaults
+            to class or id (if no class is given).</dd>
+    </dl>
+
+    <h3>Sub-elements</h3>
+
+    <ul>
+        <li><a href=
+            "config-files.html#configuration_format_in_services.xml">config</a></li>
+    </ul>
+
+    <h3>Example</h3>
+
+    <pre>
+&lt;renderer id='renderer1' class='com.yahoo.test.Renderer1' /&gt;
+    </pre>
+
+  <h2 id="processorinchain">processor (in chain)</h2>
+
+  <p>Reference to or inline definition of a processor in a
+  chain.</p>
+
+  <p>Contained in <code><a href="#chain">chain</a></code>.</p>
+
+  <h3>Attributes:</h3>
+
+  <dl>
+    <dt>idref</dt>
+
+    <dd>(required <em>or</em> use <code>id</code>) Reference to the
+    actual definition of this processor.</dd>
+
+    <dt>id</dt>
+
+    <dd>(required if not defined earlier and using
+    <code>idref</code>) The component ID.</dd>
+
+    <dt>class</dt>
+
+    <dd>(optional) The class of the component, defaults to id.</dd>
+
+    <dt>bundle</dt>
+
+    <dd>(optional) The bundle to load the component from, defaults
+    to class or id (if no class is given).</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <p>Do note, it is not possible to define config for a searcher
+  which is defined inline in a chain.</p>
+
+  <ul>
+    <li><a href="#provides">provides</a></li>
+
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre>
+&lt;chain id='default'&gt;
+  &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+&lt;/chain&gt;
+</pre>
+
+  <h2 id="provides">provides</h2>
+
+  <p>A name provided by a processor for phases and other processors
+  to use as dependencies.</p>
+
+  <p>Contained in <code><a href="#processor">processor</a></code>
+  and <code><a href="#processorinchain">processor</a></code> (in
+  chain).</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+  <pre>
+&lt;provides&gt;IntentAnalysis&lt;/provides&gt;
+</pre>
+
+  <h2 id="before">before</h2>
+
+  <p>The name of a phase or processor which should succeed this
+  phase or processor. Several <code>before</code> tags may be used
+  if it is necessary to define several processors or phases which
+  always should succeed this processor or phase in a chain.</p>
+
+  <p>In other words, the phase or processor defined is placed
+  <em>before</em> name in the tag.</p>
+
+  <p>Contained in <code><a href="#processor">processor</a></code>,
+  <code><a href="#processorinchain">processor</a></code> (in chain)
+  and <code><a href="#phase">phase</a></code>.</p>
+
+  <h3>Attributes</h3>None.
+
+  <h3>Sub-elements</h3>None.
+
+  <h3>Example</h3>
+  <pre>
+&lt;processor id='processor1' class='com.yahoo.test.IntentProcessor1'&gt;
+  &lt;before&gt;IntentAnalysis&lt;/before&gt;
+&lt;/processor&gt;
+</pre>
+
+  <h2 id="after">after</h2>
+
+  <p>The name of a phase or processor which should precede this
+  phase or processor. Several <code>after</code> tags may be used
+  if it is necessary to define several processors or phases which
+  always should precede this processor or phase in a chain.</p>
+
+  <p>In other words, the phase or processor defined is placed
+  <em>after</em> the name in the tag.</p>
+
+  <p>Contained in <code><a href="#processor">processor</a></code>,
+  <code><a href="#processorinchain">processor</a></code> (in chain)
+  and <code><a href="#phase">phase</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+  <pre>
+&lt;processor id='processorY' class='com.yahoo.test.IntentConsumer'&gt;
+  &lt;after&gt;IntentAnalysis&lt;/after&gt;
+&lt;/processor&gt;
+</pre>
+
+  <h2 id="inherits">inherits</h2>
+
+  <p>Wrapper tag for information about which chains, if any, a
+  chain should inherit, and how.</p>
+
+  <p>Contained in <code><a href="#chain">chain</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li>(inherited) <a href="#inheritedchain">chain</a></li>
+
+    <li><a href="#exclude">exclude</a></li>
+  </ul>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+    &lt;/inherits&gt;
+    &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+  &lt;/chain&gt;
+</pre>
+
+  <h2 id="inheritedchain">(inherited) chain</h2>
+
+  <p>The ID of a chain which this chain should inherit, i.e.
+  include all processors and phases from. Use several
+  <code>chain</code> tags if it is necessary to combine the
+  processors from several chains.</p>
+
+  <p>Contained in <code><a href=
+  "#inherits">inherits</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+    &lt;/inherits&gt;
+    &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+  &lt;/chain&gt;
+</pre>
+
+  <h2 id="exclude">exclude</h2>
+
+  <p>A processor the chain under definition should exclude from the
+  chain or chains it inherits from. Use several
+  <code>exclude</code> tags to exclude several processors.</p>
+
+  <p>Contained in <code><a href=
+  "#inherits">inherits</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <p>None.</p>
+
+  <h3>Sub-elements</h3>
+
+  <p>None.</p>
+
+  <h3>Example</h3>
+
+<pre>
+  &lt;chain id='demo'&gt;
+    &lt;inherits&gt;
+      &lt;chain&gt;idOfSomeInheritedChain&lt;/chain&gt;
+      &lt;exclude&gt;idOfUnwantedProcessor&lt;/exclude&gt;
+      &lt;exclude&gt;idOfYetAnotherUnwantedProcessor&lt;/exclude&gt;
+    &lt;/inherits&gt;
+    &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+  &lt;/chain&gt;
+</pre>
+
+  <h2 id="phase">phase</h2>
+
+  <p>Defines a phase, which is a checkpoint to help order
+  processors. Processors and other phases may depend on a phase to
+  be able to make assumptions about the order of processors.</p>
+
+  <p>Contained in <code><a href="#chain">chain</a></code>.</p>
+
+  <h3>Attributes</h3>
+
+  <dl>
+    <dt>id</dt>
+
+    <dd>(required) The ID, or name, which other phases and
+    processors may depend upon as a <a href="#before">successor</a>
+    or <a href="#after">predecessor</a>.</dd>
+
+    <dt>before</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should succeed this phase.</dd>
+
+    <dt>after</dt>
+
+    <dd>(optional) Space separated list of phases and/or processors
+    which should precede this phase.</dd>
+  </dl>
+
+  <h3>Sub-elements</h3>
+
+  <ul>
+    <li><a href="#before">before</a></li>
+
+    <li><a href="#after">after</a></li>
+  </ul>
+
+  <h3>Example</h3>
+
+<pre>
+&lt;chain id='demo'&gt;
+  &lt;phase id="CheckpointName"&gt;
+    &lt;before&gt;IntentAnalysis&lt;/before&gt;
+  &lt;/phase&gt;
+  &lt;processor id='processor2' class='com.yahoo.test.Processor2'/&gt;
+&lt;/chain&gt;
+</pre>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Configuration File Reference</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2013" />
+  <meta name="authors" content="gv" />
+</head>
+
+<body>
+
+
+<p class="ingress"> This reference explains the format of Vespa config
+definition files, and how to set config values in
+<em>services.xml</em>.  This information is particularly useful for
+developing applications that contain <a
+ href="../configuring-components.html">configurable components</a>
+for the <a href="../jdisc/index.html">JDisc Container</a>,
+where configuration to individual components may be provided by
+defining <a
+ href="#configuration_format_in_services.xml"><code>&lt;config&gt;</code></a>
+elements within the component's scope in services.xml.  </p>
+
+<h1 id="config_definition_files">Config definition files</h1>
+<p>
+Config definition files must have the <em>.def</em> filename suffix.
+A config definition file defines and documents the content and
+semantics of one configuration type.  Vespa's builtin .def files are
+found in
+<code>$VESPA_HOME/var/db/vespa/config_server/serverdb/classes/</code>.
+</p>
+
+<h2 id="namespace">Namespace</h2>
+<p>
+Namespace is a mandatory statement that is used to define the package
+for the generated java class. For <a
+ href="../jdisc/container-components.html">container component</a>
+developers, it is recommended to use a separate
+namespace for each bundle that needs to export config classes, to
+avoid conflicts between bundles that contain configurable components.
+</p>
+
+<p>
+Namespace must be the first non-comment line, and can only contain lower-case chars
+and dots.
+</p>
+<pre>
+namespace=myproject.config
+</pre>
+<p>
+In this example, the generated class will belong to
+package <code>com.yahoo.myproject.config</code>. The <code>com.yahoo.</code>
+prefix will automatically be added to the java package name, and must
+not be included in the namespace statement. The reason for this is
+that the config system is a generic system that is used for other
+languages than Java.
+</p>
+
+<h2 id="parameter_names">Parameter names</h2>
+<p>
+Config definition files contain lines on the form
+</p>
+<pre>
+parameterName type [default=value] [range=[min,max]]
+</pre>
+<p>
+We recommend using camelCase in parameter names for readability.
+</p>
+
+
+<h2 id="parameter-types">Parameter types</h2>
+
+<p>All variables specified in the .def file must have one of the
+following types: </p>
+
+<dl>
+<dt>int</dt>
+<dd>32 bit signed integer value.</dd>
+
+<dt>long</dt>
+<dd>64 bit signed integer value.</dd>
+
+<dt>double</dt>
+<dd>64 bit IEEE float value.</dd>
+
+<dt>enum</dt>
+<dd>Enumerated types. A set of strings representing the legal values for the
+parameter, e.g.
+<pre class="code">
+foo enum {BAR, BAZ, QUUX} default=BAR
+</pre></dd>
+
+<dt>bool</dt>
+<dd>A boolean (true/false) value.</dd>
+
+<dt>string</dt>
+<dd>A String value. Default values must be enclosed in
+quotation marks (&quot;&nbsp;&quot;), and any internal quotation marks
+must be escaped by backslash. Likewise, newlines must be escaped to
+<code>\n</code>.</dd>
+
+<dt>path</dt>
+<dd>A path to a physical file within the application package. Enables the
+user to distribute files from the application package to JDisc Container components
+(e.g. searchers and document processors). Note that path parameters <em>cannot have
+default values</em>, so the path must be given in <code>services.xml</code>. The path to
+the file is relative to the root folder of the (see <a
+ href="application-packages.html#structure">application package</a> for more about
+directories inside the application package). See the <a
+ href="#configuration_format_in_services.xml">example</a> below for how to use it. </dd>
+
+<dt>reference</dt>
+<dd>A config-id to another configuration (only for internal vespa usage).</dd>
+</dl>
+
+<h2 id="structs">Structs</h2>
+
+<dl>
+<dd><p>
+Structs are used to group a number of parameters that naturally
+belong together. A struct is declared by adding a '.' between the
+struct name and each member's name:
+</p>
+<pre class="code">
+basicStruct.foo string
+basicStruct.bar int
+</pre>
+</dd>
+</dl>
+
+<h2 id="arrays">Arrays</h2>
+
+<dl>
+<dd>
+<p> Arrays are declared by appending square brackets to the parameter
+name. Arrays can either contain simple values, or have
+children. Children can be simple parameters and/or structs and/or
+other arrays. Arbitrarily complex structures can be built to any
+depth. Some examples:
+</p>
+<pre class="code">
+intArr[] int                # Integer value array
+row[].column[] int          # Array of integer value arrays
+complexArr[].foo string     # Complex array that contains
+complexArr[].bar double     # &hellip; two simple parameters
+complexArr[].coord.x int    # &hellip; and a struct called 'coord'
+complexArr[].coord.y int
+complexArr[].coord.depths[] double  # &hellip; that contains a double array
+</pre>
+<p>
+Note that arrays cannot have default values, even for simple value arrays.
+</p>
+<p>An array that has children cannot contain simple values, and vice
+versa. In the example above, <code>intArr</code> and
+<code>row.column</code> could not have children, while
+<code>row</code> and <code>complexArr</code> are not allowed to
+contain values.</p>
+</dd> </dl>
+
+<h2 id="maps">Maps</h2>
+
+<dl>
+<dd>
+<p> Maps are declared by appending curly brackets to the parameter
+name. Arbitrarily complex structures are supported also here. Some examples:
+</p>
+
+<pre class="code">
+myMap{} int
+complexMap{}.nestedMap{}.id int
+complexMap{}.nestedMap{}.name string
+</pre>
+</dd> </dl>
+
+<h1 id="configuration_format_in_services.xml">Generic configuration in services.xml</h1>
+<p>
+In <code>services.xml</code>, there are generally four types of
+elements:
+</p>
+<dl>
+<dt>individual service elements</dt>
+<dd>(e.g. 'searcher', 'handler',
+  'searchnode') - creates a service, but has no child elements that
+  create services</dd>
+<dt>service group elements</dt>
+<dd>(e.g. 'content', 'container', 'document-processing',
+  'row') - creates a group of services and can have all types of
+  child elements</dd>
+<dt>dedicated config elements</dt>
+<dd>(e.g. 'accesslog', 'cache',
+  'searchdefinitions') - configures a service or a group of
+  services and can only have other dedicated config elements as children</dd>
+<dt>generic config elements</dt>
+<dd>always named 'config'</dd>
+</dl>
+
+<p>
+Generic config elements can be added to most elements that lead to one or
+more services being created - i.e. service group elements and individual
+service elements. The config will then be applied to all services created
+by that element and all descendant elements.
+
+For example, by adding 'config' for 'container', the config will be
+applied to all container components in that cluster. Config at a deeper level
+has priority, so this config can be overridden for individual components
+by setting the same config values in e.g. 'handler' or 'server' elements.
+</p>
+<p>
+Given the following config definition, let's say its name is
+<code>example.def</code>:
+</p>
+
+<pre>
+namespace=myproject
+
+stringVal string
+myArray[].name string
+myArray[].type enum {T1, T2, T3} default=T1
+myArray[].intArr[] int
+myMap{} string
+basicStruct.foo string
+basicStruct.bar int default=0 range=[-100,100]
+boolVal bool
+myFile path
+</pre>
+
+<p>
+For setting all the values for this config in
+<code>services.xml</code>, we would add the following xml at the
+desired element:
+</p>
+<pre>
+  &lt;config name="myproject.example"&gt;
+    &lt;stringVal&gt;val&lt;/stringVal&gt;
+    &lt;myArray&gt;
+       &lt;item&gt;
+           &lt;name&gt;elem_0&lt;/name&gt;
+           &lt;type&gt;T2&lt;/type&gt;
+           &lt;intArr&gt;
+               &lt;item&gt;0&lt;/item&gt;
+               &lt;item&gt;1&lt;/item&gt;
+           &lt;/intArr&gt;
+       &lt;/item&gt;
+       &lt;item&gt;
+           &lt;name&gt;elem_1&lt;/name&gt;
+           &lt;type&gt;T3&lt;/type&gt;
+           &lt;intArr&gt;
+               &lt;item&gt;0&lt;/item&gt;
+               &lt;item&gt;1&lt;/item&gt;
+           &lt;/intArr&gt;
+       &lt;/item&gt;
+    &lt;/myArray&gt;
+    &lt;myMap&gt;
+      &lt;item key="key1"&gt;val1&lt;/item&gt;
+      &lt;item key="key2"&gt;val2&lt;/item&gt;
+    &lt;/myMap&gt;
+    &lt;basicStruct&gt;
+       &lt;foo&gt;str&lt;/foo&gt;
+       &lt;bar&gt;3&lt;/bar&gt;
+    &lt;/basicStruct&gt;
+    &lt;boolVal&gt;true&lt;/boolVal&gt;
+    &lt;myFile&gt;components/file1.txt&lt;/myFile&gt;
+ &lt;/config&gt;
+</pre>
+<p>
+Note that each '.' in the parameter's definition corresponds to a
+child element in the xml. It is of course not necessary to set values
+that already have a default in the <em>.def</em> file,  if you
+want to keep the default value. Hence, in the
+example above, <code>basicStruct.bar</code> and
+<code>myArray[].type</code> could have been ommited in
+the xml without generating any errors when deploying the application.
+</p>
+
+<h2 id="configuring_arrays_in_services.xml">Arrays</h2>
+
+<p>
+As can be seen from the example above, assigning values to <em>arrays</em>
+is done by using the <code>&lt;item&gt;</code> tag. This ensures that the given
+config values do not overwrite any existing array elements from higher-level xml
+elements in services, or from Vespa itself.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Grouping Information in Results</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="June 2009" />
+<meta name="authors" content="simon" />
+</head>
+
+<body>
+<p class="ingress">
+This document describes what grouping is and gives a few examples on
+how to use it. See also the
+<a href="reference/grouping-syntax.html">grouping
+reference documentation</a>.
+</p>
+
+<p>
+The advanced grouping feature of Vespa offers a flexible language in
+which to describe how your query hits should be grouped, aggregated
+and presented to the user. The grouping parameter can be thought of as
+a high-level program. The core operations are <code>all</code>
+(process a list of elements as a whole), <code>each</code> (process
+each element in a list separately), <code>group</code> (group the
+elements of a list into sub-lists) and <code>output</code> (present
+something to the user). These operations may be nested to describe a
+great variety of behavior.
+</p>
+
+<p>
+The engine will carry out the desired program by a distributed
+execution against the nodes containing the data.  As realizing such
+programs over a distributed data set requires more network roundtrips
+than a regular search query, these queries are more expensive than
+regular queries. However, executing such programs are always much more
+efficient than achieving the same end result by issuing multiple
+independent queries to the engine.
+</p>
+
+<p class="alert alert-success">
+Before using this feature in production, please benchmark your typical
+grouping queries to make sure that they perform within acceptable
+limits.
+</p>
+
+<p>
+For the entirety of this document, we assume that you have an index of
+engine part purchases that contains the following data:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>2006-09-06 09:00:00</td>
+  <td>$1 000</td>
+  <td>0.24</td>
+  <td>Intake valve</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-07 10:00:00</td>
+  <td>$1 000</td>
+  <td>0.12</td>
+  <td>Rocker arm</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-07 11:00:00</td>
+  <td>$2 000</td>
+  <td>0.24</td>
+  <td>Spring</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-08 12:00:00</td>
+  <td>$3 000</td>
+  <td>0.12</td>
+  <td>Valve cover</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-08 10:00:00</td>
+  <td>$5 000</td>
+  <td>0.24</td>
+  <td>Intake port</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-08 11:00:00</td>
+  <td>$8 000</td>
+  <td>0.12</td>
+  <td>Head</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-09 12:00:00</td>
+  <td>$1 300</td>
+  <td>0.24</td>
+  <td>Coolant</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-09 10:00:00</td>
+  <td>$2 100</td>
+  <td>0.12</td>
+  <td>Engine block</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-09 11:00:00</td>
+  <td>$3 400</td>
+  <td>0.24</td>
+  <td>Oil pan</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-09 12:00:00</td>
+  <td>$5 500</td>
+  <td>0.12</td>
+  <td>Oil sump</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-10 10:00:00</td>
+  <td>$8 900</td>
+  <td>0.24</td>
+  <td>Camshaft</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-10 11:00:00</td>
+  <td>$1 440</td>
+  <td>0.12</td>
+  <td>Exhaust valve</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-10 12:00:00</td>
+  <td>$2 330</td>
+  <td>0.24</td>
+  <td>Rocker arm</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-10 10:00:00</td>
+  <td>$3 770</td>
+  <td>0.12</td>
+  <td>Spring</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-10 11:00:00</td>
+  <td>$6 100</td>
+  <td>0.24</td>
+  <td>Spark plug</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-11 12:00:00</td>
+  <td>$9 870</td>
+  <td>0.12</td>
+  <td>Exhaust port</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-11 10:00:00</td>
+  <td>$1 597</td>
+  <td>0.24</td>
+  <td>Piston</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>2006-09-11 11:00:00</td>
+  <td>$2 584</td>
+  <td>0.12</td>
+  <td>Connection rod</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td>2006-09-11 12:00:00</td>
+  <td>$4 181</td>
+  <td>0.24</td>
+  <td>Rod bearing</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>2006-09-11 13:00:00</td>
+  <td>$6 765</td>
+  <td>0.12</td>
+  <td>Crankshaft</td>
+  <td>Jones</td>
+  </tr>
+</tbody>
+</table>
+
+
+
+<h1 id="basic-grouping">Basic Grouping</h1>
+<p>
+Say you wanted to return the sum price of purchases that have been recorded on a
+per-customer basis. First of all you would need to include every document
+available, so you query by document
+type <code>/search/?yql=select * from sources * where sddocname contains 'purchase';</code>. Note
+that you can (and should) swap <code>sddocname contains "purchase"</code> for a valid Vespa
+query - we are only querying all of the documents for the sake of completeness
+in this
+example. E.g. <code>/search/?yql=select * from sources * where customer container 'smith';</code>
+would only produce groups related to Mr. Smith (and it would also be a faster
+query, because there would be fewer hits to process).
+</p>
+
+<p>
+Second, you need to specify an expression on which to perform
+grouping. In our case, we would use <code>group(customer)</code>.
+</p>
+
+<p>
+Next, you need to specify what to present to the user. If you wanted
+to present the sum of the purchase price for each customer, you would
+add an <code>each(output(sum(price)))</code>
+clause. The <code>each</code> in this case would refer to each of the
+groups produced by <code>group(customer)</code>.
+</p>
+
+<p>
+Finally, seeing that you do not need the regular hits returned, you
+may append <code>hits=0</code> to reduce latency. This amounts to the
+following complete query:
+</p>
+<pre class="code">
+/search/?hits=0&amp;yql=select * from sources * where sddocname contains 'purchase' |
+                    all(group(customer) each(output(sum(price))));
+</pre>
+<p class="note">
+In order to execute this query it needs to have all its special characters escaped. For the sake of readability, our queries are left unescaped in this article. For your reference, however, this is how the above query comes out when escaped:<br/>
+<code>
+/search/?hits=0&amp; yql=select%20%2A%20from%20sources%20%2A%20where%20sddocname%20contains%20%27purchase%27%20%7C%20
+all(group(customer)%20each(output(sum(price))))%3B
+</code>
+</p>
+
+<p>
+Which returns an XML view to the following:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Brown</td>
+  <td>$20 537</td>
+  </tr>
+<tr>
+  <td>Jones</td>
+  <td>$39 816</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td>$19 484</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+Or you may choose to query for the sum price of purchases on a
+per-date basis;
+</p>
+
+<pre class="code">
+select (&hellip;) | all(group(time.date(date)) each(output(sum(price))));
+</pre>
+
+<p>
+which produces:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>2006-09-06</td>
+  <td>$1 000</td>
+  </tr>
+<tr>
+  <td>2006-09-07</td>
+  <td>$3 000</td>
+  </tr>
+<tr>
+  <td>2006-09-08</td>
+  <td>$16 000</td>
+  </tr>
+<tr>
+  <td>2006-09-09</td>
+  <td>$12 300</td>
+  </tr>
+<tr>
+  <td>2006-09-10</td>
+  <td>$22 540</td>
+  </tr>
+<tr>
+  <td>2006-09-11</td>
+  <td>$24 997</td>
+  </tr>
+</tbody>
+</table>
+
+
+<h2 id="searcherapi">Search Container API</h2>
+<p>
+As well as adding a pipeline step to your YQL+ query, you can use the
+programmatic API to construct and run a grouping request. This allows multiple
+grouping requests to run in parallel, and does not collide with
+the <code>yql</code> parameter.  To programmatically run a grouping request,
+do:
+</p>
+
+<pre class="brush: java">
+@Override
+public Result search(Query query, Execution execution) {
+    // Create grouping request.
+    GroupingRequest request = GroupingRequest.newInstance(query);
+    request.setRootOperation(new AllOperation()
+            .setGroupBy(new AttributeValue(&quot;foo&quot;))
+            .addChild(new EachOperation()
+                .addOutput(new CountAggregator().setLabel(&quot;count&quot;))));
+
+    // Perform grouping request.
+    Result result = execution.search(query);
+
+    // Process grouping result.
+    Group root = request.getResultGroup(result);
+    GroupList foo = root.getGroupList(&quot;foo&quot;);
+    for (Hit hit : foo) {
+        Group group = (Group)hit;
+        Long count = (Long)group.getField(&quot;count&quot;);
+        // TODO: Process group and count.
+    }
+
+    // Pass results back to calling searcher.
+    return result;
+}
+</pre>
+
+<p>
+Please see the
+<a href="javadoc/index.html?com/yahoo/search/grouping/package-summary.html">
+API documentation</a> for the complete reference on this.
+</p>
+
+
+
+<h1 id="items">Expressions</h1>
+<p>
+Instead of just grouping on some attribute value, the
+<code>group</code> clause may contain arbitrarily complex expressions
+(see <code>group</code> in the
+<a href="reference/grouping-syntax.html#syntax">syntax
+reference</a> for an exhaustive list). You may do things like:
+</p>
+
+<ul>
+<li>Selecting the minimum or maximum of sub-expressions,</li>
+<li>addition, substraction, multiplication, division, and even modulo
+    of sub-expressions,</li>
+<li>bitwise operations on sub-expressions,</li>
+<li>concatenation of the results of sub-expressions,</li>
+<li>and more.</li>
+</ul>
+
+<p>
+If you wanted to sum the prices of purchases on per-hour-of-day basis,
+do:
+</p>
+
+<pre class="code">
+select (&hellip;) | all(group(mod(div(date,mul(60,60)),24)) each(output(sum(price))));
+</pre>
+
+<p>
+which produces:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>sum(price)</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>09:00</td>
+  <td>$1 000</td>
+  </tr>
+<tr>
+  <td>10:00</td>
+  <td>$22 367</td>
+  </tr>
+<tr>
+  <td>11:00</td>
+  <td>$23 524</td>
+  </tr>
+<tr>
+  <td>12:00</td>
+  <td>$26 181</td>
+  </tr>
+<tr>
+  <td>13:00</td>
+  <td>$6 765</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+These types of expressions may also be used inside <code>output</code>
+operations, so instead of simply calculating the sum price of the
+grouped purchases, you could calculate the sum income after taxes per
+customer by doing:
+</p>
+
+<pre class="code">
+select (&hellip;) | all(group(customer) each(output(sum(mul(price,sub(1,tax))))));
+</pre>
+
+<p>
+which produces:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>sum(mul(price,sub(1,tax)))</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Brown</td>
+  <td>$17 193</td>
+  </tr>
+<tr>
+  <td>Jones</td>
+  <td>$32 868</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td>$15 897</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+Note that the validity of an expression depends on the current level
+of nesting. For example; while <code>sum(price)</code> would be a
+valid expression for a group of hits, <code>price</code> would not. As
+a general rule, each operator within an expression either applies to a
+single hit or aggregates values across a group.
+</p>
+
+
+
+<h1 id="order">Ordering and Limiting Groups</h1>
+<p>
+In most realistic scenarios you may be producing a large collection of
+groups, perhaps even too large to display or process. This is handled
+by ordering your groups according to some criteria, and then limiting
+the number of groups to return. However, these are decoupled features,
+and you may of course choose to do only one or the other.
+</p>
+
+<p>
+The <code>order</code> clause accepts a list of one or more
+expressions. Each of the arguments to <code>order</code> is prefixed
+by either a plus for ascending order, or a minus for descending order.
+</p>
+
+<p>
+Limiting the number of groups is done by using a constraint. The one
+used here is <code>max</code> which represent an upper limit for the
+number of groups presented in the result. However <code>max</code> can not be
+mentioned without its ugly brother <code>precision</code>. As finding a correct
+global maximum would require us to fetch all groups from all nodes and merging
+them together. This would result in a huge network bandwidth usage and will not
+scale. As a compromise <code>precision</code> was introduced. In most cases the
+groups that are the best on one node would be among the best on another node too.
+If you want the 2 globally best groups you should make an educated guess on how
+many samples you need to fetch from each node in order to get a correct answer.
+This educated guess you should use as <code>precision</code>. An initial factor
+of 3 has proven to be quite good in most usecases. However there is one important
+exception. If you do not give an explicitt <code>order</code> constraint you do
+not need <code>precision</code>. Then local ordering will be the same as global
+ordering. Ordering will not change after a merge operation.
+
+</p>
+
+<p>
+Say you wanted to see the two customers who had the most number of
+purchases, presenting the sum price for each customer;
+</p>
+
+<pre class="code">
+select (&hellip;) | all(group(customer) max(2) order(-count())
+                 each(output(sum(price))));
+</pre>
+
+<p>
+which produces:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>sum(price)</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Jones</td>
+  <td>$39 816</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td>$19 484</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+If however the data for customer 'Jones' was spread on 3 different backend nodes.
+'Jones' might be among the 2 best on only one node.  But based on the distribution
+of the data we have concluded by earlier tests that if we fetch 5.67 as many groups
+as we need we will have a correct answer with at least 99.999% confidence. So then
+we just use 6 times as much groups when doing the merge. And that would look like this.
+</p>
+<pre class="code">
+select (&hellip;) | all(group(customer) max(2) precision(12) order(-count())
+                 each(output(sum(price))));
+</pre>
+
+
+<h2 id="max-and-precision-rules">Important rules for <code>max</code> and <code>precision</code></h2>
+<p>
+As <code>max</code> and <code>precision</code> are not intuitive right
+away we will give a few simple guidelines:
+</p>
+
+<ul>
+<li><code>order</code> clause changes ordering of groups after a merge
+    operation for the following
+    aggregators: <code>count</code>, <code>avg</code> and <code>
+    sum</code>.</li>
+<li><code>order</code> clause <strong>will not</strong> change ordering of
+    groups after a merge operation when <code>max</code>
+    or <code>min</code> is used.</li>
+<li>default order, which is <code>max(relevancy())</code>, <strong>does
+    not</strong> require the use of <code>precision</code>.</li>
+</ul>
+
+<h2 id="pagination">Limiting and pagination</h2>
+<p>
+Instead of offering an <code>offset</code> clause to accompany
+the <code>max</code> clause to support pagination, grouping supports
+cookie-esque "continuation" objects that are passed as annotations to the
+grouping statement. The "continuations" annotation is a list of zero or more
+continuation strings.  These strings can be found inside the grouping result
+itself;
+</p>
+<ul>
+<li>A single "this" continuation per <code>select</code>. This can be regarded
+as the session identifier, as submitting this will reproduce the exact same
+result from which it was taken.</li>
+<li>Zero or one "prev" continuation per group- and hit list. Submit any number
+of these to retrieve the next pages of the corresponding lists.</li>
+<li>Zero or one "next" continuation per group- and hit list. Submit any number
+of these to retrieve the previous pages of the corresponding lists.</li>
+</ul>
+<p>
+For example, given the result (using <code>format=json</code>):
+</p>
+
+<pre>
+{
+    "root": {
+        "children": [
+            {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "fields": {
+                                    "count()": 7
+                                },
+                                "value": "Jones",
+                                "id": "group:string:Jones",
+                                "relevance": 1.0
+                            }
+                        ],
+                        "continuation": {
+                            "next": "BGAAABEBEBC",
+                            "prev": "BGAAABEABC"
+                        },
+                        "id": "grouplist:customer",
+                        "label": "customer",
+                        "relevance": 1.0
+                    }
+                ],
+                "continuation": {
+                    "this": "BGAAABEBCA"
+                },
+                "id": "group:root:0",
+                "relevance": 1.0
+            }
+        ],
+        "fields": {
+            "totalCount": 20
+        },
+        "id": "toplevel",
+        "relevance": 1.0
+    }
+}
+</pre>
+
+<p>Or as XML:</p>
+
+<pre class="brush: xml">
+&lt;result total-hit-count="20"&gt;
+  &lt;group relevance="1.0"&gt;
+    &lt;id type="root"/&gt;
+    &lt;continuation id="this"&gt;BGAAABEBCA&lt;/continuation&gt;
+    &lt;grouplist label="customer"&gt;
+      &lt;continuation id="next"&gt;BGAAABEBEBC&lt;/continuation&gt;
+      &lt;continuation id="prev"&gt;BGAAABEABC&lt;/continuation&gt;
+      &lt;group relevance="1.0"&gt;
+        &lt;id type="string"&gt;Jones&lt;/id&gt;
+        &lt;output label="count()"&gt;7&lt;/output&gt;
+      &lt;/group&gt;
+    &lt;/grouplist&gt;
+  &lt;/group&gt;
+&lt;/result&gt;
+</pre>
+<p>
+One may now reproduce the same result by passing the "this" continuation along
+the orginal select:
+</p>
+<pre class="code">
+select (&hellip;) | [{ 'continuations':['BGAAABEBCA'] }]all(&hellip;);
+</pre>
+<p>
+To display the next page of customers, pass the "this" continuation of the root
+group, and the "next" continuation of the customer list:
+</p>
+<pre class="code">
+select (&hellip;) | [{ 'continuations':['BGAAABEBCA', 'BGAAABEBEBC'] }]all(&hellip;);
+</pre>
+<p>
+And finally, to display the previous page of customers, pass the "this"
+continuation of the root group, and the "prev" continuation of the customer
+list:
+</p>
+<pre class="code">
+select (&hellip;) | [{ 'continuations':['BGAAABEBCA', BGAAABEABC'] }]all(&hellip;);
+</pre>
+<p class="alert alert-success">
+The "continuations" annotation is an ordered list of
+continuation strings. These are combined by replacement, so that a continuation
+given later will replace any shared state with a continuation given
+before. Also, when using the "continuations" annotation, one must always
+pass the "this" continuation as its first element.
+</p>
+
+<h1 id="hits">Presenting Hits per Group</h1>
+<p>
+A special expression that can only be used inside the
+<code>output</code> operation is <code>summary</code>. This will
+result in the presentation of actual hits within the
+group. Constraints may be used to limit the number of hits presented. </p>
+
+<p>
+To see the three most expensive parts sold to each registered
+customer, do:
+</p>
+
+<pre class="code">
+/search/?yql=select * from sources * where sddocname contains 'purchase' |
+             all(group(customer) each(max(3) each(output(summary()))));
+        &amp;ranking=pricerank
+</pre>
+
+<p>
+which produces:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th />
+  <th />
+  <th />
+  <th />
+  <th />
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Brown</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08 11:00</td>
+  <td>$8 000</td>
+  <td>0.12</td>
+  <td>Head</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10 10:00</td>
+  <td>$3 770</td>
+  <td>0.12</td>
+  <td>Spring</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09 11:00</td>
+  <td>$3 400</td>
+  <td>0.24</td>
+  <td>Oil pan</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>Jones</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11 12:00</td>
+  <td>$9 870</td>
+  <td>0.12</td>
+  <td>Exhaust port</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10 10:00</td>
+  <td>$8 900</td>
+  <td>0.24</td>
+  <td>Camshaft</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11 13:00</td>
+  <td>$6 765</td>
+  <td>0.12</td>
+  <td>Crankshaft</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10 11:00</td>
+  <td>$6 100</td>
+  <td>0.24</td>
+  <td>Spark plug</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09 12:00</td>
+  <td>$5 500</td>
+  <td>0.12</td>
+  <td>Oil sump</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11 11:00</td>
+  <td>$2 584</td>
+  <td>0.12</td>
+  <td>Connection rod</td>
+  <td>Smith</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+Notice how we must append a <code>ranking=pricerank</code> parameter to the
+query in order to get ordering of the hits. The ranking parameter points a <a
+href="ranking.html">rank profile</a> that is used for ranking the hits. The
+following ranking expression will rank the hits by their price attribute:
+</p>
+
+<pre class="code">
+rank-profile pricerank inherits default {
+    first-phase {
+        expression: attribute(price)
+    }
+}
+</pre>
+
+<p>
+The <code>order</code> clause available in the <code>select</code> parameter is
+a directive for <em>group</em> ordering, not <em>hit</em> ordering.
+</p>
+
+<h1 id="subselect">Nested Groups</h1>
+<p>
+One of the greatest features that advanced grouping offers, is the
+ability to do nested groups. This offers unprecedented drilling
+capabilities, because there are no limits to nesting depth or
+presented information on any level.
+</p>
+
+<p>
+To find out how much each customer has spent per day, do
+</p>
+
+<pre class="code">
+select (&hellip;) | all(group(customer) each(group(time.date(date)) each(output(sum(price)))));
+</pre>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th />
+  <th />
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Brown</td>
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08</td>
+  <td>$8 000</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$3 400</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$7 540</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$1 597</td>
+  </tr>
+<tr>
+  <td>Jones</td>
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08</td>
+  <td>$8 000</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$2 100</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$8 900</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$20 816</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-06</td>
+  <td>$1 000</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-07</td>
+  <td>$3 000</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$6 800</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$6 100</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$2 584</td>
+  </tr>
+</tbody>
+</table>
+
+<p>
+The <code>summary</code> expression described
+<a href="#hits">earlier</a> may be used to present hits inside any
+group at any nesting level. Let us use this to query for all items on
+a per-customer basis, displaying the most expensive hit for each
+customer, with subgroups of purchases on a per-date basis. We also
+want to include the sum price for each customer, both as a grand total
+and broken down on a per-day basis. The query
+</p>
+
+<pre class="code">
+/search/?yql=select * from sources * where sddocname contains 'purchase' |
+             all(group(customer)
+                 each(max(1) output(sum(price)) each(output(summary())))
+                      each(group(time.date(date))
+                      each(max(10) output(sum(price)) each(output(summary())))));
+        &amp;ranking=pricerank
+</pre>
+
+<p>
+produces the following:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>GroupId</th>
+  <th>sum(price)</th>
+  <th />
+  <th />
+  <th />
+  <th />
+  <th />
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>Brown</td>
+  <td>$20 537</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08 11:00</td>
+  <td>$8 000</td>
+  <td>0.12</td>
+  <td>Head</td>
+  <td>Brown</td>
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  <th />
+  <th />
+  <th />
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08</td>
+  <td>$8 000</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-08 11:00</td>
+  <td>$8 000</td>
+  <td>0.12</td>
+  <td>Head</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$3 400</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-09 11:00</td>
+  <td>$3 400</td>
+  <td>0.12</td>
+  <td>Oil pan</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$7 540</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-10 10:00</td>
+  <td>$3 770</td>
+  <td>0.12</td>
+  <td>Spring</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-10 12:00</td>
+  <td>$2 330</td>
+  <td>0.24</td>
+  <td>Rocker arm</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-10 11:00</td>
+  <td>$1 440</td>
+  <td>0.12</td>
+  <td>Exhaust valve</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$1 597</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-11 10:00</td>
+  <td>$1 597</td>
+  <td>0.24</td>
+  <td>Piston</td>
+  <td>Brown</td>
+  </tr>
+<tr>
+  <td>Jones</td>
+  <td>$39 816</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11 12:00</td>
+  <td>$9 870</td>
+  <td>0.12</td>
+  <td>Exhaust port</td>
+  <td>Jones</td>
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  <th />
+  <th />
+  <th />
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-08</td>
+  <td>$8 000</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-08 10:00</td>
+  <td>$5 000</td>
+  <td>0.24</td>
+  <td>Intake port</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-08 12:00</td>
+  <td>$3 000</td>
+  <td>0.12</td>
+  <td>Valve cover</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$2 100</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-09 10:00</td>
+  <td>$2 100</td>
+  <td>0,12</td>
+  <td>Engine block</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$8 900</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-10 10:00</td>
+  <td>$8 900</td>
+  <td>0.24</td>
+  <td>Camshaft</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$20 816</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-11 12:00</td>
+  <td>$9 870</td>
+  <td>0.12</td>
+  <td>Exhaust port</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-11 13:00</td>
+  <td>$6 765</td>
+  <td>0.12</td>
+  <td>Crankshaft</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-11 12:00</td>
+  <td>$4 181</td>
+  <td>0.24</td>
+  <td>Rod bearing</td>
+  <td>Jones</td>
+  </tr>
+<tr>
+  <td>Smith</td>
+  <td>$19 484</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10 11:00</td>
+  <td>$6 100</td>
+  <td>0.24</td>
+  <td>Spark plug</td>
+  <td>Smith</td>
+  <td />
+  </tr>
+<tr>
+  <td />
+  <th>GroupId</th>
+  <th>Sum(price)</th>
+  <th />
+  <th />
+  <th />
+  <th />
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-06</td>
+  <td>$1 000</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-06 09:00</td>
+  <td>$1 000</td>
+  <td>0.24</td>
+  <td>Intake valve</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-07</td>
+  <td>$3 000</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-07 11:00</td>
+  <td>$2 000</td>
+  <td>0.24</td>
+  <td>Spring</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-07 10:00</td>
+  <td>$1 000</td>
+  <td>0.12</td>
+  <td>Rocker arm</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-09</td>
+  <td>$6 800</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-09 12:00</td>
+  <td>$5 500</td>
+  <td>0.12</td>
+  <td>Oil sump</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-09 12:00</td>
+  <td>$1 300</td>
+  <td>0.24</td>
+  <td>Coolant</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-10</td>
+  <td>$6 100</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-10 11:00</td>
+  <td>$6 100</td>
+  <td>0.24</td>
+  <td>Spark plug</td>
+  <td>Smith</td>
+  </tr>
+<tr>
+  <td />
+  <td>2006-09-11</td>
+  <td>$2 584</td>
+  <td />
+  <td />
+  <td />
+  <td />
+  </tr>
+<tr>
+  <td />
+  <td />
+  <th>Date</th>
+  <th>Price</th>
+  <th>Tax</th>
+  <th>Item</th>
+  <th>Customer</th>
+  </tr>
+<tr>
+  <td />
+  <td />
+  <td>2006-09-11 11:00</td>
+  <td>$2 584</td>
+  <td>0.12</td>
+  <td>Connection rod</td>
+  <td>Smith</td>
+  </tr>
+</tbody>
+</table>
+
+</body>
+</html>

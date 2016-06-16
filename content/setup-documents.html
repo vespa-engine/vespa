@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Documents</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+  <p>
+    Data given to the content layer is presented as documents. Documents
+    corresponds to document types with strict schemas for content. Each
+    document have a string identifier decided by the application which need
+    to be unique across all documents.
+  </p>
+
+  <h1>Defining document types</h1>
+  <p>
+    A document must be of a given type. The type defines a scheme for what an
+    instance of the given document may contain.
+  </p><p>
+    The schema defines strict types. It may contain maps of structs, where
+    structs support inheritance, and is thus able to represent any type of
+    data if wanted. It is also possible to store raw blobs to wrap anything
+    into the document. The reason for the strict schema is to give an easy way
+    for search users to define important properties needed when searching.
+    Backends providing search may require fields to be of given types with given
+    per field config for it to be searchable.
+  </p><p>
+    See <a href="../search/search-definitions.html">Vespa</a> documentation
+    for details on how to configure document types. Currently this setup tailors
+    mostly to Vespa Search, calling it a search definition. However, documents
+    are set up the same way for non-search users. Just leave out the search
+    config parts.
+  </p>
+
+  <h1>Document routing</h1>
+  <p>
+    When configuring content clusters, a <em>documents</em> tag set what document
+    types a cluster is to store. This configuration is used to configure the
+    garbage collector if it is enabled. Additionally it is used to define
+    default routes for documents sent into the application. By default, a
+    document will be sent to all clusters having the document type defined.
+  </p>
+  <p>
+    If you want to split documents of the same type among different clusters,
+    for instance to ensure data locality for users around the world, you cannot
+    use the default route. If rules for where data goes can be represented in
+    a document selection expression, the default route can be specified to
+    use this. If the rules for what goes where is complex, it is likely most
+    practical to implement it outside of Vespa, and just use cluster names as
+    routing targets.
+  </p>
+  <p>
+    Refer to Vespa's
+    <a href="../routing.html">introduction and overview of routing</a>
+    for more routing details.
+  </p>
+
+  <h1>Document identifier schemes</h1>
+  <p>
+    Documents have string identifiers that must conform to one of the
+    document identifier schemes available. Specifications for the schemes
+    may be found <a href="../document-ids.html">here</a>.
+  </p>
+  <p>
+    From the document identifier, the content layer calculates a numeric
+    locations. A bucket contains all the documents, where a given amount of
+    least significant bits of the location are all equal. This property is
+    used to enable co-localized storage of documents.
+  </p>
+  <p>
+    For instance, schemes specifying a group name, will have the LSB bits of
+    the location set to a hash of the group name. Thus all documents belonging
+    to that group will have locations with similar least significant bits,
+    which will put them in the same bucket. If buckets end up split far enough
+    to use more bits than the hash bits overrided by the group, the data will
+    be split into many buckets, but each will typically only contain data for
+    that group.
+  </p>
+  <p>
+    Co-locating documents might create a less even distribution, as documents
+    may be distributed unevenly among the possible buckets. Be careful of
+    co-locating into few units. While bucket splitting in distributor may
+    still provide an even distribution to service layer nodes, distribution of
+    buckets to distributors may currently become uneven with very skewed 
+    distributions
+  </p>
+  <p>
+    Co-locating documents optimizes speed of chunked document retrieval of
+    documents sharing some property for backends that store data bucket-centric.
+  </p>
+  
+</body>
+</html>

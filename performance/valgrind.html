@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+  <title>Using Valgrind with Vespa</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="March 2014"/>
+  <meta name="authors" content="balder"/>
+</head>
+<body>
+
+<p class="ingress">
+Valgrind is a useful tool to investigate bugs and to get a detailed performance
+profile of an application after using <a href="oprofile.html">OProfile</a> to get the higher level picture.
+This document explains how to run Vespa processes with valgrind.
+</p>
+
+
+<h1>Valgrind with callgrind</h1>
+<p>
+Install valgrind.
+</p>
+
+<p>
+You might need to enable world writeable $VESPA_HOME by <pre>sudo chmod 777 $VESPA_HOME</pre>.
+Keep in mind to reset that after profiling session is completed.
+General use of valgrind:
+</p>
+
+<pre>
+$ valgrind 'application'
+</pre>
+
+<p>
+Will show memory errors.
+</p>
+
+<pre>
+valgrind --tool=callgrind 'application'
+</pre>
+
+<p>
+Will show a callgraph
+</p>
+
+<pre>
+$ valgrind --tool=callgrind --simulate-hwpref=yes --simulate-cache=yes --dump-instr=yes --collect-jumps=yes 'application'
+</pre>
+
+<p>
+Will show a detailed profiling graph. This is what you use when you want to optimize your application.
+</p>
+
+<p>
+After running valgrind, copy callgrind.out.* to your machine that has kcachegrind installed.
+Also copy your binary to the same path as it had while running.
+It might also be nice to have access to your code.
+Path to code can be specified in kcachegrind.
+</p>
+
+<h1>Valgrind and system tests</h1>
+
+<pre>
+$ sudo ruby 'systemtest'.rb --valgrind="space separated application list, or 'all'"
+</pre>
+
+<p>
+E.g. <code>sudo ruby 'systemtest'.rb --valgrind="storaged distributord"</code>, will check both of them for errors. Results are logged in $VESPA_HOME/tmp/.
+</p>
+
+<pre>
+$ sudo ruby 'systemtest'.rb --valgrind="app" --valgrind_opt="--tool=callgrind --simulate-hwpref=yes --simulate-cache=yes --dump-instr=yes --collect-jumps=yes"
+</pre>
+
+<p>
+This will give you a profiling graph in the home directory of your application.
+</p>
+
+<pre>
+$ find $VESPA_HOME -name callgrind.* | xargs ls -al'
+</pre>
+
+<p>
+This will find all callgrind.out* files.
+</p>
+
+<h1>Start Vespa using valgrind</h1>
+
+<p>
+Start <code>vespa_base</code> with the following environment variables set:
+</p>
+
+<pre>
+VESPA_USE_VALGRIND="proton"
+</pre>
+
+<p>
+This will run Vespa under valgrind and check for memory errors. Log lands in $VESPA_HOME/tmp/.
+</p>
+
+<pre>
+$ VESPA_USE_VALGRIND="proton" VESPA_VALGRIND_OPT="--tool=callgrind --simulate-hwpref=yes --simulate-cache=yes --dump-instr=yes --collect-jumps=yes"
+</pre>
+
+<p>
+This will profile your application.
+</p>
+
+<pre>
+$ VESPA_USE_VALGRIND="proton" VESPA_VALGRIND_OPT="--tool=callgrind --simulate-hwpref=yes --simulate-wb=yes --dump-instr=yes --collect-jumps=yes --collect-bus=yes --branch-sim=yes"
+</pre>
+
+<p>
+Remember to stop <code>vespa_base</code>. The callgrind.* files are not generated until the program stops.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Using the Cloud config API</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2011" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+
+<p>
+This document describes how to use the C++ and Java version of the
+Cloud config API, from now on referred to as the 'config API'. See
+also the <a href="../javadoc/index.html?com/yahoo/config/package-summary.html">Java</a>
+reference.
+</p>
+
+
+
+<h1 id="developing">Developing with the Config API</h1>
+
+<p>
+This page explains how to use the Config API in your application.
+</p>
+
+<p>
+To develop with the config API, you need to install the
+<code>cloudconfig_dev</code> package. To run your application
+with the cloud config system, you need to install the
+<code>cloudconfig</code> package. This tutorial describes how
+you can set up a simple application serving the message of the day,
+using cloud config.
+</p>
+
+
+<h2 id="creating-config-definition">Creating a Config Definition</h2>
+<p>
+The first thing to do when deciding to use the config API is to define
+the config you want to use in your application. This is thoroughly
+described in the <a href="../reference/config-files.html">configuration
+file reference</a>. For the rest of this tutorial, we will use this
+definition <code>motd.def</code> from the complete example at the end
+of the tutorial.
+</p>
+
+<pre>
+namespace=myproject
+
+message string default="NO MESSAGE"
+port int default=1337
+</pre>
+
+
+<h2 id="generate-source">Generating Source Code and Accessing Config in Code</h2>
+
+<p>
+Before you can access config in your program you will need to generate
+source code for the config definition. Simple steps for how you can
+generate API code and use the API are provided for:
+</p>
+
+<ul>
+<li><a href="configapi-dev-cpp.html">C++</a></li>
+<li><a href="configapi-dev-java.html">Java</a></li>
+</ul>
+
+<p>
+We also recommend that you read the <a href="#guidelines">general
+guidelines</a> section at the end of this document to get examples of
+advanced usage and recommendations for how to incorporate the API in
+your code.
+</p>
+
+
+<h2 id="config-id">The Config ID</h2>
+<p>
+The config id specified when requesting config is essentially an
+identifier of the component requesting config. The config server
+contains a config object model, which maps a request for a given
+config name and config id to the correct configproducer instance,
+which will merge default values from the config definition with config
+from the object model and config set in
+<code>services.xml</code> to produce the final config instance.
+</p>
+
+<p>
+The config id is given to a service via the VESPA_CONFIG_ID environment
+variable. The config sentinel (mentioned <a
+href="config-introduction.html#bootstrapping">here</a>) sets the environment
+variable to the id given by the config model. This id should then be used by the
+service to subscribe for config. If you are running multiple services, each
+of them will be assigned a <strong>unique config id</strong> for that service, and a service
+should not subscribe using any config id other than its own.
+</p>
+
+<p>
+If you need to get config for a services that is not part of the model
+(i.e. it is not specified in the services.xml), but that you want
+specify values for in services.xml, use the config id <code>client</code>.
+</p>
+
+
+
+<h2 id="def-compatibility">Schema Compatibility Rules</h2>
+
+<p>
+A schema incompatibility occurs if the config class (for
+example <code>MotdConfig</code> in the C++ and Java sections above)
+was built from a different def-file than the one the server is seeing
+and using to serve config. Some such incompatibilities are
+automatically handled by the config system, others lead to error.
+This is useful to know during development/testing of a config schema.
+</p>
+
+<p>
+Let <em>S</em> denote a config definition called <em>motd</em> which
+the server is using, and <em>C</em> denote a config definition also
+called <em>motd</em> which the client is using, i.e. the one that
+created <code>MotdConfig</code> used when subscribing. The following
+is the system's behaviour:
+</p>
+
+
+<h3 id="compatible-changes">Compatible Changes</h3>
+
+<p>
+These schema mismatches are handled automatically by the config
+server:
+</p>
+
+<ul>
+  <li>C is missing a config value that S has: The server will omit
+      that value from the response.</li>
+  <li>C has an additional config value with a default value: The
+      server will include that value in the response.</li>
+  <li>C and S both have a config value, but the default values differ:
+      The server will use C's default value.</li>
+</ul>
+
+
+<h3 id="incompatible-changes">Incompatible Changes</h3>
+
+<p>
+These schema mismatches are not handled by the config server, and will
+typically lead to error in the subscription API because of missing
+values (though in principle some consumers of config may tolerate
+them):
+</p>
+
+<ul>
+  <li>C has an additional config value without a default value: The
+      server will not include anything for that value.</li>
+  <li>C has the type of a config value changed, for example from
+      string to int: The server will print an error message, and not
+      include anything for that value. The user must use an entirely
+      new name for the config if such a change must be made.</li>
+</ul>
+
+
+<h3 id="schemas-lifecycle">Schemas and a System's Life Cycle</h3>
+
+<p>
+With any data schema, it is wise to be conservative about changing it
+if the system will have new versions in the future. For
+a <code>def</code> schema, removing a config value constitutes a
+semantic change that may lead to problems when an older version of
+some config subscriber asks for config. In large deployments, the risk
+associated with this increases, because of the higher cost of a full
+restart of everything.
+</p>
+
+<p>
+Consequently, one should prefer creating a new config name, to
+removing a config value from a schema.
+</p>
+
+
+<h2 id="config-server">The Config Server and Object Model</h2>
+<p>
+Currently, the object model in the server is created from a series of
+input files (<code>services.xml</code>). The model is pluggable, and
+can generate config id mappings based on your own custom
+syntax. See <a href="cloudconfig-model-plugins.html">Developing Cloud
+Config Model plugins</a> for information on how to create model
+plugins.
+</p>
+
+
+<h2 id="deploy">Creating a Deployable Application Package</h2>
+
+<p>
+The application package consists of the following files:
+</p>
+
+<pre>
+app/services.xml
+app/hosts.xml
+</pre>
+
+<p>
+The services file contains the services that is handled by the config
+model plugin. The hosts file contains the following:
+</p>
+
+<pre>
+&lt;hosts&gt;
+  &lt;host name="localhost"&gt;
+    &lt;alias&gt;node0&lt;/alias&gt;
+  &lt;/host&gt;
+&lt;/hosts&gt;
+</pre>
+
+
+<h2 id="setting-up">Setting Up a Running System</h2>
+
+<p>
+To get a running system, first install the cloudconfig package, then start the config server.
+</p>
+
+
+<p>
+Then, deploy the application:
+</p>
+
+<pre class="brush: cli">
+$ deploy upload /path/to/app/folder
+</pre>
+
+<p>
+Then, prepare the application:
+</p>
+
+<pre class="brush: cli">
+$ deploy prepare /path/to/app/folder
+</pre>
+
+<p>
+Then, make the application active
+</p>
+
+<pre class="brush: cli">
+$ deploy activate /path/to/app/folder
+</pre>
+
+<p>
+Then, start vespa
+</p>
+
+
+<p>
+This will start the application and pass it its config id via the
+VESPA_CONFIG_ID environment variable.
+</p>
+
+
+
+<h2 id="guidelines">Advanced Usage of the Config API</h2>
+<p>
+For a simple application, having only 1 config may suffice. In a
+typical server application, however, the number of config settings can
+become quite large.  Therefore, we <strong>encourage</strong> that you
+split your config settings into multiple logical classes. This section
+covers how you can use a ConfigSubscriber to subscribe to multiple
+configs and how you should group configs based on their
+dependencies. Configs can either be:
+</p>
+
+<ul>
+<li>Independent static configs</li>
+<li>Dependent static configs</li>
+<li>Dependent dynamic configs</li>
+</ul>
+
+<p>
+We will give a few examples of how you can cope with these different
+scenarios. The code examples are given in a pseudo format common to
+C++ and Java, but they should be easy to convert to their language
+specific equivalents.
+</p>
+
+
+<h3 id="guidelines-independent">Independent Static Configs</h3>
+<p>
+Independent configs means that it does not matter if one of them is
+updated independently of the other. In this case, you might as well
+use one ConfigSubscriber for each of the configs, but it might become
+tedious to check all of them. Therefore, the recommended way is to
+manage all of these configs using one ConfigSubscriber. In this setup,
+it is also typical to split the subscription phase from the config
+check/retrieval part. The subscribing part:
+</p>
+
+<h4 id="guidelines-independent-cpp">C++</h4>
+<pre class="brush: cpp">
+ConfigSubscriber subscriber;
+ConfigHandle&lt;FooConfig&gt;::UP fooHandle = subscriber.subscribe&lt;FooConfig&gt;(&hellip;);
+ConfigHandle&lt;BarConfig&gt;::UP barHandle = subscriber.subscribe&lt;BarConfig&gt;(&hellip;);
+ConfigHandle&lt;BazConfig&gt;::UP bazHandle = subscriber.subscribe&lt;BazConfig&gt;(&hellip;);
+</pre>
+
+<h4 id="guidelines-independent-java">Java</h4>
+<pre class="brush: java">
+ConfigSubscriber subscriber;
+ConfigHandle&lt;FooConfig&gt; fooHandle = subscriber.subscribe(FooConfig.class, &hellip;);
+ConfigHandle&lt;BarConfig&gt; barHandle = subscriber.subscribe(BarConfig.class, &hellip;);
+ConfigHandle&lt;BazConfig&gt; bazHandle = subscriber.subscribe(BazConfig.class, &hellip;);
+</pre>
+
+<p>And the retrieval part:</p>
+
+<pre class="brush: java">
+if (subscriber.nextConfig()) {
+    if (fooHandle-&gt;isChanged()) {
+        // Reconfigure foo
+    }
+    if (barHandle-&gt;isChanged()) {
+        // Reconfigure bar
+    }
+    if (bazHandle-&gt;isChanged()) {
+        // Reconfigure baz
+    }
+}
+</pre>
+
+<p>
+This allows you to perform the config fetch part either in its own
+thread or as part of some other event thread in your application.
+</p>
+
+
+<h3 id="guidelines-dependent-static">Dependent Static Configs</h3>
+<p>
+Dependent configs means that one of your configs depends on the value
+in another config. The most common is that you have one config which
+contains the config id to use when subscribing to the second
+config. In addition, your system may need that the configs are updated
+to the same <strong>generation</strong>.
+</p>
+
+<p class="alert alert-success">
+A generation is a monotonically increasing number which is increased
+each time an application is deployed
+with <code>deploy</code>. Certain applications may require
+that all configs are of the same generation to ensure consistency,
+especially container-like applications. All configs subscribed to by a
+ConfigSubscriber are guaranteed to be of the same generation.
+</p>
+
+<p>
+The configs are static in the sense that the config id used does not
+change. The recommended way to approach this is to use a two phase
+setup, where you fetch the initial configs in the first phase, and
+then subscribe to both the initial and derived configs in order to
+ensure that they are of the same generation. Assume that the
+InitialConfig config contains two fields named derived1 and derived2:
+</p>
+
+<h4 id="guidelines-dependent-static-cpp">C++</h4>
+<pre class="brush: cpp">
+ConfigSubscriber initialSubscriber;
+ConfigHandle&lt;InitialConfig&gt;::UP initialHandle = subscriber.subscribe&lt;InitialConfig&gt;(&hellip;);
+while (!subscriber.nextConfig()); // Ensure that we actually get initial config.
+std::auto_ptr&lt;InitialConfig&gt; initialConfig = initialHandle-&gt;getConfig();
+
+ConfigSubscriber subscriber;
+&hellip; = subscriber.subscribe&lt;InitialConfig&gt;(&hellip;);
+&hellip; = subscriber.subscribe&lt;DerivedConfig&gt;(initialConfig-&gt;derived1);
+&hellip; = subscriber.subscribe&lt;DerivedConfig&gt;(initialConfig-&gt;derived1);
+</pre>
+
+<h4 id="guidelines-dependent-static-cpp">Java</h4>
+<pre class="brush: java">
+ConfigSubscriber initialSubscriber;
+ConfigHandle&lt;InitialConfig&gt; initialHandle = subscriber.subscribe(InitialConfig.class, &hellip;);
+while (!subscriber.nextConfig()); // Ensure that we actually get initial config.
+InitialConfig initialConfig = initialHandle.getConfig();
+
+ConfigSubscriber subscriber;
+&hellip; = subscriber.subscribe(InitialConfig.class, &hellip;);
+&hellip; = subscriber.subscribe(DerivedConfig.class, initialConfig.derived1);
+&hellip; = subscriber.subscribe(DerivedConfig.class, initialConfig.derived1);
+</pre>
+
+<p>
+You can then check the configs in the same way as for independent
+static configs, and be sure that all your configs are of the same
+generation. The reason why you need to create a new ConfigSubscriber
+is that <strong>once you have called nextConfig(), you cannot add or
+remove new subscribers</strong>.
+</p>
+
+
+<h3 id="guidelines-dependent-dynamic">Dependent Dynamic Configs</h3>
+<p>
+Dynamic configs mean that the set of configs that you subscribe for
+may change between each deployment. This is the hardest case to solve,
+and how hard it is depends on how many levels of configs you have. The
+most common one is to have a set of bootstrap configs, and another set
+of configs that may change depending on the bootstrap configs
+(typically in an application that has plugins). To cover this case,
+you can use a class named <code>ConfigRetriever</code>. Currently it is
+<strong>only available in the C++ API</strong>.
+</p>
+
+<p>
+The ConfigRetriever uses the same mechanisms as the ConfigSubscriber
+to ensure that you get a consistent set of configs. In addition, two
+more classes called
+<code>ConfigKeySet</code> and <code>ConfigSnapshot</code> are added. The
+ConfigRetriever takes in a set of configs used to bootstrap the system in its
+constructor. This set does not change. It then provides one method,
+<code>getConfigs(ConfigKeySet)</code>.  The method returns a
+ConfigSnapshot of the next generation of bootstrap configs or derived configs.
+</p>
+
+<p>
+To create the ConfigRetriever, you must first populate a set of
+bootstrap configs:
+</p>
+
+<pre class="brush: cpp">
+ConfigKeySet bootstrapKeys;
+bootstrapKeys.add&lt;BootstrapFooConfig&gt;(configId);
+bootstrapKeys.add&lt;BootstrapBarConfig&gt;(configId);
+</pre>
+
+<p>
+The bootstrap configs are typically configs that will always be needed
+by your application. Once you have defined your set, you can create
+the retriever and fetch a ConfigSnapshot of the bootstrap configs:
+</p>
+
+<pre class="brush: cpp">
+ConfigRetriever retriever(bootstrapKeys);
+ConfigSnapshot bootstrapConfigs = retriever.getConfigs();
+</pre>
+
+<p>
+The ConfigSnapshot contains the bootstrap config, and you may use that
+to fetch the individual configs. You need to provide the config id and
+the type in order for the snapshot to know which config to look for:
+</p>
+
+<pre class="brush: cpp">
+if (!bootstrapConfigs.empty()) {
+    std::auto_ptr&lt;BootstrapFooConfig&gt; bootstrapFoo = bootstrapConfigs.getConfig&lt;BootstrapFooConfig&gt;(configId);
+    std::auto_ptr&lt;BootstrapBarConfig&gt; bootstrapBar = bootstrapConfigs.getConfig&lt;BootstrapBarConfig&gt;(configId);
+</pre>
+
+<p>
+The snapshot returned is empty if the retriever was unable to get the
+configs.  In that case, you can try calling the same method again.
+</p>
+
+<p>
+Once you have the bootstrap configs, you know the config ids for the
+other components that you should subscribe for, and you can define a
+new key set. Lets assume that bootstrapFoo contains an array of config
+ids we should subscribe for.
+</p>
+
+<pre class="brush: cpp">
+ConfigKeySet pluginKeySet;
+for (size_t i = 0; i &lt; (*bootstrapFoo).pluginConfigId.size; i++) {
+    pluginKeySet.add&lt;PluginConfig&gt;((*bootstrapFoo).pluginConfigId[i]);
+}
+</pre>
+
+<p>
+In this example we know the type of config requested, but this could
+be done in another way letting the plugin add keys to the set.
+</p>
+
+<p>
+Now that the derived configs have been added to the pluginKeySet, we
+can request a snapshot of them:
+</p>
+
+<pre class="brush: cpp">
+ConfigSnapshot pluginConfigs = retriever.getConfigs(pluginKeySet);
+if (!pluginConfigs.empty()) {
+    // Configure each plugin with a config picked from the snapshot.
+}
+</pre>
+
+<p>
+And thats it. When calling the method without any key parameters, the
+snapshot returned by this method may be empty if <strong>the config
+could not be fetched within the timeout</strong>, or <strong>the
+generation of configs has changed</strong>. To check if you should
+call getBootstrapConfigs() again, you can use the
+<code>bootstrapRequired()</code> method. If it returns true, you will have to
+call getBootstrapConfigs() again, because the plugin configs have been updated
+and you need a new bootstrap generation to match it. If it returns false, you
+may call getConfigs() again to try and get a new generation of plugin configs.
+</p>
+
+<p>
+We recommend that you use the retriever API if you have a use case
+like this.  The alternative is to create your own mechanism using two
+ConfigSubscriber classes, but this is <strong>not</strong>
+recommended.
+</p>
+
+<h3 id="guidelines-tips">Advice on Config Modelling</h3>
+<p>
+Regardless of which of these types of configs you have, it is
+recommended that you always fetch all the configs you
+need <strong>before</strong> you start configuring your system. This
+is because the user may deploy multiple different version of the
+config that may cause your components to get conflicting config
+values. A common pitfall is to treat dependent configs as independent,
+thereby causing inconsistency in your application when a config update
+for config A arrives before config B. The ConfigSubscriber was created
+to minimize the possibility of making this mistake, by ensuring that
+all of the configs comes from the same config reload.
+</p>
+
+<p class="alert alert-success">
+Tip: Setup your entire <em>tree</em> of configs in one thread to
+ensure consistency, and configure your system once all of the configs
+have arrived. This also maps best to the ConfigSubscriber, since it is
+not thread safe.
+</p>
+
+</body>
+</html>

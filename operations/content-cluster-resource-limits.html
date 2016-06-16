@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Content Cluster Resource Limits</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="geirst" />
+</head>
+
+<body>
+<p>
+In a content cluster with engine proton, one can specify resource limits such that put and update
+operations are rejected by the search nodes once these limits are reached.
+This effectively stops incoming feed before filling up the disk entirely or blowing all the memory on the nodes.
+If any of the limits are reached, manual steps must be applied such that the cluster once again can
+accept put and update operations.
+
+</p>
+See <a href="../content/setup-reference.html#resource-limits">resource limits reference</a> on how to specify disk and memory
+resource limits in your application. The attribute limits should not be configured by the user.
+</p>
+
+
+<h1 id="disk-limit">Disk Limit</h1>
+<p>
+The disk usage for a search node can be monitored with the search node metric <code>content.proton.resource_usage.disk</code>.
+If the disk limit is reached, a put/update operation is rejected with an error message like this:
+</p>
+
+<p>
+<code>
+Put operation rejected for document 'id:test:test::0': 'diskLimitReached: { action: \"add more content nodes\", reason: \"disk used (0.85) &gt; disk limit (0.8)\", capacity: 100000000000, free: 85000000000, available: 85000000000, diskLimit: 0.8 }'
+</code>
+</p>
+
+<p>
+To remedy, add more nodes to the cluster.
+Then, wait until data has been re-distributed from the node(s) where disk limit was reached to the new node(s).
+</p>
+
+
+<h1 id="memory-limit">Memory Limit</h1>
+<p>
+The memory usage for a search node can be monitored with the search node metric <code>content.proton.resource_usage.memory</code>.
+If the memory limit is reached, a put/update operation is rejected with an error message like this:
+</p>
+
+<p>
+<code>
+Put operation rejected for document 'id:test:test::0': 'memoryLimitReached: { action: \"add more content nodes\", reason: \"memory used (0.75) &gt; memory limit (0.7)\", mapped: { virt: 0, rss: 0}, anonymous: { virt: 0, rss: 12000000000}, physicalMemory: 16000000000, memoryLimit : 0.7}'
+</code>
+</p>
+
+<p>
+To remedy, add more nodes to the cluster.
+Then, wait until data has been re-distributed from
+the node(s) where memory limit was reached, to the new node(s).
+</p>
+
+
+<h1 id="enum-store-limit">Attribute Enum Store Limit</h1>
+<p>
+For string attribute fields or attribute fields with <code>fast-search</code> there is a max limit on the size of the unique values
+stored for that attribute. The component storing these values is called enum store. The current max limit is 32GB.
+The max enum store usage for a document database can be monitored with the search node metric
+<code>content.proton.documentdb.attribute.resource_usage.enum_store</code>.
+If the enum store limit is reached for a given attribute field, a put/update operation is rejected with an error message like this:
+</p>
+
+<p>
+<code>
+Put operation rejected for document 'id:test:test::0' of type 'test': 'enumStoreLimitReached: { action: \"add more content nodes\", reason: \"enum store address space used (0.65) &gt; limit (0.6)\", enumStore: { used: 22333829939, limit: 34359738368}, attributeName: \"a1\", subdb: \"ready\"}
+</code>
+</p>
+
+To remedy, add more nodes to the cluster.
+Then, wait until data has been re-distributed from the node(s) where enum store limit was reached to the new node(s).
+</p>
+
+
+<h1 id="multi-value-limit">Attribute Multi-value Limit</h1>
+<p>
+For array or weighted set attribute fields there is a max limit on the number of documents that can have the same number of values.
+The current max limit is 128M (2^27) documents.
+The multi-value usage for a document database can be monitored with the search node metric
+<code>content.proton.documentdb.attribute.resource_usage.multi_value</code>.
+If the multi-value limit is reached for a given attribute field, a put/update operation is rejected with an error message like this:
+</p>
+
+<p>
+<code>
+Put operation rejected for document 'id:test:test::0' of type 'test': 'multiValueLimitReached: { action: \"use 'huge' setting on attribute field or add more content nodes\", reason: \"multiValue address space used (0.55) &gt; limit (0.5)\", multiValue: { used: 73819750, limit: 134217728}, attributeName: \"a1\", subdb: \"ready\"}')
+</code>
+</p>
+
+<p>
+To remedy, either change the attribute field to use <code>huge</code>
+(see <a href="reference/search-definitions.html#attribute">attribute reference</a> and
+<a href="../changing-live-searchdefinitions.html">changing live search definitions</a>) or add more nodes to the cluster
+(and wait until data has been re-distributed from the node(s) where multi-value limit was reached to the new node(s)).
+</p>
+
+
+<h1 id="feeding-rejected-metrics">Feeding Rejected Metrics</h1>
+<p>
+If put and/or update operations are rejected by a search node because either disk or memory limits are reached,
+the following search node metric indicates this: <code>content.proton.resource_usage.feeding_blocked</code>.
+</p>
+
+<p>
+Similarly, if put and/or update operations are rejected because either enum store or multi-value limits are reached
+the following search node metric indicates this: <code>content.proton.documentdb.attribute.resource_usage.feeding_blocked</code>.
+</p>
+
+</body>
+</html>

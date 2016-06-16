@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Glossary</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+<dl>
+  <dt id="backend">Backend</dt><dd>
+    The part of a stateful service keeping the persistent data, on top of which
+    the content layer creates a multi-node cluster. The backend must implement
+    the persistence provider interface in order to interface with the content
+    layer.
+  </dd>
+  <dt id="bucket">Bucket</dt><dd>
+    The content layer splits all the documents in the cluster into buckets.
+    Distribution, consistency, redundancy and maintenance operations are done at
+    a bucket level.
+  <dt id="client">Client</dt><dd>
+    In context of the content layer, a client is an instance of the
+    programmatic client API linked into service using the content layer.
+  </dd>
+  <dt id="cluster">Cluster</dt><dd>
+    A set of nodes splitting load between them. Clients talk to clusters, not
+    caring what nodes within the cluster it needs to talk to.
+  </dd>
+  <dt id="cluster_controller">Cluster Controller</dt><dd>
+    A service responsible for keeping track of what nodes are currently
+    available,and broadcast this information to all the nodes, to give them a
+    consistent view of the state of the cluster. The distribution algorithm use
+    this information to divide responsibility of data subsets between the nodes.
+    Several cluster controllers may exist to cope with one going down, but they
+    will elect a single master which is the only one allowed to broadcast states,
+    ensuring the cluster get a consistent view.
+  </dd>
+  <dt id="cluster_state">Cluster State</dt><dd>
+    The cluster state keeps information about what nodes in the cluster are
+    available, and what their capacities are. The cluster controller retrieves
+    node states from all nodes, and combine the node states into a cluster
+    state, which it broadcasts to all distributor and service layer nodes.
+  </dd>
+  <dt id="consistency_issues">Consistency issues</dt><dd>
+    Too few, too many, inconsistent or unknown copies of documents. Node down
+    situations cause too few copies to exist. Nodes coming back up with stale
+    data cause too many and inconsistent copies. Inconsistent copies are typically
+    bucket copies where only some have the document, or they have different
+    versions of the same document. Differences in bucket splitting might cause
+    unknown number of copies. Can also be caused by configuration changes,
+    hardware issues, current design limitations or bugs.
+  </dd>
+  <dt id="data">Data</dt><dd>
+    Typically data provided by or generated based on requests made by clients,
+    stored within the cluster to provide a stateful service. The generic term
+    state is avoided, to not confuse terms with node and cluster states. Data
+    may refer to parts of documents, a document, a set of documents, some or
+    all documents within a bucket, or the content of several buckets.
+  </dd>
+  <dt id="distribution_algorithm">Distribution algorithm</dt><dd>
+    The algorithm used to decide what nodes are responsible for a given bucket.
+    The nodes calculated to be responsible for buckets are called the ideal nodes
+    or ideal location for that bucket. The distribution algorithm is thus also
+    referred to as the ideal state algorithm.
+  </dd>
+  <dt id="distributor">Distributor</dt><dd>
+    Process responsible for a subset of the data persisted in the cluster.
+    Keeps track of where copies of this subset are located, and critical
+    metadata like checksums, to be able to detect inconsistencies. Forwards and
+    fans out requests, in addition to initiating maintenance operations when
+    needed.
+  </dd>
+  <dt id="document">Document</dt><dd>
+    State in the content layer is represented as documents, which is an object
+    tree containing typed, named fields.
+  </dd>
+  <dt id="elastic_stateful_service">Elastic stateful service</dt><dd>
+    A stateful service stores data generated from requests, needed to
+    process other requests. As the service grows, size of data, or IO capacity
+    to read, write or process data, grows to require multiple nodes to divide
+    load between them. An elastic service allows data to be easily
+    rebalanced among nodes.
+  </dd>
+  <dt id="maintenance">Maintenance</dt><dd>
+    When the cluster has <a href="#consistency_issues">consistency issues</a> it
+    will perform maintenance operations in order to fix them. Maintenance
+    operations include creating new copies, deleting superflous ones,
+    synchronizing inconsistent copies (called merging) and splitting and joining
+    buckets to ensure buckets are split at the same level across copies of the
+    same bucket.
+  </dd>
+  <dt id="node_state">Node state</dt><dd>
+    Whether a node is up, down, initializing, stopping, being retired, or being
+    in maintenance mode, in addition to its capacity, number of partitions and
+    which partitions that are currently unavailable.
+  </dd>
+  <dt id="node">Node</dt><dd>
+    A physical or virtual machine running one or more processes to provide a
+    service for the content layer. Nodes for different services may run on the
+    same actual machines. Several nodes for the same service may also run on the
+    same machine, typically used for testing. The content layer has cluster
+    controller nodes, distributor nodes and service layer nodes. Distributor
+    nodes and service layer nodes are co-located.
+  </dd>
+  <dt id="operation">Operation</dt><dd>
+    An operation is a task for the content layer. This can either be to forward
+    or process a request, or perform internal maintenance operations. An operation
+    may map to several backend requests.
+  </dd>
+  <dt id="persistence_provider">Persistence Provider</dt><dd>
+    For the content layer to be able to talk to the service backend, the
+    backend must implement a persistence provider interface specified by the
+    content layer. The backend can thus be said to be a persistence provider.
+  </dd>
+  <dt id="request">Request</dt><dd>
+    Requests are function calls in a programmatic API, or messages in a network
+    API, sent to a target in order to process it and send a response, possibly
+    mutating internal data kept. In most context, a request in the content layer
+    documentation refers to a request made by the service to the content
+    layer, such as a document insert or delete, though the content layer also
+    sends on requests to the backend, which may also originate from the content
+    layer itself.
+  </dd>
+  <dt id="service">Service</dt><dd>
+    The software that uses the content layer to solve elasticity is called a
+    service. Currently the services doing so is Vespa Search and Vespa Document
+    Storage. Not to be confused with the service layer which is a component within
+    the content layer.
+  </dd>
+  <dt id="service_layer">Service Layer</dt><dd>
+    For the content layer to be able to talk to the backend instances,
+    efficiently move data between backend nodes, hide the network protocols, and
+    divide complex operations into simpler functions, the backend instances need
+    to link with the service layer, which is part of the content layer solving
+    those issues.
+  </dd>
+</dl>
+
+</body>
+</html>

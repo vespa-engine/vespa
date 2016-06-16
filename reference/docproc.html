@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Document Processing Framework Design</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2006" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress" data-annotation="This article must be revisited after the recent docproc-in-container changes">
+The Vespa document processing framework allows you to <em>create</em>
+modules which read and modify document puts or document updates, and
+<em>compose</em> many such modules to carry out the total processing
+needs of an application.
+</p>
+
+<p>
+This document describes the Vespa Docproc framework. To learn how to
+start <em>using</em> the framework, see
+<a href="../search/docproc-development.html">Document processing guide</a>.
+</p>
+
+<p>
+More details can be found in
+the <a href="../javadoc/index.html?com/yahoo/docproc/package-summary.html">javadoc</a>.
+</p>
+
+
+
+<h1 id="design-goals">Docproc Framework Design Goals</h1>
+
+<p>
+The framework is designed to meet these goals:
+</p>
+
+<ul>
+<li><p><strong>Developer friendliness</strong>. It must be so simple to write a
+    simple processor that anybody can do it. This is a complete
+    processor:
+    </p>
+
+<pre class="code">
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.Document;
+import com.yahoo.docproc.*;
+
+public class ExampleDocumentProcessor extends DocumentProcessor {
+    public Progress process(Processing processing) {
+        for (DocumentOperation op : processing.getDocumentOperations()) {
+            if (op instanceof DocumentPut) {
+                Document document = ((DocumentPut) op).getDocument();
+                document.setValue(&quot;myfield&quot;, &quot;newvalue&quot;);
+            }
+        }
+        return Progress.DONE;
+    }
+}
+</pre></li>
+
+<li><p><strong>Gradual learning</strong>. More advanced concepts needed for
+    processing multiple document puts or document updates, making control
+    decisions and so on builds on, and extends naturally the basic
+    concepts learned when doing simple processing.</p></li>
+
+<li><p><strong>Scaling</strong>. The framework must allow cheap scaling by
+    document size, document count and document processing clock
+    time. The document processing framework uses a completely
+    asynchronous architecture to allow scaling in several of these
+    dimensions at the same time.
+    </p></li>
+
+<li><p><strong>Simplicity</strong>. The core framework consists of seven classes
+    totaling less than thousand lines of source. It has one
+    dependency&mdash;to a minimal document model (two more classes)
+    modelling documents as a named map of fields.
+    </p></li>
+
+<li><p><strong>Embedding</strong>. The framework does not make any assumptions
+    about the context in which it will run. It can be embedded in
+    another application which handles the thread management,
+    configuration and so on.
+    </p></li>
+
+<li><p><strong>Vespa integration.</strong> The framework may also run as a Vespa
+    service. Configuration through Vespa, logging to Vespa and remote
+    capabilities are handled by optional add-on packages.
+    </p></li>
+
+<li><p><strong>Plugin support</strong>. Document processors developed by
+    applications can be deployed and undeployed in the framework, run
+    without compromising the framework instance even if they contain
+    errors, and be binary compatible across different versions of the
+    framework. This is handled by developing the framework in
+    Java.
+    </p></li>
+</ul>
+
+
+
+<h1 id="features">Docproc Core Framework Features</h1>
+
+<p>
+The framework core supports asynchronous processing, processing one or
+multiple document put or document updates at the same time, document
+processors that makes dynamic decisions about the processing flow and
+passing of information between processors outside the document put or
+document update:
+</p>
+
+<ul>
+<li><p>One or more named <strong>Docproc Services</strong> may be created. One
+    of the services is the default.
+    </p></li>
+
+<li><p>A service accepts <strong>DocumentPuts</strong> and
+    (optionally) <strong>DocumentUpdates</strong> for processing. It has
+    a <strong>Call Stack</strong> which lists the calls to make to
+    various <strong>Document Processors</strong> to process each DocumentPut or
+    DocumentUpdate handed to the service.
+    </p></li>
+
+<li><p>Call Stacks consists of <strong>Calls</strong>, which refer to the
+    Document Processor instance to call, and optionally a set of
+    named <strong>Arguments</strong> to pass to the processor. By accepting
+    Arguments, processors can be made generic. For example, there can
+    be an argument for deciding which Document field to
+    access.
+    </p></li>
+
+<li><p>Document puts and document updates are processed asynchronously,
+    the state is kept in a Processing for its duration (instead of in
+    a thread or process). A Document Processor may make some
+    asynchronous calls (typically to remote services) and return to
+    the framework that it should be called again later for the same
+    Processing to handle the outcome of the calls.
+    </p></li>
+
+<li><p>A processing contains its own copy of the Call Stack of the
+    Docproc Service to keep track of what to call next.  Document
+    Processors may modify this Call Stack to dynamically decide the
+    processing steps required to process a DocumentPut or
+    DocumentUpdate.
+    </p></li>
+
+<li><p>A Processing may contain one or more DocumentPuts or
+    DocumentUpdates to be processed as a unit. One of the elements may
+    be designated as the <em>main</em> DocumentPut or DocumentUpdate of the
+    Processing. The main document put or document update is the one that
+    will be given as argument to the <code>process(DocumentOperation,
+    &hellip;)</code> method of a document processor. The other
+    document puts or document updates may be accessed through the
+    Processing. If no document put or document update is designated as the
+    main one, the <code>process(List&lt;DocumentOperation&gt;,
+    &hellip;)</code> method of Document Processors is called
+    instead. This method may optionally be overridden by processors
+    which needs to be aware of the entire set of documents or document
+    updates. By default, this method simply
+    calls <code>process(DocumentOperation, &hellip;)</code> for each
+    document put or document update.
+    </p></li>
+
+<li><p>A Call may specify a special Argument that overrides the main
+    document put or document update specified by the processing.
+    </p></li>
+
+<li><p>A Processing has a <em>context</em>, which is a Map of named
+    values which can be used to pass arguments between
+    processors.
+    </p></li>
+
+<li><p>Processings are prepared to be stored to disk to allow a very
+    high number of ongoing long-term processings per node.
+    </p></li>
+</ul>
+
+<figure>
+  <img src="../img/docproc/docproccore.gif" alt="Document processing core class diagram" />
+  <figcaption>
+    Document processing core class diagram
+  </figcaption>
+</figure>
+
+
+
+<h1 id="additional-features">Additional Features</h1>
+
+<p>
+Outside the common core, there are optional packages which provides
+the following:
+</p>
+
+<ul>
+<li><p>Configuration using Vespa Configuration. Docproc Services with
+    Call Stacks can be configured from file or a configuration server
+    using the Vespa Configuration System. Document processors may also
+    easily get own sub Call Stacks configured using the configuration
+    system.
+    </p></li>
+</ul>
+
+<p>
+More such optional capabilities will be added in the future.
+</p>
+
+</body>
+</html>

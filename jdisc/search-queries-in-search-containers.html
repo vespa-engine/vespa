@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Invoking search queries from a JDisc component</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2013" />
+  <meta name="authors" content="steinar, tonyv" />
+</head>
+
+<body>
+
+<p>
+It is not necessary as such to dispatch a request through JDisc, with the
+overhead associated with that procedure, to perform a search query from e.g. a
+request handler running in the JDisc Container if the same container also
+functions as a search container. If your application is a search application,
+you can simply add the class <em>com.yahoo.search.handler.SearchHandler</em>
+to the list of constructor arguments, and invoke its
+<em>handle(HttpRequest)</em> method directly. The implementation could look
+like the following:
+</p>
+
+<p>
+Construction:
+</p>
+
+<pre class="brush: java">
+    private final SearchHandler searchHandler;
+
+    public HelloWorld(Executor executor, AccessLog accessLog,
+            SearchHandler searchHandler, ResponseConfig config) {
+        super(executor, accessLog);
+        super(executor, accessLog,null,true);
+        this.response = config.response();
+        this.searchHandler = searchHandler;
+    }
+</pre>
+
+<p>
+Request handling:
+</p>
+
+<pre class="brush: java">
+    @Override
+    public HttpResponse handle(HttpRequest request) {
+        HttpRequest searchRequest = new HttpRequest.Builder(request)
+                .put(Model.QUERY_STRING, "something to look for")
+                .createDirectRequest();
+        HttpResponse response = searchHandler.handle(searchRequest);
+        return r;
+    }
+</pre>
+
+<p>
+The search will then run directly in the thread owned by
+the <em>HelloWorld</em> request handler, and no extra resolving of
+URI pattern bindings is necessary.
+</p>
+
+</body>
+</html>

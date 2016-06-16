@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>services.xml</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2015" />
+  <meta name="authors" content="musum,eirikref,kraune" />
+</head>
+
+<body>
+<p>
+<em>services.xml</em> is the primary configuration file in an <a href="../cloudconfig/application-packages.html">application package</a>. Elements:
+</p>
+<pre><a href="#services">services [version]</a>
+  <a href="services-admin.html">admin [version]</a>
+  <a href="services-clients.html">clients [version]</a>
+  <a href="../content/setup-reference.html">content [version]</a>
+  <a href="services-jdisc.html">jdisc [version]</a>
+  <a href="services-routing.html">routing [version]</a>
+  <a href="#service">service [command] [version]</a>
+</pre>
+
+
+
+<h2 id="services">services</h2>
+<p>Attributes:
+<ul>
+  <li><strong>version (required)</strong>: 1.0</li>
+</ul>
+</p>
+
+<p>Optional subelements (one or more of <em>jdisc</em>, <em>content</em> or <em>service</em> is required):</p>
+<ul>
+  <li><a href="services-admin.html"><code>admin</code></a></li>
+  <li><a href="services-clients.html"><code>clients</code></a></li>
+  <li><a href="../content/setup-reference.html"><code>content</code></a></li>
+  <li><a href="services-jdisc.html"><code>jdisc</code></a></li>
+  <li><a href="services-routing.html"><code>routing</code></a></li>
+  <li><a href="#service"><code>service</code></a></li>
+</ul>
+
+
+<h2>Example</h2>
+<pre class="code">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+  &lt;jdisc version=&quot;1.0&quot; id=&quot;container&quot;&gt;
+    &lt;search /&gt;
+    &lt;nodes count="1" /&gt;
+  &lt;/jdisc&gt;
+  &lt;content id="music" version="1.0"&gt;
+    &lt;redundancy&gt;2&lt;/redundancy&gt;
+    &lt;nodes count="2" /&gt;
+    &lt;documents&gt;
+      &lt;document type="music" mode="store-only" /&gt;
+    &lt;/documents&gt;
+  &lt;/content&gt;
+&lt;/services&gt;
+</pre>
+
+
+<h2 id="attributes">Common Attributes</h2>
+<p>Some attributes are common to most of <em>services</em> sub-elements:
+<ul>
+  <li><strong>jvmargs</strong>: Pass arguments to the JVM for the given service</li>
+  <li><strong>preload</strong>: Preload shared libraries for the given service. Vespa-internal use only.</li>
+</ul>
+<blockquote class="alert">
+  <p><strong>self-hosted Vespa only:</strong></p>
+<ul>
+  <li><strong>baseport</strong>: All services in a Vespa systems have a default baseport - to change it, use <em>baseport</em>. The most common port to change is the <a href="services-http.html#server">http port of jdisc container instances</a></li>
+  <li><strong>hostalias</strong>: All nodes/hosts referred to in <em>services.xml</em> must be defined in <a href="hosts.html"><em>hosts.xml</em></a>.</li>
+</blockquote>
+</ul>
+</p>
+
+
+
+<h2 id="generic-config">Generic configuration using &lt;config&gt;</h2>
+<p>
+  Most elements in <em>services.xml</em> accept a sub-element named <em>config</em>.  <em>config</em> elements can be included on different levels in the XML structure and the lower-level ones will override values in the higher-level ones (example below). The <em>config</em> element must include the attribute <em>name</em>, which gives the full name of the configuration option in question, including the namespace.  The name can either refer to configuration definitions that are shipped with Vespa or <a href="config-files.html">ones that are part of the application package</a>.
+</p>
+<pre>
+&lt;jdisc id="default" version="1.0"&gt;
+  &lt;handler id="com.yahoo.vespatest.ConfiguredHandler"&gt;
+<strong style="background-color: yellow;">    &lt;config name="vespatest.response"&gt;
+      &lt;response&gt;configured string&lt;/response&gt;
+    &lt;/config&gt;</strong>
+  &lt;/handler&gt;
+  &lt;nodes count="1" /"&gt;
+&lt;/jdisc&gt; 
+</pre>
+
+
+<h2 id="modular">Modular Configuration</h2>
+<p>
+  Some features are configurable using XML files in sub-directories of the application package. This means that the configuration found in these XML files will be used as if it was inlined in <em>services.xml</em>. This is supported for <a href="services-search.html#sec-3.1">search chains</a>, <a href="services-docproc.html#modular-config">docproc chains</a> and <a href="services-routing.html#modularconfig">routing tables</a>.
+</p>
+
+
+<h2 id="service">service</h2>
+<blockquote class="alert">
+<p>
+<strong>Note: Self-hosted Vespa only, until docker-containers are supported.</strong> <em>service</em> clusters can run any program - only the start command is needed. Vespa will start the service cluster, and keep processes alive (auto restarts). Attributes:
+<ul>
+  <li><strong>version (required)</strong>: 1.0</li>
+  <li><strong>command (required)</strong>: command to start the service</li>
+</ul>
+Example:
+</p>
+<pre class="code">
+&lt;services version=&quot;1.0&quot;&gt;
+  &lt;service name=&quot;myprogram&quot; command=&quot;/home/y/bin/myprogram&quot; version=&quot;1.0&quot;&gt;
+    &lt;node hostalias=&quot;mynode&quot;/&gt;
+  &lt;/service&gt;
+&lt;/services&gt;
+</pre>
+<p>
+<em>stdout</em> from the service is written to <em>vespa.log</em>. The service name will be that defined in the cluster. Example using <em>logfmt</em>:
+</p>
+<pre class="code">
+[2015-09-30 10:16:13.367] INFO    : myprogram    stdout     Started successfully
+</pre>
+<p>
+If more than one instance of the same service run on the same node, the names will be <em>myprogram</em>, <em>myprogram2</em> etc.
+</p>
+<blockquote>
+
+</body>
+</html>
+
+

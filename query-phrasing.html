@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Managing Query Phrasing with PhrasingSearcher</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="einarmr" />
+</head>
+
+<body>
+<p class="ingress">
+This document describes what query phrasing is, and shows how to
+enable and use it in Vespa.
+</p>
+
+<p>
+Often, users will search for phrases like e.g. <em>New
+York</em>, <em>Rolling Stones</em>, <em>The Who</em>, or <em>daily
+horoscopes</em>. Considering the latter, most of the time the query
+string will look like this:
+</p>
+
+<pre class="brush: text">
+/search/?query=daily horoscopes&amp;&hellip;
+</pre>
+
+<p>
+This is actually a search for documents where both &ldquo;daily&rdquo;
+and &ldquo;horoscopes&rdquo; match, but not necessarily documents with
+the exact phrase &ldquo;daily horoscopes&rdquo;. This is where
+PhrasingSearcher comes in. PhrasingSearcher is a QRS Searcher that
+compares queries with a list of common phrases, and replaces two
+single search terms with a phrase. So the above query becomes:
+</p>
+
+<pre class="brush: text">
+/search/?query=&ldquo;daily horoscopes&rdquo;&amp;&hellip;
+</pre>
+
+<p>
+if &ldquo;daily horoscopes&rdquo; is known to be a common phrase.
+</p>
+
+<p>
+The PhrasingSearcher must be configured with a list of common
+phrases. This list has to be <em>compiled</em> into an FSA file, which
+is the file format that PhrasingSearcher uses.  To use the compiled
+list, it has to be available on all QRS nodes and its location must be
+referenced in the QRS configuration.
+</p>
+
+
+
+<h1 id="compiling-list">Compiling the List of Phrases</h1>
+
+<p>
+The list of phrases must be:
+</p>
+
+<ul>
+<li>all lowercase</li>
+<li>sorted alphabetically</li>
+</ul>
+
+<p>
+To accomplish this, use:
+</p>
+
+<pre class="brush: cli">
+$ perl -ne 'print lc' listofphrasestextfile.unsorted.mixedcase > listofphrasestextfile.unsorted
+$ sort listofphrasestextfile.unsorted > listofphrasestextfile
+</pre>
+
+<p>
+Note that the Perl command to convert the text file to lowercase does
+not handle non-ASCII characters very well. If the list of phrases is
+e.g. UTF-8 encoded and/or contains non-English characters, you must
+double-check that the resulting file is correct.
+</p>
+
+<p>
+The <em>makefsa</em> program is used to compile a list of common
+phrases into an FSA file. It is installed with Vespa.
+</p>
+
+<p>
+The FSA can be compiled from the list of phrases:
+</p>
+
+<pre class="brush: cli">
+$ makefsa listofphrasestextfile phrasefsa
+</pre>
+
+
+
+<h1 id="configuration">Configuration</h1>
+
+<p>
+The compiled list of phrases must be available on all QRS
+nodes. <span data-annotation="Is this still true?">Currently,
+distributing the file onto these nodes must be done manually.</span>
+When it is present on the same location in the file system on all
+nodes, add a <em>qr-searchers.cfg</em> file to the <em>configs/</em>
+directory of
+your <a href="cloudconfig/application-packages.html#adding-cfg-files">application
+package</a> with the following line:
+</p>
+
+<pre class="brush: text">
+com.yahoo.prelude.querytransform.PhrasingSearcher.automatonfile &quot;<span class="marker1">/path/to/phrase/file</span>&quot;
+</pre>
+
+<p data-annotation="Does this use new configuration in XML?">
+Replace the highlighted text with the path to your phrase file. If you
+already have a <em>qr-searchers.cfg</em> file in
+<em>configs/</em>, just add the line. Finally,
+<a href="cloudconfig/application-packages.html#deploying_vespa_applications">deploy</a>
+your application to make the new settings apply.
+</p>
+
+</body>
+</html>

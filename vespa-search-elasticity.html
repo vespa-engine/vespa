@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa search elasticity</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2016" />
+  <meta name="authors" content="toregge,kraune" />
+</head>
+
+<body>
+<p>
+When using the <a href="content/setup-reference.html">content element</a>
+in <a href="reference/services.html">services.xml</a> to create content
+clusters, an elastic cluster is created. Documents might be placed on multiple nodes
+(cf. <a href="content/setup-reference.html#redundancy">redundancy
+element</a>) to ensure that a single node being down won't significantly impact
+the data corpus coverage when performing queries.
+A <a href="content/content-layer-overview.html#cluster-controller">cluster controller</a> is used to
+monitor and administer Vespa content clusters in a Vespa application.
+</p>
+<p>
+When using a Vespa content cluster, a document belongs to
+a <a href="content/buckets-and-distribution.html">bucket</a>. During feeding,
+the document is sent to all maintained replicas of the corresponding bucket.
+If maintained bucket replicas are somehow out of sync, a bucket merge operation
+is performed in order to resync the bucket.  A bucket also contains information
+about recently removed documents, in order to avoid them being incorrectly
+brought back when a content node that was down is brought up again.
+</p>
+<p>
+Only one of the replicas for a bucket is marked active and used duing search.
+</p>
+<p>
+To limit the size of buckets, they will be split when they grow too large, and
+joined when they become small enough.  The maximum size of a bucket will impact
+temporary coverage glitches when changing which bucket replica should be active
+for searches.
+</p>
+<p>
+The qps rate can be scaled by adding more nodes, although there are
+some <a href="#limitations-qps">limitations</a>.
+</p>
+<p>
+If redundancy has
+been set to 2 and 2 nodes goes down before redundancy has been reestablished,
+some data loss will occur.  This scales less with larger installations.
+Use of
+<a href="qps-scaling-content-cluster.html#hierarchical-distribution">hierarchical
+distribution</a> of content nodes can tweak the fault behavior by tweaking the
+distribution of bucket replicas.
+</p>
+<p>
+Most of the time,
+the <a href="content/setup-reference.html#searchable-copies">number of ready
+copies</a> in a content cluster should be the same as
+the <a href="content/setup-reference.html#redundancy">number of
+copies</a>. While it is possible to save memory and get better query
+performance by having ready copies being a lower number, the downside is
+significantly longer coverage glitches when nodes go down and much slower
+document selection when handling periodic removes of old documents.
+</p>
+<p>
+The <a href="content/content-layer-overview.html#cluster-controller">cluster controller</a> can be
+used to administrately take nodes out of service (e.g. for maintenance).
+</p>
+<p>
+When restarting nodes in the cluster, it might take a while for them to come back up due to replaying
+the transaction log. To reduce this cost and move it before shutdown, you can set
+the <a href="content/setup-reference.html#flush-on-shutdown">flush-on-shutdown</a> setting. This will
+cause all in-memory data to be flushed to disk, which will reduce the load time after restart.
+</p>
+
+
+<h2>Content cluster advantages</h2>
+
+<h3>Cluster can be grown by adding extra nodes</h3>
+<p>
+As described in <a href="operations/ops-scenarios.html#search-addnode-realtime">ops scenario</a>, cluster can be grown without refeeding all data.
+</p>
+
+<h3>Cluster can be shrunk by removing nodes</h3>
+<p>
+Nodes to be removed must be set in the RETIRED state, using the cluster
+controller.  This causes buckets to be migrated to the remaining nodes.
+</p><p>
+Using metrics, observe
+that the content node's stored documents go down to 0. At that point, you can
+remove the node from production without errors.
+</p>
+
+<h3>Cluster handles nodes going down</h3>
+<p>
+With redundancy being set to <em>n</em>, up to <em>n - 1</em> nodes can go down
+at the sime time without data loss.  All buckets should have at least one
+replica on the remaining nodes, and buckets with too few replicas will get new
+replicas added among the remaining nodes until redundancy has been
+reestablished.  After redundancy has been reestablished, the cluster can
+handle <em>n -1</em> new nodes going down.
+</p><p>
+Increasing redundancy reduces the probability of data loss, at a performance
+and disk space cost. More than 3 copies should rarely be needed.
+</p>
+
+<h3>Cluster allows visitation</h3>
+<p>
+Data can extracted by using a visitor.
+</p>
+
+
+<h2>Content cluster limitations</h2>
+
+<h3>Batch remove</h3>
+<p>
+<a href="content/setup-reference.html#document">Document selection</a> is
+the supported method to automatically remove old documents on a cluster.  When
+using this feature,
+the <a href="content/setup-reference.html#searchable-copies">number of ready
+copies</a> in a content cluster should be the same as
+the <a href="content/setup-reference.html#redundancy">redundancy</a> and the
+selection expression should only reference fields that are attribute vectors.
+Otherwise, the document selection maintenance will be slow and have a major
+performance impact on the system.
+</p>
+
+<h3>Partial updates</h3>
+<p>
+Speed of partial updates and garbage collection is severly reduced if
+configured number of ready copies is lower than configured redundancy.  This is
+caused by no attribute vectors being present for the not-ready copies.
+</p>
+
+<h3>Coverage might be temporarily reduced when node goes down</h3>
+<p>
+Only one of the replicas for a bucket is marked active and used duing search.
+If that replica disappars (e.g. due to the node going down), one of the other
+replicas are marked active.  Due to the search subsystem scatter/gather layer
+(fdispatch) not re-dispatching ongoing queries in such an event, and due to the
+async marking of active bucket replicas, coverage will suffer for a short
+period when a node goes down.
+</p><p>
+If ready copies is set lower than redundancy, e.g. ready copies being 1 and
+redundancy being 2, then coverage after a node going down is reduced until
+the not-ready replica have been readied.  Only ready replicas can be marked
+active.
+</p>
+
+<h3>Coverage might be temporarily reduced when node comes up</h3>
+<p>
+Coverage can suffer for a longer period when a node is brough up.  This is
+caused by fdispatch not having knowledge of buckets and movement of active
+bucket replicas.
+</p>
+
+<h3>Data loss when many nodes goes down</h3>
+<p>
+If the failed nodes are wiped, then the data loss is permanent (if redundancy was not restored).
+If the failed nodes are brought up again with data intact then only portions of
+the data loss (partial updates to documents that temporarily had no copies) is
+permanent
+</p>
+
+<h3>Data corruption when many nodes goes down</h3>
+<p>
+Data corruption (stale document wiping out a newer document) can occur when
+using partial updates and multiple nodes temporarily goes down before regaining
+sufficient redundancy.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Indexing Language: Simple Mode</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+<meta name="date"    content="November 2010" />
+<meta name="authors" content="simon" />
+</head>
+
+<body>
+
+<p class="ingress">
+The indexing language is a part of the search-definition which defines
+how a field is processed during indexing.
+</p>
+
+<p>
+In simple mode you specify the operations to be performed separated by
+the pipe (<code>|</code>) character, and leave the details to Vespa.
+If you have a advanced processing needs, you can either
+use <a href="reference/advanced-indexing-language.html">advanced
+mode</a> indexing language, or you can write
+a <a href="search/docproc-development.html"> document processor</a>.
+</p>
+
+<p>
+Supported expressions in simple mode are:
+</p>
+
+<dl>
+<dt>attribute</dt>
+<dd>
+  <p>
+  Attribute is used to make a field available for sorting and
+  grouping.
+  </p>
+
+  <p>
+  Attributes can be modified by the <code>attribute:</code> command in
+  a search definition.
+  </p>
+
+  <div class="alert alert-success">
+  All data stored in attribute will be kept in memory at all times. It
+  is therefore very important to avoid storing too much data in
+  attributes, see the <a href="performance/attribute-memory-usage.html">Attribute
+  Sizing Guide</a> for details.
+  </div>
+</dd>
+
+<dt>index</dt>
+<dd>
+  <p>
+  Creates a searchable index for the values of this field. All strings
+  are lower-cased before they are stored in the index.
+  </p>
+
+  <p>
+  By default the index name will be the same as the name of the search
+  definition field. Optionally a <a href="reference/search-definitions.html#fieldset">field set</a>
+  can be specified to combine several fields in the same set for searching.
+  </p>
+</dd>
+
+<dt>set_language</dt>
+<dd>
+  <p>
+  Parses the input value as an RFC 3066 language tag, and sets that
+  language for the current document. This affects the behavior of the
+  tokenizer. The recommended use is to have one field in the document
+  containing the language code, and that field should be the first
+  field in your document.
+  </p>
+
+  <div class="alert alert-success">
+  <p>
+  In a search definition, this operation must be placed before any
+  indexed fields, as it will only affect the fields defined after it
+  in the search-definition. If you have both header and body fields,
+  the <code>set_language</code>-field should be header, if you require
+  it to affect subsequent header fields and/or any body fields. The
+  reason is the fields are iterated header-body when deriving the
+  backend configuration for indexing scripts.
+  </p>
+
+  <p>
+  Please see the <a href="linguistics.html">linguistics</a>
+  article for more information on how language settings are applied.
+  </p>
+
+  </div>
+</dd>
+
+<dt>summary</dt>
+<dd>
+  <p>
+  Includes the value of this field in the document summary, i.e. the
+  data returned to the user.
+  </p>
+
+  <p>
+  Summary output format can be modified by using
+  the <code>summary:</code> command in a search definition (e.g. to
+  make dynamic teasers).
+  </p>
+
+  <p data-annotation="Is this limit present also in 5.1?">
+  Summary fields of type string are currently limited to 64kB.  If a
+  larger string is stored, the indexer will issue a warning and
+  truncate the value to 64kB.
+  </p>
+</dd>
+</dl>
+
+</body>
+</html>

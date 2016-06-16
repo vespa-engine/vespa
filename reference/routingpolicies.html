@@ -1,0 +1,266 @@
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html>
+
+<head>
+  <title>Routing - policies available for routing</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"      content="May 2008">
+  <meta name="authors"   content="simon">
+</head>
+
+<body>
+
+        <h1>Routing - policies available for routing</h1>
+
+        <p class="ingress">
+            This article contains detailed descriptions of the behaviour of all routing policies available in Vespa.
+            There is also a more <a href="../routing.html">general
+            article</a> on Vespa's routing model available. The <a
+            href="../routing-custom.html">advanced routing guide</a> is available to those who wish to write custom
+            routes.
+        </p>
+
+
+        <h1 id="document-protocol">The Document Protocol</h1>
+        <p>
+            The "Document" protocol is currently the only Message Bus protocol supported by Vespa. Furthermore, all
+            routing policies that are part of this protocol share a common code path for <a href="#merge">merging
+            replies</a>. The policies offered by the protocol is:
+        </p>
+        <ul>
+            <li><a href="#and">AND</a> - Selects all configured recipient hops.</li>
+            <li>
+                <a href="#documentrouteselector">DocumentRouteSelector</a> - Uses a <a
+                href="document-select-language.html">document selection string</a> to select compatible
+                routes.
+            </li>
+            <li><a href="#storage">Storage</a> - Selects a storage distributor based on system state.</li>
+            <li><a href="#messagetype">MessageType</a> - Selects a next hop based on message type.</li>
+            <li><a href="#extern">Extern</a> - Selects a recipient by querying a remote Vespa application.</li>
+            <li><a href="#localservice">LocalService</a> - Selects a recipient based on ip address.</li>
+            <li><a href="#roundrobin">RoundRobin</a> - Selects one from the configured recipients in round-robin order.</li>
+           <li><a href="#searchcolumn">SearchColumn</a> - Selects the appropriate column(s) of a search cluster.</li>
+            <li><a href="#searchrow">SearchRow</a> - Selects the appropriate row(s) of a search cluster.</li>
+            <li><a href="#subsetservice">SubsetService</a> - Selects only among a subset of all matching services.</li>
+            <li><a href="#loadbalancer">LoadBalancer</a> - A round robin policy that chooses between the recipients by generating a weight according to their performance.</li>
+        </ul>
+
+
+        <h2 id="merge">Common Document <code>merge()</code> logic</h2>
+        <p>
+            The shared merge logic of most Document routing policies is an attempt to do the "right" thing when merging
+            multiple replies into one. It works by first stepping through all replies, storing their content as either
+            1) OK replies, 2) IGNORE replies, or 3) ERROR replies. If at least one ERROR reply is found, return a new
+            reply that contains all the errors of the others. If there is at least one OK reply, return the first OK
+            reply, but transfer all feed information from the others to this (this is specific data for start- and
+            end-of-feed messages). Otherwise return a new reply that contains all the IGNORE errors.
+        </p>
+        <p>
+            Pseudocode for this logic follows:
+        </p>
+        <pre class="code">
+for each reply, do
+    if reply has no errors, do
+        store reply in OK list
+    else, do
+        if reply has only IGNORE errors
+            copy all errors from reply to IGNORE list
+        else, do
+            copy all errors from reply to ERROR list
+
+if ERROR list is not empty, do
+    return new reply with all errors
+else, do
+    if OK list is not empty, do
+        return first reply with all feed answers
+    else, do
+        return new reply with all IGNORE errors</pre>
+
+
+        <h2 id="and">Routing policy - AND</h2>
+        <p>
+            This is a mostly a convenience policy that allows the user to fork a message's route to all configured
+            recipients. It is not message-type aware, and will simply always select all recipients.  Replies are merged
+            according to the <a href="#merge">shared logic</a>.
+        </p>
+        <p>
+            The optional string parameter is parsed as a space-separated list of hops. Configured recipients have
+            precendence over parameter-given recipients, although this is likely to be changed in the future.
+        </p>
+
+
+        <h2 id="documentrouteselector">Routing policy - DocumentRouteSelector</h2>
+        <p>
+            This policy is responsible for selecting among the policy's recipients according to the subscription rules
+            defined by a search cluster's <a href="services-search-deprecated.html#documents">documents</a> element
+            in <a href="../jdisc/application-packages.html#services.xml">services.xml</a>.
+
+            If the "selection" attribute is set in the "documents" element, its value is processed as a <a
+            href="document-select-language.html">document select</a> string, and run on documents and document
+            updates to determine routes. If the "feedname" attribute is set, all feed commands are filtered through it.
+
+            If no "documents" tag is given, Vespa will guess what documents are to be processed by what clusters by
+            defaulting to the <a href="services-search.html#searchdefinitions">searchdefinitions</a>
+            element specified for each search cluster.
+        </p>
+        <p>
+            The recipient list of this policy is required to map directly to route names. E.g. if a recipient is
+            "search/cluster.music", and a message is appropriate according to the selection criteria, the message is
+            routed to the "search/cluster.music" route. If the route does not exist, this policy will reply with an
+            error. In short, <u>this policy selects one or more recipient routes based on document content and
+            configured criteria</u>.
+        </p>
+        <p>
+            If more than one route is chosen, its replies are merged according to the <a href="#merge">shared logic</a>.
+        </p>
+        <p>
+            This policy does not support any parameters.
+        </p>
+
+        <div class="alert alert-success">
+        <p>
+            The configuration for this is "documentrouteselectorpolicy" available from config id
+            "routing/documentapi".
+        </p>
+        <p>
+            <strong>NOTE:</strong> Because GET messages do not contain any document on which to run the selection criteria, this
+            policy returns an IGNORED reply that the merging logic processes. You can see this by attempting to retrieve
+            a document from an application that does not have a storage cluster.
+        </p>
+        </div>
+
+
+        <h2 id="storage">Routing policy - Storage</h2>
+        <p>
+	This policy allows you to send a message to a storage cluster. The policy uses a system state retrieved
+	from the cluster in question in conjunction with slobrok information to pick the correct distributor for
+	your message.
+        </p>
+        <p>
+            In short; <u>use this policy when communicating with document storage</u>.
+        </p>
+        <p>
+	This policy supports multiple parameters, up to one each of:
+<ul>
+<li>cluster: The name of the cluster you want to reach. Example: cluster=mycluster</li>
+<li>config: A comma-separated list of config servers or proxies you want to use to fetch configuration for the policy. This can be used to communicate with other clusters than the one you're currently in. Example: config=tcp/myadmin1:19070,tcp/myadmin2:19070</li>
+</ul>
+Separate each parameter with a semicolon. By default, this policy will use the current Vespa cluster for configuration and talk to a cluster named "storage".
+        </p>
+
+        <h2 id="content">Routing policy - Content</h2>
+        <p>
+	This policy allows you to send a message to a content cluster. With a few minor differences it is identical to the <a href="#storage">storage</a> policy. It takes the same parameters. If you are using indexed search it will combine with the <a href="#messagetype">message type</a> policy.
+        </p>
+        <p>
+            In short; <u>use this policy when communicating with Vespa using the <a href="../content/setup-reference.html#content">content</a> tag</u>.
+        </p>
+
+        <h2 id="messagetype">Routing policy - MessageType</h2>
+        <p>
+          This policy will select the next hop based on the type of the message. You configure where all messages should go (defaultroute). Then you configure what messages types should be overridden and sent to alternative routes. It is currently only used internally by vespa when using the <a href="../content/setup-reference.html#content">content</a> tag.
+        </p>
+
+        <h2 id="extern">Routing policy - Extern</h2>
+        <p>
+            This policy implements the necessary logic to communicate with an external Vespa application and resolve a
+            single service pattern using that other application's slobrok servers. Keep in mind that there might be some
+            delay from the moment this policy is initally created and when it receives the response to its service
+            query, so using this policy might cause a message to be resent a few times until it is resolved. If you
+            disable retries, this policy might cause all messages to fail for the first seconds.
+        </p>
+        <p>
+            This policy uses its parameter for both the address of the extern slobrok server to connect to, and also the
+            pattern to use for querying. The parameter is required to be on the form
+            <code>&lt;spec&gt;;&lt;service&gt;</code>, where <code>spec</code> is a comma-separated list of slobrok
+            connection specs on the form "tcp/hostname:port", and <code>service</code> is a
+            service running on the remote Vespa application.
+        </p>
+        <p class="alert alert-success">
+            The remote application needs to have a version of both message bus and the document api that is
+            binary compatible with the application you are sending from. This <u>can</u> be a problem even between patch
+            releases, so keep your application versions in sync if you intend to use this policy.
+        </p>
+
+
+        <h2 id="localservice">Routing policy - LocalService</h2>
+        <p>
+            This policy is used to select among all matching services, but prefering those running on the same host as
+            the current one. The pattern used when querying for available services is the current one, but replacing the
+            policy directive with an asterisk. E.g. the hop "docproc/cluster.default/[LocalService]/chain.default" would
+            prefer local services among all those that match the pattern "docproc/cluster.default/*/chain.default".
+
+            If there are multiple matching services that run locally, this policy will do simple round-robin load
+            balancing between them. If no matching services run locally, this policy simply returns the asterisk as a
+            match to allow the underlying network logic to do load balancing among all available.
+        </p>
+        <p>
+            This policy accepts an optional parameter which overrides the local hostname. Use this if you wish the hop
+            to prefer some specific host.
+        </p>
+        <p class="alert alert-success">
+            There is no additional logic to replace other policy directives with an asterisk, meaning that
+            if other policies directives are present in the hop string <u>after</u> "[LocalService]", no services can
+            possibly be matched.
+        </p>
+
+
+        <h2 id="roundrobin">Routing policy - RoundRobin</h2>
+        <p>
+            This policy is used to select among a configured set of recipients. For each configured recipient,
+            this policy determines what online services are matched, and then selects one among all of those
+            in round-robin order. If none of the configured recipients match any available service, this policy
+            returns an error that indicates to the sender that it should retry later.
+        </p>
+        <p>
+            Because this policy only selects a single recipient, it contains no merging logic.
+        </p>
+
+        <h2 id="subsetservice">Routing policy - SubsetService</h2>
+        <p>
+            This policy is used to select among a subset of all matching services, and is used to minimize number
+            of connections in the system. The pattern used when querying for
+            available services is the current one, but replacing the policy directive with an asterisk. E.g. the hop
+            "docproc/cluster.default/[SubsetService:3]/chain.default" would select among a subset of all those that
+            match the pattern "docproc/cluster.default/*/chain.default".
+
+            Given that the pattern returns a set of matches, this policy stores a subset of these based on the
+            hash-value of the running message bus' connection string (this is unique for each instance).
+
+            If there are no matching services, this policy returns the asterisk as a match to allow the underlying
+            network logic to fail gracefuly.
+        </p>
+        <p>
+            This policy parses its optional parameter as the size of the subset. If none is given, the subset defaults
+            to size 5.
+        </p>
+        <p class="alert alert-success">
+            There is no additional logic to replace other policy directives with an asterisk, meaning that
+            if other policies directives are present in the hop string <u>after</u> "[SubsetService]", no services can
+            possibly be matched.
+        </p>
+
+
+        <h2 id="storage">Routing policy - LoadBalancer</h2>
+        <p>
+
+            This policy is used to send to a stateless cluster such as docproc, where any node can be chosen to process any
+            message.  Messages are sent between the nodes in a round-robin fashion, but each node is assigned a weight
+            based on its performance.  The weights are calculated by measuring the number of times the node had a full
+            input-queue and returned a busy response.  Use this policy to send to docproc clusters that have nodes with different
+            performance characteristics in them.
+        </p>
+        <p>
+
+            This policy supports multiple parameters, up to one each of:
+            <ul>
+              <li>cluster: The name of the cluster you want to reach. Example: cluster=docproc/cluster.default (mandatory)</li>
+              <li>session: The destination session you want to reach. In the case of docproc, the name of the docproc chain. Example: session=chain.mychain (mandatory)</li>
+              <li>config: A comma-separated list of config servers or proxies you want to use to fetch configuration for the policy. This can be used to communicate with other clusters than the one you're currently in. Example: config=tcp/myadmin1:19070,tcp/myadmin2:19070</li>
+            </ul>
+            Separate each parameter with a semicolon. By default, this policy will use the current Vespa cluster for configuration.
+         </p>
+
+   </body>
+</html>

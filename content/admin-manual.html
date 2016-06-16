@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Issues the content layer does not solve</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+  <h1>Issues the content layer does not solve</h1>
+  <p>
+    Although many issues can be resolved automatically, some must still be
+    handled manually, either because the issue is impossible to automatically
+    handle in current context, or because the probability of the issue, the ill
+    effects caused and the complexity of fixing it, haven't put it high enough
+    on priority list yet.
+  </p>
+
+  <h2 id="inaccurate_capacity">Inaccurate capacities set</h2>
+  <p>
+    Buckets are evenly distributed according to node capacities. However, if the
+    node capacities aren't accurate, the performance of the entire cluster will be
+    limited by the node having the worst capacity setting.
+  </p>
+  <p>
+    Consider a 10 node cluster, with redundancy 1, all configured with the same
+    capacity. If the cluster bottleneck is disk IO, and one of the nodes have
+    only 10% the disk IO capacity of the others, the 9 other nodes will not be
+    able to use more than 10% of their available IO either, and most of the
+    resources are wasted. In fact, one of the nodes with a good disk would perform
+    as well as the entire 10 node cluster.
+  </p>
+  <p>
+    Clients typically have a window of pending requests. If one of the nodes
+    are performing worse than the rest, the client windows will end up being
+    filled with requests to that node, limiting the overall performance of the
+    cluster.
+  </p>
+  <p>
+    Node capacities must be set according to what the actual bottleneck is. If
+    capacities are set to reflect disk size, but the bottleneck is disk IO or
+    CPU usage, it doesn't make sense for a node to get more requests due to
+    having more disk space. It is impossible for the content layer to know what
+    the bottleneck in the backend is, so this has to be properly configured
+    for the scaling to work efficiently.
+  </p>
+  <p>
+    To solve this, using homogenious hardware seems like the simplest solution.
+    Now it doesn't really matter what resource is the bottleneck as all nodes
+    will hit the limit at the same time. However, if hardware is to be utilized
+    the most efficient, it is likely best for an application to reach the bottleneck
+    at around the same time for all the resources. If you hit the CPU
+    bottleneck with a 5 % disk fill rate, you could have used much smaller disks
+    that likely were cheaper. If you maximize your disk space while the CPU is at
+    5 % you may have been able to use cheaper CPUs at no performance cost.
+  </p>
+  <p>
+    Node capacities may also change over time:
+  </p>
+  <ul>
+    <li>A SCSI controller with a busted battery may start to perform write
+        through on all write requests, decreasing disk IO resources on that
+        node.</li>
+    <li>Someone with access to the hosts might start a process competing for
+        resources on one of the nodes.</li>
+    <li>Someone may have filled one of the disks with data thinking the disk is
+        way bigger than needed, but as first data allocated is typically
+        allocated on the faster, outer disk tracks, the disk IO capacity left
+        for the backend on that node may be less than on other nodes.</li>
+    <li>A memory timing issue may have been detected in BIOS, causing memory clock
+        frequency to be set lower last time the host was booted, lowering network
+        bandwidth.</li>
+  </ul>
+  <p>
+    Detecting altered host behavior is outside the scope of the content layer.
+    The list of possible changes can probably go on and on, and detecting the
+    issues are likely to be very hardware dependent. The type of issues that
+    are likely to happen may differ a lot between installations. Detection of
+    such issues could be created generically and used alongside the content
+    layer though.
+  </p>
+  <p>
+    <strong>Effect on cluster:</strong>
+    When the bottleneck is reached on one node, the other nodes ends up getting
+    the same amount of requests, relative to capacity, as the node hitting the
+    bottleneck. This puts the cluster into an overload situation earlier than
+    needed, leaving unused resources on other nodes.
+  </p>
+
+  <h2>Node persistently failing requests without marking resource down</h2>
+  <p>
+    If a backend fails a request due to a persistent reason, parts of the
+    documents in the cluster will not be available or consistent. For instance,
+    if a backend fails to process a write request due to finding a read only file
+    in its file system, and then just fails the single request, then the cluster
+    will just keep resending this request and it will create unavailability, a
+    bad user experience, and resources wasted.
+  </p>
+  <p>
+    In some situations, it may be better for the backend to fail the entire node
+    or partition in these cases, allowing other nodes to take over the load
+    that will keep failing on this node. In other situations, the load may be
+    likely to fail on other nodes too, or the frequency of the events might be
+    high enough that nodes will be marked out of the cluster too fast. In such
+    cases, administrators need to resolve these issues quickly.
+  </p>
+  <p>
+    Few issues in this category has been seen uptil now. There have been cases
+    where wrong configuration of the cluster have caused requests to fail. For
+    this case, it is important to not take down the node due to the failures, as
+    that would quickly take down the entire cluster. If failing to deserialize
+    data from disk can be caused by wrong configuration, it is thus very
+    dangerous for a stateful service to delete this data automatically.
+  </p>
+  <p>
+    As deleting data or bringing down nodes due to the wrong reasons have such
+    a huge impact on the cluster, the default behavior is often to not do that,
+    in which case new issues found may need manual intervention.
+  </p>
+  <p>
+    <strong>Detecting issue:</strong>
+    The easiest way to detect an issue of this type, is to monitor failures
+    seen by clients. If clients keep resending the same request, and it always
+    fail, then it sounds like a persistent failure, that may deserve
+    investigation to figure out why it won't work.
+  </p>
+  <p>
+    Note that the issue may be hidden if the request sometimes are resent to
+    other copies, where it ends up working.
+  </p>
+  <p>
+    Client requests may also fail for other reasons. A low timeout value
+    coupled with temporary failures caused by for instance distributor
+    ownership transfers may cause client requests to fail.
+  </p>
+
+  <h2>Cluster at max capacity</h2>
+  <p>
+    Automatically detection of when a backend is at maximum capacity is not
+    implemented in the content layer. Firstly, until it can run in a cloud
+    environment where hardware can be automatically acquisitioned, it cannot
+    resolve the issue. Secondly it is hard to implement independent of the
+    backend. Monitoring resources on the node may not lead to correct results for
+    a number of reasons.
+  </p>
+  <ul>
+    <li>The backend may actually send requests on to another node, so local
+        resources are not actually the bottleneck.</li>
+    <li>Disk utilization may be at 100% because of a low priority background
+        consistency checker or similar.</li>
+    <li>Memory usage may be at maximum because of a lot of cached data that
+        don't need to be cached.</li>
+    <li>CPU usage may be maxed due to some non-critical low priority task running
+        in the background.</li>
+  </ul>
+  <p>
+    Some low priority tasks typically want to use the free resources in the
+    cluster. Examples of such tasks can be maintenance operations for moving
+    consistent buckets between nodes, or migrating documents to or from the
+    cluster. These tasks typically have high timeouts, such that they can stay
+    in the queue until resources are available. Having many of these operations
+    does not constitute overload.
+  </p>
+  <p>
+    If latency critical requests starts getting queued, we have an overload
+    situation.  When the cluster get more requests than it is able to handle,
+    requests will start queue up, and eventually be denied into the node due to
+    full queues. This cause a bad user experience. To avoid this, one have to
+    detect capacity getting close to maximum in time to increase capacity before
+    it happens.
+  </p>
+  <p>
+    Refer to documentation for the application to see how to detect how close
+    nodes are to max capacity.
+  </p>
+  <p>
+    There are basically two approaches to detect this in due time. Firstly, a
+    proper benchmark of the application for a given use case can be done, from
+    which one can calculate how many nodes have to be available for the requests
+    to be served correctly within due time. Then one can set alarms, to detect if
+    available nodes in the cluster are approaching the minimum limit, or if the
+    rate of external queries have increased above what the cluster was sized for.
+  </p>
+  <p>
+    The other approach is to just know what the bottleneck of the cluster is,
+    and monitor resource consumption of the bottleneck. If the bottleneck is
+    close to being filled, capacity must be increased.
+  </p>
+  <p>
+    Increasing capacity is typically done by either fixing nodes or partitions
+    that have been marked down earlier. Maybe some disks have had file systems
+    corrupted, and need fsck to mark some new bad sectors and fix file system
+    inconsistencies. New fresh nodes can be added to the cluster. Lastly, some
+    documents may be migrated to other clusters, leaving less requests to serve
+    for this cluster.
+  </p>
+
+  <h2>Cluster under-utilized</h2>
+  <p>
+    The opposite problem of max capacity is a cluster that just has too much free
+    resources. In a cloud environment, this would entail nodes could be
+    released to be used for something else.
+  </p>
+  
+</body>
+</html>

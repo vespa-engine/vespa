@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Processing Several Documents as a Single Unit in Document Processing</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="march 2011" />
+  <meta name="authors" content="einarmr" />
+</head>
+
+<body>
+
+<p class="ingress">
+There are use cases where it would be useful for a document processor
+to process a group of documents as one unit. Imaging processing
+documents from a web crawl &mdash; for a framed HTML document, one
+would like to process the frameset along with the associated frame
+contents, as well as the images and other media. </p>
+
+
+
+<h1 id="introduction">Introduction</h1>
+<p>
+The Vespa Document Processing API has since its inception had the
+ability to process such groups of documents. This, however, has not be
+integrated in Vespa end-to-end, meaning that it has not been possible
+to feed such groups from the <a href="vespa-http-client.html">Vespa HTTP client</a>
+or the DocumentAPI.
+</p>
+
+<p>
+API snippet:
+</p>
+
+<pre class="brush: java">
+public abstract class DocumentProcessor {
+    public Progress process(Processing processing);
+}
+</pre>
+
+<p>
+The goal is thus to be able to feed a group of documents, and make
+them appear together in the list in Processing.getDocumentOperations().
+</p>
+
+
+
+<h1 id="how-it-works">How it Works</h1>
+
+<p>
+To be able to process several documents together, we must define two
+document types &mdash; one outer document type that can encapsulate an
+array of the inner document type. Example:
+</p>
+
+<pre class="brush: sd">
+search outerdoc {
+  document outerdoc {
+    field innerdocuments type array&lt;docindoc&gt; { body }
+  }
+}
+
+search docindoc {
+  document docindoc {
+    field name type string { header }
+    field content type string { body }
+  }
+}
+</pre>
+
+<p>
+Example feed:
+</p>
+
+<pre class="brush: xml">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;vespafeed&gt;
+
+  &lt;document type=&quot;outerdoc&quot; id=&quot;id:outer:outerdoc::this:is:outer:doc&quot;&gt;
+    &lt;innerdocuments&gt;
+        &lt;item&gt;
+            &lt;document type=&quot;docindoc&quot; id=&quot;id:inner:docindoc::this:is:inner:doc:a&quot;&gt;
+              &lt;name&gt;Peter Sellers&lt;/name&gt;
+              &lt;content&gt;Comedian&lt;/content&gt;
+            &lt;/document&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+            &lt;document type=&quot;docindoc&quot; id=&quot;id:inner:docindoc::this:is:inner:doc:b&quot;&gt;
+              &lt;name&gt;Ole Olsen&lt;/name&gt;
+              &lt;content&gt;Common man&lt;/content&gt;
+            &lt;/document&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+            &lt;document type=&quot;docindoc&quot; id=&quot;id:inner:docindoc::this:is:inner:doc:c&quot;&gt;
+              &lt;name&gt;Stein Nilsen&lt;/name&gt;
+              &lt;content&gt;Worker&lt;/content&gt;
+            &lt;/document&gt;
+        &lt;/item&gt;
+    &lt;/innerdocuments&gt;
+  &lt;/document&gt;
+
+&lt;/vespafeed&gt;
+</pre>
+
+<p>
+The basic idea is that one feeds documents of the outerdoc type, which
+contains instances of docindoc documents. In the document processing
+chain in question, a Vespa-supplied <code>splitter</code> document
+processor will add the inner documents of the array field in question
+to Processing.getDocumentOperations(), and remove the outer document from
+that list. For subsequent document processors in the chain, it will
+appear as if the inner documents were fed together as one unit,
+i.e. they are accessible as individual documents in
+Processing.getDocumentOperations().
+</p>
+
+<p>
+The documents can optionally be joined again. In that case, the user
+must configure a Vespa-supplied <code>joiner</code> document processor
+last in the processing chain.
+</p>
+
+
+
+<h1 id="splitting">Splitting</h1>
+
+<p>
+The first processor in the chain must be of type
+com.yahoo.docproc.util.SplitterDocumentProcessor.
+</p>
+
+<p>
+SplitterDocumentProcessor takes two configuration variables:
+</p>
+
+<ul>
+  <li>documentTypeName: the name of the outer document type (outerdoc
+      in our example)</li>
+  <li>arrayFieldName: the name of the field containing the array of
+      inner documents (innerdocuments in our example)</li>
+</ul>
+
+<p>
+SplitterDocumentProcessor will, once configured first in a document
+processor chain:</p>
+
+<ul>
+  <li>Take all documents given in the array field in question, and add
+      them to Processing.getDocumentOperations().</li>
+  <li>Remove the outer document from Processing.getDocumentOperations(),
+      and add it to a hidden context field in Processing.</li>
+</ul>
+
+
+
+<h1 id="joining">Joining</h1>
+
+<p>
+The last processor in the chain must be of type
+<code>com.yahoo.docproc.util.JoinerDocumentProcessor</code>. JoinerDocumentProcessor
+takes two configuration variables:
+</p>
+
+<ul>
+  <li>documentTypeName: the name of the outer document type (outerdoc
+      in our example)</li>
+  <li>arrayFieldName: the name of the field containing the array of
+      inner documents (innerdocuments in our example)</li>
+</ul>
+
+<p>
+JoinerDocumentProcessor will, once configured first in a document
+processor chain:
+</p>
+
+<ul>
+  <li>Retrieve the outer document from the hidden context field in
+      Processing.</li>
+  <li>Add all documents in Processing.getDocumentOperations() to the array
+      field of the outer document.</li>
+  <li>Remove all documents from Processing.getDocumentOperations(), and
+      then add the outer document to that list.</li>
+</ul>
+
+
+
+<h1 id="pros-cons">Pros and Cons of Joining</h1>
+
+<p>
+If the JoinerDocumentProcessor is configured, these are the effects:
+</p>
+
+<ul>
+  <li>The actual documents that the rest of the Vespa system
+      (post-docproc) sees, are of the outer document type. These are
+      persisted as-is (including the inner documents within them) in
+      Vespa Storage. If such outer documents are fed to Vespa Indexed
+      Search, the contents of the inner documents will not be
+      searchable.</li>
+  <li>One advantage of persisting documents of the outer type in Vespa
+      Storage, is that they can be re-processed as a group later, by
+      re-feeding them from storage to docproc.</li>
+</ul>
+
+<p>
+If the JoinerDocumentProcessor is <em>not</em> configured, these are
+the effects:</p>
+
+<ul>
+  <li>The inner documents reach Vespa Storage and Indexed Search
+      individually, can be retrieved individually from storage, and
+      are searchable in case of indexed search.</li>
+  <li>The encapsulating document is discarded, and thus, one will
+      never be able to re-process these documents as a group
+      again.</li>
+</ul>
+
+
+
+<h1 id="config">Example Services Configuration</h1>
+
+<pre class="brush: xml">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+
+  &lt;!-- other components&hellip; --&gt;
+
+  &lt;docproc version=&quot;3.0&quot;&gt;
+    &lt;cluster name=&quot;default&quot;&gt;
+      &lt;nodes&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+      &lt;/nodes&gt;
+      &lt;docprocchains&gt;
+        &lt;docprocchain id=&quot;default&quot;&gt;
+          &lt;config name=&quot;config.docproc.splitter-joiner-document-processor&quot;&gt;
+            &lt;documentTypeName&gt;outerdoc&lt;/documentTypeName&gt;
+            &lt;arrayFieldName&gt;innerdocuments&lt;/arrayFieldName&gt;
+          &lt;/config&gt;
+          &lt;documentprocessor id=&quot;com.yahoo.docproc.util.SplitterDocumentProcessor&quot;/&gt;
+          &lt;!-- other document processors here&hellip; --&gt;
+          &lt;documentprocessor id=&quot;com.yahoo.docproc.util.JoinerDocumentProcessor&quot;/&gt;
+        &lt;/docprocchain&gt;
+      &lt;/docprocchains&gt;
+    &lt;/cluster&gt;
+  &lt;/docproc&gt;
+
+&lt;/services&gt;
+</pre>
+
+</body>
+</html>

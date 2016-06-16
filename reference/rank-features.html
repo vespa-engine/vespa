@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Rank feature reference</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="level"      content="basic">
+  <meta name="audience"   content="all">
+  <meta name="lastupdate" content="$Date: 2015-11-13 09:47:00 $">
+  <meta name="reviewdate" content="December 2007 - 2015">
+  <meta name="authors"    content="bratseth">
+</head>
+
+<body>
+
+<h1>Rank feature reference</h1>
+
+<p class="ingress">
+This is a complete list of the rank features available in Vespa. These
+features are available during document ranking for combination into a
+complete rank score by a <a
+href="ranking-expressions.html">ranking expression</a>. The features are a
+combination of coarse grained features suitable for hand-written expressions,
+and finer grained features suitable for machine learning.
+</p>
+
+<p>See also <a href="../ranking.html">the overview of the ranking framework</a>, and
+<a href="rank-feature-configuration.html">rank feature configuration parameters</a>..</p>
+
+<div class="alert alert-success">
+<ul class="semicompact">
+<li>Types: All rank feature values are floats. Ints are converted to exact whole value floats.
+String values are converted to exact whole value floats using a hash function.
+String literals in rank expressions are converted using the same hash function,
+to enable equality tests on string values.</li>
+<li>Features which are <em>normalized</em> are between 0 and 1, where 0 is always the minimum and 1 the maximum.
+Normalized features should normally be preferred because
+they are more easily combined by <a href="ranking-expressions.html">ranking expressions</a> into a complete normalized score.</li>
+<li>A query may override <em>any</em> rank feature value by submitting that value as a feature with the query.</li>
+<li>Some features have parameters. It is always allowed to quote
+parameters with <em>&quot;</em>. Nested quotes are not allowed and must be
+escaped using <em>\</em>. Parameters that can be parsed as feature names
+may be left unquoted. Examples: <em>foo(bar(baz(5.5)))</em>,
+<em>foo(&quot;bar(\&quot;baz(\\\&quot;5.5\\\&quot;)\&quot;)&quot;)</em>, <em>foo(&quot;need quote&quot;)</em></li>
+</ul>
+</div>
+
+
+<h1 id="feature-list">Complete feature list</h1>
+
+<table class="table">
+<tr><th>Feature name</th>   <th>Default</th>    <th>Description</th></tr>
+
+<tr><td colspan="3" class="divider"><b>Query features</b></td></tr>
+
+<tr><td>query(<em>key</em>)</td>                                  <td>0</td>       <td>
+An application specific feature submitted with the query.
+See the doc on <a href="../ranking.html#using-variables">using the query feature</a>
+for how to set a default value in the rank profile and how to submit the feature value with the query.</td></tr>
+<tr id="termsignificance"><td>term(<em>n</em>).significance</td>  <td>0</td>       <td>
+
+A normalized number (between 0.0 and 1.0) describing the significance
+of the term; used as a multiplier or weighting factor by many other
+rank features.
+
+This should ideally be set by a searcher in the container for global correctness as each node will estimate the significance values from the local corpus.
+<a href="../javadoc/index.html?com/yahoo/prelude/query/TaggableItem.html#setSignificance%28double%29">Query API for setting significance</a>
+
+As a fallback, a significance based on Robertson-Sparck-Jones term
+weighting is used; it is logarithmic from 1.0 for very rare terms down
+to 0.5 for very common terms (those occurring in every document seen).
+
+Note that "very rare" is defined as a frequency of 0.000001 or less.
+This is the term document frequency (how many documents contain the
+term out of all documents that can be observed), so you cannot get 1.0
+as the fallback until you actually have a large number of documents
+(minimum 1 million) in the same search process.
+
+</td></tr>
+<tr><td>term(<em>n</em>).weight</td>                              <td>100</td>     <td>The importance of matching this query term given in the query</td></tr>
+<tr><td>term(<em>n</em>).connectedness</td>                       <td>0.1</td>     <td>The normalized strength with which this term is connected to the previous term in the query.
+                                                                                     Must be assigned to query terms in a Qrs Searcher.</td></tr>
+<tr><td>queryTermCount</td>                                       <td>0</td>       <td>The total number of terms in this query, including both user and syntetic terms in all fields.</td></tr>
+
+<tr><td colspan="3" class="divider"><b>Document features</b></td></tr>
+<tr><td>fieldLength(<em>name</em>)</td>                           <td>1000000</td> <td>The number of terms in this field if one or more query term matched the field, 1000000 if no query term matched the field.</td></tr>
+<tr><td>attribute(<em>name</em>)</td>                             <td>null</td>    <td>The value of a single value attribute or null/NaN if not set. use <em>isNan()</em> to check if value is not defined. Using undefined values in ranking expressions leads to undefined behavior. </td></tr>
+<tr><td>attribute(<em>name</em>,<em>n</em>)</td>                  <td>0</td>       <td>The value at index n (base 0) of an array attribute with the given name.
+                                                                                     The order of the items in an array attribute is the same as the order they have in the input feed.
+                                                                                     If items are added using partial updates they are added to the end of the existing items list.</td></tr>
+<tr><td>attribute(<em>name</em>,<em>key</em>).weight</td>         <td>0</td>       <td>The weight found at a given key in a weighted set attribute</td></tr>
+<tr><td>attribute(<em>name</em>,<em>key</em>).contains</td>       <td>0</td>       <td>1 if the given key is present in a weighted set attribute, 0 otherwise</td></tr>
+<tr><td>attribute(<em>name</em>).count</td>                       <td>0</td>       <td>The number of elements in the attribute with the given name.</td>
+
+<tr>
+<td colspan="3" class="divider" id="field-match-features">
+<b>Field match features.</b> These features provide a good measure of the degree to which a query matches the text of a field, but are expensive to calculate and therefore
+often only suitable for second-phase ranking. See the <a href="string-segment-match.html">string segment match</a> document for details on the algorithm computing this set.
+</td>
+</tr>
+
+<tr><td colspan="3" class="subdivider"><b>- normalized</b></td></tr>
+<tr><td>fieldMatch(<em>name</em>)</td>                            <td>0</td>       <td>A normalized measure of the degree to which this query and field matched
+                                                                                     (default, the long name of this is <code>match</code>). Use this if you do not
+                                                                                     want to create your own combination function of more fine grained fieldmatch features. </td></tr>
+<tr><td>fieldMatch(<em>name</em>).proximity</td>                  <td>0</td>       <td><p>Normalized proximity - a value which is close to 1 when matched terms are close
+                                                                                     <em>inside each segment</em>, and close to zero when they are far apart inside segments.
+                                                                                     Relatively more connected terms influence this value more. This is
+                                                                                     absoluteProximity/average connectedness for the query terms for this field.</p>
+                                                                                     <p>Note that if all the terms are far apart,
+                                                                                     the proximity will be 1, but the number of segments will be high. Proximity
+                                                                                     is only concerned with closeness within segments, a total score must also take the number
+                                                                                     of segments into account.</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).completeness</td>               <td>0</td>       <td><p>The normalized total completeness, where field completeness is more important:</p>
+                                                                                     <code>queryCompleteness *
+                                                                                     ( 1 - fieldCompletenessImportance ) + fieldCompletenessImportance * fieldCompleteness</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).queryCompleteness</td>          <td>0</td>       <td><p>The normalized ratio of query tokens matched in the field:</p>
+                                                                                     <code>matches/query terms searching this field</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).fieldCompleteness</td>          <td>0</td>       <td>The normalized ratio of query tokens which was matched in the field: <code>matches/fieldLength</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).orderness</td>                  <td>0</td>       <td><p>A normalized metric of how well the order of the terms agrees in the chosen segments:</p>
+                                                                                     <code>1-outOfOrder/pairs</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).relatedness</td>                <td>0</td>       <td><p>A normalized measure of the degree to which different terms are related
+                                                                                     (occurring in the same segment):</p>
+                                                                                     <code>1-(segments-1)/(matches-1)</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).earliness</td>                  <td>0</td>       <td><p>A normalized measure of how early the first segment occurs in this field.</td></tr>
+<tr><td>fieldMatch(<em>name</em>).longestSequenceRatio</td>       <td>0</td>       <td>A normalized metric of the relative size of the longest sequence: <code>longestSequence/matches</code></td></tr>
+<tr><td>fieldMatch(<em>name</em>).segmentProximity</td>           <td>0</td>       <td><p>A normalized metric of the closeness (inverse of spread) of segments in the field:</p>
+                                                                                     <code>1-segmentDistance/fieldLength</code> </td></tr>
+<tr><td>fieldMatch(<em>name</em>).unweightedProximity</td>        <td>0</td>       <td>The normalized proximity of the matched terms, not taking term connectedness into account.
+                                                                                     This number is close to 1 if all the matched terms are
+                                                                                     following each other in sequence, and close to 0 if they are far from each other or out of order.</td></tr>
+<tr><td>fieldMatch(<em>name</em>).absoluteProximity</td>          <td>0</td>       <td>Returns the normalized proximity of the matched terms, weighted by the connectedness of
+                                                                                     the query terms. This number is 0.1 if all the matched terms are and have default or lower
+                                                                                     connectedness, close to 1 if they are following in sequence and have a high connectedness,
+                                                                                     and close to 0 if they are far from each other in the segments or out of order.</td></tr>
+<tr><td>fieldMatch(<em>name</em>).occurrence</td>                 <td>0</td>       <td><p>Returns a normalized measure of the number of occurrences of the terms of the query.
+                                                                                     This is 1 if there are many occurrences of the query terms <em>in absolute terms,
+                                                                                     or relative to the total content of the field</em>, and 0 if there are none.</p>
+                                                                                     <p>This is suitable for occurrence in fields containing regular text.</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).absoluteOccurrence</td>         <td>0</td>       <td><p>Returns a normalized measure of the number of occurrence of the terms of the query:
+                                                                                     <code>sum over all query terms(min(number of occurrences of the term,maxOccurrences))/
+                                                                                     (query term count*100)</code>.</p>
+                                                                                     <p>This is 1 if there are many occurrences of the query terms, and 0 if there are none.
+	                                                                                 </p>
+                                                                                     <p>This number is not relative to the field length, so it is suitable for uses
+                                                                                     of occurrence to denote relative importance between matched terms
+                                                                                     (i.e fields containing keywords, not normal text).</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).weightedOccurrence</td>         <td>0</td>       <td>Returns a normalized measure of the number of occurrence of the terms of the query,
+                                                                                     weighted by term weight.
+                                                                                     This number is close to 1 if there are many occurrences of highly weighted query terms,
+                                                                                     in absolute terms, or relative to the total content of the field, and 0 if there are none.</td></tr>
+<tr><td>fieldMatch(<em>name</em>).weightedAbsoluteOccurrence</td> <td>0</td>       <td><p>Returns a normalized measure of the number of occurrence of the terms of the query, taking weights
+                                                                                     into account so that occurrences of higher weighted query terms has more impact than lower weighted
+                                                                                     terms.</p>
+                                                                                     <p>This is 1 if there are many occurrences of the highly weighted terms,
+                                                                                     and 0 if there are none.
+                                                                                     </p>
+                                                                                     <p>This number is not relative to the field length, so it is suitable for uses of
+                                                                                     of occurrence to denote relative importance between matched terms
+                                                                                     (i.e fields containing keywords, not normal text).</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).significantOccurrence</td>      <td>0</td>       <td><p>Returns a normalized measure of the number of occurrence of the terms of the query
+                                                                                     <em>in absolute terms,
+                                                                                     or relative to the total content of the field</em>, weighted by term significance.</p>
+                                                                                     <p>This number is 1 if there are many occurrences of the highly significant terms,
+                                                                                     and 0 if there are none.</p></td></tr>
+
+<tr><td colspan="3" class="subdivider"><b>- normalized and relative to the whole query</b></td></tr>
+<tr><td>fieldMatch(<em>name</em>).weight</td>                     <td>0</td>       <td><p>The normalized weight of this match relative to the whole query:
+                                                                                     The sum of the weights of all <em>matched</em> terms/the sum of the weights of all <em>query</em> terms.
+                                                                                     If all the query terms were matched, this is 1. If no terms were matched, or these matches has weight
+                                                                                     zero this is 0.</p>
+                                                                                     <p>As the sum of this number over all the terms of the query is always 1, sums over all fields of
+                                                                                     normalized rank features for each field multiplied by this number for the same field will produce a
+                                                                                     normalized number.</p>
+                                                                                     <p>Note that this scales with the number of matched query terms in the field. If you want a component
+                                                                                     which does not, divide by matches.</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).significance</td>               <td>0</td>       <td><p>Returns the normalized term significance of the terms of this match relative to the
+                                                                                     whole query: The sum of the significance of all <em>matched</em> terms/the sum of the significance of all
+                                                                                     <em>query</em> terms. If all the query terms were matched, this is 1. If no terms were matched, or if the
+                                                                                     significance of all the matched terms is zero, this number is zero.</p>
+                                                                                     <p>This metric has the same properties as weight.</p>
+                                                                                     <p>See the <a href="#termsignificance">term(n).significance</a> feature for how the significance
+                                                                                     for a single term is calculated.</p></td></tr>
+<tr><td>fieldMatch(<em>name</em>).importance</td>                 <td>0</td>       <td>Returns the average of significance and weight. This has the same properties as those metrics.</td></tr>
+
+<tr><td colspan="3" class="subdivider"><b>- not normalized</b></td></tr>
+<tr><td>fieldMatch(<em>name</em>).segments </td>                  <td>0</td>       <td>The number of field text segments which are needed to match the query as completely as possible</td></tr>
+<tr><td>fieldMatch(<em>name</em>).matches</td>                    <td>0</td>       <td>The total number of query terms which was matched in this field</td></tr>
+<tr><td>fieldMatch(<em>name</em>).degradedMatches</td>            <td>0</td>       <td>The number of degraded query terms which was matched in this field. A degraded term is a term where no occurrence information is available during calculation. The number of degraded matches is less than or equal to the total number of matches.</td></tr>
+<tr><td>fieldMatch(<em>name</em>).outOfOrder</td>                 <td>0</td>       <td>The total number of out of order token sequences <em>within</em> matched field segments</td></tr>
+<tr><td>fieldMatch(<em>name</em>).gaps</td>                       <td>0</td>       <td>The total number of position jumps (backward or forward) within field segments</td></tr>
+<tr><td>fieldMatch(<em>name</em>).gapLength</td>                  <td>0</td>       <td>The summed length of all gaps within segments</td></tr>
+<tr><td>fieldMatch(<em>name</em>).longestSequence</td>            <td>0</td>       <td>The size of the longest matched continuous, in-order sequence in the field</td></tr>
+<tr><td>fieldMatch(<em>name</em>).head</td>                       <td>0</td>       <td>The number of tokens in the field preceding the start of the first matched segment</td></tr>
+<tr><td>fieldMatch(<em>name</em>).tail</td>                       <td>0</td>       <td>The number of tokens in the field following the end of the last matched segment</td></tr>
+<tr><td>fieldMatch(<em>name</em>).segmentDistance</td>            <td>0</td>       <td>The sum of the distance between all segments making up a match to the query, measured
+                                                                                     as the sum of the number of token positions separating the <em>start</em> of each <em>field</em>
+                                                                                     adjacent segment.</td></tr>
+
+
+<tr><td id="text-similarity" colspan="3" class="divider"><b>Query and field similarity.</b>
+Normalized feature set measuring the approximate <em>similarity</em> between a field and the query.
+These features are suitable in cases where the query is as large as the field (i.e is a document)
+such that we are interested in the similarity between the query and the entire field.
+They are cheap to compute even if the query is very large.</td></tr>
+
+<tr><td>textSimilarity(<em>name</em>)</td><td>0</td>
+    <td>A weighted sum of the individual similarity measures.</td></tr>
+<tr><td>textSimilarity(<em>name</em>).proximity</td><td>0</td>
+    <td>A measure of how close together the query terms appear in the field.</td></tr>
+<tr><td>textSimilarity(<em>name</em>).order</td><td>0</td>
+    <td>A measure of the order in which the query terms appear in the field compared to the query.</td></tr>
+<tr><td>textSimilarity(<em>name</em>).queryCoverage</td><td>0</td>
+    <td>A measure of how much of the query the field covers when a single term from the field can only cover a single term in the query. Query term weights are used during normalization.</td></tr>
+<tr><td>textSimilarity(<em>name</em>).fieldCoverage</td><td>0</td>
+    <td>A measure of how much of the field the query covers when a single term from the query can only cover a single term in the field.</td></tr>
+
+<tr><td colspan="3" class="divider"><b>Query term and field match features</b></td></tr>
+<tr><td>fieldTermMatch(<em>name</em>,<em>n</em>).firstPosition</td><td>1000000</td>
+    <td>The position of the first occurrence of this query term in this index field</td></tr>
+<tr><td>fieldTermMatch(<em>name</em>,<em>n</em>).occurrences</td><td>0</td>
+    <td>The number of occurrences of this query term in this index field</td></tr>
+<tr><td>matches(<em>name</em>)</td><td>0</td>
+    <td>Returns 1 if the index/attribute field with the given name is matched by the query.</td></tr>
+<tr><td>matches(<em>name</em>,<em>n</em>)</td><td>0</td>
+    <td>Returns 1 if the index/attribute field with the given name is matched by the query term with position <em>n</em>.</td></tr>
+<tr><td>termDistance(<em>name</em>,<em>x</em>,<em>y</em>).forward</td><td>1000000</td>
+    <td>The minimum distance between the occurrences of term <em>x</em> and term <em>y</em> in this index field. Term <em>x</em> occurs before term <em>y</em>.</td></tr>
+<tr><td>termDistance(<em>name</em>,<em>x</em>,<em>y</em>).forwardTermPosition</td><td>1000000</td>
+    <td>The position of the occurrence of term <em>x</em> in this index field used for the forward distance.</td></tr>
+<tr><td>termDistance(<em>name</em>,<em>x</em>,<em>y</em>).reverse</td><td>1000000</td>
+    <td>The minimum distance between the occurrences of term <em>y</em> and term <em>x</em> in this index field. Term <em>y</em> occurs before term <em>x</em>.</td></tr>
+<tr><td>termDistance(<em>name</em>,<em>x</em>,<em>y</em>).reverseTermPosition</td><td>1000000</td>
+    <td>The position of the occurrence of term <em>y</em> in this index field used for the reverse distance.</td></tr>
+
+
+<tr><td colspan="3" class="divider"><b>Features for indexed multi-value string fields</b></td></tr>
+<tr><td>elementCompleteness(<em>name</em>).completeness</td>        <td>0</td>      <td>A weighted combination of fieldCompleteness and queryCompleteness for the element in the field that produces the
+                                                                                      highest value for this output after the elements weight is factored in. The weighting can be adjusted with the
+                                                                                      <code>elementCompleteness(name).fieldCompletenessImportance</code> configuration property in the search definition
+                                                                                      file.</td></tr>
+<tr><td>elementCompleteness(<em>name</em>).fieldCompleteness</td>   <td>0</td>      <td><p>The field completeness of the best matching element. This is calculated as:</p>
+                                                                                      <code>max( (number of query terms matched in the element) / (element size), 1.0)</code>.</td></tr>
+<tr><td>elementCompleteness(<em>name</em>).queryCompleteness</td>   <td>0</td>      <td><p>The query completeness of the best matching element. This is calculated as:</p>
+                                                                                      <code>(sum of weight for query terms matched in the element) / (sum of weight for query terms searching the field)</code>.</td></tr>
+<tr><td>elementCompleteness(<em>name</em>).elementWeight</td>       <td>0</td>      <td>The weight of the best matching element.</td></tr>
+
+<tr><td id="element-similarity">elementSimilarity(<em>name</em>)</td> <td>0</td>
+<td>
+Aggregated similarity between the query and individual field
+elements. The same sub-scores used by the <code>textSimilarity</code>
+feature are calculated for each individual element in the field. The
+final output is calculated as the maximum of the combined element
+similarity measures (similarity measures are combined the same way as
+the default output of the <code>textSimilarity</code> feature)
+multiplied with the element weight. This is a very flexible feature;
+how sub-scores are combined for each element and how element scores
+are aggregated may be configured. You may also add additional outputs
+if you want to capture multiple signals from a single
+field. See <a href="rank-feature-configuration.html">rank feature
+configuration</a> for information about how this feature can be
+customized.
+</td></tr>
+
+<tr><td colspan="3" class="divider"><b>Attribute match features</b></td></tr>
+<tr><td colspan="3" class="subdivider"><b>- normalized</b></td></tr>
+<tr><td>attributeMatch(<em>name</em>)</td>                         <td>0</td>      <td>A normalized measure of the degree to which this query and field matched. This is currently the same as completeness.
+                                                                                     Note that depending on what the attribute is used for, this may or may not be a suitable metric. If the attribute
+                                                                                     is a weighted set representing counts of items (like tags),
+                                                                                     <code>normalizedWeight</code> is probably a better metric.</td></tr>
+ <tr><td>attributeMatch(<em>name</em>).completeness</td>           <td>0</td>      <td><p>The normalized total completeness, where field completeness is more important:</p>
+                                                                                     <code>queryCompleteness * ( 1 - fieldCompletenessImportance + fieldCompletenessImportance * fieldCompleteness )</code>
+                                                                                     </td></tr>
+<tr><td>attributeMatch(<em>name</em>).queryCompleteness</td>       <td>0</td>      <td>The query completeness for this attribute:
+                                                                                     <code>matches/the number of query terms searching this attribute</code></td></tr>
+<tr><td>attributeMatch(<em>name</em>).fieldCompleteness</td>       <td>0</td>      <td>The normalized ratio of query tokens which was matched in the field. For arrays: <code>matches/array length</code>
+                                                                                      For weighted sets: <code>sum of weight of matched terms/sum of weights of entire set</code>. This is relatively
+                                                                                      expensive to calculate for large weighted sets.</td></tr>
+<tr><td>attributeMatch(<em>name</em>).normalizedWeight</td>        <td>0</td>      <td>A number which is close to 1 if the attribute weights of most matches in a weighted set are high
+                                                                                     (relative to the maxWeight configuration value), 0 otherwise</td></tr>
+<tr><td>attributeMatch(<em>name</em>).normalizedWeightedWeight</td><td>0</td>      <td>A number which is close to 1 if the attribute weights of most matches in a weighted set are high
+                                                                                     (relative to the maxWeight configuration value), and where highly weighted query terms
+                                                                                     has more impact, 0 otherwise</td></tr>
+
+<tr><td>closeness(<em>name</em>)</td>                              <td>0</td>      <td>
+  <p>A number which is close to 1 if the position in attribute <em>name</em> is close to the query position compared
+     to the configuration variable maxDistance: </p>
+     <code>max(1-distance(name)/maxDistance , 0)</code>
+     <p>Scales linearly with distance, see <a href="#closenessplot">closeness plot</a> below.
+</td></tr>
+
+<tr><td>closeness(<em>name</em>).logscale</td>                              <td>0</td>      <td>
+<p>
+A logarithmic-shaped closeness; like normal closeness it goes from 1 to 0,
+but looks like <a href="#closenessplot">closeness plot</a>
+below. The function is a logarithmic fall-off based on
+<code>log(distance + scale)</code> and is calculated as:
+<table style="border-style:none;" class="code">
+<tr style="border-style:none;">
+  <td rowspan="3" style="vertical-align:middle; text-align:right; border-style:none;">
+    closeness(<span style="font-style:italic;">name</span>).logscale =
+  </td>
+  <td style="text-align: center; border-style:none;">
+    (maxDistance + scale) - log(distance(<span style="font-style:italic;">name</span>) + scale))
+  </td>
+</tr>
+<tr style="border-style:none;">
+  <td style="border-style:none; padding: 0"><hr width="95%"/></td>
+</tr>
+<tr style="border-style:none;">
+  <td style="text-align:center; border-style:none;">
+    (log(maxDistance + scale) - log(scale))
+  </td>
+</tr>
+</table>
+where scale is defined using configuration variables halfResponse and maxDistance:
+<p class="code">
+scale = halfResponse&sup2; / (maxDistance - 2 &times; halfResponse)
+</p>
+<p>
+When <code>distance(name) == halfResponse</code> the function output is 0.5;
+halfResponse should be less than <code>maxDistance/2</code> since that means
+adding a certain distance when you're close matters more than adding
+the same distance when you're already far away.
+(Using configuration variable scaleDistance to specify scale explicitly is deprecated).
+</p>
+</td></tr>
+
+<tr><td>freshness(<em>name</em>)</td>                              <td>0</td>      <td>
+  <p>A number which is close to 1 if the timestamp in attribute <em>name</em> is recent compared to the current time
+     compared to the configuration variable maxAge: </p>
+     <code>max( 1-age(name)/maxAge , 0 )</code>
+     <p>Scales linearly with age, see <a href="#freshnessplot">freshness plot</a> below.
+</td></tr>
+
+<tr><td>freshness(<em>name</em>).logscale</td>                              <td>0</td>      <td>
+<p>A logarithmic-shaped freshness; also goes from 1 to 0, but looks like <a href="#freshnessplot">freshness plot</a>
+below. The function is based on <code>-log(age(name) + scale)</code> and is calculated as:
+<code>(log(maxAge + scale) - log(age(name) + scale)) / (log(maxAge + scale) - log(scale))</code>,
+where scale is defined using configuration variables halfResponse and maxAge:
+<code>-halfResponse^2/(2*halfResponse - maxAge</code>.
+When <code>age(name) == halfResponse</code> the function output is 0.5.
+</td></tr>
+
+<tr><td colspan="3" class="subdivider"><b>- normalized and relative to the whole query</b></td></tr>
+<tr><td>attributeMatch(<em>name</em>).weight</td><td>0</td>
+    <td>This has the same semantics as fieldMatch(<em>name</em>).weight.</td></tr>
+<tr><td>attributeMatch(<em>name</em>).significance</td><td>0</td>
+    <td>This has the same semantics as fieldMatch(<em>name</em>).significance.</td></tr>
+<tr><td>attributeMatch(<em>name</em>).importance</td><td>0</td>
+    <td>Returns the average of significance and weight. This has the same properties as those metrics.</td></tr>
+
+<tr><td colspan="3" class="subdivider"><b>- not normalized</b></td></tr>
+<tr><td>attributeMatch(<em>name</em>).matches</td>                 <td>0</td>      <td>The number of query terms which was matched in this attribute</td></tr>
+<tr><td>attributeMatch(<em>name</em>).totalWeight</td>             <td>0</td>      <td>The sum of the weights of the attribute keys matched in a weighted set attribute</td></tr>
+<tr><td>attributeMatch(<em>name</em>).averageWeight</td>           <td>0</td>      <td>totalWeight/matches</td></tr>
+<tr><td>distance(<em>name</em>)</td>                               <td>6400M</td>  <td>The euclidian distance from the query position to the given position attribute in millionths of degrees (about 10cm)</td></tr>
+<tr><td>distanceToPath(<em>name</em>).distance</td>                <td>6400M</td>  <td>
+
+The euclidian distance from a path through 2d space
+given in the query to the given position attribute in
+millionths of degrees. This is useful e.g. for finding the
+closest locations to a given road. The query path is set in the
+<a href="../reference/search-api.html#rankproperty">rankproperty.distanceToPath(<em>name</em>).path</a>
+query parameter, using syntax <code>"(x1,y1,x2,y2,..)"</code>
+also in millionth of degrees, see the
+<a href="../distance-to-path.html">distance to path</a>
+document.  The closest point along the path is refered to as the
+<em>intersection</em>.<br/><strong>NOTE:</strong> For documents with multiple
+locations, only the closest location is used for ranking purposes.
+
+</td></tr>
+<tr><td>distanceToPath(<em>name</em>).traveled</td>                <td>1</td>      <td>The normalized distance along the query path traveled before intersection (0.0 indicates start of path, 0.5 is middle, and 1.0 is end of path).</td></tr>
+<tr><td>distanceToPath(<em>name</em>).product</td>                 <td>0</td>      <td>The cross-product of the intersected path segment and the intersection-to-document vector. Given that the document was found to lie closest to the path element <code>A->B</code>, the intersected path segment vector is <code>[ B.x - A.x, B.y - A.y ]</code>. Furthermore, given that the intersection of that path element occured at point <code>I</code> for document location <code>D</code>, the intersection-to-document vector is <code>[ I.x - D.x, I.y - D.y]</code>. This is useful e.g. for finding what side of a path a document exists by looking at the sign of this value.</td></tr>
+<tr><td>age(<em>name</em>)</td>                                    <td>10B</td>    <td>The document age in seconds relative to the unit time value stored in the attribute having this name</td></tr>
+
+
+<tr><td colspan="3" class="divider"><b>Features combining multiple fields and attributes</b></td></tr>
+<tr><td>match</td>                                               <td>0</td>       <td>A normalized average of the fieldMatch and attributeMatch scores of all the searched fields
+                                                                                 and attributes, where the contribution of each field and attribute is weighted by its
+                                                                                 <em>weight</em> setting.</td></tr>
+<tr><td>match.totalWeight</td>                                   <td>0</td>       <td>The sum of the weight settings of all the field and attributes searched by the query</td></tr>
+<tr><td>match.weight.<em>name</em></td>                          <td>100</td>     <td>The (search definition) weight setting of a field or attribute</td></tr>
+
+
+<tr><td colspan="3" class="divider"><b>Rank scores</b></td></tr>
+<tr><td>nativeRank</td><td>0</td>
+    <td>A reasonably good rank score which is computed cheaply by Vespa.
+        This value only is a good candidate first phase ranking function.
+        The value computed by this function may change between Vespa versions.
+        See the <a href="nativerank.html">native rank reference</a> for more information.</td></tr>
+<tr><td>nativeRank(field,&hellip;)</td><td>0</td>
+    <td>Same as <em>nativeRank</em>, but only the given set of fields are used in the calculation.</td></tr>
+<tr><td>nativeFieldMatch</td><td>0</td>
+    <td>Captures how well query terms match in index fields. Used by <em>nativeRank</em>.
+        See the <a href="nativerank.html">native rank reference</a> for more information.</td></tr>
+<tr><td>nativeFieldMatch(field,&hellip;)</td><td>0</td>
+    <td>Same as <em>nativeFieldMatch</em>, but only the given set of index fields are used in the calculation.</td></tr>
+<tr><td>nativeProximity</td><td>0</td>
+    <td>Captures how near matched query terms occur in index fields. Used by <em>nativeRank</em>.
+        See the <a href="nativerank.html">native rank reference</a> for more information.</td></tr>
+<tr><td>nativeProximity(field,&hellip;)</td><td>0</td>
+    <td>Same as <em>nativeProximity</em>, but only the given set of index fields are used in the calculation.</td></tr>
+<tr><td>nativeAttributeMatch</td><td>0</td>
+    <td>Captures how well query terms match in attribute fields. Used by <em>nativeRank</em>.
+        See the <a href="nativerank.html">native rank reference</a> for more information.</td></tr>
+<tr><td>nativeAttributeMatch(field,&hellip;)</td><td>0</td>
+    <td>Same as <em>nativeAttributeMatch</em>, but only the given set of attribute fields are used in the calculation.</td></tr>
+
+<tr><td>nativeDotProduct(field)</td><td>0</td>
+<td>
+<p>Calculates the sparse dot product between query term weights and match weights for the given field.</p>
+<p>
+  Lets say we have a weighted set string field X with the content
+  <code>&lt;item weight=10&gt;x&lt;/item&gt;&lt;item weight=20&gt;y&lt;/item&gt;&lt;item weight=30&gt;z&lt;/item&gt;</code> for a particular document.
+  If we issue the query (x!2 OR y!4), the nativeDotProduct(X) feature will have the value 100 for that document. (<code>10 * 2 + 20 * 4</code>).
+</p>
+</td>
+</tr>
+
+<tr><td>firstPhase</td>                                          <td>0</td>      <td>The value of the rank score calculated in the first phase (unavailable in first phase rank expressions)</td></tr>
+
+<tr><td colspan="3" class="divider"><b>Global features</b></td></tr>
+<tr><td>now</td>                                                <td>n/a</td>     <td>Time at which the query is executed in unix-time (seconds since epoch)</td></tr>
+
+<tr>
+<td>random</td>
+<td>n/a</td>
+<td>A pseudorandom number in the range [0,1&gt; which is drawn once per document during rank evaluation. By default, the current time in microseconds is used as a seed value.
+    Users can specify a seed value by setting the 'random.seed' property in the rank profile. See <a href="rank-feature-configuration.html">rank feature configuration.</a>.
+    If you need several independent random numbers the feature can be named like this: <code>random(foo)</code>, <code>random(bar)</code>.</td>
+</tr>
+
+<tr>
+<td>random.match</td>
+<td>n/a</td>
+<td>A pseudorandom number in the range [0,1&gt; that is stable for a given hit. This means that a hit will always receive the same random score (on a single node).
+    If it is required that the scores be different between different queries, specify a seed value dependent upon the query. By default, the seed value is 1024.
+    Users can specify a seed value by adding the query parameter 'rankproperty.random.match.seed=&lt;value&gt;' to the query.
+    If you need several independent random numbers the feature can be named like this: <code>random(foo).match</code>, <code>random(bar).match</code>.</td>
+</tr>
+
+<tr id="raw_score"><td colspan="3" class="divider"><b>Match operator scores</b> (see <a href="../ranking.html#raw_score">Raw Scores and Query Item Labeling</a>)</td></tr>
+<tr><td>rawScore(<em>field</em>)</td><td>0</td>
+    <td>The sum of all raw scores produced by match operators for this field.</td></tr>
+<tr><td>itemRawScore(<em>label</em>)</td><td>0</td>
+    <td>The raw score produced by the query item with the given label.</td></tr>
+
+<tr><td colspan="3" class="divider"><b>Utility features</b></td></tr>
+<tr id="foreach"><td>foreach(<em>dimension</em>,<em>variable</em>,<em>feature</em>,<em>condition</em>,<em>operation</em>)</td>
+    <td>n/a</td>
+    <td>
+        <p>
+        The foreach feature iterates over a set of feature output values and performs an operation on them.
+        Only the values where the condition evaluates to true are considered for the operation.
+        The result of this operation is returned.
+        </p>
+        <ul>
+            <li> <em>dimension</em>: Specifies what to iterate over. This can be:
+            <ul>
+                <li> <em>terms</em>: All query term indices, from 0 and up to foreach.maxTerms.
+                </li> <li> <em>fields</em>: All index field names.
+                </li> <li> <em>attributes</em>: All attribute field names.
+            </ul>
+            </li> <li> <em>variable</em>: The name of the variable 'storing' each of the items you are iterating over.
+            </li> <li> <em>feature</em>: The name of the feature you want to use the output value from. Use the <em>variable</em> as part of the feature name, and for each item you iterate over this <em>variable</em> is replaced with the actual item.
+            Note that the variable replacement is a simple string replace so you should use a variable name
+            that is not in conflict with the feature name.
+            </li> <li> <em>condition</em>: The condition used on each feature output value to find out if the value should be considered by the operation. The condition can be:
+            <ul>
+                <li> <em>&gt;a</em>: Use feature output if greater than number a.
+                </li> <li> <em>&lt;a</em>: Use feature output if less than number a.
+                </li> <li> <em>true</em>: Use all feature output values.
+            </ul>
+            </li> <li> <em>operation</em>: The operation you want to perform on the feature output values. This can be:
+            <ul>
+                <li> <em>sum</em>: Calculate the sum of the values.
+                </li> <li> <em>product</em>: Calculate the product of the values.
+                </li> <li> <em>average</em>: Calculate the average of the values.
+                </li> <li> <em>max</em>: Find the max of the values.
+                </li> <li> <em>min</em>: Find the min of the values.
+                </li> <li> <em>count</em>: Count the number of values.
+            </ul>
+        </ul>
+        <p>
+        Lets say you want to calculate the average score of the <em>fieldMatch</em> feature for all index fields,
+        but only consider the scores larger than 0. Then you can use the following setup of the <em>foreach</em> feature:
+        <code>foreach(fields,N,fieldMatch(N),"&gt;0",average)</code>.
+        Note that when using the conditions <em>&gt;a</em> and <em>&lt;a</em>
+        they must be quoted in order to pass search definition parsing.
+        </p>
+        <p>
+        You can also specify a ranking expression in the <em>foreach</em> feature by using the <em>rankingExpression</em> feature.
+        The <em>rankingExpression</em> feature takes the expression as the first and only parameter and
+        outputs the result of evaluating this expression.
+        Lets say you want to calculate the average score of the squared <em>fieldMatch</em> feature score for all index fields.
+        Then you can use the following setup of the <em>foreach</em> feature:
+        <code>foreach(fields,N,rankingExpression("fieldMatch(N)*fieldMatch(N)"),true,average)</code>
+        Note that you must quote the expression passed in to the <em>rankingExpression</em> feature.
+        </p>
+    </td>
+</tr>
+<tr id="dotproduct"><td>dotProduct(<em>name</em>,<em>vector</em>)</td>
+    <td>0</td>
+    <td>
+        <p>
+        The sparse dot product of the vector represented by the given weighted set attribute and
+        the vector sent down with the query.
+        </p>
+        <p>
+        You can also do an ordinary full dotproduct by using arrays
+        instead of weighted sets. This will be a lot faster when you have full vectors in the document with
+        more than 5-10% non-zero values. You are also then not limited to integer weights. All the numeric
+        datatypes can be used with arrays so you have full floating point support. The 32 bit floating point type
+        yields the fastest execution.
+        <ul>
+            <li> <em>name</em>:   The name of the weighted set string/integer or array of numeric attribute.
+            <li> <em>vector</em>: The name of the vector sent down with the query.
+        </ul>
+        Each unique string/integer in the weighted set corresponds to a dimension
+        and the belonging weight is the vector component for that dimension.
+        The query vector is set in the <a href="../reference/search-api.html#rankproperty">rankproperty.dotProduct.<em>vector</em></a>
+        query parameter, using syntax
+        <code>{d1:c1,d2:c2,&hellip;}</code> where <em>d1</em> and <em>d2</em> are dimensions matching the strings/integers in
+        the weighted set and <em>c1</em> and <em>c2</em> are the vector components (floating point numbers).
+        The number of dimensions in the weighted set and the query vector do not need to be the same.
+        When calculating the dot product we only use the dimensions present in both the weighted set and the
+        query vector.
+        </p>
+        <p>When using an array the dimensions is a positive integer starting at 0. If the query is sparse all non given dimensions
+        are zero. That also goes for dimensions that outside of the array size in each document.</p>
+        <p>
+        Lets say we have a weighted set string attribute X with the content
+        <code>&lt;item weight=10&gt;x&lt;/item&gt;&lt;item weight=20&gt;y&lt;/item&gt;</code> for a particular document.
+        The result of using the feature dotProduct(X,Y) with the query vector
+        rankproperty.dotProduct.Y={x:2,y:4} will then be 100 (<code>10 * 2 + 20 * 4</code>) for this document.
+        </p>
+        <p>
+        Arrays can be passed down as <code>[w1 w2 w3 &hellip;]</code> or on sparse form <code>{d1:c1,d2:c2,&hellip;}</code>
+        as is already supported for weighted sets.
+        </p>
+        <p>
+        <strong>NOTE:</strong>When the query vector end up being the
+        same as your query, it is better to annotate your query terms
+        with weights
+        (see <a href="query-language-syntax.html#term-weight">term
+        weight</a>) and use the nativeDotProduct feature instead. This
+        will run more efficiently and improve the correlation between
+        results produced by the WAND operator and the final relevance
+        score.
+        </p>
+    </td>
+</tr>
+
+</table>
+
+
+
+<h1 id="graphs">Graphs for selected ranking functions</h1>
+
+<h2 id="closenessplot">closeness</h2>
+<img src="../img/reference/relevance/closeness-logscale.png" />
+The plot above shows the possible outputs from the closeness distance rank feature
+using the default maxDistance of 1000 km.  The "linear(x)" graph shows the default closeness
+output while the other graphs are logscale output for various values of the scaleDistance
+parameter: 9013.305 (1 km), 45066.525 (5km - the default value), and 901330.5 (100 km).
+These values correspond to the following values of the halfResponse parameter:
+276154.903 (30.64 km), 593861.739 (65.89 km), and 2088044.581 (231.66 km).
+
+<!-- gnuplot input (for image on previous line)
+
+ maxd = 1000
+ linear(x) = (x > maxd ? 0 : 1-x/maxd)
+ logscale(x, scale) = (x > maxd ? 0 : (( log(maxd+scale) - log(x+scale) ) / (log(maxd+scale) - log(scale))))
+ logscale_100km(x) = logscale(x,100)
+ logscale_5km(x) = logscale(x,5)
+ logscale_1km(x) = logscale(x,1)
+ set terminal png picsize 1000 400
+ set output "closeness-logscale.png"
+ plot [0:1100] [-0.1:1.1] logscale_5km(x), logscale_1km(x), logscale_100km(x), linear(x)
+
+gnuplot script -->
+
+
+<h2 id="freshnessplot">freshness</h2>
+<img src="../img/reference/relevance/freshness-logscale.png" />
+The plot above shows the possible outputs from the freshness rank feature
+using the default maxAge of 7776000s (90 days).  The "linear(x)" graph shows the default freshness
+output while the other graphs are logscale output for various values of the halfResponse
+parameter: 172800s (2 days), 604800s (7 days - the default value), 1209600s (14 days).
+
+<!-- gnuplot input (for image on previous line)
+
+maxa = 90
+linear(x) = (x > maxa ? 0 : 1-x/maxa)
+logscale(x, scale) = (x > maxa ? 0 : (( log(maxa+scale) - log(x+scale) ) / (log(maxa+scale) - log(scale))))
+# scale = -halfResponse*halfResponse/(2*halfResponse - maxa)
+logscale_2d(x) = logscale(x,0.047)
+logscale_7d(x) = logscale(x,0.64)
+logscale_14d(x) = logscale(x,3.16)
+set terminal png size 1000,400
+set output "freshness-logscale.png"
+plot [0:90] [0:1] logscale_2d(x), logscale_7d(x), logscale_14d(x), linear(x)
+
+gnuplot script -->
+
+
+<p class="footer"><a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>, December 2007</p>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="May 2016" />
+    <meta name="authors" content="bratseth,tonyv,kraune" />
+    <title>Developing applications</title>
+  </head>
+  <body>
+
+<h1 id="code-and-build">Code and build</h1>
+<p>
+Install and configure maven.
+Open the application package in your IDE.
+<a href="http://www.jetbrains.com/idea/download/">IntelliJ IDEA</a>
+supports opening the <code>example/pom.xml</code> file directly:
+</p>
+<p>
+  <img src="img/intellij_1.png" style="border: solid 1px black" />&nbsp;
+  <img src="img/intellij_2.png" style="border: solid 1px black" />
+</p>
+<p class="note">
+If you are running IntelliJ on a Linux host, you also need to <a
+ href="#running-on-linux">configure the test environment</a>.
+</p>
+<p class="note">
+There are some <a href="../develop-with-vespa.html">known issues</a>
+when using the Eclipse IDE.
+</p>
+<p>
+The example project contains a single <a href="processing.html">request /
+response processor</a> that responds "Hello, World!" to all incoming requests.
+Please note that the <code>Processor</code> is only one of several available
+<a href="how-does-jdisc-work.html">component types</a> that can be deployed.
+To build, do</p>
+<pre class="brush: cli">$ mvn clean install</pre>
+<p>
+from the project root. This builds the complete application package file
+<code>target/application.zip</code>, which you can now deploy and run.
+</p>
+<p>
+The Maven target <em>generate-sources</em> generates the <code>ExampleProcessorConfig</code>
+class from the <code>src/main/resources/example-processor.def</code> file. This is
+exercised when your run the above <em>install</em> target. The simplest way to run this from
+within IntelliJ is to exercise the readily available <em>compile</em> target from the Maven
+interface on its right-hand border:
+</p>
+<p><img src="img/intellij_3.png" style="border: solid 1px black" /></p>
+
+
+<h1 id="deploy-and-run">Deploy and run</h1>
+<p>
+To run your application package, do:
+</p>
+<pre class="brush: cli">
+$ mvn test -Dtest=ApplicationMain
+</pre>
+<p>
+Then, run your <code>Processor</code> using your favourite
+http client, and observe the expected output:
+</p>
+<pre class="brush: cli">
+$ curl http://localhost:8080/processing/
+{"datalist":[{"data":"Hello, services!"}]}
+</pre>
+<p>
+The JDisc Container also has a useful built-in handler that responds
+to <code>'http://localhost:8080/ApplicationStatus'</code>. This
+handler returns information about the deployed application and its
+components, e.g. server ports and URI bindings for request
+handlers. The output is in Json format, so JSONView or another add-on
+is usually needed for nicely formatted output in the browser.
+
+<p>To deploy your application, refer to 
+<a href="cloudconfig/application-packages.html#deploy">application package deployment</a>.</p>
+
+<h1 id="unit-test">Unit testing</h1>
+<p>
+Part of the generated application package is the integration test in
+<code>src/test/java/com/yahoo/example/ApplicationTest.java</code>.
+This test demonstrates how the
+<code><a href="../javadoc/index.html?com/yahoo/application/Application.html">com.yahoo.application.Application</a></code> class can be used to run the JDisc
+Container in a JVM. Not only is this useful for testing, the same approach can be used
+in production on single-vm environments (e.g. grid jobs).
+Notice the <code>com.yahoo.application.container.JDisc</code> class that is accessed by
+the test through <code>app.getJDisc(clusterName)</code>. That class has methods for
+exercising all common <a href="how-does-jdisc-work.html">JDisc component types</a>.
+</p>
+<p class="note">
+Notice how the the test disables the network layer in the call to the
+<code>Application</code> factory method. Unit tests should disable
+the network to allow tests to be run in parallel. However, to have the JDisc
+Container bind to the appropriate network sockets, the network needs to be
+enabled.
+</p>
+
+
+<h1 id="running-on-linux">Running on Linux</h1>
+<p>
+IntelliJ does not pick up custom test profiles from
+your <code>pom.xml</code>. This means that if you are running IntelliJ on a Linux host you
+need to manually configure its test environment with a reference to the
+library path (i.e. <code>$VESPA_ROOT/lib64</code>). The simplest way to do this is to edit the
+default configuration for JUnit.
+</p>
+
+</body>
+</html>

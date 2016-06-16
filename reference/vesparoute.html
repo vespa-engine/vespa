@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vesparoute</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2010" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the HTML version of the man page for the command line
+tool <em>vesparoute</em> &mdash; a tool to inspect Vespa routing
+configuration.
+</p>
+
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vesparoute</strong> - inspect Vespa hops and routes.
+</p>
+
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vesparoute</strong> [options] [file]
+</p>
+
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>vesparoute</em> is a command line tool you can use to inspect Vespa
+routing configurations.
+</p>
+
+
+
+<h1 id="options">Options</h1>
+<dl>
+
+<dt><strong>--documentmanagerconfigid &lt;id&gt;</strong></dt>
+<dd>  Sets the config id that supplies document configuration.</dd>
+<dt><strong>--dump</strong></dt>
+<dd>  Prints the complete content of the routing table.</dd>
+<dt><strong>--help</strong></dt>
+<dd>  Prints this help.</dd>
+<dt><strong>--hop &lt;name&gt;</strong></dt>
+<dd>  Prints detailed information about hop &lt;name&gt;.</dd>
+<dt><strong>--hops</strong></dt>
+<dd>  Prints a list of all available hops.</dd>
+<dt><strong>--identity &lt;id&gt;</strong></dt>
+<dd>  Sets the identity of message bus.</dd>
+<dt><strong>--listenport &lt;num&gt;</strong></dt>
+<dd>  Sets the port message bus will listen to.</dd>
+<dt><strong>--oosserverpattern &lt;id&gt;</strong></dt>
+<dd>  Sets the out-of-service server pattern for message bus.</dd>
+<dt><strong>--protocol &lt;name&gt;</strong></dt>
+<dd>  Sets the name of the protocol whose routing to inspect.</dd>
+<dt><strong>--route &lt;name&gt;</strong></dt>
+<dd>  Prints detailed information about route &lt;name&gt;.</dd>
+<dt><strong>--routes</strong></dt>
+<dd>  Prints a list of all available routes.</dd>
+<dt><strong>--routingconfigid &lt;id&gt;</strong></dt>
+<dd>  Sets the config id that supplies the routing tables.</dd>
+<dt><strong>--services</strong></dt>
+<dd>  Prints a list of all available services.</dd>
+<dt><strong>--slobrokconfigid &lt;id&gt;</strong></dt>
+<dd>  Sets the config id that supplies the slobrok server list.</dd>
+<dt><strong>--trace &lt;num&gt;</strong></dt>
+<dd>  Sets the trace level to use when visualizing route.</dd>
+<dt><strong>--verify</strong></dt>
+<dd>  All hops and routes are verified when routing.</dd>
+
+
+</dl>
+
+
+<h1 id="examples">Examples</h1>
+
+<p>
+The command:
+</p>
+
+<pre class="brush: cli">
+$ vesparoute
+</pre>
+
+<p>
+produces something similar to:
+</p>
+
+<pre class="code">
+There are 3 route(s):
+    1. default
+    2. music
+    3. search/cluster.music
+
+There are 3 hop(s):
+    1. docproc/cluster.music.indexing/chain.music.indexing
+    2. indexing
+    3. search/cluster.music
+</pre>
+
+<p>
+If you supply the binary with a file name, it will be parsed as a feed
+and the output will look similar to what you would expect to see when
+using Document API with trace enabled.
+</p>
+
+<pre class="brush: cli">
+$ vesparoute --verify --route default feed.xml</pre>
+
+<p>
+produces something similar to:
+</p>
+
+<pre class="brush: text">
+The route 'default' has 1 hop(s):
+    1. indexing (verified)
+
+Attempting to route the content of file '$VESPA_HOME/share/vespa/sampleapps/search/musicdata.xml'..
+
+Sending document id:music:music::http://music.yahoo.com/bobdylan/BestOf':
+&lt;trace&gt;
+    [1294174615.505096] Recognized 'indexing' as HopBlueprint(selector = { '[DocumentRouteSelector]' }, recipients = { 'search/cluster.music' }, ignoreResult = false).
+    [1294174615.513502] Running routing policy 'DocumentRouteSelector'.
+    [1294174615.513530] Component 'docproc/cluster.music.indexing/chain.music.indexing' selected by policy 'DocumentRouteSelector'.
+    [1294174615.513535] Resolving 'docproc/cluster.music.indexing/chain.music.indexing search/cluster.music'.
+    [1294174615.513550] Recognized 'docproc/cluster.music.indexing/chain.music.indexing' as HopBlueprint(selector = { 'docproc', 'cluster.music.indexing', '*', 'chain.music.indexing' }, recipients = {  }, ignoreResult = false).
+    [1294174615.513632] Recipient 'docproc/cluster.music.indexing/*/chain.music.indexing' resolved to 1 services, selecting first.
+    [1294174615.513641] Sending message to 'docproc/cluster.music.indexing/0/chain.music.indexing'.
+    [1294174615.513672] Forwarding message.
+    [1294174615.513689] Recognized 'search/cluster.music' as HopBlueprint(selector = { 'search', 'cluster.music', '[SearchColumn]', '[SearchRow]', 'feed-destination' }, recipients = { 'search/cluster.music/c0/r0/feed-destination' }, ignoreResult = false).
+    [1294174615.513705] Running routing policy 'SearchColumn'.
+    [1294174615.514709] Component 'search/cluster.music/c0/[SearchRow]/feed-destination' selected by policy 'SearchColumn'.
+    [1294174615.514714] Resolving 'search/cluster.music/c0/[SearchRow]/feed-destination'.
+    [1294174615.514724] Running routing policy 'SearchRow'.
+    [1294174615.514733] Component 'search/cluster.music/c0/r0/feed-destination' selected by policy 'SearchRow'.
+    [1294174615.514737] Resolving 'search/cluster.music/c0/r0/feed-destination'.
+    [1294174615.514755] Recipient service 'search/cluster.music/c0/r0/feed-destination' verified.
+    [1294174615.514759] Sending message to 'search/cluster.music/c0/r0/feed-destination'.
+    [1294174615.514786] Reached destination.
+    [1294174615.514799] Sending reply.
+    [1294174615.514814] Routing policy 'SearchRow' merging replies.
+    [1294174615.514858] Routing policy 'SearchColumn' merging replies.
+    [1294174615.514983] Routing policy 'DocumentRouteSelector' merging replies.
+&lt;/trace&gt;
+</pre>
+
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>The Chain Builder</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="gv,kraune" />
+</head>
+
+<body>
+<p>
+This document explains how to build chains programmatically by using
+the <em>chain builder</em>. Before proceeding, we should be familiar
+with the fundamental <a href="chained-components.html">chain concepts</a>.
+Building a chain programmatically means that we do not use <em>services.xml</em> to configure the
+chain and its components. Instead, we build a chain directly from Java code. This
+is useful for testing.
+<p>
+
+
+<h2 id="building-a-chain">Building a Chain</h2>
+<p>
+Let us try to build a simple chain of components. For this example, we
+call our components <em>filters</em>. What they do is not important -
+what matters is that all filter classes have a common
+baseclass. First, we define the baseclass and two implementations,
+<code>FilterA</code> and <code>FilterB</code>:
+<pre class="brush: java">
+    static class Filter {}
+    static class FilterA extends Filter {}
+    static class FilterB extends Filter {}
+
+    Filter a = new FilterA();
+    Filter b = new FilterB();
+</pre>
+<p>
+To make the following examples clearer, we will use this helper function to obtain a new
+chain builder for a chain that will be named "myChain":
+<pre class="brush: java">
+    private ChainBuilder&lt;Filter&gt; newChain() {
+        return new ChainBuilder&lt;&gt;("myChain");
+    }
+</pre>
+Now, let's build a chain where filter <code>a</code> is placed before
+filter <code>b</code>:
+<pre class="brush: java">
+    Chain&lt;Filter&gt; chain = newChain().
+            add(a, before(b)).
+            add(b).
+            build();
+</pre>
+<p>
+Or, alternatively:
+<pre class="brush: java">
+    Chain&lt;Filter&gt; chain = newChain().
+            add(a).
+            add(b, after(a)).
+            build();
+</pre>
+The statements <code>before(b)</code> and <code>after(a)</code> are
+calls to static methods in a class called <code>Dependencies</code>,
+so we need to import those. Here is a fully working example:
+<pre class="brush: java">
+import static com.yahoo.yolean.chain.Dependencies.after;
+import static com.yahoo.yolean.chain.Dependencies.before;
+
+class MyChainTest {
+    static class Filter {}
+    static class FilterA extends Filter {}
+    static class FilterB extends Filter {}
+
+    Chain&lt;Filter&gt; getMyChain()
+        Filter a = new FilterA();
+        Filter b = new FilterB();
+
+        return new ChainBuilder&lt;&gt;("myChain").
+                add(a, before(b)).
+                add(b).
+                build();
+    }
+}
+</pre>
+
+
+<h2>Adding Dependencies</h2>
+<p>
+Above, we added components to the chain using the <code>add</code>
+method. Let's take a closer look at how that method is defined:
+<pre class="brush: java">
+  public final ChainBuilder&lt;T&gt; add(T component, Dependencies&lt;? extends T&gt;... dependencies)
+</pre>
+<p>
+As we can see, the builder itself is returned, allowing us to chain
+the <code>add</code> calls. But the most interesting part is its parameters:
+<ol>
+  <li>the component itself
+  <li>one or more <code>Dependencies</code>
+</ol>
+<p>
+Each 'Dependencies' object represents an ordering constraint that
+applies to the component. Remember, there are three <a
+ href="chained-components.html">dependency
+types</a>, and the <code>Dependencies</code> class provides methods for each
+of them:
+<p>
+<dl>
+  
+<dt>provides</dt>
+<dd>Takes a varargs of string labels. Example:
+<pre class="brush: java">
+  provides("removeExplicitLanguage", "familyFilter");
+</pre>
+</dd>
+
+<dt>before</dt>
+<dd>Three separate methods allow adding 'before' constraints. Each
+  method takes a
+  varargs of one of the following: component 
+  <em>instances</em>, component <em>classes</em>, or string labels
+  (something that another component <em>provides</em>). Examples:
+<pre class="brush: java">
+  before(finalFilter, penultimateFilter, &hellip;);
+  before(FinalFilter.class, PenultimateFilter.class, &hellip;);
+  before("final", "penultimate", &hellip;);
+</pre>
+</dd>
+
+<dt>after</dt>
+<dd>Just like 'before', there are separate methods that take either a
+  varargs of component <em>instances</em>, component <em>classes</em>, or
+  string labels (something that another component
+  <em>provides</em>). Examples:
+<pre class="brush: java">
+  after(firstFilter, secondFilter, &hellip;);
+  after(FirstFilter.class, SecondFilter.class, &hellip;);
+  after("first", "second", &hellip;);
+</pre>
+</dd>
+</dl>
+<p>
+Hence, a more complex example of building a chain can look like
+this:
+<pre class="brush: java">
+    Chain&lt;Filter&gt; chain = newChain().
+            add(firstFilter, provides("first"), before(secondFilter, finalFilter)).
+            add(secondFilter, provides("second"), after("first")).
+            add(penultimateFilter, after("first", "second")).
+            add(finalFilter, after(SecondFilter.class, PenultimateFilter.class)).
+            build();
+</pre>
+<p>
+Note that most of these constraints are only added for sake of the
+example. We could, of course, have obtained the same ordering by using
+only a few of them.
+
+
+<h3>Subclasses</h3>
+<p>
+If a component has a before/after dependency on a class, it also has
+the same dependency on all its subclasses. Consider the following
+example, where component <code>a</code> is said to be before all
+instances of class <code>FilterB</code>. This also means that
+component <code>a</code> will be placed before all instances of the
+subclass <code>ExtendsFilterB</code>.
+<pre class="brush: java">
+    static class FilterA extends Filter {}
+    static class FilterB extends Filter {}
+    static class ExtendsFilterB extends FilterB {}
+
+    Filter a = new FilterA();
+    Filter b = new ExtendsFilterB();
+
+    Chain&lt;Filter&gt; chain = newChain().
+                add(a, before(FilterB.class)).
+                add(b).
+                build();
+</pre>
+
+
+
+<h3>Annotation dependencies</h3>
+<p>
+In addition to the dependencies given programmatically, the chain
+builder also honors any <a
+ href="chained-components.html">dependency
+annotations</a> that are given in the implementation
+classes. Any conflicts across these dependencies will also be detected by
+the builder.
+
+
+</body>
+</html>

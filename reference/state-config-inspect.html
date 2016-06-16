@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Config Inspect Interface</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2010" />
+  <meta name="authors" content="eirik" />
+</head>
+
+<body>
+
+<p class="ingress">
+The config inspect interface has been made to make it easy to see
+which configs are used by the application which uses the cloudconfig
+library.
+</p>
+
+<p>
+Here we will describe the way an application must expose the required
+config meta data, so the automated utilities can give you a full
+system overview.
+</p>
+
+<p>
+The config meta data must be available over HTTP. The content type of
+the data returned from the application must be JSON in the format
+given in the example below. The request path used to retrieve the
+information is: <code>/state/v1/config</code>.
+</p>
+
+<p>
+Each component within your application which subscribes to a config
+must be visible in the output. The only required field is the config
+generation returned by the subscriber. An optional message field can
+also be added in case some config values requires a restart to take
+effect.
+</p>
+
+
+
+<h2 id="example">JSON Example</h2>
+
+<pre class="code">
+{
+  &quot;config&quot;: {
+    &quot;component1&quot;: {
+      &quot;generation&quot;: 2
+    },
+    &quot;component2&quot;: {
+      &quot;generation&quot;: 2,
+      &quot;message&quot;: &quot;Restart required for all config values to take effect&quot;
+    }
+  }
+}
+</pre>
+
+<p>
+The component name used should identify part of the application the
+config is used in. And the generation number must be the number for
+the config that is active in the application.
+</p>
+
+<p>
+What we want to capture with this system is to see the main switch for
+the application config. So if you have one major config and some small
+less important ones, onyl the toplevel major config is really
+needed. It allows us to see the glitch between activating a new
+configuration and it being applied to the application and to see if
+something went horribly wrong by it not being applied at all.
+</p>
+
+</body>
+</html>

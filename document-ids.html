@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Document Identifier Schemes</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2016" />
+  <meta name="authors" content="ulf, musum, kraune" />
+</head>
+<body>
+
+<p>
+The document identifiers are URIs, represented by a string, which must
+conform to one of the defined URI schemes for document
+identifiers. All the schemes have the following in common:
+</p>
+
+<dl>
+<dt>Namespace</dt>
+<dd>The namespace is intended to be used to distinguish data from users who share the same
+    Vespa cluster and/or distinguish between different document types in search.
+    Using the namespace it is possible for various verticals to use the
+    same Vespa installation, but still ensure that they do not create
+    document identifier collisions.</dd>
+<dt>User specified part</dt>
+<dd>Here the users are free to specify anything they want.</dd>
+</dl>
+
+<p>
+Several schemes exist because in some cases we want users to be able
+to store related documents together in Vespa. See
+<a href="content/buckets-and-distribution.html">buckets and distribution</a>
+for technicalities. The document identifier scheme
+chosen also affects the  <a
+ href="content/design-overview.html#distribution">document
+distribution</a> in a search cluster. The schemes that exist are:
+</p>
+
+<dl>
+  <dt>id:<em>&lt;namespace&gt;</em>:<em>&lt;document-type&gt;</em>:<em>&lt;key/value-pairs&gt;</em>:<em>&lt;user-specified&gt;</em></dt>
+  <dd><p>
+      The <em>id</em> scheme encompasses the features of the
+      former <em>doc</em>, <em>userdoc</em>, and <em>groupdoc</em>
+      schemes, and is extensible so new features may be added in the
+      future without breaking compatibility. This scheme is required
+      when using indexed search in an elastic setup.
+      </p>
+
+      <p>
+      The &lt;document-type&gt; must correspond to the actual type of
+      the document.  The &lt;key/value-pairs&gt; field contains a
+      comma-separated list of lexicographically sorted key/value pairs
+      that modifies the behaviour of the id scheme. There are
+      currently two supported modifiers, which are mutually exclusive:
+      </p>
+
+      <ul>
+        <li><strong>n=<em>&lt;number&gt;</em></strong>:
+          All documents with the same number will be stored close to
+          each other. This means they can be efficiently visited as a
+          group. The number must be in the range [0,2^63-1].</li>
+        <li><strong>g=<em>&lt;groupname&gt;</em></strong>:
+          Just like n=, but with a name instead of number.</li>
+      </ul>
+
+      <p>
+        If no key/value pairs are specified, the scheme evenly
+        distributes all documents, not forcing any documents to be
+        co-located. This should be the default unless you need good
+        visitor performance when visiting related documents as a subset.
+      </p>
+  </dd>
+</dl>
+
+
+<h1 id="visiting">Optimizing for visiting</h1>
+<p>
+The <strong>n=</strong> or <strong>g=</strong> modifiers in the
+document id scheme should only be used in cases where you are going to
+do visiting on subsets of documents a lot, and you need this to be
+efficient. The subsets of documents you need to extract (that is
+visit) may then be grouped together with a group name or a (user)
+identifier.
+</p>
+
+<p>
+If you decide to use these features, you are manually overriding the
+random distribution. Then you need to pay attention to how you group
+documents and the relative sizes of the resulting groups. When not
+using any scheme modifiers, you don't have to care about this, since
+each document ends up in a random location, and randomness will make
+sure that documents are distributed evenly on the nodes in the system.
+</p>
+
+<p>
+All documents in a group end up in the same location, and if the sizes
+of the groups/locations are skewed, the distribution of documents will
+also be skewed, resulting in non-optimal utilization of system
+resources in multinode Vespa systems. One search node may for instance
+get full disk much faster than the other nodes, thus making it hard to
+utilize the free space on the other nodes.
+</p>
+
+<p>
+To avoid the problem with skewed distributions when grouping data, you
+should take the following points into consideration:
+</p>
+
+<ul>
+  <li>
+    Example: Given that group sizes are even and you have 65536 groups
+    on 50 nodes, we can with 99.7% certainty say that each node
+    contains less than 8% more data than the average node.
+  </li>
+  <li>
+    If less than 8% skew is not good enough in the example, number of
+    groups should be higher.
+  </li>
+  <li>
+    If number of nodes increases, number of groups should be higher.
+  </li>
+  <li>
+    The group sizes need to be small enough for a random distribution to
+    even out the size differences between the total size of groups assigned to
+    each node.
+  </li>
+  <li>
+    If you know in advance which groups will become large, you may fix the
+    problem by splitting them into smaller groups.
+  </li>
+</ul>
+
+<p>
+Check out <a href="content/design-overview.html#distribution">document
+distribution</a> for more details.
+</p>
+
+</body>
+</html>

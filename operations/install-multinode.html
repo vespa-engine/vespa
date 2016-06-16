@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+<title>Multinode Installation</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="January 2013" />
+<meta name="authors" content="daljord, musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document explains how to set up a multinode Vespa system.
+Readers are expected to know how to 
+<a href="../vespa-quick-start.html">set up a single-node system</a>.
+Installing Vespa (on each node), deploying applications, 
+feeding data and searching is done the same way 
+as described in the quick-start for single-node instances.
+</p>
+
+<p class="alert alert-success">
+Before setting a system into production, it is a good idea to
+do <a href="../performance/sizing-search.html">sizing</a> and
+<a href="../performance/vespa-benchmarking.html">benchmarking</a>
+exercise to detemine how many nodes you need to meet capacity.
+For production systems the smallest size of any cluster should
+be 2 for redundancy. The same nodes may run multiple clusters
+at the same time.
+</p>
+
+<h1 id="step-by-step">Installing and Running Step-by-Step</h1>
+
+<li><strong>Install:</strong>
+
+<p>Install Vespa on each node exactly as you would for a single-node
+instance. Even though the nodes may have different roles, they all have exactly the
+same software packages.
+
+<li><p><strong>Create a multinode application:</strong>
+
+We'll extend the example application in
+<code>$VESPA_HOME/share/vespa/sampleapps/search/music</code> to specify multiple nodes. 
+
+<pre class="brush: cli">
+$ cd [your working directory]
+$ cp -r $VESPA_HOME/share/vespa/sampleapps/search/music music-multinode
+</pre>
+
+<p>
+List all the host that should be part of the system in
+<em>music-multinode/hosts.xml</em>. For example
+</p>
+
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;hosts&gt;
+  &lt;host name="node1.host.com"&gt;
+    &lt;alias&gt;config0&lt;/alias&gt;
+  &lt;/host&gt;
+  &lt;host name="node2.host.com"&gt;
+    &lt;alias&gt;container0&lt;/alias&gt;
+  &lt;/host&gt;
+  &lt;host name="node3.host.com"&gt;
+    &lt;alias&gt;content0&lt;/alias&gt;
+  &lt;/host&gt;
+  &lt;host name="node4.host.com"&gt;
+    &lt;alias&gt;content1&lt;/alias&gt;
+  &lt;/host&gt;
+&lt;/hosts&gt;
+</pre>
+
+<p>The hosts.xml file simply provides an alias for each hostname such that the services file can refer to hosts by alias. The aliases are just ids and carry no meaning.</p>
+
+Now, modify <code>music-multinode/services.xml</code> as follows:
+<pre class="code">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;services version="1.0"&gt;
+
+  &lt;admin version="2.0"&gt;
+    &lt;adminserver hostalias="<span class="marker1">config0</span>" /&gt;
+    <span class="marker1">&lt;slobroks&gt;
+      &lt;slobrok hostalias="config0"/&gt;
+      &lt;slobrok hostalias="container0"/&gt;
+    &lt;/slobroks&gt;</span>
+  &lt;/admin&gt;
+
+  &lt;jdisc version="1.0"&gt;
+    &lt;search /&gt;
+    &lt;nodes&gt;
+      &lt;node hostalias="<span class="marker1">container0</span> /&gt;
+    &lt;/nodes&gt;
+  &lt;/jdisc&gt;
+
+  &lt;content id="music" version="1.0"&gt;
+    &lt;redundancy&gt;2&lt;/redundancy&gt;
+    &lt;documents&gt;
+      &lt;document type="music" mode="index" /&gt;
+    &lt;/documents&gt;
+    &lt;nodes&gt;
+      &lt;node hostalias="<span class="marker1">content0</span>" distribution-key="0"/&gt;
+      <span class="marker1">&lt;node hostalias="content1" distribution-key="1"/&gt;</span>
+    &lt;/nodes&gt;
+  &lt;/content&gt;
+
+&lt;/services&gt;
+</pre>
+
+
+<p>
+We have replaced all node1
+references with the appropriate node alias for the new multinode
+layout. We also added a new
+<a href="slobrok.html">location broker</a> node for redundancy. For
+content, we have changed the redundancy (number of copies of
+each document) from 1 to 2, and added a new content node.
+Notice that it is possible to run any combination of services
+on the same node by adding the same alias multiple places.
+It is also possible to make changes to the set of nodes
+and redeploying while the system is serving queries and receiving writes.
+When you make changes to content clusters the system will gradually redistribute
+the stored data to the new nodes.
+</p>
+
+<p>
+    Explanations of the different parts
+    of <code>services.xml</code> are found in the <a
+    href="../reference/application-packages-reference.html">application
+    package reference</a> doc.
+    The <a href="../service/performance/hardware-recommendations.html#allocation">Recommended
+    hardware configuration</a> doc
+    gives some recommendations on the service distributions in multinode
+    setups.
+</p>
+
+
+<li><p><strong>Start config server(s):</strong> All vespa nodes need
+to know where to find the vespa config servers of the system as that will tell them what they should do
+(which again is determined by your application package). In addition, Vespa needs to be started on each node.
+</p>
+
+<p>On each node, run
+<pre class="brush: cli">
+TODO: Command to set config server host # Use a comma-separated list when specifying multiple servers
+TODO: Command to start services
+</pre>
+
+<p>
+In addition, you need to start the config server on the nodes listed under the admin service in services.xml only:
+</p>
+
+<pre class="brush: cli">
+TODO: Command to start config server
+</pre>
+
+</li>
+
+<li><p><strong>Deploy application:</strong>
+Now we are ready to deploy the multinode application, whcih is done once on any of the config server nodes,
+precisely the same way as for a single node system:
+
+<pre class="brush: cli">
+$ deploy prepare music-multinode
+$ deploy activate
+</pre>
+
+<p>The config server you deploy to will copy the application to any other config servers for redundancy
+and determine the detailed configuration to send to each of the other nodes.
+Whenever you want to change the application package, just do so and redeploy in exactly the same way.
+The config servers will figure out the delta and push it to the other nodes of the system, which
+in most cases will apply them safely while live. If the change cannot be safely done while the node
+is running it will hold off applying it until it is restarted. In cases where a restart is needed you'll be
+notified in the response from running deploy. It is also possible to deploy remotely over a web service API.</p>
+
+<p>With the deploy step the application should be up and running and you can feed data and query it
+as described e.g in the quick start. You can use the logfmt command to verify that there are no
+ERRORS and WARNINGS in the log. The log on config servers contains the messages from all the nodes in the system
+while other nodes only contain their own locally produced messages.</p>
+
+</ol>
+
+</body>
+</html>

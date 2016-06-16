@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>String segment match</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="December 2007">
+  <meta name="authors" content="bratseth">
+</head>
+
+<body>
+
+<h1>String segment match</h1>
+
+<p class="ingress">
+The <strong>string segment match</strong> algorithm computes a set of metrics -
+the <strong>string segment match metrics</strong> - intended to capture all the
+information about how well a <em>query</em> string matches a
+<em>field</em> string, which is useful for document ranking in search,
+from the limited information usually available during matching in
+search engines.
+</p>
+
+<p>
+The algorithm works by locating <em>segments</em>, which are local
+regions in the field which contain one or more adjacent terms of the
+query. All segment start points in the field are explored, and the
+ones which produce the best overall segmentation are
+chosen. Informally, a segmentation is good if it contains few segments
+with the query matches close together.
+</p>
+
+<p>Example:
+
+<img align="center" src="../img/reference/relevance/segment-example.png"/>
+
+<p>
+Here two segments are found to cover the query. An alternative second
+segment is also found, but is discarded because it has inferior query
+term proximity. The other lone "Bush" instance is never considered
+because there is no segmentation causing "Bush" to be a segment start
+token (i.e. there is no lone "George").</p>
+
+<p>
+A subset of the metrics are computed from the tokens <em>within</em>
+located segments, while another subset of metrics characterizes the
+number and placement of the segments themselves. This allows the
+metrics to reflect the property of natural language that tokens which
+are very close are often part of the same meaning (typically as parts
+of the same sentence) while somewhat more distant tokens are only
+weakly related.</p>
+
+<p>
+Queries typically consists of multiple intended segments, where each
+segment is continuous and in order, while the ordering between the
+segments is of little significance (although the more important
+segments tend to come first).</p> By matching the query in term order
+to the best and fewest segments of the field, this algorithm makes use
+of the available field data to discover the likely query segmentation
+from the evidence. Explicit segmentation information can also be used
+in the form of connectivity scores which influences the segment scores
+and thus the chosen segments.</p>
+
+
+
+<h1 id="source-information">Source information</h1>
+
+<p>The information used by this algorithm to calculate these metrics are
+
+<ul>
+	<li>The position of each occurrence of a <em>matched</em> term in the query and field
+	<li>The number of terms in the query and field
+	<li>A number per query term indicating the weight (importance) of each query term
+	<li>A number per query term indicating the relative frequency of the term
+	<li>A number per adjacent query term pair indicating the linguistic connectivity between the terms
+</ul>
+
+Where the last three are optional.
+</p>
+
+
+<h1 id="algorithm">The algorithm</h1>
+
+<p>The algorithm locates segments from a given start query term as follows:
+
+<pre>
+i = the position of the first query term
+j = the position of the first match of the query term at i
+while (i &lt; query.length) {
+    nextJ = the first location of query term i+1 at most <code>proximityLimit</code> steps to the right of j
+    if (nextJ not found)
+        nextJ = the first location query term i+1 at most <code>prixmityLimit</code> steps to the left backwards of j
+
+    if (nextJ is found) { // Find next token in this segment
+        i = i+1
+        j = nextJ
+    }
+    else {
+        nextJ = the first location of query term i+1 at any location to the right forwards from j
+        if (nextJ not found)
+            nextJ = the first location of query term i+1 at any location to the left backwards from j
+        if (nextJ not found) { // Skip a nonexisting query term
+        	i = i+1
+        }
+        else { // End of segment
+            return i,j as the segment end
+        }
+    }
+}
+</pre>
+
+<p>So a segment is a set of terms in the field which corresponds to an adjacent subsection of query
+terms where the gap between any adjacent query term in the field is at most <code>proximityLimit</code>
+forwards or backwards, and where query terms not present in the field are ignored.</p>
+
+<p>Let's call the field term search order used above the <em>semantic distance</em> between two field position.
+So, for example
+<ul>
+	<li>the semantic distance between j and nextJ is n if nextJ is located n places after j and n&lt;<code>proximityLimit</code>
+	<li>the semantic distance between j and nextJ is <code>proximityLimit</code>+n if nextJ is located n places to the <em>left</em> of j and
+n&lt;<code>proximityLimit</code>
+</ul>
+
+<p>The algorithm explores tokens and segments in the semantic distance space. The algorithm works with any definition of semantic distance.</p>
+
+<p>The algorithm will record for each segment start point:
+<ul>
+	<li>metrics - The current best known metrics of the combined segments up to this point
+	<li>previousJ - The end j of the previous segment in the field  (if any)
+	<li>i - the query term i which is the start of this segment
+	<li>semanticDistanceExplored - the distance from previousJ explored so far
+	<li>open - whether there are possibly more j's to find beyond semanticDistanceExplored
+</ul>
+
+<p>With this, we can list the high level pseudocode of the algorithm:
+
+<pre>
+currentSegment=a segment start point at starting at i=0 (the start of the query)
+while (there are open segment start points) {
+    newSegment=find the next segment, at currentSegment.i with semanticDistance &gt; currentsegment.semanticDistance
+    if (no newSegment) {
+        currentSegment.open = false
+        continue;
+    }
+    SegmentStartPoint existingStartPoint=find stored segment at start point newSegment.i+1
+    if (no existingStartPoint) {
+        create and store a new (empty open) segment start point at newSegment.i+1
+    }
+    else {
+        if (newSegment.score &gt; existingStartPoint.score) {
+            existingStartPoint.metrics.score = newSegment.metrics.score
+            existingStartPoint.previousJ = newSegment.endJ
+            existingStartPoint.semanticDistanceExplored = newSegment.semanticDistance+1
+        }
+    }
+    currentSegment=the next open start point (in the order they are found)
+}
+finalMetrics=metrics of segmentStartPoint at query.length
+</pre>
+
+<p>The metric.score deciding which of two segmentation paths is best is <code>absoluteProximity/segments^2</code>.
+Any combination of metrics which can be calculated for a partial segmentation may be used.</p>
+
+
+
+<h1 id="complexity">Complexity</h1>
+
+<p>The algorithm uses a linear programming technique to avoid recomputing earlier segments. A constant amount
+of data is stored per possible segment start point. Since there are at most as many start points as there are
+query terms, the memory complexity is
+
+<blockquote>
+O(query.length)
+</blockquote>
+
+<p>As the algorithm will try all possible segment starting points (up to a limit), and there are at most one
+starting point per query term, the time complexity is
+
+<blockquote>
+O(query.length*total number of term occurrences)
+</blockquote>
+</p>
+
+<p>The average time complexity is
+
+<blockquote>
+O(average segment length/average number of term occurrences)
+</blockquote>
+
+
+
+<h1 id="metric-set">The string segment match metric set</h1>
+
+<p>The complete string segment match metrics set, computed by this algorithm, is
+
+<ul>
+<li>match
+<li>proximity
+<li>completeness
+<li>queryCompleteness
+<li>fieldCompleteness
+<li>orderness
+<li>relatedness
+<li>earliness
+<li>longestSequenceRatio
+<li>segmentProximity
+<li>unweightedProximity
+<li>absoluteProximity
+<li>occurrence
+<li>absoluteOccurrence
+<li>weightedOccurrence
+<li>weightedAbsoluteOccurrence
+<li>significantOccurrence
+<li>weight
+<li>significance
+<li>importance
+<li>segments
+<li>matches
+<li>outOfOrder
+<li>gaps
+<li>gapLength
+<li>longestSequence
+<li>head
+<li>tail
+<li>segmentDistance
+</ul>
+
+<p>These are documented as the features prefixed by
+<code>fieldMatch(<em>name</em>)</code> <a href="rank-features.html#field-match-features">here</a>.</p>
+
+<p>The metric set contains both low level, unnormalized metrics corresponding directly to a concept in
+the string segment match algorithm (e.g <code>segments</code>, <code>gaps</code>), normalized basic features
+(e.g. <code>proximity</code>, <code>queryCompleteness</code>), normalized metrics combining lower level
+metrics into some useful part of the truth (e.g. <code>completeness</code>, <code>orderness</code>)
+as well as a metric combining most of the others into one normalized value (<code>match</code>).
+Applications will choose the subset of the metrics which captures the properties they determine
+is important, at the granularity which is convenient.</p>
+
+
+
+<h1 id="configuration_parameters">Configuration parameters</h1>
+
+<p>The algorithm has the following configuration parameters, where the three first are fundamental
+parameters of the algorithm, and the others are used to normalize or combine certain features.
+
+<table>
+<tr><th>Parameter<th>Default<th>Description
+
+<tr><td><code>proximityLimit</code><td>10<td>
+The maximum allowed gap within a segment.
+
+<tr><td><code>proximityTable</code><td>1/(2^(i/2)/3) for i in 9..0 followed by 1/2^(i/2) for i in 0..10<td>
+The proximity table deciding the importance of separations of various distances,
+The table must have size proximityLimit*2+1, where the first half is for reverse direction
+distances. The table must only contain values between 0 and 1, where 1 is "perfect" and 0 is "worst".
+
+<tr><td><code>maxAlternativeSegmentations</code><td>10000<td>
+The maximum number of <em>alternative</em> segmentations allowed in addition to the first one found.
+This will prefer to not consider iterations on segments that are far out in the field,
+and which starts late in the query.
+
+<tr><td><code>maxOccurrences</code><td>100<td>
+The number of occurrences the number of occurrences of each word is normalized against.
+This should be set as the number above which additional occurrences of the term has no real significance.
+
+<tr><td><code>proximityCompletenessImportance</code><td>0.9<td>
+A number between 0 and 1 which determines the importance of field completeness in relation to
+query completeness in the <code>match</code> and <code>completeness</code> metrics.
+
+<tr><td><code>relatednessImportance</code><td>0.9<td>
+The normalized importance of relatedness used in the <code>match</code> metric.
+
+<tr><td><code>earlinessImportance</code><td>0.05<td>
+The importance of the match occuring early in the query, relative to segmentProximityImportance,
+occurrenceImportance and proximityCompletenessImportance in the <code>match</code> metric.
+
+<tr><td><code>segmentProximityImportance</code><td>0.05<td>
+The importance of multiple segments being close to each other, relative to earlinessImportance,
+occurrenceImportance and proximityCompletenessImportance in the <code>match</code> metric.
+
+<tr><td><code>occurrenceImportance</code><td>0.05<td>
+The importance of having many occurrences of the query terms, relative to earlinessImportance,
+segmentProximityImportance and proximityCompletenessImportance in the <code>match</code> metric.
+
+<tr><td><code>fieldCompletenessImportance</code><td>0.05<td>
+A number between 0 and 1 which determines the importance of field completeness in relation to
+query completeness in the <code>match</code> and <code>completeness</code> metrics.
+
+</table>
+
+<p>See <a href="../ranking.html#feature_configuration">feature configuration in the ranking introduction</a>
+on how to configure these in Vespa.</p>
+
+
+
+<h1 id="reference_implementation">Reference implementation</h1>
+
+<p>A standalone reference algorithm implementation computing these metrics from strings is available.</p>
+<ul>
+	<li><a href="ssm.jar">Java executable</a> - run using <code>java -jar ssm.jar "query string" "field string"
+	<li><a href="string-segment-match-source.zip">Java source code</a>
+</ul>
+
+
+<p class="footer"><a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>, December 2007</p>
+
+</body>
+</html>
+
+

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Changing a Live Configuration</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2016" />
+  <meta name="authors" content="musum,kraune" />
+</head>
+
+<body>
+
+<p>
+This article describes how you can do configuration changes to your
+Vespa system without getting into trouble.  Be aware that you
+should <em>always</em> test the changes in a staging system before
+applying it to your production system.  Changes to search definitions
+are discussed
+in <a href="changing-live-searchdefinitions.html">Changing a live
+search definition</a>.
+</p>
+
+<p>
+Deploying new configuration is done by altering
+your <a href="cloudconfig/application-packages.html">application package</a>,
+running <a href="cloudconfig/application-packages.html#deploying_vespa_applications">deploy prepare</a>
+and doing <code>deploy activate</code> to start serving the new
+config. You may need to do restart Vespa too
+(if you cannot find the change you are about to do described here,
+assume that you need to restart). Remember
+that running <code>deploy prepare</code> will not change served
+configurations until you run <code>deploy activate</code>.
+<code>deploy prepare</code> will
+warn you about all config changes that require restart.</p>
+
+
+
+<h1 id="add-remove-nodes">Add or Remove Nodes</h1>
+<p>
+Please refer to <a href="operations/elastic-vespa.html">Elastic Vespa</a> for details on how to add/remove capacity from a Vespa cluster.
+</p>
+
+
+<h1 id="add-remove-services">Add or Remove Services on a Node</h1>
+<p>
+It is possible to run multiple Vespa services on the same host.  If
+you are changing the services on a given host, you must
+stop Vespa on the given host before
+running <code>deploy activate</code>.  This is because the
+services will be allocated port numbers depending on what is running
+on the host. You should carefully consider if some of the services you
+change are used by services on other hosts.  In that case, services
+will need to be restarted on thos hosts too. The procedure will be as
+follows:
+</p>
+
+<ol>
+  <li>Edit <em>services.xml</em> and <em>hosts.xml</em></li>
+  <li>Stop Vespa on the nodes that have changes</li>
+  <li>Run <code>deploy prepare</code>
+      and <code>deploy activate</code></li>
+  <li>Start Vespa on the nodes that have changes</li>
+</ol>
+
+
+
+<h1 id="change-searchcluster">Search Cluster Changes</h1>
+<p>
+In general, be very careful when doing changes to your search cluster
+settings, and <em>always</em> test it thoroughly before applying the
+changes to your production system. Deploying bad configurations to an
+already running system might result in data loss and other unforeseen
+troubles.
+</p>
+
+
+<h2 id="add-remove-cluster">Add/remove Search Cluster</h2>
+<p>
+When adding a new search cluster to your application, be careful to
+add it <em>after</em> the existing search cluster definitions in
+the <em>services.xml</em> file.
+</p>
+
+<ol>
+    <li>Edit <em>services.xml</em></li>
+    <li>Run <code>deploy prepare</code></li>
+    <li>Run <code>deploy activate</code></li>
+    <li>Start <code>services</code> on the new nodes</li>
+    <li>Restart QR servers</li>
+    <li>Feed data to the new cluster</li>
+</ol>
+
+
+<h2 id="add-remove-sd-search">Add/Remove Search Definition in the Same Search Cluster</h2>
+<ol>
+    <li>Add/remove the search definition (.sd) file in
+        the <em>searchdefinitions</em> directory</li>
+    <li>Edit <em>services.xml</em></li>
+    <li>Run <code>deploy prepare</code></li>
+    <li>Run <code>deploy activate</code></li>
+    <li>Restart QR servers. FIXME: is there a need to restart distributors and search/storage nodes?</li> <!-- In the doc humbe wrote in 2013 it was documented that distributors and storage/search nodes needed restart -->
+    <li>Feed data for the new search definition</li>
+</ol>
+
+
+<h2 id="add-remove-sd-storage">Add/Remove Search Definition in a Storage Cluster</h2>
+<p>
+Note that your application might have both search and storage running,
+in that case follow the procedure for search (tip: for faster
+re-feeding, configure a route to search only for faster feeding).
+</p>
+
+<ol>
+  <li>Add/remove the search definition (.sd) file in
+      the <em>searchdefinitions</em> directory</li>
+  <li>Run <code>deploy prepare</code></li>
+  <li>Run <code>deploy activate</code></li>
+</ol>
+
+
+<h2 id="add-remove-qrs-plugin">Add/Remove Searchers and Document Processors</h2>
+<p>
+See the <a href="jdisc/chained-components.html">Chained components</a>
+documentation for description of how to add or remove searchers.
+</p>
+
+
+
+<h1 id="change-docproc">Document Processing Cluster Changes</h1>
+
+<h2 id="add-remove-docproc">Add/Remove/Modify Document Processor Chains</h2>
+
+<p>
+Document processing chains can be added, removed and modified at
+runtime. Modification includes adding/removing document processors in
+chains and changing names of chains and processors etc.
+</p>
+
+<p>
+In short,
+</p>
+
+<ol>
+  <li>Make the necessary adjustments in <em>services.xml</em></li>
+  <li>Run <code>deploy prepare</code></li>
+  <li>Run <code>deploy activate</code></li>
+</ol>
+
+<p>
+Note that when you are adding or modifying a processing chain in a
+running cluster; if you at the same time are deploying a <em>new</em>
+document processor (i.e.  a document processor that was unknown to
+Vespa at the time the cluster was started), there are a few things to
+note:
+</p>
+
+<ol>
+  <li>On each docproc node in the cluster, telnet to port 19098</li>
+  <li>Type <code>ls</code></li>
+  <li>Type <code>restart docprocservice</code>, and/or <code>restart
+      docprocservice2</code>, <code>restart docprocservice3</code> and
+      so on</li>
+  <li>Type <code>quit</code></li>
+</ol>
+
+</body>
+</html>

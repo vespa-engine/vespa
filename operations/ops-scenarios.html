@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Operational Scenarios</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2016" />
+  <meta name="authors" content="kraune,musum" />
+</head>
+<body>
+  
+<p>
+This document describes various scenarios that may occur when running Vespa.
+<a href="admin-procedures.html">Procedures and tools</a> is also useful in this context.
+</p>
+
+
+<h1 id="error-scenarios">Error Scenarios and Recovery</h1>
+
+<p>
+This section describes how different Vespa services/nodes may fail. It
+lists the different cases, how to detect them, what impact they have
+on a running system, and how to recover. There are three kinds of
+failures covered in this document:
+</p>
+
+<dl>
+  <dt>Crash, without loss of data</dt>
+  <dd>
+    A service or node crashes/restarts. All data kept in memory is
+    lost, but data on disk is unaffected. Restarting the
+    node/service may happen automatically or require manual
+    intervention.
+  </dd>
+
+  <dt>Crash, with loss of data</dt>
+  <dd>
+    A service or node crashes. All data kept in memory is lost,
+    data on disk is lost or corrupted (e.g. a disk in a RAID0
+    system fails). The node will require reinstallation before it
+    can be put back into use.
+  </dd>
+
+  <dt>Node replacement</dt>
+  <dd>
+    Catastrophic hardware failure on the node (e.g. motherboard
+    or CPU failure). A replacement node is needed to get the
+    system running in a reasonable time. This can be either one of
+    the other nodes in the system, an installed hot-spare node, or
+    a completely new machine.
+  </dd>
+</dl>
+
+
+<h2 id="failure-scenarios">Failure Scenarios</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Scenarios</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Feeder</td>
+      <td>
+        <a href="#feeder-add-replace">Add/Replace feeder node</a>
+      </td>
+    </tr>
+    <tr>
+      <td>Configuration Server</td>
+      <td>
+        <a href="#config-memory">Out of memory</a>, 
+        <a href="#config-replace">Node replacement</a>
+      </td>
+    </tr>
+    <tr>
+      <td>Query Result Server</td>
+      <td>
+        <a href="#qrs-crash">Failure (no loss of data)</a>, 
+        <a href="#qrs-crash-loss">Failure (loss of data)</a>, 
+        <a href="#qrs-replace">Node replacement</a>
+      </td>
+    </tr>
+    <tr>
+      <td>Storage Node</td>
+      <td>
+        <a href="#storage-crash">Failure (no loss of data)</a>,
+        <a href="#storage-crash-partial-loss">Failure (partial loss of data)</a>,
+        <a href="#storage-crash-loss">Failure (loss of data)</a>,
+        <a href="#storage-replace">Node replacement</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2 id="feeder">Feeder</h2>
+
+<h3 id="feeder-add-replace">Add/Replace Feeder Node</h3>
+<p>
+  Change designated feeder nodes on a system (e.g. add, remove, replace)
+</p>
+<p>
+    <ol>
+      <li>Update <em>hosts.xml</em> (add/remove feeder nodes)</li>
+      <li>Deploy the application package: <em>deploy prepare &amp;&amp; deploy activate</em></li>
+      <li>start vespa on the new nodes</li>
+    </ol>
+</p>
+
+
+    <h2 id="config-server">Config server</h2>
+    <h3 id="config-memory">Out of memory</h3>
+      <p>
+        Undefined behavior,
+        config requests are likely to fail, but the running config proxy
+        on each node have cached config that will be used.
+        New programs using previously unused config will
+        not start. New feeds will fail if feeder application uses
+        config system. Existing indexes will keep serving queries
+        provided all processes are up. Any stopped services will not
+        be able to restart.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>Restart config server</li>
+        <li>Restart failed services, if necessary</li>
+      </ol>
+
+    <h3 id="config-replace">Node replacement</h3>
+      <p>
+        New programs using config
+        will not start, existing programs will keep running, but not
+        get any new config.  New feeds will fail if feeder application
+        uses config system. Currently running feeds will continue
+        unaffected, but documents will not be indexed (indexer will
+        fail to start). Existing indexes will keep serving queries
+        provided all processes are up. Any stopped services will not
+        be able to restart.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>Copy configuration to new node</li>
+        <li>
+          Change IP address of the new node to the same as the old
+          configserver
+        </li>
+        <li>Start new configserver</li>
+      </ol>
+
+
+    <h2 id="qrs">QR server</h2>
+    <h3 id="qr-crash">Failure, without loss of data</h3>
+      <p>
+        QR server service or node
+        fails, losing all information stored in memory but not
+        information stored on disk. Not possible to query the
+        system unless redundant QR servers are available. If document
+        summary configuration has been updated but data not yet
+        reindexed, this QR server will not be able to handle queries
+        after it is restarted. QR server will start with empty cache,
+        which may affect performance. Document feeding and indexing is
+        unaffected.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>start vespa</li>
+        <li>
+          If document summary has changed, take QR server out of
+          service until data has been reindexed.
+        </li>
+      </ol>
+
+
+    <h3 id="qr-crash-loss">Failure, with loss of data</h3>
+      <p>
+        QR server service or node
+        fails, losing all information stored in memory. All data
+        stored on disk lost, requiring reinstallation.
+        Not possible to query the
+        system unless redundant QR servers are available. If document
+        summary configuration has been updated but data not yet
+        reindexed, this QR server will not be able to handle queries
+        after it is restarted.  QR server will start with empty cache,
+        which may affect performance. Document feeding and indexing is
+        unaffected.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>Reinstall and start Vespa</li>
+        <li>
+          If document summary has changed, take QR server out of
+          service until data has been reindexed.
+        </li>
+      </ol>
+
+
+    <h3 id="qr-replace">Node replacement</h3>
+      <p>
+        QR server node fails,
+        requiring replacement node.
+        Not possible to send
+        queries to the system unless QR servers are available. If
+        document summary configuration has been updated but data not
+        yet reindexed, this QR server will not be able to handle
+        queries after it is restarted. QR server will start with empty
+        cache, which may affect performance. Document feeding and
+        indexing is unaffected.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>Update and deploy configuration (change QR server host)</li>
+        <li>Install Vespa on new node and start it</li>
+        <li>
+          If document summary has changed, take QR server out of
+          service until data has been reindexed.
+        </li>
+      </ol>
+
+
+   <h2 id="storagenode">Storagenode</h2>
+    <h3 id="storage-crash">Failure, without loss of data</h3>
+      <p>
+        Storagenode crashes/restarts without loss of data.
+        If the system has only
+        one node, feeding and queries will fail. If the system has 
+        multiple nodes and is configured with only one copy 
+        (<a href="../reference/services-storage.html#cluster">storage
+        cluster redundancy level</a>), feeding will go to remaining 
+        nodes, while returned hits will be partial, i.e. not include 
+        results from the failed node. If the system has multiple nodes, 
+        configured with multiple copies, and all documents were at the 
+        configured redundancy level at the time of the failure, there 
+        will be no impact on neither feeding nor returned hits. The 
+        remaining nodes will have to handle extra feed load and query 
+        traffic that would otherwise have hit the failed node. Data 
+        belonging to the failed node that was fed to other nodes will 
+        automatically be merged back to the failed node when it comes 
+        back up again.
+      </p>
+      <p>
+        <dt>Recovery:</dt>
+      </p>
+      <ol>
+        <li>Restart Vespa on node</li>
+        <li>Inspect status of any running feeds</li>
+        <li>Restart feeds if they have stopped</li>
+      </ol>
+
+
+    <h3 id="storage-crash-partial-loss">Failure, with partial loss of data</h3>
+      <p>
+        A data disk on the
+        storagenode fails. When the storagenode process gets 
+        a disk error, it automatically marks the disk as bad in the 
+        <a href="#disk-failure">disks.status
+        file</a>, and automatically restarts with the remaining 
+        disks in service. <em>Impact:</em> Same as for scenario
+        without loss of data
+      </p>
+      <p>
+        <dt>Recovery:</dt> If the system has only
+        one node or is configured with only one copy,
+        no recovery is possible. The
+        only solution is to replace the failed disk and feed all 
+        documents again. If the system has multiple nodes, configured 
+        with multiple copies, and all documents were at the configured 
+        redundancy level at the time of the failure, the storage system 
+        will automatically recover by making extra copies of the 
+        documents that had too few copies after the failure, to reach 
+        the configured redundancy level. It will still make sense to 
+        replace the disk, in order to keep the same capacity for the 
+        system as before.
+      </p>
+      <ol>
+        <li>Replace bad disk(s)</li>
+        <li>Configure replaced storage disk(s)</li>
+        <li>
+          Remove error message for the disk(s) in 
+          <a href="#disk-failure">disks.status
+          file</a>
+        </li>
+        <li>Restart Vespa on node</li>
+        <li>Inspect status of any running feeds</li>
+        <li>Restart feeds if they have stopped</li>
+      </ol>
+
+
+    <h3 id="storage-crash-loss">Failure, with loss of data</h3>
+      <p>
+        Storagenode crashes with
+        loss of all data on all disks, requiring reinstallation of node.
+        <em>Impact:</em> Same as for scenario
+        without loss of data
+      </p>
+      <p>
+        <dt>Recovery:</dt> If the system has only
+        one node or is configured with only one copy,
+        no recovery is possible. The
+        only solution is to replace the failed hardware and feed all 
+        documents again. If the system has multiple nodes, configured 
+        with multiple copies, and all documents were at the configured 
+        redundancy level at the time of the failure, the storage system 
+        will automatically recover by making extra copies of the 
+        documents that had too few copies after the failure, to reach 
+        the configured redundancy level. It will still make sense to 
+        replace the hardware, in order to keep the same capacity for the 
+        system as before.
+      </p>
+      <ol>
+        <li>Replace bad disks</li>
+        <li>Reinstall Vespa on node</li>
+        <li>Configure replaced storage disks</li>
+        <li>Start Vespa on node</li>
+        <li>Inspect status of any running feeds</li>
+        <li>Restart feeds if they have stopped</li>
+      </ol>
+
+
+    <h3 id="storage-replace">Node replacement</h3>
+      <p>
+        Storagenode fails, requiring replacement node.
+        <em>Impact:</em> Same as for scenario without loss of data
+      </p>
+      <p>
+        <dt>Recovery:</dt> Same comment as for 
+        scenario with loss of data
+      </p>
+      <ol>
+        <li>Install Vespa on new node</li>
+        <li>Configure storage data disks</li>
+        <li>Update configuration (change storagenode host)</li>
+        <li>Deploy application and activate configuration</li>
+        <li>Start Vespa on new node</li>
+        <li>Inspect status of any running feeds</li>
+        <li>Restart feeds if they have stopped</li>
+      </ol>
+
+
+
+
+    <h1 id="system-expansion">System expansion</h1>
+    <p>
+    Please refer to <a href="elastic-vespa.html">Elastic Vespa</a> for details on how to add/remove capacity from a Vespa cluster.
+    Please refer to <a href="../live-changes-setup.html">Changing a Live Configuration</a> for details on how to add Search clusters and document types.
+    </p>
+
+ 
+
+    <h1 id="node-in-multiple-clusters">Node being part of multiple vespa systems</h1>
+    <p>
+    The most common cause for this issue is that there are two separate
+    Vespa systems, A and B, that both have included the search node in
+    their configuration.
+    </p>
+    
+    <p>
+    Assume you are running system A, and know for sure that you
+    are the rightful owner of the node in question. However, one of the
+    engineers responsible for system B entered the wrong hostname
+    in <em>hosts.xml</em> by mistake, and now both systems A and B try
+    to use our node as one of their own.
+    </p>
+    
+    <p>
+    To see if cluster controllers
+    are trying to communicate with your proton process,
+    you need to use <code>netstat</code> and grep for the port number used
+    for the proton rpc server.
+    </p>
+
+  
+    <h2>Impact</h2>
+    <p>
+    The node will receive feed from both installations, possibly with documents
+    that it cannot properly deserialize. If the document serialization is fragile
+    with relation to such mishaps, then the node might crash. Various guards in
+    the vespa model to prevent issues due to inconsistencies in the system wide
+    configuration will not be effective, increasing the fragility. Feeding
+    might stop for both installations.
+    </p>
+    
+    <p>
+    The node will receive query load from both installations, possibly referencing
+    fields it doesn't know anything about. The qr server might not be able to
+    deserialize the document summaries.
+    </p>
+    
+    <p>
+    The node will be targeted by distributors from both
+    installations, resulting in potential leakage of documents and removals between
+    the installations. The distibutor processes might crash due to being unable to
+    deserialize the documents, or pass it on to other proton processes that crashes
+    due to the bad document until all nodes are down. State changes in proton will
+    only be passed on to one of the distributors (e.g. list of changed buckets),
+    resulting in a breakdown in the protocol, with further inconsistencies and
+    damage. Both installation might be brought completely down.
+    </p>
+
+
+<h1 id="fix-broken">Fix broken nodes</h1>
+<p>
+Sometimes nodes may have been automatically taken down by the cluster
+controller due to it misbehaving. If automatic detection doesn't manage to
+catch the issue, the node can be causing issues in the live cluster. If an
+administrator has detected this, he may have forced the node down, hopefully
+by setting a wanted state in the cluster controller with a decent description.
+The processes might just not be running or not be reachable though, in which
+case the nodes may just appear down.
+</p><p>
+How to fix a broken node obviously depends on what was wrong with it in the
+first place. The common parts are listed below though:
+</p>
+<dl>
+  <dt>Detect what nodes need fixing</dt><dd>
+    For efficient use of admins time, you may not want to bother fixing nodes
+    as long as the cluster has decent capacity left. Identify what nodes are
+    down, and see if it is about time to try and do something about it. Refer to
+    <a href="../content/admin-states.html#inspect">states</a>
+    documentation for how to see what nodes are down.
+  </dd>
+  <dt>Fix the node</dt><dd>
+    Do what needs to be done to fix the node. Some suggestions listed below.
+  </dd>
+  <dt>Reinsert into the cluster</dt><dd>
+    Clear the wanted state for the node and ensure node is ready and has
+    services running, just as if it was added as a new node, but as it is
+    already in the application, it is just a matter of ensuring node is ready.
+  </dd>
+</dl>
+<p>
+Some suggestions for what may be done:
+</p>
+<ul>
+  <li>
+    Hard drives get corrupt sectors all the time. With a proper burn-in, the
+    rate of corrupt sectors can be lowered, but they will still happen. When
+    detected, the OS will typically stop using the sector, and grab one that is
+    free instead, but that will cause the data that used to be on that sector to
+    be corrupt. In these cases, the disk is likely fine, able to work just as
+    before by not touching the bad sector. However, if the sector contained file
+    system metadata the file system becomes corrupt. In these cases, the file
+    system needs to be fixed by running a tool such as <code>fsck</code> to fix
+    inconsistencies in the file system. When the node is set back up, some
+    documents may have been lost due to the corruption. If the backend checksums
+    its data this should be detectable after the node starts, and the node will
+    fix itself by getting good copies from other nodes. Fixing the file system
+    typically requires the file system not to be used, which typically mean
+    the services need to be stopped first.
+  </li><li>
+    Hardware may be misbehaving. Hardware verification tools can be used to
+    verify proper behavior. If found, the node may need to be replaced.
+  </li><li>
+    Hardware may have had a performance degradation. For instance, a SCSI
+    controller may have a battery with no power left, causing it to stop write
+    caching. Another example is that the memory modules may have been
+    automatically clocked down due to issues seen. Such hardware likely need
+    to be fixed or replaced. Optionally, it is possible to adjust the capacity
+    of the node to indicate that it is performing worse and thus need to handle
+    less requests.
+  </li>
+</ul>
+
+
+<h1 id="chunkinfo">VDS: how disks are configured</h1>
+<p>
+To understand how VDS uses disks, consider this example, from a VDS storage node:
+</p>
+<pre>
+  $ ls -la $VESPA_HOME/var/db/vespa/vds/storage/*/*/disks
+  total 8
+  drwxr-xr-x 2 group root 4096 Mar 18  2014 .
+  drwxr-xr-x 3 group root 4096 Oct 13 14:06 ..
+  lrwxrwxrwx 1 group root   18 Mar 18  2014 d0 -> /vespa/vdsdisk0
+  lrwxrwxrwx 1 group root   18 Mar 18  2014 d1 -> /vespa/vdsdisk1
+  
+  $ cat /vespa/vdsdisk1/chunkinfo
+  # This file tells VDS what data this mountpoint may contain.
+  1
+  2
+</pre>
+<p>
+List the mountpoints, and dump the <em>chunkinfo</em>-file at the root -
+this will list the total number of disks this hosts uses (2) and this particular
+disk's index (1).
+</p>
+<ul>
+  <li>VDS uses the total number when distributing data to disks. If a disk is missing
+  (say <em>/vespa/vdsdisk4</em> did not exist), data is written to another node.
+  This to ensure that disks don't fill up at disk errors - it is better to distribute
+  data to all other nodes.</li>
+  <li>At startup, VDS looks for the <em>chunkinfo</em>-file. If there are no files at
+  the root (e.g. <em>/vespa/vdsdisk2</em>), the file will be created (starting from
+  a fresh node).</li>
+  <li>At startup, if there are files at the root, and the <em>chunkinfo</em>-file is missing,
+  VDS will not start. This is a safeguard - designed to ensure bad data does not enter the system
+  (e.g. a host is recycled). In this case, either delete the data or create the chunkinfo file
+  by hand - you can safely copy from the example above</li>
+</ul>
+<h2>Modify disk layout</h2>
+<p>
+To alter the disk layout (say you want to add a disk in the example above), you need to
+<ul>
+  <li>modify the total number in all <em>chunkinfo</em>-files (e.g. 2 -&gt; 3)</li>
+  <li>add the mountpoint and symlink, then add a <em>chunkinfo</em>-file at the root
+    - remember that the index is zero-based:</li>
+</ul>
+<pre>
+$ cat /vespa/vdsdisk2/chunkinfo
+# This file tells VDS what data this mountpoint may contain.
+1
+3
+</pre>
+</p>
+
+
+
+
+<h1 id="disk-failure">Vespa Storage: disk failures</h1>
+
+<p>
+If a VDS disk operation fails on an IO error,
+VDS will mark the disk bad and restart. It restarts
+to ensure that the running process has not touched a
+known bad disk, as this can in theory affect all IO done and disk
+threads may be hung up because of it.
+Using the cluster controller REST API, one can observe the
+states of disks on a node. When one or more disks are listed as down
+here, the nodes will still use their other disks normally.
+</p><p>
+Note: One can manually disable disks using
+<em>vdsdisktool</em>. Run <em>vdsdisktool --help</em> for
+details.
+</p><p>
+When replacing a disk, the node can be set in
+<em>Maintenance</em> before stopping it to replace the disk -
+this to avoid new copies of documents being generated. This is
+similar to the procedure used
+when <a href="elastic-vespa.html">removing nodes</a>. To do
+this, use the <em>vespa-set-node-state</em> tool to adjust the node state
+before using the disk tool. After restarting the node, make sure to use the
+tool to adjust the wanted state back to up. Note that setting the node in
+maintenance state is by no means needed.
+Not setting maintenance will make it safer by creating another copy while
+down, doing so will consume some more system resources.
+</p>
+
+<p>
+VDS stores data in locations based on disk count and disk
+index. Each used disk contains a chunkinfo file saying what part of
+the files this disk is supposed to have, for instance by saying it is
+disk 0 of 2. To avoid a lot of data movement, use the same
+directory to mount replacement disk.
+</p>
+
+
+<h2 id="state-files">State Files</h2>
+<p>
+The VDS state-files are the <em>pidfile</em> and
+<em>disks.status</em>. The <em>pidfile</em> is the PID of the process
+running the service. The <em>disks.status</em> lists information VDS
+needs to store about partitions.
+</p>
+
+
+<h1 id="full-disk">Disk Full</h1>
+<p>
+VDS itself does not monitor disk usage, this is better left to system tools. Scenarios:
+</p>
+<ol>
+  <li><p>
+    One or some of the disks are full:
+    </p>
+    
+    <ol>
+      <li>The disks in the system have different
+        capacity. The smallest disk in the system will
+        limit the others.</li>
+      <li>Some of the disks have other data / old VDS data like a
+        backup copy. Make sure only VDS-data is present on the
+        disk.  In production scenarios, VDS should not be on the
+        system disk.</li>
+      <li>The <a href="../content/design-overview.html#distribution">document
+        distribution</a> is skewed.</li>
+    </ol>
+  </li>
+  <li><p>
+    All the VDS disks are full:
+    </p>
+    <ol>
+      <li><em>reverttimeperiod</em>
+        or <em>keepremoves</em> are set too high.</li>
+      <li>The instance is full. Delete documents or
+        <a href="elastic-vespa.html">add nodes</a></li>
+    </ol>
+  </li>
+</ol>
+<p>
+When a disk is full, write-operations to it will fail (except a
+remove). 'get' operations will (probably) work, but a system with a
+full disk will generally be in some kind of trouble - do not expect
+VDS to behave well under this condition.
+</p>
+
+
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Vespa Content Distribution Layer Overview</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="May 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+  <p>
+    The Vespa Content Distribution Layer (the <em>content layer</em> for short)
+    turns a single-node stateful service into a multi-node service, allowing
+    capacity scaling and node failures without availability loss.
+    This provides elasticity for Vespa.
+    Handling elasticity on the node level, the content layer is a good fit for
+    solutions running on commodity hardware.
+  </p>
+
+  <h1>Problem area</h1>
+  <p>
+    The content layer addresses the following problems:
+  </p>
+  <ul>
+    <li><a href="../reference/terminology.html#cluster"
+           class="glossary">Cluster</a>
+        <a href="../reference/terminology.html#node"
+           class="glossary">node</a>
+        failures without availability loss.</li>
+    <li>Easy capacity scaling by altering cluster node count.</li>
+    <li>Hide multi-node aspects of cluster and simplify writing an
+        <a href="../reference/terminology.html#elastic-stateful-service"
+           class="glossary">elastic stateful service</a>.</li>
+    <li>Create correct responses to requests while having inconsistent data
+        stored.</li>
+  </ul>
+  <p>
+    In order to solve the above, the following sub-problems must be handled:
+  </p>
+  <ul>
+    <li>Keep several copies of
+        <a href="../reference/terminology.html#document"
+           class="glossary">documents</a>.</li>
+    <li>Detect unusable nodes.</li>
+    <li>Automatically detect and fix
+        <a href="../reference/terminology.html#consistent"
+           class="glossary">consistency</a>
+        issues.</li>
+    <li>Redistribute data on capacity changes.</li>
+    <li>Ensure
+        <a href="../reference/terminology.html#client"
+           class="glossary">clients</a>
+        can always access good copies of data, independent of current
+        <a href="../reference/terminology.html#cluster-state"
+           class="glossary">cluster state</a>.</li>
+  </ul>
+
+  <h1>The solution</h1>
+  <p>
+    To provide a solution easy to use for
+    <a href="../reference/terminology.html#service"
+       class="glossary">services</a>,
+    the content layer splits a service into a client and a
+    <a href="../reference/terminology.html#backend"
+       class="glossary">backend</a>.
+    The service client will use the content layer programmatic client API to
+    talk to the backend. The service also implements a
+    <a href="../reference/terminology.html#persistence-provider"
+       class="glossary">persistence provider</a>
+    interface, linking with the
+    <a href="../reference/terminology.html#service-layer"
+       class="glossary">service layer</a>,
+    in order to provide a backend for clients to talk to.
+  </p>
+
+  <ul>
+    <li><a href="../reference/terminology.html#request"
+           class="glossary">Requests</a>
+        are routed transparently from clients to backends.</li>
+    <li>Programmatic APIs hide details. Neither client nor backend need to be
+        aware that a network is used at all.</li>
+    <li>Network APIs can be created on top of programmatic APIs where
+        wanted.</li>
+    <li>Data can be moved between nodes transparent to clients.</li>
+    <li>The content layer can implement
+        <a href="../reference/terminology.html#maintenance"
+           class="glossary">maintenance</a>
+        operations on top of simpler operations in a single node
+        solution to view, insert and process data.
+  </ul>
+
+  <h1>Features</h1>
+  <dl>
+    <dt><a href="../reference/terminology.html#crud"
+           class="glossary">CRUD operations</a>, Put, Get, Update and Remove
+    </dt><dd>
+      The four basic functions are available to access and modify stored state.
+      For details, look at the <a href="index.html#features">features</a>
+      reference doc, and the <a href="index.html#programming">client API</a>
+      parts for how to use them.
+    </dd>
+    <dt><a href="../reference/terminology.html#visit"
+           class="glossary">Visit</a> operation
+    </dt><dd>
+      Used to process or fetch a set of documents. Backing feature to implement
+      <a href="../reference/terminology.html#streaming-search"
+         class="glossary">Streaming search</a>,
+      <a href="../reference/terminology.html#reprocessing"
+         class="glossary">Reprocessing</a>,
+      <a href="../reference/terminology.html#migration"
+         class="glossary">Data migration</a>, incremental backups and
+      general fetching of document sets. In the future, visiting may also be
+      used to allow
+      <a href="../reference/terminology.html#bcp" class="glossary">BCP</a>
+      setups to keep documents consistent across clusters. Refer to
+      <a href="feature-visiting.html">visiting</a> documentation for details.
+    </dd>
+    <dt>Availability</dt><dd>
+      Having node redundancy, and handling failures at a node level,
+      availability can be kept through any type of node failure that can be
+      automatically detected.
+    </dd>
+    <dt>Consistency</dt><dd>
+      Checksumming bucket contents and continually monitoring them allows
+      consistency issues to be detected quickly and fixed. Tracking the current
+      state, most requests should be performed correctly even if there are
+      bad copies of data in the cluster.
+    </dd>
+    <dt>Scalability</dt><dd>
+      We like to say the content layer is linearly scalable. Twice as many nodes
+      should have twice the throughput capability. While this may not be
+      accurate for all cases, it should be close to correct for most common use
+      cases.
+    </dd>
+    <dt>Simplicity</dt><dd>
+      The content layer attempts to hide as many implementation details as
+      possible, limiting what services need to implement to use it. For
+      instance, using programmatic APIs and hiding distribution, routing and
+      network details.
+    </dd>
+  </dl>
+
+  <h1>Content layer parts</h1>
+  <figure>
+    <img src="../img/content/content_layer_overview.png"
+         alt="Content layer parts"/>
+    <figcaption>
+      Content layer parts in grey.
+    </figcaption>
+  </figure>
+  <p>
+    The application clients talk to the content layer through the client API,
+    either directly or through a utility like the Vespa command line interface
+    tools or the HTTP gateway. The client API routes requests to the
+    <a href="../reference/terminology.html#distributor"
+       class="glossary">distributors</a>.
+    Distributors are responsible for keeping track of metadata for a subset of
+    the data in the cluster. Distributors fan out requests to an appropriate
+    number of
+    <a href="../reference/terminology.html#content-node"
+       class="glossary">content nodes</a>.
+    The content nodes receive requests in the service layer nodes parts and
+    call into the backend through the persistence provider interface.
+  </p><p>
+    A set of
+    <a href="../reference/terminology.html#cluster-controller"
+       class="glossary">cluster controllers</a>
+    elect a master among themselves. The master gathers
+    <a href="../reference/terminology.html#node-state"
+       class="glossary">node states</a>
+    from all the distributor and content nodes, and combine them into a
+    cluster state. The cluster state is broadcasted to all the nodes every
+    time it changes enough to affect data distribution, allowing all nodes to
+    know what distributors are responsible for handling what parts of the data.
+    Clients picks up an updated cluster state if they try talking to the wrong
+    distributor.
+  </p><p>
+    Some generic services are required for internal use of the content layer,
+    including the service location broker (slobrok), used by the messagebus
+    network protocol and cloud config.
+  </p>
+
+  <h1 id="distribution">Distribution</h1>
+  <p>
+    The content layer splits all documents into a manageable amount of
+    <a href="../reference/terminology.html#bucket"
+       class="glossary">buckets</a>.
+  </p><p>
+    The distributors divide responsibility for buckets between each other. A
+    <a href="../reference/terminology.html#distribution-algorithm"
+       class="glossary">distribution algorithm</a>
+    calculates what distributors are responsible for given buckets based on
+    information of what nodes are available in the cluster. Clients can
+    calculate what distributor to talk to using information in the cluster
+    state.
+  </p><p>
+    When a distributor goes down or becomes available, all distributors
+    reshuffle what buckets they are responsible for. During this reshuffling,
+    clients may get some requests temporarily failing as distributors taking
+    over bucket ownership doesn't yet know where copies of its buckets are
+    located. These requests will automatically be resent providing timeouts
+    allow for it.
+  </p><p>
+    The distribution algorithm also calculates what content nodes copies
+    of buckets should be stored on. As moving bucket copies may take more time
+    than requests are willing to wait, the distributors track current state in
+    a bucket database, allowing requests to be processed independent of where
+    buckets are currently located.
+  </p><p>
+    Distributors use the distribution algorithm to detect buckets that are
+    stored on wrong nodes, and move copies to correct nodes when there are free
+    resources to do so.
+  </p><p>
+    The distribution algorith is a pseudo-random algorithm seeded with the
+    bucket identifier. This means that the N copies of a bucket is stored on N
+    seemingly random nodes.
+  </p>
+  <figure>
+    <img src="img/AddNodeMoveBuckets.png">
+  </figure>
+  <p>
+      The distribution algorithm generates a random node sequence for each
+      bucket. In this example with redundancy of two, the two copies sorted
+      first will store copies of the data. The figure shows how random
+      placement onto two nodes changes as a third node is introduced. The new
+      node introduced takes over as primary copy for the buckets where it got
+      sorted first in order, and as secondary copy for the buckets where it got
+      sorted second. This ensures minimal data movement when nodes come or go,
+      and allows capacity to be changed easily.
+  </p>
+
+  <h1 id="cluster-controller">Cluster controller</h1>
+  <p>
+    As the cluster state is critical for clients to calculate the correct
+    distributor to talk to, it is important that the cluster state is
+    efficiently transferred and that all nodes agree on what the cluster state
+    is.
+  </p><p>
+    The cluster controller gathers node states from all distributor and service
+    layer nodes and combine these to a cluster state, broadcasting it back to
+    the same nodes.
+  </p><p>
+    If clients talk to the wrong distributor, it will get the correct cluster
+    state piggybacked in the reply. The client can then calculate the correct
+    distributor and resend the request. That way, clients do not depend
+    directly on the cluster controller, and distributors distribute the load of
+    serving cluster states to clients.
+  </p>
+  
+</body>
+</html>

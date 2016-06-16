@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Storage Lookup Using the Get Searcher</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2015" />
+  <meta name="authors" content="vekterli" />
+</head>
+
+<body>
+
+<p class="ingress">
+The Get Searcher offers a simple to use interface for retrieving
+document data from the content layer.  Its functionality serves as an extension of
+that available through the <a href="httpgateway.html">HTTP
+Gateway</a>, particularly through the ability to retrieve multiple
+documents in a single query.
+</p>
+
+
+
+<h1 id="query-params">Query Parameters</h1>
+<p>
+Queries may be sent as either GET or POST requests.
+</p>
+
+<ul>
+  <li>
+    <em>id</em>: Get a single document with this ID.
+  </li>
+  <li>
+    <p>
+      <em>id[0..n]</em>: Get multiple documents. Mutually exclusive with
+      single-ID query.  Usage
+      is:
+    </p>
+    <pre>id[0]=docid-0&amp;id[1]=docid-1&amp;&hellip;&amp;id[<em>n</em>]=docid-<em>n</em></pre>
+    <p>
+      where the given numeric index is linearly increasing by 1 for each
+      ID. Documents are returned as hits in the same order as their
+      query ID indices. It is also possible to specify IDs using POST
+      data (see <a href="#docid-postdata">Specifying document IDs using
+        POST data</a>)
+    </p>
+  </li>
+  <li>
+    <p><em>field</em>: Get a single document field. Only a single
+    document ID may be specified in the query.</p>
+  </li>
+  <li>
+    <p><em>contenttype</em>: Override the returned content-type
+    for <em>field</em> if its type is
+    Raw. See <a href="#result-data">Result data</a>.</p>
+  </li>
+  <li>
+      <p><em>fieldset</em>: A <a href="reference/fieldsets.html">field set</a> specifying which fields of the document should
+      <em>at a minimum</em> be returned from the persistence layer. Field sets apply
+      to all documents requested and allows the persistence provider to potentially
+      perform read-optimizations when fetching the document in the case that it stores
+      documents across multiple persistence device locations (such as with VDS).</p>
+      <p><strong>Note:</strong> Depending on the persistence provider, it's possible that
+      the document(s) will contain <em>more</em> fields set than those specified.</p>
+      <p>Not to be confused with <em>field</em>, since that parameter is used for result
+      rendering in the searcher, working on a single returned document.</p>
+  </li>
+  <li>
+    <p><em>timeout</em>: see <a href="httpgateway.html">HTTP gateway
+    documentation</a>.</p>
+  </li>
+  <li>
+    <p><em>route</em>: see <a href="httpgateway.html">HTTP gateway
+    documentation</a>.</p>
+  </li>
+  <li>
+    <p>
+      <em>populatehitfields</em>: If <em>true</em>, will assign hit fields for each
+      top-level document field for each received <code>DocumentHit</code>
+      (see <a href="#hit-proc">Processing document hits in a searcher</a>).
+      This only has relevance for anyone writing searchers that process
+      the hits that the Get Searcher produces and that do not use the
+      documents directly (or anyone using default template rendering).
+    </p>
+  </li>
+</ul>
+
+<p>
+Example for retrieving multiple documents:
+</p>
+
+<pre>
+http://[host]:[port]/?id[0]=id:test:test::doc1&amp;id[1]=id:test:test::doc2
+</pre>
+
+<p>
+Example for retrieving a single field and overriding the returned
+content-type:
+</p>
+
+<pre>
+http://[host]:[port]/?id=id:test:test::doc5&amp;field=imagefield&amp;contenttype=image/jpeg
+</pre>
+
+<p>
+<strong>Note:</strong> these examples assume the searcher is running
+on the default search chain for the sake of simplicity.
+</p>
+
+
+<h2 id="docid-postdata">Specifying document IDs using POST data</h2>
+
+<p>
+If many documents are to be retrieved at the same time, it might be
+simpler to pass document IDs in the body of a POST request. The format
+of the data payload is one document ID per line. It's also possible to
+combine the two. Example:
+</p>
+
+<p>Query:</p>
+
+<pre>
+http://[host]:[port]/?id[0]=id:test:test::doc8&amp;id[1]=id:test:test::doc9
+</pre>
+
+<p>
+POST body:
+</p>
+
+<pre>
+id:test:test::doc10
+id:test:test::doc11
+id:test:test::doc12
+</pre>
+
+<p>
+In this case, the returned document ordering will be doc8, doc9,
+doc10, doc11, doc12.
+</p>
+
+
+
+<h1 id="result-data">Result data</h1>
+<p>
+By default, the searcher's template renders serialized Document XML of
+all found documents.  This can be customized either by querying for
+just a single document field or by implementing own searchers and/or
+templates on top of it.
+</p>
+
+<p>
+In the case of asking for a full document that does not exist, the
+document is simply left out of the returned result. No error hit is
+generated for this case.  If you ask for a single field and either the
+document does not exist or it exists but the field does not have a
+value set within it, a NOT_FOUND error code hit is returned. Any other
+case will generate an error hit. Unfortunately, it is not currently
+possible to state which exact input document ID an error hit is for.
+</p>
+
+<p>
+Hypothetical example of rendered XML for a 3-document query where 2
+documents were successfully retrieved and 1 was not:
+</p>
+
+<pre>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;result&gt;
+    &lt;errors&gt;
+        &lt;error type="messagebus" code="123456" message="Datacentre surrounded by bears, send help"/&gt;
+    &lt;/errors&gt;
+    &lt;document documenttype="test" documentid="id:test:test::doc6"&gt;
+        &lt;name&gt;House&lt;/name&gt;
+        &lt;sarcasm&gt;strong&lt;/sarcasm&gt;
+    &lt;/document&gt;
+    &lt;document documenttype="test" documentid="id:test:test::doc7"&gt;
+        &lt;name&gt;Wilson&lt;/name&gt;
+        &lt;sarcasm&gt;medium&lt;/sarcasm&gt;
+    &lt;/document&gt;
+&lt;/result&gt;
+</pre>
+
+<p>
+Errors (i.e. error hits) are either of type <code>"searcher"</code>,
+in which case their codes are standard container <code>ErrorHit</code>
+codes, or <code>"messagebus"</code>, in which case they are messagebus
+error codes.
+</p>
+
+<p>
+Single document fields will by default be returned as follows,
+depending on their field types:
+</p>
+
+<ul>
+  <li>
+    <strong>Raw</strong>: binary blob with content-type of <code>application/octet-stream</code>
+    (unless overridden).
+  </li>
+  <li>
+    <strong>Everything else</strong>: the textual (<code>toString()</code>) representation of the
+    field's content inside an XML <code>&lt;result&gt;&lt;/result&gt;</code> tag. Content-type
+    is always <code>application/xml</code>.
+  </li>
+</ul>
+
+<p>
+<strong>Note:</strong> due to implementational details in the searcher
+template rendering system, the content-type encoding will always be
+set to UTF-8 for (non-raw) fields where the encoding has not been
+explicitly set. Raw fields always yield an encoding of ISO-8859-1.
+For binary fields, this should not matter as the client should not
+look at the encoding either way.
+</p>
+
+
+
+<h1 id="search-chain">Search chain configuration</h1>
+<p>
+The searcher's classname
+is <code>com.yahoo.storage.searcher.GetSearcher</code>. The searcher
+functionality is present in the HTTP gateway as well, so if no
+programmatic support is needed, it should be used instead.
+</p>
+
+<p>
+It is <em>strongly advised</em> that the searcher be run in its own search
+chain rather than a native one, in order to avoid issues with other
+searchers overriding its Vespa XML templates and/or adding hits of its
+own that the Get Searcher does not know how to render. If a searcher is to be placed
+after the Get Searcher in the search chain (either explicitly through
+configuration or implicitly by e.g. being part of an inherited chain),
+the searcher <strong>must</strong> return <code>DocumentHit</code>
+instances and nothing else when the query in question will also invoke get
+Get Searcher. If there are no document identifiers in the query, both
+the query and the result will be passed through untouched and unchecked
+to/from the next searcher in the chain. Otherwise, the request will fail.
+</p>
+
+<p>
+Example of running in own search chain:
+</p>
+
+<pre>
+&lt;searchchains&gt;
+  &lt;searchchain id="storage"&gt;
+    &lt;searcher id="com.yahoo.storage.searcher.GetSearcher"/&gt;
+  &lt;/searchchain&gt;
+&lt;/searchchains&gt;
+</pre>
+
+
+
+<h1 id="hit-proc">Processing document hits in a searcher</h1>
+
+<p>
+If it is desirable to implement a searcher that has the Get Searcher
+further down its chain, Document instances may be retrieved from
+DocumentHits in the searcher result.
+</p>
+<p>
+All documents that are retrieved will be available
+as <code>com.yahoo.storage.searcher.DocumentHit</code> instances in
+the result hits collection. These offer the following methods:
+</p>
+<ul>
+  <li>
+    <code>int getIndex()</code>: the index (ordering) of the requested document in the original query.
+  </li>
+  <li>
+    <code>com.yahoo.document.Document getDocument()</code>: instance of the requested document.
+  </li>
+  <li>
+    <code>void populateHitFields()</code>: for each top-level document field, assign a hit
+    field with the same name -&gt; value mapping. See below for further information.
+  </li>
+</ul>
+<p>
+  If you depend on a document's fields being available as fields in the <code>Hit</code> itself, be it for
+  processing or rendering, note that you must either specify <em>populatehitfields=true</em>
+  in the query or call <code>populateHitFields()</code> on the <code>DocumentHit</code>
+  for these to be present. The latter may be done at any time. This is a change from 5.0.
+</p>
+<p>
+When writing a
+searcher <a href="jdisc/container-components.html#deploying_a_searcher">OSGI
+bundle</a> that depends on the GetSearcher, its package must be
+explicitly imported in the manifest:
+</p>
+
+<pre>
+Import-Package: com.yahoo.storage.searcher
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <title>Setting rank type for a document field</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="level"      content="basic">
+  <meta name="audience"   content="all">
+  <meta name="lastupdate" content="$Date: 2009-06-25 10:55:29 $">
+  <meta name="reviewdate" content="">
+  <meta name="authors"    content="bratseth">
+</head>
+
+<body>
+
+<h1>Setting rank type for a document field</h1>
+
+<p class="ingress" data-annotation="FIXME: Mismatch between filename and document title, needs to be more similar.  Also needs a cleanup of the markup">
+This document presents the rank types that are supported by nativeRank
+and the main ranking features that are controlled through the use of
+them.  See the <a href="../nativerank.html">native rank
+reference</a> document for detailed information on the nativeRank
+feature.  First, the generic mechanisms for ranking control through
+rank types are explained. Then, each ranking type will be described,
+with details of how it uses the different ranking controls.
+</p>
+
+    <h1 id="ranking-controls">Ranking controls</h1>
+
+    <p>
+      This section describes the different generic ranking controls
+      that are influenced by the ranking type selection.
+   </p>
+
+    <h2 id="firstocc-boost">FirstOcc boost</h2>
+
+    <p>
+        The position of the first occurrence of a term in a document field
+        is called the <tt class="literal">FirstOcc</tt>. A FirstOcc boost
+        table map a particular value <em><strong>x</strong></em> of FirstOcc to a rank contribution.
+        For FirstOcc equal to or above the size of the table (default 256), the value
+        for the last table element is used.
+   </p>
+    <h3>Equation 1. Example FirstOcc boost table function</h3>
+
+    <div class="calc">
+    <table>
+        <tr>
+      <td class="number">(1)</td>
+      <td>firstocc(x) &nbsp;=&nbsp; expdecay(x) &nbsp;=&nbsp;w * e<sup>-x/t</sup></td>
+    </tr></table>
+       </div>
+       <p>
+    where <em><strong>w</strong></em> is the weight (controls the amplitude) and
+    <em><strong>t</strong></em> is the tune parameter (controls the
+    slope). The curve shapes are illustrated in Figure 1-2.
+    </p>
+
+    <h3>Figure 1. FirstOcc Plot weight: increasing w lifts
+    amplitude (x-axis is first occurrence position, and y-axis is
+    firstocc boost)</h3>
+    <p><img
+    src="../img/reference/relevance/plot-firstocc-weight.png" alt="FirstOcc
+    Plot weight" />
+    </p>
+
+    <h3>Figure 2. FirstOcc
+    Plot tune: Increasing t reduces exponential falloff (x-axis is first occurrence position, and y-axis is
+    firstocc boost)</h3>
+    <p><img src="../img/reference/relevance/plot-firstocc-tune.png" alt="FirstOcc
+    Plot tune" /></p>
+
+
+    <h2 id="numocc-boost">NumOcc boost</h2>
+    <p>
+        The number of occurrences of a term in a document field is called
+        the <tt class="literal">NumOcc</tt>. A NumOcc boost table map a given
+        number of occurrences <em><strong>x</strong></em> to a
+        particular rank contribution. For terms occurring more than or equal to
+        the size of the table (default 256), the value for the last table
+        element is used.
+   </p>
+        <h3>Equation 2. Example NumOcc boost table function</h3>
+      <div class="calc">
+    <table>
+        <tr>
+      <td class="number">(2)</td>
+      <td>numocc(x) &nbsp;=&nbsp; loggrowth(x) &nbsp;=&nbsp;w * log(1 + x / s) + t</td>
+    </tr></table>
+      </div>
+      <p>where
+    <em><strong>w</strong></em> is the weight (controls the amplitude) and
+    <em><strong>t</strong></em> is the tune parameter (controls the
+    offset).
+    <em><strong>s</strong></em> is a scale parameter (controls the sensitivity
+    to the numocc variable x).
+    </p>
+
+    <h3>Figure 3. NumOcc Plot weight: increasion w
+    scales log amplitude/shape (x-axis is number of occurrences in the field and y-axis is
+    numocc boost) </h3>
+        <p><img
+    src="../img/reference/relevance/plot-numocc-weight.png" alt="NumOcc Plot
+    weight" /></p>
+
+    <h3>Figure 4. NumOcc Plot
+    tune: increasing t increases boost by offset value (x-axis is number of occurrences in the field and y-axis is
+    numocc boost)</h3>
+    <p><img src="../img/reference/relevance/plot-numocc-tune.png" alt="NumOcc Plot
+    tune" /></p>
+
+
+    <h2 id="proximity-boost"></a>Proximity boost</h2>
+
+    <p>
+        When a query with more than one query term is executed,
+        pairwise proximity is calculated between pairs of
+        query terms. For a given pair, the actual ranking value will
+        be based on lookup in a proximity boost table.
+   </p>
+    <p>
+        For a given pair of query-terms <i class="replaceable"><tt>a</tt></em>
+        <i class="replaceable"><tt>b</tt></em>, the distance in the document field
+        between the positions of the terms is calculated such that if
+        the terms occur in the same order in both the query and the
+        document, the distance will be positive. If the order is
+        reversed from the query to the document, the value will be
+        negative. The absolute value is in both cases the absolute
+        difference in word positions in the document.
+   </p>
+    <p>
+        For proximity calculations in the forward direction, the rank
+        boost will be selected from the forward proximity table.
+        For reversed proximity, a similar reverse proximity table is used.
+   </p>
+    <p>
+        Typically, the rank score of the forward proximity table will
+        be higher than the reverse proximity table, giving an overall
+        asymmetrical ranking function.
+   </p>
+        <h3>Equation 3. Example Proximity boost table function</h3>
+      <div class="calc">
+    <table>
+        <tr>
+      <td class="number">(3)</td>
+      <td>prox(x) &nbsp;=&nbsp; expdecay(x) &nbsp;=&nbsp;w * e<sup>-x/t</sup></td>
+    </tr></table>
+       </div>
+
+      <p>
+      where <em><strong>x</strong></em> is the absolute difference between
+      the query term distance and document term distance,
+    <em><strong>w</strong></em> is the weight (controls the amplitude) and
+    <em><strong>t</strong></em> is the tune parameter (controls the
+      slope). Refer to Figure 5 and 6: The same formula as in the FirstOcc examples are used,
+      but with different parameters.
+      </p>
+
+      <h3>Figure 5. Proximity Plot weight: w scales
+      amplitude (x-axis is proximity term pair distance and y-axis is
+    proximity boost)</h3>
+    <p><img
+      src="../img/reference/relevance/plot-proximity-weight.png" alt="Proximity
+      Plot weight" /></p>
+
+      <h3>Figure 6. Proximity
+      Plot tune: Increasing t reduces curve fall-off (x-axis is proximity term pair distance and y-axis is
+    proximity boost)</h3>
+    <p><img src="../img/reference/relevance/plot-proximity-tune.png"
+    alt="Proximity Plot tune" /></p>
+
+
+    <h2 id="weight_boost">Weight boost</h2>
+
+    <p>
+        The weightboost table is for calculating the rank boost contribution from attributes.
+        Equation 4 shows how attribute weight values are used for table look-ups in the weightboost table.
+        </p>
+      <h3>Equation 4. Example Weightboost boost table</h3>
+      <div class="calc">
+    <table>
+        <tr>
+      <td class="number">(4)</td>
+      <td>weight(x) &nbsp;=&nbsp;sign(x)*weightboost[abs(x)]</td>
+    </tr></table>
+       </div>
+      <p>where <em><strong>sign(x)</strong></em> is the sign of <em><strong>x</strong></em>, and <em><strong>abs(x)</strong></em> is the absolute value of  <em><strong>x</strong></em>. Hence, attributes can have negative rank contributions.
+         The argument <em><strong>x</strong></em> used as input in this boost table is dependent on the attribute type:
+         </p>
+    <ul>
+        <li><strong>Weighted set:</strong> <em><strong>x</strong></em> equals the attribute weight.</li>
+        <li><strong>Array:</strong> <em><strong>x</strong></em> equals to the number of match occurrences in the attribute array.</li>
+        <li><strong>Single value:</strong> <em><strong>x</strong></em> equals 1.</li>
+    </ul>
+
+
+
+    <h1 id="rank-types">Rank types</h1>
+
+    <p>
+      This section describes each individual ranking type, and details
+      how it uses the different generic ranking controls.
+    </p>
+
+
+    <h2 id="identity-rank-type"><tt class="literal">identity</tt> rank type</h2>
+
+    <p>
+        This ranking type is for fields that contain the identity of
+        the document. A title of a book, or product name of a product
+        are examples of this.
+   </p>
+    <p>
+        The title will usually appear early in a document. So the
+        FirstOcc table starts high and descends sharply.
+   </p>
+    <p>
+        The title is usually not repeated, so the number of
+        occurrences is not that important. It starts out at a medium
+        height, and ascends slowly.
+   </p>
+    <p>
+        Identity terms are very well connected, and fields are fairly
+        small. So the proximity table has a sharp and high peak, with
+        the importance falling rapidly.
+   </p>
+
+    <p>Supported by nativeRank using these tables:
+    <ul>
+        <li>nativeFieldMatch.firstOccurrenceTable: "expdecay(100,12.50)"</li>
+        <li>nativeFieldMatch.occurrenceCountTable: "loggrowth(1500,4000,19)"</li>
+        <li>nativeProximity.proximityTable: "expdecay(5000,3)"</li>
+        <li>nativeProximity.reverseProximityTable: "expdecay(3000,3)"</li>
+        <li>nativeAttributeMatch.weightTable: "linear(1,0)"</li>
+    </ul>
+    </p>
+
+
+    <h2 id="about-rank-type"><tt class="literal">about</tt> rank type</h2>
+
+    <p>
+        This is for fields that contain information directly relating
+        to the document, describing what it is. A description field of
+        a catalog, or a feature list of a product specification are
+        typical examples.
+   </p>
+    <p>
+        The order of occurrences is somewhat important, as usually the
+        most important features will be put up first. The FirstOcc
+        boost table starts out at a medium height, and falls fairly
+        slowly.
+   </p>
+    <p>
+        The about-ness of the description is very much related to
+        how many times a descriptive term is used. So the NumOcc boost
+        table will start out fairly low, but climb high, with the
+        maximum gain (curvature point) around 5 occurrences.
+   </p>
+    <p>
+        Proximity is fairly important for about-ness. The proximity
+        boost will be somewhat similar to the
+        <tt class="literal">identity</tt> type, although it will be somewhat
+        lower at the peak, and have a slightly shallower falloff.
+   </p>
+    <p>
+    <tt class="literal">about</tt> is <strong>the default ranking
+    type</strong> used when it is not explicitly specified which type to
+    use.
+    </p>
+
+    <p>Supported by nativeRank using these tables:
+    <ul>
+        <li>nativeFieldMatch.firstOccurrenceTable: "expdecay(8000,12.50)"</li>
+        <li>nativeFieldMatch.occurrenceCountTable: "loggrowth(1500,4000,19)"</li>
+        <li>nativeProximity.proximityTable: "expdecay(500,3)"</li>
+        <li>nativeProximity.reverseProximityTable: "expdecay(400,3)"</li>
+        <li>nativeAttributeMatch.weightTable: "linear(1,0)"</li>
+    </ul>
+    </p>
+
+    <!-- Shows the default tables used for classicRank
+    <p>
+    Figure 7 shows these curves together, where the firstocc and numocc curves have been divided by the mean divtable value to get a feeling of their average contribution
+    </p>
+
+    <h3>Figure 7: Zoomed boost table plot of rank type "about" (firstocc
+    and numocc divided by mean divtable value)</h3>
+    <p><img src="../img/reference/relevance/ranktype-about.png" alt="Rank type
+    About Boost tables" /></p>
+    -->
+
+<!-- Tags begin -->
+    <h2 id="tags_rank_type"><tt class="literal">tags</tt> rank type</h2>
+
+    <p>
+    This is for search in attributes when they are used as tags,
+    for example name tags for images that may be updated frequently.
+    The tags rank type uses a logarithmic table to give more relative boost in the low range:
+    As tags are added they should have significant impact on rank score,
+    but as more and more tags are added, each new tag should contribute less.
+    </p>
+
+    <p>
+    The <tt class="literal">tags</tt> rank type is based on the <tt class="literal">about</tt> rank type,
+    i.e. only the weight boost table is different. For the other rank types a 1-to-1 linear
+    table is used, except for the empty rank type, which has a table with zeros.
+    </p>
+
+    <p>Supported by nativeRank using this table:
+    <ul>
+        <li>nativeAttributeMatch.weightTable: "loggrowth(38,50,1)"</li>
+    </ul>
+    The other tables are the same as the <tt class="literal">about</tt> rank type.
+    </p>
+
+    <!-- Shows the default tables used for classicRank
+    <h3>Figure 8: Zoomed boost table plot of rank type "tags" (firstocc
+    and numocc divided by mean divtable value)</h3>
+    <p><img src="../img/reference/relevance/ranktype-tags.png" alt="Rank type Tags
+    boost tables" /></p>
+    -->
+
+<!-- Tags end -->
+
+
+    <h2 id="empty_rank_type"><tt class="literal">empty</tt> rank type</h2>
+
+    <p>
+      This is used for fields where you do not want matches to have
+      any impact on relevancy. Use this for instance when the field
+      contains keywords used to partition the dataset.
+    </p>
+
+    <p>The empty rank type is also supported by nativeRank.</p>
+
+
+<p class="footer">
+  Jon Bratseth
+</p>
+
+
+</body></html>

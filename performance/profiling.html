@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+  <title>Profiling</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="March 2014"/>
+  <meta name="authors" content="balder"/>
+</head>
+<body>
+
+<p class="ingress">
+This briefly describes want kind of information about what resources your program/system is using. For Java profiling see <a href="oprofile-setup.html">OProfile Setup and Usage</a>.
+</p>
+
+
+<h2>Cpu profiling</h2>
+<h3>vmstat 1</h3>
+
+<p>vmstat can be used to figure out what kind of resources you are using. Here you can see both</p>
+
+<ul>
+  <li>cpu usages split in user, system, idle, and io wait -> system should be low(&lt;10)</li>
+  <li>swap in/out -&gt; should be zero.</li>
+</ul>
+
+<p>NB!!! A maxed out system should have either maxed out disks or cpu (idle == 0). If not there might be locks.</p>
+
+<h3>top</h3>
+<ul>
+  <li>Use this to see which applications consume the cpu, and your memory.</li>
+</ul>
+
+
+<h2>Oprofile</h2>
+<p>
+See <a href="oprofile-setup.html">OProfile Setup</a> for how to setup and use OProfile.
+</p>
+
+<h2>Valgrind</h2>
+<p>See <a href="valgrind.html">Using valgrind with Vespa</a>.</p>
+
+<h2>Example - vmstat 1 -&gt; cpu bound</h2>
+<pre>
+$ vmstat 1
+
+procs -----------memory---------- ---swap-- -----io---- --system-- ----cpu----
+r  b   swpd   free   buff  cache   si   so    bi    bo   in    cs us sy id wa
+0  0   5628 3315460 304024 23008616    0    0    14    34    0     0  0  0 99  0
+1  0   5628 3298884 304024 23008640    0    0     0   396   33  4615  9  1 90  0
+0  0   5628 3316336 304028 23008644    0    0     0     0   15  4469  4  1 95  0
+0  0   5628 3316592 304028 23008644    0    0     0     0   24  4364  0  0 100  0
+0  0   5628 3316592 304028 23008644    0    0     0  2948   20  4305  0  0 100  0
+0  0   5628 3316468 304028 23008644    0    0     0     0   22  4259  0  0 100  0
+0  0   5628 3316468 304028 23008644    0    0     0   180   20  4279  0  0 100  0
+0  0   5628 3316468 304028 23008644    0    0     0     0   26  4349  0  0 100  0
+16  0   5628 3284236 304056 23008688    0    0    12   188   17  9196 38  2 60  0
+19  0   5628 3267020 304056 23008732    0    0     8   128   44  6408 99  1  0  0 BOOOOOOOOM
+16  0   5628 3245472 304060 23008840    0    0    20     0    9  7191 99  1  0  0
+17  0   5628 3227784 304060 23008872    0    0    20     0   27  6420 99  1  0  0
+16  0   5628 3215688 304060 23008900    0    0    12     0   16  6158 99  1  0  0
+16  0   5628 3199888 304060 23008944    0    0     8   160   38  6709 99  1  0  0
+16  0   5628 3182708 304060 23009036    0    0     8   880  139  6324 99  1  0  0
+16  0   5628 3172856 304060 23009060    0    0    20     0   33  6657 99  1  0  0
+</pre>
+
+</body>
+</html>

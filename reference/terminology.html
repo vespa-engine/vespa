@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+
+<html lang="en">
+<head>
+  <title>Terminology</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="July 2015" />
+  <meta name="authors" content="bratseth, kraune" />
+</head>
+<body>
+
+<p class="ingress">
+  This document lists the terms which have a well defined meaning in Vespa.
+</p>
+
+<dl>
+  <dt id="administration-server">Administration server</dt><dd>
+    The node in a <a href="#vespa-system" class="glossary">Vespa system</a> where the
+    Administration interface lives.
+  </dd>
+  <dt id="application">Application</dt><dd>
+    A configured Vespa application
+    for Vespa. An application contains bundles of business logic and
+    Vespa configuration files.
+  </dd>
+  <dt id="application-package">Application package</dt><dd>
+    The physical representation of a <a href="#vespa-application" class="glossary">Vespa
+    application</a>. A folder containing all application specific config files,
+    at least <a href="#vespa-setup" class="glossary">Vespa setup</a> and <a
+    href="#search-definition" class="glossary">search definitions</a>. Search result templates,
+    configuration files. Components, such as <a href="#searcher" class="glossary">searchers</a>
+    can also be part of the application package.
+  </dd>
+  <dt id="attribute">Attribute</dt><dd>
+    A document <a href="#field" class="glossary">field</a> which is stored in memory in an <a
+    href="#index-structure" class="glossary">index structure</a> to provide efficient <a
+    href="#grouping" class="glossary">grouping</a> and <a href="#sorting" class="glossary">sorting</a>.
+  </dd>
+  <dt id="back-end">Backend</dt><dd>
+    The part of a content cluster keeping persistent data, on top of which
+    the <a href="#content-layer" class="glossary">content layer</a> creates a multi-node cluster.
+    The backend must implement the persistence provider interface in order to
+    interface with the content layer. In search context, the backend refers
+    to a <a href="#search-node" class="glossary">search node</a>.
+  </dd>
+  <dt id="bcp">BCP - Business Continuity Planning</dt><dd>
+    BCP is a generic term for planning for incidents ahead of time, to limit
+    the effects of an incident. In the context of Vespa, BCP is considered to be
+    the ability to run clusters with similar functionality at different
+    geographic locations, such that in the event of a colo outage can be handled
+    without loss of services.
+    BCP solutions can be split into two types. Master-master and master-slave.
+    In the former, write requests for any part of the data may be sent to any
+    cluster, while in the latter all write traffic must go through the master
+    cluster for that piece of data. Master-master have the advantage of allowing
+    geographically local writes, possibly reducing write latencies, but adds
+    complexity in ensuring that the data kept is consistent.
+  </dd>
+  <dt id="blending">Blending</dt><dd>
+    To combine <a href="#result" class="glossary">results</a> from multiple <a
+    href="#search-cluster" class="glossary">search clusters</a> into one result. Done by the <a
+    href="#qrs" class="glossary">QRS</a>.
+  </dd>
+  <dt id="bucket">Bucket</dt><dd>
+    The content layer splits all the <a href="#document" class="glossary">documents</a> in the
+    cluster into buckets, like buckets in a hash map.  Routing, distribution,
+    consistency, redundancy and maintenance operations are done at a bucket
+    level. Refer to the <a
+    href="../content/design-overview.html#buckets">content layer design
+    overview</a> for more information about buckets.
+  </dd>
+  <dt id="capacity">Capacity</dt><dd>
+    Capacities are relative values that affects content cluster distribution,
+    allowing heterogenous hardware to be used while utilizing allowing all
+    nodes to fully utilize the bottleneck resource at about the same time.
+  </dd>
+  <dt id="cjk-languages">CJK languages</dt><dd>
+    Chinese, Japanese and Korean. Languages with no punctuation, for which <a
+    href="#tokenization" class="glossary">tokenization</a> is particularly difficult.
+  </dd>
+  <dt id="client">Client</dt><dd>
+    A client is some entity using the component the given context is talking
+    about, which are not part of the component itself. For instance, in the
+    context of the storage backend, the client may be the content layer, the
+    HTTP gateway, an application using the HTTP gateway, a property using Vespa
+    for data storage, or a user on the internet using the property.
+  </dd>
+  <dt id="cluster">Cluster</dt><dd>
+    A cluster is a group of nodes performing similar functions, where clients
+    typically divide load among the nodes. Clusters are created to allow
+    services to scale by altering node count and to cope with node failures.
+    The clusters in an application share configuration, log and other
+    administrative services, but individual clusters operate independent of
+    each other.
+  </dd>
+  <dt id="cluster-controller">Cluster controller</dt><dd>
+    A process in the content layer that tracks health of all content cluster
+    nodes, generating cluster states, used for routing, distribution and node
+    fault tolerance.
+  </dd>
+  <dt id="cluster-state">Cluster State</dt><dd>
+    The combined <a href="#node-state" class="glossary">node states</a> from all nodes in a
+    content <a href="#cluster" class="glossary">cluster</a>. Used by content layer for routing
+    and distribution.
+  </dd>
+  <dt id="collection">Collection</dt><dd>
+    An identifiable set of documents which is searchable together, for example
+    the set of documents belonging to one user.
+  </dd>
+  <dt id="config-server">Config server</dt><dd>
+    The server which configures an entire <a href="#vespa-system" class="glossary">Vespa
+    system</a>.
+  </dd>
+  <dt id="consistent">Consistent</dt><dd>
+    In the context of the content layer, a consistent bucket is a bucket that
+    does not overlap with any other buckets, and where all the copies of the
+    bucket contains the same data. If the bucket overlaps with another bucket
+    those buckets are said to be inconsistently split. If the bucket copies are
+    inconsistent they need to be synchronized through a maintenance operation
+    called a merge. Note that a bucket need not be stored on the correct
+    nodes to be consistent.
+  </dd>
+  <dt id="content-layer">Content layer</dt><dd>
+    Short for the content distribution layer. This is a layer enabling a single
+    node stateful service to become a multi-node elastic service. Search and
+    storage use the content layer to implement elasticity and multi-node
+    aspects of the service, such as routing, distribution, scaling, consistency
+    availability and redundancy.
+  </dd>
+  <dt id="content-node">Content node</dt><dd>
+    A content layer process linking the service layer component of the content
+    layer with the backend implementing the persistence provider.
+  </dd>
+  <dt id="crud">CRUD operations</dt><dd>
+    <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">
+      Creeate, read, update and delete</a> are the four basic functions of
+      persistent storage. In Vespa context these are called put, get, update
+      and remove.
+  </dd>
+  <dt id="dispatch-node">Dispatch node</dt><dd>
+    The service which is responsible for dispatching queries to the nodes of a
+    <a href="#search-cluster" class="glossary">search cluster</a> and <a
+    href="#merging" class="glossary">merging</a> returned results.
+  </dd>
+  <dt id="distributor">Distributor</dt><dd>
+    A content layer process responsible for a subset of the
+    <a href="#bucket" class="glossary">buckets</a> in a cluster. Keeps track of where copies of
+    this subset are located, and critical metadata like checksums, to be able
+    to detect inconsistencies. Forwards and fans out requests, in addition to
+    initiating maintenance operations when needed.
+  </dd>
+  <dt id="distribution-algorithm">Distribution algorithm</dt><dd>
+    The algorithm used to decide what nodes are responsible for a given bucket.
+    The nodes calculated to be responsible for buckets are called the ideal
+    nodes or ideal location for that bucket. The distribution algorithm is thus
+    also referred to as the ideal state algorithm.
+  </dd>
+  <dt id="document">Document</dt><dd>
+    A document is a set of <a href="#field-value" class="glossary">field values</a>. Only values
+    of <a href="#field" class="glossary">fields</a> that are specified in the <a
+    href="#document-type" class="glossary">document type</a> is legal. All documents have a <a
+    href="#document-id" class="glossary">document identifier</a>, used to identify a particular
+    instance of a document.
+  </dd>
+  <dt id="document-api">Document API</dt><dd>
+    The client API to talk to the content layer is named the Document API. It
+    implements a messagebus protocol called the document protocl, providing a
+    programmatic API in Java and C++. Other content layer clients or network
+    interfaces are implemented on top of this one. Not to be confused about the
+    programmatic API for using a <a href="#document" class="glossary">document</a>.
+  </dd>
+  <dt id="document-id">Document Identifier</dt><dd>
+    A unique identifier for a <a href="#document" class="glossary">document</a>, using one of
+    the supported <a href="../document-ids.html">schemes</a>.
+  </dd>
+  <dt id="document-processor">Document processor</dt><dd>
+    A pluggable component for transforming or extracting information from <a
+    href="#document" class="glossary">documents</a>.
+  </dd>
+  <dt id="document-stream">Document stream</dt><dd>
+    A set of <a href="#documents" class="glossary">documents</a> streamed from some source, such
+    that documents can be handled before all the documents have been retrieved.
+  </dd>
+  <dt id="document-summary">Document summary</dt><dd>
+    The <a href="#field-value" class="glossary">field values</a> of <a
+    href="#document-instance" class="glossary">documents</a> stored in the <a
+    href="#index-structure" class="glossary">index structure</a> and used to create <a
+    href="#hit" class="glossary">hits</a> to return in <a href="#result" class="glossary">results</a>.
+  </dd>
+  <dt id="document-type">Document type</dt><dd>
+    A named list of <a href="#field" class="glossary">fields</a>. Any kind of data used in Vespa
+    must be defined as a document type in a
+    <a href="#search-definition" class="glossary">search definition</a>.
+  </dd>
+  <dt id="dynamic-rank">Dynamic rank</dt><dd>
+    The component of the <a href="#rank-score" class="glossary">rank</a> of a <a
+    href="#document-instance" class="glossary">document</a> which is determined by how the <a
+    href="#query" class="glossary">query</a> compares to the document content.
+  </dd>
+  <dt id="elastic-stateful-service">Elastic stateful service</dt><dd>
+    A generic name for a service that persists state, which may use the content
+    layer to become elastic, such as Vespa search and storage.
+  </dd>
+  <dt id="event">Event</dt><dd>
+    In the context of the Vespa Log, a message which contains information about
+    the state of some <a href="#service" class="glossary">service</a> or <a
+    href="#node" class="glossary">node</a>, suitable for programmatical consumption.
+  </dd>
+  <dt id="feeder">Feeder</dt><dd>
+    A process used to feed put/remove/update operations to Vespa, such as the
+    command line tool <a href="#vespafeeder" class="glossary">vespafeeder</a>.
+  </dd>
+  <dt id="field">Field</dt><dd>
+    A named and typed container of a piece of data in a <a
+    href="#document-type" class="glossary">document type</a>. Valid field types are listed <a
+    href="search-definitions.html#field">here</a>.
+  </dd>
+  <dt id="field-parameter">Field parameter</dt><dd>
+    A configuration setting of a <a href="#field" class="glossary">field</a>, specified in the
+    <a href="#search-definition" class="glossary">search definition</a>.
+  </dd>
+  <dt id="field-value">Field value</dt><dd>
+    A particular <a href="#field" class="glossary">field</a> data instance.
+  </dd>
+  <dt id="front-end">Front end</dt><dd>
+    In search context, used as a synonym for <a href="#qrs" class="glossary">QRS</a>.
+  </dd>
+  <dt id="grouping">Grouping</dt><dd>
+    Search feature to treat sets of <a href="#hit" class="glossary">hits</a> having the same
+    value of a <a href="#field" class="glossary">field</a> as first order entities of <a
+    href="#result" class="glossary">results</a> which can be assigned additional information
+    about the group (like the size of the group).
+  </dd>
+  <dt id="hit">Hit</dt><dd>
+    A piece of information belonging to the <a href="#result" class="glossary">result</a> of a
+    <a href="#query" class="glossary">query</a>. Usually a hit represents a <a
+    href="#document-instance" class="glossary">document</a>, by containing a <a
+    href="#document-summary" class="glossary">document summary</a>, but hits may also represent
+    other kind of information pertaining the query.
+  </dd>
+  <dt id="ideal-state">Ideal state</dt><dd>
+    A content cluster where all buckets are consistent, and they are all stored
+    in correct number of copies on the nodes where the distribution algorithm
+    wants them to be stored, is said to be in the ideal state. If the cluster
+    is not in ideal state, maintenace operations will be scheduled to get to the
+    ideal state. They may take some time to perform, and are typically lower
+    priority than external load. Thus the clusters current state may often
+    differ a bit from the ideal state. Especially if the cluster is close to
+    being overloaded or have unstable nodes.
+  </dd>
+  <dt id="index">Index</dt><dd>
+    A map from <a href="#term" class="glossary">terms</a> of one or more <a
+    href="#field" class="glossary">fields</a> to the ids of the <a
+    href="#document-instance" class="glossary">documents</a> having those terms. Indexes are a
+    part of the <a href="#index-structure" class="glossary">index structure</a>.
+  </dd>
+  <dt id="index-search">Index search</dt><dd>
+    The usual method of searching, in which matches are found by looking up <a
+    href="#term" class="glossary">terms</a> in <a href="#index" class="glossary">indexes</a>.
+  </dd>
+  <dt id="index-structure">Index structure</dt><dd>
+    The data structure built by <a href="#indexing" class="glossary">indexing</a> a <a
+    href="#document-stream" class="glossary">document stream</a> to do efficient <a
+    href="#searching" class="glossary">searching</a>. The main components of the index structure
+    is <a href="#index" class="glossary">indexes</a>, <a href="#attribute" class="glossary">attributes</a> and <a
+    href="#document-summary" class="glossary">document summaries</a>.
+  </dd>
+  <dt id="indexing">Indexing</dt><dd>
+    The process of building an <a href="#index-structure" class="glossary">index structure</a>
+    from a <a href="#document-stream" class="glossary">document stream</a>.
+  </dd>
+  <dt id="indexing-controller">Indexing controller</dt><dd>
+    The process controlling the <a href="#indexing" class="glossary">indexing</a> and
+    <a href="#searching" class="glossary">searching</a> of a
+    <a href="#search-cluster" class="glossary">search cluster</a>.
+  </dd>
+  <dt id="indexing-mode">Indexing mode</dt><dd>
+    The <a href="#indexing" class="glossary">indexing</a> strategy used by a Vespa cluster -
+    <a href="#realtime-indexing" class="glossary">realtime</a> or
+    <a href="#streaming-search" class="glossary">streaming</a>.
+  </dd>
+  <dt id="indexing-script">Indexing script</dt><dd>
+    The expressions in <a href="#search-definition" class="glossary">search definitions</a>
+    which transform <a href="#field-value" class="glossary">field values</a> to additions to an
+    <a href="#index-structure" class="glossary">index structure</a>.
+  </dd>
+  <dt id="jbod">JBOD - Just a bunch of disks</dt><dd>
+    A machine disk setup where every disk is represented by its own device,
+    contrary to a RAID setup. Some machines have RAID controllers that does not
+    support not using RAID. In these cases JBOD is simulated by letting each
+    disk be its own RAID0 array.
+  </dd>
+  <dt id="join">Join</dt><dd>
+    A content layer maintenance operation for joining two buckets into one
+    bucket containing the contents of both.
+  </dd>
+  <dt id="linear-blending">Linear blending</dt><dd>
+    The default <a href="#blending" class="glossary">blending</a> done by <a href="#qrs" class="glossary">QRS</a>
+    - the <a href="#hit" class="glossary">hits</a> with the highest <a
+    href="#relevancy" class="glossary">relevancy</a> are included in the combined <a
+    href="#result" class="glossary">result</a>.
+  </dd>
+  <dt id="log-server">Log server</dt><dd>
+    The node in a <a href="#vespa-system" class="glossary">Vespa system</a> that collects logs
+    from all the <a href="#service-node" class="glossary">other nodes</a> of the system.
+  </dd>
+  <dt id="lvm">LVM - Logical Volume Management</dt><dd>
+    File system technology to create logical volumes on top of other volumes,
+    creating resizable partitions spanning multiple disks.
+  </dd>
+  <dt id="maintenance">Maintenance</dt><dd>
+    A content layer that is not in the <a href="#ideal-state" class="glossary">ideal state</a>
+    will have maintenance operations issued to get the cluster closer to the
+    ideal state. These operations are bucket create, delete, merge, split, join,
+    activate and deactivate.
+  </dd>
+  <dt id="merging">Merging</dt><dd>
+    In search context, to combine search query <a href="#result" class="glossary">result</a> from
+    multiple <a href="#search-node" class="glossary">search nodes</a> of one <a
+    href="#search-cluster" class="glossary">search cluster</a> into a result for the whole
+    cluster.
+  </dd><dd>
+    In content layer context, merge is a maintenance operation for ensuring all
+    copies of a given bucket stores the same data.
+  </dd>
+  <dt id="meta-hit">Meta hit</dt><dd>
+    A kind of <a href="#hit" class="glossary">hit</a> which represent some kind of meta
+    information about a <a href="#query" class="glossary">query</a> or its <a
+    href="#result" class="glossary">result</a>, instead of representing a concrete piece of
+    information (like a <a href="#document-summary" class="glossary">document summary</a>). Meta
+    hits are not included in the count of hits returned from a query.
+  </dd>
+  <dt id="migration">Migration</dt><dd>
+    In content layer context, the process of moving some part of the documents
+    stored in a cluster to another cluster. For instance, migrating user related
+    documents as it has been detected that he know lives in another part of the
+    world, or merely because the current cluster is filling up and increasing
+    capacity locally is not practical.
+  </dd>
+  <dt id="monitoring">Monitoring</dt><dd>
+    Administrators monitor Vespa installations looking for events or alerts
+    that needs manual attention.
+  </dd>
+  <dt id="node">Node</dt><dd>
+    A node is a resource running a service in the
+    <a href="#vespa-system" class="glossary">Vespa system</a>. It might be running alone on a
+    virtual or physical machine, or be located on the same machine as other
+    nodes. All nodes should be able to run on one machine for test purposes.
+  </dd>
+  <dt id="node-state">Node state</dt><dd>
+    Whether a node is up, down, initializing, stopping, being retired or being
+    in maintenance mode, in addition to its capacity and some other information.
+    Used by content layer for routing, distribution and fault tolerance.
+  </dd>
+  <dt id="normalizing">Normalization</dt><dd>
+    The process of finding canonical forms of words without accents, etc. It is
+    used to <a href="#recall" class="glossary">recall</a> more <a
+    href="#document-instance" class="glossary">documents</a> on the assumption that the user
+    doesn't care (much) about the specific spelling of a word spelled in
+    several different ways.
+  </dd>
+  <dt id="operation">Operation</dt><dd>
+    An operation is a task for the content layer. This can either be to forward
+    or process an external request, or perform internal maintenance operations.
+    An operation may map to several requests. For instance, a visit operation
+    splits into many requests in the clients, while maintenance operations
+    split into several more basic requests to the backend.
+  </dd>
+  <dt id="partialupdate">Partial update</dt><dd>
+    Update the contents of one or more fields within an existing document.
+  </dd>
+  <dt id="persistence-provider">Persistence Provider</dt><dd>
+    For the content layer to be able to talk to the service backend, the
+    backend must implement a persistence provider interface specified by the
+    content layer. The backend can thus be said to be a persistence provider.
+  </dd>
+  <dt id="plugin">Plugin</dt><dd>
+    A component belonging to an application, invoked by Vespa to perform some
+    customized task.
+  </dd>
+  <dt id="precision">Precision</dt><dd>
+    The degree to which returned <a href="#hit" class="glossary">hits</a> are relevant to a <a
+    href="#query" class="glossary">query</a>. <a href="#relevancy" class="glossary">Relevancy</a> can be thought
+    of as the product of precision and <a href="#recall" class="glossary">recall</a>.
+  </dd>
+  <dt id="proton">Proton</dt>
+  <dd>
+    A process in a content cluster controlling indexing and searching one
+    or more document types.
+  </dd>
+
+  <dt id="qps">QPS</dt><dd>
+    An abbreviation for <a href="#query" class="glossary">queries</a> per second.
+  </dd>
+  <dt id="qrs">QRS</dt><dd>
+    A Query Result Server <a href="#node" class="glossary">node</a>, responsible for serving <a
+    href="#result" class="glossary">results</a> in response to <a href="#query" class="glossary">queries</a>
+    received to Vespa. In this documentation the term <a
+    href="#front-end" class="glossary">front end</a> is sometimes used as a synonym for
+    QRS.
+  </dd>
+  <dt id="query">Query</dt><dd>
+    A request to Vespa which should be answered with a <a
+    href="#result" class="glossary">result</a>. A query consists of a <a
+    href="#query-string" class="glossary">query string</a> and additional parameters influencing
+    the hit order and presentation, additional operations to perform and so
+    on.
+  </dd>
+  <dt id="query-string">Query string</dt><dd>
+    The part of the <a href="#query" class="glossary">query</a> which is the actual
+    specification of which documents to match to the query, written in the
+    Vespa Query Language.
+  </dd>
+  <dt id="raid">RAID - Redundant Array of Independent Drives</dt><dd>
+    <a href="http://en.wikipedia.org/wiki/RAID">RAID</a> is a commonly used
+    technology, for instance to let many disk drives appear as one large disk
+    drive with internal redundancy. There are many variants. With RAID0 there
+    is no redundancy involved. Only striping of disks to let them appear as one
+    large disk with increased space and bandwidth.
+  </dd>
+  <dt id="rank-boost">Rank boost</dt><dd>
+    A <a href="#rank-setting" class="glossary">rank setting</a> of a <a href="#field" class="glossary">field</a>
+    which specifies a numerical value to add to the <a href="#rank-score" class="glossary">rank
+    score</a> if a <a href="#query" class="glossary">query</a> matches the field.
+  </dd>
+  <dt id="rank-profile">Rank profile</dt><dd>
+    A named collection of <a href="#rank-setting" class="glossary">rank settings</a>, specified
+    in a <a href="#search-definition" class="glossary">search definition</a>.
+  </dd>
+  <dt id="rank-score">Rank score</dt><dd>
+    A positive integer which is a calculated measure of the <a
+    href="#relevancy" class="glossary">relevancy</a> of a <a href="#hit" class="glossary">hit</a>. Rank score is
+    the sum of the <a href="#dynamic-rank" class="glossary">dynamic</a> and <a
+    href="#static-rank" class="glossary">static</a> rank
+  </dd>
+  <dt id="rank-setting">Rank setting</dt><dd>
+    A <a href="#field-parameter" class="glossary">field parameter</a> pertaining <a
+    href="#rank-score" class="glossary">rank score</a>, specified in a <a
+    href="#search-definition" class="glossary">search definition</a>.
+  </dd>
+  <dt id="rank-type">Rank type</dt><dd>
+    A <a href="#rank-setting" class="glossary">rank setting</a> of a <a href="#field" class="glossary">field</a>
+    which specifies how Vespa should compute the <a href="#rank-score" class="glossary">rank</a>
+    contribution of a match in this field.
+  </dd>
+  <dt id="ranking">Ranking</dt><dd>
+    The process of calculating a <a href="#relevancy" class="glossary">relevancy</a> <a
+    href="#rank-score" class="glossary">rank score</a> of a <a href="#hit" class="glossary">hit</a>.
+  </dd>
+  <dt id="realtime-indexing">Realtime indexing</dt><dd>
+    All updates to a single document in a Vespa index is available in
+    synchronous time, and available to search queries immediately after the
+    feed operation returns.
+  </dd>
+  <dt id="recall">Recall</dt><dd>
+    The degree to which <a href="#document-instance" class="glossary">documents</a> of interest
+    matches a <a href="#query" class="glossary">query</a>. <a href="#relevancy" class="glossary">Relevancy</a>
+    can be thought of as the product of <a href="#precision" class="glossary">precision</a> and
+    recall.
+  </dd>
+  <dt id="redundancy">Redundancy</dt><dd>
+    The content layer keeps a given number of bucket copies to solve document
+    redundancy at a bucket level. A node can never store more than one copy of
+    a bucket, thus a redundancy factor of more than the number of available
+    nodes make no sense.
+  </dd>
+  <dt id="relevancy">Relevancy</dt><dd>
+    The degree to which a <a href="#hit" class="glossary">hit</a> is of interest to the
+    (average) user for a given <a href="#query" class="glossary">query</a>.
+  </dd>
+  <dt id="reprocessing">Reprocessing</dt><dd>
+    A content layer feature implemented on top of <a href="#visit" class="glossary">visiting</a>.
+    Fetch all or a subset of the stored documents, send them somewhere to be
+    processed which sends the processed documents back to the content layer.
+    Typically implemented by using a messagebus route to send the data to
+    document processing and back. Can for instance be used to alter the
+    document type in non compatible ways, or to reindex documents after the
+    application have changed.
+  </dd>
+  <dt id="request">Request</dt><dd>
+    Requests are function calls in a programmatic API, or messages in a network
+    API, sent to a target in order to process it and send a response, possibly
+    mutating internal data kept. In most context, requests are document inserts,
+    removals, updates and similar. There are also internal requests though,
+    such as parts of a maintenance operation, and both types may be broken into
+    more primitive requests.
+  </dd>
+  <dt id="result">Result</dt><dd>
+    A list of <a href="#hit" class="glossary">hits</a> matching a <a href="#query" class="glossary">query</a>,
+    and selected to be returned from Vespa in response to the query
+  </dd>
+  <dt id="result-set">Result set</dt><dd>
+    The entire set of results matching a <a href="#query" class="glossary">query</a>, whether
+    they are selected to be returned in the <a href="#result" class="glossary">result</a> or
+    not.
+  </dd>
+  <dt id="search-application">Search application</dt><dd>
+    A concrete application of Vespa to realize some usable service.
+  </dd>
+  <dt id="search-definition">Search definition</dt><dd>
+    A specification of some <a href="#document-type" class="glossary">document type</a>, and how
+    this data type should be <a href="#indexing" class="glossary">indexed</a>, <a
+    href="#searching" class="glossary">searched</a>, <a href="#ranking" class="glossary">ranked</a> and
+    presented.
+  </dd>
+  <dt id="search-node">Search node</dt><dd>
+    A <a href="#node" class="glossary">node</a> participating in a <a
+    href="#search-cluster" class="glossary">search cluster</a>. The search node is a backend
+    using the content layer to solve elasticity.
+  </dd>
+  <dt id="searcher">Searcher</dt><dd>
+    A <a href="#plugin" class="glossary">plugin</a> to the <a href="#qrs" class="glossary">QRS</a>.
+  </dd>
+  <dt id="searching">Searching</dt><dd>
+    The process of matching of a <a href="#query" class="glossary">query</a> to the <a
+    href="#document-instance" class="glossary">documents</a> of an <a
+    href="#index-structure" class="glossary">index structure</a> to return a <a
+    href="#result" class="glossary">result</a>.
+  </dd>
+  <dt id="service">Service</dt><dd>
+    A particular function within Vespa, running on one or more
+    <a href="#node" class="glossary">nodes</a>. The stateful services in Vespa
+    (search and storage) is implemented on top of the content layer. The
+    stateless services are implemented on top of jDisc.
+  </dd>
+  <dt id="service-layer">Service Layer</dt><dd>
+    For the content layer to be able to talk to the backend instances,
+    efficiently move data between backend nodes, hide the network protocols,
+    and divide complex operations into simpler functions, the backend instances
+    need to link with the service layer, which is part of the content layer
+    solving those issues.
+  </dd>
+  <dt id="service-node">Service node</dt><dd>
+    A node in a <a href="#vespa-system" class="glossary">Vespa system</a> which is controlled by
+    an <a href="#administration-server" class="glossary">administration server</a>.
+  </dd>
+  <dt id="slotfile">Slotfile</dt><dd>
+    A file in which the storage backend stores a single
+    <a href="#bucket" class="glossary">bucket</a> instance.
+  </dd>
+  <dt id="sorting">Sorting</dt><dd>
+    To use <a href="#attribute" class="glossary">attributes</a> to decide the order of returned
+    hits instead of <a href="#ranking" class="glossary">ranking</a>. Sorting is specified in the
+    <a href="#query" class="glossary">query</a>.
+  </dd>
+  <dt id="special-token">Special token</dt><dd>
+    A string which Vespa should index and search as a word <a
+    href="#term" class="glossary">term</a> even if it contains non-word characters (e.g. C#,
+    .net). Vespa can be configured with a list of such tokens.
+  </dd>
+  <dt id="split">Split</dt><dd>
+    A maintenance operation in the content layer for splitting a bucket into
+    two buckets, dividing the content in the source bucket between them.
+  </dd>
+  <dt id="static-rank">Static rank</dt><dd>
+    The component of the <a href="#rank-score" class="glossary">rank</a> of a <a
+    href="#document-instance" class="glossary">document</a> which is determined by the document
+    alone, and not influenced by the <a href="#query" class="glossary">query</a>.
+  </dd>
+  <dt id="stemming">Stemming</dt><dd>
+    The process of finding the stem forms of words, used to <a
+    href="#recall" class="glossary">recall</a> more <a href="#document-instance" class="glossary">documents</a>
+    on the assumption that the user doesn't care (much) about the specific word
+    form used in a <a href="#query-string" class="glossary">query string</a> and in
+    documents.
+  </dd>
+  <dt id="streaming-search">Streaming search</dt><dd>
+    A method of searching supported by the content layer, in which there is no
+    <a href="#index" class="glossary">index</a>, but where matches are instead found by visiting
+    entire documents and running through the content. Shifts hardware costs
+    from <a href="#indexing" class="glossary">indexing</a> to <a href="#searching" class="glossary">searching</a>
+    compared to <a href="#index-search" class="glossary">index search</a>.
+  </dd>
+  <dt id="term">Term</dt><dd>
+    An atomic value of the <a href="#query-string" class="glossary">query string</a>, a word,
+    phrase or number.
+  </dd>
+  <dt id="tokenization">Tokenization</dt><dd>
+    The process of splitting a string of characters into <a
+    href="#term" class="glossary">terms</a>, usually by splitting on space and punctuation, but
+    by using sophisticated algorithms for <a href="#cjk-languages" class="glossary">CJK
+    languages</a>.
+  </dd>
+  <dt id="top-level-dispatch">Top level dispatch</dt><dd>
+    A <a href="#node" class="glossary">dispatch node</a> which is talked to by the <a
+    href="#qrs" class="glossary">QRS</a> and which serves results of a complete <a
+    href="#search-cluster" class="glossary">search cluster</a>. In large clusters, dispatch
+    nodes may be organized in a tree structure. If they are, this is the
+    topmost dispatch node in the tree.
+  </dd>
+  <dt id="vespa-application">Vespa application</dt><dd>
+    The user application running on a <a href="#vespa-system" class="glossary">Vespa system</a>.
+    Physically, it is represented by an <a
+    href="#application-package" class="glossary">application package</a>.
+  </dd>
+  <dt id="vespa-setup">Vespa setup</dt><dd>
+    The configuration (file) which lists the <a href="#node" class="glossary">nodes</a> of a <a
+    href="#vespa-system" class="glossary">Vespa system</a>, assigns <a
+    href="#service" class="glossary">services</a> to each node, <a
+    href="#search-definition" class="glossary">search definitions</a> to <a
+    href="#search-cluster" class="glossary">search clusters</a> and some other essential system
+    configuration.
+  </dd>
+  <dt id="vespa-system">Vespa system</dt><dd>
+    A complete <a href="#vespa-application" class="glossary">Vespa application</a> running on
+    some collection of machines.
+  </dd>
+  <dt id="vespafeeder">Vespafeeder</dt><dd>
+    Commandline <a href="#feeder" class="glossary">feeder</a> distributed as part of Vespa which
+    uses XML as input format.
+  </dd>
+  <dt id="visit">Visit</dt><dd>
+    A content layer operation for processing a subset of the documents within
+    a content cluster local to the data. This features powers more advanced
+    features like streaming search, data migration and reprocessing, but are
+    also often used to just retrieve the data back to the client efficiently.
+  </dd><dd>
+    Remove entries can also be visited, such that one can detect documents that
+    have been removed. Useful for incremental backups for instance.
+  </dd>
+  <dt id="yql">YQL</dt><dd>
+    Yahoo's standard <a href="../search/query-language.html">query language</a>
+    for structured queries.
+  </dd>
+</dl>
+
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Secure the HTTP interface</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="tonyv,musum,kraune" />
+</head>
+<body>
+
+<h1 id="ssl">SSL</h1>
+<p>
+Please refer to <a href="http-server-and-filters.html">HTTP server and filters</a>
+for generic HTTP server configuration - below is an example of how to set up SSL.
+</p>
+<pre>
+&lt;jdisc version="1.0"&gt;
+  &lt;http&gt;
+    &lt;server id="main-server" port="5000"&gt;
+      &lt;config name="container.jdisc.config.http-server"&gt;
+        &lt;ssl&gt;
+          &lt;enabled&gt;true&lt;/enabled&gt;
+          &lt;keyStoreType&gt;JKS&lt;/keyStoreType&gt;
+          &lt;keyStorePath&gt;$VESPA_HOME/conf/jdisc_container/keyStore.jks&lt;/keyStorePath&gt;
+          &lt;trustStoreType&gt;JKS&lt;/trustStoreType&gt;
+          &lt;trustStorePath&gt;$VESPA_HOME/conf/jdisc_container/trustStore.jks&lt;/trustStorePath&gt;
+          &lt;keyDBKey&gt;jdisc_container&lt;/keyDBKey&gt;
+          &lt;sslKeyManagerFactoryAlgorithm&gt;SunX509&lt;/sslKeyManagerFactoryAlgorithm&gt;
+          &lt;protocol&gt;TLS&lt;/protocol&gt;
+        &lt;/ssl&gt;
+      &lt;/config&gt;
+    &lt;/server&gt;
+  &lt;/http&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+Review the full list of config options in <em>jdisc.http.connector.def</em></a>.
+</p>
+
+</body>
+</html>

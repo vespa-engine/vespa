@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Overview</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="bratseth, kraune, daljord" />
+
+
+</head>
+
+<body>
+
+<p class="ingress">
+Vespa is a platform that allows you to develop and run scalable, low latency stateful and stateless backend services easily.
+This document provides an overview of the features and main components of the platform.
+</p>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>Vespa allows application developers to create backend and middleware systems which scales
+to large data sizes and high loads without sacrificing latency or reliability.
+A Vespa instance consists of a number of <i>stateless Java container clusters</i> (jDisc)
+and zero or more <i>content</i> clusters storing data.</p>
+
+<img src="img/overview/vespa-overview.png">
+
+<p>The <a href="search/container-intro.html">stateless <b>container</b> clusters</a> hosts components which processes incoming data as well as requests/queries and their responses. The components includes both the middleware logic of the application and functionality belonging to the platform like indexing and the global stages of query execution.
+Application developers can choose to define their Vespa system with a single stateless cluster performing all such functions or create different clusters within the system for each kind of task.
+The container clusters passes queries and data operations on to the appropriate content clusters - or if the application is using data it does not own it can also federate to external services supplying the data.</p>
+
+<p><a href="content/setup-reference.html"><b>Content</b> clusters</a> in Vespa are responsible for storing data (documents) and performing lookups and distributed select/group/aggregate queries over the data. They can function both as a simple key-value serving store as well as perform complex searches over structured and unstructured data, order the data by relevance models and group and aggregate values over the resulting data.
+Great care has been taken to make such operations work with low latency, such that these features can be used directly in end-user applications on large data sets without requiring precomputation of result data.</p>
+
+<p>Content clusters automatically fails over unreachable nodes and rebalances data in the background to maintain a configured redundancy level - in other words they are both elastic and auto-recovering.</p>
+
+<p>Data are written to content clusters through some stateless cluster for intermediate processing.
+Writes take effect in a few milliseconds, are guaranteed to succeed or provide failure information within some time limit and scales with the available resources. Writes can be sent directly <a href="httpgateway.html">over HTTP</a> or by using a <a href="document-api-guide.html">Java client</a>.</p>
+
+<p>Each document instance stored in Vespa must have a configured <a href="reference/search-definitions.html">schema</a>.
+Each content clusters in a system instance can handle data of many types at the same time -
+applications can choose to create different clusters for each type of data or put multiple data types in the same content cluster.</p>
+
+<p>Container and content clusters handle all the end user traffic of a Vespa application, but there's also a third type of cluster - <a href="cloudconfig/config-introduction.html"><b>admin</b> and config clusters</a>, which manages the other clusters and handles request for changes to the configuration of the system from application owners.</p>
+
+<p>A Vespa application is completely described by an
+<a href="cloudconfig/application-packages.html"><i>application package</i></a>, which is a directory containing a declaration of the clusters which should run as part of the system, the content schemas, Java components and other configuration or data files needed by the application. Application owners make their application live on Vespa by <i>deploying</i> the application package to the single admin cluster, and make changes to a live application exactly the same way. In addition to controlling application configuration, the admin cluster also collects logs from all the nodes of the system in real time. These features make it unnecessary for application owners to perform administration tasks locally on the nodes of the system. Once Vespa is installed and started on a node it is managed by the admin system such that the entire system can be treated as a single unit.</p>
+
+<p>The rest of this document provides some more detail on the functions Vespa performs.</p>
+
+
+<h2 id="vespa_operations">Vespa operations</h2>
+
+<p>Vespa accepts the following operations
+
+<ul>
+	<li>Writes: Put (add and replace) and remove of documents, and updates to individual fields.
+	<li>Lookups of a document (or some subset of document fields) by id.
+	<li><a href="reference/search-api.html">Queries</a>: <a href="reference/query-language-syntax.html"><i>Selects</i></a> containing boolean combinations of conditions on fields, where all matches are either <a href="reference/sorting-syntax.html"><i>sorted</i></a> or <a href="ranking.html"><i>ranked</i></a> according to a <i><a href="reference/ranking-expressions.html">ranking expression</a></i>, <a href="grouping.html"><i>grouped</i></a> by field values in a set of hierarchical groups, where each group can contain aggregated values over the data in the group.
+Ranking expressions	can be simple mathematical functions, express complex business logic, or implement machine learned search ranking model. Grouping and aggregation can be used to organize all the matching data in desired ways and calculate values for e.g. navigation aids, tag clouds, graphs or clustering in a distributed fashion without having to ship all the data up to some stateless logic component which is prohibitively expensive with large data sets.
+	<li>Data dumps: Content matching some criterion can be streamed out for background reprocessing, backup etc. by using the <a href="content/feature-visiting.html"><i>visit</i></a> operation.
+	<li><a href="search/component-types.html">Any other custom network request</a> which can be handled by application components deployed to a stateless container.
+</ul>
+
+<p>These operations allows developers to build feature rich applications expressed as Java middleware logic working on stored content, where selection, keyword searches and organization and processing of the content can be expressed as declarative queries by the middleware logic.</p>
+
+
+<h2 id="the_jdisc_stateless_container">The jDisc stateless container</h2>
+
+<p><a href="search/container-intro.html">jDisc container clusters</a> hosts the logic components working on the operations listed above and their return data.
+Vespa provides a set of such component types out of the box, as well as common component infrastructure: Dependency injection building on Guice but with support for injection of config coming from the admin server or application package, a component model based on OSGi, metrics and logging, and a shared mechanism to chain components into handler chains for modularity. The container of course also provides the network layer for handling and issuing remote requests - HTTP is provided out of the box and other protocols/transports can be plugged in transparently as components.<p>
+
+<p>Developers can make changes to components (and of course their configuration) simply by redeploying their application package - the system takes care of copying the components to the nodes of the cluster and loading/unloading components on the fly without impacting request serving.</p>
+
+
+<h2 id="content_clusters">Content clusters</h2>
+
+<p><a href="content/setup-reference.html">Content clusters</a> perform reliable storage of data as well as maintaining distributed indexes of data for searches and selects.
+The data is replicated over multiple nodes, in a number of copies specified by the application, such that the cluster can automatically repair itself on loss of a node or a disc. With the same mechanism, the clusters can also be grown and shrunk while online simply by changing the set of available nodes declared in the application package.</p>
+
+<p>Lookups of individual documents are routed directly to the right node while each query are scattered to a subset of nodes which together cover the entire set of documents to be queried. Complex queries are performed as distributed algorithms taking multiple steps back and forth between the driving container instance and the content nodes, to achieve correctness in combination with low latency by parallelism.</p>
+
+
+<h2 id="administration_and_developer_support">Administration and developer support</h2>
+
+<p>The <a href="cloudconfig/config-introduction.html">single administration and configuration cluster</a> controls all the clusters of a system instance.
+Administration clusters are capable of deriving the low level configuration of each individual cluster, process and component instance, such that the application developer can declare the desired system on a higher level without worrying about its detailed realization.
+Whenever the application package is redeployed, the system will compute the resulting changes necessary and push only the configuration
+which was actually changed to the distributed components. Changed components and data files are distributed over BitTorrent for efficiency.</p>
+
+<p>Application packages may be <a href="cloudconfig/deploy-rest-api-v2.html">changed, redeployed</a> and <a href="config-rest.html">inspected</a> over a HTTP REST API, or through a command line interface. The administration cluster runs over ZooKeeper to make changes to configuration singular  and consistent while avoiding a single point of failure.</p>
+
+<p>An application package looks the same, and is deployed once the same way whether it specifies a large system
+with hundreds of nodes or a single node running all services. The only change needed is to the lists of nodes making up the cluster.
+The stateless clusters may also be started within a single Java vm by "deploying" the application package from a method call</a>.
+This is useful for testing applications in an IDE and in unit tests. Application packages with components can be <a href="jdisc/developing-applications.html">developed</a>
+in an IDE using Maven starting from sample applications.</p>
+
+
+<h2 id="summary">Summary</h2>
+
+<p>Vespa allows functionally rich and highly available applications to be developed to scale and perform to Yahoos! high standards without burdening developers with the considerable low level complexity this requires. It allows developers to evolve and grow their applications over time without taking the system offline and avoid complex data and page precomputing schemes which leads to stale data that cannot be personalized by allowing complex queries to complete in real user time over data which is constantly changing at the same time.</p>
+
+<p>The next step in learning about the capabilities of Vespa may be to follow the <a href="tutorial.html">tutorial</a>.
+
+</body>
+</html>

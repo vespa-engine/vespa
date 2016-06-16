@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Copy and migrate data between clusters</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016" />
+  <meta name="authors" content="kraune" />
+</head>
+
+<body>
+
+<p>
+Data can easily be copied and/or migrated between clusters using Visit.
+Data transfer is direct from source to target nodes, using a compact
+serialization format for high performance. Use this feature to implement
+data center failover or data migration.
+</p>
+
+<p>
+The <a href="reference/routingpolicies.html#storage">storage policy</a> can be configured to
+use a set of configuration servers from another cluster to configure
+itself. This is specified with the <em>config</em> parameter. As
+an example, the following route routes to the storage cluster
+<em>mycluster</em> with a configuration server on
+<em>myconfigserver.mydomain.com:12345</em>:
+</p>
+
+<pre>
+[Storage:config=tcp/myconfigserver.mydomain.com:12345;cluster=mycluster]
+</pre>
+
+<p>
+This is sufficient to route to the cluster, you might blocked by firewalls.
+In such a case, you will need to open the
+ports to both the config server, the slobrok service, and the
+distributors in the storage cluster in order to feed. To do so, use
+the baseport config parameter for each service.
+</p>
+
+<p>
+You can now move / feed data across clusters. The following examples illustrate
+how to copy all data from a source cluster to another cluster unsig vespavisit:
+</p>
+
+<pre>
+<em>Copies all data in the local cluster, routing it to the remote cluster</em>
+$ vespavisit --datahandler '[Storage:config=tcp/myconfigserver.mydomain.com:12345;cluster=mycluster]'
+
+<em>Limit to 'music' documents only</em>
+$ vespavisit --selection music --datahandler '[Storage:config=tcp/myconfigserver.mydomain.com:19070;cluster=mycluster]'
+
+<em>Limit to all documents for user '1234'</em>
+$ vespavisit --selection id.user=1234 --datahandler '[Storage:config=tcp/myconfigserver.mydomain.com:12345;cluster=mycluster]'
+
+<em>Copies all music documents to a search cluster with id mycluster
+When copying data to a search cluster, 'clusterconfigid' must
+also be specified. It should be set to the same value as the cluster.</em>
+$ vespavisit --selection music --datahandler '[Storage:config=tcp/myconfigserver.mydomain.com:12345;cluster=mycluster;clusterconfigid=mycluster]'
+</pre>
+
+</body>
+</html>

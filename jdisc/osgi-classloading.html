@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Troubleshooting OSGi Bundles</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="March 2016" />
+  <meta name="authors" content="gv" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes how to troubleshoot and fix the most common errors we encounter when
+working with OSGi bundles, namely:
+
+<ul>
+  <li><a href="#class-not-found">Class Not Found</a></li>
+  <li><a href="#unresolved-constraint">Unresolved Constraint</a></li>
+  <li><a href="#multiple-implementations">Multiple Implementations of the Same Class</a></li>
+</ul>
+
+For general information on OSGi bundles for JDisc, please refer to the introduction on how
+to <a href="developing-osgi-bundles.html">develop OSGi bundles</a>. We also recommend
+Richard S. Hall's presentation on <a
+ href="http://felix.apache.org/site/presentations.data/Learning_to_ignore_OSGi.pdf">using
+OSGi as a means to achieve modularity</a>, which explains a lot about how OSGi works, and
+why.
+</p>
+
+
+<h2 id="class-not-found">Class Not Found</h2>
+
+All classes that are referred to in a user bundle must either be embedded in the bundle,
+or imported from another bundle by an <code>Import-Package</code> statement in the bundle
+manifest. When this rule has been breached, we get one of the most commonly seen
+exceptions when working with OSGi bundles:
+
+<pre class="brush: text">
+...
+exception=
+    java.lang.NoClassDefFoundError: com/acme/utils/Helper
+    ...
+    java.lang.ClassNotFoundException: com.acme.utils.Helper not found by my_bundle [29]
+</pre>
+</p>
+
+<p> For the <a href="bundle-plugin.html">bundle-plugin</a> to automatically add an
+Import-Package statement to your bundle's manifest, that package must be exported from
+another bundle that is declared as a 'provided' scope dependency in <em>pom.xml</em>.
+If the
+dependency that contains the missing class is under your own control, you should make sure
+it's packaged as an OSGi bundle, and <a
+ href="bundle-plugin.html#exporting-importing-and-including-packages-from-bundles">export
+the package</a> from that bundle.  If not, the simplest way to resolve the issue is to
+embed the dependency in your own bundle, by setting its scope to 'compile' instead of
+'provided'. </p>
+
+<p> If the strategy above does not resolve the case, it's most likely because the class in
+question is loaded by reflection,
+e.g. <code>Class.forName("com.acme.utils.Helper")</code>. This is quite common when working
+with libraries for pluggable frameworks, for which we have a separate <a
+ href="pluggable-frameworks.html"> troubleshooting doc</a>.  </p>
+
+
+<h2 id="unresolved-constraint">Unresolved Constraint</h2>
+
+<p> If your bundle has an Import-Package for a package that is not available at runtime,
+the OSGi framework will report an unresolved constraint error. The symptom as seen in the
+log is (line breaks have been added for readability):
+
+<pre class="brush: text">
+org.osgi.framework.BundleException: Unresolved constraint in bundle my_bundle [29]:
+Unable to resolve 29.0:
+missing requirement [29.0] osgi.wiring.package; (osgi.wiring.package=<span style="background: yellow">com.acme.utils</span>)
+     at org.apache.felix.framework.Felix.resolveBundleRevision(Felix.java:3974)
+</pre>
+</p>
+
+<p> This means that the missing class resides in a 'provided' dependency referred to from
+your bundle's <em>pom.xml</em>, either directly or transitively. In order to make the dependency
+available at runtime, just put the missing jar file in the <code>components/</code> folder
+of your application package, along with your own bundles. If the missing jar is a
+transitive dependency, maven can help visualize the dependency graph of your project:
+<pre class="brush: cli">
+$ mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:tree
+</pre>
+</p>
+
+
+<h2 id="multiple-implementations">Multiple Implementations of the Same Class</h2>
+<p>
+
+When two bundles interact via their public APIs, it is crucial that both bundles resolve
+each and every participating class to the same <code>Class</code> object. If not, we will
+get error messages like:
+
+<pre class="brush: text">
+    java.lang.LinkageError: loader constraint violation: when resolving field
+"DATETIME" the class loader (instance of
+org/apache/felix/framework/BundleWiringImpl$BundleClassLoaderJava5) of the referring
+class, javax/xml/datatype/DatatypeConstants, and the class loader (instance of
+&lt;bootloader&gt;) for the field's resolved type, pe/DatatypeConstants, have different Class
+objects for that type
+</pre>
+or:
+<pre class="brush: text">
+    java.lang.LinkageError: loader constraint violation: loader (instance of &lt;bootloader&gt;)
+previously initiated loading for a different type with name "<span style="background: yellow">javax/xml/namespace/QName</span>"
+</pre>
+or (less frequently):
+<pre class="brush: text">
+    java.lang.ClassCastException: com.acme.utils.Helper cannot be cast to  com.acme.utils.Helper
+</pre>
+</p>
+
+<p>
+All these error messages indicate that multiple implementations of one or more classes are
+used at runtime. This could mean that either
+
+<ul>
+  <li>Two interacting user bundles embed the same Java package.</li>
+  <li>A user bundle embeds a Java package that is exported from one of the JDisc bundles.</li>
+</ul>
+
+<p>
+Usually, the "duplicate" package is pulled in by the user bundle transitively from a
+library dependency.
+
+<h3 id="multiple-implementations-example">Troubleshooting Example</h3>
+<p>
+Let's take a look at an example resolving the duplicate <span style="background:
+yellow">javax.xml.namespace.QName</span> class from the error message above.
+</p>
+
+<p> All 'javax.xml' packages in the JDK are exported by the JDisc core bundle. This means
+that they should be imported by user bundles, instead of embedded inside them.  Hence, we
+should ensure that there are no classes from packages prefixed by 'javax.xml' in our
+bundle. To find out which library that pulls in the package, we can use the following
+procedure:
+
+<ol>
+  <li>Extract the full component jar, including any embedded jars. One
+  tool that does the job is <a href="https://code.google.com/p/rjar/">rjar</a>.
+  </li>
+  <p>
+  <li>Search the folder where the jar was extracted for 'javax.xml' classes. For example:
+<pre class="brush: cli">
+$ find . | grep "javax/xml/.*\.class"
+</pre>
+  This will yield output like:
+<pre class="brush: cli">
+...
+./my_bundle-deploy.jar/dependencies/<span style="background: yellow">stax-api-1.0.1.jar</span>/javax/xml/namespace/QName.class
+...
+  </pre>
+  </li>
+  <p>
+  <li>Now we need to find out which libraries that pulled in the offending classes. From this
+  example, it was <code>stax-api-1.0.1</code>. Usually, these libraries are not
+  pulled in by our pom as direct dependencies, but rather transitively via another library that we
+  are using. In order to find the direct dependency, use maven's dependency plugin from your application
+  directory:
+ <pre class="brush: cli">
+$ mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:tree -Dverbose
+</pre>
+  This will yield output like:
+<pre class="brush: cli">
+[INFO] +- com.acme.utils:jersey-utils:1.0.0:compile
+[INFO] |  +- com.sun.jersey:jersey-json:jar:1.13:compile
+[INFO] |  |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO] |  |    \- <span style="background: yellow">stax:stax-api:jar:1.0.1:compile</span>
+</pre>
+  We can now see that <code>stax:stax-api:1.0.1</code> is pulled in transitively from our direct
+  dependency <code>com.acme.utils:jersey-utils</code>.
+  </li>
+  <p>
+  <li>
+    Finally, to exclude <code>stax:stax-api</code> we must add the appropriate
+  <code>exclusion</code> from our direct dependency <code>com.acme.utils:jersey-utils</code>, in
+  <em>pom.xml</em>:
+ <pre class="brush: xml">
+        &lt;dependency&gt;
+          &lt;groupId&gt;com.acme.utils&lt;/groupId&gt;
+          &lt;artifactId&gt;jersey-utils&lt;/artifactId&gt;
+          &lt;version&gt;1.0.0&lt;/version&gt;
+          <span style="background: yellow">&lt;exclusions&gt;</span>
+            <span style="background: yellow">&lt;exclusion&gt;</span>
+              <span style="background: yellow">&lt;groupId&gt;stax&lt;/groupId&gt;</span>
+             <span style="background: yellow"> &lt;artifactId&gt;stax-api&lt;/artifactId&gt;</span>
+           <span style="background: yellow"> &lt;/exclusion&gt;</span>
+          <span style="background: yellow">&lt;/exclusions&gt;</span>
+        &lt;/dependency&gt;
+</pre>
+  </li>
+</ol>
+</p>
+
+<h3 id="multiple-implementations-example-slf4j">Troubleshooting Example slf4j-api</h3>
+<p>
+This is similar to the previous example, but logging libraries are maybe the most common
+problem teams encounter. Here we will see the symptom, use dependency:tree and add an exclusion.
+The symptom:
+</p>
+
+<pre>
+  java.lang.RuntimeException: An exception occurred while
+  constructing 'com.acme.utils.Helper in acme-utils'
+  Caused by: java.lang.LinkageError: loader constraint violation: when resolving method
+  "<span style="background: yellow">org.slf4j</span>.impl.StaticLoggerBinder.getLoggerFactory()Lorg/slf4j/ILoggerFactory;"
+  the class loader (instance of org/apache/felix/framework/BundleWiringImpl$BundleClassLoaderJava5) of the
+  current class, org/slf4j/LoggerFactory, and the class loader (instance of
+  sun/misc/Launcher$AppClassLoader) for the method's defining class,
+  org/slf4j/impl/StaticLoggerBinder, have different Class objects for the type
+  org/slf4j/ILoggerFactory used in the signature
+  at
+  org.slf4j.LoggerFactory.getILoggerFactory(LoggerFactory.java:299)
+  at
+  org.slf4j.LoggerFactory.getLogger(LoggerFactory.java:269)
+</pre>
+<p>
+Running the mvn dependency:tree command in the previous example gives:
+</p>
+<pre>
+[INFO] +- com.yahoo.vespa:container-dev:jar:5.28.29:provided
+[INFO] |  +- com.yahoo.vespa:jdisc_core:jar:5.28.29:provided
+[INFO] |  |  +- (org.slf4j:slf4j-api:jar:1.7.5:compile - scope updated from provided; omitted for duplicate)
+...
+[INFO] +- com.acme.utils:smartlib:jar:1.0.0:compile
+[INFO] |  +- org.slf4j:slf4j-api:jar:1.6.6:compile
+</pre>
+<p>
+We see that slf4j-api is no longer provided from container-dev, which it should. To fix this, we add an exclusion
+on the offender:
+</p>
+<pre>
+  &lt;dependency&gt;
+    &lt;groupId&gt;com.acme.utils&lt;/groupId&gt;
+    &lt;artifactId&gt;smartlib&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;scope&gt;compile&lt;/scope&gt;
+    &lt;exclusions&gt;
+      &lt;exclusion&gt;
+        &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+        &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+      &lt;/exclusion&gt;
+</pre>
+<p>
+But it still does not work! And we can see why:
+</p>
+<pre>
+$ jar -tf mailsearch-docprocs-deploy.jar  | grep slf
+dependencies/slf4j-api-1.7.5.jar
+</pre>
+<p>
+Something still pulls in slf4j... Other candidates:
+</p>
+<pre>
+[INFO] \- com.yahoo.vespa:application:jar:5.28.29:test
+...
+[INFO]    +- com.yahoo.vespa:zkfacade:jar:5.28.29:test
+[INFO]    |  +- org.apache.curator:curator-recipes:jar:2.4.1:test
+[INFO]    |  |  +- org.apache.curator:curator-framework:jar:2.4.1:test
+[INFO]    |  |  |  +- org.apache.curator:curator-client:jar:2.4.1:test
+[INFO]    |  |  |  |  +- (org.slf4j:slf4j-api:jar:1.6.4:test - omitted for conflict with 1.7.5)
+...
+[INFO]    |  +- (org.slf4j:slf4j-jdk14:jar:1.7.5:test - omitted for duplicate)
+</pre>
+<p>
+Added the right excludes for application and used mvn dependency:tree and verified that all references were
+gone, except the ones for container-dev. Still found:
+</p>
+<pre>
+  $ jar -tf mailsearch-docprocs-deploy.jar  | grep slf
+  dependencies/slf4j-api-1.7.5.jar
+</pre>
+<p>
+One can make it work by managing this dependency explicitly - add this at POM top-level:
+</p>
+<pre>
+  &lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+        &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+        &lt;version&gt;1.7.5&lt;/version&gt;
+        &lt;scope&gt;provided&lt;/scope&gt;
+      &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+  &lt;/dependencyManagement&gt;
+</pre>
+</body>
+</html>

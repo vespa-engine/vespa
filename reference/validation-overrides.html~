@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>validation-overrides.xml</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="Jaunary 2016" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p><b>validation-overrides.xml</b> can be added to the root of an application package to allow a deployment that otherwise
+fails to validate to proceed. Validations which can be overridden in this way are returned with a dash-separated validation
+id preceeding the validation message, e.g if the message is
+<code>field-type-change: Changing the type of field 'foo' to 'bar' is not supported</code> the validation id is
+<code>field-type-change</code>.
+</p>
+
+<p>Validations protect against inadvertently corrupting a production instance. Overriding them may be useful
+e.g if the application is not in production yet or if you think the consequences of inconsistencies or loss of
+the data in a particular field are fine.</p>
+
+
+<h2>Structure of validation-overrides.xml</h2>
+
+<pre class="code">
+&lt;validation-overrides&gt;
+    &lt;<a href="#allow">allow</a> until=&quot;iso-89-01-date&quot; [comment=&quot;any text&quot;]&gt;validation-id&lt;/allow&gt;*
+&lt;/validation-overrides&gt;
+</pre>
+
+Any number of <code>allow</code> tags is permissible.
+
+
+<h2 id="allow">&lt;allow&gt;</h2>
+
+<p>An <code>allow</code> tag disables a particular validation for a limited time.
+
+<h3>Attributes of &lt;allow&gt;</h3>
+
+<table>
+<tr><th>Attribute name<th>Value<th>Mandatory</tr>
+
+<tr>
+	<td>until
+	<td>The last day this change is allowed, as a ISO-8601-format date in UTC, e.g 2016-01-30.
+		Dates may at most be 30 days in the future, but should be as close to now as possible for safety,
+		while allowing time for review and propagation to all deployed zones.
+		Allow tags with dates in the past are ignored.
+	<td>Yes
+</tr>
+
+<tr>
+	<td>comment
+	<td>Any text explaining the reason for the change to humans.
+	<td>No
+</tr>
+</table>
+
+<h3>Content of &lt;allow&gt;</h3>
+
+A single validation id.
+Allow tags with unknown ids are ignored.
+
+
+<h2>Example</h2>
+<pre class="code">
+&lt;validation-overrides&gt;
+    &lt;allow until=&quot;2016-01-31&quot; comment=&quot;Reduce to needed cluster size after benchmarking by Trygve&quot;&gt;cluster-size-reduction&lt;/allow&gt;
+    &lt;allow until=&quot;2016-02-03&quot;&gt;field-type-change&lt;/allow&gt;
+    &lt;allow until=&quot;2016-02-20&quot; comment=&quot;Vespa 5.119 disallows our application, but it works on 120.&quot;&gt;skip-old-config-models&lt;/allow&gt;
+&lt;/validation-overrides&gt;
+</pre>
+</body>
+</html>
+
+

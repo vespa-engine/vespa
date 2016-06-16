@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>services.xml - 'content'</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="May 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+<pre>
+<a href="#content">content [version, id, distributor-base-port]</a>
+    <a href="#documents">documents [selection, garbage-collection, garbage-collection-interval]</a>
+        <a href="#document">document [type, selection, mode]</a>
+        <a href="#document-processing">document-processing [cluster, chain]</a>
+    <a href="#redundancy">redundancy [repldy-after]</a>
+    <a href="#nodes">nodes [count] [groups] [flavor]</a>
+        <a href="#node">node [baseport, hostalias, jvmargs??, preload, distribution-key, capacity]</a>
+    <a href="#group">group [distribution-key, name]</a>
+        <a href="#distribution">distribution</a>
+        <a href="#node">node [baseport, hostalias, jvmargs??, preload, distribution-key, capacity]</a>
+        <a href="#group">group [distribution-key, name]</a>
+    <a href="#engine">engine</a>
+        <a href="#vds">vds</a>
+        <a href="#proton">proton</a>
+            <a href="#searchable-copies">searchable-copies</a>
+            <a href="setup-proton-tuning.html">tuning</a>
+            <a href="#flush-on-shutdown">flush-on-shutdown</a>
+            <a href="#resource-limits">resource-limits</a>
+    <a href="#search">search</a>
+        <a href="#query-timeout">query-timeout</a>
+        <a href="#visibility-delay">visibility-delay</a>
+        <a href="#coverage">coverage</a>
+            <a href="#minimum">minimum</a>
+            <a href="#min-wait-after-coverage-factor">min-wait-after-coverage-factor</a>
+            <a href="#max-wait-after-coverage-factor">max-wait-after-coverage-factor</a>
+    <a href="#dispatch">dispatch</a>
+        <a href="#num-dispatch-groups">num-dispatch-groups</a>
+        <a href="#dispatch-group">group</a>
+            <a href="#dispatch-node">node [distribution-key]</a>
+    <a href="#tuning">tuning</a>
+        <a href="#bucket-splitting">bucket-splitting [max-documents, max-size, minimum-bits]</a>
+        <a href="#distribution_type">distribution [type]</a>
+        <a href="#maintenance">maintenance [start, stop, high]</a>
+        <a href="#merges">merges [max-per-node, max-queue-size]</a>
+        <a href="#persistence-threads">persistence-threads [lowest-priority-to-block-others, highest-priority-to-block]</a>
+            <a href="#thread">thread [lowest-priority, count]</a>
+        <a href="#visitors">visitors [thread-count, max-queue-size]</a>
+            <a href="#max-concurrent">max-concurrent [fixed, variable]</a>
+        <a href="#dispatch-tuning">dispatch</a>
+            <a href="#max-hits-per-partition">max-hits-per-partition</a>
+            <a href="#dispatch-policy">dispatch-policy</a>
+            <a href="#min-group-coverage">min-group-coverage</a>
+            <a href="#min-active-docs-coverage">min-active-docs-coverage</a>
+            <a href="#use-local-node">use-local-node</a>
+        <a href="#cluster-controller">cluster-controller</a>
+            <a href="#init-progress-time">init-progress-time</a>
+            <a href="#transition-time">transition-time</a>
+            <a href="#max-premature-crashes">max-premature-crashes</a>
+            <a href="#stable-state-period">stable-state-period</a>
+            <a href="#min-distributor-up-ratio">min-distributor-up-ratio</a>
+            <a href="#min-storage-up-ratio">min-storage-up-ratio</a>
+    <a href="#controllers">controllers</a>
+        <a href="#controller-nodes">nodes</a>
+</pre>
+
+<p>
+Please browse to the end of the document for an <a href="#example">example</a>.
+</p>
+
+
+<h1 id="content">content</h1>
+<p>
+The root element of a Content cluster definition.
+Creates a content cluster. A content cluster stores and/or indexes documents.
+The xml file may have zero or more such tags.
+</p>
+
+<p>
+Contained in <code><a href="../reference/services.html#overview">services</a></code>.
+Attributes:
+<ul>
+  <li><strong>version (required)</strong>:
+    Must be set to '1.0' in this version of Vespa.
+  </li>
+  <li><strong>id (required for multiple clusters)</strong>:
+    Name of the content cluster. If none is supplied, the cluster name will
+    be 'content'. Cluster names must be unique within application, so if
+    several clusters are setup, name must be set for all but one at minimum.
+    Suggested set by everyone for cluster to have a meaningful name. Allows
+    you to add clusters later without having to rename existing one for the
+    names to make sense.
+  </li>
+  <li><strong>distributor-base-port (optional)</strong>:
+    If a specific port is required for access to the distributor, override it
+    with this attribute.
+  </li>
+</ul>
+</p>
+
+<p>
+Required subelements:
+</p>
+<ul>
+  <li><a href="#documents"><code>documents</code></a></li>
+  <li><a href="#redundancy"><code>redundancy</code></a></li>
+</ul>
+
+<p>
+Optional subelements:
+</p>
+<ul>
+  <li><a href="#nodes"><code>nodes</code></a></li>
+  <li><a href="#group"><code>group</code></a></li>
+  <li><a href="#engine"><code>engine</code></a></li>
+  <li><a href="#search"><code>search</code></a></li>
+  <li><a href="#dispatch"><code>dispatch</code></a></li>
+  <li><a href="#tuning"><code>tuning</code></a></li>
+  <li><a href="#config"><code>config</code></a></li>
+</ul>
+
+
+
+
+<h1 id="documents">documents</h1>
+<p>
+Defines which document types should be routed to this content cluster using the default route, and what documents should be kept in the cluster if the garbage collector runs. Also have some backend specific configuration for whether documents should be searchable or not.
+</p>
+
+<p>
+Contained in <code><a href="#content">content</a></code>.
+Attributes:
+<ul>
+  <li><strong>selection (optional)</strong>:
+    String conforming to the <a href="../reference/document-select-language.html">document selection language.</a>. Default: A selection expression matching everything.
+    Restricts the documents that are routed to this cluster. This selection
+    can be specified to match document identifier specifics
+    that are <em>independent</em> of document types. If you want restrictions
+    that apply only to a specific document type, this must be done within
+    that particular document type's <code>&lt;document&gt;</code> tag. Trying
+    to use document type references in this selection will produce an error
+    during deployment. The selection given here will be merged with per-document
+    type selections specified within document tags, if any, meaning that any
+    document in the cluster must match <em>both</em> selections to be accepted
+    and kept.
+  </li>
+  <li><strong>garbage-collection (optional)</strong>: true or false.
+    If true, regularly verify the documents stored in the cluster to see if
+    they belong in the cluster, and delete them if not. If false, garbage
+    collection is not run. <em>If using this feature, take great care when
+    redeploying application to not lose all your documents by mistake!</em>
+    Garbage collected documents are not to be expected to be recoverable.
+  </li>
+  <li><strong>garbage-collection-interval (optional)</strong>: Non-negative integer.
+    Specifies the maximum amount of time (in seconds) between each garbage
+    collection cycle. The default value is 3600 seconds.
+  </li>
+</ul>
+</p>
+
+<p>
+Required subelements:
+</p>
+<ul>
+  <li><a href="#document"><code>document</code></a></li>
+</ul>
+
+<p>
+Optional subelements:
+</p>
+<ul>
+  <li><a href="#document-processing"><code>document-processing</code></a></li>
+</ul>
+
+
+
+<h2 id="document">document</h2>
+<p>
+Adds a document type to be routed to this content cluster.
+Contained in <code><a href="#documents">documents</a></code>.
+Attributes:
+<ul>
+  <li><strong>type (required)</strong>:
+    Restricts the documents that are routed to this cluster. This selection must apply to fields in this document type only.
+  </li>
+  <li><strong>mode (required)</strong>: The mode of storing and indexing these documents, see <a href="../indexing-modes.html">indexing modes</a>.
+    Valid values: <em>index</em>, <em>store-only</em> or <em>streaming</em>.
+  <li><strong>selection (optional)</strong>: String conforming to the <a href="../reference/document-select-language.html">document selection language.</a>
+    Selection matching all documents of given type. Restricts the documents that are routed to this cluster. This selection must apply to fields in this document type only. Selection will be merged
+    together with selection for other types and global selection from
+    <em>documents</em> tag to form a full expression for what documents
+    belong to this cluster.
+  </li>
+</ul>
+</p>
+
+
+
+<h2 id="document-processing">document-processing</h2>
+<p>
+Contained in <code><a href="#documents">documents</a></code>.
+Vespa Search specific configuration for which document processing cluster
+and chain should perform index pre processing for this content cluster.
+Attributes:
+<ul>
+  <li><strong>cluster (optional)</strong>: Name of a JDisc cluster with <a href="../reference/indexingcluster.html">document processing</a>.
+    Specifies the document processing cluster that should perform index pre processing for this content cluster. If none is specified, a new document processing cluster will be created for you, with one container instance on each content node.
+  </li>
+  <li><strong>chain (optional)</strong>: The name of a document processing chain in the JDisc cluster specified by the cluster attribute. Specifies a document processing chain to use for index pre processing. The specified chain should normally inherit the <code>indexing</code> chain. If none is specified, the builtin <code>indexing</code> chain is used.
+    </li>
+</ul>
+</p>
+
+
+
+<h1 id="redundancy">redundancy</h1>
+<p>
+Contained in <code><a href="#content">content</a></code>.
+Defines the number of copies of each piece of data the cluster will maintain
+to avoid data loss. If multiple groups are specified using the <em>groups</em> attribute, this
+means replicas within each group.
+If groups are specified explicitly using the <code>group</code> tag, this means total replicas
+across groups.
+<p class="alert alert-success">
+    <strong>Note:</strong> This means that if you use groups you will get a "global" redundancy equal to the number of groups you have, i.e groups=3 redundancy=1 means the internal group redundancy is 1, but your cluster have a redundancy of 3.
+</p>
+</p>
+<p>
+Example: with a redundancy of 2, the system can tolerate 1 node failure
+before data becomes unavailable (until the system has managed to create
+new replicas on other online nodes).
+</p>
+
+<p>
+Attributes:
+</p>
+<ul>
+  <li><strong>reply-after (optional)</strong>: Non-negative integer less or equal to the redundancy.
+    Specifies the <em>initial</em> redundancy. The content cluster will reply to a write operation after this many
+    copies have been written. Adjusting this number reduces write latency at the expense of reliability.
+  </li>
+</ul>
+
+
+
+
+<h1 id="nodes">nodes</h1>
+<p>
+Contained in <code><a href="#content">content</a></code>.
+Defines the set of content nodes in the cluster.
+Attributes:
+<ul>
+  <li><strong>count (optional)</strong>: Non-negative integer.
+    Sets the number of content nodes for the cluster when deploying to hosted Vespa. If this is set, no nodes can be specified as subelements of this.
+  </li>
+  <li><strong>groups (optional)</strong>: Non-negative integer.
+    Sets the number of <em>groups</em> into which the nodes should be divided. Each group will have an equal share of the nodes and <em>redundancy</em> copies of the
+    corpus, and each query will be routed to just one group. This allows scaling to a higher query load than is efficient within a single group.
+    If this is set, no groups can be specified as subelements of this. <a href="../qps-scaling-content-cluster.html">Example</a>.
+    WARNING: Changing from a non-grouped configuration to multiple groups will lead to temporary coverage loss in query serving.
+    Live instances should be failed out to another serving instance during this change.
+  </li>
+  <li><strong>flavor (optional)</strong>: A flavor name.
+    The node flavor to use for this cluster. If omitted the default flavor type will be used.
+  </li>
+  <li>
+      <strong>deploy (optional)</strong>: Refer to <a href="../reference/application-packages-reference.html#multi_environment_application_packages">deployment directives</a> for how to configure per-region/environment overrides (e.g. different number of nodes per region)
+  </li>
+</ul>
+</p>
+
+
+<h2 id="node">node</h2>
+<p>
+Contained in <code><a href="#nodes">nodes</a></code> or <code><a href="#group">group</code></a>.
+Configures a content node to the cluster.
+Attributes:
+<ul>
+  <li><strong>distribution-key (required)</strong>: Non-negative, unique integer.
+    Sets the distribution key of a node. It is not allowed to change this for a given node. It is recommended (but not required) that the set of distribution keys in the cluster are contiguous and starting at 0.
+  </li>
+  <li><strong>capacity (optional)</strong>: Non-negative double.
+    Capacity of this node, relative to other nodes. A node with capacity 2 will get double the data and requests of a node with capacity 1.
+  </li>
+  <li><strong><a href="../reference/services.html#attr-baseport">baseport</a> (optional)</strong></li>
+  <li><strong><a href="../reference/services.html#attr-hostalias">hostalias</a> (optional)</strong>: ToDo: check this</li>
+  <li><strong><a href="../reference/services.html#attr-jvmargs">jvmargs</a> (optional)</strong>: ToDo: check this</li>
+  <li><strong><a href="../reference/services.html#attr-preload">preload</a> (optional)</strong></li>
+</ul>
+</p>
+
+
+<h1 id="group">group</h1>
+<p>
+Contained in <code><a href="#content">content</a></code> or <code><a href="#group">group</a></code> - groups can be nested.
+Defines the hierarchical distribution structure of the cluster. Can not be used in conjunction with the <code><a href="#nodes">nodes</a></code> element.
+If a non-flat structure is desired, use this element instead. Groups can contain other groups or nodes, but not both.
+Read more on  <a href="data-placement.html">using groups</a>.
+Attributes:
+<ul>
+  <li><strong>distribution-key (required)</strong>: Non-negative, unique (within group) integer.
+    Sets the distribution key of a group. It is not allowed to change this for a given group.
+  </li>
+  <li><strong>name (required)</strong>: String.
+    The name of the group, used for access from status pages and the like.
+  </li>
+</ul>
+</p>
+<p class="alert alert-danger">
+  There is currently no deployment-time verification that the distribution key
+  remains unchanged for any given node or group. Consequently, take great
+  care when modifying the set of nodes in a content cluster. Assigning a new
+  distribution key to an existing node is undefined behavior; in the best case
+  the existing data will be temporarily unavailable until the error has been
+  corrected, in the worst case you'll experience crashes or data loss.
+</p>
+
+<h3>Example</h3>
+<p>
+This example creates two groups, where each group has all copies of half of the data set.
+</p>
+<pre class="code">
+&lt;group name='top-group' distribution-key='0'>
+  &lt;distribution partitions='*'/>
+  
+  &lt;group name='bottom-1' distribution-key='0'>
+    &lt;node distribution-key='0' hostalias='node1'/>
+  &lt;/group>
+  
+  &lt;group name='bottom-2' distribution-key='1'>
+    &lt;node distribution-key='1' hostalias='node2'/>
+  &lt;/group>
+&lt;/group>
+</pre>
+
+
+<h2 id="distribution">distribution (in group)</h2>
+<p>
+Contained in <code><a href="#group">group</a></code>.
+Defines the data distribution to subgroups of this group.
+Attributes:
+</p>
+<ul>
+  <li><strong>partitions (required, if there are subgroups in the group)</strong>: String conforming to the <a href="data-placement.html">placement strategy syntax</a>.
+  </li>
+</ul>
+
+
+
+<h1 id="engine">engine</h1>
+<p>
+Contained in <code><a href="#content">content</a></code>.
+Specify the content engine to use, and/or adjust tuning parameters for the engine. Allowed engines are vds, proton and dummy, the latter being used for debugging purposes. If no engine is given, proton (indexed search) is used. Sub-elements: one of <a href="#vds"><code>&lt;vds&gt;</code></a> and <a href="#proton"><code>&lt;proton&gt;</code></a>
+</p>
+
+
+
+
+<h2 id="vds">vds</h2>
+<p>
+Contained in <code><a href="#engine">engine</a></code>.
+If specified, the content cluster will use the VDS content engine. This engine supports storage and streaming search, but
+no secondary indices.
+</p>
+
+
+
+
+
+<h2 id="proton">proton</h2>
+<p>
+Contained in <code><a href="#engine">engine</a></code>.
+If specified, the content cluster will use the Proton content engine. This engine supports storage, indexed search and
+secondary indices.
+Optional sub-elements are <a href="#searchable-copies"><code>searchable-copies</code></a>,
+<a href="setup-proton-tuning.html"><code>tuning</code></a>,
+<a href="#flush-on-shutdown"><code>flush-on-shutdown</code></a>, and
+<a href="#resource-limits"><code>resource-limits</code></a>.
+</p>
+
+
+<h2 id="searchable-copies">searchable-copies</h2>
+<p>
+Contained in <code><a href="#proton">proton</a></code>.
+If set to less than the <a href="#redundancy"><code>redundancy</code></a> in the system, only some
+of the stored copies will be ready for searching at any time. This means that node failures can
+cause temporary data unavailability while the alternate copies are being readied for search.
+The benefit however is that we only need to store the not-ready documents on disk and resources for having them
+searchable (inverted memory index and attribute fields in memory) is spared.
+</p>
+
+<p>
+If you use partial updates or <a href="#documents">document selection</a> for garbage collection
+you should consider setting
+<a href="../reference/search-definitions.html#attribute"><code>fast-access</code></a>
+on the subset of attribute fields used for this to make sure that these attributes are always kept
+in memory for fast access. Note that this is only useful if <code>searchable-copies</code> is less than
+<code>redundancy</code>.
+</p>
+
+
+<h2 id="flush-on-shutdown">flush-on-shutdown</h2>
+<p>
+Contained in <code><a href="#proton">proton</a></code>.
+If set to true, search nodes will flush a set of components (e.g. memory index, attributes) to disk before shutting down
+such that the time it takes to flush these components plus the time it takes to replay the transaction log after restart
+is as low as possible. The time it takes to replay the transaction log depends on the amount of data to replay,
+so by flushing some components before restart the transaction log will be pruned and we reduce the replay time significantly.
+</p>
+
+
+<h2 id="resource-limits">resource-limits</h2>
+<p>
+Contained in <code><a href="#proton">proton</a></code>.
+Specifies resource limits that is used by proton content engine to reject put and update operations if one or more limits are reached.
+By settings these limits we effectively stop incoming feed before filling up the disk entirely or blowing all the memory on the nodes.
+</p>
+
+<p>
+See <a href="../operations/content-cluster-resource-limits.html">content cluster resource limits</a>
+on which steps to take if some resource limits have been reached and feeding is rejected.
+</p>
+
+
+<h2 id="disk-limit">disk</h2>
+<p>
+Contained in <code><a href="#resource-limits">resource-limits</a></code>.
+Specifies the portion of total space on the disk partition that can be used before put and update operations are rejected.
+Value in the range [0, 1]. Default value is 1.0.
+</p>
+
+
+<h2 id="memory-limit">memory</h2>
+<p>
+Contained in <code><a href="#resource-limits">resource-limits</a></code>.
+Specifies the portion of physical memory that can be resident memory in anonymous mapping by the proton process
+before put and update operations are rejected.
+Value in the range [0, 1]. Default value is 1.0.
+</p>
+
+
+<h1 id="search">search</h1>
+<p>
+Contained in <code><a href="#content">content</a></code>, optional.
+Declares search configuration for this content cluster. Optional sub-elements are
+<a href="#query-timeout"><code>query-timeout</code></a>, <a href="#visibility-delay"><code>visibility-delay</code></a> and <a href="#coverage"><code>coverage</code></a>.
+</p>
+
+
+
+<h2 id="query-timeout">query-timeout</h2>
+<p>Contained in <a href="#search"><code>search</code></a>.
+Specifies the query timeout for queries against the search interface on the content nodes.
+</p>
+
+
+<h2 id="visibility-delay">visibility-delay</h2>
+<p>Contained in:<a href="#search"><code>search</code></a>.
+Specifies the maximum amount of time (in seconds) that should pass from a write operation is
+performed to the change is visible in search results. The default value is 0 seconds. Configuring a larger value then 0 will also introduce a results oriented cache at the container level where 
+time to live (ttl) is set to the same value as the visibility-delay. 
+Note that by increasing this value you should also expect an increase in throughput during batch feeding.
+</p>
+
+<p>
+When benchmarking batch feeding for a given test set, we got the following improvements
+in throughput when setting <code>visibility-delay</code> to 4.0 seconds:
++20% during initial feeding, +15% during re-feeding and +120% during removing of 1M documents.
+These improvements depend on how many index and attribute fields are in the search definition,
+the content of the documents and the <code>visibility-delay</code> itself.
+Benchmarking is required to establish the particular improvements for a given application.
+</p>
+
+
+<h2 id="coverage">coverage</h2>
+<p>Contained in:<a href="#search"><code>search</code></a>.
+Declares search coverage configuration for this content cluster. Optional sub-elements are
+<a href="#minimum"><code>minimum</code></a>, <a href="#min-wait-after-coverage-factor"><code>min-wait-after-coverage-factor</code></a>and <a href="#max-wait-after-coverage-factor"><code>max-wait-after-coverage-factor</code></a>.
+</p>
+
+
+<h2 id="minimum">minimum</h2>
+<p>
+Contained in <a href="#coverage"><code>coverage</code></a>.
+Declares the minimum search coverage required before returning the results of a query.
+This number is in the range <code>[0, 1]</code>, with 0 being no coverage and 1 being
+full coverage.
+
+The default is 1; unless configured otherwise a query will not return until all search
+nodes have responded.
+</p>
+
+
+<h2 id="min-wait-after-coverage-factor">min-wait-after-coverage-factor</h2>
+<p>Contained in: <a href="#coverage"><code>coverage</code></a>.
+Declares the minimum time for a query to wait for full coverage once the declared
+<a href="#minimum">minimum</a> has been reached. This number is a factor that is
+multiplied with the time remaining at the time of reaching minimum coverage.
+
+The default is 0; unless configured otherwise a query will return as soon as the
+minimum coverage has been reached, and the remaining search nodes appear to be
+lagging.
+</p>
+
+
+<h2 id="max-wait-after-coverage-factor">max-wait-after-coverage-factor</h2>
+<p>Contained in:<a href="#coverage"><code>coverage</code></a>.
+Declares the maximum time for a query to wait for full coverage once the declared
+<a href="#minimum">minimum</a> has been reached. This number is a factor that is
+multiplied with the time remaining at the time of reaching minimum coverage.
+
+The default is 1; unless configured otherwise a query is allowed to wait its full
+timeout for full coverage even after reaching the minimum.
+</p>
+
+
+
+
+
+<h1 id="dispatch">dispatch</h1>
+<p>
+Contained in:<a href="#content"><code>content</code></a>, optional.
+Defines the multi-level structure of dispatchers (scatter-gather nodes) in this cluster.
+By adding this element we get a hierarchy of mid-level dispatchers, ordered in dispatch groups,
+with content/search nodes at the leaf level. This can be used in a system with a huge amount
+(hundreds) of content/search nodes where the fan-out from the top-level dispatchers causes the
+network to be a bottleneck.
+</p>
+
+<p>
+Currently, this multi-level structure is only supported when using flat document distribution
+and only one level of mid-level dispatchers.
+Optional sub-elements are
+<a href="#dispatch-group"><code>group</code></a> and <a href="#num-dispatch-groups"><code>num-dispatch-groups</code></a>.
+</p>
+
+<p>
+In the following example we create 2 mid-level dispatch groups, each containing 3 content/search
+nodes (referenced by the distribution key of the actual nodes). Each dispatch group also consists of
+3 mid-level dispatchers that will be located on the content/search node hosts. The nodes of a
+dispatch group will typically be located on the same physical switch in a production setup.
+</p>
+
+<p>
+In this setup the top-level dispatchers will see 2 mid-level dispatch groups, and each query is
+passed to 1 of the 3 dispatchers in each group (in round robin fasion).
+The mid-level dispatchers will pass the query to all its underlying content/search nodes.
+</p>
+
+<pre class="code">
+    &lt;dispatch&gt;
+        &lt;group&gt;
+            &lt;node distribution-key='0'/&gt;
+            &lt;node distribution-key='1'/&gt;
+            &lt;node distribution-key='2'/&gt;
+        &lt;/group&gt;
+        &lt;group&gt;
+            &lt;node distribution-key='3'/&gt;
+            &lt;node distribution-key='4'/&gt;
+            &lt;node distribution-key='5'/&gt;
+        &lt;/group&gt;
+    &lt;/dispatch&gt;
+</pre>
+
+
+<h2 id="num-dispatch-groups">num-dispatch-groups</h2>
+<p>Contained in <a href="#dispatch"><code>dispatch</code></a>.
+Defines the number of dispatch groups to be used in the multi-level dispatch setup.
+This can be specified instead of explicit dispatch groups. In this case the content/search nodes
+of this cluster is automatically assigned to the specified number of dispatch groups (in the same
+order they are specified in this cluster).
+</p>
+
+<p>
+NOTE: Should NOT be used for production.
+</p>
+
+
+<h2 id="dispatch-group">group (in dispatch)</h2>
+<p>Contained in <a href="#dispatch"><code>dispatch</code></a>.
+Defines a mid-level dispatch group in a multi-level dispatch setup.
+Required sub-element is <a href="#dispatch-node"><code>node</code></a>
+</p>
+
+
+
+<h2 id="dispatch-node">node (in dispatch)</h2>
+<p>Contained in <a href="#dispatch-group"><code>group</code></a>, required.
+Defines a node in a mid-level dispatch group. This is a reference to the actual content/search node
+that should be part of this dispatch group. A mid-level dispatcher will also be located on the host of the
+content/search node. Attribute:
+</p>
+<ul>
+  <li><strong>distribution-key (required)</strong>:
+    Reference to the distribution key of the actual content/search node
+  </li>
+</ul>
+
+
+
+
+
+<h1 id="tuning">tuning</h1>
+<p>Contained in <a href="#content"><code>content</code></a>, optional. Optional tuning parameters are:
+<a href="#bucket-splitting"><code>bucket-splitting</code></a>,
+<a href="#cluster-controller"><code>cluster-controller</code></a>,
+<a href="#dispatch-tuning"><code>dispatch</code></a>,
+<a href="#distribution_type"><code>distribution</code></a>,
+<a href="#maintenance"><code>maintenance</code></a>,
+<a href="#merges"><code>merges</code></a>,
+<a href="#persistence-threads"><code>persistence-threads</code></a> and
+<a href="#visitors"><code>visitors</code></a></td>.
+</p>
+
+<h2 id="bucket-splitting">bucket-splitting</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+The optimal bucket size depends on indexing type and use cases. One would normally
+prefer larger buckets, but use cases like streaming search will benefit from capping
+the maximum size to keep query latency down.
+</p>
+<p>
+Having buckets with too few documents will impact visiting performance,
+and can also cause a system to merge slower. Distributors will have
+larger in-memory bucket databases. Check a distributor's status page
+to inspect your cluster's buckets.  Attributes:
+<ul>
+  <li><strong>max-documents (optional)</strong>:
+    Maximum number of documents per content bucket. Split buckets in two if
+    they have more documents than this.
+  </li>
+  <li><strong>max-size (optional)</strong>:
+    Maximum size (in bytes) of a bucket. Split buckets in two if they are
+    larger than this.
+  </li>
+  <li><strong>minimum-bits (optional)</strong>:
+    Override the ideal distribution bit count configured for this cluster.
+    Prefer to use the <a href="#distribution_type">distribution type</a>
+    setting instead if the default distribution bit count does not fit your
+    cluster. This variable is intended for testing and to work around
+    possible distribution bit issues. Most users should not need this option.
+  </li>
+</ul>
+</p>
+
+<h2 id="distribution_type">distribution (in tuning)</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+Lets you tune the distribution algorithm used in the cluster.
+Attributes:
+<ul>
+  <li><strong>type (optional)</strong>: loose | strict | legacy
+    Sets a mode for how many distribution bits should be used given a
+    number of nodes. Many buckets give you an even distribution. Few
+    buckets let you have large buckets if you want, and have less buckets
+    to keep metadata about and manage. Legacy mode keeps equal to 5.0, which
+    means optimizing for less than 0.5 % waste, and changing bits used often
+    to optimize for current node count. Strict mode optimize for less than
+    1 % waste, and try to change bits less seldom upon cluster resizing,
+    allowing some more buckets per node for smaller clusters to handle this.
+    Loose tries to optimize for less than 10% waste, and very seldom change
+    based on cluster size.
+  </li>
+</ul>
+</p>
+
+<h2 id="maintenance">maintenance</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+Controls the running time of the bucket maintenance process. Bucket
+maintenance verifies bucket content for corruption. Most users should not
+need to tweak this.
+Attributes:
+<ul>
+  <li><strong>start (required)</strong>: Time string in HH:MM form, e.g. 02:00
+    Start of daily maintenance window.
+  </li>
+  <li><strong>stop (required)</strong>: Time string in HH:MM form, e.g. 05:00
+    End of daily maintenance window.
+  </li>
+  <li><strong>high (required)</strong>: Week day name string, e.g. monday
+    Day of week for starting full file verification cycle (more costly than partial file verification)
+  </li>
+</ul>
+</p>
+
+<h2 id="merges">merges</h2>
+<p>Contained in <td><a href="#tuning"><code>tuning</code></a>.
+  Defines throttling parameters for bucket merge operations.
+  Attributes:
+<ul>
+  <li><strong>max-per-node (optional)</strong>:
+    Maximum number of parallel active bucket merge operations.
+  </li>
+  <li><strong>max-queue-size (optional)</strong>:
+    Maximum size of the merge bucket queue, before reporting BUSY back to the distributors.
+  </li>
+</ul>
+</p>
+
+<h2 id="persistence-threads">persistence-threads</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+Defines the number of persistence threads per partition on each
+content node. A content node executes bucket operations against the
+persistence engine synchronously in each of these threads. By default, four
+threads are created that can handle any priority operation, as well as two
+threads reserved for high priority operations. Optionally, add one or more <a href="#thread"><code>thread</code></a> elements.
+Attributes:
+<ul>
+  <li><strong>lowest-priority-to-block-others (optional)</strong>: <a href="setup-throttling.html">Priority</a> indicator (e.g. VERY_HIGH)
+    If an operation has equal to or higher priority than this, operations
+    with low enough priority to be blocked will not be able to start running
+    in other persistence threads for the same partition.
+  </li>
+  <li><strong>highest-priority-to-block (optional)</strong>: <a href="setup-throttling.html">Priority</a> indicator (e.g. NORMAL_1)
+    If an operation has a priority lower than or equal to this priority, and
+    there are already operations being processed that have high enough
+    priority to block others, this operation will not be started yet, even if
+    there is a free persistence thread.
+  </li>
+</ul>
+</p>
+
+
+
+<h2 id="thread">thread</h2>
+<p>Contained in <a href="#persistence-threads"><code>persistence-threads</code></a>.
+Adds a number of threads to process persistence operations on each
+partition.
+Attributes
+<ul>
+  <li><strong>lowest-priority (optional)</strong>: <a href="setup-throttling.html">Priority</a> indicator (e.g. NORMAL_1)
+    <p>
+    The lowest priority operation these threads are allowed to process.
+    Defaults to LOWEST. Note that in this context LOWEST refers to the
+    lowest possible priority. While in the context of setting operation
+    priority, LOWEST is the lowest user settable priority, but the content
+    layer itself can create lower priority operations if it wants.
+    </p>
+    <p class="alert alert-success">
+    <strong>Note:</strong> You should always have at least 1 thread capable of processing
+    operations with any priority, as the priority of internal operations is
+    undefined from the perspective of the end-user and some of these may
+    have a very low priority (but still be important to <em>eventually</em>
+    process). Failing to do so results in operations filling up partition
+    queues that can never be performed.
+    </p>
+  </li>
+  <li><strong>count (optional)</strong>:
+    The number of these threads to create.
+  </li>
+</ul>
+</p>
+
+  
+<h2 class="param" id="visitors">visitors</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+  Tuning parameters for visitor operations. Might contain <a href="#max-concurrent"><code>&lt;max-concurrent&gt;</code></a>.
+  Attributes:
+<ul>
+  <li><strong>thread-count (optional)</strong>:
+    The maximum number of threads in which to execute visitor operations. A higher number of threads may increase performance, but may use more memory.
+  </li>
+  <li><strong>max-queue-size (optional)</strong>:
+    Maximum size of the pending visitor queue, before reporting BUSY back to the distributors.
+  </li>
+</ul>
+</p>
+
+  
+<h2 id="max-concurrent">max-concurrent</h2>
+<p>Contained in <a href="#visitors"><code>visitors</code></a>.
+Defines how many visitors can be active concurrently on each storage node. The number allowed depends on priority - lower priority visitors
+should not block higher priority visitors completely. To implement this, you can specify a fixed and a variable
+number. For a given visitor, the maximum active allowed is calculated by adjusting the variable component using the
+priority, and adding the fixed component.
+Attributes:
+<ul>
+  <li><strong>fixed (optional)</strong>: Number.
+    The fixed component of the maximum active count.
+  </li>
+  <li><strong>variable (optional)</strong>: Number.
+    The variable component of the maximum active count.
+  </li>
+</ul>
+</p>
+
+
+
+
+<h2 id="dispatch-tuning">dispatch</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+Lets you tune the behavior of the query-dispatch of the cluster.
+Optional sub-elements are:
+<ul>
+  <li><a href="#max-hits-per-partition"><code>max-hits-per-partition</code></a></li>
+  <li><a href="#dispatch-policy"><code>dispatch-policy</code></a></li>
+  <li><a href="#min-group-coverage"><code>min-group-coverage</code></a></li>
+  <li><a href="#min-active-docs-coverage"><code>min-active-docs-coverage</code></a></li>
+  <li><a href="#use-local-node"><code>use-local-node</code></a></li>
+</ul>
+</p>
+
+<h2 id="max-hits-per-partition">max-hits-per-partition</h2>
+<p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
+  Declares the maximum number of hits to return from a single node.
+  By default a query returns the requested number of hits + offset from every search node
+  up to the dispatcher, which in turns orders them according to the query, then
+  discards all hits beyond the number requested. In a system with a large
+  fan-out, this can consume a lot of bandwidth. When there is sufficiently many
+  search nodes, assuming an even distribution of the hits, it should suffice to
+  only return some fraction of the request number of hits from each node. Note that changing this number will have global ordering impact. How much is determined by the total number of search nodes involved in the query and the magnitude of the hits/offset parameters.
+</p>
+
+<h2 id="dispatch-policy">dispatch-policy</h2>
+<p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
+Tells what policy shall be used to choose wich group/row shall receive the next request.
+Default is <b>round-robin</b> which simply round robin between the different groups. <b>random</b> is the
+  other option that can be used if you have a very regular query pattern to obtain better distribution. 
+Note that <b>round-robin</b> require all groups to be of equal size where as <b>random</b> allows heterogeneous groups.
+Also note that <b>round-robin</b> will put equal load on the groups. Hence requiring them to be similar with
+regards to capacity. <b>random</b> will measure latency and prefer lower latency groups.
+</p>
+
+<h2 id="min-group-coverage">min-group-coverage</h2>
+<p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
+This says how much coverage you need in order to serve from this group. Default is 100 which means that you
+require full coverage. This is relevant only when you are using hierarchical distribution.
+</p>
+
+<h2 id="min-active-docs-coverage">min-active-docs-coverage</h2>
+<p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
+This says how many active docs (in percent) a group needs to have compared
+to average of other groups in order to be active for serving queries.
+Default is 50 to allow groups to start serving even if you have only partial
+contents but avoids serving empty results.  Because of measurement timing
+differences it is not advisable to tune this above 99 percent.  This
+parameter is relevant only when you are using hierarchical distribution.
+</p>
+
+<h2 id="use-local-node">use-local-node</h2>
+<p>Contained in <a href="#dispatch-tuning"><code>dispatch</code></a>.
+Specifies that each dispatcher only use those search node(s) that are on the same host as the dispatcher
+so that each query is only sent to those local search node(s).
+Note that this tuning should only be used if you also use hierarchical distribution where the entire document collection
+is placed on the search node(s) on each host. Otherwise this tuning gives in-complete query results.
+Please see <a href="../qps-scaling-content-cluster.html">QPS Scaling in an Indexed Content Cluster</a>
+for more information about hierarchical distribution.
+</p>
+
+
+
+<h2 id="cluster-controller">cluster-controller</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+Tuning parameters for the cluster controller managing this cluster.
+Optional sub-elements are
+<a href="#init-progress-time"><code>init-progress-time</code></a>,
+<a href="#transition-time"><code>transition-time</code></a>,
+<a href="#max-premature-crashes"><code>max-premature-crashes</code></a>,
+<a href="#stable-state-period"><code>stable-state-period</code></a>,
+<a href="#min-distributor-up-ratio"><code>min-distributor-up-ration</code></a> and
+<a href="#min-storage-up-ratio"><code>min-storage-up-ratio</code></a>.
+
+<h2 id="init-progress-time">init-progress-time</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+If the initialization progress count have not been altered for this amount
+    of seconds, the node is assumed to have deadlocked and is set down. Note
+    that initialization may actually be downprioritized now, so setting a low
+    value here might cause false positives. Though if it is set down for wrong
+    reason, when it will finish initialization and then be set up again.
+</p>
+
+<h2 id="transition-time">transition-time</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+If a node seems to be doing a controlled restart, it is allowed to be set in
+    maintenance mode for this amount of seconds automatically, causing the
+    cluster to assume it will soon be available again, and not start to take
+    over bucket ownership.
+</p>
+
+<h2 id="max-premature-crashes">max-premature-crashes</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+The maximum number of crashes allowed before a content node is permanently
+    set down by the cluster controller. If the node has a stable up or down
+    state for more than the stable state time period, the crash count is reset.
+    However, resetting the count will not reenable the node again if it has been
+    disabled. A disabled node may not crash because it no longer receives
+    requests.
+</p>
+
+<h2 id="stable-state-period">stable-state-period</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+If a content node's state doesn't change for this many seconds, it's state
+    is considered "stable", clearing the premature crash count.
+</p>
+
+<h2 id="min-distributor-up-ratio">min-distributor-up-ratio</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+The minimum ratio of distributors that are required to be "up" for the
+    cluster state to be "up".
+</p>
+
+<h2 id="min-storage-up-ratio">min-storage-up-ratio</h2>
+<p>Contained in <a href="#cluster-controller"><code>cluster-controller</code></a>.
+The minimum ratio of content nodes that are required to be "up" for the
+    cluster state to be "up".
+</p>
+
+<h2 id="controllers">controllers</h2>
+<p>Provides control over the nodes used as cluster controllers in this cluster.
+If this tag is not specified, 3 nodes from the content cluster are assigned as cluster controllers
+(from different groups if applicable). If this is specified, there is one mandatory subtag,
+<a href="#controller-nodes">nodes</a>.
+</p>
+
+<h2 id="controller-nodes">nodes (in controllers)</h2>
+<p>
+Contained in <code><a href="#controllers">controllers</a></code>.
+Controls the cluster controller nodes in the cluster.
+Attributes:
+<ul>
+  <li><strong>count (mandatory)</strong>: Non-negative integer.
+    The number of nodes to be used as controllers for this content cluster. At least 3 is recommended as
+    this uses leader election.
+  </li>
+  <li><strong>dedicated (optional)</strong>: true or false
+    Whether or not separate nodes should be allocated as controllers. By default content nodes are reused.
+  </li>
+  </li>
+  <li><strong>flavor (optional)</strong>: A flavor name.
+    If dedicated nodes are used this can be used to control their flavor.
+  </li>
+</ul>
+</p>
+
+<h1 id="example">Example</h1>
+<p>
+Below is a minimalistic content-application where you can feed and retrieve documents
+using vespafeeder, vespaget and vespavisit. Use the application in the <a href="../vespa-quick-start.html">
+quick-start</a> and modify <em>services.xml</em>. Feed, dump using vespavisit and then get the IDs:
+</p>
+<pre>
+  &lt;services version="1.0">
+    &lt;admin version="2.0"&gt;
+      &lt;adminserver hostalias="node1"/&gt;
+    &lt;/admin&gt;
+    &lt;content id="mycluster" version="1.0"&gt;
+      &lt;config name="vespa.config.content.core.stor-distributormanager"&gt;
+        &lt;maxpendingidealstateoperations&gt;32&lt;/maxpendingidealstateoperations&gt;
+      &lt;/config&gt;
+      &lt;tuning&gt;
+        &lt;maintenance start="22:00" stop="05:00" high="friday" /&gt;
+      &lt;/tuning&gt;
+      &lt;engine&gt;
+        &lt;proton&gt;
+          &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
+        &lt;/proton&gt;
+      &lt;/engine&gt;
+      &lt;redundancy&gt;2&lt;/redundancy&gt;
+      &lt;documents&gt;
+        &lt;document type="music" mode="index" /&gt;
+      &lt;/documents&gt;
+      &lt;nodes count="5"/&gt;
+    &lt;/content&gt;
+  &lt;/services&gt;
+</pre>
+<p>
+Please observe how one can set configuration to the content cluster, in this example <em>
+maxpendingidealstateoperations</em>. It also demonstrates how to tune the cluster's
+<em>maintenance</em> instervals.
+</p>
+
+
+</body>
+</html>

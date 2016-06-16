@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Content Distribution Layer Architecture</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="July 2013"/>
+  <meta name="authors" content="humbe"/>
+</head>
+<body>
+
+<p class="ingress">
+  This document describes the various aspects of the content layer. It assumes
+  the reader have read the <a href="content-layer-overview.html">overview</a>.
+</p>
+
+<h1 id="buckets">Buckets</h1>
+<p>
+  The various operations done through and within the content layer need some
+  unit of data to operate on. This could be documents directly, but then the
+  number of units existing can not be controlled by the content layer. Mapping
+  documents to buckets, the number of units existing can be controlled.
+</p>
+<p>
+  Advantages of many units.
+</p>
+<ul>
+  <li>Easy to create an even distribution.</li>
+  <li>Issues detected are more specific, relating to a smaller part of the
+      document corpus.</li>
+  <li>Operations on small units finish quickly.</li>
+</ul>
+<p>
+  Advantages of few units.
+</p>
+<ul>
+  <li>Per unit metadata takes up less space, simplifying caching and metadata
+      transfers.</li>
+  <li>Iterating metadata for all units is faster.</li>
+</ul>
+<p>
+  To be able to strike a decent balance, documents are mapped to a set of
+  buckets, where the number of buckets existing can be controlled. As clusters
+  grow or shrink, or document sizes in the cluster change, one may want to have
+  a different amount of buckets in the cluster. This is achieved by bucket
+  splitting and joining.
+</p>
+<p>
+  Documents have string identifiers that maps to a 58 bit numeric
+  location. A bucket is defined as all the documents that shares a given amount
+  of least significant bits within the location. The amount of bits used
+  controls how many buckets will exist. For instance, if a bucket contains all
+  documents whose 8 LSB bits is 0x01, the bucket can be split in two by using
+  the 9th bit in the location to split them. Similarly buckets can be joined
+  by requiring one less bit in common.
+</p>
+<p>
+  Document identifiers may use document identifier schemes to control how
+  documents map to locations. This way it is possible to colocate data within
+  buckets by enforcing some documents to have common LSB bits. Doing so may
+  create a less even distribution, so unless your use case requires it, it is
+  recommended to use the default MD5 checksum mapping.
+</p>
+
+<h1 id="distribution">Distribution</h1>
+<p>
+  Distribution happens in several layers.
+</p>
+<ul>
+  <li>Documents map to 58 bit numeric locations.</li>
+  <li>Locations map to buckets</li>
+  <li>Buckets map to distributors responsible for handling requests related to
+      those buckets.</li>
+  <li>Buckets map to content nodes responsible for storing copies of
+      buckets.</li>
+  <li>Buckets within a content node is mapped to partitions within</li>
+</ul>
+
+<h2 id="documents-to-loc-distribution">Document to location distribution</h2>
+<p>
+  See the <a href="../document-ids.html">document identifier schemes</a>
+  documentation for how the document identifiers can be user to override
+  location bits. Specifying a group or numeric value with the n and g options
+  overrides the 32 LSB bits of the location. This is useful for streaming
+  search use cases. Unless co-localization is required it is recommended not
+  to override the location bits, to generate a more even distribution.
+</p>
+
+<h2 id="loc-to-bucket-distribution">Location to bucket distribution</h2>
+<p>
+  When clients talk to the content layer, they typically have a document where
+  a location can be calculated. But in order to know what distributor to talk
+  to, they need to know the correct bucket to use.
+</p>
+<p>
+  Currently this is solved by enforcing a given number of location bits to be
+  used. The cluster state contains a distribution bit count, which is the
+  amount of location bits to use to generate buckets which can be mapped to
+  distributors.
+</p>
+<p>
+  The cluster state may change the number of distribution bits to adjust the
+  number of buckets distributed at this level. When adding more nodes to the
+  cluster, the amount of buckets may need to increase in order for the
+  distribution to remain reasonably even. When removing nodes, one may want to
+  decrease the number of distribution bits used, to allow the content nodes to
+  keep metadata for less buckets.
+</p>
+<p>
+  Currently, altering the distribution bit count will redistribute a lot of
+  bucket ownership between the distributors, which may create some temporary
+  loss of availability. Thus, one don't want to change the number too often.
+</p>
+<p>
+  Another limitation is that there should be a decent distribution of documents
+  into the buckets that exist. If locations have been overrided to colocalize
+  documents into few units, the distribution of documents into these buckets
+  may be skewed. A possible future improvement would be to not require the
+  distribution bit count to be equal within the entire bucket tree. One could
+  allow the distribution bit count to differ based on the LSB bits of the
+  location.
+</p>
+
+<h2 id="bucket-to-dist-distribution">Bucket to distributor distribution</h2>
+<p>
+  Clients need to reach the entire cluster. Keeping a single registry of where
+  to find all buckets require memory to scale with cluster size. Requiring this
+  registry to fit in memory, limits amount of buckets used, complicates
+  creating an even distribution, and keeping a dynamic, large memory structure
+  synchronized across many nodes adds complexity.
+</p>
+<p>
+  An external registry service could be used, but if the registry is large
+  enough to require multiple nodes, then it becomes another stateful service of
+  its own, and client requests would need to do extra network hops to talk to
+  the registry server.
+</p>
+<p>
+  To avoid the problems above, the content layer maps buckets to nodes using an
+  algorithm calculating distributor targets based on bucket and knowledge about
+  what distributors exist, and what their capacities are.
+</p>
+
+<h2 id="bucket-to-content-node-dist">Bucket to content node distribution</h2>
+<p>
+  Buckets are mapped to content nodes for storage. As the content nodes store
+  persistent data, moving ownership of buckets take a lot more time at the
+  content node level than on the distributor level. But as each distributor
+  only handles a controllable amount of buckets, they can keep per bucket
+  metadata in memory without creating a scaling issue. Distributors route
+  requests on to content nodes based on an in memory bucket database telling it
+  who have copies of what buckets.
+</p>
+<p>
+  The same algorithm that is used to calculate distributor ownership is used to
+  calculate wanted content node ownership. The distributor uses this algorithm
+  to calculate where bucket copies are supposed to be, and move buckets that
+  are currently in the wrong position in the background. As the algorithm is
+  the same, each distributor typically have one copy of all buckets it owns
+  locally. Traffic only requiring one copy, such as read traffic, can thus be
+  served with only a single network hop from the client.
+</p>
+<p>
+  The distributors typically use little system resources, and should not be the
+  bottle neck in the cluster. It is thus not critical if the distribution to
+  distributors are not as even as distribution of buckets to content nodes. The
+  distributors may split the buckets further than the distribution bit count
+  indicate, allowing more units to be distributed among the content nodes to
+  create a more even distribution, while not affecting routing from client to
+  distributors. Note though, that if this is required, one loses the
+  optimalization of having one copy of each bucket a distributor owns locally.
+  For many applications this is not critical though, as write traffic needs to
+  span to many copies anyhow, and there may be little read traffic. The extra
+  network hop shouldn't be critical either.
+</p>
+
+<h2 id="bucket-to-partition-dist">Bucket to partition distribution</h2>
+<p>
+  A content node may contain multiple partitions, enabling it to fail only
+  parts of the node, or easily split requests between multiple resources
+  creating separate queues to avoid one overloaded partition to stop other
+  partitions from being available.
+</p>
+<p>
+  Buckets map to partitions within a content node using the same algorithm that
+  is used to map to nodes. Just that in this case, the distribution keys used
+  are the partition indexes. The seed used includes the distribution key of the
+  node too though, to ensure the bucket will map to different partitions on
+  other nodes. This is an important property to ensure that when a partition
+  goes down, all partitions on all other nodes will divide the extra load
+  between them.
+</p>
+<p>
+  To avoid a two level distribution with non-ideal movement on state changes,
+  the distributors are aware of the partition states and partition selection
+  algorithm. When mapping buckets to content nodes, it will not map buckets to
+  nodes where the correct partition is not available. By doing this, there is
+  still minimal transfer of buckets on partition state changes, and the node
+  capacities do not need to be altered. The cost is that the remaining
+  partitions on the node will not take over any load from the disk that went
+  down. However, in clusters with many nodes, this should be a small percentage
+  of the partitions.
+</p>
+
+<h1>Maintenance operations</h1>
+<p>
+  In addition to external load, the content layer defines a set of maintenance
+  operations that it use to keep the cluster in a good state.
+</p>
+<dl>
+  <dt>Split bucket</dt><dd>
+    Used to split one bucket into two buckets, by enforcing the documents within
+    the new buckets to have more location bits in common. Buckets are split
+    either because configuration says they have become too large, or because
+    the cluster wants to use more distribution bits, requiring all buckets to
+    be split to at least that level.
+  </dd>
+  <dt>Join bucket</dt><dd>
+    Used to join two buckets into one. If a bucket has been previously split due
+    to being large, but documents have now been deleted, the bucket can be
+    joined again, to limit the amount of buckets that needs to be tracked. Being
+    able to join buckets allow the content layer clusters to shrink without
+    ending up with too many buckets per node, or buckets that contain very few
+    documents making some operations expensive.
+  </dd>
+  <dt>Merge bucket</dt><dd>
+    If several copies of a bucket is stored, but they do not store the same
+    information, merge is used to synchronize the copies so they are all equal.
+    A special case of a merge is a one-way merge, which may be performed, if
+    some of the copies are to be deleted right after the merge. Merging is used
+    not only to fix inconsistent bucket copies, but also to move buckets between
+    nodes. To move a bucket, an empty copy is created on the target node, a
+    merge is executed, and afterwards one of the sources might be deleted.
+  </dd>
+  <dt>Create bucket</dt><dd>
+    This operation exist merely for the distributor to notify a content node
+    that it is now to store documents for this bucket too. This allows content
+    nodes to refuse operations towards buckets it does not own. The ability to
+    refuse traffic is a safeguard to avoid inconsistencies. If a client talks
+    to a distributor that is no longer working correctly, we rather wants its
+    requests to fail than to alter the content cluster in strange ways.
+  </dd>
+  <dt>Delete bucket</dt><dd>
+    This operation tells the content node to delete its stored state for a
+    bucket and that it should not accept further requests for that bucket.
+  </dd>
+  <dt>Activate/Deactivate bucket</dt><dd>
+    A special operation for the search backend. If the backend wants it to, the
+    distributor will try to mark one copy of each bucket active. Traffic hitting
+    all backends without going through the content layer, can then process one
+    copy of all data in the cluster. This is useful to implement search,
+    preventing search result duplicates with minimal resources expended.
+  </dd>
+</dl>
+<p>
+  The distributors calculate what maintenance operations are needed, and issue
+  them to content nodes. Maintenance operations should ideally not affect
+  external load. Typically they are not high priority requests. Another
+  important property is that scheduling a maintenance operation does not stop
+  any external operations. Maintenance operations are typically easier to
+  implement queueing up external traffic while they are pending, however that
+  heavily affects the external load. Instead the only queueing that is done is
+  at the bottom of the content node, where operations are small and complete
+  fast.
+</p>
+
+<h1 id="consistency">Consistency</h1>
+<p>
+  The content layer maintain consistency at bucket level. The backend calculates
+  checksums based on the bucket contents, and the distributors compare checksums
+  among the bucket copies. If inconsistencies are detected, a merge is typically
+  issued to resolve the consistency issue.
+</p>
+<p>
+  While there are inconsistent bucket copies, the distributors try to route
+  external operations to the best copies. The distributor might not always now
+  which the best copies are though.
+</p>
+<p>
+  As buckets can be split and joined, it is possible for copies of a bucket to
+  be split at different levels. A node may have been down while its buckets
+  have been split or joined. This is called inconsistent bucket splitting.
+  Bucket checksums can not be compared across buckets with different split
+  levels. Consequently, distributors do not know whether all documents exist in
+  enough copies in this state. Due to this, inconsistent splitting is one of the
+  highest maintenance priorities. After all buckets are split or joined back to
+  the same level, the distributors can verify that all the copies are consistent
+  and fix any detected issues with a merge.
+</p>
+
+<h1 id="redundancy">Redundancy</h1>
+<p>
+  Redundancy is also handled at the bucket level by keeping a given amount of
+  copies of each bucket. No node may store more than one copy of a bucket.
+</p>
+<p>
+  Currently, all documents are stored in an equal amount of copies. If one wants
+  some documents stored in more copies than other documents one currently have
+  to create multiple clusters. A future improvement may be to allow some
+  buckets to be stored in more copies than other copies, but then the document
+  to buckets mapping must be improved to allow for a more flexible mapping.
+</p>
+<p>
+  The distributors detect whether there are enough copies of buckets on the
+  content nodes. Copies are added or removed as needed in the background.
+</p>
+
+<h1 id="components">Components</h1>
+<p>
+  The content layer is divided into the following parts.
+</p>
+
+<h2 id="clientlib">Client Library</h2>
+<p>
+  For the client interface to be as simple as possible, while not sacrificing
+  performance, the interface to the clients go through a programmatic client
+  library. Using such a library, client logic can exist transparently to the
+  user.
+</p>
+<p>
+  As routing from a client to distributors are done through a distribution
+  algorithm, this should be hidden for users. A network interface would be
+  terribly complex if it left it up to the user to calculate correct node to
+  talk to. Thus, creating any network interfaces on top of the client library
+  enables the network interfaces to stay reasonably simple.
+</p>
+<p>
+  The client library forwards requests to distributors. Possibly splitting
+  complex requests into multiple requests, which may be sent to distributors in
+  sequence or in parallel. It calculates correct distributors to talk to using
+  the distribution algorithm and knowledge of the cluster state. If it's cached
+  knowledge is outdated, it may end up talking to the wrong distributor, in
+  which case the distributor will reply with the correct state, enabling the
+  client library to resend to the correct one.
+</p>
+<p>
+  With no known cluster state, the client library will send requests to random
+  nodes registered in the naming service (slobrok), which will reply with the
+  updated state if the node was not the correct one. Cluster states are
+  versioned, such that clients hitting outdated distributors does not override
+  updated states with old states.
+</p>
+<p>
+  The client library is currently implemented in the
+  <a href="../document-api-guide.html">Document API</a>.
+</p>
+
+<h2 id="distributors">Distributors</h2>
+<p>
+  Each distributor in the cluster is responsible for a currently
+  non-overlapping set of buckets. (Distributor redundancy is planned to allow
+  better availability during cluster changes). The distribution algorithm
+  calculates what distributors are responsible for which buckets. All requests
+  related to these buckets are sent through the distributors.
+</p>
+<p>
+  As the number of distributors grow with the amount of content nodes, it is
+  assumed that distributors can track per bucket metadata without creating
+  scaling issues. The distributors each keep a bucket database containing
+  metadata of buckets it is responsible for. This metadata indicates what
+  content nodes store copies of the buckets, the checksum of the bucket
+  content and the number of documents and meta entries within the bucket.
+</p>
+<p>
+  In addition the distributor can track some historic knowledge. For instance
+  it may know that of the currently existing bucket copies, a given copy has
+  been available all the time and may be trusted to have all the information,
+  while another copy may be on a storage node that recently restarted, so that
+  copy may lack some documents. Such historic state is not persisted, and is
+  thus lost on distributor restarts.
+</p>
+<p>
+  The distributors use the bucket metadata to ensure the buckets are in a good
+  state.
+</p>
+<ul>
+  <li>If buckets have too few copies, new copies are generated.</li>
+  <li>If buckets have too many copies, superfluous copies are deleted once the
+      distributor knows the copies to delete don't contain data other copies do
+      not have.</li>
+  <li>If all the copies do not contain the same data, merges are issued to get
+      bucket copies consistent.</li>
+  <li>If two buckets exist, such that both may contain the same document, the
+      buckets are split or joined to remove such overlapping buckets.</li>
+  <li>If buckets contain too little or too much data, they should be joined or
+      split.</li>
+  <li>If not exactly one copy is marked active, and the backend wants a copy to
+      be marked active, activate or deactivate copies to get in a good
+      state.</li>
+</ul>
+<p>
+  The various maintenance operations have various priorities depending on why
+  they are needed. The distributor tries to prioritize to fix the most critical
+  issues first. If no maintenance operations are needed, the cluster is said to
+  be in the ideal state.
+</p>
+<p>
+  Changes in what distributors are up and available will currently cause
+  windows of availability loss. New distributors need to take over bucket
+  ownership. To do this they need to fetch bucket metadata for new buckets from
+  all storage nodes. These are memory operations and should be fairly
+  efficient. Distributor redundancy is planned, such that several distributors
+  are able to handle requests for a given bucket, enabling distributors to go
+  down without any availability loss.
+</p>
+<p>
+  External operations are sent through the distributors, enabling them to use
+  their bucket knowledge to choose the most appropriate bucket copies to be
+  targets for the execution. This way the clients need not know anything about
+  what copies exist of buckets, where they are, and what state they are in.
+  Additionally, the distributors are able to synchronize maintenance traffic
+  with the external load, to for instance remap requests to other buckets after
+  bucket splitting and joining happens.
+</p>
+
+<h2 id="contentnodes">Content nodes</h2>
+<p>
+  The content nodes runs an instance of the content backend. By linking the
+  backend in with the content layer code, the content service need not know
+  about network communication and serialization details. Additionally, complex
+  operations are mapped into simpler operations in the backend. While the
+  content layer have operations like merge bucket across nodes or split a
+  bucket, the backend has simpler operations like iterate metadata or content
+  of a bucket, which is used together with CRUD operations to implement the
+  maintenance operations.
+</p>
+<p>
+  As the distributors wants quick access to bucket metadata, the content layer
+  keeps a bucket database on each content node to efficiently serve these
+  requests, allowing the backend to use a bit more resources to calculate
+  bucket metadata values.
+</p>
+<p>
+  When a content node starts up it first needs to get an overview of what
+  partitions it have, and what buckets each partition currently stores. Once it
+  knows this, it is in initializing mode, able to handle external load, but
+  distributors do not yet know bucket metadata for all the buckets, and thus
+  can't know whether buckets are consistent with copies on other nodes. Once
+  metadata for all buckets are known, the content nodes transitions from
+  initializing to up state.
+</p>
+
+<h2 id="cluster-controller">Cluster Controller</h2>
+<p>
+  See the
+  <a href="design-clustercontroller.html">cluster controller</a>
+  documentation for details on what the cluster controller does.
+</p>
+
+</body>
+</html>

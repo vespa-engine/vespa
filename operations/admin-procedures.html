@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Administration procedures and tools</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+
+<h1 id="system-status">The state of your Vespa System</h1>
+<ul>
+  <li>Check <a href="../reference/logs.html">logs</a></li>
+  <li>Use performance graphs, System Activity Report (<em>sar</em>)
+    or status pages to track load</li>
+  <li>Use <a href="../reference/search-api.html#tracelevel">query tracing</a></li>
+  <li>Use <a href="../reference/services-clients.html#tracelevel">feed tracing</a></li>
+  <li>Use the <a href="../content/content-layer-overview.html#cluster-controller">
+    Cluster Controller</a> to track the status of search/storage nodes.</li>
+  <li>The command <code>vespa-status-filedistribution</code> can be used to
+    check if application files have been transfered to all the hosts</li>
+  <li>Check status pages</li>
+</ul>
+
+
+<h1 id="process_pid_files">Process PID files</h1>
+<p>
+Any process started from Vespa will get a PID file
+<em>$VESPA_HOME/var/run/{service name}.pid</em>, where <em>{service name}</em>
+is the Vespa service name, e.g. <em>container</em> or <em>qrserver</em>. It is exactly
+the same name which is used in the telnet administration interface for the
+Vespa sentinel.
+</p>
+
+<h1 id="status-pages">Status Pages</h1>
+<p>
+Vespa service instances have status pages for debugging and testing.
+These status pages are not public interfaces,
+hence subject to change at any time - please take care when automating:
+</p>
+<ul>
+  <li>
+    Changes can happen, even between minor or patch releases.
+  </li><li>
+    Changes will not be documented, and their content may be hard to
+    understand without developer knowledge of the service.
+  </li>
+</ul>
+<h2>Find the port</h2>
+<p>
+The status pages runs on ports assigned by Vespa. To find status page ports,
+use <code>vespa-model-inspect</code> to list the services run in the application.
+</p>
+<pre class="brush: cli">
+  $ vespa-model-inspect services
+</pre>
+<p>
+To find
+the status page port for a specific node for a specific service, you need to pick
+the correct service and run:
+</p>
+<pre class="brush: cli">
+  $ vespa-model-inspect service <i>[Options]</i> <i>&lt;service-name&gt;</i>
+</pre>
+<p>
+A <code>--help</code> option can be given to see syntax of the tool.
+The <code>-u</code> option can be used to get proper URLs in the output.
+The <code>-t</code> option can be used to print only the address of the
+services matching the tags, but note that this will hide other information.
+</p>
+<h2>Get the status and metrics</h2>
+<p>
+<em>distributor</em>, <em>storagenode</em>, <em>searchnode</em> and
+<em>container-clustercontroller</em> are content services with status
+pages. These ports are tagged HTTP. The cluster controller have multiple
+ports tagged HTTP, where the port tagged STATE is the one with the status
+page.
+</p>
+<p>
+Try connecting to the root at the port, or /state/v1/metrics.
+The <em>distributor</em> and <em>storagenode</em> status pages are available at
+<code>/</code>, while the <em>container-clustercontroller</em> status page is found at
+<code>/clustercontroller-status/v1/<i>[clustername/]</i></code>.
+</p>
+<h2>Examples</h2>
+<pre class="brush: cli">
+$ vespa-model-inspect service searchnode
+searchnode @ myhost.mydomain.com : search
+search/search/cluster.search/0
+tcp/myhost.mydomain.com:19110 (STATUS ADMIN RTC RPC)
+tcp/myhost.mydomain.com:19111 (FS4)
+tcp/myhost.mydomain.com:19112 (TEST HACK SRMP)
+tcp/myhost.mydomain.com:19113 (ENGINES-PROVIDER RPC)
+tcp/myhost.mydomain.com:19114 (HEALTH JSON HTTP)
+$ curl http://myhost.mydomain.com:19114/state/v1/metrics
+...
+$ vespa-model-inspect service distributor
+distributor @ myhost.mydomain.com : content
+search/distributor/0
+tcp/myhost.mydomain.com:19116 (MESSAGING)
+tcp/myhost.mydomain.com:19117 (STATUS RPC)
+tcp/myhost.mydomain.com:19118 (STATE STATUS HTTP)
+$ curl http://myhost.mydomain.com:19118/state/v1/metrics
+...
+$ curl http://myhost.mydomain.com:19118/
+...
+</pre>
+
+
+
+  <h1 id="detecting-overload">Overload</h1>
+  <ul>
+    <li>
+      If the number of requests exceed what the cluster is
+      scaled for, there may be permanent overload until more nodes can be added
+      or some data can be migrated off the cluster.
+    </li><li>
+      If nodes have been disabled, cluster capacity is lowered, which may cause
+      permanent overload.
+    </li><li>
+      Spikes in external load may lead to temporary overload.
+    </li><li>
+      Background tasks with inappropriate priorities may overload cluster until
+      they complete. Especially visiting tasks like reprocessing and migration
+      are able to use a lot of resources if allowed to. They should likely
+      always have low priority to ensure important traffic goes ahead of it.
+    </li><li>
+      Cluster incidents requiring maintenance operations to fix may cause
+      temporary overloads. Hopefully most maintenance operations can be
+      performed at reasonably low priority, but some operations are more
+      important than others, and may have been set to a priority higher than
+      some not that critical external traffic.
+    </li>
+  </ul>
+  <h2>Detecting overload through queues</h2>
+  <p>
+    The most trustworth metric for overload is the prioritized partition queues
+    on the content nodes. In an overload situation, operations above some
+    priority level will come in so fast that operations below this priority
+    level will just fill up the queue. The metric to look out for is the
+    <code>.filestor.alldisks.queuesize</code> metric, giving a total value for
+    all the partitions.
+  </p><p>
+    While queue size is the most dependable metric, operations can be queued
+    elsewhere too, which may be able to hide the issue. There are some visitor
+    related queues: <code>.visitor.allthreads.queuesize</code> and
+    <code>.visitor.cv_queuesize</code>. Additionally, maintenance operations may
+    be queued merely by not being created yet, as there's no reason to keep
+    more pending operations than is needed to get good throughput.
+  </p>
+  <h2>Detecting overload through recent request type throughput</h2>
+  <p>
+    Metrics for operation throughput can also be used, to detect that the
+    cluster is suddenly doing a lot of one type of operation that it doesn't
+    normally do.
+  </p>
+  <h2>Detecting through measuring system resources</h2>
+  <p>
+    It may seem obvious to detect overload by monitoring CPU, memory and IO
+    usage. However, a fully utilized resource does not necessarily indicate
+    overload. As the content cluster supports prioritized operations, it will
+    typically do as many low priority operations as it is able to when no high
+    priority operations are in the queue. This means, that even if there's just
+    a low priority reprocess or a load rebalancing effort going on after a node
+    went down, the cluster may still use up all available resources to process
+    these low priority tasks.
+  </p><p>
+    Network bandwidth consumption and switch saturation is something to look out
+    for though. These communication channels are not prioritized, and if they
+    fill up processing low priority operations, high priority operations may
+    not get through. If latencies gets mysterious high while no queuing is
+    detected, the network may be a likely candidate.
+  </p>
+  <h2>Rate limiting</h2>
+  <p>
+    Many applications built on Vespa is used by multiple clients and faces the problem
+    of protecting clients from others overuse or abuse.
+    To solve this problem Vespa offers a searcher for rate limiting traffic from each client type.
+    Details in <a href="../javadoc/index.html?com/yahoo/search/searchers/RateLimitingSearcher.html">
+    com.yahoo.search.searchers.RateLimitingSearcher</a>.
+</p>
+
+
+
+
+<h1 id="ideal-state-distance">Monitor distance to ideal state</h1>
+<p>
+Distributor <a href="#status-pages">status pages</a> can be
+viewed to manually inspect state metrics:
+</p>
+<dl>
+  <dt><em>.idealstate.idealstate_diff</em></dt><dd>
+    This metric tries to create a single value indicating distance to the
+    ideal state. A value of zero indicates that the cluster is in the ideal
+    state. Graphed values of this metric gives a good indication for how
+    fast the cluster gets back to the ideal state after changes.
+  </dd><dd>
+    Note that some issues may hide other issues, so sometimes the graph
+    may appear to stand still or even go a bit up again, as resolving one
+    issue may have detected one or several others.
+  </dd>
+  <dt><em>.idealstate.buckets_toofewcopies</em></dt><dd>
+    Specifically lists how many buckets have too few copies. Compare to
+    the <em>buckets</em> metric to see how big a portion of the cluster this
+    is.
+  </dd>
+  <dt><em>.idealstate.buckets_toomanycopies</em></dt><dd>
+    Specifically lists how many buckets have too many copies. Compare to
+    the <em>buckets</em> metric to see how big a portion of the cluster this
+    is.
+  </dd>
+  <dt><em>.idealstate.buckets</em></dt><dd>
+    The total number of buckets managed. Used by other metrics reporting
+    bucket counts to know how big a part of the cluster they relate to.
+  </dd>
+  <dt><em>.idealstate.buckets_notrusted</em></dt><dd>
+    Lists how many buckets have no trusted copies. Without trusted buckets
+    operations against the bucket may have poor performance, having to send
+    requests to many copies to try and create consistent replies.
+  </dd>
+  <dt><em>.idealstate.delete_bucket.pending</em></dt><dd>
+    Lists how many buckets that needs to be deleted.
+  </dd>
+  <dt><em>.idealstate.merge_bucket.pending</em></dt><dd>
+    Lists how many buckets there are, where we suspect not all copies store
+    identical document sets.
+  </dd>
+  <dt><em>.idealstate.split_bucket.pending</em></dt><dd>
+    Lists how many buckets are currently being split.
+  </dd>
+  <dt><em>.idealstate.join_bucket.pending</em></dt><dd>
+    Lists how many buckets are currently being joined.
+  </dd>
+  <dt><em>.idealstate.set_bucket_state.pending</em></dt><dd>
+    Lists how many buckets are currently altered for active state. These are
+    high priority requests which should finish fast, so these requests should
+    seldom be seen as pending.
+  </dd>
+</dl>
+
+
+</body>
+</html>

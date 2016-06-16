@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespa-check-hosts</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2011" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the HTML version of the man page for the command line
+tool <em>vespa-check-hosts</em> &mdash; a tool you can use to check
+the hosts in your setup for OS version, kernel version, valid
+hostnames, valid disk setup.
+</p>
+
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vespa-check-hosts</strong>
+</p>
+
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vespa-check-hosts</strong>
+</p>
+
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>vespa-check-hosts</em> is a command line tool you can use to check
+valid setup for all nodes in a Vespa installation. It needs a running
+<em>cloudconfig_server</em> or a running <em>services</em> package on
+the node you are executing the script on to work.
+</p>
+
+
+
+<h1 id="options">Options</h1>
+<p>
+None
+</p>
+
+
+
+<h1 id="examples">Examples</h1>
+
+<pre class="brush: cli">
+$ vespa-check-hosts
+no services found with type 'storagenode'
+WARNING: [host-url] has kernel 2.6.9-023stab048.4-smp, Vespa recommends at least 2.6.9-89 (this is RHEL 4u8)
+Checking search hosts
+</pre>
+
+
+
+</body>
+</html>

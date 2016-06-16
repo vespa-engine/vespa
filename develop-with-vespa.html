@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="May 2016" />
+  <meta name="authors"    content="kraune" />
+  <title>Develop with Vespa</title>
+</head>
+
+<body>
+
+<h1 id="introduction">Develop with Vespa</h1>
+<p>
+ToDo: more stuff here!
+</p>
+<p>
+ToDo: ref to sample apps
+</p>
+<p>
+Try the <a href="tutorial.html ">tutorial</a>!
+</p>
+
+<h1 id="introduction">Troubleshooting</h1>
+
+<h2 id="generated-sources">Cannot find <em>*Config</em> classes</h2>
+<p>
+Several projects depend on generated configuration classes. These are
+created by the <em>generate-sources</em> Maven target. The easiest way to avoid the
+problem is building the project with Maven from the shell, <em>then</em> importing
+in Eclipse/IntelliJ. If you already have imported the project and want to get rid of the
+errors, first run the <em>generate-sources</em> target either from the IDE or the
+shell, then mark the pertinent <em>target/generated-sources/vespa-configgen-plugin</em>
+directories as source directories.
+</p>
+
+<h2 id="troubleshooting-maven">Maven</h2>
+<p>
+If you have issues when running <em>mvn</em>, getting the error:
+</p>
+<pre class="brush: text">
+  at org.codehaus.plexus.archiver.AbstractArchiver$1.hasNext(AbstractArchiver.java:482)
+  at org.codehaus.plexus.archiver.AbstractArchiver$1.hasNext(AbstractArchiver.java:482)
+  at org.codehaus.plexus.archiver.AbstractArchiver$1.hasNext(AbstractArchiver.java:482)
+  at org.codehaus.plexus.archiver.AbstractArchiver$1.hasNext(AbstractArchiver.java:482)
+</pre>
+<p>
+try increasing the thread stack size for maven:<em>export MAVEN_OPTS=-Xss2m</em>
+</p>
+
+</body>
+</html>

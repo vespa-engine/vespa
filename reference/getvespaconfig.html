@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>getvespaconfig</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2012" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+This is the HTML version of the man page for the command line
+tool <em>getvespaconfig</em>&mdash;a tool you can use to get config
+from a running Vespa system.
+</p>
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>getvespaconfig</strong>&mdash;get and print a specific config from Vespa.
+</p>
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>getvespaconfig</strong> -n defName -i configId &lt;option&gt; [args]
+</p>
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>getvespaconfig</em> is a command line tool you can use to get configuration
+from the Vespa config system. By default it connects to the config proxy on localhost,
+ fetches config from its cache and prints the config payload on stdout.
+</p>
+
+
+<h1 id="options">Options</h1>
+<dl>
+
+<dt><strong>-n</strong></dt>
+<dd>config definition name, including namespace (on the form &lt;namespace&gt;.&lt;name&gt;)
+</dd>
+
+<dt><strong>-i</strong></dt>
+<dd>config id, optional
+</dd>
+
+
+<dt><strong>-a</strong></dt>
+<dd>config def schema file, optional (if you want to use another schema
+  than known for the config server)
+</dd>
+
+<dt><strong>-m</strong></dt>
+<dd>defMd5, optional
+</dd>
+
+<dt><strong>-c</strong></dt>
+<dd>configMd5, optional
+</dd>
+
+<dt><strong>-t</strong></dt>
+<dd>server timeout, in seconds, default value 3, optional
+</dd>
+
+<dt><strong>-w</strong></dt>
+<dd>timeout, default value 10, optional
+</dd>
+
+<dt><strong>-s</strong></dt>
+<dd>server hostname, default localhost, optional
+</dd>
+
+<dt><strong>-p</strong></dt>
+<dd>port, default 19090, optional
+</dd>
+
+<dt><strong>-d</strong></dt>
+<dd>debug mode, optional
+</dd>
+
+<dt><strong>-h</strong></dt>
+<dd>help text and usage
+</dd>
+
+</dl>
+
+
+<h1 id="return-values">Return Values</h1>
+
+<p>
+0 if success.
+</p>
+
+<h1 id="environment">Environment</h1>
+
+<h1 id="files">Files</h1>
+
+<h1 id="examples">Examples</h1>
+<pre>
+$ getvespaconfig -n container.statistics -i search/cluster.search
+</pre>
+
+<h1 id="see-also">See Also</h1>
+
+
+<h1 id="history">History</h1>
+
+</body>
+</html>

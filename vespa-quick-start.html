@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Quick start: Install and Run Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2016" />
+  <meta name="authors" content="bratseth, eirikref, musum, kraune" />
+</head>
+
+<body>
+
+<p class="ingress">
+This guide will give you a single&ndash;node Vespa installation. 
+</p>
+
+
+<h1 id="requirements">Requirements</h1>
+
+<ul>
+  <li>A machine (real or cirtual) running CentOS Linux node with at least 2GB RAM</li>
+</ul>
+
+
+<h1 id="running-vespa">Install and run Vespa</h1>
+
+<ol>
+
+<li><p><strong>Install Vespa:</strong></p>
+
+<pre class="brush: cli">
+TODO: Install command(s)
+</pre>
+</li>
+
+<li><p><strong>Set the Vespa config server address:</strong>
+This must be a fully qualified hostname - in this case, the one node you are using:</p>
+<pre class="brush: cli">
+TODO: Set configserver address command.
+</pre>
+</li>
+
+<li><p><strong>Start the Vespa config server:</strong>
+Start the Vespa config server, which needs to be up and running
+before deploying your application (wait five seconds after start, then proceed to next step):</p>
+<pre class="brush: cli">
+TODO: Start config server command.
+</pre>
+</li>
+
+
+<li><p><strong>Deploy an application:</strong> An example application is provided
+in <em>$VESPA_HOME/share/vespa/sampleapps/search/music</em>, deploy it:</p>
+<pre class="brush: cli">
+$ deploy prepare $VESPA_HOME/share/vespa/sampleapps/search/music
+$ deploy activate
+</pre>
+</li>
+
+<li><p><strong>Start Vespa:</strong></p>
+<pre class="brush: cli">
+TODO: Start services command
+</pre>
+</li>
+
+<li><p><strong>Feed data:</strong> A few documents for the example
+application is prepared in
+<em>$VESPA_HOME/share/vespa/sampleapps/search/musicdata.xml</em>.
+Use the command line tool
+<code>vespafeeder</code> to create an index:</p>
+<pre class="brush: cli">
+$ vespafeeder $VESPA_HOME/share/vespa/sampleapps/search/musicdata.xml
+</pre>
+TODO: Change this to json docs and curl?
+</li>
+
+<li><p><strong>Query the index:</strong></p>
+<pre class="code">
+curl http://`hostname`:4080/search/?query=best
+</pre>
+</li>
+</ol>
+
+<h1 id="next-steps">Next Steps</h1>
+<p>
+Congratulations! You have now successfully installed and run
+Vespa and can head right over to the
+<a href="tutorial.html">Vespa Tutorial</a> to learn more.
+</p>
+
+</body>
+</html>

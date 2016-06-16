@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Annotations API</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2010" />
+  <meta name="authors" content="einarmr" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the Vespa Annotations API; its purpose and use
+cases along with some usage examples.
+</p>
+
+
+
+<h1 id="annotating-text">Annotating Text</h1>
+
+<h2 id="simple-labels">Using Annotations as Simple Labels</h2>
+<p>
+Imagine a use case where one wants to add some metadata to a chunk of
+text, where various parts of the text have some semantics that we want
+to express.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-0.png" title="Fig. 0. A block of text." />
+  <figcaption>
+    Fig. 0. A block of text.
+  </figcaption>
+</figure>
+
+<p>
+This can be done by marking up the text
+with <em>spans</em>&mdash;where a span is identified by a start
+character index, and a length, and grouping these spans together to
+form a <em>span tree</em>.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-1.png" title="Fig. 1. A block of text with spans over it." />
+  <figcaption>
+    Fig. 1. A block of text with spans over it.
+  </figcaption>
+</figure>
+
+<p>
+In the illustration above, we have a span tree called
+&ldquo;html&rdquo;, with a root node that holds references to the
+spans we have created over the text.  To do this using the Annotations
+API, use the following code:
+</p>
+
+<pre>
+StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+
+SpanList root = new SpanList();
+root.add(new Span(0, 19))
+        .add(new Span(19, 5))
+        .add(new Span(24, 21))
+        .add(new Span(45, 23))
+        .add(new Span(68, 14));
+
+SpanTree tree = new SpanTree(&quot;html&quot;, root);
+text.setSpanTree(tree);
+</pre>
+
+<p>
+Now for each of the spans over the text, we can add an arbitrary
+number of <em>annotations</em>. An annotation is a piece of
+information associated with a span. For now, think of it as a label.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-2.png" title="Fig. 2. Each span has an annotation on it." />
+  <figcaption>
+    Fig. 2. Each span has an annotation on it.
+  </figcaption>
+</figure>
+
+<p>
+Annotations are kept by the span tree in a global list. The
+annotations in the list have references to their respective spans. To
+do this using the Annotations API, first declare the <em>annotation
+types</em> in your search definition:
+</p>
+
+<pre>
+search example {
+<strong>
+  annotation text {
+  }
+  annotation markup {
+  }
+</strong>
+}
+</pre>
+
+<p>
+Then, use the declared types and annotate the spans:
+</p>
+
+<pre>
+<strong>// The following line works inside process(Processing) in a DocumentProcessor
+AnnotationTypeRegistry atr = processing.getService().getDocumentTypeManager().getAnnotationTypeRegistry();
+</strong>
+StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+<strong>
+AnnotationType textType = atr.getType(&quot;text&quot;);
+AnnotationType markup = atr.getType(&quot;markup&quot;);
+</strong>
+SpanList root = new SpanList();
+SpanTree tree = new SpanTree(&quot;html&quot;, root);
+
+<strong>
+Span span1 = new Span(0, 19);
+root.add(span1);
+tree.annotate(span1, markup);
+
+Span span2 = new Span(19, 5);
+root.add(span2);
+tree.annotate(span2, textType);
+
+Span span3 = new Span(24, 21);
+root.add(span3);
+tree.annotate(span3, markup);
+
+Span span4 = new Span(45, 23);
+root.add(span4);
+tree.annotate(span4, textType);
+
+Span span5 = new Span(68, 14);
+root.add(span5);
+tree.annotate(span5, markup);
+</strong>
+
+text.setSpanTree(tree);
+</pre>
+
+<p>
+Note that in the above code, we have used a convenience
+method <code>SpanTree.annotate(SpanNode node, AnnotationType
+at)</code>. This is equivalent to:
+</p>
+
+<pre>
+AnnotationType markupType = new AnnotationType(&quot;markup&quot;);
+Annotation a = new Annotation(markupType);
+tree.annotate(span, a);
+</pre>
+
+
+<h2 id="annotation-trees">Annotation Trees</h2>
+<p>
+The annotated spans shown in Fig. 2 might be fine for the very simple
+cases where one wants to just annotate some text. However, let's
+imagine that one wants to not only identify markup from text, but also
+create a structure over the markup.
+</p>
+
+<p>
+In such a case, we can build a tree of spans using SpanLists. A
+SpanList is simply a node in the tree that can have children&mdash;the
+children can be spans, or SpanLists themselves. And of course,
+SpanLists can be annotated as well. Henceforth we will refer to both
+Spans and SpanLists as SpanNodes, which is in fact their common
+superclass.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-3.png" title="Fig. 3. An annotation tree." />
+  <figcaption>
+    Fig. 3. An annotation tree.
+  </figcaption>
+</figure>
+
+<p>
+In Fig. 3, we no longer have a simple two-level structure of Spans
+with labels on them, but instead a tree of SpanNodes, each having zero
+or more annotations.
+</p>
+
+<p>
+To do this using the Annotations API, first declare the <em>annotation
+types</em> in your search definition:
+</p>
+
+<pre>
+search example {
+
+  annotation text {
+  }<strong>
+  annotation begintag {
+  }
+  annotation endtag {
+  }
+  annotation body {
+  }
+  annotation header {
+  }
+</strong>
+}
+</pre>
+
+<p>
+Then, use the declared types and annotate the spans:
+</p>
+
+<pre>
+// The following line works inside process(Processing) in a DocumentProcessor
+AnnotationTypeRegistry atr = processing.getService().getDocumentTypeManager().getAnnotationTypeRegistry();
+
+StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+
+SpanList root = new SpanList();
+SpanTree tree = new SpanTree(&quot;html&quot;, root);
+
+AnnotationType textType = atr.getType(&quot;text&quot;);
+<strong>AnnotationType beginTag = atr.getType(&quot;begintag&quot;);
+AnnotationType endTag = atr.getType(&quot;endtag&quot;);
+AnnotationType bodyType = atr.getType(&quot;body&quot;);
+AnnotationType headerType = atr.getType(&quot;header&quot;);
+
+SpanList header = new SpanList();
+{
+    Span span1 = new Span(6, 6);
+    Span span2 = new Span(12, 7);
+    Span span3 = new Span(19, 5);
+    Span span4 = new Span(24, 8);
+    Span span5 = new Span(32, 7);
+    header.add(span1)
+            .add(span2)
+            .add(span3)
+            .add(span4)
+            .add(span5);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, beginTag)
+            .annotate(span3, textType)
+            .annotate(span4, endTag)
+            .annotate(span5, endTag)
+            .annotate(header, headerType);
+}
+
+SpanList body = new SpanList();
+{
+    Span span1 = new Span(39, 6);
+    Span span2 = new Span(45, 23);
+    Span span3 = new Span(68, 7);
+    body.add(span1)
+            .add(span2)
+            .add(span3);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, textType)
+            .annotate(span3, endTag)
+            .annotate(body, bodyType);
+}
+
+{
+    Span span1 = new Span(0, 6);
+    Span span2 = new Span(75, 7);
+    root.add(span1)
+            .add(header)
+            .add(body)
+            .add(span2);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, endTag);
+}
+</strong>
+text.setSpanTree(tree);
+</pre>
+
+
+<h2 id="annotation-values">Annotation values</h2>
+<p>
+But what if we need to attach more information to a SpanNode than just
+a label?  Imagine that we want to annotate &ldquo;San Francisco&rdquo;
+in the text above with not only &ldquo;city&rdquo;, but also include
+its latitude and longitude. This can be done, since annotations can
+also have <em>values</em>.
+</p>
+
+<p>
+Every annotation in the tree is of a declared <em>annotation
+type</em>, where an annotation type is declared with a name and a
+possible data type for its optional value. Up until now, our
+annotation types have only had names, and no data type.
+</p>
+
+<p>
+For the case of &ldquo;San Francisco&rdquo;, we can let our annotation
+type have two data fields, as shown in the search definition syntax
+below:
+</p>
+
+<pre>
+search example {
+
+  annotation text {
+  }
+  annotation begintag {
+  }
+  annotation endtag {
+  }
+  annotation body {
+  }
+  annotation header {
+  }<strong>
+  annotation city {
+    field latitude type double {}
+    field longitude type double {}
+  }
+</strong>
+}
+</pre>
+
+<p>
+By deploying the search definition above, a struct data type is
+implicitly created, named <code>annotation.city</code>, having the two
+fields declared. The annotation type <code>city</code> is set to use
+this data type. For more on struct types, see the
+<a href="reference/search-definitions.html#struct">search
+definition reference</a>.
+</p>
+
+<p>
+We can then create an annotation holding the latitude and longitude of
+San Francisco on this SpanNode.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-4.png" title="Fig. 4. One annotation has a value." />
+  <figcaption>
+    Fig. 4. One annotation has a value.
+  </figcaption>
+</figure>
+
+<p>
+To do this using the Annotations API, use the following code:
+</p>
+
+<pre>
+//the following line works inside process(Processing) in a DocumentProcessor
+AnnotationTypeRegistry atr = processing.getService().getDocumentTypeManager().getAnnotationTypeRegistry();
+
+StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+
+SpanList root = new SpanList();
+SpanTree tree = new SpanTree(&quot;html&quot;, root);
+
+AnnotationType textType = atr.getType(&quot;text&quot;);
+AnnotationType beginTag = atr.getType(&quot;begintag&quot;);
+AnnotationType endTag = atr.getType(&quot;endtag&quot;);
+AnnotationType bodyType = atr.getType(&quot;body&quot;);
+AnnotationType headerType = atr.getType(&quot;header&quot;);
+<strong>AnnotationType cityType = atr.getType(&quot;city&quot;);
+
+Struct position = (Struct) cityType.getDataType().createFieldValue();
+position.setValue(&quot;latitude&quot;, 37.774929);
+position.setValue(&quot;longitude&quot;, -122.419415);
+Annotation city = new Annotation(cityType, position);
+</strong>
+SpanList header = new SpanList();
+{
+    Span span1 = new Span(6, 6);
+    Span span2 = new Span(12, 7);
+    Span span3 = new Span(19, 5);
+    Span span4 = new Span(24, 8);
+    Span span5 = new Span(32, 7);
+    header.add(span1)
+            .add(span2)
+            .add(span3)
+            .add(span4)
+            .add(span5);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, beginTag)
+            .annotate(span3, textType)
+            .annotate(span4, endTag)
+            .annotate(span4, endTag)
+            .annotate(header, headerType);
+}
+<strong>
+SpanList textNode = new SpanList();
+{
+    Span span1 = new Span(45, 10);
+    Span span2 = new Span(55, 13);
+    textNode.add(span1)
+            .add(span2);
+    tree.annotate(span2, city)
+            .annotate(textNode, textType);
+}
+</strong>
+SpanList body = new SpanList();
+{
+    Span span1 = new Span(39, 6);
+    Span span2 = new Span(68, 7);
+    body.add(span1)
+            <strong>.add(textNode)</strong>
+            .add(span2);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, endTag)
+            .annotate(body, bodyType);
+}
+
+{
+    Span span1 = new Span(0, 6);
+    Span span2 = new Span(75, 7);
+    root.add(span1)
+            .add(header)
+            .add(body)
+            .add(span2);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, endTag);
+}
+
+text.setSpanTree(tree);
+</pre>
+
+
+<h2 id="alternate-subtrees">Alternate subtrees</h2>
+<p>
+For the examples above, the purpose of the annotator has been to
+express the structure of the original HTML document, as well as adding
+some semantics to the tree. The HTML structure is fairly unambiguous
+(let's assume valid HTML for now). However, there are many other use
+cases where the source text allows for multiple interpretations,
+i.e. where there is not one unambiguous tree. Natural language
+processing is one such use case.
+</p>
+
+<p>
+As an example, review the following sentence:
+</p>
+
+<p>
+<strong>I saw the girl with the boy.</strong>
+</p>
+
+<p>
+Most humans would read this as &quot;the boy is accompanying the girl,
+and I saw them both&quot;. There is one alternate interpretation; that
+&quot;boy&quot; is an instrument that could be used to see the girl,
+as in &quot;I saw the girl with the telescope&quot;, i.e.
+&quot;I saw the girl <em>using</em> the telescope&quot;. NLP parsers would
+likely identify both these interpretations.
+</p>
+
+<p>
+We can express more than one interpretation in one span tree, using an
+AlternateSpanList. As opposed to a SingleSpanList, which can have a
+single subtree of SpanNodes, AlternateSpanList can have an arbitrary
+number of subtrees, each with its own probability. In the analysis of
+longer and more complex passages of text, this is a great advantage,
+as we don't have to copy the <em>entire</em> tree to express differing
+interpretations. We just insert an AlternateSpanList at the point in
+the tree where the interpretations differ, and attach suitable
+probabilities to them, if possible.
+</p>
+
+
+<h2 id="annotation-references">Annotation References</h2>
+<p>
+Annotations can in fact have references to other annotations in the
+tree, that is, have an Annotation reference as its value.
+</p>
+
+<p>
+Review the example given in Fig. 6 below:
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-6.png" title="Fig. 6. HTML structure where San and Francisco do not have common supernode." />
+  <figcaption>
+    Fig. 6. HTML structure where San and Francisco do not have common supernode.
+  </figcaption>
+</figure>
+
+<p>
+We can see that in the HTML structure, &ldquo;I live in San&rdquo; is
+one paragraph, while &ldquo;Francisco&rdquo; continues on the next
+line. Consequently, &ldquo;San&rdquo; and &ldquo;Francisco&rdquo; do
+not have a SpanList as their immediate common supernode. On a higher
+semantic level, though, it is clear that &ldquo;San Francisco&rdquo;
+should be annotated as a <em>city</em>, as in Fig. 4. This can be
+achieved by using an annotation reference:
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-7.png" title="Fig. 7. HTML structure with annotation reference" />
+  <figcaption>
+    Fig. 7. HTML structure with annotation reference.
+  </figcaption>
+</figure>
+
+<p>
+Note that the annotation &ldquo;city&rdquo; is <em>not</em> annotating
+a span node. It is present in the global list of annotations, and has
+references to other annotations in the same list. To create the
+structure as shown in Fig. 7 above, we must declare the
+struct <code>position</code>, and change the fields of annotation
+type <code>city</code>.
+</p>
+
+
+<pre>
+search example {
+
+  annotation text {
+  }
+  annotation begintag {
+  }
+  annotation endtag {
+  }
+  annotation body {
+  }
+  annotation header {
+  }<strong>
+  annotation city {
+    field position type position {}
+    field references type array&lt;annotationref&lt;text&gt;&gt; {}
+  }
+  struct position {
+    field latitude type double {}
+    field longitude type double {}
+  }
+</strong>
+}
+</pre>
+
+<p>
+To do this using the Annotations API, use the following code:
+</p>
+
+<pre>
+//the following two lines work inside process(Processing) in a DocumentProcessor
+DocumentTypeManager dtm = processing.getService().getDocumentTypeManager();
+AnnotationTypeRegistry atr = dtm.getAnnotationTypeRegistry();
+
+StringFieldValue text = new StringFieldValue(&quot;&lt;body&gt;&lt;p&gt;I live in San &lt;/p&gt;Francisco&lt;/body&gt;&quot;);
+
+SpanList root = new SpanList();
+SpanTree tree = new SpanTree(&quot;html&quot;, root);
+
+<strong>StructDataType positionType = (StructDataType) dtm.getDataType(&quot;position&quot;);</strong>
+
+AnnotationType textType = atr.getType(&quot;text&quot;);
+AnnotationType beginTag = atr.getType(&quot;begintag&quot;);
+AnnotationType endTag = atr.getType(&quot;endtag&quot;);
+AnnotationType bodyType = atr.getType(&quot;body&quot;);
+AnnotationType paragraphType = atr.getType(&quot;paragraph&quot;);
+<strong>AnnotationType cityType = atr.getType(&quot;city&quot;);
+
+Struct position = new Struct(positionType);
+position.setValue(&quot;latitude&quot;, 37.774929);
+position.setValue(&quot;longitude&quot;, -122.419415);
+
+Annotation sanAnnotation = new Annotation(textType);
+Annotation franciscoAnnotation = new Annotation(textType);
+
+Struct positionWithRef = (Struct) cityType.getDataType().createFieldValue();
+positionWithRef.setValue(&quot;position&quot;, position);
+
+Field referencesField = ((StructDataType) cityType.getDataType()).getField(&quot;references&quot;);
+Array&lt;FieldValue&gt; refList = new Array&lt;FieldValue&gt;(referencesField.getDataType());
+AnnotationReferenceDataType annRefType = (AnnotationReferenceDataType) ((ArrayDataType) referencesField.getDataType()).getNestedType();
+refList.add(new AnnotationReference(annRefType, sanAnnotation));
+refList.add(new AnnotationReference(annRefType, franciscoAnnotation));
+positionWithRef.set(referencesField, refList);
+
+Annotation city = new Annotation(cityType, positionWithRef);
+
+SpanList paragraph = new SpanList();
+{
+    Span span1 = new Span(6, 3);
+    Span span2 = new Span(9, 10);
+    Span span3 = new Span(19, 4);
+    Span span4 = new Span(23, 4);
+    paragraph.add(span1)
+            .add(span2)
+            .add(span3)
+            .add(span4);
+    tree.annotate(span1, beginTag)
+            .annotate(span2, textType)
+            .annotate(span3, sanAnnotation)
+            .annotate(span4, endTag)
+            .annotate(paragraph, paragraphType);
+}
+
+{
+    Span span1 = new Span(0, 6);
+    Span span2 = new Span(27, 9);
+    Span span3 = new Span(36, 8);
+    root.add(span1)
+            .add(paragraph)
+            .add(span2)
+            .add(span3);
+
+    tree.annotate(span1, beginTag)
+            .annotate(span2, franciscoAnnotation)
+            .annotate(span3, endTag)
+            .annotate(root, bodyType)
+            .annotate(city);
+}
+</strong>
+text.setSpanTree(tree);
+</pre>
+
+<p>
+The above example shows that when using annotation references,
+building the span tree, and overlaying annotations (which now form an
+annotation graph), becomes quite complex. However, it enables
+annotators from various contexts to cooperate on one single annotation
+graph.
+</p>
+
+<p>
+In the above example, we are mixing two semantically different trees
+into one tree. The first tree models the HTML representation of the
+input document. The second tree tries to find entities (like
+&ldquo;San Francisco&rdquo;), and creates a structure on a higher
+semantic level.
+</p>
+
+<p>
+Note that in <em>some</em> cases, it would be wiser to create two span
+trees, and annotating these separately. Recall that on the last line
+in all the above code samples, we have set the tree on the
+StringFieldValue using
+<code>StringFieldValue.setSpanTree(String s, SpanNode sn)</code>. The
+string given is an arbitrary name for this tree. Creating two trees is
+then trivial (and is left as an exercise to the reader).
+</p>
+
+
+
+<h1 id="manipulate-span-tree">Manipulating a Span Tree</h1>
+<p>
+The previous section focused mainly on building a span tree over an
+input string. In many cases though, like when using the docproc
+framework, a document processor reads a span tree created by some
+previous process, manipulates it, and passes it on.
+</p>
+
+
+<h2 id="iterating-span-nodes">Iterating over SpanNodes</h2>
+<p>
+A typical use case is to iterate over all SpanNodes (that have an
+Annotation of a certain type), and manipulate these. As an example,
+imagine that Fig. 2 above is the output of one document processor and
+Fig. 3 is the output of another. The second document processor would
+typically iterate over all nodes that have an annotation of type
+&ldquo;markup&rdquo;, and replace them with spans that have
+annotations of type &ldquo;begintag&rdquo; and &ldquo;endtag&rdquo;.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-8.png" title="Fig. 8. Traversing nodes that have annotations of type &ldquo;markup&rdquo; in a span tree" />
+  <figcaption>
+    Fig. 8. Traversing nodes that have annotations of type &ldquo;markup&rdquo; in a span tree.
+  </figcaption>
+</figure>
+
+<p>
+To do this using the Annotations API, use the following code:
+</p>
+
+<pre>
+public void example() {
+    StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+
+    SpanTree tree = text.getSpanTree(&quot;html&quot;);
+    SpanList root = (SpanList) tree.getRoot();
+    //TODO: Note that the above could have been a Span or an AlternateSpanList!
+
+    ListIterator&lt;SpanNode&gt; nodeIt = root.childIterator();
+
+    AnnotationType beginTag = new AnnotationType(&quot;begintag&quot;);
+    AnnotationType endTag = new AnnotationType(&quot;endtag&quot;);
+
+
+    while (nodeIt.hasNext()) {
+        SpanNode node = nodeIt.next();
+        boolean nodeHadMarkupAnnotation = removeMarkupAnnotation(tree, node);
+        if (nodeHadMarkupAnnotation) {
+            nodeIt.remove();
+            List&lt;Span&gt; replacementNodes = analyzeMarkup(tree, node, text, beginTag, endTag);
+            for (SpanNode repl : replacementNodes) {
+                nodeIt.add(repl);
+            }
+        }
+    }
+}
+
+/**
+ * Removes annotations of type 'markup' from the given node.
+ *
+ * @param tree the tree to remove annotations from
+ * @param node the node to remove annotations of type 'markup' from
+ * @return true if the given node had 'markup' annotations, false otherwise
+ */
+private boolean removeMarkupAnnotation(SpanTree tree, SpanNode node) {
+    //get iterator over all annotations on this node:
+    Iterator&lt;Annotation&gt; annotationIt = tree.iterator(node);
+
+    while (annotationIt.hasNext()) {
+        Annotation annotation = annotationIt.next();
+        if (annotation.getType().getName().equals(&quot;markup&quot;)) {
+            //this node has an annotation of type markup, remove it:
+            annotationIt.remove();
+            //return true, this node had a markup annotation:
+            return true;
+        }
+    }
+    //this node did not have a markup annotation:
+    return false;
+}
+
+/**
+ * NOTE: This method is provided only for completeness. It analyzes spans annotated with
+ * &quot;markup&quot;, and splits them into several shorter spans annotated with &quot;begintag&quot;
+ * and &quot;endtag&quot;.
+ *
+ * @param tree       the span tree to annotate into
+ * @param input      a SpanNode that is annotated with &quot;markup&quot;.
+ * @param text       the text that the SpanNode covers
+ * @param beginTag   the type to use for begintag annotations
+ * @param endTagType the type to use for endtag annotations
+ * @return a list of new spans to replace the input
+ */
+private List&lt;Span&gt; analyzeMarkup(SpanTree tree, SpanNode input, StringFieldValue text,
+                                 AnnotationType beginTag, AnnotationType endTagType) {
+    //we know that this node is annotated with &quot;markup&quot;
+    String coveredText = input.getText(text.getString()).toString();
+    int spanOffset = input.getFrom();
+    int tagStart = -1;
+    boolean endTag = false;
+    List&lt;Span&gt; tags = new ArrayList&lt;Span&gt;();
+    for (int i = 0; i &gt; coveredText.length(); i++) {
+        if (coveredText.charAt(i) == '&lt;') {
+            //we're in a tag
+            tagStart = i;
+            continue;
+        }
+        if (coveredText.charAt(i) == '&gt;' &amp;&amp; tagStart &gt; -1) {
+            Span span = new Span(spanOffset + tagStart, (i + 1) - tagStart);
+            tags.add(span);
+            if (endTag) {
+                tree.annotate(span, endTagType);
+            } else {
+                tree.annotate(span, beginTag);
+            }
+            tagStart = -1;
+        }
+        if (tagStart &gt; -1 &amp;&amp; i == (tagStart + 1)) {
+            if (coveredText.charAt(i) == '/') {
+                endTag = true;
+            } else {
+                endTag = false;
+            }
+        }
+    }
+    return tags;
+}
+</pre>
+
+
+<h2 id="iterating-annotations">Iterating over annotations</h2>
+<p>
+One may also traverse the global list of annotations, as opposed to
+iterating over SpanNodes.  Imagine a use case where some annotator
+wants to find and remove all annotations of type &ldquo;markup&rdquo;.
+</p>
+
+<figure>
+  <img src="img/docproc/annotations-9.png" title="Fig. 9. Traversing the tree and iterating over annotations of type &quot;markup&quot;, and then deleting them" />
+  <figcaption>
+    Fig. 9. Traversing the tree and iterating over annotations of type &quot;markup&quot;, and then deleting them.
+  </figcaption>
+</figure>
+
+<p>
+To do this using the Annotations API, use the following code:
+</p>
+
+<pre>
+StringFieldValue text = new StringFieldValue(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Diary&lt;/title&gt;&lt;/head&gt;&lt;body&gt;I live in San Francisco&lt;/body&gt;&lt;/html&gt;&quot;);
+
+
+SpanTree tree = text.getSpanTree(&quot;html&quot;);
+
+ListIterator&lt;Annotation&gt; annotationIt = tree.iterator();
+
+while (annotationIt.hasNext()) {
+    Annotation annotation = annotationIt.next();
+    if (annotation.getType().getName().equals(&quot;markup&quot;)) {
+        //we have an annotation of type markup, remove it:
+        annotationIt.remove();
+    }
+}
+</pre>
+
+
+
+<h1 id="inheritance">Annotation Inheritance</h1>
+<p>
+Annotation types can inherit from each other. This is particularly
+useful when given e.g. a document processor (along with its
+configuration of annotation types and document types) from some
+external entity, and one wants to extend these annotation types with
+some additional information.  Review the below example:
+</p>
+
+<pre>
+search example {
+
+  annotation person {
+    field birthdate type int { }
+    field firstname type string { }
+    field lastname type string { }
+  }
+
+}
+</pre>
+
+<p>
+This annotation type, <code>person</code>, comes from some legacy code
+that we have gotten from some external entity. We want to leave this
+code and this configuration as-is, but we are writing document
+processors that rely on these types and extend them:
+</p>
+
+<pre>
+search example2 {
+
+  annotation employee inherits person {
+    field employeeid type int { }
+  }
+
+}
+</pre>
+
+<p>
+The type <code>employee</code> behaves just like
+a <code>person</code>, and can be used anywhere that
+a <code>person</code> can appear.  It has inherited the three fields
+defined in <code>person</code>, and has one field of its own in
+addition.
+</p>
+
+</body>
+</html>

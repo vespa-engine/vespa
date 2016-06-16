@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Directories, Files, and Processes</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="reviewdate"    content="February 2014">
+<meta name="authors" content="musum">
+</head>
+
+<body>
+
+<p class="ingress">
+This document is a reference of the various files and directories that
+are installed with a Vespa installation, and the processes that
+typically run on the Vespa nodes.
+</p>
+
+
+
+<h1 id="directories">Directories</h1>
+
+<p>
+Vespa installs files in the following directories:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Directory</th>
+  <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>$VESPA_HOME/bin64/</td>
+  <td>Command line utilities and scripts</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/sbin64/</td>
+  <td>Server programs, daemons, etc</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/lib64/</td>
+  <td>Dynamically linked libraries, typically third-party
+      libraries</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/lib/jars/</td>
+  <td>Java archives</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/logs/vespa/</td>
+  <td>Log files</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/var/cache/vespa/config</td>
+  <td>Disk cache for config proxy (only used when config proxy is in
+    diskcache mode)</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/var/db/vespa/config_server/serverdb/</td>
+  <td>Config server database and user applications</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/share/vespa/</td>
+  <td>A directory with sample applications and XML schemas for
+      application package validation</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/conf/vespa</td>
+  <td>Various config files used by Vespa or libraries Vespa depend on</td>
+  </tr>
+</tbody>
+</table>
+
+
+
+<h1 id="files">Files</h1>
+
+<p>
+The following is a list of some of the important Vespa files and
+directories, and their function:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>File</th>
+  <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+<tr>
+  <td>$VESPA_HOME/logs/vespa/vespa.log*</td>
+  <td>Local log files. Contains only log messages that have been
+      logged by processes on the local node. Rotated when they get too
+      big, in which case the date of their rotation is appended to the
+      filename.</td>
+  </tr>
+<tr>
+  <td>$VESPA_HOME/logs/vespa/logarchive/</td>
+  <td>Log archive for entire Vespa installation. Stored in a
+      YYYY/MM/DD/HH-* file structure. The log files themselves are
+      rotated as they get bigger, giving filenames such as 09, 09-1,
+      09-2 (first, second and third file of 9 AM). Only on admin
+      server.</td>
+  </tr>
+</tbody>
+</table>
+
+
+
+<h1 id="processes">Processes</h1>
+
+<p>
+Each Vespa node has different services running. The table below shows
+the processes that will typically run on the nodes. Note that
+processes on the various nodes are subject to change without notice
+between Vespa versions.
+</p>
+
+<table>
+<tr>
+  <th>Process</th>
+  <th>Host where this process typically runs</th>
+  <th>Appearance to ps</th>
+  <th>Function</th>
+  </tr>
+<tr>
+  <td>Config sentinel</td>
+  <td>All nodes</td>
+  <td>sbin/config-sentinel</td>
+  <td>Sentinel that starts and stops vespa services and makes sure they
+      are running unless they are manually stopped</td>
+  </tr>
+<tr>
+  <td>Config proxy</td>
+  <td>All nodes</td>
+  <td>java (&hellip;) com.yahoo.vespa.config.proxy.ProxyServer</td>
+  <td>Communication liaison between Vespa processes and config
+      server. Caches config in memory.</td>
+  </tr>
+<tr>
+  <td>File distribution</td>
+  <td>All nodes</td>
+  <td>$VESPA_HOME/sbin/filedistributor-bin</td>
+  <td>File distribution process for distributing bundles to
+  e.g. containers</td>
+  </tr>
+<tr>
+  <td>Slobrok</td>
+  <td>Admin nodes</td>
+  <td>$VESPA_HOME/bin/slobrok</td>
+  <td>Service location object broker.</td>
+  </tr>
+<tr>
+  <td>logd</td>
+  <td>All nodes</td>
+  <td>sbin/logd</td>
+  <td>Reads local log files and sends them to log server</td>
+  </tr>
+<tr>
+  <td>Config server</td>
+  <td>configserver</td>
+  <td>java (...) -jar lib/jars/standalone-container-jar-with-dependencies.jar</td>
+  <td>Vespa Configuration server</td>
+  </tr>
+<tr>
+  <td>Log server</td>
+  <td>logserver</td>
+  <td>java (...) -jar lib/jars/logserver-jar-with-dependencies.jar</td>
+  <td>Vespa Log server</td>
+  </tr>
+<tr>
+  <td>Cluster controller</td>
+  <td>search cluster</td>
+  <td>$VESPA_HOME/sbin/rtx</td>
+  <td>Cluster controller</td>
+  </tr>
+<tr>
+  <td>Storage distributor</td>
+  <td>storage cluster</td>
+  <td>$VESPA_HOME/sbin/distributord-bin</td>
+  <td>Content layer distributor processes</td>
+  </tr>
+<tr>
+  <td>Storage server</td>
+  <td>storage cluster</td>
+  <td>$VESPA_HOME/sbin/storaged-bin</td>
+  <td>Content layer storagenode processes</td>
+  </tr>
+<tr>
+  <td>Storage fleetcontroller</td>
+  <td>storage cluster</td>
+  <td>java (...) -jar
+      $VESPA_HOME/lib/jars/fleetcontroller-with-dependencies.jar</td>
+  <td>Content layer fleetcontroller processes, which manages state for content
+      layer services</td>
+  </tr>
+<tr>
+  <td>Dispatcher</td>
+  <td>search cluster or content cluster</td>
+  <td>$VESPA_HOME/sbin/fdispatch-bin</td>
+  <td>Dispatcher, communicates between the QRS and the
+      searchnodes. Can be multi-level in a hierarchy</td>
+  </tr>
+<tr>
+  <td>proton</td>
+  <td>search cluster or content cluster</td>
+  <td>$VESPA_HOME/sbin/proton-bin</td>
+  <td>Searchnode process, receives queries from the dispatcher and
+      returns results from the indexes. Also receives feed and indexes
+      documents.</td>
+  </tr>
+<tr>
+  <td>container</td>
+  <td>JDisc cluster</td>
+  <td>java (...) -jar $VESPA_HOME/lib/jars/container-disc-with-dependencies.jar</td>
+  <td>JDisc Container running servers, handlers and processing components.</td>
+  </tr>
+<tr>
+  <td>Metrics proxy</td>
+  <td>All nodes</td>
+  <td>java (...) com.yahoo.vespa.metricsproxy.RpcServer</td>
+  <td>Aggregate and forward metrics</td>
+</tr>
+</table>
+
+</body>
+</html>

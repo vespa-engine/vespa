@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Load types and priorities</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="July 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+  <h1>Summary</h1>
+  <ul>
+    <li>Ensure all external requests are tagged with load types.</li>
+    <li>Configure priorities for the load types, to ensure that the most
+        important types are prioritized correctly in overload situations.</li>
+    <li>Look at priorities of internal maintenance operations, to know which
+        types of external requests may be queued due to important maintenance
+        operations.</li>
+  </ul>
+
+  <h1>Hard priorities</h1>
+  <p>
+    All requests sent to the content layer have a priority set. Maintenance
+    operations, initiated by the content layer itself, also have priorities.
+  </p>
+  <p>
+    The service layer nodes keep priority queues per partition. If several
+    operations are in the queue, the highest priority one will always be
+    performed first.
+  </p>
+    As long as the cluster is in a good state, with free capacity, the queues
+    will be empty, and priorities will not matter as all operations can be
+    performed immediately. However, once a partition is overloaded, temporarily
+    or permanent, priorities decides what operation will be performed.
+  </p>
+
+  <h1>Throttling using priorities</h1>
+  <p>
+    A low priority task can be throttled by priority in order to use all
+    available resources. By ensuring there is enough pending low priority
+    operations available for all the parts of the cluster, it will use spare
+    time to process these operations. This is useful for tasks like:
+  </p>
+  <ul>
+    <li>Moving buckets around to get back to ideal state after a capacity
+        increase.</li>
+    <li>Migrate documents between clusters. Typically want to finish as soon as
+        possible, but not affect latency critical requests.</li>
+    <li>Visit documents to gather statistics</li>
+  </ul>
+  <p>
+    To throttle more than one task by priority, both need to use the same low
+    priority. If they do not, the highest prioritized among them will win, and
+    will be processed first. As the tasks are low priority to begin with this
+    may not matter.
+  </p>
+  <p>
+    Priority throttling may starve other low priority tasks. Some tasks can be
+    throttled further by reducing the number of parallel requests or by waiting
+    a bit before sending new requests. It is not intuitive how many operations
+    the backend can handle though. Throttling by hard coding such limits may
+    provide a challenge in itself.
+  </p>
+
+  <h1>Avoid overload caused by only latency critical requests</h1>
+  <p>
+    Letting latency critical requests wait in queues are likely to break SLAs.
+    Additionally, if the cluster is at max capacity with just critical load, it
+    will never have time to do less critical load. Having short overload spikes
+    may be acceptable. Overload spikes lasting for hours may leave the cluster
+    in a bad state, and should be avoided. Administrators must ensure enough
+    capacity exist to allow for some non-critical at all times.
+  </p>
+
+  <h1 id="load-types">Using load types to set priorities</h1>
+  <p>
+    Priorities are settable per external request sent through the client API.
+    However, that typically hard codes the priorities in the clients, and hides
+    the type of load from the backend. A much better practise is to configure
+    load types, and set load types for all requests.
+  </p>
+  <ul>
+    <li>With load types, priorities can be changed live through content layer
+        configuration.</li>
+    <li>The type of load does not change over time, so hardcoding this in
+        clients is not an issue.</li>
+    <li>Load types allow the content layer and the backend to differentiate
+        between traffic. Instead of just seeing put operations, it may now for
+        instance be able to differentiate between puts caused by user feed,
+        cluster migration and internal consistency fixing.</li>
+  </ul>
+  <p>
+    The content layer is able to use load types to log specific metrics. For
+    instance, the content layer has metrics for how long operations wait in
+    the disk queue. This metric can be very useful to verify that the latency
+    critical operations do not end up waiting in the queue, but is useless if
+    polluted with values from operations that are expected to be waiting.
+  </p>
+
+  <h1>Priority of internal maintenance operations</h1>
+  <p>
+    When configuring priorities for external requests, priorities of internal
+    operations may be considered. If your application have requests with very
+    strict latency requirements they likely need to be prioritized higher than
+    any maintenance operation. Requests with less strict latency requirements
+    may want to use a lower or equal priority though, to allow some critical
+    maintenance operations to be performed.
+  </p>
+  <table>
+    <tr><td>Delete superfluous copies of consistent bucket</td>
+        <td>NORMAL_1</td></tr>
+    <tr><td>Set bucket active state</td><td>NORMAL_1</td></tr>
+    <tr><td>Resolve inconsistently split buckets</td><td>NORMAL_2</td></tr>
+    <tr><td>Regain redundancy for bucket with too few copies</td>
+        <td>NORMAL_3</td></tr>
+    <tr><td>Fix inconsistent bucket copies</td><td>NORMAL_3</td></tr>
+    <tr><td>Join buckets that now contain too few documents</td>
+        <td>Between NORMAL_6 and LOW_1</td></tr>
+    <tr><td>Move bucket copies that ideally should be located elsewhere</td>
+        <td>Between LOW_1 and LOW_2</td></tr>
+    <tr><td>Split bucket that now contain too many or too large documents</td>
+        <td>Between LOW_2 and LOW_3</td></tr>
+    <tr><td>Split bucket as cluster wants a higher distribution bit count</td>
+        <td>LOWEST</td></tr>
+    <tr><td>Remove documents no longer belonging in cluster (Garbage collector)</td>
+        <td>LOWEST</td></tr>
+  </table>
+
+
+  <h1>Timeouts</h1>
+  <p>
+    Requests within the content layer has timeouts. When sending a request, if
+    the timeout have been reached, but no response have been retrieved, an
+    automatic response is created with a timeout error. If requests fail with
+    transient failures with time left within the timeout, the request may be
+    resent, but timeout before a successful reply has been retrieved. In the
+    latter case the client have received at least one error reply, and should
+    be able to provide a better error description as to what isn't working.
+  </p>
+  <p>
+    The content layer currently does nothing to prioritize operations based on
+    timeout values or time left within a timeout. Priorities are set
+    separately, preferrably through load type configuration. Consequently,
+    reducing the timeout does not affect the latency of requests that does not
+    time out.
+  </p>
+  <p>
+    Overload is a common reason for timeouts to happen. Failing requests with
+    timeouts typically add to the load as the request will often be retried
+    later.  This puts even more load on the cluster.
+  </p>
+  <p>
+    Known reasons for using timeouts:
+  </p>
+  <ul>
+    <li>The source of the request has likely discarded it anyhow. Whether we
+        time out or not does not affect probability of the request to be
+        resent.</li>
+    <li>The source prefers a low latency partial result to a high latency
+        complete result. Timing out do not add additional load to the
+        cluster.</li>
+  </ul>
+  <p>
+    If a timeout is set low for the wrong reasons, request resending will
+    happen, the cluster will get more load, and more requests are likely to
+    time out. Do not set a low timeout just to enforce an SLA or similar. If
+    the latency is too high, this needs to be fixed by other means.
+  </p>
+  <p>
+    Another common case is clients using synchronous interfaces. If processing
+    a request that uses a lot of time, other requests are kept waiting. By
+    using asynchronous interfaces, clients are able to keep a lot more pending
+    requests at a lower cost, allowing the backend to throttle the requests
+    rather than the client. Timeouts do not need to be very low, and one avoids
+    extra load put on the cluster due to resending.
+  </p>
+  <p>
+    When setting timeouts for your requests, especially requests that need to be
+    applied anyhow, try to set all long enough for common issues causing
+    temporary issues to be resolved, to reduce extra load caused by resending.
+  </p>
+
+  <h1>Priority values</h1>
+  <p>
+    Internally, priorities are byte values from 0 to 255, where 0 is the highest
+    priority. To be able to configure priorities a bit more textual, 16 priority
+    values are mapped to names, used in <em>services.xml</em>:
+  </p>
+  <ul>
+    <li>HIGHEST</li>
+    <li>VERY_HIGH</li>
+    <li>HIGH_1</li>
+    <li>HIGH_2</li>
+    <li>HIGH_3</li>
+    <li>NORMAL_1</li>
+    <li>NORMAL_2</li>
+    <li>NORMAL_3</li>
+    <li>NORMAL_4</li>
+    <li>NORMAL_5</li>
+    <li>NORMAL_6</li>
+    <li>LOW_1</li>
+    <li>LOW_2</li>
+    <li>LOW_3</li>
+    <li>VERY_LOW</li>
+    <li>LOWEST</li>
+  </ul>
+  <p>
+    We recommend that load that have strict latency requirements are priorities
+    high or above. Load that may be throttled by priority should be low or less.
+  </p>
+  
+</body>
+</html>

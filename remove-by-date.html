@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Removing old documents</title>
+  <link rel="stylesheet"  href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="September 2012" />
+  <meta name="lastupdate" content="August 2015" />
+  <meta name="authors"    content="lulf, bjormel" />
+</head>
+
+<body>
+
+<p class="ingress">
+A common feature used in real-time applications is to expire or remove documents once they have passed
+as certain age. This is a very useful feature if you want to keep a window of documents available.
+</p>
+
+<h1 id="intro">Removing old documents by date</h1>
+<p>
+To remove old documents in a Vespa setup, your documents need to contain a field
+with a timestamp. See the <a href="indexing-language.html">indexing language</a>
+documentation for how to set its value to the current time automatically.
+</p>
+<pre>
+field timestamp type long {
+    indexing: attribute
+}
+</pre>
+<p>
+Now that all documents have a timestamp, you can instruct Vespa to remove the documents periodically. This is done by providing a selection
+expression in you <code>services.xml</code>. The expression states which documents you want to <strong>keep</strong>. To remove all documents for the document type 'music' older than two hours, you simply have
+to state that you want to keep all documents newer than two hours:
+</p>
+<pre>
+&lt;documents garbage-collection="true"&gt;
+    &lt;document type=&quot;music&quot; mode=&quot;index&quot; selection=&quot;music.timestamp > now() - 7200&quot; &gt;
+&lt;/documents&gt;
+</pre>
+
+<h2 id="tuning">Tuning garbage collection interval</h2>
+<p>
+The periodic removal is done by the distributor garbage collection task, by default this is ran every 3600 second.
+</p>
+<p>
+You can change the garbage collection interval by specifying the <code>garbage-collection-interval</code> attribute in <code>documents</code>.
+</p>
+<pre>
+&lt;documents garbage-collection=&quot;true&quot; garbage-collection-interval=&quot;1800&quot;&gt;
+</pre>
+
+<p>
+See the <a href="content/setup-reference.html#documents">search services reference</a> for further details.
+</p>
+
+</body>
+</html>

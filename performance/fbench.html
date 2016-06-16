@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>fbench</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="March 2011" />
+<meta name="authors" content="gunnarin" />
+</head>
+
+<body>
+
+<p>
+This is the HTML version of the man page for the command line
+tool <em>fbench</em>- a tool used for benchmarking the capacity of
+a Vespa system.
+</p>
+
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>fbench</strong> - command-line tool for benchmarking a Vespa setup
+</p>
+
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>fbench</strong> [-<strong>n</strong> <em>numClients</em>]
+[-<strong>c</strong> <em>cycleTime</em>] [-<strong>l</strong>
+<em>limit</em>] [-<strong>i</strong> <em>ignoreCount</em>] [-<strong>s</strong> <em>seconds</em>] [-<strong>q</strong>
+<em>queryFilePattern</em>] [-<strong>o</strong> <em>outputFilePattern</em>] [-<strong>r</strong>
+<em>restartLimit</em>] [-<strong>m</strong> <em>maxLineSize</em>]
+[-<strong>p</strong> <em>seconds</em>] [-<strong>k</strong>] [-<strong>x</strong>] [-<strong>y</strong>]
+[-<strong>z</strong>] &lt;hostname&gt; &lt;port&gt;
+</p>
+
+
+
+<h1 id="description">Description</h1>
+<p>
+<ul>
+  <li>Several hostnames and ports can be listed (make sure we have an example using multiple hosts)</li>
+  <li>This is distributed in round-robin manner to clients</li>
+</ul>
+</p>
+
+
+
+<h1 id="options">Options</h1>
+<dl>
+
+<dt><strong>-n</strong> <em>numClients</em></dt>
+<dd>
+Run fbench with <em>numClients</em> clients in parallel.  If not
+specified, fbench will use a default value of <em>10</em> clients.
+</dd>
+
+<dt><strong>-c</strong> <em>cycleTime</em></dt>
+<dd>
+each client will make a request each &lt;num&gt; milliseconds [1000]
+('-1' -&gt; cycle time should be twice the response time)
+</dd>
+
+<dt><strong>-l</strong> <em>limit</em></dt>
+<dd>
+minimum response size for successful requests [0]
+</dd>
+
+<dt><strong>-i</strong> <em>ignoreCount</em></dt>
+<dd>
+do not log the &lt;num&gt; first results. -1 means no logging [0]
+</dd>
+
+<dt><strong>-s</strong> <em>seconds</em></dt>
+<dd>
+run the test for &lt;num&gt; seconds. -1 means forever [60]
+</dd>
+
+<dt><strong>-q</strong> <em>queryFilePattern</em></dt>
+<dd>
+pattern defining input query files ['query%03d.txt'] (the pattern is
+            used with sprintf to generate filenames)
+</dd>
+
+<dt><strong>-o</strong> <em>outputFilePattern</em></dt>
+<dd>
+save query results to output files with the given pattern (default is
+            not saving.)
+</dd>
+
+<dt><strong>-r</strong> <em>restartLimit</em></dt>
+<dd>
+ number of times to re-use each query file. -1 means no limit [-1]
+</dd>
+
+<dt><strong>-m</strong> <em>maxLineSize</em></dt>
+<dd>
+max line size in input query files [8192].  Can not be less than the
+            minimum [1024].
+</dd>
+
+<dt><strong>-p</strong> <em>seconds</em></dt>
+<dd>
+print summary every &lt;num&gt; seconds.  only available when
+installing fbench from test branch,
+</dd>
+
+<dt><strong>-k</strong></dt>
+<dd>
+enable HTTP keep-alive.
+</dd>
+
+<dt><strong>-x</strong></dt>
+<dd>
+write benchmarkdata-reporting to output file.
+</dd>
+
+<dt><strong>-y</strong></dt>
+<dd>
+write data on coverage to output file (must used with -x).
+</dd>
+
+<dt><strong>-z</strong></dt>
+<dd>
+use single query file to be distributed between clients.  only
+available when installing fbench from test branch,
+</dd>
+
+</dl>
+
+
+
+<h1 id="return-values">Return Values</h1>
+<p>
+</p>
+
+
+
+<h1 id="environment">Environment</h1>
+<p>
+</p>
+
+
+
+<h1 id="files">Files</h1>
+<p>
+</p>
+
+
+
+<h1 id="examples">Examples</h1>
+<p>
+</p>
+
+
+
+<h1 id="see-also">See Also</h1>
+<p>
+</p>
+
+
+
+<h1 id="reporting-bugs">Reporting Bugs</h1>
+<p>
+Please file
+<a href="http://bug.corp.yahoo.com/enter_bug.cgi?product=vespa&amp;component=devAdmin">Bugzilla
+tickets in product:Vespa, component:devAdmin</a>.
+</p>
+
+
+
+<h1 id="using">Using fbench</h1>
+
+<h2 id="using-prepare">Preparing query files</h2>
+
+<p>
+Fbench uses <em>query files</em>, which are files where each line
+is a query following the pattern:
+</p>
+<pre>/search/?query=<em>sddocname:music&amp;nocache</em></pre>
+
+<p>It is often desirable to collect queries from a live system</p>
+
+<p class="alert alert-success">
+Adding "&amp;nocache" to each query will force the QRS server to request
+results from the search nodes.  This parameter is recommended if the
+query set for benchmarking is small, otherwise the benchmark results
+will be biased by the caching performance of the QRS server.
+</p>
+
+<h2 id="using-fbench">Run fbench</h2>
+<p>It is recommended to run multiple tests by changing the value in
+<code>-n</code> parameter to measure how the system might sustain
+query load and still meet the QPS and/or latency requirements. For
+example, starting from 1 client, 10, 20, etc.</p>
+
+<p>A typical fbench command would look like this:</p>
+<pre class="brush: cli">
+$ fbench -n 10 -q query%03d.txt -s 300 -c 0 -o output%03d.txt -xy test.corp.yahoo.com 4080
+</pre>
+
+
+<p>This creates 10 clients which will run for 300 seconds (5 minutes). The
+<code>-c</code> parameter states that each client will wait for 0
+milliseconds between each request. Each client would use a query and
+output file given by the given pattern and it's client number,
+i.e. client 1 will use query file query001.txt and output file output001.txt.</p>
+
+<p>The options <code>-xy</code> makes fbench clients output
+benchmarking data to it's output files</p>
+
+<p class="alert alert-success">
+It is possible to list several hostnames and ports. The different
+hostnames will be distributed to the clients in a round-robin manner,
+such that, with two hosts, client 0, 2, &hellip;, 38 would make requests to
+the first host while client 1, 3, &hellip;, 39 would make requests to the
+second host.
+</p>
+
+<h2 id="using-post">Using fbench results</h2>
+
+<p>After running fbench you will have a summary written to stdout and an
+output file from each client.</p>
+
+<p>fbench includes a script
+<a href="#fbench-formatter"><code>fbench-formatter</code></a>
+that creates a summary of the output files.</p>
+
+<p>scripts like
+<a href="#resultfilter"><code>resultfilter.pl</code></a>
+can be used for formatting the summary to a space seperated value
+format to ease plotting.</p>
+
+<h2 id="running">Running fbench</h2>
+
+
+
+
+<h1 id="results">Understanding benchmarking results</h1>
+<p>After a test run has completed, fbench outputs various test
+results. This section will explain what each of these numbers mean.</p>
+
+
+<h2 id="results-notes">Notes about results</h2>
+<ul>
+  <li>'system utilization' provide no information about the Vespa
+  system under test and should not be used for benchmarking. </li>
+  <li> In
+  some modes of operation, fbench waits before sending the next
+  query.</li>
+  <li>'system utilization' represents the time that fbench is
+  sending queries and waiting for responses. For example a 'system
+  utilization' of 50% means that fbench is stress testing the system
+  50% of the time and is doing nothing the remaining 50% of the
+  time.</li>
+
+  <li>Do not run fbench on the same machine as the qrserver
+  or the search node because it will impact the performance of vespa
+  system.</li>
+
+  <li>fbench latency results include network latency. Measure and subtract network latency to obtain the true
+  vespa query latency. See also <a href="#results-extended-1">extended results</a> for this info from Vespa</li>
+
+  <li>If many of the queries return zero results, the average latency will be low.</li>
+</ul>
+
+
+<h2 id="results-basic">Basic results</h2>
+<dl>
+<dt>'connection reuse count'</dt>
+<dd> This value indicates how many times HTTP
+     connections were reused to issue another
+     request. Note that this number will only be
+     displayed if the -k switch (enable HTTP
+     keep-alive) is used.
+</dd>
+
+<dt>'clients'</dt>
+<dd> Echo of the -n parameter.</dd>
+
+<dt>'cycle time'</dt>
+<dd> Echo of the -c parameter.</dd>
+
+<dt>'lower response limit'</dt>
+<dd> Echo of the -l parameter.</dd>
+
+<dt>'skipped requests'</dt>
+<dd> Number of requests that was skipped
+by fbench. fbench will typically skip a request if the line containing
+the query url exceeds a pre-defined limit. Skipped requests will have
+minimal impact on the statistical results.</dd>
+
+<dt>'failed requests'</dt>
+<dd> The number of failed requests. A
+request will be marked as failed if en error occurred while reading
+the result or if the result contained less bytes than 'lower response
+limit'.</dd>
+
+<dt>'successful requests'</dt>
+<dd> Number of successful
+requests. Each performed request is counted as either successful or
+failed. Skipped requests (see above) are not performed and therefore
+not counted.</dd>
+
+<dt>'cycles not held'</dt>
+<dd> Number of cycles not held. The cycle
+time is specified with the -c parameter. It defines how often a client
+should perform a new request. However, a client may not perform
+another request before the result from the previous request has been
+obtained. Whenever a client is unable to initiate a new request 'on
+time' due to not being finished with the previous request, this value
+will be increased.</dd>
+
+<dt>'minimum response time'</dt>
+<dd> The minimum response time. The
+response time is measured as the time period from just before the
+request is sent to the server, till the result is obtained from the
+server.</dd>
+
+<dt>'maximum response time'</dt>
+<dd> The maximum response time. The
+response time is measured as the time period from just before the
+request is sent to the server, till the result is obtained from the
+server.</dd>
+
+<dt>'average response time'</dt>
+<dd> The average response time. The
+response time is measured as the time period from just before the
+request is sent to the server, till the result is obtained from the
+server.</dd>
+
+<dt>'X percentile'</dt>
+<dd> The X percentile of the response time
+samples; a value selected such that X percent of the response time
+samples are below this value. In order to calculate percentiles, a
+histogram of response times is maintained for each client at runtime
+and merged after the test run ends. If a percentile value exceeds the
+upper bound of this histogram, it will be approximated (and thus less
+accurate) and marked with '(approx)'.</dd>
+
+<dt>'actual query rate'</dt>
+<dd> The average number of queries per
+second; QPS.</dd>
+
+<dt>'utilization'</dt>
+<dd> The percentage of time used waiting for
+the server to complete (successful) requests. Note that if a request
+fails, the utilization will drop since the client has 'wasted' the
+time spent on the failed request.</dd>
+
+<dt>'zero hit queries'</dt>
+<dd>The number of queries that gave zero hits in Vespa</dd>
+
+</dl>
+
+<h2 id="results-extended">Extended results</h2>
+
+<h3 id="results-extended-1"><code>-x</code> Activate benchmarkdata-reporting</h3>
+<p>This results will be added to the output file if the <code>-x</code> switch is active(activate benchmarkdata-reporting) is used</p>
+
+<p>To get this numbers aggregated you can use
+<a href="#fbench-formatter"><code>fbench-formatter.py</code></a></p>
+
+<dl>
+
+<dt>NumHits</dt>
+<dd>Number of hits returned</dd>
+
+<dt>NumFastHits</dt>
+<dd>Number of actual document hits returned</dd>
+
+<dt>TotalHitCount</dt>
+<dd>Total number of hits for query</dd>
+
+<dt>QueryHits</dt>
+<dd>Hits as specified in query</dd>
+
+<dt>QueryOffset</dt>
+<dd>Offset as specified in query</dd>
+
+<dt>NumErrors</dt>
+<dd>Number of error hits returned</dd>
+
+<dt>NumGroupHits</dt>
+<dd>Number of grouping hits returned</dd>
+
+<dt>SearchTime</dt>
+<dd>Time used for searching. Entire query time for one phase search, first phase for
+two-phase search</dd>
+
+<dt>AttributeFetchTime</dt>
+<dd>Time used for attribute fetching, or 0 for one phase search</dd>
+
+<dt>FillTime</dt>
+<dd>Time used for summary fetching, or 0 for one phase search</dd>
+
+</dl>
+
+<p>In a simple straight forward vespa setup without any custom searchers doing multiple queries the total time spent
+should be 1 + 2 + 3 + rendering and network = fbench.</p>
+
+<h3 id="results-extended-2"><code>-y</code> Activate additional data on coverage</h3>
+<p>This uses the report coverage query feature</p>
+<p>This results will be added to the output file if the <code>-y</code> switch is active</p>
+
+<p>To get this numbers aggregated you can use
+<a href="#fbench-formatter"><code>fbench-formatter.py</code></a></p>
+
+<dl>
+
+<dt>DocsSearched</dt>
+<dd>Total number of documents in nodes searched</dd>
+
+<dt>NodesSearched</dt>
+<dd>Total number of search nodes which were used</dd>
+
+<dt>FullCoverage</dt>
+<dd>1 if true, 0 if false</dd>
+
+</dl>
+
+
+<h1 id="queries-live">Usecase: Collect queries from a live system</h1>
+
+<p>To create 200 query files from log:</p>
+<pre>
+$ cat $VESPA_HOME/logs/vespa/qrs/QueryAccessLog.* | filterfile -a | splitfile -p folder/file%03d.txt 200
+</pre>
+<p>
+This will create files <em>folder/file000.txt</em> to <em>folder/file/199.txt</em>
+</p>
+
+
+<p class="alert alert-success">
+To add <code>&amp;nocache</code> to the end of each line, use
+<code>sed 's/$/\&amp;nocache/g'</code>
+</p>
+<pre>
+$ <span class="input">cat $VESPA_HOME/logs/vespa/qrs/QueryAccessLog.* | ./filterfile -a | sed 's/$/\&amp;nocache/g' | splitfile -p folder/file%03d.txt &lt;numClients&gt;</span>
+</pre>
+
+
+<p class="alert alert-success">
+A query file can become very large, and it can then be pratical to let
+the clients share query file.  To do this the flag <em>-z</em> must be
+set when invoking fbench. If the flag is not set all clients will send
+the same query, resulting in a artificial high performance
+</p>
+
+
+
+<h1>fbench scripts</h1>
+
+
+<h2>Preparing query files</h2>
+
+<dt><a href="#filterfile"><code>filterfile</code></a></dt>
+<dd>Takes query server logs as input and filters them into query file format <br />
+  <code> cat QueryAccessLog.* | filterfile -a &gt; query-file.txt</code></dd>
+
+<dt><a href="#splitfile"><code>splitfile</code></a></dt>
+<dd>Splits a query file into several files <br />
+  <code>cat query-file.txt | splitfile &lt;num parts&gt;</code></dd>
+
+<h2>Post processing </h2>
+<dt><a href="#fbench-formatter"><code>fbench-formatter.py</code></a></dt>
+<dd>Processes fbench output files and creates statistics <br />
+  <code>fbench-formatter.py fbench-output%d.txt</code> </dd>
+
+<dt><a href="#geturl"><code>geturl</code></a></dt>
+<dd>Print result of query to stdout</dd>
+
+<dt><a href="#resultfilter"><code>resultfilter.pl</code></a></dt>
+<dd>Script for filtering fbench summary output into space separated list <br />
+  <code>fbench host port | resultfilter &gt;&gt; result.txt</code></dd>
+
+<dt><a href="#plot"><code>plot.pl</code></a></dt>
+<dd>Script to make plot of fbench output in result.txt<br />
+  <code>plot.pl [1-3]</code></dd>
+
+<dt><a href="#separate"><code>seperate.pl</code></a></dt><dd></dd>
+
+<h2>Test scripts</h2>
+<dt><a href="#runtests"><code>runtests.sh</code></a></dt>
+<dd>Script for automatically run fbench with different number of clients and cycle times</dd>
+
+<dt><a href="#runtests"><code>pretest.sh</code></a></dt>
+<dd>Invoked by runtests.sh for initialization</dd>
+
+</p>
+
+<h2 id="fbench-formatter">fbench-formatter</h2>
+<h3 id="fbench-formatter-usage">Usage</h3>
+<pre>
+  Usage: fbench-formatter.py [options] [fbench output file]
+  
+  Use  '-' for input from stdin
+  
+  Wildcards:
+  %d : any digits
+  * : any string
+  . : any char
+  
+  Example:
+  fbench-formatter.py file%d directory/file
+  cat filename | fbench-formatter.py -
+  
+  Options:
+  -h, --help              show this help
+  -d, --dir=&lt;string&gt;      search directory [default: current directory]
+  -n, --depth=&lt;int&gt;       search depth for subfolders [default: no limit]
+  -f                      show file list
+  
+  -w                      give output as html
+  -s                      give output as minimal tab seperated list
+  (headers is written to stderr)
+  -c,                     give output as comma seperated list
+  (headers is written to stderr)
+  
+  -t, --tag=&lt;string&gt;      set tag to output (use with -s)
+</pre>
+
+<p><code>fbench-formatter.py</code> parses fbench output files and
+returns aggregated info of those</p>
+
+<h3 id="fbench-formatter-example">Example of use</h3>
+<pre>
+  $ cat output/out* | ./fbench-formatter.py -
+  Processing stdin&hellip;
+  NAME	         TOTAL	       AVG	   MIN	   MAX
+  TotalHitCount:	          3731	      0.62	     0	    21
+  SearchTime:	        629844	    104.92	    10	   392
+  FillTime:	        222128	     37.00	     0	   408
+  NumHits:	          3148	      0.52	     0	    10
+  QueryHits:	         60030	     10.00	    10	    10
+  DocsSearched:	       4540939	    756.44	   756	   757
+  NumFastHits:	          3148	      0.52	     0	    10
+  FullCoverage:	          6003	      1.00	     1	     1
+  AttributeFetchTime:	             0	      0.00	     0	     0
+  NumErrors:	             0	      0.00	     0	     0
+  QueryOffset:	             0	      0.00	     0	     0
+  NodesSearched:	         24012	      4.00	     4	     4
+  
+  Search+Fill+AttrFetch:	    851972.000	    141.92	    13	   526
+  Standard deviation:	        58.833
+  Number of requests:	          6003
+  successful requests:	          6003
+  failed requests:	             0
+  zero hit requests:	          3332
+</pre>
+
+<h2 id="filterfile">filterfile</h2>
+<h3 id="filterfile-usage">Usage</h3>
+<pre>
+  usage: filterfile [-a] [-h] [-m maxLineSize]
+  
+  Read concatenated QRS logs from stdin and write
+  extracted query urls to stdout.
+  
+  -a : all parameters to the original query urls are preserved.
+  If the -a switch is not given, only 'query' and 'type'
+  parameters are kept in the extracted query urls.
+  -h : print this usage information.
+  -m &lt;num&gt; : max line size for input/output lines.
+  Can not be less than the default [10240]
+</pre>
+
+<p>Filterfile is used for extracting queries from the query server</p>
+
+<h3 id="filterfile-example">Example of use</h3>
+<pre>
+  cat $VESPA_HOME/logs/vespa/qrs/* | filterfile -a > query.txt
+</pre>
+
+<p>This will create a file with name 'query.txt', with queries extracted from the log files</p>
+
+<h2 id="resultfilter">resultfilter.pl</h2>
+<p> This script converts an fbench summary report read from stdin to a
+single line containing only the numerical values written to # stdout.
+</p>
+
+<h3 id="resultfilter-example">Example of use</h3>
+<pre>
+  $ cat result.txt
+  ***************** Benchmark Summary *****************
+  clients:                      10
+  ran for:                       1 seconds
+  cycle time:                    0 ms
+  lower response limit:          0 bytes
+  skipped requests:              0
+  failed requests:               0
+  successful requests:          66
+  cycles not held:              66
+  minimum response time:     36.46 ms
+  maximum response time:    322.66 ms
+  average response time:    156.37 ms
+  25 percentile:            108.00 ms
+  50 percentile:            143.00 ms
+  75 percentile:            194.00 ms
+  90 percentile:            271.00 ms
+  95 percentile:            294.50 ms
+  99 percentile:            321.05 ms
+  actual query rate:         63.94 Q/s
+  utilization:               99.99 %
+  
+  $ cat result.txt | resultfilter.pl
+  10 1 0 0 0 0 66 66 36.46 322.66 156.37 108.00 143.00 194.00 271.00 294.50 321.05 63.94 99.99
+</pre>
+
+<h2 id="splitfile">splitfile</h2>
+<h3 id="splitfile-usage">Usage</h3>
+<pre>
+  usage: splitfile [-p pattern] [-m maxLineSize] &lt;numparts&gt; [&lt;file&gt;]
+  
+  -p pattern : output name pattern ['query%03d.txt']
+  -m &lt;num&gt;   : max line size for input/output lines.
+  Can not be less than the default [10240]
+  &lt;numparts&gt; : number of output files to generate.
+  
+  Reads from &lt;file&gt; (stdin if &lt;file&gt; is not given) and
+  randomly distributes each line between &lt;numpart&gt; output
+  files. The names of the output files are generated by
+  combining the &lt;pattern&gt; with sequential numbers using
+  the sprintf function.
+</pre>
+
+<p>To let each client have a distinct file, you should split
+the query urls into at least as many files as the number of clients
+you are planning to run.</p>
+
+<pre>./splitfile -p folder/query%02d 2 queryfile</pre>
+<p>This will create two files, <code>folder/query00</code> and
+<code>folder/query01</code>. The content of <code>queryfile</code> is
+divided between them</p>
+
+<h2 id="plot">plot.pl</h2>
+<h3 id="plot-usage">Usage</h3>
+<pre>
+  usage: plot.pl [-h] [-x] <plotno>
+    Plot the contents of 'result.txt'.
+    -h      This help
+    -x      Output to X11 window (default PS-file 'graph.ps')
+    plotno: 1: Response Time Percentiles by NumCli
+    2: Rate by NumCli
+    3: Response Time Percentiles by Rate
+</pre>
+    
+<h3 id="plot-example">Example of use</h3>
+<pre>
+  fbench &hellip; host port | resultfilter.pl &gt;&gt; result.txt
+  fbench &hellip; host port | resultfilter.pl &gt;&gt; result.txt
+  fbench &hellip; host port | resultfilter.pl &gt;&gt; result.txt
+  plot 1
+</pre>
+<p>This will plot the values of result.txt as response time percentiles by number of clients</p>
+
+<h2 id="runtests">runtests.sh</h2>
+<h3 id="runtests-usage">Usage</h3>
+<pre>
+  usage: runtests.sh [-o] [-l] &lt;minClients&gt; &lt;maxClients&gt; &lt;deltaClients&gt;
+  &lt;minCycle&gt; &lt;maxCycle&gt; &lt;deltaCycle&gt; [fbench options] &lt;hostname&gt; &lt;port&gt;
+  
+  The number of clients varies from &lt;minClients&gt; to &lt;maxClients&gt; with
+  &lt;deltaClients&gt; increments. For each client count, the cycle time will
+  vary in the same way according to &lt;minCycle&gt;, &lt;maxCycle&gt; and &lt;deltaCycle&gt;.
+  fbench is run with each combination of client count and cycle time, and
+  the result output is filtered with the 'resultfilter.pl' script.
+  If you want to save the results you should redirect stdout to a file.
+  
+  -o : change the order in which the tests are performed so that client
+  count varies for each cycle time.
+  -l : output a blank line between test subseries. If -o is not specified this
+  will output a blank line between test series using different client count.
+  If -o was specified this will output blank lines between test series
+  using different cycle time.
+  
+  [fbench options] &lt;hostname&gt; &lt;port&gt;: These arguments are passed to fbench.
+  There are 2 things to remember: first; do not specify either of the -n
+  or -c options since they will override the values for client count and
+  cycle time generated by this script. Secondly; make sure you specify
+  the correct host and port number. See the fbench usage (run fbench
+  without parameters) for more info on how to invoke fbench
+</pre>
+
+
+<p><code>runtests.sh</code> is used to run fbench with different values of n and c</p>
+<p>The script <code>pretest.sh</code> will be called before each
+individual run and can be used for clearing caches etc</p>
+
+<h2 id="geturl">geturl</h2>
+<h3 id="geturl-usage">Usage</h3>
+<pre>
+  usage: geturl &lt;host&gt; &lt;port&gt; &lt;url&gt;
+</pre>
+
+<p>geturl fetches the result of the query given</p>
+
+<h3 id="geturl-example">Example of use</h3>
+<pre>
+  geturl hostname port /search/?query=sddocname:music
+</pre>
+
+<h2 id="separate">separate.pl</h2>
+<h3 id="separate-usage">Usage</h3>
+<pre>
+  usage: separate.pl &lt;sepcol&gt;
+  Separate a tabular numeric file into chunks using a blank
+  line whenever the value in column 'sepcol' changes.
+</pre>
+
+
+
+</body>
+</html>

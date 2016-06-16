@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Document Field Path Syntax</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+
+<p class="ingress">
+The field path syntax is used several places in Vespa to traverse
+documents through arrays, structs, maps and sets and generate a set of
+values matching the expression.
+</p>
+
+
+
+<h1 id="examples">Examples</h1>
+
+<p>
+To start off, let us review some examples of use:
+</p>
+
+<pre class="brush: text">
+mymap{mykey}
+</pre>
+
+<p>
+If the document contains the field <code>mymap</code>, and it has a
+key <code>mykey</code>, the expression returns the value of the map
+for that key.
+</p>
+
+<pre class="brush: text">
+myarray[3]
+</pre>
+
+<p>
+Returns the value in index 3 of the <code>myarray</code> field, if
+set.
+</p>
+
+<pre class="brush: text">
+mystruct.value1
+</pre>
+
+<p>
+Returns the value of the <code>value1</code> field in the struct
+field <code>mystruct</code>, if set.
+</p>
+
+<pre class="brush: text">
+mystructarray.value1
+</pre>
+
+<p>
+If mystructarray is an array field containing structs, returns the
+values of value1 for each of those structs.
+</p>
+
+
+
+<h1 id="syntax">Syntax Description</h1>
+
+<p>
+The following syntax can be used for the different field types, and
+can be combined recursively as required:
+</p>
+
+
+<h2 id="syntax-map">Maps/weighted Sets</h2>
+<ul>
+  <li><em>&lt;mapfield&gt;{&lt;keyvalue&gt;}</em> Retrieve the value
+      of a specific key</li>
+  <li><em>&lt;mapfield&gt;{$&lt;variablename&gt;}</em> Retrieve all
+      values, setting the variable to the key value for each
+      (see <a href="#variables">below</a>)</li>
+  <li><em>&lt;mapfield&gt;.key</em> Retrieve all key values</li>
+  <li><em>&lt;mapfield&gt;.value</em> Retrieve all values</li>
+  <li><em>&lt;mapfield&gt;</em> Retrieve all keys</li>
+</ul>
+
+<p>
+In the case of weighted sets, the value referenced above is the weight
+of the item.
+</p>
+
+
+
+<h2 id="syntax-array">Array</h2>
+<ul>
+  <li><em>&lt;arrayfield&gt;[&lt;index&gt;]</em> Retrieve the value in
+      a specific index</li>
+  <li><em>&lt;arrayfield&gt;[$&lt;variablename&gt;]</em> Retrieve all
+      values in the array, setting the variable to the index of each
+      (see <a href="#variables">below</a>)</li>
+  <li><em>&lt;arrayfield&gt;</em> Retrieve all values in the
+      array</li>
+</ul>
+
+
+<h2 id="syntax-struct">Struct</h2>
+<ul>
+  <li><em>&lt;structfield&gt;{.&lt;subfield&gt;}</em> Return the value
+      of the struct field</li>
+  <li><em>&lt;structfield&gt;</em> Return the value of all
+      subfields</li>
+</ul>
+
+<p>
+Note that when specifying values of subscripts of maps, weighted sets
+and arrays, only primitive types (numbers and strings) may be used.
+</p>
+
+
+
+<h1 id="variables">Variables</h1>
+
+<p>
+In certain uses, it can be useful to reference several field paths
+using a common variable. For instance, if you have an array of
+structs, you may want to use document selection on fields within the
+same array index together. This could be done by an expression like
+this:
+</p>
+
+<pre class="brush: text">
+mydoctype.mystructarray{$x}.field1==&quot;foo&quot; AND mydoctype.mystructarray{$x}.field2==&quot;bar&quot;
+</pre>
+
+<p>
+Variables either have a <code>key</code> value (for maps and weighted
+sets), or an <code>index</code> value (for arrays). Variables cannot
+be used across such contexts (that is, a map key cannot be used to
+index into an array).
+</p>
+
+</body>
+</html>

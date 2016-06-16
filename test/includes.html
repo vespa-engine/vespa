@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Test: Including Files and File Parts</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="August 2010" />
+  <meta name="authors" content="eirikref" />
+</head>
+<body>
+
+<p class="ingress">
+Testing is nice.
+</p>
+
+
+<h1 id="file">Including file</h1>
+<pre>
+{@include file="test/hosts.xml"}
+</pre>
+
+<h1 id="file">Including block</h1>
+<pre>
+{@include file="test/hosts.xml" block="nalle"}
+</pre>
+
+<pre>
+{@include file="test/hosts.xml" block="frosk"}
+</pre>
+
+
+</body>
+</html>

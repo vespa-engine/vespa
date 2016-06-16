@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Performance</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="March 2014" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+<h1>Sizing and capacity planning</h1>
+<p>
+Sizing and capacity planning involves figuring out how many nodes you need and what kind of hardware best fits your application. Get started:
+</p>
+<ul>
+  <li><a href="sizing-search.html">Sizing Vespa search</a> for a guide on how to size a Vespa search cluster.</li>
+  <li><a href="attribute-memory-usage.html">Attributes and memory usage</a> to see how attributes impact your memory foot print and how to find attribute memory usage.</li>
+</ul>
+
+<h1>Benchmarking and tuning</h1>
+<p>
+Benchmarking is important both during sizing and for testing new features.
+Below are a few guides that gives you advice on what tools to use for benchmarking
+and how to tune system aspects of Vespa:
+</p>
+<ul>
+  <li><a href="vespa-benchmarking.html">Benchmarking Vespa</a> for a guide on how to test Vespa performance.</li>
+  <li><a href="container-http.html">Container Http performance testing using Gatling</a> for a guide on how to do performance testing using Gatling.</li>
+  <li><a href="jvm-tuning.html">JVM tuning</a> for how to increase memory usage and otherwise change JVM behavior.</li>
+  <li><a href="container-tuning.html">JDisc Container tuning</a> General JDisc container tuning.</li>
+  <li><a href="docproc-tuning.html">Document Processing tuning</a> Docproc specific tuning dealing with parallelism and memory usage of document processors.</li>
+  <li><a href="fbench.html">fbench</a> reference documentation</li>
+</ul>
+
+<h1>Profiling</h1>
+<p>
+Some times, it is necessary to do a deeper investigation of the performance.
+Below are a few guides that describe how to profile your own application as well as Vespa itself:
+</p>
+<ul>
+  <li><a href="oprofile-setup.html">Using oprofile</a>
+    How to setup OProfile on a Vespa host and how to do simple analysis.</li>
+  <li><a href="profiling.html">Profiling</a> Generic profiling tips.</li>
+  <li><a href="valgrind.html">Valgrind</a> How to run Vespa with Valgrind.</li>
+  <li><a href="profiling-search-container.html">Jdisc profiling</a> to profile your container application.</li>
+</ul>
+
+</body>
+</html>

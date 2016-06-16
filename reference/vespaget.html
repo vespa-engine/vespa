@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespaget</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="September 2014" />
+  <meta name="authors" content="bjorncs" />
+</head>
+
+<body>
+
+<p class="ingress">
+This page provides the reference documentation on the <code>vespaget</code> tool.
+</p>
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vespaget</strong>&mdash;Fetch documents from a Vespa content cluster.
+</p>
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vespaget</strong> &lt;options&gt; [documentid...]
+</p>
+
+<h1 id="description">Description</h1>
+<p>
+The <em>vespaget</em> tool retrieves documents from a Vespa content
+cluster, and prints them to <em>stdout</em> as <a href="document-xml-format.html">XML</a>.
+Vespaget will retrieve documents identified by the document ids passed as command line arguments. If no document ids are passed through the command line interface, they will be read from <em>stdin</em> (separated with line break).
+</p>
+
+<h1 id="options">Options</h1>
+See the vespaget help page (<code>vespaget --help</code>) for a list of command line options.
+
+<h1 id="examples">Examples</h1>
+<p>
+
+Fetching two documents where ids are passed by command line:
+<pre class="brush: cli">
+$ vespaget id:storage_test:music:n=1234:document1 id:storage_test:music:n=1234:document2
+&lt;document documenttype="music" documentid="id:storage_test:music:n=1234:document1" lastmodifiedtime="1410859069000000"&gt;
+  &lt;title&gt;title1&lt;/title&gt;
+&lt;/document&gt;
+&lt;document documenttype="music" documentid="id:storage_test:music:n=1234:document2" lastmodifiedtime="1410859069000002"&gt;
+  &lt;title&gt;title2&lt;/title&gt;
+  &lt;band&gt;foo&lt;/band&gt;
+  &lt;body&gt;bar&lt;/body&gt;
+&lt;/document&gt;
+</pre>
+
+Fetching two documents where ids are passed by stdin:
+<pre class="brush: cli">
+$ vespaget
+id:storage_test:music:n=1234:document1
+&lt;document documenttype="music" documentid="id:storage_test:music:n=1234:document1" lastmodifiedtime="1410859069000000"&gt;
+  &lt;title&gt;title1&lt;/title&gt;
+&lt;/document&gt;
+id:storage_test:music:n=1234:document2
+&lt;document documenttype="music" documentid="id:storage_test:music:n=1234:document2" lastmodifiedtime="1410859069000002"&gt;
+  &lt;title&gt;title2&lt;/title&gt;
+  &lt;band&gt;foo&lt;/band&gt;
+  &lt;body&gt;bar&lt;/body&gt;
+&lt;/document&gt;
+</pre>
+
+Example of <code>--trace</code>, <code>--headersonly</code> and <code>--showdocsize</code>:
+<pre class="brush: cli">
+$ vespaget --trace 5 --headersonly --showdocsize id:storage_test:music:n=1234:document1
+&lt;trace&gt;
+    [1410859418.913] Recognized 'indexing' as HopBlueprint(selector = { '[DocumentRouteSelector]' }, recipients = { 'storage' }, ignoreResult = false).
+    [1410859418.949] Running routing policy 'DocumentRouteSelector'.
+    [1410859418.949] Component '[Content:cluster=storage]' selected by policy 'DocumentRouteSelector'.
+    [1410859418.949] Resolving '[Content:cluster=storage]'.
+    [1410859418.953] Running routing policy 'Content'.
+    [1410859418.983] Selecting route
+    [1410859418.984] No cluster state cached. Sending to random distributor.
+    [1410859418.984] Too few nodes seen up in state. Sending totally random.
+    [1410859418.984] Component 'tcp/mynode.myhost.com:19110/default' selected by policy 'Content'.
+    [1410859418.984] Resolving 'tcp/mynode.myhost.com:19110/default'.
+    [1410859418.999] Sending message from client to 'tcp/mynode.myhost.com:19110/default' with 179.906 seconds timeout.
+    [1410859419.000245] Message (type 100003) received at 'storage/cluster.storage/distributor/0' for session 'default'.
+    [1410859419.000278] storage/distributor/0 CommunicationManager: Received message from message bus
+    [1410859419.000528] Sending message from 'storage/cluster.storage/distributor/0' to 'storage/cluster.storage/storage/0/default' with 179.91 seconds timeout.
+    [1410859419.000702] Message (type 4) received at 'storage/cluster.storage/storage/0' for session 'default'.
+    [1410859419.000756] storage/storage/0 CommunicationManager: Received message from message bus
+    [1410859419.000870] FileStorHandler: Operation added to disk 0's queue with priority 110
+    [1410859419.000922] PersistenceThread: Processing message in persistence layer
+    [1410859419.001139] Sending reply from 'storage/cluster.storage/storage/0'.
+    [1410859419.001345] Reply (type 5) received at 'storage/cluster.storage/distributor/0'.
+    [1410859419.001399] storage/distributor/0Communication manager: Received reply from message bus
+    [1410859419.001598] Sending reply from 'storage/cluster.storage/distributor/0'.
+    [1410859419.010] Reply (type 200003) received at client.
+    [1410859419.011] Routing policy 'Content' merging replies.
+    [1410859419.014] Routing policy 'DocumentRouteSelector' merging replies.
+&lt;/trace&gt;
+
+Document size: 75 bytes.
+&lt;document documenttype="music" documentid="id:storage_test:music:n=1234:document1" lastmodifiedtime="1410859069000000"&gt;
+  &lt;title&gt;title1&lt;/title&gt;
+&lt;/document&gt;
+</pre>
+</p>
+</body>
+</html>

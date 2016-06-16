@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Request-Response Processing</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"     content="March 2016" />
+  <meta name="authors"  content="bratseth" />
+</head>
+
+<body>
+
+<p>
+<em>Processing</em> makes it easy to create low-latency
+request/response processing applications.  It is the recommended way
+of creating such applications on top of JDisc, but can also be used independently of JDisc.
+Processing lets you define application behavior by combining Processors performing simple tasks.
+Processors use a synchronous call model, but the underlying IO may be asynchronous.
+</p>
+
+<p>
+  Javadoc:<br/>
+  <code><a href="../javadoc/index.html?com/yahoo/processing/Processor.html">com.yahoo.processing.Processor</a></code><br/>
+  <code><a href="../javadoc/index.html?com/yahoo/processing/rendering/Renderer.html">com.yahoo.processing.rendering.Renderer</a></code>
+</p>
+
+<h1 id="using_processing">Using processing</h1>
+
+To use processing, add this dependency to your maven pom:
+
+<pre class="code">
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+      &lt;artifactId&gt;container-dev&lt;/artifactId&gt;
+      &lt;version&gt;6.9.0&lt;/version&gt; &lt;!-- Note: use latest version available --&gt;
+      &lt;scope&gt;provided&lt;/scope&gt;
+    &lt;/dependency&gt;
+</pre>
+
+Or read <a href="developing-applications.html">how to start a deployable project from scratch</a>.
+
+
+<h1 id="processors">Processors</h1>
+
+<p>
+A <em>processor</em> subclasses Processor and implements a single
+method:
+</p>
+
+<pre class="brush: java">
+package com.mydomain.example;
+
+import com.yahoo.processing.*;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.test.ProcessorLibrary.StringData;
+
+public class ExampleProcessor extends Processor {
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        // Process the Request:
+        request.properties().set("foo","bar");
+
+        // Pass on to the next processor in the chain
+        Response response=execution.process(request);
+
+        // process the response
+        response.data().add(new StringData(request,"Hello, world!"));
+
+        return response;
+    }
+
+}
+</pre>
+
+<p>
+Processors may work on both the request and response, pass on the
+request one or more times to further processors or create the result
+data internally or by contacting a remote service. The result data may
+be a nested composite structure where content is contributed by
+multiple processors.
+</p>
+
+
+
+<h1 id="chaining-processors">Chaining Processors</h1>
+
+<p>
+Processors should carry out a single task and combined to complete
+applications.  This is achieved using Chains:
+</p>
+
+<pre class="brush: java">
+Chain&lt;Processor&gt; myChain=new Chain&lt;Processor&gt;(new ExampleProcessor(),
+                                              new FooProcessor(),
+                                              new BarProcessor());
+Response response=new Execution(myChain).process(request); // execute this chain
+</pre>
+
+<p>
+This executes the three processors in order. The Execution keeps track
+of the execution state so the same processor instances may be used in
+many chains at the same time.  When the execution reaches the end of
+the chain, the execution returns an empty Response to the processor
+calling it.  An AsyncExecution class is provided as a convenience to
+perform an execution in a separate thread instead.
+</p>
+
+<p>
+In most cases it is more convenient to configure chains and processor
+instances using external configuration. Chains of processors may be
+specified in
+a <code><a href="../reference/services-processing.html">processing</a></code>
+element in
+the <em><a href="../cloudconfig/application-packages.html#services.xml">services.xml</a></em>
+file in the application package.  The compiled processors are added to
+the application package as
+<a href="container-components.html">OSGi components</a>. Chain
+configuration allows chains to be defined as <em>sets</em> of
+processors with ordering constraints, such that the global ordering of
+processors can be figured out by the framework, and set operations con
+chains can be used to define extensions and variants of chains.
+</p>
+
+
+
+<h1 id="asynchronous-processing">Asynchronous Results</h1>
+
+<p>
+In some cases it is useful to return a Response before all the data in
+it is available.  This allows returning a partial response to clients
+with low latency even though the complete response contains some data
+arriving more slowly. The slow data can be added to the Response as a
+placeholder where actual data will arrive later. The processing
+framework allows waiting or listening for such completion events as
+<a href="http://docs.guava-libraries.googlecode.com/git-history/v11.0.1/javadoc/com/google/common/util/concurrent/ListenableFuture.html">Guava ListenableFutures.</a>
+</p>
+
+<p>
+If <em>all</em> data is added to the Response as future placeholders
+the processing framework becomes completely non-blocking.
+</p>
+
+
+
+<h1 id="dependency-injection">Dependency Injection</h1>
+
+<p>
+Processors in real applications will typically depend on some
+configuration and/or other components to run.  Such dependencies
+should be declared as straightforward constructor arguments to allow
+them to be injected at construction time.
+</p>
+
+<p>
+The container runtime used to host the processing framework uses a
+dependency injection framework based in Guice, see
+<a href="container-components.html">container components</a>.
+</p>
+
+<p>
+As a processor may participate in many processing executions at one
+time, field values in a processing class should usually be immutable
+after construction is completed.
+</p>
+
+
+<h1 id="response-rendering">Response Rendering</h1>
+
+<p>
+A <em>Renderer</em> is used to serialize the Response for return to a
+client.  Renderers are subclasses of
+<code>com.yahoo.processing.rendering.Renderer</code>.  A convenience
+superclass which handles waiting for future data in the asynchronous
+case is provided as
+<code>com.yahoo.processing.rendering.AsynchronousSectionedRenderer</code>.
+The default renderer, which renders in a simple JSON format is
+<code><a href="http://git.corp.yahoo.com/vespa/vespa/blob/master/container-core/src/main/java/com/yahoo/processing/rendering/ProcessingRenderer.java?view=markup">com.yahoo.processing.rendering.ProcessingRenderer</a></code>
+and can be subclassed to customize rendering of each kind of Data
+item.
+</p>
+
+<p>
+Processors are
+regular <a href="container-components.html">components</a> which are
+added to the application package in
+the <a href="../reference/services-processing.html#renderer">renderer
+section</a> of the <em>services.xml</em> file. A renderer is selected
+in the request by setting the <code>format</code> parameter in the request
+to the renderer id.
+</p>
+
+
+
+<h1 id="subclassing-of-processing">Subclassing of Processing</h1>
+
+<p>
+The Processing framework is meant to be generic and minimal. In some
+domains it is useful to employ a richer model of Processors, Requests,
+Responses and Executions targeted to that domain. An example is the
+<a href="../search/searcher-development.html">Search
+domain</a>, where Searchers, Queries and Results subclasses
+Processors, Requests and Responses.  The Processing framework is
+designed to allow such subclassing to built richer frameworks on top.
+</p>
+
+<h1 id="testing-processors-with-application">Testing Processors with an Application</h1>
+<p>
+A processor can be tested running inside a container.
+We create a JDisc from <em>services.xml</em>:
+</p>
+
+<pre class="brush: java">
+import com.yahoo.application.container.JDisc;
+import com.yahoo.application.Networking;
+
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+
+import com.yahoo.component.ComponentSpecification;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.containsString;
+
+public class ContainerTest {
+    @Test
+    public void testSearch() {
+        String servicesXml =
+                "&lt;jdisc version=\"1.0\"&gt;" +
+                "  &lt;processing&gt;" +
+                "    &lt;chain id=\"default\"&gt;" +
+                "      &lt;processor id=\"com.mydomain.example.ExampleProcessor\" /&gt;" +
+                "    &lt;/chain&gt;" +
+                "  &lt;/processing&gt;" +
+                "&lt;/jdisc&gt;";
+        try (JDisc container = JDisc.fromServicesXml(servicesXml, Networking.disable)) {
+            Response response = container.processing().process(ComponentSpecification.fromString("default"), new Request());
+            assertThat(response.data().get(0).toString(), containsString("Hello, world!"));
+        }
+
+    }
+}
+</pre>
+<p>
+We can also examine which processors are in a chain and their ordering:
+</p>
+<pre class="code">
+ChainRegistry<Processor> chains = container.processing().getChains();
+Chain<Processor> defaultChain = chains.getComponent("default");
+
+boolean foundExampleProcessor = false;
+for (Processor processor: defaultChain.components()) {
+    if ("ExampleProcessor".equals(processor.getClassName()))
+        foundExampleProcessor = true;
+}
+
+assertTrue("No instance of ExampleProcessor found in the default chain", foundExampleProcessor)
+</pre>
+
+<h1 id="selecting-a-chain">Selecting a Non-default Processor Chain</h1>
+
+<p>
+A complete application will usually be composed of several processor chains,
+which may or may not invoke eachother. To select a chain configured with
+another <code>id</code> than "default", add the the chain ID as a GET
+parameter named <code>chain</code>.
+</p>
+
+<p>In other words, given a chain named "testbed", as in:</p>
+
+<pre>
+&lt;jdisc version="1.0"&gt;
+  &lt;processing&gt;
+    &lt;chain id="testbed"&gt;
+      &lt;processor id="com.yahoo.example.ExampleProcessor" /&gt;
+    &lt;/chain&gt;
+  &lt;/processing&gt
+&lt;/jdisc&gt;
+</pre>
+
+<p>The chain testbed could be tested from the command line by doing:</p>
+
+<pre>
+curl http://<i>hostname</i>:<i>port</i>/processing/?chain=testbed
+</pre>
+
+<h1 id="references">References</h1>
+
+<ul>
+  <li><a href="../developing-web-services.html">Developing web services</a>.
+  <li><a href="../javadoc/index.html?com/yahoo/processing/package-summary.html">com.yahoo.processing</a> javadoc </li>
+  <li><a href="http://code.google.com/p/guava-libraries/source/browse/#git%2Fguava%2Fsrc%2Fcom%2Fgoogle%2Fcommon%2Futil%2Fconcurrent">Guava
+  Javadoc</a>.</li>
+</ul>
+
+
+<h1 id="common-tasks-with-processing">Common tasks with processing</h1>
+
+This section contains a collection of "how do I" explanations with processing.
+Most of these pertains to the jDisc binding of Processing, but note that Processing is independent of
+jDisc and may be invoked programmatically in any environment.
+
+<h2 id="accessing-the-http-request-from-processors">Accessing the HTTP request from Processors</h2>
+
+<p>Processors which interface with the network layer may need to access the network level request to access headers or request data,
+or to make outgoing calls through jDisc. The jDisc request is available through request properties:
+
+<pre class="brush: java">
+httpRequest = (com.yahoo.container.jdisc.HttpRequest)processingRequest.properties().get("jdisc.request");
+</pre>
+
+<h2 id="setting-response-headers-from-processors">Setting response headers from Processors</h2>
+
+<p>Response headers may be added to any Response by adding instances of
+<code>com.yahoo.processing.handler.ResponseHeaders</code> to the Response (ResponseHeaders is a kind of response Data).
+Multiple instances of this may be added to the Response, and the complete set of headers returned is the superset of all such objects.
+Example Processor:
+
+<pre class="brush: java">
+import com.yahoo.processing.Processor;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+import com.yahoo.processing.handler.ResponseHeaders;
+import com.yahoo.processing.execution.Execution;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.List;
+
+public class ResponseHeaderSetter extends Processor {
+
+   private final Map&lt;String,List&lt;String&gt;&gt; responseHeaders;
+
+   public ResponseHeaderSetter(Map&lt;String,List&lt;String&gt;&gt; responseHeaders) {
+       this.responseHeaders = Collections.unmodifiableMap(responseHeaders);
+   }
+
+   @Override
+   public Response process(Request request, Execution execution) {
+       Response response = execution.process(request);
+       response.data().add(new ResponseHeaders(responseHeaders, request));
+       return response;
+   }
+
+}
+</pre>
+
+
+<h1 id="example-processors">Example Processors</h1>
+
+<p>
+This section lists a few example processors which shows some use cases
+for the asynchronous aspects of the API.
+</p>
+
+<pre class="brush: java">
+import com.yahoo.component.chain.Chain;
+import com.yahoo.processing.Processor;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+import com.yahoo.processing.execution.AsyncExecution;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.response.FutureResponse;
+
+import java.util.*;
+
+/**
+ * Call a number of chains in parallel
+ */
+public class Federator extends Processor {
+
+    private final List&lt;Chain&lt;? extends Processor&gt;&gt; chains;
+
+    public Federator(Chain&lt;? extends Processor&gt; &hellip; chains) {
+        this.chains= Arrays.asList(chains);
+    }
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        List&lt;FutureResponse&gt; futureResponses=new ArrayList&lt;FutureResponse&gt;(chains.size());
+        for (Chain&lt;? extends Processor&gt; chain : chains) {
+            futureResponses.add(new AsyncExecution(chain,execution).process(request));
+        }
+        Response response=execution.process(request);
+        AsyncExecution.waitForAll(futureResponses,1000);
+        for (FutureResponse futureResponse : futureResponses) {
+            Response federatedResponse=futureResponse.get();
+            response.data().add(federatedResponse.data());
+            response.mergeWith(federatedResponse);
+        }
+        return response;
+    }
+}
+</pre>
+
+<pre class="brush: java">
+import com.yahoo.processing.*;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.response.*;
+import com.yahoo.processing.test.ProcessorLibrary.StringData;
+
+/**
+ * A data producer which producer data which will receive asynchronously.
+ * This is not a realistic, thread safe implementation as only the incoming data
+ * from the last created incoming data can be completed.
+ */
+public class AsyncDataProducer extends Processor {
+
+    private IncomingData incomingData;
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        DataList dataList = ArrayDataList.createAsync(request); // Default implementation
+        incomingData=dataList.incoming();
+        return new Response(dataList);
+    }
+
+    /** Called by some other data producing thread, later */
+    public void completeLateData() {
+        incomingData.addLast(new StringData(incomingData.getOwner().request(),
+                                            "A late hello, world!"));
+    }
+
+}
+</pre>
+
+<pre class="brush: java">
+import com.google.common.util.concurrent.MoreExecutors;
+import com.yahoo.component.chain.Chain;
+import com.yahoo.processing.*;
+import com.yahoo.processing.execution.*;
+
+/**
+ * A processor which registers a listener on the future completion of
+ * asynchronously arriving data to perform another chain at that point.
+ */
+public class AsyncDataProcessingInitiator extends Processor {
+
+    private final Chain&lt;Processor&gt; asyncChain;
+
+    public AsyncDataProcessingInitiator(Chain&lt;Processor&gt; asyncChain) {
+        this.asyncChain=asyncChain;
+    }
+
+    @Override
+    public Response process(Request request, Execution execution) {
+        Response response=execution.process(request);
+        response.data().complete().addListener(new RunnableExecution(request,
+                new ExecutionWithResponse(asyncChain, response, execution)),
+                MoreExecutors.sameThreadExecutor());
+        return response;
+    }
+
+}
+</pre>
+
+</body>
+</html>

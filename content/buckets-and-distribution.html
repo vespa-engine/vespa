@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Document to bucket distribution</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2016"/>
+  <meta name="authors" content="humbe,kraune"/>
+</head>
+<body>
+
+<p>
+  The content layer splits the document space into manageable chunks called
+  <a href="design-overview.html#buckets">buckets</a>. This document describes
+  why one may care how this is done, and what options the content layer gives
+  to control this distribution.
+</p>
+
+<h1 id="usecases">Co-locating documents into buckets</h1>
+<p>
+  MD5 checksums maps document identifiers to random locations.
+  This creates a uniform bucket distribution, and is default.
+  For some use cases, it is better to co-locate documents,
+  optimizing grouped access - an example is personal documents.
+  By enforcing some documents to map to similar locations, these documents are
+  likely to end up in the same actual buckets. There are several use cases for
+  where this may be useful.
+</p>
+<ul>
+  <li>When migrating documents for some entity between clusters, this may be
+      implemented more efficient if the entity is contained in just a few
+      buckets rather than having documents scattered around all the existing
+      buckets.</li>
+  <li>If one want to search through a small document set, this can be done using
+      streaming search if the documents can be read cheaply. If document sets
+      one wants to search in is known at feed time, one can co-locate these
+      documents, to enable cheap fetches.</li>
+  <li>If operations to the cluster is clustered somehow, clustering
+      the documents equally in the backend may make better use of caches. For
+      instance, if a service stores data for users, and traffic is typically
+      created for users at short intervals while the users are actively using
+      the service, clustering user data may allow a lot of the user traffic
+      to be easily cached by generic bucket caches.</li>
+</ul>
+<p>
+  <strong>Implementation note:</strong> A bucket contains all the documents that share a given
+  amount of least significant bits. It might have been better to
+  use the most significant bits instead. Due to this fact, the content layer and
+  backends typically sort their memory databases in inverted location order,
+  such that documents that will be split or joined together will be next to
+  each other in the order.
+</p>
+
+<h1 id="limitations">Limitations to co-localization</h1>
+<p>
+  One basic limitation to the document to location mapping is that it may never
+  change. If it changes, then documents will suddenly be in the wrong buckets
+  in the cluster. The content layer do not want to handle this unnecessary
+  complication, so such an event should never happen. To allow new
+  functionality, document identifier schemes may be extended or created that
+  maps to location in new ways, but the already existing ones must map the same
+  way as they have always done.
+</p>
+<p>
+  Currently, document identifiers just map to a single 58 bit location. If one
+  for instance wants to co-locate documents of the same document type, a given
+  amount of bits can be used to represent the document type. However, if the
+  document type names are hashed, there's a chance for a hash collision. If
+  they are enumerated, then the addition or removal of document types creates
+  hazards. If trying to encode the string itself, then the string must have
+  very limited length to fit within the 58 bits possible.
+</p>
+<p>
+  Additionally, users may typically co-localize more documents that can fit in
+  a single bucket, so even though some bits are overrided to ensure
+  co-localization, some other bits should still be created through hashing to
+  allow the co-localized documents to be split into multiple buckets if needed.
+</p>
+<p>
+  Current document identifier schemes typically allow the 32 least significant
+  bits to be overrided for co-localization, while the remaining 26 bits are
+  reserved for bits created from the MD5 checksum.
+</p>
+
+<h1 id="splitting">Splitting co-localized documents</h1>
+<p>
+  Then calculating what content nodes should store copies of buckets, the bucket
+  bits above the distribution bits, but within the first 32 bits is ignored.
+  This ensures that a copy of the bucket will exist locally to the distributor
+  responsible for the bucket.
+</p><p>
+  When there is enough documents co-localized to the same bucket, enforcing the
+  bucket to be split, it will typically need to split past the 32 bits
+  overrided to reach the hashed bits distinguishing the documents. These bits
+  will be included in the seed to calculate content nodes to store copies.
+</p><p>
+  The result of this is that co-localized documents that are split into
+  different parts will not be enforced to be stored on the same nodes. This
+  allows efficient parallel access to the data, such that streaming search can
+  read one chunk from each node efficiently and parallellize the search.
+</p>
+
+<h1 id="future">Future options</h1>
+<p>
+  Splitting documents into distinctive parts of the bucket space may allow new
+  features. For instance, one could split the buckets into several parts where
+  some buckets were stored in a different amount of copies than other buckets.
+</p><p>
+  Some backends may want to handle different document types separately.
+  With more possibilities for controlling the bucket mapping, it
+  could map each unique document type to a specific bucket set.
+</p><p>
+  To allow full control, the location needs to be an array of variable length
+  values. Then one could for instance set the first value to the redundancy and
+  the second value to the document type, and the third value to the MD5
+  checksum. Configuration could for instance specify what levels were allowed
+  to be contained in the same bucket.
+</p>
+
+<h1 id="distribution">Distribution of documents into buckets</h1>
+<p>
+  Each document has a document identifier following a document identifier
+  <a href="../document-ids.html">uri scheme</a>. From this scheme a 58 bit
+  numeric location is generated. Typically, all the bits are created from an
+  MD5 checksum of the whole identifier.
+</p><p>
+  If the <code>n=</code> option is specified, the 32 LSB bits of the given
+  number overrides the 32 LSB bits of the location.
+</p><p>
+  If the <code>g=</code> option is specified, a hash is created of the group
+  name, and the hash value overrides the 32 LSB bits of the location.
+</p><p>
+  When the location is calculated, one need to map that to a bucket. Clients
+  map locations to buckets using <a
+  href="design-overview.html#loc-to-bucket-distribution">distribution bits</a>.
+</p><p>
+  Distributors map locations to buckets by searching their bucket database,
+  which is sorted in inverse location order. Thus, one can detect what buckets
+  exist that may be able to contain the given document. The common case is that
+  there is one. If there are several, there is currently inconsistent bucket
+  splitting. If there are none, the distributor will create a new bucket for
+  the request if it is a request that may create new data. Typically new buckets
+  are generated split according to the distribution bit count.
+</p><p>
+  Content nodes should rarely need to map documents to buckets, as distributors
+  specify bucket targets for all requests. However, as external operations are
+  not queued during bucket splits and joins, the content nodes remap operations
+  to avoid having to fail them due to a bucket having recently been split or
+  joined.
+</p>
+
+</body>
+</html>
+

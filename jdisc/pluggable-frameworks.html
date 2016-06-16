@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+  <head>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date" content="March 2016" />
+    <meta name="authors" content="gv" />
+    <title>Using Libraries for Pluggable Frameworks</title>
+  </head>
+  <body>
+
+<p>
+ Many libraries provide pluggable architectures via Service Provider Interfaces
+(SPI). Currently, JDisc provides special support for <a href="jax.html">JAXB/JAXP</a> to
+simplify working with XML processing. Using other libraries usually requires some manual
+setup in the application package.
+</p>
+
+<h2>Troubleshooting and Configuring the Application</h2>
+
+<p>
+Libraries for pluggable frameworks rely on loading classes dynamically at runtime, usually via
+<code>Class.forName("&hellip;")</code>. If the package of the class that is loaded is not
+imported by our user bundle, this will result in the following error: </p>
+
+<pre class="brush: text">
+java.lang.ClassNotFoundException: <span style="background: yellow">com.sun.imageio.plugins.jpeg.JPEGImageReaderSpi</span> not found by my-bundle [29]
+    at
+org.apache.felix.framework.BundleWiringImpl.findClassOrResourceByDelegation(BundleWiringImpl.java:1532)
+</pre>
+
+<p> The example above is from using the <a
+ href="http://docs.oracle.com/javase/6/docs/technotes/guides/imageio/">Image I/O
+framework</a>. In this case, we notice that the missing class is from a
+<code>com.sun</code> package, which is available in the SDK.
+</p>
+
+<h3>Importing the Missing Package</h3>
+
+<p> The <code>ClassNotFoundException</code> means that our bundle is not importing the
+package. The bundle-plugin will usually not have added an import since the class is only
+referred to from a string in a <code>Class.forName("&hellip;")</code> statement. Hence,
+we must add an explicit <code>importPackage</code> in the bundle's pom.xml: </p>
+
+<pre class="brush: xml">
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+        &lt;artifactId&gt;bundle-plugin&lt;/artifactId&gt;
+        ...
+        &lt;configuration&gt;
+          <span style="background: yellow">&lt;importPackage&gt;com.sun.imageio.plugins.jpeg&lt;/importPackage&gt;</span>
+          ...
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+</pre>
+
+<p>
+The <code>importPackage</code> configuration option takes a comma-separated list of
+packages. Adding multiple <code>importPackage</code> elements in pom.xml means that only
+one of them will take effect.
+</p>
+
+
+<h3>Exporting the Missing Package from JDisc Container</h3>
+<p>
+As mentioned, the missing package in this example is part of the SDK. In these cases, we
+must tell JDisc to export the missing package. When running JDisc in <a
+ href="../operations/install-multinode.html">cluster mode</a> this is done in
+<code>services.xml</code>:
+</p>
+<pre class="brush: xml">
+&lt;jdisc version="1.0"&gt;
+    &lt;config name="search.config.qr-start"&gt;
+        &lt;jdisc&gt;
+            &lt;export_packages&gt;com.sun.imageio.plugins.jpeg&lt;/export_packages&gt;
+        &lt;/jdisc&gt;
+    &lt;/config&gt;
+    ...
+&lt;/jdisc&gt;
+</pre>
+
+  </body>
+</html>
+

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+<title>Profiling the Search Container</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="August 2010" />
+<meta name="authors" content="bergum" />
+</head>
+
+<body>
+<p>
+This document describes how you can configure the JDisc Container to
+allow for profiling custom searchers in order to identify
+performance bottlenecks - be it lock contention or CPU intensive
+algorithms. It also describes how to enable remote debugging using the
+IntelliJ IDEA.
+</p>
+
+
+
+<h1 id="setup">Install the YourKit Profiler on the JDisc Container Server</h1>
+<p>
+Yourkit is a good and simple tool for finding hotspots in Java code. It supports both sampling and tracing. Very often it is necessary to use both modes. Tracing is accurate as to how many times a method is invoked and from where. That can be used to analyze if you are actually not computing the same thing from multiple places and overall doing more than you need. However it will hide effects of cache miss and especially cost of atomic operations and synchronization costs.
+</p><p>
+Assume there is an installation in a data center that you would like
+to profile, preferably with a nice UI running on your local
+desktop. All this is just a few steps away:
+<ul>
+  <li>Install yourkit</li> <!-- ToDo: better instructions here -->
+  <li>
+    Modify <em>services.xml</em>:
+<pre class="code">
+&lt;nodes jvmargs="-agentlib:yjpagent -Dvespa.freezedetector.disable=true"&gt;
+...
+&lt;/nodes&gt;
+</pre>
+<p>
+Read more about the <a href="jvm-tuning.html">jvmargs services attribute</a>.
+Disabling the freezedetector stops the container from shutting down during profiling.
+</p>
+  <li>
+    Re-deploy the application:
+  </li>
+<pre class="code">
+deploy prepare &amp;&amp; deploy activate
+</pre>
+  <li>
+    restart Vespa on the node that runs the JDisc Container
+  </li>
+</ul>
+<p>
+Browse <em>$VESPA_HOME/logs/vespa.log</em> for errors.
+You are now ready to perform profiling;
+you just need to install the UI on your desktop.
+</p>
+
+
+
+<h1 id="setup-ui">Install the YourKit UI on the Desktop</h1>
+<p>
+The server is ready for profiling, now install
+the YourKit profiler on the desktop. Download the distribution
+that fits the OS you are running from
+<a href="http://www.yourkit.com/java/profiler/index.jsp">YourKit</a>.
+Follow the installation instructions, including setting the
+<em>license server</em>.
+</p><p>
+<strong>Note:</strong>
+By default the YourKit agent runs on port 10001.
+If Vespa is running on hosts not directly reachable from the desktop,
+setting up an SSH tunnel can work around:
+<pre class="code">
+  ssh -L 1080:$hostname:10001 $hostname
+</pre>
+<p>
+Where <em>$hostname</em> is the node that is running the
+container with the YourKit agent profiler. All traffic to localhost
+(the desktop) port 1080 will be forwarded to the remote application
+running on port 10001.
+</p>
+
+
+
+<h1 id="using">Using Yourkit</h1>
+<p>
+You are now ready to profile your application. (You will need to put
+some realistic load against the container instance, please see
+the <a href="vespa-benchmarking.html">Vespa benchmarking guide</a>)
+After having started the load simulation you can start the profiling session,
+open the YourKit application installed locally and chose <em>Monitor Remote
+Applications =&gt; Connect to remote
+application</em>. Enter <em>localhost:1080</em> and press
+Connect. You should now see the profiling screen with <em>Remote
+application "Server" (PID XXXXX) is being profiled at
+localhost:1080</em>.
+</p>
+
+
+
+<h1 id="idea">Remote debug with IntelliJ IDEA</h1>
+<p>
+To remote debug the container, use
+the <em>jvmargs</em> attribute of the <em>container</em> element in <em>services.xml</em>:
+</p>
+<pre class="code">
+&lt;nodes jvmargs="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8998"&gt;
+...
+&lt;/nodes&gt;
+</pre>
+<p>
+Re-deploy the application, then restart Vespa on the node that runs the container.
+Browse <em>vespa.log</em> for errors.
+You are now ready to perform remote debug. In
+IDEA, add a new run <em>task -&gt; remote -&gt; host= port=</em> , where host is
+the host runing the container instance configured with
+the specific debug jvmargs, and port is 8998. Feel free to change the
+port.
+</p>
+
+</body>
+</html>

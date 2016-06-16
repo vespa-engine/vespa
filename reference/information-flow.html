@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Information Flow in Vespa</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date" content="July 2009">
+<meta name="authors" content="simon">
+</head>
+
+<body>
+
+<p class="ingress">
+This document is intended to detail how information moves through a
+Vespa system. It is complete to the extent that most readers will, at
+the end of it, be able to conceptually understand how the system works
+in entirety.
+</p>
+
+
+
+<h1 id="deploy">...when deploying an application</h1>
+<p>
+By "deploying an application" we mean to run the command
+<code>deploy prepare</code> that resides on the configserver node
+of the system. Its task is to make all configuration files
+available to all hosts in the system. It does this by parsing the
+hand-written configuration and deriving separate configuration files
+for each node, which is then accessible through the
+<code>config-server</code> service on the configserver node.
+</p>
+
+<p class="alert alert-success">
+The binary must be run on the admin node, given by
+the <a href="services-admin.html">Admin
+model</a> in <code>services.xml</code>.
+</p>
+
+<p>
+Information follows the "config-server" part of figure 1 as follows:
+</p>
+
+<ol>
+    <li>Read system configuration
+        <ol type="a">
+            <li>
+                Read file <code>hosts.xml</code> (see <a
+                href="../cloudconfig/application-packages.html">Vespa setup</a>) to setup
+                <em>one or more</em> aliases for each host that is used in <code>services.xml</code>.
+            </li>
+            <li>
+                Read file <code>services.xml</code> (see
+                <a href="../cloudconfig/application-packages.html">Vespa setup</a>), and
+                run each child node of <code>&lt;services&gt;</code> through a separate XML parser
+                (i.e. <code>&lt;admin&gt;</code>, <code>&lt;storage&gt;</code> and <code>&lt;search&gt;</code>
+                are parsed by separate parsers).  This makes the configuration framework easily extendable.
+                The XML syntax and structure is also validated against a set of schema files.
+            </li>
+            <li>
+                Read all search definitions that are referenced in <code>services.xml</code> from
+                directory <code>searchdefinitions/</code>. These definitions are parsed to build machine-understandable
+                indexing language scripts (see <a href="search-definitions.html">search
+                definition reference</a>) that the indexing document processor uses to perform indexing of documents.
+            </li>
+            <li>
+                Read any additional configuration files from directory <code>configs/</code> (see <a href="config-files.html">configuration file reference</a>).
+            </li>
+      </ol>
+    </li>
+    <li>Produce all configurations needed for every service in the entire application.
+        <ol type="a">
+            <li>
+                All generated files are stored in directory
+                <code>$VESPA_HOME/var/db/vespa/config_server/serverdb/configs/</code> for distribution through the
+                configserver interface.
+            </li>
+           <li>
+                The same data is stored in <a href="../cloudconfig/configuration-server.html">ZooKeeper</a>.
+            </li>
+        </ol>
+    </li>
+</ol>
+<p>
+    At this point all configuration files and their derivates are available on disk and in the ZooKeeper data storage
+    system of the configserver. The configserver takes no notice of these files until <code>deploy activate</code> is run.
+</p>
+<p>
+    Unless an error has occurred or some nodes have been manually shut down,
+    all nodes in a Vespa system has at least 4 running services:
+</p>
+<ul>
+    <li>
+        <code>config-proxy</code> - proxies config requests between Vespa applications and the configserver
+        node. All configuration are cached locally so that this service can maintain its current
+        configuration even if the configserver shuts down.
+    </li>
+    <li>
+        <code>config-sentinel</code> - registers itself at the local <code>configproxy</code> and subscribes to node
+        configuration. By "node configuration" we mean the configuration of what services should be run locally,
+        and with what parameters.
+    </li>
+    <li>
+        <code>logd</code> - monitors the file <code>$VESPA_HOME/logs/vespa/vespa.log</code>, which is used by all
+        other services, and relays everything to the log-server node of the system.
+    </li>
+    <li>
+        <code>vespa_metrics_proxy</code> - Gathers metrics from vespa
+        log and running services.
+    </li>
+</ul>
+
+<p>
+   The command <code>deploy activate</code> (run on admin node) forces
+    the <code>config-server</code> on every configserver node to
+    reload all configuration files from the most recently deployed set
+    of data in ZooKeeper. All configurations are then propagated to
+    those processes that subscribe to them.
+</p>
+<p>
+    As these processes are started on a node in the system, information follows the "Host 0"
+    part of figure 1 as follows:
+</p>
+<ol>
+    <li>
+        Service <code>config proxy</code> is started. The local yinst variables
+        <code>services.addr_configserver</code> and <code>services.port_configserver_rpc</code> are used to
+        connect to the <code>config-server</code> service(s) running on the configserver node(s).
+    </li>
+    <li>
+        Service <code>config-sentinel</code> is started, and subscribes to node configuration from
+        <code>config-proxy</code>.
+    </li>
+    <li>
+        <code>config-proxy</code> subscribes to node configuration from <code>config-server</code>,
+        gets the result back, caches it and returns result to the application.
+    </li>
+    <li>
+        <code>config-sentinel</code> runs the services given in the node configuration.
+    </li>
+    <li>
+        Each local service started by <code>config-sentinel</code> then
+        <ol type="a">
+            <li>
+                Subscribes to wanted configuration(s) from <code>config-proxy</code>.
+            </li>
+            <li>
+                <code>config-proxy</code> subscribes to node configuration from <code>config-server</code>,
+                gets the result back, caches it and returns result to the application.
+            </li>
+            <li>
+                The service runs according to its configuration. Like all other services in Vespa, it logs any
+                event to the file <code>$VESPA_HOME/logs/vespa/vespa.log</code>.
+            </li>
+        </ol>
+    </li>
+</ol>
+<p>
+    When the <code>config-server</code> receives an updated configuration for an already running system, it will
+    propagate each changed configuration to those nodes that subscribe to it. In turn, these nodes reconfigure themselves in
+    accordance with the new system setup.
+</p>
+<table align="center">
+    <tr>
+        <td align="center">
+            <img src="../img/reference/flow/deploy.png" /><br />
+            <strong>Figure 1:</strong> Information flow in Vespa when deploying an application.
+        </td>
+    </tr>
+</table>
+
+
+
+<h1 id="feed">...when feeding an application</h1>
+<p>
+    By "feeding an application" we mean sending a set of documents to a Vespa system for indexing. Receiving
+    these documents and relaying these to the designated search nodes happens in accordance with figure 2 as
+    follows:
+</p>
+<ol>
+    <li>
+        The user initiates a feed to a <a href="../routing.html">named route</a> either through a) a <a
+        href="../document-api-guide.html">Document API</a> client that communicates with a document
+        processing cluster, or b) the binary <code>vespa-feeder</code>
+        or c) the <a href="../httpgateway.html">HTTP Gateway</a>.
+    </li>
+    <li>
+        The Document API contains the necessary logic to distribute the document stream to all of the available
+        document processor nodes in the selected cluster in a round-robin fashion.
+    </li>
+    <li>
+        Each document processor node is running a java server called
+        <code>com.yahoo.docproc.server.Server</code>. This service, like all other services, receives
+        its configuration from the local <code>config-proxy</code> by subscription.
+    </li>
+    <li>
+        <code>com.yahoo.docproc.server.Server</code> processes the
+        documents it receives according to its
+        <a href="services-docproc.html">configuration</a>.
+        Each document is distributed to all search nodes in the column that corresponds
+        to the document's hash.
+    </li>
+</ol>
+<table align="center">
+    <tr>
+        <td align="center">
+            <img src="../img/reference/flow/feed1.png" /><br />
+            <strong>Figure 2:</strong> Information flow in Vespa when feeding an application.
+        </td>
+    </tr>
+</table>
+<p>
+    As the distributor relays an incoming document stream to a search node, the information carries according to
+    figure 3 as follows:
+</p>
+<ol>
+    <li>
+        The data stream enters a search cluster by direct connection to the <code>proton</code>-process running on
+        its search-nodes, there is no controller within the cluster that has to acknowledge or verify the
+        data. <code>proton</code> indexes the data immediately and as
+        soon as that the response is sent back to the sender, the
+        document is searchable.
+    </li>
+</ol>
+<table align="center">
+    <tr>
+        <td align="center">
+            <img src="../img/reference/flow/feed2.png" /><br />
+            <strong>Figure 3:</strong> Information flow in Vespa when feeding an application, detail of search cluster.
+        </td>
+    </tr>
+</table>
+
+
+
+<h1 id="query">...when querying from an application</h1>
+<p>
+    By "querying from an application" we mean an action by a user to search through the indexed documents that
+    have previously been fed (see <a href="#feed">previous</a>) to the system. The query exists as a human
+    readable string similar to what any user of a search engine could write.
+</p>
+<p>
+    Information moves through the system according to figure 4 as follows:
+<ol>
+    <li>
+        A query arrives from some unknown entity or front-end application to one of several Query Result Server
+        nodes (QRS). The node that is used is given by the front-end, and is of no concern to Vespa - if a QRS
+        is down, it is up to the front-end to relay the query to one of the other nodes.
+    </li>
+    <li>
+        Any required processing of the query is done by the <code>qrs</code>-binary itself. This includes any
+        allowed narrowing of search, such as stemming and geo-tagging.
+    </li>
+    <li>
+        Unless otherwise specified by the query, it is distributed by the QRS to all search clusters in the
+        system. Because the selection of top level dispatcher (TLD) is done by a hash of the query, it is viable
+        to cache query-results even on TLD's.
+    </li>
+</ol>
+<table align="center">
+    <tr>
+        <td align="center">
+            <img src="../img/reference/flow/query1.png" /><br />
+            <strong>Figure 4:</strong> Information flow in Vespa when querying from an application.
+        </td>
+    </tr>
+</table>
+<p>
+    At this point the query enters one or more search clusters, and information according to figure 5 as
+    follows:
+</p>
+<ol>
+    <li>
+        Like all services in Vespa, the dispatcher service (binary is <code>fdispatch</code>) is run by the
+        <code>config-sentinel</code>. This service subscribes to its
+        configuration from the local <code>config-proxy</code>, and its primary task is to relay the query in such a
+        manner that it covers the entire document base at the lowest possible load on each node. The TLD knows,
+        at all times, what queries are being processed at what nodes - load balancing is therefore simple by
+        dispatching to the node with the least the number of running queries in each column.
+        <ol type="a">
+            <li>
+                The query arrives at each searchnode's local dispatcher (binary is the same as for TLD,
+                <code>fdispatch</code>). This dispatcher allocates a search thread in binary
+                <code>proton</code> to perform a search in the local index for the query.
+                <blockquote>
+                    The two modes of the <code>fdispatch</code> binary are separable in the log files by their
+                    entry; the search node writes <pre class="code">(...) searchnode.dispatch0.dispatch
+                    fdispatch (...)</pre> whereas the top level dispatcher writes <pre class="code">(...)
+                    topleveldispatch fdispatch (...)</pre>
+                </blockquote>
+            </li>
+            <li>
+                <code>proton</code> searches to its memory index or
+                local disk index index files at <code>$VESPA_HOME/var/db/vespa/search/</code>
+                and returns its results back to the local dispatcher.
+            </li>
+        </ol>
+    </li>
+    <li>
+        When all search nodes have responded to the TLD, it merges their partial results and relays this back to
+        the QRS.
+    </li>
+    <li>
+        The QRS performs any required processing of the results, possibly requerying data if needed, before it
+        finally returns these to the querying entity.
+    </li>
+</ol>
+
+<table align="center">
+    <tr>
+        <td align="center">
+            <img src="../img/reference/flow/query2.png" /><br />
+            <strong>Figure 5:</strong> Information flow in Vespa when querying from an application, detail of search cluster.
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

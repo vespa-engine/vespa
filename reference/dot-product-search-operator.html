@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Dot Product Search Operator</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="April 2013" />
+  <meta name="authors" content="havardpe" />
+</head>
+
+<body>
+
+<p class="ingress">
+<code>DotProductItem</code> is a query item available in the search
+container that can be used to search for documents matching a subset
+of weighted tokens while at the same time calculating the sparse dot
+product between token weights in the query item and the corpus. This
+is the query operator for which Parallel Wand is an optimization.
+</p>
+
+<h1>When to Use</h1>
+
+<p>
+You have a collection of weighted tokens produced by an algorithm and
+want to perform matching against a corpus containing weighted tokens
+produced by another algorithm in order to implement personalized
+content exploration...
+</p>
+
+<p>
+Generally, the use-cases for <em>dot product</em> are the same as
+for <a href="advanced-search-operators.html#parallel-wand">wand</a>.
+The <a href="../ranking.html#raw_score">raw scores</a> produced by
+<em>dot product</em> operators are equivalent to those produced by
+<em>Parallel Wand</em>.
+</p>
+
+<p>
+The difference is that <em>Parallel Wand</em> will perform local
+optimizations in order to retrieve the top-k results that would be
+returned by the <em>dot product</em> operator. This optimization will
+only yield correct results if the overall ranking is equal to the
+score produced by the <em>dot product</em> operator itself.
+</p>
+
+<p>
+It might make sense to start out using <em>dot product</em> and later
+switch to wand if the performance gain outweighs the reduction in
+flexibility and correctness. Also note that benchmarking should be
+involved in such a switch, to quantify the possible gain in
+performance (which might be negative).
+</p>
+
+<p>
+Here follows a list of cases where <em>dot product</em> might be
+preferable to <em>wand</em> (Better means more correct):
+</p>
+
+<ul>
+<li>Might be more efficient with few tokens or few total results.</li>
+<li>Works better with arbitrary rank expressions and compound queries.</li>
+<li>Works better with grouping.</li>
+<li>Scales better when partitioning the problem space.</li>
+</ul>
+
+
+<h1>How to Use</h1>
+
+<p>
+<code>DotProductItem</code> is an advanced feature. You may need a
+custom searcher to prepare the query. Before that, you will need a
+corpus with weighted tokens to be matched. Finally, it is all tied
+together by using the score produced by the <em>dot product</em>
+operator in a ranking expression.
+</p>
+
+
+<h3>Preparing the Corpus</h3>
+
+<p>
+Use a weighted set field in the document to store the tokens. For best
+performance, we recommend using an attribute vector.
+</p>
+
+<pre class="brush: text">
+field features type weightedset&lt;string&gt; {
+    indexing: summary | attribute
+    attribute: fast-search
+}
+</pre>
+
+
+<h3>Preparing the Query</h3>
+
+<p>
+The query needs to be prepared by a custom searcher or sent
+using <a href=" ../search/yql-in-vespa.html#dot-product">YQL</a>. The code below
+shows the relevant part. For a full example that is actually somewhat
+generic, take a look at
+the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/dot_product_search/DotProductTestSearcher.java?view=markup">searcher
+used by the system test</a>. If you use multiple dot products in the
+same query it is a good idea to label them. This enables us to use
+individual dot product scores when ranking results later.
+</p>
+
+<pre class="brush: java">
+Item makeDotProduct(String label, String field, Map<String,Integer> token_map) {
+    DotProductItem item = new DotProductItem(field);
+    item.setLabel(label);
+    for (Map.Entry<String,Integer> entry : token_map.entrySet()) {
+        item.addToken(entry.getKey(), entry.getValue());
+    }
+    return item;
+}
+</pre>
+
+<h3>Ranking</h3>
+
+<p>
+The <em>dot product</em> operator
+produces <a href="../ranking.html#raw_score">raw scores</a> that may
+be used in a ranking expression. The simplest approach is to just use
+the sum of all raw scores for the field containing the tokens, like
+this:
+</p>
+
+<pre class="brush: text">
+rank-profile default {
+    first-phase {
+        expression: rawScore(features)
+    }
+}
+</pre>
+
+<p>
+For better control, you can label each dot product in the query and
+use their scores individually, like this:
+</p>
+
+<pre class="brush: text">
+rank-profile default {
+    first-phase {
+        expression: itemRawScore(dp1) + itemRawScore(dp2)
+    }
+}
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+<head>
+  <title>Profiling using oprofile</title>
+  <link rel="stylesheet"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+  <meta name="date" content="March 2014"/>
+  <meta name="authors" content="balder,lulf"/>
+</head>
+<body>
+
+<p class="ingress">
+This document intends to explain how to setup OProfile on a Vespa host and doing simple profiling. See
+the <a href="http://oprofile.sourceforge.net/doc/index.html">OProfile manual</a>
+for examples of more complicated OProfile usage. OProfile is the best tool if you want to know where you system is spending time. It gives you a very accurate view at a cost of 0.1-2%.  It is important to note that you need a real host and that it will not work on OpenVZ jails or linux containers.
+</p>
+
+<h1>Useful guidelines</h1>
+<p>
+A useful set of guidelines when profiling
+</p>
+<ul>
+<li>Define clearly what you want to profile.</li>
+<li>Find a load that represents what you want to profile. This is often the hardest part as you get a lot of noise if you stress other components.</li>
+<li>Make sure that there are no other bottlenecks that prevents you from stressing your component. It doesn't make any sense to do cpu profiling if the network is the limitation.</li>
+<li>If possible write special unit-test like benchmark programs that stress exactly what you want to profile.</li>
+<li>If system is multithreaded
+  <ul>
+    <li>always profile single threaded first. That gives you a baseline for doing the scaling tests. Verify that you are utilizing as many cores as you expect.</li>
+    <li>Increase scaling gradually to at least 2x numcores or until throughput degrades.</li>
+  </ul>
+  </li>
+</ul>
+
+<h1 id="installing">Installing</h1>
+<p>
+To install oprofile, run
+</p>
+
+<pre>
+$ sudo yum install oprofile oprofile-jit
+</pre>
+
+<p>
+This will also install bindings that allow profiling java applications as well.
+</p>
+
+<h1>Setting up</h1>
+
+<p>
+To use OProfile, it is useful to have kernel debug info installed to get symbol info for
+the Linux kernel as well.
+</p>
+
+<pre>
+$ sudo yum install kernel-debuginfo
+</pre>
+
+<p>
+Its important that you get somewhat same version of kernel-debuginfo as you already have of the 'kernel' package.
+You then need to setup OProfile to point to the kernel debuginfo file and ensure
+that you get per-application profiles.
+</p>
+<pre>
+$ sudo opcontrol --separate=kernel --vmlinux=`rpm -ql kernel-debuginfo | grep vmlinux`
+</pre>
+
+<p>
+OProfile is typically run like this:
+</p>
+
+<pre>
+$ sudo opcontrol --start
+$ sudo opcontrol --reset
+$ &lt;put some load on the system&gt;
+$ sudo opcontrol --shutdown
+</pre>
+
+<h2>Profiling java applications</h2>
+<p>
+To profile java applications, you need to start the java application with <code>-agentlib:jvmti_oprofile</code>.
+For Vespa, you can set <a href="../reference/services-jdisc.html#nodes">jvmargs</a> or set the <code>services.agentlib</code> variable to "jvmti_oprofile". Please refer to <a href="../setting-vespa-variables.html">setting vespa variables</a> for more information.
+You will need to restart services.
+</p>
+
+<p>
+jvmti_oprofile is installed when you install <a href="#installing">oprofile-jit with yum</a>.
+</p>
+
+<h2>Troubleshooting</h2>
+
+<p>
+If you do not get any output from opreport -l it is probably because the kernel is to old for the cpu. OProfile will not be able to do to event profiling.
+To fix this, you must force OProfile to use the timer mode.
+</p>
+
+<pre>
+$ sudo opcontrol --shutdown
+$ sudo opcontrol --deinit
+$ sudo modprobe oprofile timer=1
+</pre>
+
+<h1>Analysis</h1>
+
+<pre>
+$ opreport -l # gives whole system. This normally tells you all you need to know.
+$ opreport -l "path of binary" #  i.e. "*proton-bin" -&gt; gives a view of only binary.
+</pre>
+
+<p class="note">
+For java applications, its important to let the application run for a while to allow the JIT compiler to do its magic.
+Then run <code>opcontrol --dump</code> before inspecting oprofile reports.
+</p>
+
+</body>
+</html>

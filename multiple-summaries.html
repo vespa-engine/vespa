@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Using Multiple Document Summaries</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="January 2010" />
+  <meta name="authors" content="bergum" />
+</head>
+
+<body>
+
+<p class="ingress">
+Defining multiple summaries might be useful if you want to search the same index,
+but want to present different subsets of fields in different
+situations. The rest of the article shows how to configure and use
+multiple summaries.
+</p>
+
+<p>
+Note that the <em>default</em> summary always contain all fields that
+are possible to include in summaries; all other summaries will contain
+a subset of the fields included in the <em>default</em> summary.
+</p>
+
+<div class="alert alert-success">
+
+<p>When configuring or using additional summaries for performance
+reasons, you only limit the amount of network bandwidth used
+when using a summary with fewer fields then the default. Having
+'debug' fields with summary enabled will hence also affect the
+amount of information that needs to be read from disk even for the
+production summaries.</p>
+
+<p>Vespa keeps attribute type fields in memory and fetches those fields from
+memory when requested as part of document summaries.</p>
+
+<p>The remaining document fields are stored as blobs/records in the document
+store, possibly compressed, possibly along with a number of other
+documents in order to have sufficient data to achieve a reasonable
+compression ratio. This record is used when processing summary requests
+that include fields in this record, and as needed during visiting or
+re-distribution of content to handle elasticity.</p>
+
+<p>The default summary class will always access the document store because it
+includes the document id which is stored here.</p>
+</div>
+
+<h1 id="configuration">Configuration</h1>
+
+<p>
+Define additional summary classes as described in
+the <a href="reference/search-definitions.html">search
+definition reference</a>. This can be done by an implicit
+definition or by an explicit definition.
+</p>
+
+
+<h2 id="implicit-definition">Implicit Definition</h2>
+
+<p>
+Implicit definition is shown below:
+</p>
+
+<pre class="brush: sd">
+field [name] type [type] {
+  &hellip;
+  summary-to: [summary name], [summary name]  # The names of the doc summaries which will include this field
+}
+</pre>
+
+<p>
+In the following example the title field and the year field are
+defined as parts of a summary called <code>titleyear</code>:
+</p>
+
+<pre class="brush: sd">
+# A basic search definition - called music, should be saved to music.sd
+search music {
+
+  # It contains one document type only - called music as well
+  document music {
+
+    field title type string {
+      indexing: summary | index   # How this field should be indexed
+      summary-to: titleyear
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+    }
+
+    field year type int {
+      indexing: summary | attribute
+      summary-to: titleyear
+    }
+
+    field popularity type int {
+      indexing: summary | attribute
+    }
+
+    field url type uri {
+      indexing: summary | index
+    }
+
+   }
+
+  fieldset default {
+    fields: title, artist
+  }
+
+  rank-profile default inherits default {
+    first-phase {
+      expression: nativeRank(title,artist) + attribute(popularity)
+    }
+  }
+
+  rank-profile textmatch inherits default {
+    first-phase {
+      expression: nativeRank(title,artist)
+    }
+  }
+
+}
+</pre>
+
+<p class="alert alert-success">
+Please note that both year and title will be a part of the default
+summary, even if not mentioned in the summary-to statement.
+</p>
+
+
+<h2 id="explicit-definition">Explicit Definition</h2>
+
+<p>
+Explicit definition of additional classes is shown below:
+</p>
+
+<pre class="brush: sd">
+search [name] {
+
+ document [name] {
+   &hellip;
+ }
+
+ document-summary [name] {
+
+   summary [field name] type [type] {
+     source: [source field name]
+   }
+
+   summary [field name] type [type] {
+     source: [source field name], [source field name]
+   }
+
+ }
+}
+</pre>
+
+<p>
+The example below will give exactly the same behavior as the previous
+example.
+</p>
+
+<pre class="brush: sd">
+# A basic search definition - called music, should be saved to music.sd
+search music {
+
+  # It contains one document type only - called music as well
+  document music {
+
+    field title type string {
+      indexing: summary | index   # How this field should be indexed
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+    }
+
+    field year type int {
+      indexing: summary | attribute
+    }
+
+    field popularity type int {
+      indexing: summary | attribute
+    }
+
+    field url type uri {
+      indexing: summary | index
+    }
+
+   }
+
+  fieldset default {
+    fields: title, artist
+  }
+
+  rank-profile default inherits default {
+    first-phase {
+      expression: nativeRank(title,artist) + attribute(popularity)
+    }
+  }
+
+  rank-profile textmatch inherits default {
+    first-phase {
+      expression: nativeRank(title,artist)
+    }
+  }
+
+  document-summary titleyear {
+
+    summary title type string {
+      source: title
+    }
+
+    summary year type int {
+      source: year
+    }
+  }
+}
+
+</pre>
+
+<p>
+It is also possible to combine implicit and explicit definition of
+summary classes. For more details on summary properties,
+see <a href="reference/search-definitions.html#summary">Search
+Definitions: Summary</a>.
+</p>
+
+
+
+<h1 id="usage">Usage in Query</h1>
+
+<p>
+Use <code>summary=[summary name]</code> in the query to choose the
+summary class to use (the default one is called <em>default</em>). Example
+query: <code>/search/?yql=select+*+from+sources+*+where+default+contains+"best"%3B&amp;summary=titleyear</code>.
+</p>
+
+<h2 id="yql">YQL</h2>
+
+<p>The “select” statement in YQL lists a set of fields to return. Vespa
+in general makes a best effort to return those fields, and only those fields,
+unless a wildcard (“*”) is given as argument. The wildcard implies returning
+the full set of fields included in the given summary class.</p>
+
+<p>In conjunction with YQL statements, the “summary” argument operates like a
+definition of the set which YQL “select” then chooses a subset of fields
+from.</p>
+
+<p>In other words, if the YQL expression is “select * …”, and the “summary”
+argument is “titleyear”, all the fields in the summary class “titleyear” will be
+returned. If the “select” statement lists one or more fields (and “summary” is
+“titleyear”), the summary class “titleyear” is fetched, and the fields
+<em>not</em> listed in the select statement will be stripped away.</p>
+
+<h1 id="prefetch">Built-in summary for attribute field fetching</h1>
+<p>
+This section describes <em>attribute prefetching</em>, a concept
+which allows you to access a specific built-in summary named
+<i>attributeprefetch</i>,
+which by default contain all single valued fields defined as
+attributesin the search definition. The name of this summary is
+a bit missleading, as there is no prefetching, just a regular
+summary fill for a specific built-in summary class.</p>
+
+<p>
+Attribute prefetching allow you to access attributes in the
+QRS/Container without having to fetch the entire document summaries
+from disk on the search nodes. As attributes are always stored in
+memory and memory seeks are much cheaper than disk seeks, this feature
+can increase document summary fetching performance.
+</p>
+
+<p class="note">
+The recommended approach for fetching specific document fields is to define a summary which only references the wanted fields and define them as attribute in the indexing statement.
+</p>
+
+<h2 id="search-definitions">Search Definitions</h2>
+<p>
+All single-value fields which are not bolded or are used to create a
+dynamic snippet are in the prefetch document summary by default. To
+make a multi-value field available for attribute prefetching, add the
+following to the field's search definition entry:
+</p>
+
+<pre>
+  attribute: prefetch
+</pre>
+
+<p>
+To remove a field from the prefetch document summary, add:
+</p>
+
+<pre>
+  attribute: no-prefetch
+</pre>
+
+<p>
+Fields which are bolded or dynamic abstracts can not be prefetched,
+even if this is done in different summary classes.
+</p>
+
+
+<h2 id="writing-a-searcher">Writing a Searcher</h2>
+
+<p>
+Writing a searcher to plug into the QRS becomes slightly more
+complicated when using attribute prefetch. When
+<code>doSearch()</code> returns results, the hits have none of the
+fields defined in the document summary available.  The class
+<code>com.yahoo.prelude.Searcher</code> defines the method
+</p>
+
+<pre>
+  public final void fillAttributes(Result result);
+</pre>
+
+<p>
+After <code>fillAttributes()</code> has returned, the hits will have
+the attributes, but not necessarily the fields from the usual document
+summary. It is not necessary to explicitly add the other fields to the
+hits, the QRS will do this automatically before rendering the result.
+</p>
+
+
+</body>
+</html>

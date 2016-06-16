@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>General Log Events</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="vlarsen" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document describes the types of Events found in vespa logs.
+</p>
+
+
+
+<h1 id="events">Events</h1>
+<p>
+Events messages are log messages of the <em>event</em> type. Events
+contains a well-defined payload which makes them suitable for
+automated processing of various kinds. An example of this is the Vespa
+yMon integration, which collects and forwards events to yMon. An event
+is emitted by a component when something of interest happens to it, or
+when it has some metric data it wants to share with the world. As all
+other log messages, events are collected to the admin nodes by the
+logserver component, where they may be found in the Vespa log or
+intercepted programmatically by a logserver plugin.
+</p>
+
+
+<h2 id="event-format">Event format</h2>
+<p>
+Each event has an event type, a version and an optional payload.
+</p>
+
+<p>
+In the log format, event types are expressed as a single word,
+versions as a simple integer, and the payload as a set
+of <em>key=value</em> pairs.
+</p>
+
+<p>
+The event payload is backslash-quoted just like log messages are in
+general. This means that events may be double-quoted during
+transport. Double-quote delimiters are not supported.
+</p>
+
+
+<h2 id="event-types">Event types</h2>
+<p>
+These are the supported event types and their usage. You can find more
+details about each of the event types further below.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Event Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>starting</td>
+      <td>Sent by a process starting another process</td>
+    </tr>
+    <tr>
+      <td>started</td>
+      <td>Sent by a process when it has started</td>
+    </tr>
+    <tr>
+      <td>stopping</td>
+      <td>Sent by a process that will exit</td>
+    </tr>
+    <tr>
+      <td>stopped</td>
+      <td>Sent by the calling process when a sub-process has
+          exited</td>
+    </tr>
+    <tr>
+      <td>reloading</td>
+      <td>Sent when some form of reloading starts</td>
+    </tr>
+    <tr>
+      <td>reloaded</td>
+      <td>Sent when the reload is complete</td>
+    </tr>
+    <tr>
+      <td>crash</td>
+      <td>Sent by the calling process when a sub-process crashes</td>
+    </tr>
+    <tr>
+      <td>progress</td>
+      <td>For tracking any type of progress</td>
+    </tr>
+    <tr>
+      <td>count</td>
+      <td>For tracking any type of counter (queries served etc)</td>
+    </tr>
+    <tr>
+      <td>value</td>
+      <td>For tracking any type of value (QPS, queue-length,
+          etc.)</td>
+    </tr>
+    <tr>
+      <td>collection</td>
+      <td>For tracking events related to collections (collection out
+          of sync, etc.)</td>
+    </tr>
+  </tbody>
+</table>
+
+<dl>
+  <dt>Event: starting</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt;</em></p>
+
+    <p>This event is sent by processes when they are about to start another
+    process. Typical for, but not limited to, shell scripts. This event
+    is not required to track processes, but is useful in cases where a
+    sub-process may fail during startup.</p>
+
+    <p>Example:</p>
+    <pre>starting name=fdispatch</pre>
+  </dd>
+
+  <dt>Event: started</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt;</em></p>
+
+    <p>The <em>started</em> event is sent by a service that just started up.</p>
+
+    <p>Example:</p>
+    <pre>started name=fdispatch</pre>
+  </dd>
+
+  <dt>Event: stopping</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; why=&lt;why&gt;</em></p>
+
+    <p>The <em>stopping</em> event is sent by a process that is about to exit.</p>
+
+    <p>Example:</p>
+    <pre>stopping name=fdispatch why=&quot;clean exit&quot;</pre>
+  </dd>
+
+  <dt>Event: stopped</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; pid=&lt;pid&gt;
+    exitcode=&lt;exitcode&gt;</em></p>
+
+    <p>This event is sent by a process monitoring when a sub-process exits.</p>
+
+    <p>Example:</p>
+    <pre>stopped name=fdispatch pid=76512 exitcode=0</pre>
+  </dd>
+
+  <dt>Event: reloading</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt;</em></p>
+
+    <p>This event is used to signal that a service is about to start some
+    kind of reloading operation. The <em>name</em> payload attribute says what
+    kind of reload operation that is being done, and is specific for each
+    library/application. The <em>reloading</em> event is optional for reloads,
+    for a simple reload that doesn't fail, you can use <em>reloaded</em>
+    directly.</p>
+
+    <p>Example:</p>
+    <pre>reloading name=partitions</pre>
+  </dd>
+
+  <dt>Event: reloaded</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt;</em></p>
+
+    <p>The <em>reloaded</em> event is sent after the reload is complete (and
+    successful). Any <em>reloading</em> event must have a matching
+    <em>reloaded</em> event</p>
+
+    <p>Example:</p>
+    <pre>reloaded name=crawler.configfile:$VESPA_HOME/var/mms/docproccfg.xml</pre>
+  </dd>
+
+  <dt>Event: crash</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; pit=&lt;pid&gt;
+    signal=&lt;signal&gt;</em></p>
+
+    <p>Submitted by a process monitoring a sub-process when the sub-process
+    crashes (dumps core etc.)</p>
+
+    <p>Example:</p>
+    <pre>crash name=fastcrawler pid=12345 signal=11</pre>
+  </dd>
+
+  <dt>Event: progress</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; value=&lt;value&gt;
+    [total=&lt;total&gt;]</em></p>
+
+    <p>Somewhat general event for tracking progress. The <em>name</em> is specific
+    to each library/application.</p>
+
+    <p>Example:</p>
+    <pre>progress name=indexing.autoindex value=17 total=90</pre>
+  </dd>
+
+  <dt>Event: count</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; value=&lt;value&gt;</em></p>
+
+    <p>Somewhat general event for counting stuff. As with "progress", the
+    <em>name</em> is specific to each library/application. Counters are assumed
+    to increase with time, counting the number of events since the program
+    was started for example.</p>
+  </dd>
+
+  <dt>Event: value</dt>
+  <dd>
+    <p>Payload: <em>name=&lt;name&gt; value=&lt;value&gt;</em></p>
+
+    <p>General event for values. <em>Value is for values that cannot be
+    counts</em> Typical values are queue lengths, transaction frequencies and so
+    on.</p>
+
+    <p>Example:</p>
+    <pre>count name=queue-length value=2346235</pre>
+  </dd>
+  <dt>Event: collection</dt>
+  <dd>
+    <p>Payload: <em>collectionid=&lt;id&gt; name=&lt;name&gt;
+    &lt;params&gt;</em></p>
+
+    <p>Represents events related to collections. The name describes what
+    happened to the collection (<em>syncrows</em>, <em>created</em>, etc). params
+    is a string on the form param1=&hellip; param2=&hellip; that holds various
+    parameters for the event. For <em>syncrows</em>, the parameters are: column,
+    badrow, goodrow.</p>
+
+    <p>Example:</p>
+    <pre>collection collectionid=1111111111 name=syncrows column=1
+    badrow=0 goodrow=1</pre>
+  </dd>
+</dl>
+
+</body>
+</html>

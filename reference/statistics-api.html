@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Statistics API - Generating statistics in a plug-in</title>
+    <link rel="stylesheet" type="text/css"
+	  href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+    <meta name="date"    content="January 2012" />
+    <meta name="authors" content="steinar" />
+  </head>
+<body>
+
+<p class="ingress">
+This document describes how to use the statistics module in Vespa and
+includes an example QRS plugin which uses the statistics module.
+</p>
+
+<p>
+The goal of the statistics module is making it possible to gather
+measurements of a component with minimal effort. Collected data are
+logged at given intervals.
+</p>
+
+<p>Processing and logging is done in the background by the library,
+measurements are sent to the library by Handle instances. A client
+obtains and initializes a (subclass of) Handle, then collects data using that
+handle.
+</p>
+
+<p>Events are registered by name. If two events are registered using the same
+name, the last one registered will be used.
+</p>
+
+<p>All statistics objects are thread-safe.</p>
+
+
+<h1>Writing a plugin using statistics</h1>
+
+<p>Using the statistics library is supposed to be as non-intrusive in
+code as possible. Sampling a value is supposed to be cheap. It is necessary
+to supply a Statistics manager into a handle during construction, the
+manager instance is acquired through dependency injection in the container.
+</p>
+
+<h2>Example searcher</h2>
+
+<pre class="code">
+package com.yahoo.example;
+
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.prelude.query.*;
+import com.yahoo.statistics.Value;
+import com.yahoo.statistics.HistogramType;
+import com.yahoo.statistics.Statistics;
+import java.util.Iterator;
+
+public class QueryDepthSearcher extends <a href="../javadoc/index.html?com/yahoo/search/Searcher.html">Searcher</a> {
+
+    private final <a href="../javadoc/index.html?com/yahoo/statistics/Value.html">Value</a> queryDepth;
+
+    public QueryDepthSearcher(<a href="../javadoc/index.html?com/yahoo/statistics/Statistics.html">Statistics</a> manager) {
+        // Initialize new statistics value handle:
+        // - the event name is "query_depth"
+        // - Do not read config
+        // - Do use a histogram split at 0.0, 1.0, 2.0 and 3.0
+        // - Use a regular histogram, not some sort of cumulative histogram
+        queryDepth = new Value("query_depth", manager,
+                new <a href="../javadoc/index.html?com/yahoo/statistics/Value.Parameters.html">Value.Parameters</a>()
+                        .setLogHistogram(true)
+                        .setLimits(new <a href="../javadoc/index.html?com/yahoo/statistics/Limits.html">Limits</a>(new double[] { 0, 1, 2, 3 })
+                        .setHistogramId(<a href="../javadoc/index.html?com/yahoo/statistics/HistogramType.html">HistogramType</a>.REGULAR)
+                        // Do log mean value pr logging interval
+                        .setLogMean(true)
+                        // Log mean with the name "query_depth", not "query_depth.mean"
+                        .setNameExtension(false)));
+    }
+
+    @Override
+    public Result search(Query query, Execution execution) {
+        int depth = stackDepth(0, query.getModel().getQueryTree().getRoot());
+        queryDepth.put(depth);
+
+        return execution.search(query);
+    }
+
+    /**
+     * Helper function to find depth of query trees. Just to have
+     * something to sample.
+     */
+    private int stackDepth(int i, Item root) {
+        if (root == null) {
+            return i;
+        }
+        if (root instanceof CompositeItem) {
+            int maxDepth = i;
+            for (Iterator&lt;Item&gt; j = ((CompositeItem) root).getItemIterator();
+                    j.hasNext();) {
+                int newDepth = stackDepth(i+1, j.next());
+                maxDepth = Math.max(maxDepth, newDepth);
+            }
+            return maxDepth;
+        } else {
+            return i;
+        }
+    }
+}
+</pre>
+
+<p>Above is a complete QRS plugin. The only thing it does is sample the
+depth of the query tree, and logging the mean depth along with a histogram
+for the depths.
+</p>
+
+<p>Do note that it may very often be cleaner get the parameters for a Value or
+Counter instance from your own <a href="#custom_config">custom configuration
+classes</a> than by overriding the contents of the statistics configuration.
+I.e. simply read the desired values from the custom configuration, and
+initialize the Value (or other class) using a standard constructor ignoring
+configuration. </p>
+
+
+<h1>The Value Class</h1>
+
+<p>The <a
+href="../javadoc/index.html?com/yahoo/statistics/Value.html">Value</a>
+class is a Handle subclass which represents sampled values which will
+fluctuate, as contradistinguished from monotone growth, over time. The
+values may be handled as raw values which the surrounding code simply
+sets to some appropriate level, or a bucket that the surrounding code
+fills with samples – for which derived values, such as the mean
+value, is logged.
+</p>
+
+<p>The default behavior is logging nothing. Everything emitted
+to the log must be stated in the Value.Parameters instance or
+config.</p>
+
+<p>A Value instance can be initialized with a set of limits to split
+a histogram for the samples. In other words, using the limits { 0,
+1, 2 } will lead to the histogram having four buckets, covering
+the intervals { &lt;-∞, 0&gt;, [0, 1&gt;, [1, 2&gt;, [2, ∞&gt; }. Samples
+put into the Value instance will be counted in the correct bucket
+automatically, and the histogram will be sent to the log and reset
+for each logging interval.
+</p>
+
+<p>Apart from the raw/last value sampled and a histogram for the value
+distribution, the minimum, maximum and mean value can be logged.
+</p>
+
+<p>Value instances use the log events <em>value</em> and <em>histogram</em>.
+</p>
+
+
+
+<h1>The Counter class</h1>
+
+<p>The <a href="../javadoc/index.html?com/yahoo/statistics/Counter.html">Counter</a> class is a  subclass of Handle which represents integer
+values increasing either over the lifetime of a process, or for each
+logging interval. A Counter may be incremented by 1, or by an
+arbitrary integer.
+</p>
+
+<h3>ResetCounter</h3>
+
+<p>A counter may be reset between each logging interval. It is then
+output to the log as a <em>value</em> event instead of a count. This
+is chosen either by using a constructor argument or using
+config.
+</p>
+
+<p>Counter events use the log events <em>count</em> and <em>value</em>.
+</p>
+
+
+
+<h1>The ValueGroup class</h1>
+
+<p>A <a href="../javadoc/index.html?com/yahoo/statistics/ValueGroup.html">ValueGroup</a> represents a set of associated Value instances.  Each time
+a variable is sampled, the name of the Value in question is passed
+to the ValueGroup along with the new sample.
+</p>
+
+<p>A ValueGroup only supports
+logging the raw value, not derived statistics (histogram, min, etc). In
+the log, the name for each value will be
+<em>nameOfValueGroup.nameOfValue</em>.
+</p>
+
+<p>A ValueGroup is marginally more expensive than a Value, since each
+sample is a Map lookup to find the correct Value instance.
+</p>
+
+
+
+<h1>The CounterGroup class</h1>
+
+<p>A <a href="../javadoc/index.html?com/yahoo/statistics/CounterGroup.html">CounterGroup</a> represents a set of associated Counter instances. Each
+time a Counter for a CounterGroup is incremented, the name of the
+Counter in question is passed to the CounterGroup along with the
+increment.
+</p>
+
+<p>A CounterGroup is marginally more expensive than a Counter, since each
+sample is a Map lookup to find the correct Counter instance.
+</p>
+
+
+
+<h1>Callbacks</h1>
+
+<p>It is sometimes useful to do some processing right before data is dumped to
+log, or simply only then perform measurements. The statistics library supports
+this by having a callback slot in all objects used when collecting data. The
+callback is called immediately <em>before</em> the object logs its values. As the
+callback is run in the worker thread of the statistics library, a callback
+must be lightweight.</p>
+
+
+<h2>Callback example</h2>
+
+<p>This is a code snippet which obtains the number of currently running
+worker threads.
+</p>
+
+<pre class="code">
+  <em>[&hellip;]</em>
+
+private final Value activeQueries; // raw measure every 5 minutes
+
+// Callback to measure queries in flight every five minutes
+private static class ActivitySampler implements <a href="../javadoc/index.html?com/yahoo/statistics/Callback.html">Callback</a> {
+  public void run(Handle h, boolean firstRun) {
+        if (firstRun) {
+            // don't insert a value, ensure counter is reset at reconfig
+            return;
+        }
+        // Sample the current number of currently active queries
+        // in progress in the QRS.
+        ((<a href="../javadoc/index.html?com/yahoo/statistics/Value.html">Value</a>) h).put(Server.get().searchQueriesInFlight());
+  }
+}
+
+public StatisticsSearcher(<a href="../javadoc/index.html?com/yahoo/statistics/Statistics.html">Statistics</a> manager) {
+  activeQueries = new <a href="../javadoc/index.html?com/yahoo/statistics/Value.html">Value</a>("active_queries", manager,
+          new Value.Parameters().setLogRaw(true)
+                  .setCallback(new ActivitySampler()));
+
+  <em>[&hellip;]</em>
+</pre>
+
+
+<p>First a Value instance is obtained, then a callback is inserted, and
+the value is ready for use. The callback will be activated automatically
+every 5 minutes (or every configured <em>n</em> minutes).
+</p>
+
+<p>The <a
+href="../javadoc/index.html?com/yahoo/statistics/Callback.html">Callback</a>
+interface defines two arguments which are passed to the implementing object. The
+<a href="../javadoc/index.html?com/yahoo/statistics/Handle.html">Handle</a> argument
+is the statistics handle which called the callback, typically a Value or Counter
+owning the callback object. The second, the boolean, is set to true the first
+time, and only the first time, a callback is called from the given handle. The
+reason for adding this information is in case the callback emits a log event to
+the log itself (even though that would be unusual) and the first emitted value
+should be a well-defined special case, e.g. a hard-coded zero value.</p>
+
+
+<h1>Configuring statistics components</h1>
+
+<p>Statistics events can be configured either using custom config classes
+in conjunction with programmatic setup, or overriding global arrays. For
+most cases, using custom config classes is desirable.</p>
+
+<a name="custom_config"></a>
+<h2>Custom config classes</h2>
+
+<p>Using custom configuration classes has two huge advantages over overriding
+values in the global configuration:</p>
+
+<ul>
+<li>It is easier to maintain small, specifically modelled custom config classes
+than the contents of a very general array in the configuration.</li>
+<li>By using custom config classes, fewer components have to be re-initialized
+during reconfiguration. A very large number of components depend on Statistics,
+changing some global statistics configuration, will force all these instances to
+be constructed once more. Changing a configuration only used a single place,
+will only lead to that component (and any dependants) being reconstructed.</li>
+</ul>
+
+
+<p>Assume a searcher plugin which tracks the number of hits returned each
+logging interval, and optionally tracks the mean (number of hits returned).
+First, one would create config definition as outlined in the documentation for
+general <a
+href="../jdisc/container-components.html#configurable_components">configurable
+components</a>, the configuration definition might look as follows:</p>
+
+<pre class="code">
+namespace=example
+
+## Switch to control whether to log mean number of hits per query
+logmean bool default=false
+</pre>
+
+<p>Then, we need a search which actually does the measurements, and also
+reads the configuration:</p>
+
+<pre class="code">
+package com.yahoo.example;
+
+import com.yahoo.example.HitratesConfig;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.statistics.Statistics;
+import com.yahoo.statistics.Value;
+
+/**
+ * An example searcher measuring the total number of documents fetched each
+ * logging interval, and optionally the mean number of documents per query.
+ */
+public class HitratesMeasurer extends Searcher {
+    private final Value <em>rates</em>;
+
+    public HitratesMeasurer(final Statistics manager,
+            final HitratesConfig <strong>config</strong>) {
+        // Create a Value object which always logs the sum, but whether the mean
+        // is to be logged, is fetched from config. Activate name extension to
+        // allow for multiple values being logged, using a suffix to distinguish
+        // them.
+        <em>rates</em> = new Value("hit_rates", manager, new Value.Parameters()
+                .setNameExtension(true).setLogSum(true)
+                .setLogMean(<strong>config.logmean()</strong>));
+    }
+
+    @Override
+    public Result search(final Query query, final Execution execution) {
+        final Result result = execution.search(query);
+        // Measure the number of documents returned to the user
+        <em>rates.put(result.getConcreteHitCount())</em>;
+        return result;
+    }
+}
+</pre>
+
+<p>It is then possible to turn logging of the mean event on and off, without
+having to maintain the entire control array in the statistics configuration.</p>
+
+<h2>Using the global configuration</h2>
+
+<p>In general, one should usually employ smaller custom configuration classes
+as described above. If a single part of the global statistics config changes,
+all components emitting statistics events have to be constructed once more,
+making reconfiguration very expensive. Also, maintaining the arrays inside
+the global configuration is very cumbersome, compared to changing specific
+structures inside custom configuration classes.</p>
+
+<p>Below follows a version of the config definition for the
+statistics library. This can be found in
+<code>$VESPA_HOME/var/db/vespa/config_server/serverdb/classes/statistics.2.def</code>
+file.
+</p>
+
+<pre class="code">
+&lt;config name="container.statistics"&gt;
+&lt;!-- Interval between internal sample points measured in minutes --&gt;
+&lt;collectionintervalsec&gt;5&lt;/collectionintervalsec&gt;
+
+&lt;!-- Interval between each dump to log measured in minutes --&gt;
+&lt;loggingintervalsec&gt;5&lt;/loggingintervalsec&gt;
+
+&lt;!-- Configuration for measured values --&gt;
+&lt;values index="0"&gt;
+  &lt;!-- A string which uniquely identifies the event in the log --&gt;
+  &lt;name&gt;example_event&lt;/name&gt;
+
+  &lt;!-- An array of what operations should be performed on gathered data --&gt;
+  &lt;operations index="0"&gt;
+    &lt;!-- An enum with the name of the operation to perform in the event. Legal
+         values RAW, MEAN, MIN, MAX, REGULAR, CUMULATIVE, REVERSE_CUMULATIVE.
+         --&gt;
+    &lt;name&gt;RAW&lt;/name&gt;
+
+    &lt;!-- Arguments for the operations, typically limits for arrays. --&gt;
+    &lt;arguments index="0"&gt;
+      &lt;key&gt;some_string&lt;/key&gt;
+      &lt;value&gt;some_string&lt;/value&gt;
+    &lt;/arguments&gt;
+  &lt;/operations&gt;
+&lt;/values&gt;
+
+&lt;!-- The counters which should be reset between each collection interval,
+and therefore be logged as values. --&gt;
+&lt;counterresets index="0"&gt;
+  &lt;name&gt;name_of_count_to_reset&lt;/name&gt;
+&lt;/counterresets&gt;
+&lt;/config&gt;
+</pre>
+
+<p>Reconfiguring a component is done by adding the config tag with the name
+<code>statistics</code> to the apropriate component in
+<code>services.xml</code>. The following example shows how to change the
+measurement and logging intervals to get measurements each minute from all
+qrservers:</p>
+
+<pre class="code">
+&lt;!-- other config&hellip; --&gt;
+&lt;jdisc&gt;
+  &lt;search&gt;
+    &lt;config name="container.statistics"&gt;
+      &lt;collectionintervalsec&gt;1&lt;/collectionintervalsec&gt;
+      &lt;loggingintervalsec&gt;1&lt;/loggingintervalsec&gt;
+    &lt;/config&gt;
+    &lt;!-- other config&hellip; --&gt;
+  &lt;/search&gt;
+&lt;!-- other config&hellip; --&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>This is the complete content of <code>statistics.cfg</code> when the
+only desired change is getting the statistics events every minute. Obviously
+this will only affect components using this library.</p>
+
+
+
+<h1>Logging intervals</h1>
+
+<p>Data is dumped to log every <em>n</em> minutes. The first logging event is
+scheduled as soon as possible, but at <em>m×n</em> minutes after 1970-00-00
+00:00, where <em>m</em> is an integer and leap seconds are ignored. The
+default value of <em>n</em> is 5, leading to data being logged 0, 5, 10,
+15, 20, &hellip; minutes past each hour.
+</p>
+
+
+<h2>Reconfiguring logging intervals</h2>
+
+<p>At the time of writing, <code>collectionintervalsec</code> has to be set
+equal to <code>loggingintervalsec</code>, as there currently is no internal
+extra data aggregation. So, to make all containers log events every minute,
+the following example in <code>services.xml</code> should do the trick:
+
+<pre class="code">
+&lt;!-- other config&hellip; --&gt;
+&lt;jdisc&gt;
+  &lt;config name="container.statistics"&gt;
+    &lt;collectionintervalsec&gt;1&lt;/collectionintervalsec&gt;
+    &lt;loggingintervalsec&gt;1&lt;/loggingintervalsec&gt;
+  &lt;/config&gt;
+   &lt;!-- other config&hellip; --&gt;
+&lt;/jdisc&gt;
+&lt;!-- other config&hellip; --&gt;
+</pre>
+
+
+<h2>Deactivating event logging</h2>
+
+The one exception to the rule of logging interval always being equal to the
+collection interval is when deactivating all events, this is done by setting
+<code>loggingintervalsec</code> to 0. So, to e.g. deactivate all event logging from
+docproc, something like the following would be appropriate:</p>
+
+<pre class="code">
+&lt;docproc version="3.0"&gt;
+  &lt;config name="container.statistics"&gt;
+    &lt;loggingintervalsec&gt;0&lt;/loggingintervalsec&gt;
+  &lt;/config&gt;
+&lt;!-- other config&hellip; --&gt;
+&lt;/docproc&gt;
+</pre>
+
+
+<h1>API doc</h1>
+
+<p>Refer to <a href="../javadoc/index.html?com/yahoo/statistics/package-summary.html">Statistics API doc</a> for JavaDoc of
+the different classes.
+</p>
+
+</body>
+</html>

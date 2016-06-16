@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>services.xml - 'admin'</title>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="August 2013" />
+  <meta name="authors" content="musum, eirikref" />
+</head>
+
+<body>
+<p>
+This is the reference documentation for the 
+<code>&lt;admin&gt;</code> section in <a href="services.html">services.xml</a>.
+</p>
+
+
+
+<h1 id="admin40" class="ref-param">&lt;admin version='4.0'&gt;</h1>
+
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services.html#services"><code>&lt;services&gt;</code></a></td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Admin version 4 is used for explicit control over the number of admin services running and whether these should run on dedicated nodes or on some existing container cluster in the application.
+  In most cases, there is no need to specify any of this.
+  </div>
+
+<h3>Sub elements</h3>
+
+<table class="ref-toc table table-condensed table-hover table-striped table-bordered">
+<tr><th>Element<th>Quantity<th>Description</tr>
+<tr><td>&lt;slobroks&gt;<a href="services-admin.html#nodes"><code>/&lt;nodes&gt;</code></a><td>0 or 1<td>Provides control over nodes used for instance internal service location brokering.</tr>
+<tr><td>&lt;logservers&gt;<a href="services-admin.html#nodes"><code>/&lt;nodes&gt;</code></a><td>0 or 1<td>Provides control over the node used as log server. At most 1 node can be configured.</tr>
+</table>
+
+<h2 id="nodes" class="ref-param">&lt;nodes&gt;</h1>
+
+<h3>Attributes</h3>
+
+<table>
+<tr><th>Name<th>Default<th>Description
+<tr><td>count<td><i>(required)</i><td>The number of nodes to use for service location brokering in this application instance.
+<tr><td>dedicated<td>false<td>True to allocate separate nodes for this role rather than reusing container nodes.
+<tr><td>flavor<td><i>empty</i><td>The id of the node flavor to allocate, if dedicated nodes are used.
+<tr><td>docker-image<td><i>empty</i><td>The id of the docker image to use on allocated nodes, if dedicated nodes are used.
+</table>
+
+</div>      
+
+
+
+<h1 id="admin30" class="ref-param">&lt;admin version='3.0'&gt;</h1>
+
+<p>The content of admin version 3 is ignored.
+If this element is used, the result is the same as not having an admin element at all:
+The cluster will get a default setup of admin services
+on the same nodes used for other purposes (jdisc containers for slobroks and logserver and
+content nodes for cluster controllers). This is the perfect setup in most cases.</p>
+
+
+
+<h1 id="admin20" class="ref-param">&lt;admin version='2.0'&gt; and &lt;admin version='1.0'&gt;</h1>
+<p>Admin version 2.0  provides the ability to set up config servers
+as well as the finer control over the administration services.
+The content of version 1.0 of this element is also documented below.</p>
+
+<h3 id="summary">Element summary</h3>
+
+<table class="ref-toc table table-condensed table-hover table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Element</th>
+      <th>Required</th>
+      <th>Quantity</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr><td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td><td>-</td><td>-</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#adminserver"><code>&lt;adminserver&gt;</code></a></td><td class="required">Yes</td><td>One</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#cluster-controllers"><code>&lt;cluster-controllers&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#cluster-controller"><code>&lt;cluster-controller&gt;</code></a></td><td class="required">Yes</td><td>One</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#configserver"><code>&lt;configserver&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#configservers"><code>&lt;configservers&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#configserver"><code>&lt;configserver&gt;</code></a></td><td class="required">Yes</td><td>One or More</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#filedistribution"><code>&lt;filedistribution&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#downloadbitrate"><code>&lt;downloadbitrate&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#uploadbitrate"><code>&lt;uploadbitrate&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#logserver"><code>&lt;logserver&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#metric-consumers"><code>&lt;metric-consumers&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#consumer"><code>&lt;consumer&gt;</code></a></td><td class="required">Yes</td><td>One or More</td></tr>
+<tr><td class="indent-3"><a href="services-admin.html#metric"><code>&lt;metric&gt;</code></a></td><td class="required">Yes</td><td>One or More</td></tr>
+<tr><td class="indent-1"><a href="services-admin.html#slobroks"><code>&lt;slobroks&gt;</code></a></td><td class="required"></td><td>Zero or One</td></tr>
+<tr><td class="indent-2"><a href="services-admin.html#slobrok"><code>&lt;slobrok&gt;</code></a></td><td class="required">Yes</td><td>One or More</td></tr>
+  </tbody>
+</table>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- admin                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="admin" class="ref-param">&lt;admin version="2.0"&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services.html#services"><code>&lt;services&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  The container element for defining the <code>&lt;admin&gt;</code> section of your <em>services.xml</em>.
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>version</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>2.0</td></tr>
+                <tr><td>Default Value:</td><td>-</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              This parameter is used to tell Vespa which version of the <code>&lt;admin&gt;</code> configuration format you are using.
+
+              </div>
+            </li>
+                        </ul>
+      
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#adminserver"><code>&lt;adminserver&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#cluster-controllers"><code>&lt;cluster-controllers&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#configserver"><code>&lt;configserver&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#configservers"><code>&lt;configservers&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#filedistribution"><code>&lt;filedistribution&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#logserver"><code>&lt;logserver&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#metric-consumers"><code>&lt;metric-consumers&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#slobroks"><code>&lt;slobroks&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;admin version="2.0"&gt;
+  &lt;adminserver hostalias="node0" /&gt;
+  &lt;configservers&gt;
+    &lt;configserver hostalias="node1" /&gt;
+    &lt;configserver hostalias="node2" /&gt;
+  &lt;/configservers&gt;
+  &lt;logserver hostalias="node1" /&gt;
+  &lt;slobroks&gt;
+    &lt;slobrok hostalias="node2" /&gt;
+    &lt;slobrok hostalias="node3" /&gt;
+  &lt;/slobroks&gt;
+&lt;/admin&gt;
+</pre>
+
+                  <p class="description"><strong>Example 1</strong>: An example of how the <code>&lt;admin&gt;</code> section of <em>services.xml</em> may look.</p>
+                  </div>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;admin version="2.0"&gt;
+  &lt;adminserver hostalias="node0" /&gt;
+&lt;/admin&gt;
+</pre>
+
+                  <p class="description"><strong>Example 2</strong>: A minimal example of the <code>&lt;admin&gt;</code> section.</p>
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- adminserver                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="adminserver" class="ref-param">&lt;adminserver&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  <p>
+  The configured node will be the default administration node in
+  your Vespa system, which means that unless configured otherwise
+  all administrative services - ie. the log server, the
+  configuration server, the slobrok, and so on - will run on
+  this node.
+</p>
+
+  </div>
+
+
+  <h2>Attributes</h2>
+            <div class="commonAttrs alert">
+        <strong>Common attributes:</strong> <a href="services.html#attr-hostalias">hostalias</a>, <a href="services.html#attr-baseport">baseport</a>, <a href="services.html#attr-jvmargs">jvmargs</a>
+      </div>
+          
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;adminserver hostalias="node1" /&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- cluster-controller                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="cluster-controller" class="ref-param">&lt;cluster-controller&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#cluster-controllers"><code>&lt;cluster-controllers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a host on which to run the Cluster Controller service. The Cluster Controller manages the state of the cluster in order to provide elasticity and failure detection.
+  </div>
+
+
+  <h2>Attributes</h2>
+            <div class="commonAttrs alert">
+        <strong>Common attributes:</strong> <a href="services.html#attr-hostalias">hostalias</a>, <a href="services.html#attr-baseport">baseport</a>, <a href="services.html#attr-jvmargs">jvmargs</a>
+      </div>
+          
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;cluster-controllers&gt;
+  &lt;cluster-controller hostalias="node1" /&gt;
+&lt;/cluster-controllers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- cluster-controllers                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="cluster-controllers" class="ref-param">&lt;cluster-controllers&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  <p>
+  This is a container for one or more <a
+  href="#cluster-controller"><code>&lt;cluster-controller&gt;</code></a>
+  elements.
+</p>
+
+<p class="alert alert-info">
+  <strong>Note:</strong> If your <em>services.xml</em> contains one or
+  more <code>&lt;content&gt;</code> elements, configuring at least
+  one Cluster Controller is required.
+</p>
+  </div>
+
+
+  <h2>Attributes</h2>
+
+    <ul class="ref-param-attributes">
+    <li>
+              <h3>standalone-zookeeper</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>true/false</td></tr>
+                <tr><td>Default Value:</td><td>false</td></tr>
+                <tr><td>Required:</td><td class="required">No, will by default share the ZooKeeper instance with configserver</td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              If configured to true a separate ZooKeeper instance will be configured and started on the set of nodes where you run cluster controller on. The set of cluster controllers nodes cannot overlap with the set of nodes where config server is running. If this setting is changed from false to true in a running system all previous cluster state information will be lost as the underlaying ZooKeper changes. Cluster controllers will re-discover the state, but nodes that have been manually set as down will again be considered to be up. 
+              </div>
+            </li>
+    </ul>
+      
+  
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#cluster-controller"><code>&lt;cluster-controller&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;cluster-controllers&gt;
+  &lt;cluster-controller hostalias="node1" /&gt;
+&lt;/cluster-controllers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- configserver                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="configserver" class="ref-param">&lt;configserver&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#configservers"><code>&lt;configservers&gt;</code></a>, <a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a host on which to run the Configuration Server service. If contained directly below <a href="#admin"><code>&lt;admin&gt;</code></a> you may only have one, so if you need to configure multiple instances of this service, please contain them within the <a href="#configservers"><code>&lt;configservers&gt;</code></a> element instead.
+  </div>
+
+
+  <h2>Attributes</h2>
+            <div class="commonAttrs alert">
+        <strong>Common attributes:</strong> <a href="services.html#attr-hostalias">hostalias</a>, <a href="services.html#attr-baseport">baseport</a>, <a href="services.html#attr-jvmargs">jvmargs</a>
+      </div>
+          
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;configservers&gt;
+  &lt;configserver hostalias="node1" /&gt;
+  &lt;configserver hostalias="node2" /&gt;
+&lt;/configservers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- configservers                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="configservers" class="ref-param">&lt;configservers&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  This is a container for one or more <a href="#configserver"><code>&lt;configserver&gt;</code></a> elements.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#configserver"><code>&lt;configserver&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One or More</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;configservers&gt;
+  &lt;configserver hostalias="node1" /&gt;
+  &lt;configserver hostalias="node2" /&gt;
+&lt;/configservers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- consumer                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="consumer" class="ref-param">&lt;consumer&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#metric-consumers"><code>&lt;metric-consumers&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Configure a metrics consumer
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>string</td></tr>
+                <tr><td>Default Value:</td><td>-</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              The name of the consumer
+              </div>
+            </li>
+                        </ul>
+      
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#metric"><code>&lt;metric&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One or More</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;metric-consumers&gt;
+  &lt;consumer name="barbar"&gt;
+    &lt;metric name="foo" output-name="bar" /&gt;
+    &lt;metric name="foobar" /&gt;
+  &lt;/consumer&gt;
+&lt;/metric-consumers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- downloadbitrate                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="downloadbitrate" class="ref-param">&lt;downloadbitrate&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#filedistribution"><code>&lt;filedistribution&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Configure the download bitrate for file distribution.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;filedistribution&gt;
+  &lt;downloadbitrate&gt;1024k&lt;/downloadbitrate&gt;
+  &lt;uploadbitrate&gt;4.5M&lt;/uploadbitrate&gt;
+&lt;/filedistribution&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- filedistribution                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="filedistribution" class="ref-param">&lt;filedistribution&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Configure general settings for file distribution in your Vespa setup.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#downloadbitrate"><code>&lt;downloadbitrate&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+                  <tr>
+            <td><a href="services-admin.html#uploadbitrate"><code>&lt;uploadbitrate&gt;</code></a></td>
+            <td class="required"></td>
+            <td>Zero or One</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;filedistribution&gt;
+  &lt;downloadbitrate&gt;1024k&lt;/downloadbitrate&gt;
+  &lt;uploadbitrate&gt;4.5M&lt;/uploadbitrate&gt;
+&lt;/filedistribution&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- logserver                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="logserver" class="ref-param">&lt;logserver&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a host on which to run the Vespa Log Server service.
+  </div>
+
+
+  <h2>Attributes</h2>
+            <div class="commonAttrs alert">
+        <strong>Common attributes:</strong> <a href="services.html#attr-hostalias">hostalias</a>, <a href="services.html#attr-baseport">baseport</a>, <a href="services.html#attr-jvmargs">jvmargs</a>
+      </div>
+          
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;logserver hostalias="node1" /&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- metric                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="metric" class="ref-param">&lt;metric&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#consumer"><code>&lt;consumer&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Configure an actual metric
+  </div>
+
+
+  <h2>Attributes</h2>
+                <ul class="ref-param-attributes">
+                              <li>
+              <h3>name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>Name</td></tr>
+                <tr><td>Default Value:</td><td>-</td></tr>
+                <tr><td>Required:</td><td class="required">Yes</td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              The name of the metric as defined in your code or in the Vespa logs.
+              </div>
+            </li>
+                                        <li>
+              <h3>output-name</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>Name</td></tr>
+                <tr><td>Default Value:</td><td>-</td></tr>
+                <tr><td>Required:</td><td class="required"></td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              The name you want the metric to use within graphing application.
+              If not configured, the value provided in <code>name</code> will be used.
+              </div>
+            </li>
+                        </ul>
+      
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;metric-consumers&gt;
+  &lt;consumer name="barbar"&gt;
+    &lt;metric name="foo" output-name="bar" /&gt;
+    &lt;metric name="foobar" /&gt;
+  &lt;/consumer&gt;
+&lt;/metric-consumers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- metric-consumers                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="metric-consumers" class="ref-param">&lt;metric-consumers&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Used for configuring the forwarding of metrics to graphing applications.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#consumer"><code>&lt;consumer&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One or More</td>
+          </tr>
+              </tbody>
+    </table>
+  
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;metric-consumers&gt;
+  &lt;consumer name="barbar"&gt;
+    &lt;metric name="foo" output-name="bar" /&gt;
+    &lt;metric name="foobar" /&gt;
+  &lt;/consumer&gt;
+&lt;/metric-consumers&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- slobrok                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="slobrok" class="ref-param">&lt;slobrok&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#slobroks"><code>&lt;slobroks&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Specifies a host on which to run the Service Location Broker (slobrok) service.
+  </div>
+
+
+  <h2>Attributes</h2>
+            <div class="commonAttrs alert">
+        <strong>Common attributes:</strong> <a href="services.html#attr-hostalias">hostalias</a>, <a href="services.html#attr-baseport">baseport</a>, <a href="services.html#attr-jvmargs">jvmargs</a>
+      </div>
+              <ul class="ref-param-attributes">
+                              <li>
+              <h3>index</h3>
+              <table class="param-summary table table-condensed table-striped table-bordered">
+                <tr><td>Valid Values:</td><td>nonNegativeInteger</td></tr>
+                <tr><td>Default Value:</td><td>-</td></tr>
+                <tr><td>Required:</td><td class="required"></td></tr>
+                <tr><td>Since:</td><td class="since">-</td></tr>
+                <tr><td>Deprecated:</td><td>-</td></tr>
+              </table>
+
+              <div class="description">
+              
+              </div>
+            </li>
+                        </ul>
+      
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;slobrok hostalias="node1" baseport="12345" index="1" /&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- slobroks                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="slobroks" class="ref-param">&lt;slobroks&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#admin"><code>&lt;admin&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  This is a container for one or more <a href="#slobrok"><code>&lt;slobrok&gt;</code></a> elements.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <table class="sub-elements table table-condensed table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>Required</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+   
+      <tbody>
+                  <tr>
+            <td><a href="services-admin.html#slobrok"><code>&lt;slobrok&gt;</code></a></td>
+            <td class="required">Yes</td>
+            <td>One or More</td>
+          </tr>
+              </tbody>
+    </table>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;slobroks&gt;
+  &lt;slobrok hostalias="node1" /&gt;
+  &lt;slobrok hostalias="node2" /&gt;
+&lt;/slobroks&gt;
+</pre>
+
+                  </div>
+  </div>
+<!-- ---------------------------------------------------------------- -->
+<!-- uploadbitrate                                                 -->
+<!-- ---------------------------------------------------------------- -->
+<h1 id="uploadbitrate" class="ref-param">&lt;uploadbitrate&gt;</h1>
+<div class="ref-param-container">
+
+  <table class="param-summary table table-condensed table-striped table-bordered">
+    <tr>
+      <td>Contained in:</td>
+      <td><a href="services-admin.html#filedistribution"><code>&lt;filedistribution&gt;</code></a></td>
+    </tr>
+    <tr>
+      <td>Valid Values:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Default Value:</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>Since:</td>
+      <td class="since">-</td>
+    </tr>
+    <tr>
+      <td>Deprecated:</td>
+              <td>-      </td>
+    </tr>
+  </table>
+
+
+  <div class="description">
+  Configure the upload bitrate for file distribution.
+  </div>
+
+
+  <h2>Attributes</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  <h2>Sub Elements</h2>
+      <p class="none">
+      <em>None.</em>
+    </p>
+  
+
+  
+  <h2>Examples</h2>
+      <div class="example">
+      <pre class="code markup brush: xml">
+&lt;filedistribution&gt;
+  &lt;downloadbitrate&gt;1024k&lt;/downloadbitrate&gt;
+  &lt;uploadbitrate&gt;4.5M&lt;/uploadbitrate&gt;
+&lt;/filedistribution&gt;
+</pre>
+
+                  </div>
+  </div>
+
+
+</body>
+</html>

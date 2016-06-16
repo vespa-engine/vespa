@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+<head>
+  <title>Choosing a request handler base class</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2016" />
+  <meta name="authors" content="steinar,tonyv,kraune" />
+</head>
+
+<body>
+
+<p>
+A request handler may be a direct subclass of one of the JDisc
+request handler base classes, but there are also base classes available
+for integrating easier with the Vespa platform. 
+For instance, the base class LoggingRequestHandler does
+access logging to the Vespa access log, the JDisc API is masked behind
+a synchronous API and so on.
+</p>
+
+<p>
+For the Container, there is nothing special about the different
+handlers, the application will work as well deploying a pure JDisc
+handler, be it a subclass
+of <code>com.yahoo.container.jdisc.ThreadedRequestHandler</code> or a
+fully independent implementation of the
+interface <code>com.yahoo.jdisc.handler.RequestHandler</code>. As long
+as they are built and deployed as other components in the application,
+they will be instantiated and bound properly by the container
+framework.
+</p>
+
+<p>
+Also, do note, any handler can have arbitrary components injected into
+its constructor, refer to a <a href="http-api-tutorial.html">HTTP API
+use case</a> for examples with both arbitrary shared components and the
+processing handler.
+</p>
+
+<p>
+To summarize:
+</p>
+
+<dl>
+  <dt>Extend <code>com.yahoo.container.jdisc.LoggingRequestHandler</code> if</dt>
+  <dd>
+    <ul>
+      <li>you want your queries automatically written to the access log</li>
+      <li>you otherwise have requirements as listed for com.yahoo.container.jdisc.ThreadedHttpRequestHandler.</li>
+    </ul>
+  <dt>Extend <code>com.yahoo.container.jdisc.ThreadedHttpRequestHandler</code> if</dt>
+  <dd>
+    <ul>
+      <li>you only are implementing an HTTP service</li>
+      <li>you want to use a synchronous API</li>
+      <li>you want an HTTP date header automatically added to the response (if your own code adds a date header, it will not be overwritten, though)</li>
+      <li>you want logging of exceptions (and masking of these from the JDisc layer)</li>
+      <li>you want automatic shutdown when an Error is thrown</li>
+      <li>you want a multi-threaded execution model</li>
+    </ul>
+  </dd>
+  <dt>Extend <code>com.yahoo.container.jdisc.ThreadedRequestHandler</code> if</dt>
+  <dd>
+    <ul>
+      <li>you want a multi-threaded execution model</li>
+      <li>only use instantiation and configuration from the container</li>
+      <li>you want to use the JDisc I/O API directly</li>
+    </ul>
+  </dd>
+  <dt>Implement <code>com.yahoo.jdisc.handler.RequestHandler</code> if</dt>
+  <dd>
+    <ul>
+      <li>you want full control over your own execution model</li>
+      <li>only use instantiation and configuration from the container</li>
+      <li>you want to use the JDisc I/O API directly</li>
+    </ul>
+  </dd>
+</dl>
+
+</body>
+</html>

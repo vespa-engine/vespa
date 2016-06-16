@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Configuration Servers</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2011" />
+  <meta name="authors" content="musum, vegardh" />
+</head>
+
+<body>
+<p>
+The Cloud Config System can be set up with one or more configuration
+servers (config servers). 
+A config server uses <a href="http://zookeeper.apache.org/">ZooKeeper</a> as a
+distributed data storage for the configuration system. In addition,
+each node runs a config proxy to cache configuration data.
+</p>
+
+
+
+<h1 id="requirements">System requirements</h1>
+<p>
+The default heap size for the JVM it runs
+under is 1.5 Gb (which can be changed with a <a
+ href="../performance/jvm-tuning.html#tune-config">setting</a>).
+It writes a transaction log that is regularly purged of old
+items, so little disk space is required. Note that running
+on a server that has a lot of disk I/O will adversely effect
+performance and is not recommended.
+</p>
+
+
+
+<h1 id="zookeeper">ZooKeeper</h1>
+<p>
+ZooKeeper handles data consistency across multiple config
+servers. The config server Java application runs a ZooKeeper server,
+embedded with an RPC frontend that the other nodes
+use. ZooKeeper stores data internally in <em>nodes</em> that can have
+<em>sub-nodes</em>, similiar to a file system. The path to a node can be
+written out the same way as a file: <em>/vespa/config/apps</em>
+</p><p>
+When you start/restart the config server, the configuration file for
+ZooKeeper, <em>$VESPA_HOME/conf/zookeeper/zookeeper.cfg</em>, is
+generated based on the contents of
+<a href="../setting-vespa-variables.html">VESPA_CONFIGSERVERS</a>. Hence,
+config server(s) must all be restarted if that changes on a config
+server node.
+</p><p>
+When you <em>deploy</em>, your application's
+files, along with global configurations, are stored in
+ZooKeeper. The application data is stored
+under <em>/vespa/config/apps/&lt;timestamp&gt;</em>. When you
+run <em>deploy activate</em>, you set the newest application
+<em>live</em> by updating the pointer
+in <em>/vespa/config/liveapp</em> to refer to the active app's
+timestamp. It is at that point the other nodes get
+configured. If you try to run <em>deploy</em>, and the
+config server(s) is not running, it will fail because ZooKeeper cannot
+be reached. The same goes for <em>deploy activate</em>.
+</p><p>
+<em>zkls</em> and <em>zkcat</em> can be used to inspect state:
+<ul>
+<li><em>zkls /vespa/config/apps</em></li>
+<li><em>zkcat /vespa/config/apps/1225109763380/userapp/services.xml</em></li>
+</ul>
+Note that <em>zkls /vespa/config/apps/</em> (with a trailing
+slash) does not work.
+</p> 
+
+
+<h2 id="fault-tolerance">ZooKeeper Logs</h2>
+<p>
+The ZooKeeper server logs to <em>$VESPA_HOME/logs/vespa/zookeeper.configserver.log</em>
+</p> 
+
+
+<h2 id="fault-tolerance">Fault Tolerance</h2>
+<p>
+For the system to tolerate <em>n</em> failures, ZooKeeper by design
+requires that you use <em>(2*n)+1</em> nodes. Consequently, only odd
+numbers of nodes works. One need at least 3 nodes to have a
+fault tolerant config system.
+</p><p>
+It is important to remember that even when using one config server,
+the config system will not fail at once if that server fails. This is because
+all nodes runs a <em>config proxy</em> that caches every
+known config, and serves it to the components on that node. However,
+restarting a node, with half or more config servers unavailable,
+will lead to a failure of that node, since restarting a node means
+restarting the config proxy.
+</p>  
+
+
+<h1 id="using-multiple-servers">Using More than one Config Server</h1>
+<p>
+The config servers need to be defined in <em>services.xml</em>:
+</p>
+<pre>
+&lt;admin version="2.0"&gt;
+  &lt;configservers&gt;
+    &lt;configserver hostalias="administration0" /&gt;
+    &lt;configserver hostalias="administration1" /&gt;
+    &lt;configserver hostalias="administration2" /&gt;
+  &lt;/configservers&gt;
+&lt;/admin&gt;
+</pre>
+<p>
+See the <a href="../reference/services-admin.html#configservers">admin
+model</a> reference for more information. In addition,
+<em>VESPA_CONFIGSERVERS</em> must be set on all
+nodes. This is a comma or whitespace-separated list with the hostname
+of all configservers, like <em>myhost1.mydomain.com,myhost2.mydomain.com,myhost3.mydomain.com</em>.
+</p><p>
+When there are multiple config servers, the config clients (usually
+the config proxy, if you have not configured the client to use another
+config source) will pick a config server based on a hash of their
+hostname and how many config servers there are. This uniformly
+loads the config servers. The config clients are
+fault-tolerant and will switch to another config server if it is
+unavailable or there is an error in the configuration it
+receives. With only one config server configured, it will continue
+using that in case of errors.
+</p>
+
+
+
+<h1 id="tools">Tools to Query the Configuration System</h1>
+<p>
+You can log into a node to query the config server or config proxy
+running on the node, using <em>getvespaconfig</em> or
+<em>configproxy-cmd</em>. Alternatively, you can use the
+<a href="../config-rest.html">REST API for listing and retrieving config</a>.
+</p><p>
+A config server or proxy can be queried for configuration data
+using <em>getvespaconfig</em>. Configuration is addressed using
+name and configId. If you omit configId, the global and default
+data for that name is returned. The default port number is
+the config proxy's port: 19090. If you use port 19070, it will query a
+server instead.
+</p><p>
+A config proxy can be queried for status
+using <em>configproxy-cmd</em>. Run it without arguments to see
+usage. The tool allows you to display heap usage for the proxy,
+display the configs cached and flush the cache. Also, it allows you to
+view the outstanding requests it has against the server(s). An
+outstanding request is the same as a subscription of server data, the
+requests are held open until the data changes on the server, through
+a <em>deploy activate</em>.
+</p>
+
+
+<h2 id="config-sources">Specifying config sources for an application</h2>
+<p>
+If you need to access config from a node not running the config system (e.g. doing
+feeding via the Document API) or you for some other reason want to
+override the default settings, this can be done
+using VESPA_CONFIG_SOURCES:
+</p>
+<pre>
+$ export VESPA_CONFIG_SOURCES="myadmin0.mydomain.com:12345,myadmin1.mydomain.com:12345"
+</pre>
+<p>
+Alternatively, for Java programs, you can use the system
+property <em>configsources</em> and set it programmatically or on
+the command line with the <em>-D</em> option to Java.  The syntax
+for the value is the same as for the environment variable
+VESPA_CONFIG_SOURCES.
+</p>
+
+</body>
+</html>

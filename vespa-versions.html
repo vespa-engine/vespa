@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Vespa Versions</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="February 2016" />
+  <meta name="authors" content="bratseth" />
+</head>
+
+<body>
+<p class="ingress">
+This document explains the version numbering scheme of Vespa.
+</p>
+
+<h1 id="vespa_versions_and_compatibility">Vespa versions and compatibility</h1>
+
+<p>Vespa uses <a href="http://semver.org/">semantic versioning</a>.</p>
+
+<p>Java API's, web service API's and all application package constructs are
+supported throughput a major release and only removed on a new release if they
+are already marked deprecated.</p>
+
+<p>Use of deprecated Java API's will cause a warning on compilation,
+and use of deprecated application package constructs will cause a deprecation
+warning on deployment. For web services there is no mechanism for warning
+at runtime and we can only mark deprecation in the documentation.</p>
+
+<p>Note that Java API's come in two categories:
+<ul>
+	<li><i>Public API's</i> carry the compatibility guarantee and are visible from you code
+as well as in the <a href="http://vespa.corp.yahoo.com/javadoc/">Vespa javadoc</a>.
+	<li><i>Exported API's</i> are also visible from you code, but is not in the public Javadoc
+and carry no compatibility guarantee.
+</ul>
+
+Check the Javadoc list to verify that you are
+using public packages.</p>
+
+<p>In addition, some public Java classes and methods are marked with the
+com.google.common.annotations.Beta tag. These are under development and
+may still change before they stabilize.</p>
+
+
+<h1 id="data">Stored Data</h1>
+
+<p>Data written to Vespa is compatible between adjacent releases.
+For self-hosted systems it may be necessary to upgrade through each
+minor release rather than in larger leaps to ensure Vespa can read existing data.
+This is a good practice in any case.
+
+</body>
+</html>

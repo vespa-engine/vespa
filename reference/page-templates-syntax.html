@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+<title>Page Templates Syntax</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="September 2010">
+<meta name="authors" content="bratseth">
+</head>
+
+<body>
+
+<p class="ingress">
+This document is a reference to the elements of the Page Template XML
+format. For an introduction, please see the
+<a href="../page-templates.html">Introduction to
+Page Templates</a>.
+</p>
+
+
+
+<h1>XML structure</h1>
+
+<p>
+A page template describes a particular way or set of ways of
+organizing data from some sources on a page. It has the following
+structure:
+</p>
+
+<pre class="code">
+&lt;<a href="#page">page</a> id=&quot;<a href="#id">[id]</a>&quot;&gt; <em>&lt;!-- The top-level section of this page --&gt;</em>
+    [page-element]*
+&lt;/page&gt;
+</pre>
+
+<p>
+&hellip;where each <code>[page-element]</code> is one of:
+</p>
+
+<dl>
+<dt>&lt;<a href="#section">section</a>&gt;[page-element]*&lt;/section&gt;</dt>
+<dd><em>A nested section (screen area)</em></dd>
+
+<dt>&lt;<a href="#source">source</a> name=&quot;[source-name]&quot;&gt; [renderer]* [parameter]* &lt;/source&gt;</dt>
+<dd><em>A data source which should be placed in this section</em></dd>
+
+<dt>&lt;<a href="#renderer">renderer</a> name=&quot;[renderer-name]&quot;&gt; [parameter]* &lt;/renderer&gt;</dt>
+<dd><em>The renderer to use for the source or section containing this</em></dd>
+
+<dt>&lt;<a href="#choice">choice</a>&gt; [map] or [page-element]/[alternative]* &lt;/choice&gt;</dt>
+<dd><em>A choice between alternative page elements resolved at runtime</em></dd>
+
+<dt>&lt;placeholder id=&quot;[id]&quot;</a>/&gt;</dt>
+<dd><em>an element to be replaced by a map item at runtime</em></dd>
+
+<dt>&lt;<a href="#include">include</a> idref=&quot;[page-id]&quot;&gt;/&gt;</dt>
+<dd><em>Include the page elements contained in another page</em></dd>
+</dl>
+
+<p>
+where the nested elements above are:
+</p>
+
+<dl>
+<dt>&lt;parameter name=&quot;[name]&quot;&gt;[value]&lt;/parameter&gt;</dt>
+<dd>
+  <em>A parameter of the owning element. Renderer parameters are sent
+  as-is to the frontend in the result. Source parameters are sent to
+  the source by setting the query
+  parameter<code>source.[sourceName].[name]</code>.</em>
+</dd>
+
+<dt>&lt;alternative&gt; [page-element]* &lt;/alternative&gt;</dt>
+<dd><em>multiple page elements constituting one choice alternative</em></dd>
+
+<dt>&lt;<a href="#map">map</a> to=&quot;placeheholder-id1 placeholder-id2 &hellip;&quot;&gt; [page-element]/[item]* &lt;/alternative&gt;</dt>
+<dd><em>a mapping of some page elements to placeholders</em></dd>
+
+<dt>&lt;item&gt; [page-element]* &lt;/item&gt;</dt>
+<dd><em>multiple page elements which should all map to one placeholder</em></dd>
+</dl>
+
+<p>
+All tags may also include a <code>description</code> attribute to
+document the use of the tag.
+</p>
+
+<p>
+Tags and attributes are described in detail in the following.
+</p>
+
+
+<h1 id="id">id</h1>
+
+<p>An id has the format</p>
+
+<pre class="code">
+id        ::= name(:major(.minor(.micro(.qualifier)?)?)?)?
+name      ::= <em><a href="#identifiers">identifier</a></em>
+major     ::= <em>integer</em>
+minor     ::= <em>integer</em>
+micro     ::= <em>integer</em>
+qualifier ::= <em><a href="#identifiers">identifier</a></em>
+</pre>
+
+<p>
+Any omitted numeric version component missing is taken to mean 0,
+while a missing qualifier is taken to mean the empty string.
+</p>
+
+
+
+<h1 id="page">page</h1>
+
+<p>
+The root tag of a page template. Defines a page, is also its root
+section.  Attributes and subtags are the same as
+for <a href="#section">section</a>, with the exception that the
+<code>id</code> attribute is mandatory for a page.
+</p>
+
+
+
+<h1 id="section">section</h1>
+
+<p>
+A representation of an area of screen real-estate. At runtime a
+section will contain content from various sources. The final renderer
+will render the section with its data items and/or subsections in an
+area of screen real-estate determined by its containing tag.
+</p>
+
+<p>Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>id</td>
+  <td>A unique identifier of this section used for referring.</td>
+  <td><em>No id</em></td>
+  </tr>
+<tr>
+  <td>layout</td>
+  <td>An identifier. Permissible values
+      are <code>row</code>, <code>column</code> and any additional
+      layouts supported by the renderer i of the returned page.</td>
+  <td><code>column</code></td>
+  </tr>
+<tr>
+  <td>region</td>
+  <td>An identifier. The permissible values, and whether this is
+      mandatory is determined by the particular layout identifier of
+      the containing section (<code>row</code> and <code>column</code>
+      does not specify any region identifiers).</td>
+  <td><em>None</em></td>
+  </tr>
+<tr>
+  <td>source
+  <td>A space-separated set of sources permissible within this. This
+      is a shorthand for defining sources as subtags. The total source
+      list of this section consists of both the sources listed here
+      and as subtags.</td>
+  <td><em>All sources are permissible if none are specified.</em></td>
+  </tr>
+<tr>
+  <td>max
+  <td>The maximum number of items permissible within this section
+      (including any subsections). Regardless of the blending method
+      used, the most relevant items are kept.</td>
+  <td><em>Unrestricted</em></td>
+  </tr>
+<tr>
+  <td>min</td>
+  <td>The minimum number of items desired within this.</td>
+  <td><em>Unrestricted</em></td>
+  </tr>
+<tr>
+  <td>order</td>
+  <td>The method of ordering to use on the the items displayed in this
+      container. This may be any <a href="sorting-syntax.html">sorting
+      specification</a> over the fields of the hits, plus the source
+      name and relevance score, for example <code>[source]
+      -[relevance] category</code> to group by source, sort each group
+      primarily by decreasing relevance and secondarily by the
+      "category" field. The <code>[source]</code> identifier will sort
+      sources by the order in which they are listed in the template in
+      use.
+  </td>
+  <td></td>
+</tr>
+</table>
+
+
+
+<h1 id="source">source</h1>
+
+<p>
+A data source whose data should be placed in the containing section.
+</p>
+
+<p>Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>name</td>
+  <td>The name of this source.</td>
+  <td><em>Mandatory</em></td>
+  </tr>
+<tr>
+  <td>url</td>
+  <td>The url of this source. If this is set, the data of this source
+      is <em>not</em> fetched, but instead the source tag (with url)
+      will appear in the returned page such that the frontend may
+      fetch it. This is provided primarily as a migration path, as
+      such data can not be inspected and processed to optimize the
+      returned page.</td>
+  <td><em>No url: Fetch this configured source from the container.</em></td>
+  </tr>
+</table>
+
+
+
+<h1 id="renderer">renderer</h1>
+
+<p>
+A renderer to use to render a section of a data item (hit) of a
+particular type.
+</p>
+
+<p>Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>name</td>
+  <td>The name of this renderer.</td>
+  <td><em>Mandatory</em>
+  </tr>
+<tr>
+  <td>for</td>
+  <td>The name of a hit type or a source this is the renderer for.</td>
+  <td><em>If in a section: This is the renderer for the whole
+      section.<br />If in a source: This is the default renderer for
+      hits from this source.</em></td>
+  </tr>
+</table>
+
+
+
+<h1 id="choice">choice</h1>
+
+<p>
+A choice between multiple alternative (lists of) page elements.  A
+resolver chooses between the possible alternatives for each request at
+runtime.  The <code>alternative</code> tag is used to enclose an
+alternative.  If an alternative consists of just one page element tag,
+the enclosing alternative tag may be skipped.
+</p>
+
+<p><a name="choice_attributes"></a>Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>method</td>
+  <td>the name of the method for making the choice. Must be supported
+      by the optimizer in use.</td>
+  <td><em>Any method</em></td>
+  </tr>
+</table>
+
+<p>Contained tags</p>
+
+<p>
+Either:
+</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Occurrences</th>
+  </tr>
+<tr>
+  <td>[page-element]</a></td>
+  <td>An alternative consisting of a single page element.</td>
+  <td>0&ndash;n</td>
+  </tr>
+<tr>
+  <td>alternative</td>
+  <td>An alternative consisting of multiple page elements.</td>
+  <td>0&ndash;n</td>
+  </tr>
+</table>
+
+<p>
+or
+</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Occurrences</th>
+  </tr>
+<tr>
+  <td><a href="#map">map</a></td>
+  <td>Specify all alternatives as a single mapping function.</td>
+  <td>0&ndash;1</td>
+  </tr>
+</table>
+
+
+
+<h1 id="map">map</h1>
+
+<p>
+Specify all the alternatives of a choice as a mapping function of
+elements to placeholders.  A map is a convenience shorthand of writing
+many alternatives in the case where a collection of elements should be
+mapped to a set of placeholders with the constraint that each
+placeholder should get a unique element.  This is useful e.g in the
+case where a set of sources are to be mapped to a set of sections.
+</p>
+
+<p id="map_attributes">Map Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>to</td>
+  <td>A space-separated list of the placeholder id's the map values
+      should be mapped to.  There cannot be more placeholder id's than
+      there are values in this map (but fewer is ok).</td>
+  </tr>
+</table>
+
+<p>Contained tags</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Occurrences</th>
+  </tr>
+<tr>
+  <td>[page-element]</a></td>
+  <td>A map item consisting of a single page element to map to a placeholder.</td>
+  <td>0&ndash;n</td>
+  </tr>
+<tr>
+  <td><a href="#item">item</a></td>
+  <td>A item containing multiple page elements to be mapped to a single placeholder.</td>
+  <td>0&ndash;n</td>
+  </tr>
+</table>
+
+
+
+<h1 id="include">include</h1>
+
+<p>
+Includes the page elements contained directly in the <code>page</code>
+element in the given page template (the page tag itself is not
+included).  Inclusion works exactly as if the include tag was
+literally replaced by the content of the included page.
+</p>
+
+<p id="include_attributes">Include Attributes:</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Description</th>
+  <th>Default</th>
+  </tr>
+<tr>
+  <td>idref</td>
+  <td>The id specification of the page to include. Portions of the
+      version may be left unspecified to get the latest matching
+      version.</td>
+  <td><em>(Mandatory)</em></td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Live-upgrading Vespa</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2016" />
+  <meta name="authors" content="kraune,geirst" />
+</head>
+
+<body>
+<p>
+This document describes how to live-upgrade a Vespa cluster -
+i.e. the cluster can continue serving traffic during upgrade.
+Please read the release notes for any additional steps that may
+need to be performed during the upgrade.
+</p>
+
+<ol>
+  <li id="before-update"><strong>Before Upgrading a Node</strong>
+    <ul><li>
+        To save downtime, push software packages to the hosts in advance.
+    </li></ul>
+  </li>
+
+  <li id="config-server"><strong>Upgrade Config Server(s)</strong>
+    <ul><li>
+      For all nodes in the cluster, detach config proxies from
+      the config server(s) by running this command on all hosts (this makes
+      sure that services keep their current configuration until both config
+      server and the services themselves have been upgraded):
+      <pre class="brush: cli">$ configproxy-cmd -m setmode memorycache</pre>
+    </li><li>
+      Activate packages on the config server(s) and restart.
+    </li><li>
+      Redeploy and activate the application:
+      <pre class="brush: cli">$ deploy prepare &lt;app&gt; &amp;&amp; deploy activate</pre>
+    </li><li>
+      Restart services on the configserver node(s) -
+      the config proxy will then go back to using the default mode and
+      serve config from the upgraded config server(s).
+    </li></ul>
+  </li>
+
+  <li id="admin-node"><strong>Upgrade Admin Node(s)</strong>
+    <ul><li>
+      The second step is to upgrade the rest of the admin nodes in the
+      system (those specified in <em>&lt;admin&gt;</em> in <em>services.xml</em>).
+      Upgrade each of the nodes as follows, one and one at a time:
+      stop, install, start.
+    </li><li>
+      If the config server(s) is deployed on admin node(s), these nodes
+      are already upgraded as part of the first step.
+    </li></ul>
+
+  <li id="cluster-controller"><strong>Upgrade the Cluster Controller</strong>
+    <ul><li>
+      The system will work with no interruption when the Cluster Controller stops.
+      (Cluster controller nodes can be found by running
+      <em>vespa-model-inspect service container-clustercontroller</em>)
+      To upgrade: stop, install and start.
+    </li><li>
+      You will see warning log messages from the other nodes in the system
+      while the cluster controller is down - this is normal. Note that
+      if the Cluster Controller is deployed on an admin node, it is upgraded
+      as part of the admin node upgrade.
+    </li></ul>
+  </li>
+
+  <li id="storage-nodes"><strong>Upgrade Content Nodes</strong>
+    <ul><li>
+      Upgrading a content node implies stopping both a distributor and a content
+      node. Note that the procedure below only needs to be followed if you
+      need to have your data available for serving during the upgrade procedure -
+      if not, just stop the full Vespa cluster as-is.
+    </li><li>
+      You should only stop <em>redundancy-1</em> nodes at a time - if
+      you got, say 2, copies, stop and upgrade only one node at a time:
+      stop, install start - then wait for content node initialization
+      and redundancy merge (application dependent)
+    </li><li>
+      The wait period must be adjusted to the time it takes for a content
+      node to initialize. This initialization period depends heavily on whether we have
+      an indexed, streaming or store-only content cluster.
+      You can look at health status to see progress.
+    </li></ul>
+
+  </li>
+</ol>
+
+</body>
+</html>

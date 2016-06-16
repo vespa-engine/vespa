@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Tuning Vespa JVMs</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="January 2010" />
+  <meta name="authors" content="kraune, vegardh" />
+</head>
+<body>
+
+<p class="ingress">
+Some of the Vespa services are implemented in Java. Setting the
+correct settings for memory usage etc. is non-trivial, and the Vespa
+defaults are most often good for production &mdash; not your development
+machine. This article is not an extensive guide on how to tune VM
+memory usage, but rather a list of pointers of where to look and
+change. Refer to <a href="container-tuning.html">Container Tuning</a>
+for information about settings for the JDisc Container in Vespa.
+</p>
+
+
+
+<h1 id="when-to-tune">When to tune</h1>
+
+<p>
+If things work when you run Vespa, you can skip reading here. However,
+if parts of Vespa fail at startup or while running, and you suspect it
+is for example memory related, look below for hints. You might
+find <code>vespa.log</code> entries looking like these:
+</p>
+
+<pre class="brush: text">
+1222175132.631524       mynode.mydomain.com   12213   config-sentinel config-sentinel.service event   stopped/1 name=&quot;qrserver&quot; pid=15414 exitcode=32768
+1222175132.631583       mynode.mydomain.com   12213   config-sentinel config-sentinel.service error   qrserver: Attempted to start, but fork() failed: Cannot allocate memory
+
+&hellip;
+
+1222175132.52427        mynode.mydomain.com   15381   logserver       stdout  info    Java HotSpot(TM) 64-Bit Server VM warning: Attempt to deallocate stack guard pages failed.
+1222175132.52480        mynode.mydomain.com   15381   logserver       stdout  info    Java HotSpot(TM) 64-Bit Server VM warning: Attempt to allocate stack guard pages failed.
+1222175132.036          mynode.mydomain.com   -/10    -       ADM.com.yahoo.logserver.handlers.HandlerThread  config  logserver.queue.size=200
+1222175132.52521        mynode.mydomain.com   15381   logserver       stderr  warning Exception in thread &quot;main&quot; java.lang.OutOfMem
+oryError: unable to create new native thread
+
+&hellip;
+
+1222175130.810528       mynode.mydomain.com   14314   logserver       stderr  warning dl failure on line 685 Error: failed $VESPA_HOME/libexec64/jdk1.6.0/jre/lib/amd64/server/libjvm.so, because $VESPA_HOME/libexec64/jdk1.6.0/jre/lib/amd64/server/libjvm.so: failed to map segment from shared object: Cannot allocate memory
+</pre>
+
+<p>
+A frequent case is trying to run some of the sample Vespa
+applications, configured with all services on a dev box &mdash; this
+will eat many gigabytes of memory and often fail.
+</p>
+
+
+
+<h1 id="tuning-in-services-xml">JVM Tuning in services.xml</h1>
+
+<p>
+You can set JVM parameters for different Java services
+in <em>services.xml</em>. If you change them, you need
+to <code>deploy prepare</code>, <code>deploy activate</code>
+and restart the relevant services. The example below shows how to run
+2 QR-servers with concurrent garbage collection:
+</p>
+
+<pre class="brush: xml">
+&lt;jdisc id="default" version="1.0"&gt;
+  &lt;nodes jvmargs=&quot;-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+CMSIncrementalPacing&quot;&gt;
+    &lt;node hostalias=&quot;node0&quot; /&gt;
+    &lt;node hostalias=&quot;node1&quot; /&gt;
+  &lt;/nodes&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>
+This example shows how to run the Log Server with verbose garbage
+collection:
+</p>
+
+<pre class="brush: xml">
+&lt;logserver hostalias=&quot;node0&quot; jvmargs=&quot;-verbose:gc&quot;/&gt;
+</pre>
+
+<p>
+You can use the use the <code>jvmargs</code> attribute for the
+following XML elements:
+</p>
+
+<ul>
+  <li>(container) nodes</li>
+  <li>(container) node</li>
+  <li>(docproc) nodes</li>
+  <li>(docproc) node</li>
+  <li>logserver</li>
+  <li>fleetcontrollers</li>
+  <li>fleetcontroller</li>
+  <li>spoolers</li>
+  <li>spooler</li>
+  <li>gateways</li>
+  <li>gateway</li>
+</ul>
+
+<p>
+The given JVM parameters are appended to Vespa's default ones on the
+command line when executing Java. If you supply a setting that is also
+given by default in the start script, for example -Xmx, the last one
+(ie. yours) will take effect.
+</p>
+
+
+
+<h1 id="tune-config">JVM Tuning for Config Server, Config Proxy and
+Metrics Proxy</h1>
+
+<p>
+The config server and proxy are not executed based on the model
+outlined in
+<em>services.xml</em>. On the contrary, they are used to bootstrap the
+services in that model. Consequently, you need to use configuration variables
+to set the JVM parameters for the config server and config proxy. They also
+need to be restarted (<code>services</code> in the config proxy's case) after
+a change, but you do <em>not</em> need to do <code>deploy prepare</code>
+or <code>deploy activate</code> first. The metrics proxy JVM parameters
+cannot be set in services.xml either, and can be set the same way. Example:
+</p>
+
+<pre class="brush: cli">
+cloudconfig_server.jvmargs      -verbose:gc
+services.jvmargs_configproxy    -verbose:gc -Xmx256m
+vespa_metrics_proxy.jvmargs     -verbose:gc
+</pre>
+
+<p>
+Refer to <a href="../setting-vespa-variables.html">Setting Vespa variables</a>
+for more information on how to set these variables.
+</p>
+
+<h1 id="overriding-booleans">Override already set parameters</h1>
+
+<p>Sometimes it is necessary to turn off a Vespa factory setting to make
+your own setting take effect, for instance when choosing another GC
+algorithm. You must then first disable the Vespa setting, then enable
+your own setting.</p>
+
+<p>Assuming a Vespa release has CMS as factory
+setting, and you need to override this. You would then have to do the
+following:<p>
+
+<pre>
+-XX:-UseConcMarkSweepGC -XX:+UseOtherGCAlgo
+</pre>
+
+<p>I.e., use the standard JVM option syntax for turning on and off boolean flags
+by prefixing the actual option name with plus and minus.</p>
+
+<p>The user defined parameters will <i>always</i> be appended
+after factory settings, this to ensure straightforward overrides will
+automatically take precedence over factory settings.</p>
+
+<h2 id="final-flags">Verifying settings</h2>
+
+<p>By adding <code>-XX:+PrintFlagsFinal</code> to the JVM parameters, the
+JVM will dump (to the log) the final value of all flags. Be warned, though,
+as there are many hundred tunable flags in the JVM.</p>
+
+<h1 id="tuning-tips">Tuning Tips</h1>
+
+<p>
+Below are a few links about JVM tuning. One very common parameter to
+set is <code>-Xmx1024m</code>, which sets the JVM's maximum heap size
+to 1024MB.
+</p>
+
+<ul>
+  <li><a href="http://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html">Java HotSpot VM Options</a></li>
+  <li><a href="http://javahowto.blogspot.com/2006/06/6-common-errors-in-setting-java-heap.html">6 Common Errors in Setting Java Heap Size</a></li>
+</ul>
+
+</body>
+</html>

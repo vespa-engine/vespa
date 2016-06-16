@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Deploy Standalone</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date" content="May 2013" />
+  <meta name="authors" content="tonyv, gv" />
+</head>
+
+<body>
+<p class="ingress">
+This document explains how to deploy applications on a
+standalone JDisc container instance. We should already be
+familiar with <a href="developing-applications.html">developing applications</a>.
+</p>
+
+<h1 id="installing-container">Install the Standalone JDisc Container</h1>
+<p>
+Use the latest yinst version (you need at least version 7.159), then install:
+</p>
+<pre class="brush: cli">
+$ yinst self-update -br rhel6stable
+$ yinst install -os rhel-6.x standalone_jdisc_container-stable -br test
+</pre>
+<p>
+Refer to <a href="#troubleshooting">the troubleshooting section</a> as needed
+</p>
+
+
+<h1 id="running-jdisc-container">Run the Standalone JDisc Container</h1>
+<p>
+Start the standalone JDisc container by specifying the location of
+your <a href="../cloudconfig/application-packages.html">application package</a>:
+</p>
+<pre class="brush: cli">
+$ yinst set standalone_jdisc_container.app_location=/path/to/my/application
+$ yinst start standalone_jdisc_container
+</pre>
+<p>
+You should now have a http server running on port 4080:
+</p>
+<pre class="brush: cli">$ curl localhost:4080/</pre>
+<p>
+Logging goes to the standard JDisc log:
+</p>
+<pre class="code"> tail /home/y/logs/jdisc_core/jdisc_core.log</pre>
+<p>
+As the log format is machine-readable, it can be hard to read -
+use <em>jdisc_logfmt</em> to output human-readable
+text. Refer to the man page for details.
+To clear the log between runs, do:
+</p>
+<pre class="brush: cli">$ sudo rm /home/y/logs/jdisc_core/jdisc_core.log*</pre>
+
+
+<h1 id="starting-manually">Start the JDisc Container Manually</h1>
+<p>
+You can also start and stop JDisc container without using yinst:
+</p>
+<pre class="brush: cli">
+$ sudo jdisc_container_start path/application
+$ sudo jdisc_container_stop
+</pre>
+
+
+<h1 id="activating_optional_components">Activating optional components</h1>
+
+<p>Some components which are available by default when running in a managed
+environment must be added explicitly when running standalone. This is done
+by listing those components under the &lt;jdisc&gt; tag in the services.xml file.
+The available components are listed in copy-pasteable form below.
+
+<pre class="code">
+&lt;jdisc&gt;
+  &lt;!-- Scoreboard integration --&gt;
+  &lt;component id=&quot;YamasMetricConsumerProvider&quot; class=&quot;com.yahoo.container.jdisc.metric.yamas.YamasMetricConsumerProvider&quot; bundle=&quot;jdisc_yamas_metrics&quot;/&gt;
+
+  &lt;!-- Security filters for servlets --&gt;
+  &lt;component id=&quot;SecurityFilterInvoker&quot; class=&quot;com.yahoo.jdisc.http.filter.security.SecurityFilterInvoker&quot; bundle=&quot;jdisc_http_filters&quot;/&gt;
+
+  &lt;!-- SSL certificate store backed by BouncyCastle --&gt;
+  &lt;component id=&quot;PemSslKeyStoreFactory&quot; class=&quot;com.yahoo.jdisc.http.ssl.keystore.provider.pem.PemSslKeyStoreFactory&quot; bundle=&quot;jdisc_http_filters&quot;/&gt;
+
+  &lt;!-- YCA store of password secrets --&gt;
+  &lt;component id=&quot;YcaSecretStore&quot; class=&quot;com.yahoo.jdisc.http.yca.YcaSecretStore&quot; bundle=&quot;jdisc_http_filters&quot;/&gt;
+
+  &lt;!-- YCA store of certificates --&gt;
+  &lt;component id=&quot;YcaCertificateStore&quot; class=&quot;com.yahoo.jdisc.http.yca.YcaCertificateStore&quot; bundle=&quot;jdisc_http_filters&quot;/&gt;
+
+  &lt;!-- Libyell integration --&gt;
+  &lt;component id=&quot;YellLinguisticsProvider&quot; class=&quot;com.yahoo.language.lib.yell.YellLinguistics&quot; bundle=&quot;libyell-linguistics&quot;/&gt;
+&lt;/jdisc&gt;
+</pre>
+
+<p>Code which needs a component of the interface each of these implements will automatically use the implementation
+specified by the component when it is included in services.xml.</p>
+
+
+<h1 id="log-settings">Log Settings</h1>
+
+<p>
+In order to control log levels on the standalone container, we first have to install the vespa_log package:
+<pre class="brush: bash">
+$ yinst install vespa_fastos vespa_log -br current
+</pre>
+
+Then, to enable debug logging for all packages do:
+<pre class="brush: bash">
+$ sudo logctl -f /home/y/var/db/jdisc/logcontrol/jdisc-container.logcontrol Container debug=on
+</pre>
+
+Or, to enable debug logging only for a specific package (skip the trailing '.' to include sub-packages):
+<pre class="brush: bash">
+$ sudo logctl -f /home/y/var/db/jdisc/logcontrol/jdisc-container.logcontrol Container:com.yahoo.mypackage. debug=on
+</pre>
+</p>
+
+
+<h1 id="remote-debugging">Remote Debugging</h1>
+
+<p> It is possible to remote debug a standalone container with e.g. IntelliJ
+IDEA. Just set the port for remote debugging:
+
+<pre class="brush: cli">
+$ yinst set jdisc_container_jars.jpda_port=8998
+</pre>
+
+<p> The default behaviour is that the target VM will be suspended immediately before the
+main class is loaded. To change this, use the following setting:
+
+<pre class="brush: cli">
+$ yinst set jdisc_container_jars.jpda_suspend=n
+</pre>
+
+<p> JDisc has a freeze detector that will notify the user when the process becomes
+unresponsive. While debugging, this can create a lot of spam in the logs, so it's
+best to shut it off temporarily:
+
+<pre class="brush: cli">
+$ yinst set jdisc_container_jars.java_opts=-Dvespa.freezedetector.disable=true
+</pre>
+
+
+<h1 id="troubleshooting">Troubleshoot the install</h1>
+
+<p>
+If yinst tells you that your node is in mixed mode, you will have to remove any
+rhel4 package installed. The simplest way to do this is to remove ALL installed
+packages:
+<pre class="brush: cli">
+  $ yinst restore 1 -empty-restore -noadmin
+  $ yinst clean -inactive -full -yes
+  $ yinst self-update -br rhel6stable
+  $ yinst set root.os_restriction=rhel-6.x
+</pre>
+</p>
+<p>
+Alternatively, use the <a href="http://dist.corp.yahoo.com/by-package/rhel6/">RHEL6 toolbox</a>
+</p>
+
+</body>
+</html>

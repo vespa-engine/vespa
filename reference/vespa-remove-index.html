@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>vespa-remove-index</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2011" />
+  <meta name="authors" content="arnej" />
+</head>
+
+<body>
+
+
+<p class="ingress">
+This is the HTML version of the man page for the command line
+tool <em>vespa-remove-index</em> &mdash; the tool for completely
+removing index data on a Vespa search node.
+</p>
+
+
+<h1 id="name">Name</h1>
+<p>
+<strong>vespa-remove-index</strong> &mdash; completely remove all index
+data on a Vespa search node.
+</p>
+
+
+<h1 id="synopsis">Synopsis</h1>
+<p>
+<strong>vespa-remove-index</strong>
+[-<strong>force</strong>]
+[-<strong>cluster</strong> <em>name</em>]
+</p>
+
+
+<h1 id="description">Description</h1>
+<p>
+<em>vespa-remove-index</em> is a command line tool that completely
+removes all index data on a Vespa search node, by wiping out selected
+files and subdirectories found in $VESPA_HOME/var/db/vespa/.
+</p>
+
+<p>
+This process is irreversible and the indexes deleted can not be
+recovered without either copying the indexes from another search node
+within the same column, or by refeeding the data.
+</p>
+
+<p>
+You must stop <em>services</em> before running <em>vespa-remove-index</em>.
+</p>
+
+
+<h1 id="options">Options</h1>
+
+<dl>
+
+<dt><strong>-force</strong></dt>
+<dd>Do not require verification from the user before really removing index data.</dd>
+
+<dt><strong>-cluster</strong> <em>name</em></dt>
+<dd>only remove data for given cluster name.</dd>
+
+</dl>
+
+
+<h1 id="examples">Examples</h1>
+<p>
+Running the command without any options:
+</p>
+<pre class="brush: cli">
+$ vespa-remove-index
+[info] You have 18708772 kilobytes of data for cluster testcluster1
+[info] For cluster testcluster1 row 0 column 0 you have:
+[info] 18708764 kilobytes of data in var/db/vespa/search/cluster.testcluster1/r0/c0
+Really to remove this vespa index? Type "yes" if you are sure ==> yes
+[info] removing data: sudo rm -rf var/db/vespa/search/cluster.testcluster1/r0/c0
+[info] removed.
+
+[info] For cluster testcluster2 row 0 column 0 you have:
+[info] 188 kilobytes of data in var/db/vespa/search/cluster.testcluster2/r0/c0
+Really to remove this vespa index? Type "yes" if you are sure ==> yes
+[info] removing data: sudo rm -rf var/db/vespa/search/cluster.testcluster2/r0/c0
+[info] removed.
+
+[info] You have 5606552 kilobytes of data for cluster testcluster3
+[info] For cluster testcluster3 row 0 column 0 you have:
+[info] 5606544 kilobytes of data in var/db/vespa/search/cluster.testcluster3/r0/c0
+Really to remove this vespa index? Type "yes" if you are sure ==> yes
+[info] removing data: sudo rm -rf var/db/vespa/search/cluster.testcluster3/r0/c0
+[info] removed.
+</pre>
+
+
+</body>
+</html>

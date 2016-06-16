@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+
+  <meta name="date"       content="March 2014" />
+  <meta name="authors"    content="steinar" />
+<title>Query Language</title>
+</head>
+
+<body>
+<script>
+function replace(encodedText) {
+        var body_element = document.getElementsByTagName('body')[0];
+        var selection = window.getSelection();
+        var newdiv = document.createElement('div');
+        body_element.appendChild(newdiv);
+        newdiv.innerHTML = encodedText;
+        newdiv.style.position='absolute';
+        newdiv.style.left='-99999px';
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function() {
+                body_element.removeChild(newdiv);
+        },0);
+}
+function init() {
+        var elements = document.getElementsByClassName("urlunencode");
+        var len = elements.length
+        for (var i = 0 ; i < len; i++)
+        {
+          var original = elements[i].innerHTML;
+          elements[i].innerHTML = decodeURIComponent(original);
+          elements[i].getAttributeNode("oncopy").nodeValue = "replace(\""+original+"\");";
+        }
+
+}
+</script>
+
+<p class="ingress"> Vespa accepts unstructured human input and structured
+queries for application logic separately, then combines into a single data
+structure for executing on the search nodes. Human input is <a
+href="../reference/query-language-syntax.html">parsed heuristically</a>, while
+application queries are formulated in YQL.
+Storing the YQL query in query profiles allows for simple URLs executing
+complex queries. </p>
+
+<p class="ingress">This is the introductory documentation, for a list of
+available operations, refer to the <a href="yql-in-vespa.html">integration
+document</a>.</p>
+
+<h1 id="yql101">YQL 101</h1>
+
+<p>YQL is a SQL-like language intended to be Yahoo's unified search language
+independent of backend type. Vespa's native features are made accessible
+through custom functions. A simple search URL may look like this:</p>
+
+<pre>
+http://myhost.mydomain.com:8080/search/?yql=select%20%2A%20from%20sources%20%2A%20where%20text%20contains%20%22blues%22%3B
+</pre>
+
+<p>
+In other words, the parameter “yql” contains the string:
+</p>
+
+<pre class="urlunencode" oncopy="">select%20%2A%20from%20sources%20%2A%20where%20text%20contains%20%22blues%22%3B</pre>
+
+<p>This is a search for all documents where the field named “text” contains the
+word “blues”. The match type is determined by the <a
+href="../reference/search-definitions.html">search definition</a>.</p>
+
+<p>Do note the need to URL quote the terminating semicolon, this is a common
+source of mistakes.</p>
+
+<h1 id="combining_user_queries_with_yql">Combining User Queries with YQL</h1>
+
+<p>If separating the application query and the human input is to be useful,
+there has to be some way of combining them back together. This is currently
+done using the function “userQuery()”. This function evaluates to the
+parsed user query, i.e. the HTTP API parameter named “query” (including
+the “filter” part, if this is available.</p>
+
+<pre>http://myhost.mydomain.com:8080/search/?query=abc%20def%20-ghi&type=all&yql=select%20%2A%20from%20sources%20%2A%20where%20vendor%20contains%20%22brick%20and%20mortar%22%20AND%20price%20%3C%2050%20AND%20userQuery%28%29%3B</pre>
+
+<p>To break down that URL to its separate arguments:</p>
+
+<dl>
+<dt>query</dt>
+    <dd>abc def -ghi</dd>
+<dt>type</dt>
+    <dd>all</dd>
+<dt>yql</dt>
+    <dd>select * from sources * where vendor contains "brick and mortar" AND price &lt; 50 AND userQuery();</dd>
+</dl>
+
+<p>The above example will in other words evaluate to a query where the numeric
+field “price” must have a value lower than 50, “vendor” must match the term
+“brick and mortar”, <i>and</i> the default index must contain the two terms
+“abc” and “def” while <i>not</i> containing the term “ghi”. The spaces in the
+vendor term will not be used to split this into several new terms by YQL. The
+string specified by the search will be used. Query transformers may convert the
+string at a later stage, but it is not necessary to do anything “special” to
+create a search term containing arbitrary characters.</p>
+
+<h1 id="yql_in_query_profiles">YQL in Query Profiles</h1>
+
+<p>It should by now be quite clear that YQL requires a large amount of quoting
+to be included in a URL. Since YQL is well suited to application logic, while
+not being intended for end users, a solution to this is storing the
+application's YQL queries into different <a href="../query-profiles.html">query
+profiles</a>.</p>
+
+<p>To create a new default query profile for an application, create the
+following file named “default.xml” and in the directory “query-profiles” in your
+application:</p>
+
+<pre>
+&lt;query-profile id="default"&gt;
+  &lt;field name="yql"&gt;select * from sources * where default contains "latest" or userQuery();&lt;/field&gt;
+&lt;/query-profile&gt;
+</pre>
+
+<p>This will add “latest” as an “OR term” to all queries not having an explicit
+query profile parameter. The important thing to note is how it is not necessary
+to URL quote anything in the query profiles files. They operate independently
+of the HTTP parsing as such.</p>
+
+<h1 id="search">Search Specific Operators</h1>
+
+<p>YQL has no native definition of e.g. phrase matching. Here the Vespa
+integration uses a function:</p>
+
+<pre class="urlunencode" oncopy="">select%20%2A%20from%20sources%20%2A%20where%20text%20contains%20phrase%28%22st%22%2C%20%22louis%22%2C%20%22blues%22%29%3B</pre>
+
+<p>Other Vespa specific search operators, like “wand” is expressed using
+functions as well.</p>
+
+<p>It may be necessary to pass along extra information about a
+search term, for instance when specifying a term should not be stemmed
+before matching. This is done by using YQL annotations:<p>
+
+<pre class="urlunencode" oncopy="">select%20%2A%20from%20sources%20%2A%20where%20text%20contains%20%28%5B%7B%22stem%22%3A%20false%7D%5D%22blues%22%29%3B</pre>
+
+<p> The reference document for the <a href="yql-in-vespa.html">YQL Vespa
+integration</a> gives the exhaustive list of functions and annotations supported
+by Vespa. </p>
+
+<h1 id="converting_to_yql">Converting Queries to YQL</h1>
+
+<p>When converting logic expressed in any of the other query languages, it is
+not necessary to do this manually. Simply run the queries in question through
+your container instance while setting the parameter “<a
+href="../reference/search-api.html#tracelevel">tracelevel</a>” to 2 or higher.
+Then the parsed query expressed as YQL+ will be available in the trace info.</p>
+
+<p>It is also possible to do this programmatically, using the instance method
+<code>com.yahoo.search.Query.yqlRepresentation()</code> in the search API of the
+container.</p>
+
+<script>
+window.onload=init();
+</script>
+</body>
+</html>

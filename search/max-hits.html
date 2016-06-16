@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="Nov 2015" />
+  <meta name="authors"    content="bergum" />
+<title>Configuring maximum hits and maximum offset for search</title>
+</head>
+
+<body>
+<p class="ingress">Vespa search has by default limitations on how many hits you can request (maxHits) and how deep in the result set you can paginate (maxOffset).</p>
+
+<h2>Configure maxHits and maxOffset</h2>
+Add a <a href="../query-profiles.html">query profile</a> named <i>default</i> saved as <i>default.xml</i> in your <i>search/query-profiles/</i> directory of your application package with the following contents
+<pre>
+&lt;query-profile id="default"&gt;
+  &lt;field name="maxHits"&gt;10&lt;/field&gt;
+  &lt;field name="maxOffset"&gt;1000&lt;/field&gt;
+&lt;/query-profile&gt;
+</pre>
+<p>re-deploy and enjoy the new limits. Note that increasing the number of hits and offset allowed will increase cpu and network usage.</p>
+</body>
+</html>

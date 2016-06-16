@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Inspecting structured data in a Searcher</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2013" />
+  <meta name="authors" content="arnej" />
+</head>
+
+<body>
+
+<p class="ingress">
+The
+<a href="../javadoc/index.html?com/yahoo/data/access/package-summary.html">
+Data Access API
+</a>
+is used to access structured data (rank features, summary features, arrays and
+weighted sets).
+</p>
+
+<h1 id="usecase1">Use Case: Summary Features</h1>
+
+<p>
+A simple searcher example accessing the
+<a href="../ranking.html#summary-features">summary features</a> looks like this:
+
+<pre class="code">
+import com.yahoo.search.*;
+import com.yahoo.search.result.*;
+import com.yahoo.search.searchchain.*;
+import com.yahoo.data.access.*;
+
+@After(PhaseNames.TRANSFORMED_QUERY)
+@Before(PhaseNames.BLENDED_RESULT)
+public class SimpleTestSearcher extends Searcher {
+
+    public Result search(Query query, Execution execution) {
+        Result r = execution.search(query);
+        execution.fill(r);
+        for (Hit hit : r.hits().asList()) {
+            if (hit.isMeta()) continue;
+            Object o = hit.getField("summaryfeatures");
+            if (o instanceof Inspectable) {
+                Inspectable summaryfeatures = (Inspectable) o;
+                Inspector obj = summaryfeatures.inspect();
+                if (obj.field("fieldMatch(title)").asDouble(0.0) &gt; 0.85) {
+                        hit.setField("goodmatch", "good title");
+                }
+                if (obj.field("fieldMatch(title)").asDouble(0.0) &gt; 0.95) {
+                        hit.setField("goodmatch", "super good title");
+                }
+                if (obj.field("attribute(quality)").asDouble(0.0) &gt; 0.4) {
+                        hit.setField("qualitysource", "good quality");
+                }
+                if (obj.field("attribute(quality)").asDouble(0.0) &gt; 0.9) {
+                        hit.setField("qualitysource", "super good quality");
+                }
+                hit.removeField("summaryfeatures");
+            }
+        }
+        return r;
+    }
+
+}
+</pre>
+
+Here, the searcher processes all hits and looks at the summary features to
+determine their quality in several ways.  (A real example would probably
+use other ranking features and much more complicated logic, of course).
+
+The Object returned when getting the "summaryfeatures" implements the
+<a href="../javadoc/index.html?com/yahoo/data/access/Inspectable.html">
+com.yahoo.data.access.Inspectable</a> interface.  The actual data access
+API that you will use is the
+<a href="../javadoc/index.html?com/yahoo/data/access/Inspector.html">
+com.yahoo.data.access.Inspector</a>, which can be used to access all
+sorts of structured data.
+
+In the case of "summaryfeatures" the top-level value is always a simple
+struct (with <code>type() == Type.OBJECT</code>) with each ranking feature
+as a double-valued field.
+
+Note the use of the <code>asDouble</code> function with a supplied default
+value; this ensures that if the ranking feature for some reason is unavailable,
+we get sensible default behavior instead of getting an exception.  If getting
+the correct data is crucial you may want the exception and handle that
+instead, of course.
+
+<h1 id="usecase2">Use Case: accessing array attributes</h1>
+
+The following illustrates accessing some field that is of array type:
+
+<pre class="code">
+import com.yahoo.search.*;
+import com.yahoo.search.result.*;
+import com.yahoo.search.searchchain.*;
+import com.yahoo.data.access.*;
+
+@After(PhaseNames.TRANSFORMED_QUERY)
+@Before(PhaseNames.BLENDED_RESULT)
+public class SimpleTestSearcher extends Searcher {
+
+    public Result search(Query query, Execution execution) {
+        Result r = execution.search(query);
+        execution.fill(r);
+        for (Hit hit : r.hits().asList()) {
+            if (hit.isMeta()) continue;
+            Object o = hit.getField("titles");
+            if (o instanceof Inspectable) {
+                StringBuilder pasteBuf = new StringBuilder();
+                Inspectable field = (Inspectable) o;
+                Inspector arr = field.inspect();
+                for (int i = 0; i &lt; arr.entryCount(); i++) {
+                    pasteBuf.append(arr.entry(i).asString(""));
+                    if (i+1 &lt; arr.entryCount()) {
+                        pasteBuf.append(", ");
+                    }
+                }
+                hit.setField("titles", pasteBuf.toString());
+            }
+        }
+        return r;
+    }
+}
+</pre>
+
+Here we assume there is a field in our search definition like this:
+<pre class="code">
+    field titles type array<string> {
+        indexing: attribute | summary
+    }
+</pre>
+
+Again we process each hit, this time traversing the array and
+building a string which contains all the titles, transforming
+a field looking like this in a vespafeeder XML input:
+
+<pre class="code">
+&lt;titles&gt;
+  &lt;item&gt;Bond&lt;/item&gt;
+  &lt;item&gt;James Bond&lt;/item&gt;
+&lt;titles&gt;
+</pre>
+into this output:
+<pre class="code">
+&lt;field name="titles"&gt;Bond, James Bond&lt;/field&gt;
+</pre>
+
+<h1 id="usecase3">Use Case: accessing weighted set attributes</h1>
+
+The following example illustrates accessing data held in a weighted set.
+
+Note that the Data Access API doesn't have a "set" or "weighted set"
+concept; the weighted set is represented as an unordered array of objects
+where each object has an "item" and a "weight" field.  The weight is a
+long integer value, while the item type will vary according to the field
+type as declared in the search definition.
+
+<pre class="code">
+import com.yahoo.search.*;
+import com.yahoo.search.result.*;
+import com.yahoo.search.searchchain.*;
+import com.yahoo.data.access.*;
+
+@After(PhaseNames.TRANSFORMED_QUERY)
+@Before(PhaseNames.BLENDED_RESULT)
+public class SimpleTestSearcher extends Searcher {
+
+    public Result search(Query query, Execution execution) {
+        Result r = execution.search(query);
+        execution.fill(r);
+        for (Hit hit : r.hits().asList()) {
+            processHit(hit);
+        }
+        return r;
+    }
+
+    void processHit(Hit hit) {
+        if (hit.isMeta()) return;
+        Object o = hit.getField("titles");
+        if (o instanceof Inspectable) {
+            StringBuilder pasteBuf = new StringBuilder();
+            Inspectable field = (Inspectable) o;
+            Inspector arr = field.inspect();
+            for (int i = 0; i &lt; arr.entryCount(); i++) {
+                String sval = arr.entry(i).field("item").asString("");
+                long weight = arr.entry(i).field("weight").asLong(0);
+                pasteBuf.append("title: ");
+                pasteBuf.append(sval);
+                pasteBuf.append("[");
+                pasteBuf.append(weight);
+                pasteBuf.append("]");
+                if (i+1 &lt; arr.entryCount()) {
+                    pasteBuf.append(", ");
+                }
+            }
+            hit.setField("alternates", pasteBuf.toString());
+        }
+    }
+
+}
+</pre>
+
+Here we assume there is a field in our search definition like this:
+<pre class="code">
+    field titles type weightedset<string> {
+        indexing: attribute | summary
+    }
+</pre>
+
+Again we process each hit, and format each element of the weighted
+set, transforming this vespafeeder input:
+<pre class="code">
+&lt;titles&gt;
+  &lt;item weight='15'&gt;Bond&lt;/item&gt;
+  &lt;item weight='89'&gt;James Bond&lt;/item&gt;
+&lt;titles&gt;
+</pre>
+into this (default template) output:
+<pre class="code">
+&lt;field name="alias"&gt;title: James Bond[89], title: Bond[15]&lt;/field&gt;
+</pre>
+
+</body>
+</html>

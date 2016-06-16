@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Weighted Set Query Term</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2011" />
+  <meta name="authors" content="arnej, havardpe" />
+</head>
+
+<body>
+
+<p class="ingress">
+<a href="#what-is">WeightedSetItem</a> is a query term available in
+the container that can be used to search for a collection of tokens
+with individual weights.  It has similar semantics to EQUIV, since it
+acts as a single term in the query.  However, the restriction
+dictating that it contains a collection of weighted tokens directy
+enables specific back-end optimizations that improves performance for
+large sets of tokens compared to using the generic EQUIV or OR
+operators.
+</p>
+
+
+
+<h1 id="usecase">Use Case</h1>
+
+<p>
+The actual use cases for this feature are for limiting the search
+result to documents with specific properties that can have a large
+number of distinct values.  Some concrete use cases are:
+</p>
+
+<ul>
+  <li>We know who the user is, and want to restrict to documents
+      written by one of the user's friends</li>
+  <li>We have the topic area the user is interested in, and want to
+      restrict to the top-ranked authors for this topic</li>
+  <li>We have recorded the documents that have been clicked by users
+      in the last 10 minutes, and want to search only in these</li>
+</ul>
+
+<p>
+Note that in most actual use cases the field we are searching in is
+some sort of user ID, topic ID, group ID, or document ID and can often
+be modeled as a number &ndash; usually in a field of
+type <code>long</code> (or <code>array&lt;long&gt;</code> if multiple
+values are needed).  If a string field is used, it will usually also
+be some sort of ID; if you have data in a string field intended for
+searching with WeightedSetItem then using <code>match: word</code> for
+that field is recommended.
+</p>
+
+
+
+<h1 id="activate">How to Introduce WeightedSetItem terms in Your Application</h1>
+
+<p>
+The decision to use a <code>WeightedSetItem</code> must be taken by
+application-specific logic.  This must be in the form of a QRS plugin
+where the query object can be manipulated as follows:
+</p>
+
+<ul>
+  <li>Decide if <code>WeightedSetItem</code> should be used</li>
+  <li>Create a new <code>WeightedSetItem</code> for the field you want
+      to use as filter</li>
+  <li>Find the tokens and optionally weights to insert into the
+      set</li>
+  <li>Combine new <code>WeightedSetItem</code> with the original query
+      by using an <code>AndItem</code></li>
+</ul>
+
+<p>
+Here is a simple code example adding a hardcoded filter containing 10
+tokens:
+</p>
+
+<pre class="brush: java">
+private Result hardCoded(Query query, Execution execution) {
+    WeightedSetItem filter = new WeightedSetItem(&quot;author&quot;);
+    filter.addToken(&quot;magazine1&quot;, 2);
+    filter.addToken(&quot;magazine2&quot;, 2);
+    filter.addToken(&quot;magazine3&quot;, 2);
+    filter.addToken(&quot;tv&quot;, 3);
+    filter.addToken(&quot;tabloid1&quot;, 1);
+    filter.addToken(&quot;tabloid2&quot;, 1);
+    filter.addToken(&quot;tabloid3&quot;, 1);
+    filter.addToken(&quot;tabloid4&quot;, 1);
+    filter.addToken(&quot;tabloid5&quot;, 1);
+    filter.addToken(&quot;tabloid6&quot;, 1);
+    QueryTree tree = query.getModel().getQueryTree();
+    Item oldroot = tree.getRoot();
+    AndItem newtop = new AndItem();
+    newtop.addItem(oldroot);
+    newtop.addItem(filter);
+    tree.setRoot(newtop);
+    query.trace(&quot;FriendFilterSearcher added hardcoded filter: &quot;, true, 2);
+    return execution.search(query);
+}
+</pre>
+
+<p>
+The biggest challenge here is finding the tokens to insert; normally
+the incoming search request URL should not contain all the tokens
+directly.  For example, the search request could contain the user id
+and a lookup (in a database or a Vespa index) would fetch the friends
+list.
+</p>
+
+<p>
+Since the tokens are inserted directly into the query without going
+through the normal QRS query parsing and query handling, they won't be
+subject to transforms such as lowercasing, stemming, or phrase
+generation.  This means that if the field is a string field you'll
+need to insert lowercased tokens only, and only single tokens in the
+index can be matched.
+</p>
+
+<p>
+For more real-world examples on how the code might look there is a
+<a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/weightedsetterm/WeightedSetTermTester.java?view=markup">
+detailed code example
+</a>
+from the system test in the source code repository and there is
+<a href="../javadoc/index.html?com/yahoo/prelude/query/WeightedSetItem.html">
+container javadoc
+</a> available.
+</p>
+
+</body>
+</html>

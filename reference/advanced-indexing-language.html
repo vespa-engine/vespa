@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html>
+  <head>
+    <title>Indexing language expressions</title>
+    <link rel="stylesheet" type="text/css"
+          href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+    <meta name="date"       content="November 2010" />
+    <meta name="authors"    content="simon" />
+  </head>
+  <body>
+    <p>
+      This document explains the
+      Vespa <a href="../indexing-language.html">indexing language</a>
+      (IL) in detail. It is meant for users who need the more advanced features
+      of IL, or wants to know how it actually works.
+
+      If even more complex processing of input data is required, consider
+      implementing a custom
+      <a href="../search/docproc-development.html">document
+      processor</a>.
+    </p>
+    <p>
+      Indexing language behaves analogous to UNIX pipes, in that data
+      (the <em>execution value</em>) flows from one expression to the next as
+      long as they are deliminated by the expression separator (the pipe
+      character). Also, no execution value crosses the statement separator (the
+      semicolon). If you need to pass values from one statement to another, use
+      the <code>set_var</code> and <code>get_var</code> expressions.
+    </p>
+
+    <h1 id="script">Indexing script</h1>
+    <p>
+      An indexing script is a sequence of <a href="#statement">indexing
+      statements</a> separated by a semicolon (<code>;</code>). A script is
+      executed statement-by-statement, in order, one document at a time.
+    </p>
+    <p>
+      Vespa derives one indexing script per search cluster based on the search
+      definitions assigned to that cluster. As a document is fed to a search
+      cluster, it passes through the corresponding
+      <a href="indexingcluster.html">indexing cluster</a>, which runs the
+      document through its indexing script.
+    </p>
+    <p>
+      You can examine the indexing script generated for a specific search
+      cluster by retrieving the configuration of the indexing document
+      processor.
+    </p>
+    <pre class="code">
+$ getvespaconfig -i search/cluster.&lt;cluster-name&gt; -n vespa.configdefinition.ilscripts</pre>
+    <p>
+      The current <em>execution value</em> is set to <code>null</code> prior to
+      executing a statement.
+    </p>
+
+    <h1 id="statement">Indexing statement</h1>
+    <p>
+      An indexing statement is a sequence of <a href="#expression">indexing
+      expressions</a> separated by a pipe (<code>|</code>). A statement is
+      executed expression-by-expression, in order.
+    </p>
+    <p>
+      Within a statement, the execution value is passed from one expression to
+      the next.
+    </p>
+    <p>
+      The simplest of statements passes the value of an input field into an
+      attribute:
+    </p>
+    <pre class="code">
+input year | attribute year;</pre>
+    <p>
+      The above statement consists of 2 expressions; <code>input year</code> and
+      <code>attribute year</code>. The former sets the execution value to the
+      value of the "year" field of the input document. The latter writes the
+      current execution value into the attribute "year".
+    </p>
+
+    <h1 id="expression">Indexing expression</h1>
+    <h2 id="primitive">Primitives</h2>
+    <p>
+      A string or numeric literal can be used as an expression to explicitly
+      set the execution value (e.g. <code>"foo"</code> or <code>69</code>).
+    </p>
+
+    <h2 id="output">Outputs</h2>
+    <p>
+      An output expression is an expression that writes the current execution
+      value to a document field. These expressions also double as the indicator
+      for the type of field to construct (i.e. attribute, index or summary). It
+      is important to note that you <u>can not</u> assign different values to
+      the same field in a single document (e.g. <code>attribute | lower_case |
+      index</code> is <u>illegal</u> and will not deploy).
+    </p>
+
+    <table>
+      <tr>
+        <th>Expression</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><code>attribute</code></td>
+        <td>
+          Writes the execution value to the current field. During deployment,
+          this indicates that the field should be stored as an attribute.
+        </td>
+      </tr>
+      <tr>
+        <td><code>index</code></td>
+        <td>
+          Writes the execution value to the current field. During deployment,
+          this indicates that the field should be stored as an index field.
+        </td>
+      </tr>
+      <tr>
+        <td><code>summary</code></td>
+        <td>
+          Writes the execution value to the current field. During deployment,
+          this indicates that the field should be included in the document
+          summary.
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="arithmetic">Arithmetics</h2>
+    <p>
+      Indexing statements can contain any combination of arithmetic operations,
+      as long as the operands are numeric values. In case you need to convert
+      from string to numeric, or convert from one numeric type to another, use
+      the applicable <a href="#converter">converter</a> expression. The
+      supported arithmetic operators are:
+    </p>
+    <table>
+      <tr>
+        <th>Operator</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; + &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the result of adding of the execution
+          value of the <code>lhs</code> expression with that of
+          the <code>rhs</code> expression.
+        </td>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; - &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the result of subtracting of the execution
+          value of the <code>lhs</code> expression with that of
+          the <code>rhs</code> expression.
+        </td>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; * &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the result of multiplying of the execution
+          value of the <code>lhs</code> expression with that of
+          the <code>rhs</code> expression.
+        </td>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; / &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the result of dividing of the execution
+          value of the <code>lhs</code> expression with that of
+          the <code>rhs</code> expression.
+        </td>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; % &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the remainder of dividing the execution
+          value of the <code>lhs</code> expression with that of
+          the <code>rhs</code> expression.
+        </td>
+      </tr>
+      <tr>
+        <td><code>&lt;lhs&gt; . &lt;rhs&gt;</code></td>
+        <td>
+          Sets the execution value to the concatenation of the execution value
+          of the <code>lhs</code> expression with that of the <code>rhs</code>
+          expression. If <em>both</em> <code>lhs</code> and <code>rhs</code> are
+          collection types, this operator will append <code>rhs</code>
+          to <code>lhs</code> (if any operand is null, it is treated as an empty
+          collection). If not, this operator concatenates the string
+          representations of <code>lhs</code> and <code>rhs</code> (if any
+          operand is null, the result is null).
+        </td>
+      </tr>
+    </table>
+    <p id="parenthesis">
+      You may use parenthesis to declare precedence of execution (e.g. <code>(1
+      + 2) * 3</code>). This also works for more advanced array concatenation
+      statements such as <code>(input str_a | split ',') . (input str_b | split
+      ',') | index arr</code>.
+    </p>
+
+    <h2 id="converter">Converters</h2>
+    <p>
+      There are several expressions that allow you to convert from one data type
+      to another. These are often used within a <code>for_each</code> to convert
+      e.g. an array of strings to an array of integers.
+    </p>
+    <table>
+      <tr>
+        <th>Converter</th>
+        <th>Input</th>
+        <th>Output</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><code>to_array</code></td>
+        <td>Any</td>
+        <td>Array&lt;inputType&gt;</td>
+        <td>Converts the execution value to a single-element array.</td>
+      </tr>
+      <tr>
+        <td><code>to_byte</code></td>
+        <td>Any</td>
+        <td>Byte</td>
+        <td>
+          Converts the execution value to a byte. This will throw a
+          NumberFormatException if the string representation of the execution
+          value does not contain a parsable number.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_double</code></td>
+        <td>Any</td>
+        <td>Double</td>
+        <td>
+          Converts the execution value to a double. This will throw a
+          NumberFormatException if the string representation of the execution
+          value does not contain a parsable number.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_float</code></td>
+        <td>Any</td>
+        <td>Float</td>
+        <td>
+          Converts the execution value to a float. This will throw a
+          NumberFormatException if the string representation of the execution
+          value does not contain a parsable number.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_int</code></td>
+        <td>Any</td>
+        <td>Integer</td>
+        <td>
+          Converts the execution value to an int. This will throw a
+          NumberFormatException if the string representation of the execution
+          value does not contain a parsable number.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_long</code></td>
+        <td>Any</td>
+        <td>Long</td>
+        <td>
+          Converts the execution value to a long. This will throw a
+          NumberFormatException if the string representation of the execution
+          value does not contain a parsable number.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_pos</code></td>
+        <td>String</td>
+        <td>Position</td>
+        <td>
+          Converts the execution value to a position struct. The input format
+          must be either a) <code>[N|S]&lt;val&gt;;[E|W]&lt;val&gt;</code>, or
+          b) <code>x;y</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>to_string</code></td>
+        <td>Any</td>
+        <td>String</td>
+        <td>Converts the execution value to a string.</td>
+      </tr>
+      <tr>
+        <td><code>to_uri</code></td>
+        <td>String</td>
+        <td>Uri</td>
+        <td>Converts the execution value to a URI struct</td>
+      </tr>
+      <tr>
+        <td><code>to_wset</code></td>
+        <td>Any</td>
+        <td>WeightedSet&lt;inputType&gt;</td>
+        <td>
+          Converts the execution value to a single-element weighted set with
+          default weight.
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="other">Other expressions</h2>
+    <p>
+      The following are the unclassified expressions available:
+    </p>
+    <table>
+      <tr>
+        <th>Expression</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><code>attribute &lt;fieldName&gt;</code></td>
+        <td>Writes the execution value to the named attribute field.</td>
+      </tr>
+      <tr>
+        <td><code>base64decode</code></td>
+        <td>
+          If the execution value is a string, it is base-64 decoded to a long
+          integer. If it is not a string, the execution value is set
+          to <code>Long.MIN_VALUE</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>base64encode</code></td>
+        <td>
+          If the execution value is a long integer, it is base-64 encoded to a
+          string. If it is not a long integer, the execution value is set
+          to <code>null</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>echo</code></td>
+        <td>
+	  Prints the execution value to standard output, for debug purposes.
+        </td>
+      </tr>
+      <tr>
+        <td><code>flatten</code></td>
+        <td>
+          Sets the execution value to a new string which is the current value
+          with all linguistic annotations written into the string itself. This
+          is useful for testing various tokenization settings on a field.
+        </td>
+      </tr>
+      <tr>
+        <td><code>for_each { &lt;script&gt; }</code></td>
+        <td>
+          Executes the given indexing script for each element in the execution
+          value. Here, element refers to each element in a collection, or each
+          field value in a struct.
+        </td>
+      </tr>
+      <tr>
+        <td><code>get_field &lt;fieldName&gt;</code></td>
+        <td>
+          Retrieves the value of the named field from the execution value (which
+          needs to be either a document or a struct), and sets it as the new
+          execution value.
+        </td>
+      </tr>
+      <tr>
+        <td><code>get_var &lt;varName&gt;</code></td>
+        <td>
+          Retrieves the value of the named variable from the execution context
+          and sets it as the execution value. Note that variables are scoped to
+          the indexing script of the current field.
+        </td>
+      </tr>
+      <tr>
+        <td><code>hex_decode</code></td>
+        <td>
+          If the execution value is a string, it is parsed as a long integer in
+          base-16. If it is not a string, the execution value is set
+          to <code>Long.MIN_VALUE</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>hex_encode</code></td>
+        <td>
+          If the execution value is a long integer, it is converted to a string
+          representation of an unsigned integer in base-16. If it is not a long
+          integer, the execution value is set to <code>null</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>hostname</code></td>
+        <td>
+          Sets the execution value to the name of the host computer.
+        </td>
+      </tr>
+      <tr>
+        <td><code>
+            if&nbsp;(&lt;lhs&gt;&nbsp;&lt;cmp&gt;&nbsp;&lt;rhs&gt;)&nbsp;{<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&lt;trueScript&gt;<br />
+            }<br />
+            [&nbsp;else&nbsp;{&nbsp;&lt;falseScript&gt;&nbsp;}&nbsp;]
+        </code></td>
+        <td>
+          Executes the <code>trueScript</code> if the conditional evaluates to
+          true, or the <code>falseScript</code> if it evaluates to false. If
+          either <code>lhs</code> or <code>rhs</code> is null, no expression is
+          executed.
+        </td>
+      </tr>
+      <tr>
+        <td><code>index &lt;fieldName&gt;</code></td>
+        <td>Writes the execution value to the named index field.</td>
+      </tr>
+      <tr>
+        <td><code>input &lt;fieldName&gt;</code></td>
+        <td>
+          Retrieves the value of the named field from the document and sets it
+          as the execution value. The field name may contain '.' characters to
+          retrieve nested struct fields.
+        </td>
+      </tr>
+      <tr>
+        <td><code>join "&lt;delim&gt;"</code></td>
+        <td>
+          Creates a single string by concatenating the string representation of
+          each array element of the execution value. This function is useful
+          for indexing data from a multi-value field into a single-value field.
+        </td>
+      </tr>
+      <tr>
+        <td><code>lowercase</code></td>
+        <td>Lowercases all the strings in the execution value.</td>
+      </tr>
+      <tr>
+        <td><code>ngram &lt;size&gt;</code></td>
+        <td>
+          Adds ngram annotations to all strings in the execution value.
+        </td>
+      </tr>
+      <tr>
+        <td><code>normalize</code></td>
+        <td>
+          Performs accent normalization on the input data (see
+          <a href="#normalize">normalization table</a>).
+          The corresponding query command for this function is
+          <code>normalize</code>.
+        </td>
+      </tr>
+      <tr>
+        <td><code>now</code></td>
+        <td>
+	  Outputs the current system clock time as a UNIX timestamp,
+	  i.e. seconds since 0 hours, 0 minutes, 0 seconds, January 1, 1970,
+	  Coordinated Universal Time (Epoch).
+        </td>
+      </tr>
+      <tr>
+        <td><code>random [ &lt;max&gt; ]</code></td>
+        <td>
+	  Returns a random integer value. Lowest value is 0 and the highest
+	  value is determined either by the argument or, if no argument is
+	  given, the execution value.
+        </td>
+      </tr>
+      <tr>
+        <td><code>
+            select_input&nbsp;{ <br />
+            (&nbsp;case&nbsp;&lt;fieldName&gt;:&nbsp;&lt;statement&gt;;&nbsp;)* <br />
+            }
+        </code></td>
+        <td>
+          Performs the statement that corresponds to the <strong>first</strong> named
+          field that is not empty (see <a href="#select_input">example</a>).
+        </td>
+      </tr>
+      <tr>
+        <td><code>set_language</code></td>
+        <td>
+          Sets the language of this document to the string representation of the
+          execution value. Refer to <a href="../linguistics.html">
+          linguistics</a> for details.
+        </td>
+      </tr>
+      <tr>
+        <td><code>set_var &lt;varName&gt;</code></td>
+        <td>
+          Writes the execution value to the named variable. Note that variables
+          are scoped to the indexing script of the current field.
+        </td>
+      </tr>
+      <tr>
+        <td><code>slice &lt;from&gt; &lt;to&gt;</code></td>
+        <td>
+          Replaces all strings in the execution value by a substring of the
+	  respective value. The arguments are inclusive-from and
+	  exclusive-to. Both arguments are clamped during execution to avoid
+	  going out of bounds.
+        </td>
+      </tr>
+      <tr>
+        <td><code>split &lt;regex&gt;</code></td>
+        <td>
+          Splits the string representation of the execution value into a string
+          array using the given regex pattern. This function is useful for
+          creating multi-value fields such as an integer array out of a string
+          of comma-separated numbers.
+        </td>
+      </tr>
+      <tr>
+        <td><code>summary &lt;fieldName&gt;</code></td>
+        <td>Writes the execution value to the named summary field.</td>
+      </tr>
+      <tr>
+        <td><code>
+            switch&nbsp;{ <br />
+            (&nbsp;case&nbsp;'&lt;value&gt;':&nbsp;&lt;caseStatement&gt;;&nbsp;)* <br />
+            [&nbsp;default:&nbsp;&lt;defaultStatement&gt;;&nbsp;] <br />
+            }
+        </code></td>
+        <td>
+          Performs the statement of the case whose value matches the string
+          representation of the execution value (see
+          <a href="#switch">example</a>).
+        </td>
+      </tr>
+      <tr>
+        <td><code>tokenize [ normalize ] [ stem ]</code></td>
+        <td>
+          Adds linguistic annotations to all strings in the execution value. The
+          optional arguments are passed as parameters to libyell.
+          Argument <code>normalize</code> tells libyell to remove accents.
+          Argument <stem>stem</stem> tells libyell to perform SHORTEST stemming.
+        </td>
+      </tr>
+      <tr>
+        <td><code>trim</code></td>
+        <td>
+          Removes leading and trailing whitespace from all strings in the
+          execution value.
+        </td>
+      </tr>
+      <tr>
+        <td><code>uri</code></td>
+        <td>
+          Converts all strings in the execution value to an URI struct. If a
+          string could not be converted, it is removed.
+        </td>
+      </tr>
+    </table>
+
+    <h1 id="select_input">Select_input example</h1>
+    <p>
+      The <code>select_input</code> expression is used to choose a statement to
+      execute based on which fields are non-empty in the input document.
+    </p>
+    <pre class="code">
+select_input {
+CX:   input CX | set_var CX;
+CA:   input CA . " " . input CB | set_var CX;
+}</pre>
+    <p>
+      This statement executes <code>input CX | set_var CX;</code> unless CX is
+      empty. If so, it will execute <code>input CA . " " . input CB | set_var
+      CX;</code> unless CA is empty.
+    </p>
+
+    <h1 id="switch">Switch example</h1>
+    <p>
+      The switch-expression behaves similarly to the switch-statement in other
+      programming languages. Each case in the switch-expression consists of a
+      string and a statement. The execution value is compared the each string,
+      and if there is a match, the corresponding statement is executed. An
+      optional default operation (designated by <code>default:</code>) can be
+      added to the end of the switch.
+    </p>
+    <pre class="code">
+input mt | switch {
+case "audio": input fa | index;
+case "video": input fv | index;
+default: 0 | index;
+};</pre>
+
+    <h1 id="normalize">Normalization table</h1>
+    <p>
+      This table shows how different characters are normalized when using
+      the <code>normalize</code> expression. All normalization preserves case.
+    </p>
+    <table>
+      <tr>
+        <td>à &#x21D2; a</td>
+        <td>ç &#x21D2; c</td>
+        <td>ð &#x21D2; d</td>
+        <td>ù &#x21D2; u</td>
+      </tr>
+      <tr>
+        <td>â &#x21D2; a</td>
+        <td>è &#x21D2; e</td>
+        <td>ñ &#x21D2; n</td>
+        <td>ú &#x21D2; u</td>
+      </tr>
+      <tr>
+        <td>á &#x21D2; a</td>
+        <td>é &#x21D2; e</td>
+        <td>ò &#x21D2; o</td>
+        <td>û &#x21D2; u</td>
+      </tr>
+      <tr>
+        <td>ã &#x21D2; a</td>
+        <td>ê &#x21D2; e</td>
+        <td>ó &#x21D2; o</td>
+        <td>ü &#x21D2; ue</td>
+      </tr>
+      <tr>
+        <td>ä &#x21D2; ae</td>
+        <td>ë &#x21D2; e</td>
+        <td>ô &#x21D2; o</td>
+        <td>&#xFD; &#x21D2; y</td>
+      </tr>
+      <tr>
+        <td>å &#x21D2; aa</td>
+        <td>ì &#x21D2; i</td>
+        <td>õ &#x21D2; o</td>
+        <td>ÿ &#x21D2; y</td>
+      </tr>
+      <tr>
+        <td>æ &#x21D2; ae</td>
+        <td>í &#x21D2; i</td>
+        <td>ö &#x21D2; oe</td>
+        <td>ß &#x21D2; ss</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>î &#x21D2; i</td>
+        <td>ø &#x21D2; oe</td>
+        <td>&#xFE; &#x21D2; th</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>ï &#x21D2; i</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </table>
+
+  </body>
+</html>

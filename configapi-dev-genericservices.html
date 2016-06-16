@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Cloud config generic services</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2011" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+<p class="ingress">
+This document explains the generic services mechanism in cloud config, and how
+it can be used for prototyping and configure simple applications.
+</p>
+
+<h1 id="developing">Cloud config generic services</h1>
+
+<p>
+Generic services is a term used a specific syntax in the
+<code>services.xml</code> that is completely generic and allows to configure an
+application by refering to the config definition fields direclty. Using generic
+services is only recommended for small applications containing only a single
+config with a few fields. For more advanced configs, we recommend writing a
+<a href="cloudconfig/cloudconfig-model-plugins.html">config model plugin</a> instead.
+</p>
+
+<p>
+The rest of this document will give some examples of configuring an example
+application using generic services syntax.
+</p>
+
+<h2 id="running-single-service">Running a single service on a single host</h2>
+<p>To define our service (motd) to run on a host, the following services file
+can is defined:</p>
+<pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+
+    &lt;admin version=&quot;2.0&quot;&gt;
+        &lt;adminserver hostalias=&quot;node0&quot; /&gt;
+    &lt;/admin&gt;
+
+    &lt;service name=&quot;motdserver&quot; command=&quot;$VESPA_ROOT/sbin/motdserver&quot;&gt;
+        &lt;config name=&quot;myproject.motd&quot; version=&quot;2&quot;&gt;
+           &lt;port&gt;12345&lt;/port&gt;
+           &lt;message&gt;Hello, World C++&lt;/message&gt;
+        &lt;/config&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+    &lt;/service&gt;
+&lt;/services&gt;</pre>
+
+<p>
+Here, the name of the service (motdserver) and its path is given. When
+deployed and loaded into the config server, this model will generate the correct
+MotdConfig instance for the config id <code>motdserver/0</code>. You can
+use multiple configs within the service tag as well:
+</p>
+<pre>
+    &lt;service name=&quot;motdserver&quot; command=&quot;$VESPA_ROOT/sbin/motdserver&quot;&gt;
+        &lt;config name=&quot;namespace.motd&quot; version=&quot;2&quot;&gt;
+           &lt;port&gt;12345&lt;/port&gt;
+           &lt;message&gt;Hello, World C++&lt;/message&gt;
+        &lt;/config&gt;
+        &lt;config name=&quot;someotherconfig&quot; version=&quot;1&quot;&gt;
+           &lt;myfield&gt;foo&lt;/myfield&gt;
+        &lt;/config&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+    &lt;/service&gt;
+</pre>
+
+<h2 id="running-multiple-services">Running multiple services of the same type, but with different config</h2>
+
+<p>You can also run the same service with different config on the same or
+different hosts. To do that with generic services, you can specify different
+config on different host or use multiple service tags, as so:
+</p>
+<pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+
+    &lt;admin version=&quot;2.0&quot;&gt;
+        &lt;adminserver hostalias=&quot;node0&quot; /&gt;
+    &lt;/admin&gt;
+
+    &lt;service id=&quot;motd1&quot; name=&quot;motdserver1&quot; command=&quot;$VESPA_ROOT/sbin/motdserver&quot; version=&quot;1.0&quot;&gt;
+        &lt;config name=&quot;namespace.motd&quot;&gt;
+           &lt;port&gt;12345&lt;/port&gt;
+           &lt;message&gt;Hello From Service 0&lt;/message&gt;
+        &lt;/config&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+        &lt;node hostalias=&quot;node1&quot;&gt;
+          &lt;config name=&quot;namespace.motd&quot;&gt;
+             &lt;port&gt;12345&lt;/port&gt;
+             &lt;message&gt;Hello From Service 1&lt;/message&gt;
+          &lt;/config&gt;
+        &lt;/node&gt;
+    &lt;/service&gt;
+
+    &lt;service id=&quot;motd2&quot;name=&quot;motdserver2&quot; command=&quot;$VESPA_ROOT/sbin/motdserver&quot; version=&quot;1.0&quot;&gt;
+        &lt;config name=&quot;namespace.motd&quot; version=&quot;2&quot;&gt;
+           &lt;port&gt;12346&lt;/port&gt;
+           &lt;message&gt;Hello From Service 0, cluster 2&lt;/message&gt;
+        &lt;/config&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+    &lt;/service&gt;
+
+&lt;/services&gt;</pre>
+<p>
+The first service on cluster motdserver1 will get the config id <code>motd1/motdserver/0</code>,
+the second service will get config id <code>motd1/motdserver/1</code> while
+the service on motdserver2 cluster will get the config id
+<code>motd2/motdserver/0</code>. When defining multiple service tags, you have
+to specify an <code>id</code> attribute to get distinct clusters. If you have
+only one cluster, you can omit the id.
+The <a href="reference/config-files.html#configuration_format_in_services.xml">
+configuration file reference</a> describes generic configuration in more detail.
+</p>
+
+<h2 id="running-same-service">Running the same service with the same config on multiple hosts</h2>
+<p>
+A common use case in distributed systems is to run the same service on multiple
+nodes. To do that, the following config will run the motd server on 3 different
+hosts.
+</p>
+<pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
+&lt;services version=&quot;1.0&quot;&gt;
+
+    &lt;admin version=&quot;2.0&quot;&gt;
+        &lt;adminserver hostalias=&quot;node0&quot; /&gt;
+    &lt;/admin&gt;
+
+    &lt;service name=&quot;motdserver&quot; command=&quot;$VESPA_ROOT/sbin/motdserver&quot; version=&quot;1.0&quot;&gt;
+        &lt;config name=&quot;namespace.motd&quot; version=&quot;2&quot;&gt;
+           &lt;port&gt;12345&lt;/port&gt;
+           &lt;message&gt;Hello, World C++&lt;/message&gt;
+        &lt;/config&gt;
+        &lt;node hostalias=&quot;node0&quot;/&gt;
+        &lt;node hostalias=&quot;node1&quot;/&gt;
+        &lt;node hostalias=&quot;node2&quot;/&gt;
+    &lt;/service&gt;
+&lt;/services&gt;</pre>
+<p>
+This will run the motdserver on three different nodes, giving them three
+different config ids: <code>service/motdserver/0</code>,
+<code>service/motdserver/1</code> and <code>service/motdserver/2</code>.
+</p>
+
+<h2 id="nesting">Nested modules and custom config</h2>
+
+<p>
+To support a more generic way of configuring complex components using generic
+services, you can use the <code>module</code> tag:
+</p>
+
+<pre class="code">
+&lt;services version=&quot;1.0&quot;&gt;
+  &lt;service name=&quot;myapp&quot; command=&quot;$VESPA_ROOT/bin/myapp&quot; version=&quot;1.0&quot;&gt;
+      &lt;module name=&quot;mod1&quot;&gt;
+          &lt;config name=&quot;foo&quot;&gt;
+              &lt;field&gt;value1&lt;/field&gt;
+          &lt;/config&gt;
+      &lt;/module&gt;
+      &lt;module name=&quot;mod2&quot;&gt;
+          &lt;config name=&quot;foo&quot;&gt;
+              &lt;field&gt;value2&lt;/field&gt;
+          &lt;/config&gt;
+      &lt;/module&gt;
+      &lt;node hostalias=&quot;storage0&quot;/&gt;
+  &lt;/service&gt;
+
+&lt;/services&gt;
+</pre>
+
+<p>
+This will allow you to subscribe to multiple instances of the same config within
+the same process. This example will allow you to subscribe for config foo, with
+the config ids, &quot;service/myapp/0/mod1&quot; and &quot;service/myapp/0/mod2&quot;.
+</p>
+
+</body>
+</html>

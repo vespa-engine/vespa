@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+ <title>Partial Updates</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="May 2011" />
+  <meta name="authors" content="musum" />
+</head>
+
+<body>
+
+<p class="ingress">
+When feeding documents to Vespa it is possible to update only parts of
+already existing documents without re-feeding the complete document,
+you only need the document ID. These updates will take the highway
+through the system and be searchable faster than regular document
+puts. Partial updates to non-existing documents are also supported.
+In this case an empty document is created before the update is applied.
+</p>
+
+<p>
+This article describes when you can benefit from using partial update,
+which field types that are updateable and how to use it. Performance
+impact and interference with other Vespa features will also be
+discussed.
+</p>
+
+<p>
+This article is mainly written for search, and the feature behaves a
+little different for Storage and Document processors. This is
+described in the <a href="#performance-and-impacts">last section</a>.
+</p>
+
+
+
+<h1 id="examples">Use Cases and Examples</h1>
+
+<p>
+The general use case for this feature is that you have one or more
+fields users (or other incoming feeds, like auction offers) can change
+in one or another way, and you want the change to be visible and
+searchable in your search system as soon as possible and/or you want
+to update a field in a document without having the complete document
+available at feed time.
+</p>
+
+<p>
+A general example of how to use this feature is provided
+in <a href="partial-update-example.html">Partial update example</a>. A
+few more illustrating use cases are described in the following
+subsections.
+</p>
+
+
+<h2 id="tagging">Tagging</h2>
+
+<p>
+Imagine an image sharing site where users can give their images one or more tags.
+With partial updates the user can add, remove or change a tag and she can see the
+changes take effect immediately. Other users can also get the tagged
+photo in the result set immediately after the tag has been added.
+</p>
+
+
+<h2 id="starring">Starring or liking</h2>
+
+<p>
+Another example is starring or liking content, where users
+can add and remove stars, look up all starrers of a
+piece of content and look up all content she has starred. When using partial
+update when adding and removing stars, the change will be visible for
+the look up functions immediately, and the user does not need to wait
+for the next indexing to see the change take effect.
+</p>
+
+
+<h2 id="large-volume-updates">Large Volumes Updating</h2>
+
+<p>
+This use case is taken from auction services where it is required that
+the system can update price changes and have the new prices visible
+and searchable for other users immediately. By using partial update,
+this can be supported by Vespa. An updated price will be sent to Vespa
+with the new price, and it will immediately be visible in the search
+results.
+</p>
+
+
+
+<h1 id="updateable">What is Updateable in Vespa?</h1>
+
+<p>
+All fields (both attribute, index and plain summary fields) are possible to update using partial
+update in Vespa search. In Storage all fields can be updated as well,
+see <a href="#storage">Storage</a>. Some of the update operations
+described in the next section are especially developed for three
+collection field types. The fields types
+are <a href="reference/search-definitions.html#type:tag">tag</a>,
+<a href="reference/search-definitions.html#type:weightedset">weighted
+set</a>
+and <a href="reference/search-definitions.html#type:array">array</a>.
+</p>
+
+
+
+<h1 id="operations">Update Operations</h1>
+
+<p>
+The table below lists and describe the currently available update
+operations in Vespa. Syntax examples for each of them are also
+provided. Examples for how to use the syntax can be seen
+in <a href="partial-update-example.html">Partial update example</a>.
+</p>
+
+<dl class="reference">
+  <dt>Add</dt>
+  <dd>
+    <p>
+    Add a new value to an array, or a key-value pair to a weighted
+    set.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    Array and weighted set.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;add field=&quot;tags&quot;&gt;
+  &lt;item weight=&quot;2&quot;&gt;bobby&lt;/item&gt;
+&lt;/add&gt;
+</pre>
+  </dd>
+
+
+  <dt>Add (with field path)</dt>
+  <dd>
+    <p>
+    Add a new value to an array.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    Array (Storage only)
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;add fieldpath=&quot;numbers&quot;&gt;
+  &lt;item&gt;bobby&lt;/item&gt;
+&lt;/add&gt;
+</pre>
+  </dd>
+
+
+  <dt>Remove</dt>
+  <dd>
+    <p>
+    Remove a value from an array, or a key-value pair from a weighted set.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    Array and weighted set.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;remove field=&quot;tags&quot;&gt;
+  &lt;item weight=&quot;2&quot;&gt;bobby&lt;/item&gt;
+&lt;/remove&gt;
+</pre>
+  </dd>
+
+
+  <dt>Remove (with fieldpath)</dt>
+  <dd>
+    <p>
+    Remove values from the document.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    Any value within a document (Storage only).
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;remove fieldpath=&quot;tags{$x}&quot; where=&quot;music.tags{$x} &lt; 3&quot;&gt;
+&lt;/remove&gt;
+</pre>
+  </dd>
+
+
+  <dt>Assign</dt>
+  <dd>
+    <p>
+    Give the attribute a new value.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    All fields.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;assign field=&quot;number&quot;&gt;13&lt;/assign&gt;
+</pre>
+  </dd>
+
+
+  <dt>Assign (with fieldpath)</dt>
+  <dd>
+    <p>
+    Modify any part of the document.
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    Any part of the document (Storage only).
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;assign fieldpath=&quot;numbers[2]&quot;&gt;13&lt;/assign&gt;
+</pre>
+  </dd>
+
+
+  <dt>Increment</dt>
+  <dd>
+    <p>
+    This is the same as mathematical <code>addition</code>. The given
+    value will be added to the previous value (e.g. if the previous
+    value was 4 and the given value is 2, the value will be 6 after
+    the update).
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    All numeric single value fields and weighted set. For
+    weighted set, only the weight will be changed.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;increment field=&quot;number&quot; by=&quot;2&quot; /&gt;
+</pre>
+  </dd>
+
+
+  <dt>Decrement</dt>
+  <dd>
+    <p>
+    This is the same as mathematical <code>subtraction</code>. The
+    given value will be subtracted from the previous value (e.g. if
+    the previous value was 4 and the given value is 2, the value will
+    be 2 after the update).
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    All numeric single value fields and weighted set. For
+    weighted set, only the weight will be changed.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;decrement field=&quot;number&quot; by=&quot;2&quot; /&gt;
+</pre>
+  </dd>
+
+
+  <dt>Multiply</dt>
+  <dd>
+    <p>
+    Multiplies the previous value with the given value (e.g. if the
+    previous value was 4 and the given value is 2, the value will be 8
+    after the update).
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    All numeric single value fields and weighted set. For
+    weighted set, only the weight will be changed.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;multiply field=&quot;number&quot; by=&quot;2&quot; /&gt;
+</pre>
+  </dd>
+
+
+  <dt>Divide</dt>
+  <dd>
+    <p>
+    Divides the previous value with the given value (e.g. if the
+    previous value was 4 and the given value is 2, the value will be 2
+    after the update).
+    </p>
+
+    <h4>Works for</h4>
+    <p>
+    All numeric single value fields and weighted set. For
+    weighted set, only the weight will be changed.
+    </p>
+
+    <h4>Syntax</h4>
+<pre class="brush: xml">
+&lt;divide field=&quot;number&quot; by=&quot;2&quot; /&gt;
+</pre>
+  </dd>
+
+</dl>
+
+<p class="alert alert-success">
+If correctness is important, i.e. it is important that the operation
+only happens once, it is recommended to first retrieve the current
+field value and do the operation yourself before submitting the update
+using <code>assign</code>, as it is a small probability that your
+updates can be sent more than once if your system is overloaded or
+experiencing other error situations. If this is not that important to
+you, use of <code>increment</code>, <code>decrement</code>,
+<code>multiply</code> and <code>divide</code> will save you some
+resources as you do not need to get the current value before sending
+the update.
+</p>
+
+
+
+<h1 id="create-if-non-existent">Updates to Non-Existing Documents</h1>
+<p>
+Partial updates to non-existing documents are supported.
+When feeding such an update an empty document is created on the content/search
+node handling the update before the update is applied.
+</p>
+
+<p>
+Lets say we have a use case where multiple clients are going to update various
+aspects of a document. In this case we do not care who creates the document first
+and we do not want to add complex syncing between the clients to make sure
+one of them is responsible for creating the initial version of the document.
+In such use case we would like all clients to just feed their partial updates,
+whoever comes first will implicit create the document on the content/search node
+and the partial updates will then be applied.
+<p>
+
+<p>
+To use this new create if non-existent feature we set an extra flag on the
+partial update itself:
+</p>
+
+<pre class="brush: xml">
+&lt;vespafeed&gt;
+  &lt;update type=&quot;music&quot; id=&quot;id:music:music::0&quot; create-if-non-existent=&quot;true&quot;&gt;
+    &lt;assign field=&quot;number&quot;&gt;13&lt;/assign&gt;
+  &lt;/update&gt;
+&lt;/vespafeed&gt;
+</pre>
+
+<p>
+If you create your partial updates programmatically in Java you can specify the same flag:
+</p>
+
+<pre>
+public DocumentUpdate createUpdate(DocumentType musicType) {
+    DocumentUpdate update = new DocumentUpdate(musicType, &quot;id:music:music::0&quot;);
+    update.setCreateIfNonExistent(true);
+}
+</pre>
+
+
+<h1 id="configuring">Conditional partial updates</h1>
+
+<p>
+  Using the test and set feature of Vespa, it's possible to perform a
+  conditional partial update by specifying a condition attribute to
+  the update element.  The condition attribute contains
+  a <a href="reference/document-select-language.html">document
+  selection</a> that must match for the update to be executed.
+</p>
+
+<p>
+  The example below shows a partial update that atomically increments
+  the <code>popularity</code> field of a document if its current value
+  is equal to 99.
+</p>
+
+<pre class="brush: xml">
+&lt;vespafeed&gt;
+    &lt;update documenttype=&quot;music&quot; documentid=&quot;id:music:music::0&quot; condition=&quot;music.popularity==99&quot;&gt;
+        &lt;increment field=&quot;popularity&quot; by=&quot;1&quot;/&gt;
+    &lt;/update&gt;
+&lt;/vespafeed&gt;
+</pre>
+
+<h1 id="configuring">Configuring</h1>
+
+<p>
+The only parameter you need to consider is the
+<code>visibilitydelay</code>. This parameter is set in
+the <em>services.xml</em> file and sets the maximum delay from an
+update is fed into Vespa until it is visible in the system.  This
+parameter also controls how long results can reside in the cache,
+hence, a higher time here will start using the cache and it will take
+longer time from feeding until documents are searchable. This means
+that the QPS rate can be higher, but it should not have any impact on
+the feeding rate.  If you add <code>nocache</code> to the query, the
+<code>visibilitydelay</code> parameter will have no effect.
+</p>
+
+<p>
+It is also possible to turn off update on specific attributes, but
+this should not be necessary to do, as this feature uses very few
+resources. How to do this is described
+in <a href="reference/search-definitions.html#attribute">Search
+definition reference: attribute</a>.
+</p>
+
+
+
+<h1 id="feeding">Feeding Updates</h1>
+
+<p>
+Updates can be fed using <a href="vespa-http-client.html">Vespa HTTP client</a>.
+The update feed needs to include the document ID as well as the required fields for
+the update operation, see also <a href="#docprocs-il">Document
+processors and indexing language expressions</a> below.
+</p>
+
+<pre class="brush: xml">
+&lt;vespafeed&gt;
+  &lt;update documenttype=&quot;music&quot; documentid=&quot;id:music:music::http://music.yahoo.com/bobdylan/BestOf&quot;&gt;
+    &lt;add field=&quot;tags&quot;&gt;
+       &lt;item weight=&quot;2&quot;&gt;bobby&lt;/item&gt;
+    &lt;/add&gt;
+  &lt;/update&gt;
+&lt;/vespafeed&gt;
+</pre>
+
+<p>
+See <a href="partial-update-example.html">Partial update example</a>
+for the complete example.
+</p>
+
+
+
+<h1 id="performance-and-impacts">Performance Impacts and Interference with Other Features</h1>
+
+<p>
+This sections describes how this update technique works together with
+other Vespa parts, as Storage and Document processors. The last
+section highlights important issues and performance impacts.
+</p>
+
+
+
+<h2 id="docprocs-il">Document Processors and Indexing Language Expressions</h2>
+<p>
+As the incoming update will probably not contain the complete
+document, but only the update operation and the document ID, it is
+important that you make sure your document processors only rely on the
+fields always present in the feed.
+</p>
+
+<p>
+This also goes for indexing language expressions in the search
+definitions. If you have a number of fields that are combined to one
+attribute, it is required that all, or none, of the required fields
+for the indexing language expression to be evaluated are included in
+the feed when an update is issued.
+</p>
+
+<p>
+Which fields that are required is dependent on the indexing expression
+itself and the wanted update operation.  For example, if you have the
+indexing expressions below:
+</p>
+
+<pre class="brush: text">
+input field1 | attribute field1
+input field1 . field2 | attribute field2
+</pre>
+
+<p>
+If you want to update <code>field1</code>, you can do that without
+feeding <code>field2</code> and only the attribute
+named <code>field1</code> will be updated, as both expressions are
+possible to evaluate. But if you want to update <code>field2</code>,
+it is not possible to evaluate the second indexing expression
+without <code>field1</code>.
+</p>
+
+<p>
+If you do feed an update that does not contain all the required
+fields, your update will fail.
+</p>
+
+
+<h2 id="storage">Storage</h2>
+
+<p>
+There are no limitations on which fields that are updateable in
+Storage; any field or any data type is possible to update. When the
+update operation arrives at Storage, Storage will retrieve the
+existing document, apply the update and store the merged document.
+Throughput will be approximately 60-80% of PUT throughput,
+latency approximately 120-150% of PUT.
+</p>
+
+
+<h2 id="performance-impacts">Performance Impacts and Other Noticeable Issues</h2>
+
+<p>
+Performance impacts for Storage and Document processors are in the
+above sections. Some of the issues in the list below are elaborated
+other places in this article, see the links for details.
+</p>
+
+<ul>
+  <li>
+    The time from the update is issued to it is visible in the system
+    is controlled by the <code>visibility</code> parameter. The
+    minimum time will be about 500
+    ms. See <a href="#configuring">Configuring</a>.
+  </li>
+  <li>
+    If you set the <code>visibility</code> parameter higher than
+    default, more queries will hit the cache and your QPS will be
+    impacted. This impact is expected to be between 0 and 20% increase
+    in QPS, but you will have to benchmark this in your own system.
+  </li>
+<!--
+  <li>
+    Throughput for Vespa search will be at least 10 folds of the
+    indexing throughput.</font>
+  </li>
+-->
+  <li>
+    Fields that are updateable should be small as these are more
+    memory intensive.
+  </li>
+<!--
+  <li>
+    If there is an index with the same name as the attribute, the
+    updates will not be searchable.
+  </li>
+-->
+  <li>
+    If you send an update that does not contain all fields required by
+    indexing language expressions or document processors, the update
+    will fail. See <a href="#docprocs-il">Document processors and
+    indexing language expressions</a>.
+    </li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Features</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="March 2015" />
+  <meta name="authors" content="bratseth, kraune, bergum" />
+</head>
+
+<body>
+
+<p class="ingress" data-annotation="rewrite">
+Vespa is a complete platform for developing stateless and stateful low latency scalable backend services. Its main features are listed here, also see the <a href="overview.html">overview</a> document. Vespa is
+<ul>
+<li><strong>Scalable:</strong> Data is distributed over the available hardware resources.
+When hardware is added or removed the data is automatically redistributed.
+All operations are distributed to avoid nonscalable bottlenecks.</li>
+<li><strong>Robust:</strong> All services are replicated so there are no single points of failure.
+The system automatically routes around failures.
+Data is replicated as desired and automatically recovered to the desired redundancy level
+when there is a data/node loss.</li>
+<li><strong>Easy to use:</strong> Everything can be installed on one node
+by creating a single small configuration file.
+The same application can be deployed to a large collection of hardware with minimal changes.
+The stateless clusters of an application can be run in an IDE to develop stateless components.</li>
+<li><strong>A platform:</strong> Vespa is not a set of executables which you
+    must piece together into a working application yourself, but a complete system
+which manages its internals automatically to provide a robust
+production quality service.</li>
+</ul>
+
+
+<h1 id="application_logic_container">Application logic container</h1>
+
+<ul>
+
+<li><b>Logic container</b>: Vespa features a Java Container - jDisc - which can run the stateless ("middleware") logic of applications.
+
+<li><b>Multiple protocols</b>: jDisc supports HTTP out of the box and allows other client/server protocols to be plugged in as components.
+
+<li><b>Components</b>: Various component types may be deployed - general request handlers, general chainable request/response handlers, HTTP filters,
+response renderers, search specific chainable request/response processors ("searchers"), and chainable write operation processors ("docprocs").
+
+<li><b>Response streaming</b>: Responses can start streaming back to users before they are completely received/processed for lower latency to first byte.
+
+<li><b>Federation, query rewriting and document text annotation processing</b>: Complex queries and Components and APIs are available out of the box for federating to multiple content clusters as well as external services,
+work programmatically with complex queries and process unstructured data by adding hierarchical annotations to text.
+
+<li><b>OSGi</b>: Components are packaged as OSGi bundles and may be redeployed and redeployed remotely at runtime without restarts.
+
+<li><b>Dependency injection</b>: A dependency injection framework allows components to declare arbitrary dependencies on configuration and other components in the constructor.
+
+<li><b>Query profiles</b>: Sets of request specific properties can be configured for various buckets, regions, use cases, devices etc.
+
+</ul>
+
+
+<h1 id="content">Content</h1>
+
+<ul>
+
+<li><b>Multiple schemas and clusters</b>: Any number of schemas may be added to an application and assigned many to many to content clusters holding data of those schemas.
+
+<li><b>Realtime</b>: Schema instances (documents) may be read and written with a few milliseconds latency. Documents are retrieved based on id only.
+
+<li><b>Data streaming</b>: Data may be streamed out of content clusters for reprocessing, backup etc.
+
+<li><b>Garbage collection</b>: Content clusters may only keep data which matches an expression and automatically garbage collect
+	non-matching data. Typically used to store only a window of data and have old data automatically expire.
+
+<li><b>Data background integrity checking</b>: Data is checksummed and autorepaired as necessary in the background.
+
+<li><b>Mutable data</b>: Existing documents may be removed, replaced or partially modified.
+
+<li><b>Guaranteed delivery</b>: Writes are guaranteed to either succeed and be globally visible and durable at that point or to produce and error response within a time limit.
+
+<li><b>Searches and selects</b>: Searches over unstructured document data and selects over structured data can be executed over entire document sets of any size with low latency.
+
+<li><b>Grouping and aggregation</b>: Matching sets from such searches/selects can be grouped/bucketed in multilevel hierarchies and values aggregated over groups to perform complex calculations
+and organization of data. These operations are performed distributed and works with any data sets with low latency.
+
+<li><b>Ranking</b>: Matches to search/select queries can be ordered by relevance. Complex, multiphase ranking using complex ranking features and complex ranking expressions implementing
+business logic or machine learned models are supported. Multiple ranking expressions may be in use at the same time and are selected per query.
+
+<li><b>Dynamic snippets</b>: Matches in unstructured text fields may be highlighted in dynamic summaries in responses.
+
+<li><b>Large queries</b>: Queries containing thousands of terms - typically expressing personal/social data - can be executed with low latency.
+
+</ul>
+
+
+<h1 id="developer_support">Developer support</h1>
+
+<ul>
+
+<li><b>SDK</b>: Packaging of components and application packages are supported by maven plugins.
+Application packages can be "deployed" within a single vm for testing and development in an IDE (stateless clusters only).
+
+<li><b>Validation</b>: Application packages are validated prior to deployment.
+
+<li><b>Schema agility</b>: Most schema changes are handled in live systems without requiring changes to existing data.
+
+</ul>
+
+<h1 id="operations">Operations</h1>
+
+<ul>
+
+<li><strong>Installation size:</strong> System instances may run on a single host or over hundreds.</li>
+
+<li><strong>Data size:</strong> Handles storing, indexing of and operations over web scale data sets.</li>
+
+<li><strong>Load:</strong> Scales to hundreds of thousands of read and write request per second.</li>
+
+<li><strong>Performance:</strong> Heavily optimized for low latency and high concurrency of both data read/write operations and queries/selects over large data sets.</li>
+
+<li><strong>Failover:</strong> All functions are redundant and fails over automatically.</li>
+
+<li><strong>Recovery:</strong> The system autorecovers partial data losses automatically.</li>
+
+<li><strong>Realtimeness:</strong> Data operations complete in a few milliseconds.</li>
+
+<li><strong>Elasticity:</strong> Nodes can be added or removed to both stateless and stateful clusters without downtime.</li>
+
+</ul>
+
+
+
+<h1 id="administration">Administration</h1>
+
+<ul>
+<li><strong>Unified system setup:</strong> A system of any size is set up
+by an <i>application package</i> containing configuration and application components.
+Application packages are deployed to the central configuration subsystem as a single operation.</li>
+
+<li>Any number of clusters containing different or the same nodes may be defined as part of a system instance.</li>
+
+<li><strong>Unified schemas:</strong> Each kind of data to be
+handled by a system is described completely in one file in the application package -
+the content of the data, and how to index, search, rank and present it.</li>
+
+<li><strong>Centralized configuration:</strong> Any change to the configuration or
+application components is done simply by redeploying the application package.</li>
+
+<li><strong>Hot reconfiguration:</strong> Most changes can be done
+instantly without the need for restarting nodes.</li>
+
+<li><strong>Centralized monitoring and logging:</strong> Logs are collected in real time to the
+       administration server.</li>
+
+</ul>
+
+</body>
+</html>
+

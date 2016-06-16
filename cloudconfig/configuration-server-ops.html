@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+<title>Configuration Server Operations</title>
+<link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+<meta name="date"    content="January 2014" />
+<meta name="authors" content="musum, vegardh" />
+</head>
+
+<body>
+<p>
+Vespa can be set up with one or more configuration servers. Vespa
+uses <a href="http://hadoop.apache.org/zookeeper/">ZooKeeper</a> as a
+distributed data storage for the configuration system. In addition,
+each Vespa node runs a config proxy to cache configuration data.  This
+article also explains various operations scenarios in a fault tolerant
+Vespa configuration system.
+</p><p>
+Whenever a config server is (re)started, it is important that
+<a href="../setting-vespa-variables.html">VESPA_CONFIGSERVERS</a> refers to
+the correct set of servers in the cluster. Also, when doing
+<em>deploy prepare</em>, the config servers listed in
+<em>services.xml</em> must be correct.
+</p>
+
+
+<h2 id="health-checks">Config server health checks and metrics</h2>
+<p>
+A handy way to verify that a config server is up and running is to
+access the status page, like
+<a href="http://foo.bar.com:12345/state/v1/">http://foo.bar.com:12345/state/v1/
+</a>. Use <a href="../reference/vespa-model-inspect.html">vespa-model-inspect</a>
+to find host and port number.
+</p><p>
+For checking config for a particular application, use the <a
+href="config-rest-api-v2.html">Config REST API</a>.
+</p>
+<p>
+  Metrics are found at <a href="http://foo.bar.com:12345/state/v1/metrics">
+  http://foo.bar.com:12345/state/v1/metrics</a>
+</p>
+
+
+<h2 id="scaling-up">Scaling Up</h2>
+<p>
+New nodes can be added to the config server cluster for increased
+fault tolerance. The basic operation is to update
+<em>VESPA_CONFIGSERVERS</em> to
+reflect the new cluster, then restart the old nodes and start the new
+ones. ZooKeeper will automatically redistribute the application data.
+</p><p>
+An example on how to scale up follows. Do not
+restart Vespa on other nodes during the
+operation. This ensures uninterrupted functionality of your search
+cluster(s).
+</p>
+<ol>
+  <li>Install <em>vespa</em> on the new config server nodes as
+    usual.</li>
+  <li>Update the <em>VESPA_CONFIGSERVERS</em> on <em>all</em> the nodes,
+    to reflect the new cluster.</li>
+  <li>Restart the config server on the old config server
+    hosts and start it on the new ones.</li>
+  <li>Update <em>services.xml</em>
+    and <em>hosts.xml</em> with the new set of config
+    servers, and <em>deploy prepare</em>
+    and <em>deploy activate</em>, making sure
+    that <em>VESPA_CONFIGSERVERS</em> is correct on the
+    node which you do that, i.e. the admin node.</li>
+</ol>
+
+
+<h3 id="scaling-up" data-annotation="Can we find a better heading?">Scaling up by Majority</h3>
+<p>
+If you go from for instance 1 to 3 nodes or 3 to 7, note that the
+blank nodes will constitute a majority in the cluster. After you
+restart the config servers, they will not
+always contain your old application data, because the blank nodes have
+won the election. (Restarting timing comes into account here.)  You
+should get a new correct data set when you
+redo <em>deploy prepare</em>
+and <em>deploy activate</em>. If you do not wish to scratch your old
+application data like this, for instance to keep the history, the
+solution is to scale up by minor sets of the nodes, like:
+</p>
+<ol>
+  <li>Scale from 1 to 2 as described above.</li>
+  <li>Scale from 2 to 3 as described above.</li>
+</ol>      
+
+
+<h2 id="scaling-down">Scaling down</h2>
+<p>
+Removing config servers from your cluster is done as follows:
+</p>
+<ol>
+  <li>Update <em>VESPA_CONFIGSERVERS</em> on the new
+    smaller subset of nodes and <em>all</em> other vespa nodes.</li>
+  <li>Restart config servers on the new subset.</li>
+  <li>Verify that these nodes have data, by
+    using <em>getvespaconfig</em> or <em>zkls</em>, see
+    section on health checks above. If they are blank,
+    redo <em>deploy prepare</em>
+    and <em>deploy activate</em>.</li>
+  <li>The old nodes can be pulled from production.</li>
+</ol>
+
+
+<h2 id="bad-node">Bad Node</h2>
+<p>
+If running with more than
+one config server and one of these goes down or has hardware failure,
+the cluster will still work and serve config as usual (clients will
+switch to use one of the good nodes).  It is not necessary to remove a
+bad node from the configuration.  Deploying applications will use
+a long time, since the deploy command will not be able to complete a
+deployment on all servers when one of them is down.  If this is
+troublesome, change the <a href="#zookeeper-barrier-timeout">barrier
+timeout</a> to be lower (default value is 120 seconds). Note also that
+if you have not configured <a
+href="../reference/services-admin.html#cluster-controller">cluster
+controllers</a> explicitly, these will run on
+the config server nodes and the operation of these might be affected.
+This is another reasong for not trying to manually remove a bad node
+from the config server setup.
+</p>
+
+
+<h2 id="zookeeper-recovery">ZooKeeper Recovery</h2>
+<p>
+If the config server(s) should experience data corruption, for
+instance a hardware failure, use the following recovery procedure. One
+example of such a scenario is
+if <em>$VESPA_HOME/logs/vespa/zookeeper.configserver.log</em>
+says <em>java.io.IOException: Negative seek offset at
+java.io.RandomAccessFile.seek(Native Method)</em>, which indicates
+ZooKeeper has not been able to recover after a full disk.  Do not
+restart vespa on other nodes during the procedure.
+</p>
+<ol>
+  <li>stop cloudconfig_server</li>
+  <li>cloudconfig_server-remove-state</li>
+  <li>start cloudconfig_server</li>
+  <li>deploy prepare &lt;application path&gt;</li>
+  <li>deploy activate</li>
+</ol>
+<p>
+This procedure completely cleans out ZooKeeper's internal data
+snapshots and deploys from scratch. It is of course vital not to lose
+your application package's files.
+<p class="note">
+Note that by default the <a href="../content/design-clustercontroller.html">cluster controller</a> that maintaints the state of your content cluster will use the shared same ZooKeeper instance, so the content cluster state is also reset when removing state. If state is removed nodes that have been manually marked as down will come back up in service.  It's possible to run cluster-controllers in standalone zookeeper mode where they'll use a separate instance. <a href="../reference/services-admin.html#cluster-controllers">Standalone ZooKeeper instance for cluster-controllers configuration</a>
+</p>
+
+
+<h2 id="ports">Changing config server RPC and HTTP ports</h2>
+<p>
+The config server RPC port can be changed by setting
+<a href="../setting-vespa-variables.html">VESPA_CONFIGSERVER_RPC_PORT</a> on all nodes in the
+system.  Changing HTTP port requires 
+changing the port in
+<em>$VESPA_HOME/conf/configserver-app/services.xml</em>:
+<pre>
+&lt;http&gt;
+  &lt;server port="12345" id="configserver" /&gt;
+&lt;/http&gt;
+</pre>
+When deploying, use the
+<em>-p</em> option, if port is changed from the default.
+</p>
+
+
+<h2 id="zookeeper-barrier-timeout">Adjusting ZooKeeper barrier timeout</h2>
+<p>
+If the config servers are heavily loaded, or the applications being deployed are
+big, the internals of the server may time out when synchronizing with the other
+servers during deploy. To work around, increase the timeout
+by setting: <a href="../setting-vespa-variables.html">
+  VESPA_CONFIGSERVER_ZOOKEEPER_BARRIER_TIMEOUT</a> to 600 (seconds) or higher,
+and restart the config servers.
+</p>
+
+
+<h2 id="zookeeper-ports">Set ZooKeeper ports</h2>
+<p>
+Set the ZooKeeper ports, prior to starting the config server. This is useful
+if running multiple instances on the same host:
+<ul>
+  <li>VESPA_CONFIGSERVER_ZOOKEEPER_CLIENT_PORT</li>
+  <li>VESPA_CONFIGSERVER_ZOOKEEPER_QUORUM_PORT</li>
+  <li>VESPA_CONFIGSERVER_ZOOKEEPER_ELECTION_PORT</li>
+</ul>
+Note that the two last ones are only used in a multi node config server cluster.
+</p>
+
+</body>
+</html>

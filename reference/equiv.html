@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>The EQUIV Operator</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="July 2010" />
+  <meta name="authors" content="arnej" />
+</head>
+
+<body>
+
+<p class="ingress">
+<a href="#what-is">EQUIV</a> is a query operator that can be used to
+add synonyms for words where the various synonyms should be
+equivalent.
+</p>
+
+
+
+<h1 id="usecase">Use Case</h1>
+
+<p>
+The typical use case is something like this:
+</p>
+
+<ul>
+  <li>The user's query is something like <code>(used AND
+      automobile)</code></li>
+  <li>We somehow&mdash;probably by using a dictionary&mdash;have
+      knowledge that &ldquo;automobile&rdquo; is a synonym for
+      &ldquo;car&rdquo;</li>
+  <li>We rewrite the query to <code>(used AND (automobile EQUIV
+      car))</code></li>
+  <li>We do not care if a document contains &ldquo;automobile&rdquo;
+      or &ldquo;car&rdquo;, they are equivalent.</li>
+</ul>
+
+<p>
+The last point deserves some elaboration: In this case, we want the
+query to behave as if all occurrences of &ldquo;car&rdquo; in the
+document corpus had been replaced by &ldquo;automobile&rdquo; and we
+were running the original query <code>(used AND automobile)</code>.
+</p>
+
+
+
+<h1 id="compared-to-or">Difference from OR Operator</h1>
+
+<p>
+In many circumstances, the OR operator will give the same results as
+an EQUIV.  The matching logic is exactly the same, and an OR does not
+have <a href="#limitations">the limitations that EQUIV does</a>.  The
+difference is in how matches are visible to ranking functions.  All
+words that are children of an OR count for ranking.  When using an
+EQUIV however, it looks like a single word:
+</p>
+
+<ul>
+  <li>Counts as only +1 for queryTermCount</li>
+  <li>Counts as 1 word for completeness measures</li>
+  <li>Proximity will not discriminate different words inside the
+      EQUIV</li>
+  <li>Connectivity can be set between the entire EQUIV and the word
+      before and after</li>
+  <li>Items inside the EQUIV are not directly visible to ranking
+      features, so weight and connectivity on those will have no
+      effect.</li>
+</ul>
+
+<p>
+In many cases it may still be more appropriate to use OR instead of
+EQUIV.  When looking for an entity like Sean &ldquo;Diddy&rdquo; Combs
+this might look appropriate:
+</p>
+
+<pre class="brush: text">
+&quot;Diddy&quot; EQUIV &quot;Sean Combs&quot; EQUIV &quot;Sean John&quot; EQUIV &quot;Puff Daddy&quot; EQUIV &quot;P. Diddy&quot;
+</pre>
+
+<p>
+But &ldquo;Diddy&rdquo; is used by other people&mdash;even other pop
+artists&mdash;so matching that alone is not a sure hit for the entity
+we are looking for, and finding more than one of the synonyms in the
+same text would give better confidence.  This is exactly what OR does,
+so something like:
+</p>
+
+<pre class="brush: text">
+&quot;Diddy&quot;!20 OR &quot;Sean Combs&quot;!75 OR &quot;Sean John&quot;!75 OR &quot;Puff Daddy&quot;!80 OR &quot;P. Diddy&quot;!60 OR &quot;Sean John Combs&quot;!100
+</pre>
+
+<p>
+might be better, with lower weights on the alternatives giving less
+confidence.  If it looks like the many words and phrases inside the OR
+overwhelms other words in the query, giving even lower weights may be
+useful, for example making the sum of weights 100 &mdash; the default
+weight for just one alternative.
+</p>
+
+
+
+<h1 id="activate">How to Introduce EQUIV in Your Application</h1>
+
+<p>
+The decision to use EQUIV must be taken by application-specific
+dictionary or linguistics use.  This can be done from <a
+href="../search/yql-in-vespa.html#equiv">YQL</a> or from a QRS plugin
+where the query object can be manipulated as follows:
+</p>
+
+<ul>
+  <li>Find a word item in the query</li>
+  <li>Check that an EQUIV can be used in that place
+      (see <a href="#limitations">limitations of EQUIV</a>
+      below).</li>
+  <li>Find the synonyms you want to insert in your dictionary</li>
+  <li>Make word items for your synonyms</li>
+  <li>Make an <code>EquivItem</code> with the synonyms (and the
+      original word of course) as children</li>
+  <li>Replace the original <code>WordItem</code> with the
+      new <code>EquivItem</code></li>
+</ul>
+
+<p>
+For ideas on how the code might look there is a
+<a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/equiv/EquivTestSearcher.java?view=markup">
+detailed code example
+</a>
+in the source code repository and there is
+<a href="../javadoc/index.html?com/yahoo/prelude/query/EquivItem.html">
+javadoc
+</a> available, with a typical insertion of <code>EquivItem</code>
+looking like this:
+</p>
+
+<pre class="brush: java">
+private Item equivize(Item item) {
+    if (item instanceof TermItem) {
+        String word = ((TermItem)item).stringValue();
+
+        // lookup word in dictionary:
+        DictEntry entry = dict.get(word);
+
+        // if synonyms found, make equiv and replace this word:
+        if (entry != null) {
+            EquivItem eq = new EquivItem(item, entry.synonyms);
+            return eq;
+        }
+    } else if (item instanceof PhraseItem ||
+               item instanceof PhraseSegmentItem) {
+        // cannot put EQUIV inside PHRASE
+        return item;
+    } else if (item instanceof CompositeItem) {
+        CompositeItem cmp = (CompositeItem)item;
+        for (int i = 0; i &lt; cmp.getItemCount(); ++i) {
+            cmp.setItem(i, equivize(cmp.getItem(i)));
+        }
+        return cmp;
+    }
+    return item;
+}
+</pre>
+
+
+
+<h1 id="limitations">Limitations of EQUIV</h1>
+
+<p>
+There are several limitations on how EQUIV can be used in a query:
+</p>
+
+<ul>
+  <li>EQUIV may not appear inside a phrase.</li>
+  <li>It may only contain <code>TermItem</code>
+      and <code>PhraseItem</code> instances.  You cannot place
+      operators like AND inside EQUIV.</li>
+  <li><code>PhraseItems</code> inside EQUIV will rank like as if they
+      have size 1.</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Managing Nodes and Processes</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="June 2009" />
+  <meta name="authors" content="bratseth" />
+</head>
+<body>
+
+
+<h1 id="administration">Administration and service nodes</h1>
+<p>A Vespa system consists of two kinds of nodes:</p>
+<dl>
+  <dt>Administration node</dt>
+  <dd>
+    The administration node configures, monitors and collect logs
+    from all the other nodes of the system. Each Vespa system has minimum one
+    administration node active at a time.
+  </dd>
+  <dt>Service nodes</dt>
+  <dd>
+    All nodes except the administration node(s) are service nodes.
+  </dd>
+</dl>
+<p>
+Most work on a Vespa installation is done on administration node only,
+like <a href="../cloudconfig/application-packages.html">configuration</a>
+This document describes the kind of things you may want to do also on service nodes.
+</p>
+
+
+
+<h1 id="manually-managing-services">Manually Managing Services</h1>
+<p>
+In regular operation, all processes on all nodes of a Vespa system is
+started, stopped and restarted by Vespa as described in the
+configuration on the administration node. All services on a node can
+be started, stopped and restarted using:
+</p>
+<pre>
+$ service vespa-services start
+$ service vespa-services stop
+$ service vespa-services restart
+</pre>
+<p>Likewise, for the config server:</p>
+<pre>
+  $ service vespa-configserver start
+  $ service vespa-configserver stop
+  $ service vespa-configserver restart
+</pre>
+<p>
+<strong>Note:</strong> If you stop service nodes in a cluster before stopping
+the <em>clustercontroller</em> node, you may get spurious messages in
+the <em>vespa.log</em> about communication failures within the
+cluster. This is because the clustercontroller can not differentiate
+between failures, and outside intervention like restarts.
+</p><p>
+<strong>Note:</strong> To run an automated node check before Vespa is
+started, provide a check script, returning 0 if
+<em>service vespa-services start</em> is allowed to run.
+This is useful when autostarting <em>vespa-services</em>:
+</p>
+<pre>
+$ export VESPA_VALIDATIONSCRIPT=/tmp/foo.bar.sh
+$ cat /tmp/foo.bar.sh
+#!/bin/sh
+echo detect some problem
+exit 1
+$ service vespa-services start
+... starting ...
+detect some problem
+validation script '/tmp/foo.bar.sh' failed
+service vespa-services start failed: exit code 1 from command:
+$VESPA_HOME/libexec/vespa/start-vespa-base.sh
+</pre>
+<p>
+There is also a way to manually manage services on individual
+nodes. Each node runs a telnet service which can be used to list,
+start and stop the services supposed to run on that node. The port
+number is 19098 by default, use
+the <a href="../reference/vespa-model-inspect.html">Vespa
+Model Inspector</a> to verify. The service name is
+<code>config-sentinel</code>, and the port is tagged <em>telnet interactive</em>:
+</p>
+<pre>
+$ telnet localhost 19098
+</pre>
+<p>
+the following commands are available:
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ls</td>
+      <td>
+        Lists the services running on this node and their status.
+      </td>
+    </tr>
+    <tr>
+      <td>restart [name]</td>
+      <td>
+        Restarts the service with the given name. The name is the
+        first string in the service list given by <code>ls</code>.
+      </td>
+    </tr>
+    <tr>
+      <td>manual [name]</td>
+      <td>
+        Switch the service with the given name into manual mode, where
+        you use <code>stop</code> and <code>start</code> for manual
+        management, and the service will not be automatically
+        restarted if it should stop.
+      </td>
+    </tr>
+    <tr>
+      <td>auto [name]</td>
+      <td>
+        Switch the service with the given name back to automatic mode.
+        Also starts the service if necessary.
+      </td>
+    </tr>
+    <tr>
+      <td>stop [name]</td>
+      <td>Stops the service with the given name.  Only possible when
+          the service won't auto-restart, so you must
+          do <code>manual</code> first.
+      </td>
+    </tr>
+    <tr>
+      <td>start [name]</td>
+      <td>
+        Starts the service with the given name.  Note that the service
+        will remain in manual mode and won't be restarted if it
+        crashes, so remember to use 'auto' to get back to normal
+        operations.
+      </td>
+    </tr>
+    <tr>
+      <td>quit</td>
+      <td>Close the connection.</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+Usually, one should only use <code>restart</code>.  To
+temporarily stop a service, use <code>manual</code> and
+then <code>stop</code>; later switch it back to normal operation by
+using the <code>auto</code> command.
+To learn more about the processes and services which may run on nodes,
+see
+the <a href="../reference/files-and-processes.html#processes">files
+and processes</a> reference.
+</p>
+
+
+<h3 id="ls_output">Status output details</h3>
+<p>
+The output from <code>telnet localhost 19098</code> followed by
+a <code>ls</code> may look like this (single node system):
+</p>
+<pre>
+logd state=RUNNING mode=AUTO pid=24512 exitstatus=0 autostart=TRUE 
+    autorestart=TRUE id="hosts/myhost.mydomain.com/logd"
+topleveldispatch state=RUNNING mode=AUTO pid=24518 exitstatus=0 autostart=TRUE 
+    autorestart=TRUE id="search/cluster.search/tld.0"
+clustercontroller state=RUNNING mode=AUTO pid=24517 exitstatus=0 autostart=TRUE 
+    autorestart=TRUE id="search/cluster.search/rtx/0"
+qrserver state=RUNNING mode=AUTO pid=24516 exitstatus=0 autostart=TRUE 
+    autorestart=TRUE id="search/qrservers/qrserver.0"
+slobrok state=RUNNING mode=AUTO pid=24514 exitstatus=0 autostart=TRUE 
+    autorestart=TRUE id="admin/slobrok.0"
+</pre>
+<p>
+Each line has the following fields:
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>service name</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>state</td>
+      <td>
+        <p>RUNNING: service is running</p><p>FINISHED: Service has been stopped
+        FAILED: service has crashed and failed to restart</p><p>TERMINATING:
+        Service is stopping</p>
+      </td>
+    </tr>
+    <tr>
+      <td>mode</td>
+      <td>
+        <p>MANUAL: service has to be started and stopped manually</p><p>AUTO:
+        service will restart automatically according to
+        autorestart</p>
+      </td>
+    </tr>
+    <tr>
+      <td>pid</td>
+      <td>Pid of the process (main thread)</td>
+    </tr>
+    <tr>
+      <td>exitstatus</td>
+      <td>
+        Exit code last time service stopped and did not exit normally
+        (e.g. using stop command)
+      </td>
+    </tr>
+    <tr>
+      <td>autostart</td>
+      <td>
+        Indicates if service will be started automatically when Vespa is
+        started
+      </td>
+    </tr>
+    <tr>
+      <td>autorestart</td>
+      <td>
+        Indicates if service should be restarted automatically if it
+        crashes. Has no effect if mode=MANUAL. Configuration setting
+      </td>
+    </tr>
+    <tr>
+      <td>id</td>
+      <td>Config ID of the service</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<h1 id="viewing-logs">Viewing Logs Locally</h1>
+<p>
+The system log from an entire system is collected on the
+administration server and should be viewed there. Some times however,
+it is practical to view the log from only one node locally on that
+node. All services on a node logs to
+<em>$VESPA_HOME/logs/vespa/logs/vespa.log</em>. View this log using
+<em>logfmt</em>.
+</p><p>
+  To view everything (except debug messages):
+</p>
+<pre>
+$ logfmt vespa.log
+</pre>
+<p>
+To view errors and warnings:
+</p>
+<pre>
+$ logfmt -l warning,error vespa.log
+</pre>
+<p>
+To show help on logfmt:
+</p>
+<pre>
+$ logfmt -h
+</pre>
+
+
+
+<h1 id="node-content">Node content</h1>
+<p>
+All nodes in a Vespa system have the same packages installed, but
+obviously the pieces which are used varies based on the assigned role
+of the node. In particular, configuration files will be ignored on
+service nodes.
+</p><p>
+Apart from looking at logs, there is not much you want to access at
+service nodes. At rare occasions, you may want to manually replace
+binaries. These are found in <code>bin</code>, <code>lib</code> and
+<code>sbin</code> on the node. If a
+binary is changed, the service(s) using the binary should be restarted
+as described above.
+</p><p>
+To learn more about the content of nodes, see
+the <a href="../reference/files-and-processes.html#directories">files
+and processes</a> reference.
+</p>
+
+</body>
+</html>

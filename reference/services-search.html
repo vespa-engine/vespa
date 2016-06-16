@@ -1,0 +1,643 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<head>
+  <title>services.xml - 'search'</title>
+  <link rel="stylesheet" type="text/css"
+        href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+
+  <meta name="date" content="April 2016"/>
+  <meta name="authors" content="kraune"/>
+</head>
+
+<body>
+
+<h1 class="title">services.xml: search</h1>
+
+<p class="ingress">
+This document explains in detail the syntax and semantics of the
+search part of the JDisc config.  For an
+introduction, see the
+<a href="../configuring-search-chains.html">search chain</a> and <a href="../federation-platform.html">federation</a> tutorials.
+</p>
+
+<h1 id="sec-1">search root </h1>
+<p>The root element of the search configuration, declared as a subelement to <a href="services-jdisc.html">jdisc</a>.
+</p>
+<p>
+<pre class="code">
+&lt;search&gt;
+    &lt;<a href="#binding">binding</a> /&gt;
+    &lt;<a href="#sec-2.1">searcher</a> /&gt;
+    &lt;<a href="#sec-2.2">federation</a> /&gt;
+    &lt;<a href="#sec-3.1">chain</a> /&gt;
+    &lt;<a href="#sec-3.2">provider</a> /&gt;
+    &lt;<a href="#sec-2.3">renderer</a> /&gt;
+&lt;/search&gt;
+</pre>
+</p>
+<p>
+Optional sub-elements:
+</p><ul>
+<li>
+<a href="#binding">binding</a> (one or more)
+</li>
+<li>
+<a href="#sec-2">searcher</a> (one or more)
+</li>
+<li>
+<a href="#sec-3.1">chain</a> (one or more)
+</li>
+<li>
+<a href="#sec-3.2">provider</a> (one or more)
+</li>
+<li>
+<a href="#sec-2.3">renderer</a> (one or more)
+</li>
+<li>
+<a href="config-files.html#configuration_format_in_services.xml">config</a>
+Config will apply to all searchers in the JDisc cluster's search chains, unless
+overridden by individual search chains or searchers.
+</li>
+</ul>
+
+<h1 id="binding">binding</h2>
+<p>
+    The URI to map the SearchHandler to. The default binding is
+  <code>http://*/search/*</code>. Multiple elements are allowed.
+</p>
+<p>
+   Example:
+<pre>
+&lt;binding&gt;http://*/search/*&lt;/binding&gt;
+</pre>
+</p>
+
+<h1 id="sec-2">Searcher elements </h1>
+<p>Searcher elements are contained in <a href="#sec-3.1">chain elements</a> or in the <a href="#sec-1">search root</a>.
+</p>
+<p>
+A searcher element is either a searcher definition or searcher reference.
+The rest of this section deals with searcher definitions; searcher references are
+described in the <a href="#sec-3">chain elements section.</a>
+</p>
+<p>
+A searcher definition causes the creation of exactly one searcher instance.
+This instance is set up according to the content of the searcher element.
+</p>
+<p>
+A searcher definition contained in a search chain element defines an
+<em>inner searcher.</em>
+Otherwise, it defines an <em>outer searcher.</em>
+</p>
+<p>
+Types:
+</p><ul>
+<li>
+<a href="#sec-2.1">searcher</a>
+</li>
+<li>
+<a href="#sec-2.2">federation</a>
+
+</li>
+</ul>
+
+<p>Mandatory attributes for all searcher definitions:
+</p><ul>
+<li>
+<strong>id</strong>,  the component id of the searcher instance.
+
+</li>
+</ul>
+
+<p>For inner searchers, the name must be unique inside the search chain.
+For outer searchers, the component id must be unique.
+An inner searcher is not permitted to have the same name as an outer searcher.
+</p>
+<p>
+Optional attributes for all searcher definitions:
+</p><ul>
+<li>
+<strong>provides</strong>, a space separated list of names that represents what this searcher produces.
+</li>
+<li>
+<strong>before</strong>, a space separated list of phase or provided names. Phases or searchers providing these names will be
+placed later in the search chain than this searcher.
+</li>
+<li>
+<strong>after</strong>, a space separated list of phase or provided names. Phases or searchers providing these names will be
+placed earlier in the search chain than this searcher.
+</li>
+</ul>
+
+<p>Optional sub-elements:
+</p><ul>
+<li>
+<a href="config-files.html#configuration_format_in_services.xml"><code>config</code></a>
+</li>
+</ul>
+
+<p>For more information on provides, before and after, see <a href="../chains-in-vespa.html">ordering components</a>.
+</p>
+
+<h2 id="sec-2.1">searcher </h2>
+
+<p>Defines a searcher instance of a user specified class.
+</p>
+<p>
+<pre class="code">
+&lt;searcher id="<em>componentId</em>" class="<em>className:versionSpecification</em>" bundle="<em>bundleSymbolicName:versionSpecification</em>"&gt;
+    &lt;<a href="../jdisc/container-components.html#configurable_components">config</a> /&gt;
+&lt;/searcher&gt;
+</pre>
+</p>
+<p>
+Optional attributes:
+</p><ul>
+<li>
+<strong>class</strong>, a component specification containing the name of the class to instantiate to create the searcher instance.
+If missing, copied from id.
+</li>
+<li>
+<strong>bundle</strong>, a component specification containing the bundle symbolic name and version used to select the bundle.
+The class is retrieved from this bundle. If missing, copied from class.
+
+</li>
+</ul>
+
+
+<h2 id="sec-2.2">federation</h2>
+
+<p>Defines a searcher instance that sends each query to a set of search chains in parallel and combines the results.
+</p>
+<p>
+<pre class="code">
+&lt;federation id="<em>componentId</em>"&gt;
+    &lt;<a href="#sec-2.2.1">source</a> idref="<em>componentSpecification</em>" /&gt;
+    &lt;<a href="#sec-2.2.3">target-selector</a> /&gt;
+&lt;/federation&gt;
+</pre>
+</p>
+<p>
+Optional sub-elements:
+</p><ul>
+<li>
+<a href="#sec-2.2.1">source</a> (one or more), a reference to a search chain or a source.
+</li>
+<li>
+<a href="#sec-2.2.4">source-set</a>
+</li>
+<li>
+<a href="#sec-2.2.3">target-selector</a> (one)
+</li>
+</ul>
+
+
+<h3 id="sec-2.2.1">source reference </h3>
+
+<p>Contained in <a href="#sec-2.2">federation</a>.
+Specifies a search chain that should be used by the enclosing federation searcher.
+</p>
+<p>
+<pre class="code">
+&lt;source idref="<em>componentSpecification</em>"&gt;
+    &lt;<a href="#sec-2.2.2">federationoptions</a> /&gt;
+&lt;/source&gt;
+</pre>
+</p>
+<p>
+Optional sub-elements
+</p><ul>
+<li>
+<a href="#sec-2.2.2">federationoptions</a> (one)
+</li>
+</ul>
+
+<h3 id="sec-2.2.4">source-set </h3>
+
+<p>Contained in <a href="#sec-2.2">federation</a>. This can be used to duplicate
+the sources of e.g. the built-in federation searcher:
+
+<pre class="code">
+&lt;federation id="combinator"&gt;
+    &lt;source-set inherits="default" /&gt;
+    …
+&lt;/federation&gt;
+</pre>
+
+<h3 id="sec-2.2.2">federationoptions </h3>
+
+<p>Contained in <a href="#sec-2.2.1">source reference</a>, <a href="#sec-3.3">source</a> or <a href="#sec-3.2">provider</a>.
+Specifies <em>how</em> a federation searcher should federate to a given search chain.
+</p>
+<p>
+If a federation options A <em>overrides</em> another federation options B,
+the result is a new federation options containing:
+</p><ul>
+<li>
+all the options in B not present in A
+</li>
+<li>
+all the options in A
+
+</li>
+</ul>
+
+<p>When federating to a source or provider, the federation searcher per default
+uses the federation options from the search chain.
+If a <a href="#sec-2.2.1">source reference</a> contains federation options, it overrides the options of the search chain
+when used from the enclosing federation searcher.
+</p>
+<p>
+<pre class="code">
+&lt;federationoptions timeout="<em>float m?s</em>" requestTimeout="<em>float m?s</em>" optional="<em>boolean</em>" /&gt;
+</pre>
+</p>
+<p>
+Optional attributes:
+</p><ul>
+<li>
+<strong>timeout</strong>, the minimum number of seconds or milliseconds (if m is present) the federation searcher
+should wait for the federated search chain executing the query.
+</li>
+<li>
+<strong>requestTimeout</strong>, the minimum number of seconds or milliseconds (if m is present) the
+search chain executing the query should continue execution. In some cases it is useful to set this higher
+than the timeout, such that a chain can keep waiting for requested data longer than the query is waiting for the chain.
+This allows queries to populate caches within the search chain even though populating the caches requires waiting
+longer than the query timeout.
+</il>
+<li>
+<strong>optional</strong>, determines if the federation searcher should wait for this search chain at all.
+Normally, it only waits for mandatory(i.e. not optional) search chains, and when they are done,
+cancels the remaining search chains that are not finished.
+If all the search chains federated to are optional, all of them will be treated as mandatory.
+All search chains are per default mandatory.
+
+
+</li>
+</ul>
+
+<h3 id="sec-2.2.3">target-selector</h3>
+<p>Contained in <a href="#sec-2.2">federation</a>.
+Specifies a componen that should be used to select search chains to federate to.
+This component must inherit from com.yahoo.search.federation.selection.TargetSelector.
+See <a href="services-jdisc.html#component">component</a> for attributes and subelements.
+</p>
+
+<h2 id="sec-2.3">renderer </h2>
+<p>
+  Contained in <code><a href="#sec-1">search</a></code>.
+</p>
+<pre class="code">
+&lt;renderer id="<em>componentId</em>" class="<em>className:versionSpecification</em>" bundle="<em>bundleSymbolicName:versionSpecification</em>"&gt;
+    &lt;<a href="../jdisc/container-components.html#configurable_components">config</a> /&gt;
+&lt;/renderer&gt;
+</pre>
+<p>
+  The definition of a
+  <a href="../search/result-rendering.html">search result renderer</a>. It
+  has one mandatory attribute, <code>id</code>.
+</p>
+    <h3>Attributes:</h3>
+
+    <dl>
+        <dt>id</dt>
+
+        <dd>(required) The component ID.</dd>
+
+        <dt>class</dt>
+
+        <dd>(optional) The class of the component, defaults to id.</dd>
+
+        <dt>bundle</dt>
+
+        <dd>(optional) The bundle to load the component from, defaults
+            to class or id (if no class is given).</dd>
+    </dl>
+
+    <h3>Optional Sub-elements</h3>
+
+    <ul>
+        <li><a href="config-files.html#configuration_format_in_services.xml">config</a></li>
+    </ul>
+
+
+
+<h1 id="sec-3">Chain elements </h1>
+
+<p>Specifies how a search chain should be instantiated, and how the contained
+searchers should be ordered.
+</p>
+<p>
+Types:
+</p><ul>
+<li>
+<a href="#sec-3.1">chain</a>
+</li>
+<li>
+<a href="#sec-3.2">provider</a>
+</li>
+<li>
+<a href="#sec-3.3">source</a>
+
+</li>
+</ul>
+
+
+<h2 id="sec-3.1">chain </h2>
+
+<p>Contained in <a href="#sec-1">search</a>. Example:
+</p>
+
+<pre>
+&lt;chain id='common'&gt;
+  &lt;searcher class='com.yahoo.vespatest.ExtraHitSearcher' id='CommonSearcher'&gt;
+    &lt;config name='vespatest.extra-hit'&gt;
+      &lt;exampleString&gt;A searcher for ...&lt;/exampleString&gt;
+    &lt;/config&gt;
+  &lt;/searcher&gt;
+&lt;/chain&gt;
+</pre>
+
+<p>
+mandatory attributes:
+</p><ul>
+<li>
+<strong>id</strong>, the component id of the search chain.
+
+</li>
+</ul>
+
+<p>Optional attributes:
+</p><ul>
+<li>
+<strong>inherits</strong>, a space separated list of component specifications, each giving a
+search chain to <a href="#sec-3.1.2">inherit from</a>.
+</li>
+<li>
+<strong>excludes</strong>, a space separated list of names. If a searcher reference has the
+same name as one of these names, the searcher reference is removed from this
+search chain. The exclusion is done before any consolidation of searcher
+references when inheriting search chains.
+
+</li>
+</ul>
+
+<p>Optional sub-elements:
+</p><ul>
+<li>
+<a href="#sec-2">searcher element</a> (one or more), either a searcher reference or searcher
+definition.  If the name given for a searcher matches an <a href="#sec-2">outer searcher</a>, it is
+a <a href="#sec-3.1.1">searcher reference</a>.  Otherwise, it is a <a href="#*searcher==definition">searcher definition</a>.  If it is a
+searcher definition, it is also an implicit searcher reference saying: use
+<em>exactly</em> this searcher. All these searcher elements must have different name.
+</li>
+<li>
+<a href="#sec-3.1.3">phase</a> (one or more).
+</li>
+<li>
+<a href="config-files.html#configuration_format_in_services.xml">config</a>
+(one or more - will apply to all <em>inner</em> searchers in this search chain, unless
+overridden by individual inner searchers).
+</li>
+</ul>
+
+<p>You can put search config in separate files in a directory under
+the application package using <a
+ href="services-jdisc.html#include">include</a>. Each file must
+contain one <code>&lt;search&gt;</code> element like above. Vespa
+behaves as if each chain configured within was "inline" in
+<code>services.xml</code>. This is handy when multiple developers need
+to deploy individual search chains, say in different yinst
+packages. Please note that if you are using multiple JDisc
+clusters, the modular search chains will be available in all the
+clusters.  </p>
+
+<h3 id="sec-3.1.1">Searcher reference </h3>
+
+<p>The searcher references determines which searcher instances are used in the
+resulting search chain instance.
+</p>
+<p>
+A searcher reference is a component specification that says: there shall be
+exactly one searcher in this search chain with the given name,
+and this searcher must  must match the version specification.
+</p>
+<p>
+A searcher reference <em>overrides</em> any inherited
+searcher references with the same name (i.e. the inherited ones are ignored).
+</p>
+<p>
+Each searcher reference must match the <a href="#sec-3">type</a> of the searcher definition.  So for
+example the searcher reference '<em>federation</em> idref="myId"' must match an outer
+searcher defined as '<em>federation</em> id="myId'", not '<em>searcher</em> id="myId'".
+</p>
+<p>
+If several searchers matches a given searcher reference, the newest(as
+determined by the version) is used.
+</p>
+
+
+<h3 id="sec-3.1.2">Search chain inheritance </h3>
+
+<p>When a search chain inherits from another search chain, it subsumes the phases
+and the <em>searcher references</em> (both implicitly and explicitly defined) from the
+parent chain.
+</p>
+<p>
+If two or more inherited searcher references have the same name, a new component
+specification matching those will be used instead. If that is not possible, an
+error will be signaled(i.e. if the version specifications can not be
+consolidated or if they require searcher definitions from different search
+chains).
+</p>
+
+
+<h3 id="sec-3.1.3">Phase </h3>
+<p>
+  A phase is a named checkpoint.  They are used to help create a linear ordering
+  of the searcher instances inside each resulting search chain instance. For
+  more information,
+  see <a href="../chains-in-vespa.html">ordering components</a>.
+</p>
+<pre class="code">
+&lt;phase id="<em>name</em>"&gt;
+    &lt;before&gt;<em>phaseName</em>&lt;/before&gt;
+    &lt;after&gt;<em>phaseName</em>&lt;/after&gt;
+&lt;/phase&gt;
+</pre>
+<p>
+  Equivalent, but less verbose:
+</p>
+<pre class="code">
+&lt;phase id="<em>name</em>" before="<em>phaseNames</em>" after="<em>phaseNames</em>" /&gt;
+</pre>
+<p>
+  Optional attributes:
+</p>
+<ul>
+  <li>before, a space separated list of phase names that are considered to be
+    later in the search chain than this phase.</li>
+  <li>after, a space separated list of phase names that are considered to be
+    earlier in the search chain than this phase.</li>
+</ul>
+<p>
+  Optional sub-elements:
+</p>
+<ul>
+  <li>before, a single name that should be added to the before list.</li>
+  <li>after, a single name that should be added to the after list.</li>
+</ul>
+
+<h2 id="sec-3.2">provider </h2>
+
+<p>Contained in <a href="#sec-1">search</a>.
+A search chain responsible for talking to an external service.
+Everything covered in <a href="#sec-3.1">chain</a> is also valid for providers.
+An example:
+</p>
+
+<pre>
+&lt;provider id='webService'&gt;
+  &lt;nodes&gt;
+    &lt;node port='8080' host='webservice.host'/&gt;
+  &lt;/nodes&gt;
+  &lt;searcher id='com.yahoo.example.ExampleProviderSearcher'/&gt;
+&lt;/provider&gt;
+</pre>
+
+<p>
+For providers of type <code>vespa</code>, the query language used to serialize
+the query to the external cluster may be set to YQL by overriding
+<code>queryType</code> in the <code>provider</code> configuration.
+</p>
+
+<pre>
+&lt;provider id='local' excludes='' path='/search/' type='vespa'&gt;
+  &lt;config name='search.federation.provider'&gt;
+    &lt;queryType&gt;YQL&lt;/queryType&gt;
+  &lt;/config&gt;
+  &lt;nodes&gt;
+    &lt;node host='localhost' port='8080'/&gt;
+  &lt;/nodes&gt;
+&lt;/provider&gt;
+</pre>
+
+<p>
+Optional attributes:
+</p><ul>
+<li>type, determines which searchers are implicitly added to this search chain to talk to the external service.</li>
+</ul>
+
+
+<h3 id="sec-3.2.1">Provider types </h3>
+
+<h4 id="sec-3.2.1.1">Http providers </h4>
+
+<p>Http providers are providers which either have the attribute <code>type=vespa</code>
+or no type but contains a component subclassing HTTPSearcher.</p>
+
+<p>Optional attributes:
+</p><ul>
+<li>
+cacheweight, a non-negative floating point number determining how
+much of the memory reserved for caching should be allocated to this provider.
+</li>
+<li>
+path, the location of the resource.
+
+</li>
+<li>readtimeout, the HTTP client's socket timeout.  Normally, this value is
+calculated dynamically by Vespa. (The timeout is basically the timeout for
+blocking read operations from the network.) Legal units are “s” and “ms”, as in
+e.g. “2.5 s” and “500 ms”.
+</li>
+<li>connectiontimeout, timeout for connecting to the provider from the
+JDisc Container. Normally, this value is calculated dynamically by Vespa.
+Legal units are “s” and “ms”, as in e.g. “2.5 s” and “500 ms”.
+</li>
+<li>connectionpooltimeout, the timeout for for acquiring a connection if using
+pooled connection. Should not be necessary to tweak under normal circumstances.
+Legal units are “s” and “ms”, as in e.g. “2.5 s” and “500 ms”.
+</li>
+<li>retries, the number of times to retry an HTTP operation if the error is
+assumed to be transient. The default is 1.
+</li>
+</ul>
+
+<p>Optional sub-elements:
+</p><ul>
+<li>
+nodes, a list of node elements.
+Each node element consists of a <em>host</em> element and a <em>port</em> element.
+
+</li>
+</ul>
+
+
+<h4 id="sec-3.2.1.2">Local providers </h4>
+
+<p>Local providers are provider with the type set to "local".
+They are used to talk to a local vespa cluster.
+</p>
+<p>
+mandatory attribute: cluster, the name of the local cluster. In the cluster attribute, set cluster name (and document type, separated by a dot, if using streaming search) - example:
+</p>
+<pre>
+&lt;provider id="storage" cluster="storage" type="local" excludes="com.yahoo.prelude.querytransform.StemmingSearcher" /&gt;
+</pre>
+
+
+<h3>Cluster</h3>
+
+
+<h2 id="sec-3.3">source</h2>
+
+<p>
+Contained in <a href="#sec-3.2">provider</a>.
+Defines a source search chain and an associated source.
+</p>
+
+<pre>
+&lt;provider id='providerA'&gt;
+  &lt;source id='commonSource'&gt;
+    &lt;searcher id='com.yahoo.example.AddHitSearcher'&gt;
+      &lt;config name='vespatest.hit-title'&gt;
+        &lt;hitTitle&gt;providerA&lt;/hitTitle&gt;
+      &lt;/config&gt;
+    &lt;/searcher&gt;
+  &lt;/source&gt;
+&lt;/provider&gt;
+</pre>
+
+<p>
+The component id specified is the id of the associated source.
+The associated source consists of all the source search chains
+with the same source name.
+</p>
+
+<p>
+Only a single source search chain can specify the source name
+using the "id" attribute. This search chain is called the <em>leader.</em>.
+The other source search chains must specify the source name
+using the "idref" attribute. The latter search chains are called participants.
+</p>
+
+<p>
+A source can be used for <em>federation</em>. When federating to a source,
+the leader search chain is normally used.
+To use one of the participant search chains, the following query parameter must be set:
+source.<em>sourceId</em>.provider.<em>providerId</em>.
+</p>
+
+<p>
+The id of the source search chain is <em>sourceId@providerId</em>.
+This search chain automatically inherits from the enclosing provider.
+It also automatically inherits the federation options of the enclosing provider.
+If the source contains federation options, they override the inherited ones.
+In all other respects, this search chain behaves like any other search chain.
+</p>
+
+</body>
+</html>

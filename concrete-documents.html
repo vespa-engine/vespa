@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html lang="en">
+
+<head>
+  <title>Concrete Document Types</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="April 2011" />
+  <meta name="authors" content="vegardh" />
+</head>
+
+<body>
+
+<p class="ingress">
+This document explains the usage of code-generated concrete document
+types in Vespa.
+</p>
+
+
+
+<h1 id="rationale">Rationale</h1>
+<p>
+In document processing scenarios, where the
+class <code>Document</code> is used, you will read and write data from
+it using the methods <code>setFieldValue()</code>
+and <code>getFieldValue()</code>. The data for each of the fields in
+the document instance is wrapped in field values.  If your documents
+use structs, they are handled the same way. Below is an example of
+setting the value for the field <code>title</code> on
+a <code>Document</code>:
+</p>
+
+<pre class="brush: java">
+book.setFieldValue("title", new StringFieldValue("Moby Dick"));
+</pre>
+
+<p>
+Code that does this a lot, such as an advanced document processor,
+will start to look untidy.
+</p>
+
+
+
+<h1 id="maven-plugin">Maven Plugin</h1>
+<p>
+To improve this, you may use code generation to get a <em>concrete
+document type</em>, a <code>Document</code> subclass that represents
+the exact document type (defined for example in the
+file <code>book.sd</code>) you are working with. To generate such
+types, you must include the following in your pom.xml in the
+Maven project where you build your bundles, in the build,plugins
+section:
+</p>
+
+<pre>
+&lt;plugin&gt;
+  &lt;groupId&gt;com.yahoo.vespa&lt;/groupId&gt;
+  &lt;artifactId&gt;vespa-documentgen-plugin&lt;/artifactId&gt;
+  &lt;version&gt;6.0.1&lt;/version&gt; &lt;!-- TODO fix version number --&gt;
+  &lt;configuration&gt;
+    &lt;sdDirectory&gt;etc/searchdefinitions&lt;/sdDirectory&gt;
+  &lt;/configuration&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;id&gt;document-gen&lt;/id&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;document-gen&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;
+</pre>
+
+<p>
+The <code>sdDirectory</code> is the directory of the SD files in your
+application package.
+</p>
+
+<p>
+After your project builds, the generated classes will be in the
+standard <em>target/generated-sources</em> directory of your code
+tree. The document type <code>book</code> will be represented as the
+Java class <code>Book</code>, and it will have native methods for data
+access, so the code example above becomes:
+</p>
+
+<pre>
+book.setTitle("Moby Dick");
+</pre>
+
+
+
+<h1 id="package-name">Package of Types</h1>
+<p>
+Specify the Java package of the generated types by using the following
+configuration:
+</p>
+
+<pre>
+&lt;configuration&gt;
+  &lt;packageName&gt;com.yahoo.mypackage&lt;/packageName&gt;
+</pre>
+
+
+<h1 id="user-provided-annotation-types">User provided annotation types</h1>
+<p>
+In some cases, you may want to provide the Java implementation of a
+given annotation type yourself, yielding <em>behaviour of
+annotations</em>. Implementing additional interfaces may be one
+scenario. In this case, you tell
+<code>vespa-documentgen-plugin</code> about that this way:
+</p>
+
+<pre>
+&lt;configuration&gt;
+  &lt;sdDirectory&gt;etc/searchdefinitions&lt;/sdDirectory&gt;
+  &lt;provided&gt;
+    &lt;annotation&gt;&lt;type&gt;NodeImpl&lt;/type&gt;&lt;clazz&gt;com.yahoo.vespa.document.NodeImpl&lt;/clazz&gt;&lt;/annotation&gt;
+    &lt;annotation&gt;&lt;type&gt;DocumentImpl&lt;/type&gt;&lt;clazz&gt;com.yahoo.vespa.document.DocumentImpl&lt;/clazz&gt;&lt;/annotation&gt;
+  &lt;/provided&gt;
+&lt;/configuration&gt;
+</pre>
+
+<p>
+Here, the plugin will not generate a type for <code>NodeImpl</code>
+and <code>DocumentImpl</code>, but
+the <code>ConcreteDocumentFactory</code> will support them, so that
+code relying on that will work.
+</p>
+
+
+
+<h1 id="abstract-annotation-types">Abstract Annotation Types</h1>
+<p>
+Make a generated annotation type abstract by using the following
+configuration:
+</p>
+
+<pre>
+&lt;configuration&gt;
+  &lt;abztract&gt;
+    &lt;annotation&gt;&lt;type&gt;myabstractannotationtype&lt;/type&gt;&lt;/annotation&gt;
+  &lt;/abztract&gt;
+</pre>
+
+
+
+<h1 id="inheritance-of-types">Inheritance of Concrete Types</h1>
+<p>
+If your input document types use single inheritance, the generated
+Java types will inherit accordingly.  However, if a document type
+inherites from more than one type (example: <code>document myDoc
+inherits base1, base2 {</code> ), the Java type for <code>myDoc</code>
+will just inherit from <code>Document</code>, since Java has single
+inheritance.
+</p>
+
+
+
+<h1 id="concrete-types-for-search-storage">Concrete Types in Search and Storage</h1>
+<p>
+Often you will use concrete types in a docproc that is used during
+feeding data into stateful clusters: search and/or storage. To make
+Vespa use the correct type during feeding and serialization, you must
+include this config in the <code>&lt;jdisc&gt;</code>
+in <code>services.xml</code>:
+</p>
+
+<pre>
+&lt;jdisc id="default" version="1.0"&gt;
+  &lt;document type="book" bundle="myBundle" class="com.yahoo.mypackage.Book" /&gt;
+  &hellip;
+</pre>
+
+<p>
+Vespa will make the type <code>Book</code> and all other concrete
+document, annotation and struct types from the bundle available to the
+docproc(s) in the container.  The specified bundle must be
+your <code>Bundle-SymbolicName</code>. It will also use the given Java
+type when feeding through a docproc chain.
+</p>
+
+<p>
+If the class is not in the specified bundle, the container will emit
+an error message about not being able to
+load <code>ConcreteDocumentFactory</code> as a component, and not
+start.
+</p>
+
+<p>
+You don't need to <code>Export-Package</code> the concrete document
+types from your bundle, a <code>package-info.java</code> is generated
+that does that for you.
+</p>
+
+
+
+<h1 id="factory-copycon">Factory and Copy Constructor</h1>
+<p>
+Along with the actual types, the Maven plugin will also generate a
+class <code>ConcreteDocumentFactory</code>, which holds information on
+the actual concrete types present. It can be used to initialize an
+object given the document type:
+</p>
+
+<pre>
+Book b = (Book) ConcreteDocumentFactory.getDocument("book", new DocumentId("id:book:book::0"));
+</pre>
+
+<p>
+It is possible to do this for example during deserialization, when a
+document is created. The concrete types also have copy constructors
+that can take a generic <code>Document</code> object of the same
+type. The contents will be deep-copied:
+</p>
+
+<pre>
+Document bookGeneric;
+// &hellip;
+Book book = new Book(bookGeneric, bookGeneric.getId());
+</pre>
+
+<p>
+All of the accessor and mutator methods (also those deprecated)
+on <code>Document</code> will work as expected on concrete types. Note
+that <code>getFieldValue()</code> will <em>generate</em> an
+ad-hoc <code>FieldValue</code> <em>every time</em>, since concrete
+types don't use them to store data. <code>setFieldValue()</code> will
+pack the data into the native Java field of the type.
+</p>
+
+
+
+<h1 id="using-concrete-types">Using Concrete Types in a Document Processor</h1>
+<p>
+In a document processor, you cast the incoming document base into your
+concrete document type before accessing it. Example:
+</p>
+
+<pre class="brush: java">
+/**
+ * An example document processor using concrete doc types.
+ *
+ * @author vegardh
+ */
+public class ConcreteDocDocProc extends DocumentProcessor {
+  public Progress process(Processing processing) {
+    DocumentPut put = (DocumentPut) processing.getDocumentOperations().get(0);
+    Book b = (Book) (put.getDocument());
+    b.setTitle("The Title");
+    return Progress.DONE;
+  }
+}
+</pre>
+
+<p>
+Concrete document types are not supported for document updates or
+removes.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<html lang="en">
+
+<head>
+  <title>Using the C++ Cloud config API</title>
+  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"    content="October 2011" />
+  <meta name="authors" content="lulf" />
+</head>
+
+<body>
+
+<p>
+This document describes how to use the C++ cloud config API.
+We are assuming you have created a <a href="configapi-dev.html">config
+definition file</a> (def file), which is the schema for one of your
+configs.
+</p>
+
+
+
+<h1 id="developing-cpp-api">Developing with the C++ Cloud Config API</h1>
+
+<p>
+Working with the C++ config API requires you to
+</p>
+
+<ul>
+<li>Generate C++ code from your config definitions</li>
+<li>Subscribe to the config using the API</li>
+</ul>
+
+
+<h2 id="configgen">Generating Config</h2>
+<p>
+In my example application, I have the following hierarchy related to
+config:
+</p>
+
+<pre>
+src/config-defs/motd.def
+</pre>
+
+<p>
+To generate code while standing in the <code>src/</code> folder:
+</p>
+
+<pre class="brush: cli">
+$ make-config.pl `pwd` `pwd`/config-defs/motd.def
+</pre>
+
+<p>
+This will generate a <em>config-defs/config-motd.h</em> and
+<em>config-defs/config-motd.cpp</em>. These classes are immutable pure
+data objects that you can use to configure your application. The
+objects may be copied. In this example, the class MotdConfig is the
+generated config object.
+</p>
+
+
+<h2 id="subscribing">Subscribing and Getting Config</h2>
+<p>
+To retrieve the config in your application, you must create a
+ConfigSubscriber. A ConfigSubscriber is capable of subscribing to one
+or more configs. The subscribe method takes an optional parameter as
+well, a timeout. If the ConfigSubscriber was unable to subscribe
+within the timeout, it will throw a ConfigRuntimeException. To use the
+API, you must include the header of the generated classes as well as
+the header shown in the example below. All of the config API resides
+in the <code>config</code> namespace.
+</p>
+
+<pre class="brush: cpp">
+#include &lt;config/config.h&gt;
+
+using namespace config;
+
+&hellip;
+
+ConfigSubscriber s;
+try {
+    std::unique_ptr&lt;ConfigHandle&lt;MotdConfig&gt;&gt; handle = s.subscribe&lt;MotdConfig&gt;("my.config.id");
+} catch (ConfigRuntimeException &amp; exception) {
+    // Handle exception
+}
+</pre>
+
+<p class="alert alert-success">
+Note that a ConfigSubscriber is <strong>NOT</strong> thread safe. It
+is up to the API user to ensure that the ConfigSubscriber is not used
+by multiple threads.
+</p>
+
+<p>
+Once you have subscribed to all the configs you need, you may perform
+the nextConfig() call on the ConfigSubscriber:
+</p>
+
+<pre>
+s.nextConfig(1000);
+</pre>
+
+<p>
+Given N subscriptions, the nextConfig call will wait up to 1 second
+for 1 to N configs to change. If they have changed, it returns
+true. If not, it returns
+false. See <a href="configapi-dev.html#guidelines">config API
+guidelines</a> for a more advanced usage of the ConfigSubscriber.
+</p>
+
+<p class="alert alert-success">
+It is important to note that you <strong>cannot</strong> subscribe or
+unsubscribe to more configs once you have called nextConfig(). This
+means that in order to change the set of configs to which you
+subscribe, you must create a new ConfigSubscriber with the new set.
+</p>
+
+<p>
+Having called nextConfig(), the ConfigHandle can be asked for the
+current config:
+</p>
+
+<pre>
+std::unique_ptr&lt;MotdConfig&gt; cfg = handle-&gt;getConfig();
+</pre>
+
+<p>
+This will retrieve the currently available config. If the subscribe
+calls succeeded and valid configs was returned by the config server,
+you are guaranteed that it will give you a correct config. For getting
+updates, the <code>nextConfig</code> method can be used like this:
+</p>
+
+<pre>
+if (s.nextConfig(3000)) {
+    std::unique_ptr&lt;MotdConfig&gt; cfg = handle-&gt;getConfig();
+}
+</pre>
+
+<p>
+The method ensures that whatever getConfig() returns next will be the
+latest config available. nextConfig has a timeout parameter, and will
+return false if timeout was reached, or true if a new generation of
+configs was deployed, and at at least 1 of them changed.
+</p>
+
+<p>
+When subscribing to multiple configs, a natural use case is to check
+which of the configs changed. Therefore, the ConfigHandle class also
+contains a <code>isChanged</code> method. This method returns true if
+the previous call to nextConfig() resulted in a change in this handles
+config, and false if not.
+</p>
+
+
+<h3 id="context">Selecting Config Source</h3>
+<p>
+The ConfigSubscriber constructor may also be passed
+a <code>ConfigContext</code> object. A context can be used to share
+resources with multiple ConfigSubscriber objects and select the config
+source. The context is passed a
+<code>SourceSpec</code> parameter, which specifies the source of the config. The
+different spec types are:
+</p>
+
+<ul>
+<li><code>ServerSpec</code>, the default spec</li>
+<li><code>ConfigSet</code>, used for subscribing to a set of config
+    objects.</li>
+<li><code>DirSpec</code>, used for subscribing to config files in a
+    directory.</li>
+<li><code>FileSpec</code>, used for subscribing to a single file.</li>
+<li><code>RawSpec</code>, used for subscribing to a config value
+    specified directly.</li>
+</ul>
+
+<p>
+Most users will use the default ServerSpec, or ConfigSet.
+</p>
+
+<h2 id="unit-testing">Unit Testing Config</h2>
+<p>
+To help with unit testing, each config type has a corresponding
+builder type.  For instance, given <code>FooConfig and
+BarConfig</code> generated config classes, <code>FooConfigBuilder and
+BarConfigBuilder</code> should also be available as mutable
+versions. The builders can then be added to a
+<code>ConfigSet</code>
+</p>
+
+<pre>
+ConfigSet set;
+FooConfigBuilder fooBuilder;
+BarConfigBuilder barBuilder;
+set.addBuilder("id1", &amp;fooBuilder);
+set.addBuilder("id1", &amp;barBuilder);
+fooBuilder.foobar = 13;
+barBuilder.barfoo = 12;
+</pre>
+
+<p>
+Having populated the set and set values on the builders, one must
+create a context containing the set.
+</p>
+
+<pre>
+IConfigContext::SP ctx(new ConfigContext(set));
+</pre>
+
+<p>
+Once the context is created, it can be passed to the
+ConfigSubscriber.
+</p>
+
+<pre>
+ConfigSubscriber subscriber(ctx);
+ConfigHandle&lt;FooConfig&gt;::UP fooHandle =
+subscriber.subscribe&lt;FooConfig&gt;("id1");
+ConfigHandle&lt;BarConfig&gt;::UP barHandle =
+subscriber.subscribe&lt;BarConfig&gt;("id1");
+subscriber.nextConfig() // returns true first time
+</pre>
+
+<p>
+Once having subscribed, nextConfig and nextGeneration methods will
+work as normal. If you need to update a field to test reload, you can
+change the field of one of the builders and call reload on the
+context.
+</p>
+
+<pre>
+subscriber.nextConfig() // should return false if called before
+fooBuilder.foobar = 188;
+ctx-&gt;reload();
+subscriber.nextConfig() // should return true now
+</pre>
+
+<p>
+How the config id relates to the application package deployed is
+covered in the main <a href="configapi-dev.html">Config API</a>
+document.
+</p>
+
+<p>
+We also provide some helper classes such as
+the <code>ConfigGetter</code> to test the config itself.
+</p>
+
+<p class="alert alert-success">
+Note that when using builders for unit testing, there is an underlying
+assumption that the configured application have subscribed to all
+configs before you mutate the builders. Otherwise, the application may
+try to retrieve a inconsistent configuration. In general, try to
+design your application so that you can verify configuration changes
+in your tests.
+</p>
+
+
+<h2 id="printing">Printing Config</h2>
+<p>
+All config objects can be printed, and the API supports several ways
+of doing so. To print config, you need to include the
+&lt;config/print.h&gt;. Config can be printed with any class
+implementing the <code>ConfigWriter</code> interface.
+A <code>ConfigWriter</code> has a write method that takes any config
+class as input, and writes it somewhere. The following classes are
+provided:
+</p>
+
+<ul>
+<li><code>FileConfigWriter</code> - Can write a config to a file.</li>
+<li><code>OstreamConfigWriter</code> - Can write a config to a C++
+    ostream.</li>
+</ul>
+
+<p>
+A <code>ConfigWriter</code> also supports another parameter in the
+write method, a <code>ConfigFormatter</code>. Currently, we provide
+two formatters:
+</p>
+
+<ul>
+<li><code>FileConfigFormatter</code> - Formats the config as the old
+    config payload format. This is the <strong>default</strong>
+    formatter.</li>
+<li><code>JsonConfigFormatter</code> - Formats the config as
+    JSON.</li>
+</ul>
+
+<p>
+The <code>FileConfigFormatter</code> is the default formatter if none
+is specified.
+</p>
+
+
+<h3 id="printing-example">Example Printing</h3>
+<p>
+Writing the config <code>MyConfig</code> to a file, as json:
+</p>
+
+<pre>
+MyConfig foo;
+FileConfigWriter writer("myfile.json");
+writer.write(foo, JsonConfigFormatter());
+</pre>
+
+</body>
+</html>

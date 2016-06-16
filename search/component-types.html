@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
+  <meta name="date"       content="November 2012" />
+  <meta name="authors"    content="steinar" />
+  <title>Container component types</title>
+</head>
+
+<body>
+
+<h1>Container component types</h1>
+
+<p class="ingress">
+  The container has a large number of different types of plug-ins available
+  to a developer, this is an outline of when and why to use the different
+  kinds. To start creating components, see
+  <a href="../jdisc/developing-applications.html">developing applications</a>.
+</p>
+
+
+
+<h2 id="overview">30000 feet perspective</h2>
+
+<img src="../img/container_components.svg">
+
+<p>
+  Starting at the top of the diagram, <a href="#server">server</a> instances are
+  used for supporting external clients (if no suitable implementations of
+  com.yahoo.jdisc.service.ServerProvider are available. A client may or may not
+  be a network client, so it is related to the network layer. The network layer
+  associates a Request with a <a href="#responsehandler">response handler</a>
+  and routes it to the correct type of <a href="#requesthandler">request
+  handler</a> (typically based on URI binding patterns).
+</p>
+
+<p>
+  If an application needs lightweight request-response processing using
+  decomposition by a series of chained logical units, the <a href="../jdisc/processing.html">processing framework</a>
+  is the correct family of components to use. The request will be routed from
+  ProcessingHandler through one or more chains of <a
+  href="#processor">Processor</a> instances. The exact format of the output is
+  customizable using a <a href="#renderer">Renderer</a>.
+</p>
+
+<p>
+  If doing search queries, SearchHandler will create a Query object, route that
+  to the pertinent chain of <a href="#searcher">Searcher</a> instances, and
+  associate the returned Result with the correct <a href="#renderer">Renderer</a>
+  instance for optional customization of the output format.
+</p>
+
+<p>
+  The DocumentProcessingHandler is usually invoked from messagebus, and used for
+  feeding documents into an index or storage. The incoming data is used to build
+  a Document object, and this is then feed through a chain of <a
+  href="#docproc">DocumentProcessor</a> instances.
+</p>
+
+<p>
+  If building an application with custom HTTP APIs, for instance arbitrary REST
+  APIs, the easiest way is building a custom <a
+  href="#requesthandler">RequestHandler</a>. This gets the Request, which is
+  basically a set of key-value pairs, and returns a stream of arbitrary data
+  back to the network.
+</p>
+
+<p>
+  <a href="#component">Component</a> is the basic building block in the
+  container. A component may be injected into other components, including all
+  the different request handlers, document processors and so on mentioned above,
+  and will get a destructor like method invoked when no other component is using
+  it any more.
+</p>
+
+
+<h2 id="server">Server</h2>
+<p>
+  Servers are components implementing the com.yahoo.jdisc.service.ServerProvider
+  interface, usually by subclassing
+  com.yahoo.jdisc.service.AbstractServerProvider. Use this if developing support
+  for a new type of clients, e.g. an unsupported network protocol.
+</ul>
+
+<h2 id="responsehandler">Response handlers</h2>
+
+<p>
+  Response handlers are invoked by the request handlers after the client
+  response is created. The correct response handler is chosen from URI
+  pattern bindings. A Response is a more or less opaque data structure,
+  so a response handler is more suited to e.g. tracking return codes
+  than doing deep result inspections.
+</p>
+
+<h2 id="requesthandler">Request handlers</h2>
+
+<p>
+  Request handlers are the easiest way to implement arbitrary REST services. The
+  incoming request is a set of key-value pairs and protocol specific
+  information. A request handler my fire off a request to e.g. the search
+  handler, but what it will get back is opaque. If context sensitive result
+  transformations are necessary, the request handler must be paired with one or
+  more <a href="#searcher">searchers</a>, and if the output from the search
+  needs to be customized, a <a href="#renderer">renderer</a> for the search
+  result is the correct way of doing it (as opposed to trying to transform the
+  search response in the request handler).
+</p>
+
+<h2 id="processor">Processor instances</h2>
+
+<p>
+  The <a href="../jdisc/processing.html">processing framework</a> is to be used for light-weight solutions where
+  decomposition of the problem by partitioning the implementation into
+  (a) chain(s) of processors is useful. Processors are invoked synchronously
+  and the response is a tree of arbitrary data elements. Custom output
+  formats is achieved by adding <a href="#renderer">renderers</a>.
+</p>
+
+<h2 id="renderer">Renderers</h2>
+
+<p>
+  Renderers are result formatters for the processing and search frameworks
+  in the container. They usually render responses as JSON or XML, but
+  arbitrary MIME types may be used, including binary formats. Renderers
+  are subclasses of com.yahoo.processing.rendering.Renderer.
+</p>
+
+<h2 id="searcher">Searchers</h2>
+
+<p>
+  Searchers are the only supported way of doing <i>structured</i> query
+  and result transforms in a search context. If an application is performing
+  searches and needs to look at single result documents (hits) or needs
+  to add terms to the parsed query, searchers are the only way to do this
+  robustly.
+</p>
+
+<h2 id="docproc">Document processors</h2>
+
+<p>
+  Document processors are for documents what searchers are for queries, they
+  can access and transform documents robustly and structured. If documents
+  need some kind of transformations or annotations before reaching an
+  index or storage, custom document processors are usually a better solution
+  than manipulating the document feed.
+</p>
+
+<h2 id="component">Components</h2>
+
+<p>
+  Usually, any container plug-in is a component. A component is usually a
+  subclass of com.yahoo.component.AbstractComponent, though
+  com.yahoo.component.Component is an interface. Components are the low-level
+  wirings for using composition with injection in the container. If building
+  complex searchers or document processors, shared resources or simply
+  partitioning the code, is often needed. The Component is an object with
+  a controlled lifecycle which may be injected into other components, such
+  as searchers, renderers, document processors, request handlers and so on
+  an so forth.
+</p>
+
+</body>
+</html>

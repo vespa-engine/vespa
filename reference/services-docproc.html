@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+
+<head>
+    <title>services.xml - 'document-processing'</title>
+    <link rel="stylesheet" type="text/css" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css"/>
+    <meta name="level" content="basic">
+    <meta name="audience" content="all">
+    <meta name="lastupdate" content="$Date: 2009-07-01 10:57:23 $">
+    <meta name="reviewdate" content="October 2012">
+    <meta name="authors" content="einarmr">
+</head>
+
+<body>
+
+<h1>services.xml - 'document-processing'</h1>
+
+<p class="ingress">
+    This is the reference documentation for all elements contained within
+    the <code>&lt;document-processing&gt;</code> section of
+    <code>&lt;jdisc&gt;</code> in <em>services.xml</em>.  For
+    a complete overview of all <code>&lt;jdisc&gt;</code> subsections,
+    please see the <a href="services-jdisc.html">Reference documentation for
+        <em>JDisc</em></a>.
+</p>
+
+<p>
+    The document processing model elements are:
+</p>
+
+<p>&nbsp;</p> <!-- Added to avoid the TOC box chopping the horizontal size of the element below&hellip;sigh -->
+
+<pre>
+<a href="services-jdisc.html">jdisc</a>
+    <a href="#document-processing">document-processing [numnodesperclient, preferlocalnode, maxmessagesinqueue, maxqueuebytesize, maxqueuewait, maxconcurrentfactor, documentexpansionfactor, containercorememory]</a>
+        <a href="services-jdisc.html#include">include</a>
+        <a href="#documentprocessor">documentprocessor [class, bundle, id, idref, provides, before, after]</a>
+            <a href="#provides">provides</a>
+            <a href="#before">before</a>
+            <a href="#after">after</a>
+            <a href="#map">map</a>
+                <a href="#map">field [doctype, in-document, in-processor]</a>
+        <a href="#chain">chain [name, id, idref, inherits, excludes, documentprocessors]</a>
+            <a href="#map">map</a>
+                <a href="#map">field [doctype, in-document, in-processor]</a>
+            <a href="#inheritance">inherits</a>
+                <a href="#inheritance">docprocchain</a>
+                <a href="#inheritance">exclude</a>
+            <a href="#documentprocessor">documentprocessor [class, bundle, id, idref, provides, before, after]</a>
+                <a href="#provides">provides</a>
+                <a href="#before">before</a>
+                <a href="#after">after</a>
+                <a href="#map">map</a>
+                    <a href="#map">field [doctype, in-document, in-processor]</a>
+            <a href="#phase">phase [id, idref, before, after]</a>
+                <a href="#beforephase">before</a>
+                <a href="#afterphase">after</a>
+</pre>
+
+
+<h1 id="document-processing-model-elements">document-processing configuration model elements</h1>
+
+
+<h2 id="document-processing">document-processing</h2>
+
+<p>
+    The root element of the document-processing configuration model in JDisc.
+</p>
+
+<p>
+    Attributes:
+</p>
+<ul id="document-processing-cluster-attributes">
+    <li><strong>numnodesperclient (optional - default "")</strong>: Set to some number below the amount of
+        nodes in the cluster to limit how many nodes a single client can connect to. If you have
+        <u>many</u> clients, this can reduce the memory usage on both document-processing and client nodes.
+    </li>
+    <li><strong>preferlocalnode (optional - default "false")</strong>: Set to always prefer sending to a
+        document-processing node running on the same host as the client. You should use this if you are running
+        a client on each document-processing node.
+    </li>
+    <li><strong>documentexpansionfactor (optional)</strong>: The document expansion factor, see <a href="../performance/docproc-tuning.html">Docproc
+        tuning</a> for an explanation of this.
+    </li>
+    <li><strong>maxqueuewait (optional)</strong>:
+        The maximum number of seconds a message should wait in queue before being processed. Docproc will
+        adapt its queue size to adhere to this. If the queue is full, new messages will be replied to with SESSION_BUSY.
+    </li>
+</ul>
+
+<h1 id="documentprocessorelements">Document Processor elements </h1>
+
+<p>Documentprocessor elements are contained in <a href="#chain">docproc chain elements</a> or in the <a
+        href="#document-processing">document-processing root</a>.
+</p>
+
+<p>
+    A documentprocessor element is either a document processor definition or document processor reference.
+    The rest of this section deals with document processor definitions; document processor references are
+    described in the <a href="#docprocchainelements">docproc chain elements section.</a>
+</p>
+
+<p>
+    A documentprocessor definition causes the creation of exactly one document processor instance.
+    This instance is set up according to the content of the documentprocessor element.
+</p>
+
+<p>
+    A documentprocessor definition contained in a docproc chain element defines an
+    <em>inner document processor.</em>
+    Otherwise, it defines an <em>outer document processor.</em>
+</p>
+
+<p>Mandatory attributes for all documentprocessor definitions:
+</p>
+<ul>
+    <li>
+        <em>id</em>, the component id of the documentprocessor instance.
+    </li>
+</ul>
+
+<p>For inner documentprocessors, the name must be unique inside the docproc chain.
+    For outer documentprocessors, the component id must be unique.
+    An inner documentprocessor is not permitted to have the same name as an outer documentprocessor.
+</p>
+
+<p>
+    Optional attributes for all documentprocessor definitions:
+</p>
+<ul>
+    <li>
+        provides, a space separated list of names that represents what this documentprocessor produces.
+    </li>
+    <li>
+        before, a space separated list of phase or provided names. Phases or documentprocessors providing these names
+        will be
+        placed later in the docproc chain than this document processor.
+    </li>
+    <li>
+        after, a space separated list of phase or provided names. Phases or documentprocessors providing these names
+        will be
+        placed earlier in the docproc chain than this document processor.
+    </li>
+</ul>
+
+<p>Optional sub-elements:
+</p>
+<ul>
+    <li id="provides">
+        provides, a single name that should be added to the provides list.
+    </li>
+    <li id="before">
+        before, a single name that should be added to the before list.
+    </li>
+    <li id="after">
+        after, a single name that should be added to the after list.
+    </li>
+    <li>
+        config (one or more).
+    </li>
+</ul>
+
+<p>
+    For more information on provides, before and after , see <a
+        href="../chains-in-vespa.html">ordering
+    documentprocessors</a>.
+</p>
+
+<h2 id="documentprocessor">documentprocessor </h2>
+
+<p>Defines a documentprocessor instance of a user specified class.
+</p>
+
+<pre class="code">
+&lt;documentprocessor id="<em>componentId</em>" class="<em>className:versionSpecification</em>" bundle="<em>bundleSymbolicName:versionSpecification</em>"&gt;
+    &lt;config /&gt;
+&lt;/documentprocessor&gt;
+</pre>
+<p>
+    Optional attributes:
+</p>
+<ul>
+    <li>
+        <em>class</em>, a component specification containing the name of the class to instantiate to create the document
+        processor instance.
+        If missing, copied from id.
+    </li>
+    <li>
+        <em>bundle</em>, a component specification containing the bundle symbolic name and version used to select the
+        bundle.
+        The class is retrieved from this bundle. If missing, copied from class.
+
+    </li>
+</ul>
+
+<h1 id="docprocchainelements">Docproc chain elements </h1>
+
+<p>Specifies how a docproc chain should be instantiated, and how the contained
+    document processors should be ordered.
+</p>
+
+<h2 id="chain">chain </h2>
+
+<p>Contained in <a href="#document-processing">document-processing</a>.
+</p>
+
+<p>
+    mandatory attributes:
+</p>
+<ul>
+    <li>
+        id, the component id of the docproc chain.
+
+    </li>
+</ul>
+
+<p>Optional attributes:
+</p>
+<ul>
+    <li>
+        <em>inherits</em>, a space separated list of component specifications, each giving a
+        docproc chain to <a href="#inheritance">inherit from</a>.
+    </li>
+    <li>
+        <em>excludes</em>, a space separated list of names. If a document processor reference has the
+        same name as one of these names, the document processor reference is removed from this
+        docproc chain. The exclusion is done before any consolidation of document processor
+        references when inheriting docproc chains.
+    </li>
+</ul>
+
+<p>Optional sub-elements:
+</p>
+<ul>
+    <li>
+        <a href="#documentprocessor">documentprocessor element</a> (one or more), either a documentprocessor reference
+        or documentprocessor
+        definition. If the name given for a documentprocessor matches an <a href="#documentprocessorelements">outer
+        documentprocessor</a>, it is
+        a <a href="#documentprocessorreference">documentprocessor reference</a>. Otherwise, it is a <a
+            href="#documentprocessor">documentprocessor definition</a>. If it is a
+        documentprocessor definition, it is also an implicit documentprocessor reference saying: use
+        <em>exactly</em> this documentprocessor. All these documentprocessor elements must have different name.
+    </li>
+    <li>
+        <a href="#phase">phase</a> (one or more).
+    </li>
+    <li>
+        <a href="config-files.html#configuration_format_in_services.xml">config</a>
+        (one or more - will apply to all <em>inner</em> documentprocessors in this docproc chain, unless
+        overridden by individual inner documentprocessors).
+    </li>
+</ul>
+
+<h3 id="documentprocessorreference">Documentprocessor reference </h3>
+
+<p>The documentprocessor references determines which documentprocessor instances are used in the
+    resulting docproc chain instance.
+</p>
+
+<p>
+    A documentprocessor reference is a component specification that says: there shall be
+    exactly one documentprocessor in this docproc chain with the given name,
+    and this documentprocessor must must match the version specification.
+</p>
+
+<p>
+    A documentprocessor reference <em>overrides</em> any inherited
+    documentprocessor references with the same name (i.e. the inherited ones are ignored).
+</p>
+
+<p>
+    If several documentprocessors matches a given documentprocessor reference, the newest(as
+    determined by the version) is used.
+</p>
+
+
+<h3 id="inheritance">chain inheritance </h3>
+
+<p>When a docproc chain inherits from another docproc chain, it subsumes the phases
+    and the <em>documentprocessor references</em> (both implicitly and explicitly defined) from the
+    parent chain.
+</p>
+
+<p>
+    If two or more inherited documentprocessor references have the same name, a new component
+    specification matching those will be used instead. If that is not possible, an
+    error will be signaled(i.e. if the version specifications can not be
+    consolidated or if they require documentprocessor definitions from different docproc
+    chains).
+</p>
+
+
+<h3 id="phase">Phase </h3>
+
+<p>
+    A phase is a named checkpoint. They are used to help create a linear ordering
+    of the documentprocessor instances inside each resulting docproc chain instance. For
+    more information,
+    see <a href="../chains-in-vespa.html">ordering
+    documentprocessors</a>.
+</p>
+<pre class="code">
+&lt;phase id="<em>name</em>"&gt;
+    &lt;before&gt;<em>phaseName</em>&lt;/before&gt;
+    &lt;after&gt;<em>phaseName</em>&lt;/after&gt;
+&lt;/phase&gt;
+</pre>
+<p>
+    Equivalent, but less verbose:
+</p>
+<pre class="code">
+&lt;phase id="<em>name</em>" before="<em>phaseNames</em>" after="<em>phaseNames</em>" /&gt;
+</pre>
+<p>
+    Optional attributes:
+</p>
+<ul>
+    <li>before, a space separated list of phase names that are considered to be
+        later in the docproc chain than this phase.
+    </li>
+    <li>after, a space separated list of phase names that are considered to be
+        earlier in the docproc chain than this phase.
+    </li>
+</ul>
+<p>
+    Optional sub-elements:
+</p>
+<ul>
+    <li id="beforephase">before, a single name that should be added to the before list.</li>
+    <li id="afterphase">after, a single name that should be added to the after list.</li>
+</ul>
+
+
+<h1 id="map">Schema mapping</h1>
+
+<p>
+    It is possible to set up a field name mapping from the name(s) of field(s) in the input documents to the names used
+    in a deployed docproc.
+    The purpose is to reuse functionality without changing the field names. The example below shows the configuration:
+
+<pre class="code">
+    &lt;chain name="myChain"&gt;<strong>
+        &lt;map&gt;
+            &lt;field in-document="key" in-processor="id"/&gt;
+        &lt;/map&gt;</strong>
+        &lt;documentprocessor type="CityDocProc"&gt;<strong>
+            &lt;map&gt;
+                &lt;field in-document="town" in-processor="city" doctype="restaurant"/&gt;
+            &lt;/map&gt;</strong>
+        &lt;/documentprocessor&gt;
+        &lt;documentprocessor type="CarDocProc"&gt;<strong>
+            &lt;map&gt;
+                &lt;field in-document="engine.cylinders" in-processor="cyl"/&gt;
+            &lt;/map&gt;</strong>
+        &lt;/documentprocessor&gt;
+    &lt;/chain&gt;
+</pre>
+
+<p>
+    In the example, a chain is deployed with 2 docprocs.
+<p>
+    For the chain, a mapping from <em>key</em> to <em>id</em> is set up.
+    Imagine that some or all of the docprocs in the chain read and write to a field called <em>id</em>, but we want this functionality to the document field <em>key</em>.
+
+    <p>
+    Furthermore, a similar thing is done for the
+    <code>CityDocProc</code>: The docproc accesses the field <em>city</em>, whereas it's called <em>town</em> in the
+    feed. The mapping
+    only applies to the document type <em>restaurant</em>.
+
+<p>
+    The <code>CarDocProc</code> accesses a field called <em>cyl</em>. In this example this is mapped to the field <em>cylinders</em>
+    of a struct <em>engine</em> using
+    a dotted notation.
+
+<p>
+    If you specify mappings on different levels of the config (say both for a cluster and a docproc), the mapping
+    closest to the actual docproc will take precedence.
+
+</body>
+</html>
+
+
