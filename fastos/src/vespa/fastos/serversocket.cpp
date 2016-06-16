@@ -43,7 +43,7 @@ FastOS_SocketInterface *FastOS_ServerSocket::Accept()
     int                      handlerSocketHandle;
     struct sockaddr_storage  clientAddress;
 
-    FastOS_SocketLen clientAddressLength = sizeof(clientAddress);
+    socklen_t clientAddressLength = sizeof(clientAddress);
 
     memset(&clientAddress, 0, sizeof(clientAddress));
 
@@ -71,7 +71,7 @@ FastOS_Socket *FastOS_ServerSocket::AcceptPlain()
     int                 handlerSocketHandle;
     struct sockaddr_storage clientAddress;
 
-    FastOS_SocketLen clientAddressLength = sizeof(clientAddress);
+    socklen_t clientAddressLength = sizeof(clientAddress);
 
     memset(&clientAddress, 0, sizeof(clientAddress));
 

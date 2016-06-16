@@ -13,4 +13,3 @@
 #define FASTOS_HAVE_INT8_T        1
 #define FASTOS_HAVE_UINT8_T       1
 #define FASTOS_HAVE_INT64_T       1
-#define FASTOS_HAVE_SOCKLEN_T     1

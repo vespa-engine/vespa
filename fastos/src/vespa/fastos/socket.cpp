@@ -3,8 +3,6 @@
 #include <vespa/fastos/socket.h>
 #include <sstream>
 
-typedef caddr_t FastOS_SockOptValP;
-
 FastOS_SocketInterface::FastOS_SocketInterface()
     : _readEventEnabled(false),
       _writeEventEnabled(false),
@@ -158,9 +156,7 @@ bool FastOS_SocketInterface::SetSoLinger( bool doLinger, int seconds )
     lingerTime.l_linger = seconds;
 
     if (CreateIfNoSocketYet()) {
-        rc = (0 == setsockopt(_socketHandle, SOL_SOCKET, SO_LINGER,
-                              reinterpret_cast<FastOS_SockOptValP>(&lingerTime),
-                              sizeof(lingerTime)));
+        rc = (0 == setsockopt(_socketHandle, SOL_SOCKET, SO_LINGER, &lingerTime, sizeof(lingerTime)));
     }
 
     return rc;
@@ -173,9 +169,7 @@ FastOS_SocketInterface::SetNoDelay(bool noDelay)
     int noDelayInt = noDelay ? 1 : 0;
 
     if (CreateIfNoSocketYet()) {
-        rc = (setsockopt(_socketHandle, IPPROTO_TCP, TCP_NODELAY,
-                         reinterpret_cast<FastOS_SockOptValP>(&noDelayInt),
-                         sizeof(noDelayInt)) == 0);
+        rc = (setsockopt(_socketHandle, IPPROTO_TCP, TCP_NODELAY, &noDelayInt, sizeof(noDelayInt)) == 0);
     }
     return rc;
 }
@@ -189,10 +183,9 @@ int FastOS_SocketInterface::GetSoError ()
     int lastError = FastOS_Socket::GetLastError();
     int  soError = 0;
 
-    FastOS_SocketLen soErrorLen = sizeof(soError);
+    socklen_t soErrorLen = sizeof(soError);
 
-    if (getsockopt(_socketHandle, SOL_SOCKET, SO_ERROR,
-                   reinterpret_cast<FastOS_SockOptValP>(&soError), &soErrorLen) != 0) {
+    if (getsockopt(_socketHandle, SOL_SOCKET, SO_ERROR, &soError, &soErrorLen) != 0) {
         return lastError;
     }
 
@@ -208,9 +201,7 @@ bool FastOS_SocketInterface::SetSoIntOpt (int option, int value)
     bool rc=false;
 
     if (CreateIfNoSocketYet()) {
-        rc = (0 == setsockopt(_socketHandle, SOL_SOCKET, option,
-                              reinterpret_cast<FastOS_SockOptValP>(&value),
-                              sizeof(value)));
+        rc = (0 == setsockopt(_socketHandle, SOL_SOCKET, option, &value, sizeof(value)));
     }
 
     return rc;
@@ -221,11 +212,9 @@ bool FastOS_SocketInterface::GetSoIntOpt(int option, int &value)
     bool rc=false;
 
     if (CreateIfNoSocketYet()) {
-        FastOS_SocketLen len = sizeof(value);
+        socklen_t len = sizeof(value);
 
-        int retval = getsockopt(_socketHandle, SOL_SOCKET, option,
-                                reinterpret_cast<FastOS_SockOptValP>(&value),
-                                &len);
+        int retval = getsockopt(_socketHandle, SOL_SOCKET, option, &value, &len);
 
         if (len != sizeof(value)) {
             // FIX! - What about GetLastError() in this case?
@@ -264,7 +253,7 @@ int FastOS_SocketInterface::GetLocalPort ()
 {
     int result = -1;
     sockaddr_storage addr;
-    FastOS_SocketLen len = sizeof(addr);
+    socklen_t len = sizeof(addr);
     if(getsockname(_socketHandle, reinterpret_cast<struct sockaddr *>(&addr), &len) == 0) {
         if ((addr.ss_family == AF_INET) && (len == sizeof(sockaddr_in))) {
             const sockaddr_in *my_addr = reinterpret_cast<const sockaddr_in *>(&addr);

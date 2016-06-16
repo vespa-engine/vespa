@@ -97,15 +97,6 @@
 #undef __USE_GNU  /* for O_DIRECT define */
 #endif
 
-#ifndef FASTOS_AUTOCONF
-#if defined(FASTOS_HAVE_SOCKLEN_T)
-typedef socklen_t FastOS_SocketLen;
-#else
-typedef int FastOS_SocketLen;
-#endif
-#endif  /* FASTOS_AUTOCONF */
-
-
 #include <stdio.h>
 #include <stdlib.h>
 
