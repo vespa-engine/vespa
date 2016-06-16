@@ -19,7 +19,6 @@ MODULES="
   jrt
   component
   messagebus
-  linguistics
   filedistributionmanager"
 
 for module in $MODULES; do
