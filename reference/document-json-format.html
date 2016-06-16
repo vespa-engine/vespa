@@ -3,7 +3,7 @@
 title: "Document JSON format"
 ---
 
-<h1>Document JSON format</h1>
+<h2>Document JSON format</h2>
 
 <p class="ingress">
 This document defines the Vespa Document JSON format. This format
@@ -13,7 +13,7 @@ documents</em>.
 
 
 
-<h1 id="structure">Structure</h1>
+<h2 id="structure">Structure</h2>
 
 <p>
 A document feed is a JSON list of document operations, where each
@@ -32,7 +32,7 @@ document operation is a JSON object.
 following sections describes each of these elements in detail. You can also refer to the
 <a href="#a-complete-example">complete example</a> at the end.</p>
 
-<h1 id="put">The Put Structure</h1>
+<h2 id="put">The Put Structure</h2>
 
 <p>The <code>put</code> object is used to add new or changed documents to Vespa.</p>
 
@@ -55,7 +55,7 @@ as shown above in the "fields" object. In this example, "songs" and "title" are
 fields specified in the document type.</p>
 
 
-<h2 id="conditional-put">Conditional puts</h2>
+<h3 id="conditional-put">Conditional puts</h3>
 <p>
   An optional "condition" object can be added to the put operation to
   specify a test and set condition. The value of the condition object
@@ -81,7 +81,7 @@ fields specified in the document type.</p>
 }
 </pre>
 
-<h2 id="array-values">Array values</h2>
+<h3 id="array-values">Array values</h3>
 
 <p>Arrays are represented by using JSON arrays.</p>
 
@@ -105,7 +105,7 @@ fields specified in the document type.</p>
 ]
 </pre>
 
-<h2 id="map-values">Map values</h2>
+<h3 id="map-values">Map values</h3>
 
 <p>Maps are represented as an array of key-/value-entries. They are not
 represented as JSON maps, as the internal API puts few limitations on what a key
@@ -138,7 +138,7 @@ to use maps. Also, weighted sets (below) are represented as maps.</p>
 
 <p>Note that map values are currently only supported by streaming search.</p>
 
-<h2 id="struct-values">Struct values</h2>
+<h3 id="struct-values">Struct values</h3>
 
 <p>Structs are more or less directly represented as JSON objects. They are declared by their field name.</p>
 
@@ -158,7 +158,7 @@ to use maps. Also, weighted sets (below) are represented as maps.</p>
 
 <p>Note that struct values are currently only supported by streaming search.</p>
 
-<h2 id="weightedset-values">Weighted set values</h2>
+<h3 id="weightedset-values">Weighted set values</h3>
 
 <p>Weighted sets are represented as maps where the value is the weight. Do note, even if the key is not
 a string as such, it will be represented as a string in the JSON format.</p>
@@ -182,7 +182,7 @@ a string as such, it will be represented as a string in the JSON format.</p>
 </pre>
 
 
-<h2 id="base64">base64 encoded values</h2>
+<h3 id="base64">base64 encoded values</h3>
 
 <p>Feeding <a href="../reference/search-definitions.html#type:raw">raw</a> fields
 are done by feeding the input data as a base64 encoded string.</p>
@@ -199,7 +199,7 @@ are done by feeding the input data as a base64 encoded string.</p>
 </pre>
 
 
-<h2 id="tensor">Tensor values</h2>
+<h3 id="tensor">Tensor values</h3>
 
 <p>Feeding a <a href="../reference/search-definitions.html#type:tensor">tensor</a> field
 is done by specifying the dimensions (optional) and cells of the tensor as follows:</p>
@@ -244,7 +244,7 @@ in <code>dimensions</code> and the ones mentioned on the cell addresses.</p>
 
 
 
-<h1 id="update">The Update Structure</h1>
+<h2 id="update">The Update Structure</h2>
 
 <p>Vespa supports making changes to existing document without submitting the
 entire document again. This is called <em>partial update</em>.</p>
@@ -257,17 +257,17 @@ document.</p>
 <p>The following update operations are supported and described in more detail in
 the next subchapters:</p>
 
-<h3>
+<h4>
 Valid operations for all field types
-</h3>
+</h4>
 
 <ul>
     <li><code><a href="#assign">assign</a></code> (may also be used to clear fields)</li>
 </ul>
 
-<h3>
+<h4>
 Valid operations for numeric field types
-</h3>
+</h4>
 
 <ul>
     <li><code><a href="#arithmetic">increment</a></code></li>
@@ -276,9 +276,9 @@ Valid operations for numeric field types
     <li><code><a href="#arithmetic">divide</a></code></li>
 </ul>
 
-<h3>
+<h4>
 Valid operations for composite types (e.g. maps)
-</h3>
+</h4>
 
 <ul>
     <li><code><a href="#add">add</a></code></li>
@@ -286,7 +286,7 @@ Valid operations for composite types (e.g. maps)
 </ul>
 
 
-<h2 id="assign"><code>assign</code></h2>
+<h3 id="assign"><code>assign</code></h3>
 
 <p><code>assign</code> is used to completely replace the value of a field with a
 new value. The new value is specified as an "action" for the field in the set of
@@ -309,7 +309,7 @@ fields.</p>
 
 <p>If the field is to be cleared, assign <code>null</code> to it.</p>
 
-<h2 id="add"><code>add</code></h2>
+<h3 id="add"><code>add</code></h3>
 
 <p><code>add</code> is used to add entries to multi-value fields: Arrays, tags,
 maps, and weighted sets. If the value is already present in the weighted set, the
@@ -358,7 +358,7 @@ weight from the update will <em>replace</em> the old weight.</p>
 ]
 </pre>
 
-<h2 id="arithmetic"><code>increment, decrement, multiply, divide</code></h2>
+<h3 id="arithmetic"><code>increment, decrement, multiply, divide</code></h3>
 
 <p>The four arithmetic operators increment, decrement, multiply and divide are
 used to modify single value numeric values without having to look up the current
@@ -387,7 +387,7 @@ is needed, the current value should be looked up first, and the new value set
 using <a href="#assign">assign</a>.</p>
 
 
-<h2 id="match"><code>match</code></h2>
+<h3 id="match"><code>match</code></h3>
 
 <p>If an action, like an arithmethic operation, is to be performed for a specific key
 in a composite structure, use the <code>match</code> operation.
@@ -411,7 +411,7 @@ in a composite structure, use the <code>match</code> operation.
 <p>In other words, for the weighted set "trackPopularity", <code>match</code>
 the element "Lay Lady Lay", then <code>increment</code> its weight by 1.</p>
 
-<h2 id="updating-documents">Updating documents which combines values in indexing statements</h2>
+<h3 id="updating-documents">Updating documents which combines values in indexing statements</h3>
 
 <p>Vespa allows flexibility in how documents are turned into index structure
 data through <em>indexing statements</em>. Using indexing statements, multiple
@@ -454,7 +454,7 @@ the following will happen for various partial updates.
   <tr><td>field1 and field2</td><td>field1 and field2 is updated</td></tr>
 </table>
 
-<h2 id="conditional-update">Conditional updates</h2>
+<h3 id="conditional-update">Conditional updates</h3>
 
 <p>
   Like the put operation, an optional "condition" object can be added
@@ -486,7 +486,7 @@ the following will happen for various partial updates.
 ]
 </pre>
 
-<h1 id="remove">The Remove Structure</code></h1>
+<h2 id="remove">The Remove Structure</code></h2>
 
 <p>The <code>remove</code> operation is used to remove an existing document from Vespa.
 Remove is used for permanent removal, it is not necessary to remove a document before adding a new version.</p>
@@ -499,7 +499,7 @@ Remove is used for permanent removal, it is not necessary to remove a document b
 ]
 </pre>
 
-<h2 id="conditional-remove">Conditional removes</h2>
+<h3 id="conditional-remove">Conditional removes</h3>
 
 <p>
   Like the put and update operations, an optional "condition" object
@@ -521,7 +521,7 @@ Remove is used for permanent removal, it is not necessary to remove a document b
 </pre>
 
 
-<h1 id="document-ids">Document IDs</h1>
+<h2 id="document-ids">Document IDs</h2>
 
 <p>Read more about document IDs in the <a
 href="../search/search-definitions.html#urischemes">search defintions
@@ -535,7 +535,7 @@ how Vespa calculates the 12-byte hash that uniquely identifies a document.</p>
 
 
 
-<h1 id="a-complete-example">A complete example</h1>
+<h2 id="a-complete-example">A complete example</h2>
 
 <p>The following is a simple example of JSON in this format, it contains both a
 document and some document operations.</p>

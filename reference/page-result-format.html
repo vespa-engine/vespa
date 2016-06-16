@@ -3,7 +3,7 @@
 title: "The Vespa Search API - Page result format"
 ---
 
-<h1>The page result format</h1>
+<h2>The page result format</h2>
 
 <p>This document describes the <code>page</code> result format returned by Vespa.
 This result format is used when the <code>presentation.format</code> parameter is set to <code>page</code>.
@@ -14,7 +14,7 @@ Subtags will be rendered in the order listed here. The format is <em>open</em>,
 all parsers must ignore tags may contain attributes and child tags not mentioned here.</p>
 
 
-<h1 id="page">&lt;page&gt;</h1>
+<h2 id="page">&lt;page&gt;</h2>
 <p>The root tag of a page result: The single top-level section of the page.</p>
 
 <p>Attributes:</p>
@@ -35,7 +35,7 @@ all parsers must ignore tags may contain attributes and child tags not mentioned
 <p>For regular permissible subtags, refer to <a href="#section">section</a>.</p>
 
 
-<h1 id="section">&lt;section&gt;</h1>
+<h2 id="section">&lt;section&gt;</h2>
 
 <p>A layout "box" in a page.
 
@@ -85,7 +85,7 @@ all parsers must ignore tags may contain attributes and child tags not mentioned
 </table>
 
 
-<h1 id="#renderer">&lt;renderer&gt;</h1>
+<h2 id="#renderer">&lt;renderer&gt;</h2>
 
 <p>The way this section, or some of its content should be rendered.</p>
 
@@ -102,7 +102,7 @@ all parsers must ignore tags may contain attributes and child tags not mentioned
 </table>
 
 
-<h1 id="#source">&lt;source&gt;</h1>
+<h2 id="#source">&lt;source&gt;</h2>
 
 <p>The source to be used to fetch the content of a section, if it is not sent as inline <a href="#content">content</a>.</p>
 
@@ -119,7 +119,7 @@ all parsers must ignore tags may contain attributes and child tags not mentioned
 </table>
 
 
-<h1 id="#">&lt;content&gt;</h1>
+<h2 id="#">&lt;content&gt;</h2>
 
 <p>The content to render in a section.</p>
 
@@ -131,7 +131,7 @@ all parsers must ignore tags may contain attributes and child tags not mentioned
 </table>
 
 
-<h1 id="#hit">&lt;hit&gt;</h1>
+<h2 id="#hit">&lt;hit&gt;</h2>
 
 <p>A single result content item.</p>
 
@@ -150,14 +150,14 @@ Hits have one subtag for every field they contains, where the field name is the 
 field content is the content of the tag.
 
 
-<h1 id="#group">&lt;group&gt;</h1>
+<h2 id="#group">&lt;group&gt;</h2>
 
 <p>A <a href="#hit">hit</a> which contains nested hits. Used to organize hits hierarchically.</p>
 
 <p>Has the name attributes and subtags as <a href="#hit">hit</a> but may also contain nested <a href="#hit">hit</a> and <a href="#group">group</a> tags.</p>
 
 
-<h1>Example</h1>
+<h2>Example</h2>
 
 <p>A page which should be renderer with two columns on top.
 
