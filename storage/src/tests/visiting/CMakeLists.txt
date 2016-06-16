@@ -8,4 +8,5 @@ vespa_add_library(storage_testvisiting
     DEPENDS
     AFTER
     storage_storageconfig
+    storage_visitor
 )
