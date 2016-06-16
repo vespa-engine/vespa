@@ -15,6 +15,7 @@
 #include <vespa/fastos/mutex.h>
 #include <vespa/fastos/cond.h>
 
+typedef pthread_t FastOS_ThreadId;
 
 class FastOS_Runnable;
 class FastOS_ThreadInterface;

@@ -191,7 +191,7 @@ SerializableArray::deCompress() // throw (DeserializeException)
         if (unCompressed.getDataLen() != (size_t)_uncompressedLength) {
             throw DeserializeException(
                     vespalib::make_string(
-                            "Did not decompress to the expected length: had %" PRIu64 ", wanted %" PRId32 ", got %" PRIu64,
+                            "Did not decompress to the expected length: had %" PRIu64 ", wanted %d, got %" PRIu64,
                             _compSerData->getRemaining(), _uncompressedLength, unCompressed.getDataLen()),
                     VESPA_STRLOC);
         }

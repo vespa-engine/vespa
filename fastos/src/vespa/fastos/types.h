@@ -58,10 +58,6 @@
 
 #include <sys/socket.h>
 
-#ifndef SHUT_RDWR
-#define SHUT_RDWR 2
-#endif
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -113,7 +109,7 @@
 #include <getopt.h>
 
 /* 64bit printf specifiers */
-#ifdef FASTOS_64BIT_LONG
+#if (__WORDSIZE == 64)
 
   #ifndef PRIu64
     #define PRIu64        "lu"
@@ -125,5 +121,3 @@
 #else /* ! FASTOS_64BIT_LONG */
   #error "Only 64 environments are supported."
 #endif /* FASTOS_64BIT_LONG */
-
-typedef pthread_t FastOS_ThreadId;
