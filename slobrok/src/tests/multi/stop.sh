@@ -11,11 +11,26 @@ ok=true
 ../../apps/sbcmd/sbcmd 18516 slobrok.system.stop || ok=false
 ../../apps/sbcmd/sbcmd 18517 slobrok.system.stop || ok=false
 
-sleep 2
+if $ok; then
+    echo "Signaled all brokers to stop OK"
+fi
+
+for cnt in 1 2 3 4 5 6 7 8 9; do
+    sleep $cnt
+    alive=false
+    for x in `cat pids.txt`; do
+	kill $x 2>/dev/null && ps -p $x && alive=true
+    done
+    if $alive; then
+        echo "Some processes still alive after $cnt seconds"
+    else
+        rm -f pids.txt
+        $ok
+        exit
+    fi
+done
 
 for x in `cat pids.txt`; do
-	kill $x 2>/dev/null && ok=false
+    kill -9 $x 2>/dev/null && echo "Force killed pid $x"
 done
-rm -f pids.txt
-
-$ok
+exit 1
