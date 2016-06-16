@@ -14,6 +14,7 @@ vespa_add_executable(vespalog_vlogreplay_app
     OUTPUT_NAME vlogreplay
     INSTALL bin
     DEPENDS
+    m
 )
 vespa_add_executable(vespalog_vespa-runserver_app
     SOURCES

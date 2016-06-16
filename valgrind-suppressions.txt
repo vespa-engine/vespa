@@ -21,7 +21,19 @@
    fun:_Znwm
    fun:*addTestsToSuite*CppUnit*TestSuiteBuilderContextBase*
 }
-
+{
+   Bug in cppunit. This suppression is created on CentOS7.
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:addTestsToSuite
+   fun:suite
+   fun:*makeTest*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   fun:_ZN10vdstestlib17CppUnitTestRunner3runEiPKPKc
+   fun:main
+}
 {
    RHEL6 strlen is eager and will read 16 bytes blocks.
    Memcheck:Cond
@@ -267,14 +279,23 @@
    fun:_ZN26FastOS_UNIX_DynamicLibrary4OpenEPKc
 }
 {
-   This supresses a bug in valgrind-3.10.1. It is fixed in version 3.11.0.
+   This supresses a bug in valgrind-3.10.1. It is fixed in version 3.11.0. (http://permalink.gmane.org/gmane.comp.kde.devel.bugs/1594999)
    Memcheck:Leak
    match-leak-kinds: possible
    fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
    fun:_ZNSsC1EPKcRKSaIcE
+   obj:/usr/lib64/llvm/libLLVM-3.4.so
+   ...
+}
+{
+   This supresses a bug in valgrind-3.10.1. It is fixed in version 3.11.0. (http://permalink.gmane.org/gmane.comp.kde.devel.bugs/1594999)
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   ...
    fun:__static_initialization_and_destruction_0
-   fun:_GLOBAL__sub_I_unix_dynamiclibrary.cpp
-   fun:_dl_init
+   ...
 }
