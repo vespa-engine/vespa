@@ -33,6 +33,12 @@ struct ConfigStore : FeedConfigStore {
                             SerialNum serialNum) = 0;
 
     virtual void removeInvalid() = 0;
+    /**
+     * Perform prune after everything up to and including serialNum has been
+     * flushed to stable storage.
+     *
+     * @param serialNum The serial number flushed to stable storage.
+     */
     virtual void prune(SerialNum serialNum) = 0;
 
     virtual SerialNum getBestSerialNum() const = 0;

@@ -19,7 +19,6 @@ private:
     IFlushHandler::SP                 _handler;
     IFlushTarget::SP                  _target;
     searchcorespi::FlushTask::UP      _task;
-    search::SerialNum _oldestFlushable;
     search::SerialNum _lastSerial;
 
 public:
@@ -43,7 +42,6 @@ public:
      */
     FlushContext(const IFlushHandler::SP &handler,
                  const IFlushTarget::SP &target,
-                 search::SerialNum oldestFlushable,
                  search::SerialNum lastSerial);
 
     /**
@@ -81,13 +79,6 @@ public:
      * @return The target.
      */
     const IFlushTarget::SP & getTarget() const { return _target; }
-
-    /**
-     * Returns the oldest flushable serial number.
-     *
-     * @return The oldest flushable serial number
-     */
-    search::SerialNum getOldestFlushable() const { return _oldestFlushable; }
 
     /**
      * Returns the last serial number.

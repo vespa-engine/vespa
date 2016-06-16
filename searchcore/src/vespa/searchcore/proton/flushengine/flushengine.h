@@ -49,7 +49,6 @@ private:
     bool                           _closed;
     const uint32_t                 _maxConcurrent;
     const uint32_t                 _idleIntervalMS;
-    const bool                     _enableAutoPrune;
     uint32_t                       _taskId;    
     FastOS_ThreadPool              _threadPool;
     IFlushStrategy::SP             _strategy;
@@ -61,13 +60,14 @@ private:
     vespalib::Lock                 _strategyLock; // serialize setStrategy calls
     vespalib::Monitor              _strategyMonitor;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
+    std::set<IFlushHandler::SP>    _pendingPrune;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     std::pair<FlushContext::List,bool> getSortedTargetList(vespalib::MonitorGuard &strategyGuard) const;
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
     vespalib::string flushNextTarget(const vespalib::string & name);
     void flushAll(const FlushContext::List &lst);
-    void prune();
+    bool prune();
     uint32_t initFlush(const FlushContext &ctx);
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
@@ -93,15 +93,10 @@ public:
      * @param strategy   The flushing strategy to use.
      * @param numThreads The number of worker threads to use.
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
-     * @param enableAutoPrune Indicate if pruning shall be done even if there
-                              are no flushing happening. Turn off for some tests.
-                              Needed for pruning  to be correct if one flush is started
-                              while another is in progress. In that case the pruning
-                              will be too conservative.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
                 tlsStatsFactory,
-                IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS, bool enableAutoPrune);
+                IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS);
 
     /**
      * Destructor. Waits for all pending tasks to complete.
