@@ -19,10 +19,13 @@
  * below, we define the behaviour here.
  */
 #ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS 1
+  #define __STDC_LIMIT_MACROS 1
 #endif
 #ifndef __STDC_CONSTANT_MACROS
-#define __STDC_CONSTANT_MACROS 1
+  #define __STDC_CONSTANT_MACROS 1
+#endif
+#ifndef __STDC_FORMAT_MACROS
+  #define __STDC_FORMAT_MACROS
 #endif
 
 #include <assert.h>
@@ -66,18 +69,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define FASTOS_EMFILE_VERIFIED (-1)
-#ifdef EMFILE
-#undef  FASTOS_EMFILE_VERIFIED
-#define FASTOS_EMFILE_VERIFIED EMFILE
-#endif
-
-#define FASTOS_ENFILE_VERIFIED (-1)
-#ifdef ENFILE
-#undef  FASTOS_ENFILE_VERIFIED
-#define FASTOS_ENFILE_VERIFIED ENFILE
-#endif
-
 #ifndef __USE_GNU
 #define __USE_GNU  /* for O_DIRECT define */
 #define __TYPES_H_DIRECTIO_GNU
@@ -97,32 +88,26 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <float.h>
-
 #include <netinet/tcp.h>
+#include <inttypes.h>
+#include <getopt.h>
+
+#if (__WORDSIZE == 64)
+
+#else
+  #error "Only LP 64 environments are supported."
+#endif
 
 #define FASTOS_PREFIX(a) FastOS_##a
 
-#include <inttypes.h>
-
-#include <getopt.h>
-
-/* 64bit printf specifiers */
-#if (__WORDSIZE == 64)
-
-  #ifndef PRIu64
-    #define PRIu64        "lu"
-  #endif
-  #ifndef PRId64
-    #define PRId64        "ld"
-  #endif
-  #ifndef PRIx64
-    #define PRIx64        "lx"
-  #endif
-
-#else
-  #error "Only 64 environments are supported."
+#define FASTOS_EMFILE_VERIFIED (-1)
+#ifdef EMFILE
+#undef  FASTOS_EMFILE_VERIFIED
+#define FASTOS_EMFILE_VERIFIED EMFILE
 #endif
 
-#ifndef PRIu32
-  #define PRIu32        "u"
+#define FASTOS_ENFILE_VERIFIED (-1)
+#ifdef ENFILE
+#undef  FASTOS_ENFILE_VERIFIED
+#define FASTOS_ENFILE_VERIFIED ENFILE
 #endif
