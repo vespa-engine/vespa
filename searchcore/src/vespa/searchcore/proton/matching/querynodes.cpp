@@ -24,7 +24,6 @@ using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
 using search::query::Node;
 using search::query::TemplateTermVisitor;

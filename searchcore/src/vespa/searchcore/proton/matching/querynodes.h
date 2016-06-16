@@ -76,8 +76,8 @@ uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) {
 } // namespace proton::matching::<unnamed>
 
 template <typename Base>
-struct ProtonTerm : public Base,
-                    public ProtonTermData
+struct ProtonTermNonFinal : public Base,
+                          public ProtonTermData
 {
     using Base::Base;
 
@@ -89,10 +89,15 @@ struct ProtonTerm : public Base,
     }
 
     // ITermData interface
-    virtual uint32_t getPhraseLength() const { return numTerms<Base>(*this); }
-    virtual uint32_t getTermIndex() const { return -1; }
-    virtual search::query::Weight getWeight() const { return Base::getWeight(); }
-    virtual uint32_t getUniqueId() const { return Base::getId(); }
+    uint32_t getPhraseLength() const override final { return numTerms<Base>(*this); }
+    uint32_t getTermIndex() const override final { return -1; }
+    search::query::Weight getWeight() const override final { return Base::getWeight(); }
+    uint32_t getUniqueId() const override final { return Base::getId(); }
+};
+
+template <typename Base>
+struct ProtonTerm : public ProtonTermNonFinal<Base> {
+    using ProtonTermNonFinal<Base>::ProtonTermNonFinal;
 };
 
 typedef search::query::SimpleAnd     ProtonAnd;
@@ -103,10 +108,10 @@ typedef search::query::SimpleOr      ProtonOr;
 typedef search::query::SimpleRank    ProtonRank;
 typedef search::query::SimpleWeakAnd ProtonWeakAnd;
 
-struct ProtonEquiv : public ProtonTerm<search::query::Equiv>
+struct ProtonEquiv final : public ProtonTermNonFinal<search::query::Equiv>
 {
     search::fef::MatchDataLayout children_mdl;
-    using ProtonTerm::ProtonTerm;
+    using ProtonTermNonFinal::ProtonTermNonFinal;
 };
 
 typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;
