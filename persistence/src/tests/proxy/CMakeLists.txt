@@ -21,6 +21,8 @@ vespa_add_executable(persistence_providerproxy_conformance_test_app
 vespa_add_executable(persistence_external_providerproxy_conformancetest_app
     SOURCES
     external_providerproxy_conformancetest.cpp
+    OUTPUT_NAME external_providerproxy_conformancetest
+    INSTALL bin
     DEPENDS
     persistence
     persistence_persistence_conformancetest
