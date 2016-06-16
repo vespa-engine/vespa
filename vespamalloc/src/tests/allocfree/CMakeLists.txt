@@ -20,5 +20,6 @@ vespa_add_executable(vespamalloc_linklist_test_app
     ../../vespamalloc/malloc/allocchunk.cpp
     ../../vespamalloc/malloc/common.cpp
     $<TARGET_OBJECTS:vespamalloc_util>
+    DEPENDS
+    dl
 )
-vespa_add_target_system_dependency(vespamalloc_linklist_test_app dl)
