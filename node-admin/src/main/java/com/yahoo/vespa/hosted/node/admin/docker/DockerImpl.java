@@ -29,13 +29,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,12 +71,17 @@ public class DockerImpl implements Docker {
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
+    private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
+        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
+    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = RELATIVE_APPLICATION_STORAGE_PATH.resolve("../container-storage-cleanup");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+    private static final Path CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
@@ -188,28 +195,20 @@ public class DockerImpl implements Docker {
         }
     }
 
+    /**
+     * Delete application storage, implemented by moving it away for later cleanup
+     */
     @Override
     public void deleteApplicationStorage(ContainerName containerName) throws IOException {
-        Path applicationStoragePath = applicationStoragePathForNodeAdmin(containerName.asString());
-        if (!Files.exists(applicationStoragePath)) {
-            log.log(LogLevel.INFO, "The application storage at " + applicationStoragePath + " doesn't exist");
+        Path from = applicationStoragePathForNodeAdmin(containerName.asString());
+        if (!Files.exists(from)) {
+            log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
-
-        log.log(LogLevel.INFO, "Deleting application storage in " + applicationStoragePath);
-        Files.walkFileTree(applicationStoragePath,
-                new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                        Files.delete(path);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        return visitFile(dir, null);
-                    }
-                });
+        Path to = CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString() + "_" + filenameFormatter
+                .format(Date.from(Instant.now())));
+        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
+        Files.move(from, to);
     }
 
     @Override
