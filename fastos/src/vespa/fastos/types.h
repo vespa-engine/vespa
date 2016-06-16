@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <vespa/fastos/autoconf.h>
-
 /**
  * @def __STDC_LIMIT_MACROS
  * According to C99, C++ implementations will only define UINT64_MAX
@@ -118,6 +116,6 @@
     #define PRId64        "ld"
   #endif
 
-#else /* ! FASTOS_64BIT_LONG */
+#else
   #error "Only 64 environments are supported."
-#endif /* FASTOS_64BIT_LONG */
+#endif
