@@ -5,7 +5,7 @@ title: "Vespa log files"
 
 <h2>Vespa log files</h2>
 
-<p class="ingress">
+<p>
 This reference contains an overview of how to handle Vespa logs.  All
 Vespa components use a common log module for logging. These log
 messages are added to a local logfile in <em>$VESPA_HOME/logs/vespa/</em> on each
@@ -227,7 +227,7 @@ logarchive/2016/07/20/08-0
             metrics and log events</h3>
 
       <p>The timing in the access log will in general be slightly off compared
-      to the timing values in the vespa.log or available from the metrics proxy.
+      to the timing values in the vespa.log.
       The reason is the “probes” into the system are placed at slightly
       different levels of abstraction. The explanations here are directed at
       experienced users and troubleshooting.</p>
@@ -244,10 +244,10 @@ logarchive/2016/07/20/08-0
       search chains, but before any network traffic or rendering has been
       done.</p>
 
-      <h4>Definition of processing time in the vespa.log and metrics proxy</h4>
+      <h4>Definition of processing time in the vespa.log</h4>
 
-      <p>StatisticsSearcher defines the metric “query_latency” and the log event
-      “mean_query_latency”. The data fed into these is identical. The start of
+      <p>StatisticsSearcher defines the metric <em>query_latency</em> and the log event
+      <em>mean_query_latency</em>. The data fed into these is identical. The start of
       the interval is defined as when the control flow enters
       StatisticsSearcher, the end as when the next searcher after
       StatisticsSearcher returns from search(). This has the unfortunate side
