@@ -115,6 +115,9 @@
   #ifndef PRId64
     #define PRId64        "ld"
   #endif
+  #ifndef PRIx64
+    #define PRIx64        "lx"
+  #endif
 
 #else
   #error "Only 64 environments are supported."
