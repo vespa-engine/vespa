@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.google.inject.Module;
-import com.yahoo.jdisc.application.ContainerBuilder;
-import com.yahoo.jdisc.application.OsgiFramework;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -28,7 +23,7 @@ public class BootstrapDaemon implements Daemon {
     }
 
     public BootstrapDaemon() {
-        this(new ApplicationLoader(newOsgiFramework(), newConfigModule()),
+        this(new ApplicationLoader(Main.newOsgiFramework(), Main.newConfigModule()),
              Boolean.valueOf(System.getProperty("jdisc.privileged")));
     }
 
@@ -71,34 +66,6 @@ public class BootstrapDaemon implements Daemon {
     @Override
     public void destroy() {
         loader.destroy();
-    }
-
-    private static OsgiFramework newOsgiFramework() {
-        String cachePath = System.getProperty("jdisc.cache.path");
-        if (cachePath == null) {
-            throw new IllegalStateException("System property 'jdisc.cache.path' not set.");
-        }
-        FelixParams params = new FelixParams()
-                .setCachePath(cachePath)
-                .setLoggerEnabled(Boolean.valueOf(System.getProperty("jdisc.logger.enabled", "true")));
-        for (String str : ContainerBuilder.safeStringSplit(System.getProperty("jdisc.export.packages"), ",")) {
-            params.exportPackage(str);
-        }
-        return new FelixFramework(params);
-    }
-
-    private static Iterable<Module> newConfigModule() {
-        String configFile = System.getProperty("jdisc.config.file");
-        if (configFile == null) {
-            return Collections.emptyList();
-        }
-        Module configModule;
-        try {
-            configModule = ApplicationConfigModule.newInstanceFromFile(configFile);
-        } catch (IOException e) {
-            throw new IllegalStateException("Exception thrown while reading config file '" + configFile + "'.", e);
-        }
-        return Arrays.asList(configModule);
     }
 
 }
