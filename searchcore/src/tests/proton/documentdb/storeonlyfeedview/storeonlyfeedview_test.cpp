@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for storeonlyfeedview.
-
-#include <vespa/log/log.h>
-LOG_SETUP("storeonlyfeedview_test");
 #include <vespa/fastos/fastos.h>
 
 #include <vespa/document/base/documentid.h>
@@ -19,6 +16,9 @@ LOG_SETUP("storeonlyfeedview_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("storeonlyfeedview_test");
 
 using document::BucketId;
 using document::DataType;
