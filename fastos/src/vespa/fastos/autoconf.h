@@ -4,7 +4,6 @@
 #pragma once
 
 #define FASTOS_64BIT_LONG         1
-#define FASTOS_HAVE_INTTYPES_H    1
 #define FASTOS_HAVE_INT64_T       1
 #define FASTOS_HAVE_UINT64_T      1
 #define FASTOS_HAVE_INT32_T       1
@@ -14,11 +13,4 @@
 #define FASTOS_HAVE_INT8_T        1
 #define FASTOS_HAVE_UINT8_T       1
 #define FASTOS_HAVE_INT64_T       1
-#define FASTOS_HAVE_SYS_TIME_H    1
 #define FASTOS_HAVE_SOCKLEN_T     1
-#define FASTOS_HAVE_HSTRERROR     1
-#define FASTOS_HAVE_GETPAGESIZE   1
-#define FASTOS_HAVE_GETOPT_LONG   1
-#define FASTOS_ICONV_NOT_CONST    1
-
-

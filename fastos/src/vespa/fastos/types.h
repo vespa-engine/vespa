@@ -368,12 +368,3 @@ typedef pthread_t FastOS_ThreadId;
 
 #define FASTOS_EXTERNC extern "C"
 #define FASTOS_KLASS   class
-
-#define FASTOS_IPCMSGBUF_MAXSIZE (200)
-
-#if defined(FASTOS_ICONV_NOT_CONST)
-#define LIBICONV_CONST
-#else
-#define LIBICONV_CONST const
-#endif
-
