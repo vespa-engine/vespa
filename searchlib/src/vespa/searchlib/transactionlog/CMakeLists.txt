@@ -11,4 +11,6 @@ vespa_add_library(searchlib_translog OBJECT
     translogserver.cpp
     translogserverapp.cpp
     DEPENDS
+    AFTER
+    searchlib_common
 )
