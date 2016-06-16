@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>Deploy Standalone</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date" content="May 2013" />
-  <meta name="authors" content="tonyv, gv" />
-</head>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Deploy Standalone"
+---
 
-<body>
 <p class="ingress">
 This document explains how to deploy applications on a
 standalone JDisc container instance. We should already be
@@ -158,5 +153,4 @@ packages:
 Alternatively, use the <a href="http://dist.corp.yahoo.com/by-package/rhel6/">RHEL6 toolbox</a>
 </p>
 
-</body>
-</html>
+

@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <title>Secure the HTTP interface</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="August 2014" />
-  <meta name="authors" content="tonyv, musum, kraune" />
-</head>
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Secure the HTTP interface"
+---
 
 <p class="ingress">
 This document aims to help you securing your service by using certificates and/or SSL
@@ -121,5 +115,4 @@ explicitly enable it on the jdisc element</p>
 Finally, review the <a href="http://git.corp.yahoo.com/vespa/vespa/blob/master/jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.connector.def?view=markup">full list of config options</a>.
 </p>
 
-</body>
-</html>
+

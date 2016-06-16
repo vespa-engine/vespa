@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<html lang="en">
-<head>
-  <title>Content Cluster Resource Limits</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="May 2016" />
-  <meta name="authors" content="geirst" />
-</head>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Content Cluster Resource Limits"
+---
 
-<body>
 <p>
 In a content cluster with engine proton, one can specify resource limits such that put and update
 operations are rejected by the search nodes once these limits are reached.
@@ -113,5 +107,4 @@ Similarly, if put and/or update operations are rejected because either enum stor
 the following search node metric indicates this: <code>content.proton.documentdb.attribute.resource_usage.feeding_blocked</code>.
 </p>
 
-</body>
-</html>
+

@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>services.xml</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="October 2015" />
-  <meta name="authors" content="musum,eirikref,kraune" />
-</head>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "services.xml"
+---
 
-<body>
 <p>
 <em>services.xml</em> is the primary configuration file in an <a href="../cloudconfig/application-packages.html">application package</a>. Elements:
 </p>
@@ -125,8 +120,5 @@ Example:
 If more than one instance of the same service run on the same node, the names will be <em>myprogram</em>, <em>myprogram2</em> etc.
 </p>
 <blockquote>
-
-</body>
-</html>
 
 

@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "deployment.xml"
+---
 
-<head>
-  <title>deployment.xml</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="March 2016" />
-  <meta name="authors" content="bratseth,kraune" />
-</head>
-
-<body>
 <pre class="brush: xml">
 &lt;deployment version="1.0"&gt;
   &lt;test /&gt;
@@ -86,7 +80,4 @@ Note: changing a region will leave the instance in both regions. E.g. changing f
 to <em>us-central-1</em> will create an instance in the latter but not delete the instance in <em>us-east-3</em>.
 One can easily track production instances in the Vespa dashboard.
 </p>
-</body>
-</html>
-
 

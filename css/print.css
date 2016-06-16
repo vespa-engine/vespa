@@ -1,0 +1,62 @@
+#vc-hd-top, #hd-sub, #vc-hd-breadcrumbs, #vc-article-footer, #vc-article-toc, #ft, #vc-article-header span {
+    display: none;
+}
+
+body, html, #bd {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    font-size: 116%;
+}
+
+#vc-article {
+    font-family: "Times New Roman", serif;
+    line-height: 1.2;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Arial", "Helvetica", sans-serif;
+}
+
+#pageTitle {
+    padding: 0;
+    margin: 0 30px 10px 30px;
+}
+
+#mainContent {
+    padding: 0 30px 30px 30px;
+}
+
+#vc-article {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+#vc-article pre, #vc-article pre.code {
+    border: 1px dashed #ccc;
+    padding: 1em;
+    font-size: 93%;
+}
+
+#vc-article-header {
+    font-size: 70%;
+    font-family: "Arial", "Helvetica", sans-serif;
+    color: #777;
+}
+
+#vc-article code {
+    font-size: 100%;
+}
+
+#vc-article h2 {
+    border-bottom: 0;
+}
+
+#vc-article a {
+    text-decoration: none;
+}
+
+li {
+    margin-bottom: 0.4em;
+}

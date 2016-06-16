@@ -1,16 +1,8 @@
-<!DOCTYPE html>
-<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "The Vespa HTTP Client - Feeding to Vespa from External Sources"
+---
 
-<html lang="en">
-
-<head>
-  <title>The Vespa HTTP Client - Feeding to Vespa from External Sources</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="March 2016" />
-  <meta name="authors" content="einarmr" />
-</head>
-
-<body>
 <p>
     This document describes the Vespa HTTP Client - a Java API and commandline util to feed document
     operations to Vespa content clusters.
@@ -315,5 +307,4 @@ public interface FeedClient extends AutoCloseable {
     By looking at the JSON you can see which endpoints that are slow as these will usually have more pending documents.
     You can also verify that documents are sharded nicely by looking at document received on various endpoints.
     For debugging purposes you can dump this to the log now and then as this will give you some insight when needed.
-</body>
-</html>
+

@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>validation-overrides.xml</title>
-  <link rel="stylesheet" href="http://vespa.corp.yahoo.com/css/vespadoc-standalone.css" />
-  <meta name="date"    content="Jaunary 2016" />
-  <meta name="authors" content="bratseth" />
-</head>
-
-<body>
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "validation-overrides.xml"
+---
 
 <p><b>validation-overrides.xml</b> can be added to the root of an application package to allow a deployment that otherwise
 fails to validate to proceed. Validations which can be overridden in this way are returned with a dash-separated validation
@@ -71,7 +65,4 @@ Allow tags with unknown ids are ignored.
     &lt;allow until=&quot;2016-02-20&quot; comment=&quot;Vespa 5.119 disallows our application, but it works on 120.&quot;&gt;skip-old-config-models&lt;/allow&gt;
 &lt;/validation-overrides&gt;
 </pre>
-</body>
-</html>
-
 
