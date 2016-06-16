@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_index");
 #include <vespa/fastos/fastos.h>
 
 #include "predicate_index.h"
@@ -10,6 +8,8 @@ LOG_SETUP(".predicate_index");
 #include <vespa/searchlib/btree/entryref.h>
 #include "predicate_hash.h"
 #include <algorithm>
+#include <vespa/log/log.h>
+LOG_SETUP(".predicate_index");
 
 using search::btree::EntryRef;
 using vespalib::MMapDataBuffer;
