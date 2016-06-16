@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Common code for running unit tests of simplemetrics
  *
- * @author eirik
+ * @author ean
  */
 public class UnitTestSetup {
     MetricManager metricManager;
