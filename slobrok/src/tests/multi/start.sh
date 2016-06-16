@@ -19,3 +19,22 @@ echo $! >> pids.txt
 echo $! >> pids.txt 
 ../../apps/slobrok/slobrok -c file:7.cfg -p 18517 > slobrok6.out 2>&1 &
 echo $! >> pids.txt
+
+echo "Started: " `cat pids.txt`
+
+export VESPA_LOG_LEVEL='all -debug -spam'
+
+for x in 1 2 3 4 5 6 7 8 9; do
+    sleep $x
+    echo "waiting for service location brokers to start, slept $x seconds"
+    alive=true
+    for port in 18511 18512 18513 18514 18515 18516 18517; do 
+        ../../apps/sbcmd/sbcmd $port slobrok.callback.listNamesServed || alive=false
+    done
+    if $alive; then
+        echo "all started ok after $x seconds"
+        exit 0
+    fi
+done
+echo "giving up, this probably won't work"
+exit 1

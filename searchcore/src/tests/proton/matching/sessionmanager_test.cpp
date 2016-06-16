@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for sessionmanager.
 
-#include <vespa/log/log.h>
-LOG_SETUP("sessionmanager_test");
 #include <vespa/fastos/fastos.h>
 
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
@@ -12,6 +10,9 @@ LOG_SETUP("sessionmanager_test");
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("sessionmanager_test");
 
 using vespalib::string;
 using namespace proton;
