@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
 #include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include "producerconsumer.h"
 #include <map>
@@ -107,9 +107,9 @@ int Test::Main() {
     EXPECT_EQUAL(numFreeOperations, numMallocOperations);
     const size_t numCrossThreadMallocFreeOperations(numMallocOperations);
 
-    fprintf(stderr, "Did %" PRIu64 " Cross thread malloc/free operations\n", numCrossThreadMallocFreeOperations);
-    fprintf(stderr, "Did %" PRIu64 " Same thread malloc/free operations\n", numSameThreadMallocFreeOperations);
-    fprintf(stderr, "Did %" PRIu64 " Total operations\n", numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
+    fprintf(stderr, "Did %lu Cross thread malloc/free operations\n", numCrossThreadMallocFreeOperations);
+    fprintf(stderr, "Did %lu Same thread malloc/free operations\n", numSameThreadMallocFreeOperations);
+    fprintf(stderr, "Did %lu Total operations\n", numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
 
     TEST_DONE();
 }

@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include "producerconsumer.h"
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
+#include <vespa/log/log.h>
 
 using vespalib::Consumer;
 using vespalib::Producer;
@@ -169,13 +169,13 @@ int Test::Main() {
         FastOS_Thread::Sleep(1000);
     }
     pool.Close();
-    fprintf(stderr, "Did (%" PRIu64 " + %" PRIu64 ") = %" PRIu64 " linkIn operations\n",
+    fprintf(stderr, "Did (%lu + %lu) = %lu linkIn operations\n",
             c1.operations(), c2.operations(), c1.operations() + c2.operations());
-    fprintf(stderr, "Did (%" PRIu64 " + %" PRIu64 ") = %" PRIu64 " linkOut operations\n",
+    fprintf(stderr, "Did (%lu + %lu) = %lu linkOut operations\n",
             p1.operations(), p2.operations(), p1.operations() + p2.operations());
-    fprintf(stderr, "Did (%" PRIu64 " + %" PRIu64 ") = %" PRIu64 " linkInOut operations\n",
+    fprintf(stderr, "Did (%lu + %lu) = %lu linkInOut operations\n",
             pc1.operationsConsumed(), pc2.operationsConsumed(), pc1.operationsConsumed() + pc2.operationsConsumed());
-    fprintf(stderr, "Did %" PRIu64 " Total operations\n",
+    fprintf(stderr, "Did %lu Total operations\n",
             c1.operations() + c2.operations() + p1.operations() + p2.operations() + pc1.operationsConsumed() + pc2.operationsConsumed());
     fprintf(stderr, "Start verifying result 2.\n");
     for (size_t i=0; i < NumBlocks; i++) {
