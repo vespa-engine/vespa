@@ -11,7 +11,6 @@ in entirety.
 </p>
 
 
-
 <h1 id="deploy">...when deploying an application</h1>
 <p>
 By "deploying an application" we mean to run the command
@@ -79,7 +78,7 @@ Information follows the "config-server" part of figure 1 as follows:
 </p>
 <p>
     Unless an error has occurred or some nodes have been manually shut down,
-    all nodes in a Vespa system has at least 4 running services:
+    all nodes in a Vespa system has at least these running services:
 </p>
 <ul>
     <li>
@@ -95,10 +94,6 @@ Information follows the "config-server" part of figure 1 as follows:
     <li>
         <code>logd</code> - monitors the file <code>$VESPA_HOME/logs/vespa/vespa.log</code>, which is used by all
         other services, and relays everything to the log-server node of the system.
-    </li>
-    <li>
-        <code>vespa_metrics_proxy</code> - Gathers metrics from vespa
-        log and running services.
     </li>
 </ul>
 
