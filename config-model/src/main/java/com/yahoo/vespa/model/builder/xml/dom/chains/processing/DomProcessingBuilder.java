@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Root builder of the processing model
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.6
  */
 public class DomProcessingBuilder extends DomChainsBuilder<Processor, ProcessingChain, ProcessingChains> {

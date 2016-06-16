@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Pages are freezable - once frozen calling a setter will cause an IllegalStateException, and returned
  * live collection references are unmodifiable
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Section extends FreezableClass implements PageElement {
 

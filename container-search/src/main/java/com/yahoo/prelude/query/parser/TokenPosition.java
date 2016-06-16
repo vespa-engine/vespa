@@ -9,7 +9,7 @@ import java.util.List;
  * An iterator-like view of a list, but typed, random-accessible
  * and with more convenience methods
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 final class TokenPosition {
 

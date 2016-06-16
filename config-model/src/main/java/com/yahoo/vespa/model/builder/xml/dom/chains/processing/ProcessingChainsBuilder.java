@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Creates all processing chains from xml.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since   5.1.6
  */
 public class ProcessingChainsBuilder extends ChainsBuilder<Processor, ProcessingChain> {

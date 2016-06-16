@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests rank profiles
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class RankProfileTestCase extends SearchDefinitionTestCase {
     @Test

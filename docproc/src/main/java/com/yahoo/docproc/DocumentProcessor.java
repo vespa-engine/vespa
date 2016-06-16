@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * access to any mutable, thread-unsafe state held in a field by the processor is
  * synchronized.</p>
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public abstract class DocumentProcessor extends ChainedComponent {
     static Logger log = Logger.getLogger(DocprocService.class.getName());

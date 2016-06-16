@@ -6,7 +6,7 @@ import com.yahoo.search.Query;
 /**
  * A name space representing the (http) parameters following this query
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ParameterNameSpace extends NameSpace {
 

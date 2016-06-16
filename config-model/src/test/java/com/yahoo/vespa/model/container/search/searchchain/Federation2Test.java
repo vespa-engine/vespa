@@ -8,7 +8,7 @@ import org.w3c.dom.Element;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Federation2Test extends SearchChainsTestBase {
     @Override

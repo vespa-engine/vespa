@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * The implementation of the tag datatype
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TagType extends Processor {
 

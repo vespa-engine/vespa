@@ -10,7 +10,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A condition which contains a list of conditions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public abstract class CompositeCondition extends Condition {
 

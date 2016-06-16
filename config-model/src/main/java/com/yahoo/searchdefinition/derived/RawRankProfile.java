@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * A rank profile derived from a search definition, containing exactly the features available natively in the server
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class RawRankProfile implements RankProfilesConfig.Producer {
 

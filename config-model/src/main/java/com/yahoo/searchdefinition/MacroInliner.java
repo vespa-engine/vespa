@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Inlines macros in ranking expressions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class MacroInliner extends ExpressionTransformer {
 

@@ -16,7 +16,7 @@ import java.util.Map;
  * Contains the properties properties of a query.
  * This is a multimap: Multiple properties may be set for the same key.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RankProperties implements Cloneable {
 

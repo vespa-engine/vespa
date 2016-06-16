@@ -8,7 +8,7 @@ import java.util.Map;
  * A benchmark of map parsing.
  * Expected time on Jon's mac: 200 microseconds per 1k size map.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MapParserMicroBenchmark {
 

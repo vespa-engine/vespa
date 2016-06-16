@@ -8,7 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 /**
  * A string value.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.21
  */
 public class StringValue extends Value {

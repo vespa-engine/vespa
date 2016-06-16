@@ -6,7 +6,7 @@ import java.io.IOException;
 /**
  * Thrown on communication timeouts
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("serial")
 public class TimeoutException extends IOException {

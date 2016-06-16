@@ -6,7 +6,7 @@ import com.yahoo.component.provider.Freezable;
 /**
  * Implemented by all page template model classes
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface PageElement extends Freezable {
 

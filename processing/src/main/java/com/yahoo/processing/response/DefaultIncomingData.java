@@ -14,7 +14,7 @@ import java.util.concurrent.Executor;
 /**
  * The default incoming data implementation
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<DATATYPE> {
 

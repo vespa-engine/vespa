@@ -17,7 +17,7 @@ import static org.junit.Assert.assertNull;
 /**
  * Tests that documents ids are treated as they should
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class IdTestCase extends AbstractExportingTestCase {
 

@@ -5,7 +5,7 @@ package com.yahoo.prelude.semantics.test;
  * Tests that the phrase produced by an automata match can subsequently be replaced by an AND of the
  * same terms.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PhraseMatchTestCase extends RuleBaseAbstractTestCase {
 

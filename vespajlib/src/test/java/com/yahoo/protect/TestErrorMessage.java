@@ -2,7 +2,7 @@
 package com.yahoo.protect;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TestErrorMessage extends junit.framework.TestCase {
 

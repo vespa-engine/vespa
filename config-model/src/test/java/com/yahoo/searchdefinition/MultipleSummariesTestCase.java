@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * tests importing of document containing array type fields
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MultipleSummariesTestCase extends SearchDefinitionTestCase {
     @Test

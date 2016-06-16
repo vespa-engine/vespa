@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Replaces "features" which found in the given constants by their constant value
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ConstantDereferencer extends ExpressionTransformer {
 

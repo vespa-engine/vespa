@@ -10,7 +10,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class LoggingTestCase extends junit.framework.TestCase {
 

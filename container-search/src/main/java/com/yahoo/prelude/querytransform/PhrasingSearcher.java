@@ -19,7 +19,7 @@ import java.util.List;
  * <p>Detects query phrases. When a phrase is detected in the query,
  * the query is mutated to reflect this fact.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @author  <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 @After(PhaseNames.RAW_QUERY)

@@ -29,7 +29,7 @@ import java.util.logging.Level;
 /**
  * Adds a "fieldName.zcurve" long attribute and a "fieldName.distance" summary field to all position type fields.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class CreatePositionZCurve extends Processor {
 

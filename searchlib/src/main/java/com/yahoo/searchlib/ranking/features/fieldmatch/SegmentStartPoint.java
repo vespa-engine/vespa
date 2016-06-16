@@ -8,7 +8,7 @@ package com.yahoo.searchlib.ranking.features.fieldmatch;
  * and the end of the previous segment. In addition it holds information on how far we have tried
  * to look for alternative segments from this starting point (skipI and previousJ).</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 final class SegmentStartPoint {
 

@@ -15,7 +15,7 @@ import com.yahoo.protect.Validator;
  * A term produced by a production rule which takes it's actual term value
  * from one or more terms matched in the condition
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ReferenceTermProduction extends TermProduction {
 

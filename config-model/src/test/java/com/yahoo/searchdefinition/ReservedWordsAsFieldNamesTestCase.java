@@ -9,7 +9,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ReservedWordsAsFieldNamesTestCase extends SearchDefinitionTestCase {
 

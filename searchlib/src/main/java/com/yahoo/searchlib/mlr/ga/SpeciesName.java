@@ -5,7 +5,7 @@ package com.yahoo.searchlib.mlr.ga;
  * The name of a species. For tracking purposes.
  * A name has the form superSpeciesName + "/" + serialNumber.generationNumber.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SpeciesName {
 

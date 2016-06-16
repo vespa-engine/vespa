@@ -9,7 +9,7 @@ import java.util.List;
  * After freezing, edit operations will throw UnsupportedOperationException.
  * Freezable lists may optionally allow new items to be added to the end of the list also after freeze.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.20
  */
 public class FreezableArrayList<ITEM> extends ListenableArrayList<ITEM> {

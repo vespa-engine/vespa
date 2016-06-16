@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * A static utility for encoding values to the binary map representation used in fs4 packets.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MapEncoder {
 

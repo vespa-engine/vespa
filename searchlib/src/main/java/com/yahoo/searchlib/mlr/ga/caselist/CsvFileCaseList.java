@@ -15,7 +15,7 @@ import java.util.Optional;
  *
  * <p>Comment lines starting with "#" are ignored.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class CsvFileCaseList extends FileCaseList {
 

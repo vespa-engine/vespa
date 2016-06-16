@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Rudimentary http searcher test.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class HttpTestCase extends junit.framework.TestCase {
 

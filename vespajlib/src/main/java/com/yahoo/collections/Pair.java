@@ -5,7 +5,7 @@ package com.yahoo.collections;
  * An immutable pair of objects. This implements equals and hashCode by delegating to the
  * pair objects.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Pair<F, S> {
 

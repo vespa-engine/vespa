@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * A variant of a query profile
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
 */
 public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVariant> {
 

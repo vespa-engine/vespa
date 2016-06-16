@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests summary extraction
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class SummaryTestCase extends SearchDefinitionTestCase {
     @Test

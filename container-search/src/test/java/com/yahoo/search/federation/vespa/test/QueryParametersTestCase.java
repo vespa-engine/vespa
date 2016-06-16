@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Tests that source and backend specific parameters from the query are added correctly to the backend requests
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryParametersTestCase extends junit.framework.TestCase {
 

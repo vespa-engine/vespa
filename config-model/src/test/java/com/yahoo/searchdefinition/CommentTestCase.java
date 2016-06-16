@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests comment handling
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class CommentTestCase extends SearchDefinitionTestCase {
     @Test

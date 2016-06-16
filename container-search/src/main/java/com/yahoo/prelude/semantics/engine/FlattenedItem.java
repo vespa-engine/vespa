@@ -6,7 +6,7 @@ import com.yahoo.prelude.query.TermItem;
 /**
  * An item which knows its position in its parent
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class FlattenedItem {
 

@@ -15,7 +15,7 @@ import java.util.*;
  * A set of semantic production rules and named conditions used to analyze
  * and rewrite queries
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class RuleBase {
 

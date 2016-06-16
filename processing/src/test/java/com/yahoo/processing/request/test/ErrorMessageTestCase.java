@@ -6,7 +6,7 @@ import com.yahoo.processing.request.ErrorMessage;
 import org.junit.Test;
 
 /**
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class ErrorMessageTestCase extends junit.framework.TestCase {
 

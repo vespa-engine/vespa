@@ -6,7 +6,7 @@ import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class DuplicateRuleTestCase extends junit.framework.TestCase {
 

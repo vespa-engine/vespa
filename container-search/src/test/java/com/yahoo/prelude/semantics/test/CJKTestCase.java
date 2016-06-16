@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Tests that using rule bases containing cjk characters work
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class CJKTestCase extends RuleBaseAbstractTestCase {
 

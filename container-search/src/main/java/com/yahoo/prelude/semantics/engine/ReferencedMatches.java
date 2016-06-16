@@ -10,7 +10,7 @@ import com.yahoo.prelude.query.PhraseItem;
 /**
  * The Matches referenced by a particular context name in a rule evaluation
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ReferencedMatches {
 

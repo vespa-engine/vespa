@@ -7,7 +7,7 @@ import com.yahoo.processing.Request;
 /**
  * Convenience superclass for implementations of data. This contains no payload.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class AbstractData extends ListenableFreezableClass implements Data {
 

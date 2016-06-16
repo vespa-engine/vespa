@@ -4,10 +4,8 @@ package com.yahoo.document;
 import java.util.Iterator;
 
 /**
- * TODO: Document purpose
- *
- * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
- * @author <a href="bratseth@yahoo-inc.com>Jon S Bratseth</a>
+ * @author Thomas Gundersen
+ * @author bratseth
  */
 public class DocumentTypeTestCase extends junit.framework.TestCase {
 
@@ -30,14 +28,6 @@ public class DocumentTypeTestCase extends junit.framework.TestCase {
         DocumentTypeManager typeManager = new DocumentTypeManager();
 
         DocumentType child = new DocumentType("child");
-        //typeManager.register(child);
-
-        /*
-        ListIterator inherited = child.inheritedIterator();
-        assertTrue(inherited.hasNext());
-        assertEquals(new DataTypeName("document", 0), inherited.next());
-        assertTrue(!inherited.hasNext());
-        */
         Iterator inherited;
 
         child.addField("childfield", DataType.INT);
@@ -104,4 +94,5 @@ public class DocumentTypeTestCase extends junit.framework.TestCase {
 
         // TODO: Test uninheriting
     }
+
 }

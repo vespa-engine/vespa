@@ -5,7 +5,7 @@ package com.yahoo.prelude.query.parser;
 /**
  * Parser exceptions. JavaCC legacy, never thrown.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 @SuppressWarnings("serial")
 public class ParseException extends RuntimeException {

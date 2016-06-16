@@ -7,7 +7,7 @@ import com.yahoo.processing.response.DataList;
 /**
  * Static utilities
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.13
  */
 public class Responses {

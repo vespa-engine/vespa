@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
 /**
  * Represents a processing chain in the config model
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.6
  */
 public class ProcessingChain extends Chain<Processor> {

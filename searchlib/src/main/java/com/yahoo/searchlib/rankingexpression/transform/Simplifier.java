@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Performs simple algebraic simplification of expressions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Simplifier extends ExpressionTransformer {
 

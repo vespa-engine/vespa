@@ -12,7 +12,7 @@ import java.util.List;
  * <p>
  * As we are training ranking expressions, the genome, here, is the ranking expression.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Individual extends Evolvable {
 

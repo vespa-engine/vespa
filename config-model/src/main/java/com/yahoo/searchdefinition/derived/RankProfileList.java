@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * The derived rank profiles of a search definition
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class RankProfileList extends Derived implements RankProfilesConfig.Producer {
 

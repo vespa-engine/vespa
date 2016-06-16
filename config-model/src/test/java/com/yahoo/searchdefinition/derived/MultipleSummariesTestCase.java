@@ -10,7 +10,7 @@ import java.io.IOException;
 /**
  * Tests deriving a configuration with multiple summaries
  *
- * @author  <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class MultipleSummariesTestCase extends AbstractExportingTestCase {
     @Test

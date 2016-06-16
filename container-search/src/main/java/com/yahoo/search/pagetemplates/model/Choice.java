@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * A choice between some alternative lists of page elements.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class Choice extends AbstractChoice {
 

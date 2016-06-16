@@ -6,7 +6,7 @@ package com.yahoo.prelude.query;
  * An substring which also provides access to the full (query) string it is a substring of.
  * This is immutable.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class Substring {
 

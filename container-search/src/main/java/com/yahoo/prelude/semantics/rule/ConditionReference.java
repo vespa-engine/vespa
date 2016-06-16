@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * A reference to a named condition
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ConditionReference extends Condition {
 

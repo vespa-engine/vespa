@@ -81,7 +81,7 @@ public class BobHash {
      * Note: This is copying the string content, change implementation to
      * use efficiently on large strings.
      *
-     * <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+     * bratseth
      */
     public static int hash(String key) {
         return hash(Utf8.toBytes(key), 0);

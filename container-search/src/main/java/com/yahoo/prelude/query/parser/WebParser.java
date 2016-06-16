@@ -16,7 +16,7 @@ import java.util.Set;
  * <li>"a b": Phrase search for a followed by b
  * </ul>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class WebParser extends AllParser {
 

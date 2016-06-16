@@ -25,7 +25,7 @@ import java.util.Map;
  * not with primitive types. Support for direct access to primitive types will
  * be removed soon.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  * @author <a href="einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class Document extends StructuredFieldValue {

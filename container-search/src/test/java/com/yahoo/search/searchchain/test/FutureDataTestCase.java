@@ -29,7 +29,7 @@ import com.yahoo.component.chain.Chain;
 /**
  * Tests using the async capabilities of the Processing parent framework of searchers.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class FutureDataTestCase {
 

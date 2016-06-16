@@ -5,7 +5,7 @@ package com.yahoo.text;
  * A string which has a current position.
  * Useful for writing simple single-pass parsers.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.15
  */
 public class PositionedString {

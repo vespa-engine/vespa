@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * A processing response which will arrive in the future.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class FutureResponse extends ForwardingFuture<Response> {
 

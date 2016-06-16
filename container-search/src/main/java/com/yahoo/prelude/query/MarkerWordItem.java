@@ -9,7 +9,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
  * Special words known by the index used for marking things.
  * The reserved word itself is not public, while a symbol representation is.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class MarkerWordItem extends WordItem {
 

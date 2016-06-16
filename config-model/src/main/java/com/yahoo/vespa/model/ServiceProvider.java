@@ -4,7 +4,7 @@ package com.yahoo.vespa.model;
 /**
  * A provider of services (an entity which has its own top-level tag in the services.xml file).
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface ServiceProvider {
 

@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * The implementation of "gram" matching - splitting the incoming text and the queries into
  * n-grams for matching. This will also validate the gram settings.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NGramMatch extends Processor {
 

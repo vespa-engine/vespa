@@ -7,7 +7,7 @@ package com.yahoo.documentapi;
  *
  * <p>This is a <i>value object</i>.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Response {
 

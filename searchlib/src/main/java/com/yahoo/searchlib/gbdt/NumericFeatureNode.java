@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * A GBDT node representing a numeric "less than" comparison: feature &lt; numeric-value
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class NumericFeatureNode extends FeatureNode {
 

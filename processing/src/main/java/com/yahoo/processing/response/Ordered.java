@@ -7,7 +7,7 @@ package com.yahoo.processing.response;
  * the list is insignificant. The usage of this is to allow the content of a list to be rendered in the order
  * in which it completes rather than in the order in which it is added to the list.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.19
  */
 public interface Ordered {

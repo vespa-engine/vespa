@@ -16,7 +16,7 @@ import java.util.List;
  *
  * <p>This class is not multithread safe.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class GBDTOptimizer extends Optimizer {
 

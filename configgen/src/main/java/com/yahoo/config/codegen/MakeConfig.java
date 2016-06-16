@@ -77,7 +77,7 @@ public class MakeConfig {
     /**
      * Helper methods for handling exceptions
      *
-     * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+     * @author bratseth
      */
     static class Exceptions {
 

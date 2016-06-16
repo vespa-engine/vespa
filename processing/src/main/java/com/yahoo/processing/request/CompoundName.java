@@ -15,7 +15,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * <p>
  * Using CompoundName is generally substantially faster than using strings.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class CompoundName {
 

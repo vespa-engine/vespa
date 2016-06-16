@@ -5,7 +5,7 @@ package com.yahoo.searchlib.ranking.features.fieldmatch;
  * The parameters to a string match metric calculator.
  * Mutable until frozen.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public final class FieldMatchMetricsParameters {
 

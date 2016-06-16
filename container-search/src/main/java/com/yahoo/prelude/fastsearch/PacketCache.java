@@ -15,7 +15,7 @@ import com.yahoo.log.LogLevel;
  * size limiting factor. Directly modelled after com.yahoo.collections.Cache.
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class PacketCache extends LinkedHashMap<CacheKey, PacketWrapper> {
 

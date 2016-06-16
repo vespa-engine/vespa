@@ -12,7 +12,7 @@ import java.util.Map;
  * An immutable binding of a set of dimensions to values.
  * This binding is minimal in that it only includes dimensions which actually have values.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Binding implements Comparable<Binding> {
 

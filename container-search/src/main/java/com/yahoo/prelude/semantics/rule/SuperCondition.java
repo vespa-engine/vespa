@@ -7,7 +7,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
  * A condition which evaluates the <i>last included</i> version of
  * the named condition this is a premise of.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class SuperCondition extends Condition {
 

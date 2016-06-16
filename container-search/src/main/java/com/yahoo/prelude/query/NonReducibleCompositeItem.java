@@ -9,7 +9,7 @@ package com.yahoo.prelude.query;
  * <p>
  * This type functions as a marked interfaces for query rewriters.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.22
  */
 public abstract class NonReducibleCompositeItem extends CompositeItem {

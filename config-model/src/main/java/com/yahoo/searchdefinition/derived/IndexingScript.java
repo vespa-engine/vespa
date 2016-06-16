@@ -15,7 +15,7 @@ import java.util.*;
  * An indexing language script derived from a search definition. An indexing script contains a set of indexing
  * statements, organized in a composite structure of indexing code snippets.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public final class IndexingScript extends Derived implements IlscriptsConfig.Producer {
 

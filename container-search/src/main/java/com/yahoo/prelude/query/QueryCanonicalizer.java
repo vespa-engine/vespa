@@ -12,7 +12,7 @@ import java.util.*;
  * A class which canonicalizes and validates queries.
  * This class is multithread safe.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryCanonicalizer {
 

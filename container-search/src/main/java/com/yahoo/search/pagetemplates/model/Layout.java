@@ -4,7 +4,7 @@ package com.yahoo.search.pagetemplates.model;
 /**
  * The layout of a section
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 // This is not made an enum, to allow the value set to be extendible.
 // It is not explicitly made immutable

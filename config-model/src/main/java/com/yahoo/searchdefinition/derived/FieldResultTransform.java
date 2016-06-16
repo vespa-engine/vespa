@@ -6,7 +6,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 /**
  * The result transformation of a named field
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class FieldResultTransform {
 

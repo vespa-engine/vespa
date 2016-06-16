@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Superclass of all derived configurations
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public abstract class Derived implements Exportable {
 

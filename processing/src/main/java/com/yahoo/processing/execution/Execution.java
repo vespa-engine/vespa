@@ -16,7 +16,7 @@ import java.util.Iterator;
  * An execution of a chain. This keeps tracks of the progress of the execution and is called by the
  * processors (using {@link #process} to move the execution to the next one.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Execution {
 
@@ -240,7 +240,7 @@ public class Execution {
      * Tre trace of this execution. This is a facade into a node in the larger trace tree which captures
      * the information about all executions caused by some request
      *
-     * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+     * @author bratseth
      */
     public static class Trace {
 

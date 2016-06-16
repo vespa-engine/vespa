@@ -13,7 +13,7 @@ import java.util.Map;
  * This may be frozen, at which point no further modifications are allowed.
  * Note that <b>until</b> this is cloned, the internal map may be both read and written.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class CopyOnWriteContent extends FreezableClass implements Cloneable {
 

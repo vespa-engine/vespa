@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * A document processor to call - an item on a {@link com.yahoo.docproc.CallStack}.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class Call implements Cloneable {

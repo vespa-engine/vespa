@@ -7,7 +7,7 @@ import com.yahoo.docproc.Accesses.Field.Tree;
 /**
  * Tests the basic operation of the docproc service
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstractTestCase {
 

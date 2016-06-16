@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Superclass of expression transformers
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class ExpressionTransformer {
 

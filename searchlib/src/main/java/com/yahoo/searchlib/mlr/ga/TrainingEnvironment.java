@@ -4,7 +4,7 @@ package com.yahoo.searchlib.mlr.ga;
 /**
  * The static environment of a training session
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TrainingEnvironment {
 

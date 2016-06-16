@@ -15,7 +15,7 @@ import com.yahoo.prelude.semantics.rule.TermCondition;
 import com.yahoo.prelude.semantics.rule.TermProduction;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ProductionRuleTestCase extends junit.framework.TestCase {
 

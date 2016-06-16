@@ -9,7 +9,7 @@ import com.yahoo.search.federation.ProviderConfig;
 /**
  * Some static helper classes for configured*Searcher classes
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class ConfiguredSearcherHelper {
 

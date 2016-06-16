@@ -8,7 +8,7 @@ import java.util.Map;
  * (i.e the score of a source node is called <i>appropriateness</i>).
  * Sources are ordered by decreasing appropriateness.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SourceNode extends Node {
 

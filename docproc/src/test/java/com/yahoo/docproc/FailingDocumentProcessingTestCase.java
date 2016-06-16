@@ -12,7 +12,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 /**
  * Tests a document processing where some processings fail with an exception
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class FailingDocumentProcessingTestCase extends junit.framework.TestCase {
 

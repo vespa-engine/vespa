@@ -9,7 +9,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * Superclass of all kinds of conditions of production rules
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public abstract class Condition {
 

@@ -15,7 +15,7 @@ import com.yahoo.document.select.rule.ExpressionNode;
  *
  * <p>Document selectors are multithread safe.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DocumentSelector {
 

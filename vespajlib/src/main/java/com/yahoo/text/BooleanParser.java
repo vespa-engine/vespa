@@ -5,7 +5,7 @@ package com.yahoo.text;
  * Utility class parsing a string into a boolean.
  * In contrast to Boolean.parseBoolean in the Java API this parser is strict.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class BooleanParser {
 

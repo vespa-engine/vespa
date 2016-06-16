@@ -34,7 +34,7 @@ import com.yahoo.search.searchchain.Execution;
 import static com.yahoo.search.searchchain.Execution.Context.createContextStub;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NGramSearcherTestCase extends junit.framework.TestCase {
 

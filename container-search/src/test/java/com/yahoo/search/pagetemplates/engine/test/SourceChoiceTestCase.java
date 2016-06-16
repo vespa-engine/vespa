@@ -12,7 +12,7 @@ import com.yahoo.search.pagetemplates.model.Choice;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SourceChoiceTestCase extends ExecutionAbstractTestCase {
 

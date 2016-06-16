@@ -13,7 +13,7 @@ import java.io.IOException;
 /**
  * Command line runner for training sessions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 /*
 TODO: Switch order of generation and sequence in names

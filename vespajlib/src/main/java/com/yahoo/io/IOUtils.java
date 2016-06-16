@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
 /**
  * <p>Some static io convenience methods.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
  */
 public abstract class IOUtils {

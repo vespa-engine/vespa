@@ -10,7 +10,7 @@ import org.w3c.dom.Element;
 /**
  * Builds a processor from XML.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.6
  */
 public class DomProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Processor> {

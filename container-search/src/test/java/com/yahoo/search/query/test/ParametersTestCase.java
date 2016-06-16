@@ -10,7 +10,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ParametersTestCase extends junit.framework.TestCase {
 
