@@ -3,7 +3,7 @@
 title: "Managing Nodes and Processes"
 ---
 
-<h1 id="administration">Administration and service nodes</h1>
+<h2 id="administration">Administration and service nodes</h2>
 <p>A Vespa system consists of two kinds of nodes:</p>
 <dl>
   <dt>Administration node</dt>
@@ -25,7 +25,7 @@ This document describes the kind of things you may want to do also on service no
 
 
 
-<h1 id="manually-managing-services">Manually Managing Services</h1>
+<h2 id="manually-managing-services">Manually Managing Services</h2>
 <p>
 In regular operation, all processes on all nodes of a Vespa system is
 started, stopped and restarted by Vespa as described in the
@@ -160,15 +160,15 @@ The output from <code>telnet localhost 19098</code> followed by
 a <code>ls</code> may look like this (single node system):
 </p>
 <pre>
-logd state=RUNNING mode=AUTO pid=24512 exitstatus=0 autostart=TRUE 
+logd state=RUNNING mode=AUTO pid=24512 exitstatus=0 autostart=TRUE
     autorestart=TRUE id="hosts/myhost.mydomain.com/logd"
-topleveldispatch state=RUNNING mode=AUTO pid=24518 exitstatus=0 autostart=TRUE 
+topleveldispatch state=RUNNING mode=AUTO pid=24518 exitstatus=0 autostart=TRUE
     autorestart=TRUE id="search/cluster.search/tld.0"
-clustercontroller state=RUNNING mode=AUTO pid=24517 exitstatus=0 autostart=TRUE 
+clustercontroller state=RUNNING mode=AUTO pid=24517 exitstatus=0 autostart=TRUE
     autorestart=TRUE id="search/cluster.search/rtx/0"
-qrserver state=RUNNING mode=AUTO pid=24516 exitstatus=0 autostart=TRUE 
+qrserver state=RUNNING mode=AUTO pid=24516 exitstatus=0 autostart=TRUE
     autorestart=TRUE id="search/qrservers/qrserver.0"
-slobrok state=RUNNING mode=AUTO pid=24514 exitstatus=0 autostart=TRUE 
+slobrok state=RUNNING mode=AUTO pid=24514 exitstatus=0 autostart=TRUE
     autorestart=TRUE id="admin/slobrok.0"
 </pre>
 <p>
@@ -236,7 +236,7 @@ Each line has the following fields:
 
 
 
-<h1 id="viewing-logs">Viewing Logs Locally</h1>
+<h2 id="viewing-logs">Viewing Logs Locally</h2>
 <p>
 The system log from an entire system is collected on the
 administration server and should be viewed there. Some times however,
@@ -265,7 +265,7 @@ $ logfmt -h
 
 
 
-<h1 id="node-content">Node content</h1>
+<h2 id="node-content">Node content</h2>
 <p>
 All nodes in a Vespa system have the same packages installed, but
 obviously the pieces which are used varies based on the assigned role

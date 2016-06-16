@@ -3,7 +3,7 @@
 title: "Routing - policies available for routing"
 ---
 
-        <h1>Routing - policies available for routing</h1>
+        <h2>Routing - policies available for routing</h2>
 
         <p class="ingress">
             This article contains detailed descriptions of the behaviour of all routing policies available in Vespa.
@@ -14,7 +14,7 @@ title: "Routing - policies available for routing"
         </p>
 
 
-        <h1 id="document-protocol">The Document Protocol</h1>
+        <h2 id="document-protocol">The Document Protocol</h2>
         <p>
             The "Document" protocol is currently the only Message Bus protocol supported by Vespa. Furthermore, all
             routing policies that are part of this protocol share a common code path for <a href="#merge">merging
@@ -39,7 +39,7 @@ title: "Routing - policies available for routing"
         </ul>
 
 
-        <h2 id="merge">Common Document <code>merge()</code> logic</h2>
+        <h3 id="merge">Common Document <code>merge()</code> logic</h3>
         <p>
             The shared merge logic of most Document routing policies is an attempt to do the "right" thing when merging
             multiple replies into one. It works by first stepping through all replies, storing their content as either
@@ -70,7 +70,7 @@ else, do
         return new reply with all IGNORE errors</pre>
 
 
-        <h2 id="and">Routing policy - AND</h2>
+        <h3 id="and">Routing policy - AND</h3>
         <p>
             This is a mostly a convenience policy that allows the user to fork a message's route to all configured
             recipients. It is not message-type aware, and will simply always select all recipients.  Replies are merged
@@ -82,7 +82,7 @@ else, do
         </p>
 
 
-        <h2 id="documentrouteselector">Routing policy - DocumentRouteSelector</h2>
+        <h3 id="documentrouteselector">Routing policy - DocumentRouteSelector</h3>
         <p>
             This policy is responsible for selecting among the policy's recipients according to the subscription rules
             defined by a search cluster's <a href="services-search-deprecated.html#documents">documents</a> element
@@ -123,7 +123,7 @@ else, do
         </div>
 
 
-        <h2 id="storage">Routing policy - Storage</h2>
+        <h3 id="storage">Routing policy - Storage</h3>
         <p>
 	This policy allows you to send a message to a storage cluster. The policy uses a system state retrieved
 	from the cluster in question in conjunction with slobrok information to pick the correct distributor for
@@ -141,7 +141,7 @@ else, do
 Separate each parameter with a semicolon. By default, this policy will use the current Vespa cluster for configuration and talk to a cluster named "storage".
         </p>
 
-        <h2 id="content">Routing policy - Content</h2>
+        <h3 id="content">Routing policy - Content</h3>
         <p>
 	This policy allows you to send a message to a content cluster. With a few minor differences it is identical to the <a href="#storage">storage</a> policy. It takes the same parameters. If you are using indexed search it will combine with the <a href="#messagetype">message type</a> policy.
         </p>
@@ -149,12 +149,12 @@ Separate each parameter with a semicolon. By default, this policy will use the c
             In short; <u>use this policy when communicating with Vespa using the <a href="../content/setup-reference.html#content">content</a> tag</u>.
         </p>
 
-        <h2 id="messagetype">Routing policy - MessageType</h2>
+        <h3 id="messagetype">Routing policy - MessageType</h3>
         <p>
           This policy will select the next hop based on the type of the message. You configure where all messages should go (defaultroute). Then you configure what messages types should be overridden and sent to alternative routes. It is currently only used internally by vespa when using the <a href="../content/setup-reference.html#content">content</a> tag.
         </p>
 
-        <h2 id="extern">Routing policy - Extern</h2>
+        <h3 id="extern">Routing policy - Extern</h3>
         <p>
             This policy implements the necessary logic to communicate with an external Vespa application and resolve a
             single service pattern using that other application's slobrok servers. Keep in mind that there might be some
@@ -176,7 +176,7 @@ Separate each parameter with a semicolon. By default, this policy will use the c
         </p>
 
 
-        <h2 id="localservice">Routing policy - LocalService</h2>
+        <h3 id="localservice">Routing policy - LocalService</h3>
         <p>
             This policy is used to select among all matching services, but prefering those running on the same host as
             the current one. The pattern used when querying for available services is the current one, but replacing the
@@ -198,7 +198,7 @@ Separate each parameter with a semicolon. By default, this policy will use the c
         </p>
 
 
-        <h2 id="roundrobin">Routing policy - RoundRobin</h2>
+        <h3 id="roundrobin">Routing policy - RoundRobin</h3>
         <p>
             This policy is used to select among a configured set of recipients. For each configured recipient,
             this policy determines what online services are matched, and then selects one among all of those
@@ -209,7 +209,7 @@ Separate each parameter with a semicolon. By default, this policy will use the c
             Because this policy only selects a single recipient, it contains no merging logic.
         </p>
 
-        <h2 id="subsetservice">Routing policy - SubsetService</h2>
+        <h3 id="subsetservice">Routing policy - SubsetService</h3>
         <p>
             This policy is used to select among a subset of all matching services, and is used to minimize number
             of connections in the system. The pattern used when querying for
@@ -234,7 +234,7 @@ Separate each parameter with a semicolon. By default, this policy will use the c
         </p>
 
 
-        <h2 id="storage">Routing policy - LoadBalancer</h2>
+        <h3 id="storage">Routing policy - LoadBalancer</h3>
         <p>
 
             This policy is used to send to a stateless cluster such as docproc, where any node can be chosen to process any
