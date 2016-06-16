@@ -35,14 +35,14 @@ public class OrchestratorUtilTest {
     public void applicationid_conversion_are_symmetric() throws Exception {
 
         // From appId to appRef and back
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(APPID_1);
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(APPID_1, new DummyInstanceLookupService());
         ApplicationId appIdRoundTrip = OrchestratorUtil.toApplicationId(appRef);
 
         Assert.assertEquals(APPID_1, appIdRoundTrip);
 
         // From appRef to appId and back
         ApplicationId appId = OrchestratorUtil.toApplicationId(APPREF_1);
-        ApplicationInstanceReference appRefRoundTrip = OrchestratorUtil.toApplicationInstanceReference(appId);
+        ApplicationInstanceReference appRefRoundTrip = OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService());
 
         Assert.assertEquals(APPREF_1, appRefRoundTrip);
     }

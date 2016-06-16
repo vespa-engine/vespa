@@ -5,8 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -14,9 +12,12 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -108,14 +109,17 @@ public class OrchestratorUtil {
     }
 
 
-    public static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId appId) {
-        TenantId tenantId = new TenantId(appId.tenant().toString());
+    public static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId appId,
+                                                                              InstanceLookupService instanceLookupService)
+            throws ApplicationIdNotFoundException {
 
-        String appName = appId.application().toString();
-        String instanceName = appId.instance().toString();
-        ApplicationInstanceId appInstanceId = new ApplicationInstanceId(appName + ":" + instanceName);
-
-        return new ApplicationInstanceReference(tenantId,appInstanceId);
+        String appRegex = String.format("^%s:.*:.*:%s$",appId.application().toString(), appId.instance().toString());
+        Set<ApplicationInstanceReference> appRefs = instanceLookupService.knownInstances();
+        Optional<ApplicationInstanceReference> appRef = appRefs.stream()
+                .filter(a -> a.tenantId().equals(appId.tenant()))
+                .filter(a -> a.applicationInstanceId().toString().matches(appRegex))
+                .findFirst();
+        return appRef.orElseThrow(() -> new ApplicationIdNotFoundException());
     }
 
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {
@@ -126,9 +130,7 @@ public class OrchestratorUtil {
         String[] appNameParts = appNameStr.split(":");
 
         // We assume a valid application reference has at lest two parts appname:instancename
-        // TODO is this assumption valid?
         if (appNameParts.length < 2)  {
-            // TODO Since this is used internally we should perhapes use another exception type?
             throw new IllegalArgumentException("Application reference not valid: " + appRef);
         }
 

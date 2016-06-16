@@ -291,7 +291,7 @@ public class OrchestratorImplTest {
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
         for (ApplicationInstance<ServiceMonitorStatus> app : DummyInstanceLookupService.getApplications()) {
-            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId))) {
+            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId,new DummyInstanceLookupService()))) {
                 return clustercontroller.isInMaintenance(app, hostName);
             }
         }

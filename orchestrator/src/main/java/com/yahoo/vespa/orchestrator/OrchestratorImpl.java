@@ -136,7 +136,7 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(
             final ApplicationId appId) throws ApplicationIdNotFoundException {
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId);
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId,instanceLookupService);
         return statusService.forApplicationInstance(appRef).getApplicationInstanceStatus();
     }
 
@@ -271,7 +271,8 @@ public class OrchestratorImpl implements Orchestrator {
             final ApplicationId appId,
             final ApplicationInstanceStatus status) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
 
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId);
+
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         try (MutableStatusRegistry statusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(appRef)) {
 
