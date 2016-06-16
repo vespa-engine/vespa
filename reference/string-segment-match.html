@@ -3,7 +3,7 @@
 title: "String segment match"
 ---
 
-<h1>String segment match</h1>
+<h2>String segment match</h2>
 
 <p class="ingress">
 The <strong>string segment match</strong> algorithm computes a set of metrics -
@@ -56,7 +56,7 @@ and thus the chosen segments.</p>
 
 
 
-<h1 id="source-information">Source information</h1>
+<h2 id="source-information">Source information</h2>
 
 <p>The information used by this algorithm to calculate these metrics are
 
@@ -72,7 +72,7 @@ Where the last three are optional.
 </p>
 
 
-<h1 id="algorithm">The algorithm</h1>
+<h2 id="algorithm">The algorithm</h2>
 
 <p>The algorithm locates segments from a given start query term as follows:
 
@@ -156,7 +156,7 @@ Any combination of metrics which can be calculated for a partial segmentation ma
 
 
 
-<h1 id="complexity">Complexity</h1>
+<h2 id="complexity">Complexity</h2>
 
 <p>The algorithm uses a linear programming technique to avoid recomputing earlier segments. A constant amount
 of data is stored per possible segment start point. Since there are at most as many start points as there are
@@ -182,7 +182,7 @@ O(average segment length/average number of term occurrences)
 
 
 
-<h1 id="metric-set">The string segment match metric set</h1>
+<h2 id="metric-set">The string segment match metric set</h2>
 
 <p>The complete string segment match metrics set, computed by this algorithm, is
 
@@ -231,7 +231,7 @@ is important, at the granularity which is convenient.</p>
 
 
 
-<h1 id="configuration_parameters">Configuration parameters</h1>
+<h2 id="configuration_parameters">Configuration parameters</h2>
 
 <p>The algorithm has the following configuration parameters, where the three first are fundamental
 parameters of the algorithm, and the others are used to normalize or combine certain features.
@@ -286,7 +286,7 @@ on how to configure these in Vespa.</p>
 
 
 
-<h1 id="reference_implementation">Reference implementation</h1>
+<h2 id="reference_implementation">Reference implementation</h2>
 
 <p>A standalone reference algorithm implementation computing these metrics from strings is available.</p>
 <ul>
