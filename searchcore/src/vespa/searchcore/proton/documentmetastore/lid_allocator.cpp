@@ -90,16 +90,6 @@ LidAllocator::ensureSpace(DocId lid,
 }
 
 void
-LidAllocator::markAsActive(DocId lid)
-{
-    if (_activeLids.get(lid) == 0) {
-        ++_numActiveLids;
-    }
-    _activeLids.update(lid, 1);
-    _activeLids.commit();
-}
-
-void
 LidAllocator::unregisterLid(DocId lid)
 {
     assert(!_pendingHoldLids.testBit(lid));
