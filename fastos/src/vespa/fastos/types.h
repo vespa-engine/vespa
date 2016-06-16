@@ -122,3 +122,7 @@
 #else
   #error "Only 64 environments are supported."
 #endif
+
+#ifndef PRIu32
+  #define PRIu32        "u"
+#endif
