@@ -4,4 +4,3 @@ vespa_add_executable(slobrok_multi_test_app TEST
     multi.cpp
     DEPENDS
 )
-vespa_add_test(NAME slobrok_multi_test_app NO_VALGRIND COMMAND sh multi_test.sh)
