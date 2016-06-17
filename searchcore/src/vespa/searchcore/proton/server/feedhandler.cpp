@@ -432,32 +432,32 @@ FeedHandler::performEof()
 
 
 void
-FeedHandler::performFlushDone(SerialNum oldestSerial)
+FeedHandler::performFlushDone(SerialNum flushedSerial)
 {
     assert(_writeService.master().isCurrentThread());
-    // XXX: oldestSerial can go backwards when attribute vectors are
+    // XXX: flushedSerial can go backwards when attribute vectors are
     // resurrected.  This can be avoided if resurrected attribute vectors
     // pretends to have been flushed at resurrect time.
-    if (oldestSerial <= _prunedSerialNum) {
+    if (flushedSerial <= _prunedSerialNum) {
         return;                                // Cannot unprune.
     } 
     if (!_owner.getAllowPrune()) {
-        _prunedSerialNum = oldestSerial;
+        _prunedSerialNum = flushedSerial;
         _delayedPrune = true;
         return;
     }
     _delayedPrune = false;
-    performPrune(oldestSerial);
+    performPrune(flushedSerial);
 }
 
 
 void
-FeedHandler::performPrune(SerialNum oldestSerial)
+FeedHandler::performPrune(SerialNum flushedSerial)
 {
     try {
-        tlsPrune(oldestSerial);  // throws on error
-        LOG(debug, "Pruned TLS to token %" PRIu64 ".", oldestSerial);
-        _owner.onPerformPrune(oldestSerial);
+        tlsPrune(flushedSerial);  // throws on error
+        LOG(debug, "Pruned TLS to token %" PRIu64 ".", flushedSerial);
+        _owner.onPerformPrune(flushedSerial);
     } catch (const vespalib::IllegalStateException & e) {
         LOG(warning, "FeedHandler::performPrune failed due to '%s'.", e.what());
     }
@@ -606,7 +606,7 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial,
 
 
 void
-FeedHandler::flushDone(SerialNum oldestSerial)
+FeedHandler::flushDone(SerialNum flushedSerial)
 {
     // Called by flush worker thread after performing a flush task
     _writeService.master().execute(
@@ -614,7 +614,7 @@ FeedHandler::flushDone(SerialNum oldestSerial)
                     makeClosure(
                             this,
                             &FeedHandler::performFlushDone,
-                            oldestSerial)));
+                            flushedSerial)));
 }
 
 void FeedHandler::changeToNormalFeedState(void) {

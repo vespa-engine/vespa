@@ -300,7 +300,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
     _flushEngine.reset(new FlushEngine(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                       strategy, flush.maxconcurrent, flush.idleinterval*1000, true));
+                                       strategy, flush.maxconcurrent, flush.idleinterval*1000));
     _fs4Server.reset(new TransportServer(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL));
     _fs4Server->setTCPNoDelay(true);
     _metricsEngine->addExternalMetrics(_fs4Server->getMetrics());

@@ -25,13 +25,10 @@ public:
      * @param taskId The identifier used by IFlushStrategy.
      * @param engine The running flush engine.
      * @param ctx    The context of the flush to perform.
-     * @param serial The oldest unflushed serial available in the handler once
-     *               this task has been run.
      */
     FlushTask(uint32_t taskId,
               FlushEngine &engine,
-              const FlushContext::SP &ctx,
-              search::SerialNum serial);
+              const FlushContext::SP &ctx);
 
     /**
      * Destructor. Notifies the engine that the flush is done to prevent the

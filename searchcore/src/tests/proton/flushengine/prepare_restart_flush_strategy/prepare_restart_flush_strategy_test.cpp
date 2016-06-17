@@ -72,7 +72,7 @@ public:
                                                                       targetType,
                                                                       flushedSerial,
                                                                       approxDiskBytes);
-        _result.push_back(std::make_shared<FlushContext>(handler, target, 0, 0));
+        _result.push_back(std::make_shared<FlushContext>(handler, target, 0));
         return *this;
     }
     ContextsBuilder &add(const vespalib::string &handlerName,

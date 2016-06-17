@@ -201,7 +201,7 @@ private:
      * Implements FeedHandler::IOwner
      */
     virtual void onTransactionLogReplayDone() __attribute__((noinline));
-    virtual void onPerformPrune(SerialNum oldestSerial);
+    virtual void onPerformPrune(SerialNum flushedSerial);
     virtual bool isFeedBlockedByRejectedConfig();
 
     /**
@@ -391,7 +391,7 @@ public:
     getDocsums(const search::engine::DocsumRequest & request);
 
     IFlushTarget::List getFlushTargets();
-    void flushDone(SerialNum oldestSerial);
+    void flushDone(SerialNum flushedSerial);
 
     virtual SerialNum
     getCurrentSerialNumber() const

@@ -62,7 +62,7 @@ public:
         virtual void performWipeHistory() = 0;
         virtual void onTransactionLogReplayDone() = 0;
         virtual void enterRedoReprocessState() = 0;
-        virtual void onPerformPrune(SerialNum oldestSerial) = 0;
+        virtual void onPerformPrune(SerialNum flushedSerial) = 0;
         virtual bool isFeedBlockedByRejectedConfig() = 0;
         virtual bool getAllowPrune() const = 0;
     };
@@ -153,10 +153,10 @@ private:
      * Used when flushing is done
      */
     void
-    performFlushDone(SerialNum oldestSerial);
+    performFlushDone(SerialNum flushedSerial);
 
     void
-    performPrune(SerialNum oldestSerial);
+    performPrune(SerialNum flushedSerial);
 
 public:
     void
@@ -240,10 +240,10 @@ public:
     /**
      * Called when a flush is done and allows pruning of the transaction log.
      *
-     * @param oldestSerial The oldest serial number that is still in use.
+     * @param flushedSerial serial number flushed for all relevant flush targets.
      */
     void
-    flushDone(SerialNum oldestSerial);
+    flushDone(SerialNum flushedSerial);
 
     /**
      * Used to flip between normal and recovery feed states.

@@ -105,7 +105,7 @@ public:
         return *this;
     }
     ContextBuilder &add(const IFlushTarget::SP &target, SerialNum lastSerial = 0) {
-        FlushContext::SP ctx(new FlushContext(_handler, target, 0, lastSerial));
+        FlushContext::SP ctx(new FlushContext(_handler, target, lastSerial));
         return add(ctx);
     }
     const FlushContext::List &list() const { return _list; }
@@ -282,22 +282,22 @@ requireThatWeCanOrderByTlsSize()
            (handler1,
             createTargetT("t2", TimeStamp(now.val() - 10 * TimeStamp::SEC),
                           1900),
-            2000, 2000)).
+            2000)).
         add(std::make_shared<FlushContext>
             (handler2,
              createTargetT("t1", TimeStamp(now.val() - 5 * TimeStamp::SEC),
                            1000),
-             2000, 2000)).
+             2000)).
         add(std::make_shared<FlushContext>
             (handler1,
              createTargetT("t4", TimeStamp(),
                            1000),
-             2000, 2000)).
+             2000)).
         add(std::make_shared<FlushContext>
             (handler2,
              createTargetT("t3", TimeStamp(now.val() - 15 * TimeStamp::SEC),
                            1900),
-             2000, 2000));
+             2000));
     { // sum of tls sizes above limit, trigger sort order based on tls size
         MemoryFlush flush({1000, 3 * gibi, 1.0, 1000, 1.0, 2000, TimeStamp(2 * TimeStamp::SEC)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t1").add("t2").add("t3"),

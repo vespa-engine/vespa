@@ -36,9 +36,9 @@ FlushHandlerProxy::getCurrentSerialNumber(void) const
 
 
 void
-FlushHandlerProxy::flushDone(SerialNum oldestSerial)
+FlushHandlerProxy::flushDone(SerialNum flushedSerial)
 {
-    _documentDB->flushDone(oldestSerial);
+    _documentDB->flushDone(flushedSerial);
 }
 
 

@@ -15,6 +15,7 @@ LOG_SETUP("flushengine_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <memory>
 
 // --------------------------------------------------------------------------------
@@ -75,6 +76,7 @@ public:
     search::SerialNum         _oldestSerial;
     search::SerialNum         _currentSerial;
     vespalib::CountDownLatch  _done;
+    std::vector<search::SerialNum> _flushDoneHistory;
 
 public:
     typedef std::shared_ptr<SimpleHandler> SP;
@@ -85,7 +87,8 @@ public:
           _targets(targets),
           _oldestSerial(0),
           _currentSerial(currentSerial),
-          _done(targets.size())
+          _done(targets.size() + 1),
+          _flushDoneHistory()
     {
         // empty
     }
@@ -112,12 +115,15 @@ public:
         LOG(info, "SimpleHandler(%s)::flushDone(%" PRIu64 ")",
             getName().c_str(), oldestSerial);
         _oldestSerial = std::max(_oldestSerial, oldestSerial);
+        _flushDoneHistory.push_back(oldestSerial);
         _done.countDown();
    }
 
 };
 
 class SimpleTask : public searchcorespi::FlushTask {
+    search::SerialNum &_flushedSerial;
+    search::SerialNum &_currentSerial;
 public:
     vespalib::Gate &_start;
     vespalib::Gate &_done;
@@ -126,8 +132,11 @@ public:
 public:
     SimpleTask(vespalib::Gate &start,
                vespalib::Gate &done,
-               vespalib::Gate *proceed)
-        : _start(start), _done(done), _proceed(proceed)
+               vespalib::Gate *proceed,
+               search::SerialNum &flushedSerial,
+               search::SerialNum &currentSerial)
+        : _flushedSerial(flushedSerial), _currentSerial(currentSerial),
+          _start(start), _done(done), _proceed(proceed)
     {
         // empty
     }
@@ -137,6 +146,7 @@ public:
         if (_proceed != NULL) {
             _proceed->await();
         }
+        _flushedSerial = _currentSerial;
         _done.countDown();
     }
 
@@ -150,6 +160,7 @@ public:
 class SimpleTarget : public test::DummyFlushTarget {
 public:
     search::SerialNum _flushedSerial;
+    search::SerialNum _currentSerial;
     vespalib::Gate    _proceed;
     vespalib::Gate    _initDone;
     vespalib::Gate    _taskStart;
@@ -162,6 +173,7 @@ public:
     SimpleTarget(Task::UP task, const std::string &name) :
         test::DummyFlushTarget(name),
         _flushedSerial(0),
+        _currentSerial(0),
         _proceed(),
         _initDone(),
         _taskStart(),
@@ -177,7 +189,8 @@ public:
         _initDone(),
         _taskStart(),
         _taskDone(),
-        _task(new SimpleTask(_taskStart, _taskDone, &_proceed))
+        _task(new SimpleTask(_taskStart, _taskDone, &_proceed,
+                             _flushedSerial, _currentSerial))
     {
         if (proceedImmediately) {
             _proceed.countDown();
@@ -190,8 +203,8 @@ public:
     virtual SerialNum
     getFlushedSerialNum() const override
     {
-        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum()",
-            getName().c_str());
+        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64,
+            getName().c_str(), _flushedSerial);
         return _flushedSerial;
     }
 
@@ -200,6 +213,7 @@ public:
     {
         LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")",
             getName().c_str(), currentSerial);
+        _currentSerial = currentSerial;
         _initDone.countDown();
         return std::move(_task);
     }
@@ -340,7 +354,7 @@ struct Fixture
     Fixture(uint32_t numThreads, uint32_t idleIntervalMS)
         : tlsStatsFactory(std::make_shared<SimpleTlsStatsFactory>()),
           strategy(std::make_shared<SimpleStrategy>()),
-          engine(tlsStatsFactory, strategy, numThreads, idleIntervalMS, false)
+          engine(tlsStatsFactory, strategy, numThreads, idleIntervalMS)
     {
     }
 };
@@ -398,7 +412,9 @@ TEST_F("require that oldest serial is found", Fixture(1, IINTERVAL))
     f.engine.start();
 
     EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(20ul, handler->_oldestSerial);
+    EXPECT_EQUAL(25ul, handler->_oldestSerial);
+    EXPECT_EQUAL(std::vector<search::SerialNum>({ 10, 20, 25 }),
+                 handler->_flushDoneHistory);
 }
 
 TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
@@ -423,9 +439,13 @@ TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
     f.engine.start();
 
     EXPECT_TRUE(fooH->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(20ul, fooH->_oldestSerial);
+    EXPECT_EQUAL(25ul, fooH->_oldestSerial);
+    EXPECT_EQUAL(std::vector<search::SerialNum>({ 10, 20, 25 }),
+                 fooH->_flushDoneHistory);
     EXPECT_TRUE(barH->_done.await(LONG_TIMEOUT));
-    EXPECT_EQUAL(15ul, barH->_oldestSerial);
+    EXPECT_EQUAL(20ul, barH->_oldestSerial);
+    EXPECT_EQUAL(std::vector<search::SerialNum>({ 5, 15, 20 }),
+                 barH->_flushDoneHistory);
 }
 
 TEST_F("require that target can refuse flush", Fixture(2, IINTERVAL))
