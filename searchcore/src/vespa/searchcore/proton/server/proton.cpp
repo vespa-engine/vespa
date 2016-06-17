@@ -89,10 +89,41 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton)
             proton.writefilter.sampleinterval);
 }
 
+static constexpr size_t TOTAL_HARD_MEMORY_LIMIT=16*1024*1024*1024ul;
+static constexpr size_t EACH_HARD_MEMORY_LIMIT=12*1024*1024*1024ul;
+
+MemoryFlush::Config
+memoryFlushConfig(const ProtonConfig::Flush &flush)
+{
+    size_t totalMaxMemory = flush.memory.maxmemory;
+    if (totalMaxMemory > TOTAL_HARD_MEMORY_LIMIT) {
+        LOG(warning, "flush.memory.maxmemory=%ld can not"
+            " be set above the hard limit of %ld so we cap it",
+            flush.memory.maxmemory,
+            TOTAL_HARD_MEMORY_LIMIT);
+        totalMaxMemory = TOTAL_HARD_MEMORY_LIMIT;
+    }
+    size_t eachMaxMemory = flush.memory.each.maxmemory;
+    if (eachMaxMemory > EACH_HARD_MEMORY_LIMIT) {
+        LOG(warning, "flush.memory.each.maxmemory=%ld can not"
+            " be set above the hard limit of %ld so we cap it",
+            flush.memory.maxmemory,
+            EACH_HARD_MEMORY_LIMIT);
+        eachMaxMemory = EACH_HARD_MEMORY_LIMIT;
+    }
+    return MemoryFlush::Config(totalMaxMemory,
+                               flush.memory.maxtlssize,
+                               flush.memory.diskbloatfactor,
+                               eachMaxMemory,
+                               flush.memory.each.diskbloatfactor,
+                               flush.memory.maxage.serial,
+                               static_cast<long>
+                               (flush.memory.maxage.time) *
+                               fastos::TimeStamp::NANO);
 }
 
-static const size_t TOTAL_HARD_MEMORY_LIMIT=16*1024*1024*1024ul;
-static const size_t EACH_HARD_MEMORY_LIMIT=12*1024*1024*1024ul;
+}
+
 static const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
 Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const Proton &proton_,
@@ -262,34 +293,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
     switch (flush.strategy) {
-    case ProtonConfig::Flush::MEMORY: {
-            size_t totalMaxMemory = flush.memory.maxmemory;
-            if (totalMaxMemory > TOTAL_HARD_MEMORY_LIMIT) {
-                LOG(warning, "flush.memory.maxmemory=%ld can not"
-                             " be set above the hard limit of %ld so we cap it",
-                             flush.memory.maxmemory,
-                             TOTAL_HARD_MEMORY_LIMIT);
-                totalMaxMemory = TOTAL_HARD_MEMORY_LIMIT;
-            }
-            size_t eachMaxMemory = flush.memory.each.maxmemory;
-            if (eachMaxMemory > EACH_HARD_MEMORY_LIMIT) {
-                LOG(warning, "flush.memory.each.maxmemory=%ld can not"
-                             " be set above the hard limit of %ld so we cap it",
-                             flush.memory.maxmemory,
-                             EACH_HARD_MEMORY_LIMIT);
-                eachMaxMemory = EACH_HARD_MEMORY_LIMIT;
-            }
+    case ProtonConfig::Flush::MEMORY:
             strategy = std::make_shared<MemoryFlush>(
-                    MemoryFlush::Config(totalMaxMemory,
-                                        flush.memory.maxtlssize,
-                                        flush.memory.diskbloatfactor,
-                                        eachMaxMemory,
-                                        flush.memory.each.diskbloatfactor,
-                                        flush.memory.maxage.serial,
-                                        static_cast<long>
-                                        (flush.memory.maxage.time) *
-                                        fastos::TimeStamp::NANO));
-        }
+                    memoryFlushConfig(flush));
         break;
     case ProtonConfig::Flush::SIMPLE:
     default:
@@ -299,6 +305,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::mkdir(protonConfig.basedir + "/documents", true);
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
+    _strategy = strategy;
     _flushEngine.reset(new FlushEngine(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
                                        strategy, flush.maxconcurrent, flush.idleinterval*1000, true));
     _fs4Server.reset(new TransportServer(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL));
@@ -538,6 +545,12 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot,
                                        configSnapshot->getGeneration()));
     _diskMemUsageSampler->
         setConfig(diskMemUsageSamplerConfig(protonConfig));
+    std::shared_ptr<MemoryFlush> memoryFlushStrategy =
+        std::dynamic_pointer_cast<MemoryFlush>(_strategy);
+    if (memoryFlushStrategy) {
+        memoryFlushStrategy->setConfig(memoryFlushConfig(protonConfig.flush));
+        _flushEngine->kick();
+    }
 }
 
 void

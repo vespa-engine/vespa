@@ -15,12 +15,21 @@ class MemoryFlush : public boost::noncopyable,
 public:
     struct Config
     {
+        /// Global maxMemory
         uint64_t          maxGlobalMemory;
+        /// Maximum global tls size.
         uint64_t          maxGlobalTlsSize;
+        /// Maximum global disk bloat factor. When this limit is reached
+        /// flush is forced.
         double            globalDiskBloatFactor;
+        /// Maximum memory saved. When this limit is reached flush is forced.
         int64_t           maxMemoryGain;
+        /// Maximum disk bloat factor. When this limit is reached
+        /// flush is forced.
         double            diskBloatFactor;
+        /// Maximum count of what a target can have outstanding in the TLS.
         int64_t           maxSerialGain;
+        /// Maximum age of unflushed data.
         fastos::TimeStamp maxTimeGain;
         Config();
         Config(uint64_t maxGlobalMemory_in,
@@ -35,21 +44,7 @@ public:
 private:
     /// Needed as flushDone is called in different context from the rest
     vespalib::Lock     _lock;
-    /// Global maxMemory
-    uint64_t           _globalMaxMemory;
-    /// Maximum global tls size.
-    uint64_t           _maxGlobalTlsSize;
-    /// Maximum global disk bloat factor. When this limit is reached
-    /// flush is forced.
-    double             _globalDiskBloatFactor;
-    /// Maximum memory saved. When this limit is reached flush is forced.
-    int64_t            _maxMemoryGain;
-    /// Maximum disk bloat factor. When this limit is reached flush is forced.
-    double             _diskBloatFactor;
-    /// Maximum count of what a target can have outstanding in the TLS.
-    int64_t            _maxSerialGain;
-    /// Maximum age of unflushed data.
-    fastos::TimeStamp  _maxTimeGain;
+    Config             _config;
     /// The time when the strategy was started.
     fastos::TimeStamp  _startTime;
 
@@ -73,6 +68,8 @@ private:
         const flushengine::TlsStatsMap &_tlsStatsMap;
     };
 
+    Config getConfig() const;
+
 public:
     MemoryFlush();
 
@@ -84,6 +81,8 @@ public:
     getFlushTargets(const FlushContext::List &targetList,
                     const flushengine::TlsStatsMap &
                     tlsStatsMap) const override;
+
+    void setConfig(const Config &config);
 };
 
 } // namespace proton

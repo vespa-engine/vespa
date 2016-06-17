@@ -106,6 +106,7 @@ private:
     MatchEngine::UP                 _matchEngine;
     SummaryEngine::UP               _summaryEngine;
     DocsumBySlime::UP               _docsumBySlime;
+    IFlushStrategy::SP              _strategy;
     FlushEngine::UP                 _flushEngine;
     RPCHooks::UP                    _rpcHooks;
     HealthAdapter                   _healthAdapter;
