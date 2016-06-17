@@ -177,7 +177,7 @@ exit 0
 %{_prefix}/libexec/vespa/common-env.sh
 %{_prefix}/libexec/vespa/start-vespa-base.sh
 %{_prefix}/libexec/vespa/stop-vespa-base.sh
-%{_prefix}/libexec/vespa/start-file
+%{_prefix}/libexec/vespa/start-filedistribution
 %{_prefix}/libexec/vespa/ping-configserver
 %{_prefix}/libexec/vespa/start-configserver
 %{_prefix}/libexec/vespa/start-logd
