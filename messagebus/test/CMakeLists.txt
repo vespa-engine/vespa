@@ -1,5 +1,4 @@
 vespa_add_module_dependency(slobrok_slobrokserver)
-vespa_add_module_dependency(messagebus_messagebus-test)
 vespa_add_module_dependency(messagebus)
 add_subdirectory(src/binref)
 add_subdirectory(src/tests/compile-cpp)
