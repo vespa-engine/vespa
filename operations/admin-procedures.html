@@ -3,7 +3,7 @@
 title: "Administration procedures and tools"
 ---
 
-<h2 id="system-status">The state of your Vespa System</h2>
+<h1 id="system-status">The state of your Vespa System</h1>
 <ul>
   <li>Check <a href="../reference/logs.html">logs</a></li>
   <li>Use performance graphs, System Activity Report (<em>sar</em>)
@@ -18,7 +18,7 @@ title: "Administration procedures and tools"
 </ul>
 
 
-<h2 id="process_pid_files">Process PID files</h2>
+<h1 id="process_pid_files">Process PID files</h1>
 <p>
 Any process started from Vespa will get a PID file
 <em>$VESPA_HOME/var/run/{service name}.pid</em>, where <em>{service name}</em>
@@ -27,7 +27,7 @@ the same name which is used in the telnet administration interface for the
 Vespa sentinel.
 </p>
 
-<h2 id="status-pages">Status Pages</h2>
+<h1 id="status-pages">Status Pages</h1>
 <p>
 Vespa service instances have status pages for debugging and testing.
 These status pages are not public interfaces,
@@ -41,7 +41,7 @@ hence subject to change at any time - please take care when automating:
     understand without developer knowledge of the service.
   </li>
 </ul>
-<h3>Find the port</h3>
+<h2>Find the port</h2>
 <p>
 The status pages runs on ports assigned by Vespa. To find status page ports,
 use <code>vespa-model-inspect</code> to list the services run in the application.
@@ -63,7 +63,7 @@ The <code>-u</code> option can be used to get proper URLs in the output.
 The <code>-t</code> option can be used to print only the address of the
 services matching the tags, but note that this will hide other information.
 </p>
-<h3>Get the status and metrics</h3>
+<h2>Get the status and metrics</h2>
 <p>
 <em>distributor</em>, <em>storagenode</em>, <em>searchnode</em> and
 <em>container-clustercontroller</em> are content services with status
@@ -77,7 +77,7 @@ The <em>distributor</em> and <em>storagenode</em> status pages are available at
 <code>/</code>, while the <em>container-clustercontroller</em> status page is found at
 <code>/clustercontroller-status/v1/<i>[clustername/]</i></code>.
 </p>
-<h3>Examples</h3>
+<h2>Examples</h2>
 <pre class="brush: cli">
 $ vespa-model-inspect service searchnode
 searchnode @ myhost.mydomain.com : search
@@ -103,7 +103,7 @@ $ curl http://myhost.mydomain.com:19118/
 
 
 
-  <h2 id="detecting-overload">Overload</h2>
+  <h1 id="detecting-overload">Overload</h1>
   <ul>
     <li>
       If the number of requests exceed what the cluster is
@@ -127,7 +127,7 @@ $ curl http://myhost.mydomain.com:19118/
       some not that critical external traffic.
     </li>
   </ul>
-  <h3>Detecting overload through queues</h3>
+  <h2>Detecting overload through queues</h2>
   <p>
     The most trustworth metric for overload is the prioritized partition queues
     on the content nodes. In an overload situation, operations above some
@@ -143,13 +143,13 @@ $ curl http://myhost.mydomain.com:19118/
     be queued merely by not being created yet, as there's no reason to keep
     more pending operations than is needed to get good throughput.
   </p>
-  <h3>Detecting overload through recent request type throughput</h3>
+  <h2>Detecting overload through recent request type throughput</h2>
   <p>
     Metrics for operation throughput can also be used, to detect that the
     cluster is suddenly doing a lot of one type of operation that it doesn't
     normally do.
   </p>
-  <h3>Detecting through measuring system resources</h3>
+  <h2>Detecting through measuring system resources</h2>
   <p>
     It may seem obvious to detect overload by monitoring CPU, memory and IO
     usage. However, a fully utilized resource does not necessarily indicate
@@ -166,7 +166,7 @@ $ curl http://myhost.mydomain.com:19118/
     not get through. If latencies gets mysterious high while no queuing is
     detected, the network may be a likely candidate.
   </p>
-  <h3>Rate limiting</h3>
+  <h2>Rate limiting</h2>
   <p>
     Many applications built on Vespa is used by multiple clients and faces the problem
     of protecting clients from others overuse or abuse.
@@ -178,7 +178,7 @@ $ curl http://myhost.mydomain.com:19118/
 
 
 
-<h2 id="ideal-state-distance">Monitor distance to ideal state</h2>
+<h1 id="ideal-state-distance">Monitor distance to ideal state</h1>
 <p>
 Distributor <a href="#status-pages">status pages</a> can be
 viewed to manually inspect state metrics:

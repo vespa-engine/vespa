@@ -3,7 +3,7 @@
 title: "Elastic Vespa"
 ---
 
-<h2 id="add-remove-nodes">Add or Remove Nodes</h2>
+<h1 id="add-remove-nodes">Add or Remove Nodes</h1>
 <p>
 The procedure for adding and removing nodes depends on node type,
 and the type specific procedures are outlined in separate
@@ -17,7 +17,7 @@ version</em> as the rest of the system.
 
 
 
-<h3 id="add-remove-content-node">Add a content node</h3>
+<h2 id="add-remove-content-node">Add a content node</h2>
 <p>
 Adding a content node is done simply by adding a
 <em>&lt;node&gt;</em>-element to the <em>&lt;group&gt;</em>-element in <em>services.xml</em>
@@ -62,7 +62,7 @@ many nodes at the same time.
 
 
 
-<h3 id="remove-node">Remove a content node</h2>
+<h2 id="remove-node">Remove a content node</h1>
 <p>
 Nodes can be removed with various degrees of safety.
 </p>
@@ -94,7 +94,7 @@ procedure for details.
 
 
 
-<h3 id="remove-node-retire">Removing nodes through retirement</h3>
+<h2 id="remove-node-retire">Removing nodes through retirement</h2>
 <p>
 Retiring nodes is the recommended way of removing nodes.
 When doing so, the nodes are still available to serve requests, but the
@@ -157,7 +157,7 @@ remaining nodes have enough capacity to serve all the requests. Procedure:
 
 
 
-<h3 id="merge">Merge clusters</h3>
+<h2 id="merge">Merge clusters</h2>
 <p>
 There are multiple ways to merge clusters, based on requirements to availability
 and effort. <em>Important: Ensure distribution keys are unique when adding nodes.</em>
@@ -165,7 +165,7 @@ and effort. <em>Important: Ensure distribution keys are unique when adding nodes
 
 
 
-<h3 id="add-remove-qrs">QRS / Top Level Dispatchers (TLD) / Document Processor nodes</h3>
+<h2 id="add-remove-qrs">QRS / Top Level Dispatchers (TLD) / Document Processor nodes</h2>
 <p>
 Add or remove nodes.
 <ol>
@@ -177,7 +177,7 @@ Add or remove nodes.
 
 
 
-<h3 id="add-remove-configserver">Configserver nodes</h3>
+<h2 id="add-remove-configserver">Configserver nodes</h2>
 <p>
 ToDo
 </p>

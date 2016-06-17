@@ -3,7 +3,7 @@
 title: "services.xml - 'document-processing'"
 ---
 
-<h2>services.xml - 'document-processing'</h2>
+<h1>services.xml - 'document-processing'</h1>
 
 <p class="ingress">
     This is the reference documentation for all elements contained within
@@ -48,10 +48,10 @@ title: "services.xml - 'document-processing'"
 </pre>
 
 
-<h2 id="document-processing-model-elements">document-processing configuration model elements</h2>
+<h1 id="document-processing-model-elements">document-processing configuration model elements</h1>
 
 
-<h3 id="document-processing">document-processing</h3>
+<h2 id="document-processing">document-processing</h2>
 
 <p>
     The root element of the document-processing configuration model in JDisc.
@@ -78,7 +78,7 @@ title: "services.xml - 'document-processing'"
     </li>
 </ul>
 
-<h2 id="documentprocessorelements">Document Processor elements </h2>
+<h1 id="documentprocessorelements">Document Processor elements </h1>
 
 <p>Documentprocessor elements are contained in <a href="#chain">docproc chain elements</a> or in the <a
         href="#document-processing">document-processing root</a>.
@@ -156,7 +156,7 @@ title: "services.xml - 'document-processing'"
     documentprocessors</a>.
 </p>
 
-<h3 id="documentprocessor">documentprocessor </h3>
+<h2 id="documentprocessor">documentprocessor </h2>
 
 <p>Defines a documentprocessor instance of a user specified class.
 </p>
@@ -183,13 +183,13 @@ title: "services.xml - 'document-processing'"
     </li>
 </ul>
 
-<h2 id="docprocchainelements">Docproc chain elements </h2>
+<h1 id="docprocchainelements">Docproc chain elements </h1>
 
 <p>Specifies how a docproc chain should be instantiated, and how the contained
     document processors should be ordered.
 </p>
 
-<h3 id="chain">chain </h3>
+<h2 id="chain">chain </h2>
 
 <p>Contained in <a href="#document-processing">document-processing</a>.
 </p>
@@ -242,7 +242,7 @@ title: "services.xml - 'document-processing'"
     </li>
 </ul>
 
-<h4 id="documentprocessorreference">Documentprocessor reference </h4>
+<h3 id="documentprocessorreference">Documentprocessor reference </h3>
 
 <p>The documentprocessor references determines which documentprocessor instances are used in the
     resulting docproc chain instance.
@@ -265,7 +265,7 @@ title: "services.xml - 'document-processing'"
 </p>
 
 
-<h4 id="inheritance">chain inheritance </h4>
+<h3 id="inheritance">chain inheritance </h3>
 
 <p>When a docproc chain inherits from another docproc chain, it subsumes the phases
     and the <em>documentprocessor references</em> (both implicitly and explicitly defined) from the
@@ -281,7 +281,7 @@ title: "services.xml - 'document-processing'"
 </p>
 
 
-<h4 id="phase">Phase </h4>
+<h3 id="phase">Phase </h3>
 
 <p>
     A phase is a named checkpoint. They are used to help create a linear ordering
@@ -322,7 +322,7 @@ title: "services.xml - 'document-processing'"
 </ul>
 
 
-<h2 id="map">Schema mapping</h2>
+<h1 id="map">Schema mapping</h1>
 
 <p>
     It is possible to set up a field name mapping from the name(s) of field(s) in the input documents to the names used

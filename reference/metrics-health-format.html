@@ -3,7 +3,7 @@
 title: "Metrics and Health API"
 ---
 
-<p>
+<p class="ingress">
 This article describes the API for health and metrics for a service in Vespa.
 </p>
 
@@ -16,9 +16,9 @@ Health status can be found by HTTP GET at <code>http://host:healthport/state/v1/
 
 <pre class="brush: js">
 {
-  "status" : {
-    "code" : "up",
-    "message" : "Everything ok here"
+  &quot;status&quot; : {
+    &quot;code&quot; : &quot;up&quot;,
+    &quot;message&quot; : &quot;Everything ok here&quot;
   }
 }
 </pre>
@@ -45,42 +45,42 @@ that is the case.
 
 <pre class="brush: js">
 {
-  "status" : {
-    "code" : "up",
-    "message" : "Everything ok here"
+  &quot;status&quot; : {
+    &quot;code&quot; : &quot;up&quot;,
+    &quot;message&quot; : &quot;Everything ok here&quot;
   },
-  "metrics" : {
-    "snapshot" : {
-      "from" : 1334134640.089,
-      "to" : 1334134700.088,
+  &quot;metrics&quot; : {
+    &quot;snapshot&quot; : {
+      &quot;from&quot; : 1334134640.089,
+      &quot;to&quot; : 1334134700.088,
     },
-    "values" : [
+    &quot;values&quot; : [
       {
-        "name" : "queries",
-        "description" : "Number of queries executed during snapshot interval",
-        "values" : {
-          "count" : 28,
-          "rate" : 0.4667
+        &quot;name&quot; : &quot;queries&quot;,
+        &quot;description&quot; : &quot;Number of queries executed during snapshot interval&quot;,
+        &quot;values&quot; : {
+          &quot;count&quot; : 28,
+          &quot;rate&quot; : 0.4667
         },
-        "dimensions" : {
-          "searcherid" : "x"
+        &quot;dimensions&quot; : {
+          &quot;searcherid&quot; : &quot;x&quot;
         }
       },
       {
-        "name" : "query_hits",
-        "description" : "Number of documents matched per query during snapshot interval",
-        "values" : {
-          "count" : 28,
-          "rate" : 0.4667,
-          "average" : 128.3,
-          "min" : 0,
-          "max" : 10000,
-          "sum" : 3584,
-          "median" : 124.0,
-          "std_deviation": 5.43
+        &quot;name&quot; : &quot;query_hits&quot;,
+        &quot;description&quot; : &quot;Number of documents matched per query during snapshot interval&quot;,
+        &quot;values&quot; : {
+          &quot;count&quot; : 28,
+          &quot;rate&quot; : 0.4667,
+          &quot;average&quot; : 128.3,
+          &quot;min&quot; : 0,
+          &quot;max&quot; : 10000,
+          &quot;sum&quot; : 3584,
+          &quot;median&quot; : 124.0,
+          &quot;std_deviation&quot;: 5.43
         },
-        "dimensions" : {
-          "searcherid" : "x"
+        &quot;dimensions&quot; : {
+          &quot;searcherid&quot; : &quot;x&quot;
         }
       }
     ]
@@ -149,7 +149,8 @@ set. The currently possible values are as follows:
       period. Typically sum divided by count.</dd>
 
   <dt>rate</dt>
-  <dd>count/s.</dd>
+  <dd>count/s Superfluous metric. But metrics proxy for some reasons
+      did not manage to calculate this itself.</dd>
 
   <dt>min</dt>
   <dd>The smallest value seen in this snapshot period.</dd>

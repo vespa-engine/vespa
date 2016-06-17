@@ -1,0 +1,148 @@
+---
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+title: "Test: Annotations"
+---
+
+<p class="ingress">
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel massa
+interdum lectus ultrices scelerisque. Etiam sapien sapien, pharetra ac
+tincidunt sit amet, ullamcorper vitae diam. Maecenas nunc metus,
+luctus viverra tempor vitae, iaculis non quam.
+</p>
+
+
+<h1 id="lorem">Lorem Ipsum</h1>
+<p data-tickets="123456, 4567,7890" data-annotation="This is a note">
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel massa
+interdum lectus ultrices scelerisque. Etiam sapien sapien, pharetra ac
+tincidunt sit amet, ullamcorper vitae diam. Maecenas nunc metus,
+luctus viverra tempor vitae, iaculis non quam. Morbi nisl lectus,
+scelerisque nec lobortis sed, lobortis vel lorem. Maecenas sit amet
+turpis vel purus sollicitudin dignissim. In adipiscing, lacus id
+varius dignissim, mauris nunc viverra arcu, nec iaculis dui purus
+semper enim. Proin pellentesque libero enim, tincidunt placerat
+sapien. Vivamus tortor elit, venenatis ac fermentum at, sollicitudin
+ac enim. Etiam euismod, quam non pharetra hendrerit, dui risus rutrum
+purus, in varius quam purus ut neque. Nullam eget nisl ac arcu porta
+fermentum nec a elit.
+</p>
+
+<p>
+Morbi eget turpis ligula, at posuere erat. Mauris dapibus condimentum
+accumsan. Nam accumsan sapien ut tortor aliquam vitae fringilla massa
+sagittis. Phasellus vitae lectus quis nibh mollis mattis. Vivamus
+vitae mi mi, nec scelerisque eros. Cum sociis natoque penatibus et
+magnis dis parturient montes, nascetur ridiculus mus. Pellentesque id
+lacus quis ligula fermentum pretium. Vestibulum pharetra faucibus
+aliquam. Nam pretium tincidunt tincidunt. Sed vestibulum tempus risus,
+eu congue velit feugiat quis. Morbi id libero orci. Nullam vestibulum
+auctor urna sed accumsan. <span data-annotation="This is a
+test">Vestibulum ultricies</span> odio non nibh aliquam non fermentum
+ipsum tempus. Cum sociis natoque penatibus et magnis dis parturient
+montes, nascetur ridiculus mus. Fusce posuere, urna id imperdiet
+scelerisque, sapien mi ultrices quam, eu dictum mi arcu sit amet
+ipsum. Donec faucibus dignissim vulputate. Quisque ut mi mauris, id
+auctor sem. Vivamus posuere massa non risus rhoncus eu tincidunt lorem
+auctor. Quisque dignissim, justo ac sodales volutpat, risus erat
+aliquam nunc, ac pulvinar risus erat euismod mauris.
+</p>
+
+
+
+<h1 id="lists">Lists</h1>
+<ol>
+  <li>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  </li>
+  <li data-tickets="3000000" data-annotation="This item is just completely meaningless.  Whoever wrote this should be shot.">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel
+    massa interdum lectus ultrices scelerisque.
+  </li>
+  <li>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel
+    massa interdum lectus ultrices scelerisque. Etiam sapien sapien,
+    pharetra ac tincidunt sit amet, ullamcorper vitae diam. Maecenas
+    nunc metus, luctus viverra tempor vitae, iaculis non quam.
+  </li>
+</ol>
+
+<ul>
+  <li>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  </li>
+  <li>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel
+    massa interdum lectus ultrices scelerisque.
+  </li>
+  <li data-tickets="3000001" data-annotation="Another meaningless item.  Will this ever end?">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel
+    massa interdum lectus ultrices scelerisque. Etiam sapien sapien,
+    pharetra ac tincidunt sit amet, ullamcorper vitae diam. Maecenas
+    nunc metus, luctus viverra tempor vitae, iaculis non quam.
+  </li>
+</ul>
+
+
+
+<h1 id="lists">Definition List</h1>
+<dl>
+  <dt>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  </dt>
+  <dd data-annotation="Bad language, must be rewritten.">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel
+    massa interdum lectus ultrices scelerisque. Etiam sapien sapien,
+    pharetra ac tincidunt sit amet, ullamcorper vitae diam. Maecenas
+    nunc metus, luctus viverra tempor vitae, iaculis non quam.
+  </dd>
+</dl>
+
+
+
+<h1 id="table">Table</h1>
+<table data-tickets="200000" data-annotation="Is this really correct?  Must be verified.">
+  <thead>
+    <tr>
+      <th>Column 1</th>
+      <th>Column 2</th>
+      <th>Column 3</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+    </tr>
+    <tr>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+    </tr>
+    <tr>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+      <td>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h1 id="pre">Pre</h1>
+<pre data-tickets="1234567, 2345678," data-annotation="This is just another note.">
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel massa
+interdum lectus ultrices scelerisque. Etiam sapien sapien, pharetra ac
+tincidunt sit amet, ullamcorper vitae diam. Maecenas nunc metus,
+luctus viverra tempor vitae, iaculis non quam. Morbi nisl lectus,
+scelerisque nec lobortis sed, lobortis vel lorem. Maecenas sit amet
+turpis vel purus sollicitudin dignissim. In adipiscing, lacus id
+varius dignissim, mauris nunc viverra arcu, nec iaculis dui purus
+semper enim. Proin pellentesque libero enim, tincidunt placerat
+sapien. Vivamus tortor elit, venenatis ac fermentum at, sollicitudin
+ac enim. Etiam euismod, quam non pharetra hendrerit, dui risus rutrum
+purus, in varius quam purus ut neque. Nullam eget nisl ac arcu porta
+fermentum nec a elit.
+</pre>
+
+

@@ -3,7 +3,7 @@
 title: "Load types and priorities"
 ---
 
-  <h2>Summary</h2>
+  <h1>Summary</h1>
   <ul>
     <li>Ensure all external requests are tagged with load types.</li>
     <li>Configure priorities for the load types, to ensure that the most
@@ -13,7 +13,7 @@ title: "Load types and priorities"
         operations.</li>
   </ul>
 
-  <h2>Hard priorities</h2>
+  <h1>Hard priorities</h1>
   <p>
     All requests sent to the content layer have a priority set. Maintenance
     operations, initiated by the content layer itself, also have priorities.
@@ -29,7 +29,7 @@ title: "Load types and priorities"
     or permanent, priorities decides what operation will be performed.
   </p>
 
-  <h2>Throttling using priorities</h2>
+  <h1>Throttling using priorities</h1>
   <p>
     A low priority task can be throttled by priority in order to use all
     available resources. By ensuring there is enough pending low priority
@@ -57,7 +57,7 @@ title: "Load types and priorities"
     provide a challenge in itself.
   </p>
 
-  <h2>Avoid overload caused by only latency critical requests</h2>
+  <h1>Avoid overload caused by only latency critical requests</h1>
   <p>
     Letting latency critical requests wait in queues are likely to break SLAs.
     Additionally, if the cluster is at max capacity with just critical load, it
@@ -67,7 +67,7 @@ title: "Load types and priorities"
     capacity exist to allow for some non-critical at all times.
   </p>
 
-  <h2 id="load-types">Using load types to set priorities</h2>
+  <h1 id="load-types">Using load types to set priorities</h1>
   <p>
     Priorities are settable per external request sent through the client API.
     However, that typically hard codes the priorities in the clients, and hides
@@ -92,7 +92,7 @@ title: "Load types and priorities"
     polluted with values from operations that are expected to be waiting.
   </p>
 
-  <h2>Priority of internal maintenance operations</h2>
+  <h1>Priority of internal maintenance operations</h1>
   <p>
     When configuring priorities for external requests, priorities of internal
     operations may be considered. If your application have requests with very
@@ -122,7 +122,7 @@ title: "Load types and priorities"
   </table>
 
 
-  <h2>Timeouts</h2>
+  <h1>Timeouts</h1>
   <p>
     Requests within the content layer has timeouts. When sending a request, if
     the timeout have been reached, but no response have been retrieved, an
@@ -175,7 +175,7 @@ title: "Load types and priorities"
     temporary issues to be resolved, to reduce extra load caused by resending.
   </p>
 
-  <h2>Priority values</h2>
+  <h1>Priority values</h1>
   <p>
     Internally, priorities are byte values from 0 to 255, where 0 is the highest
     priority. To be able to configure priorities a bit more textual, 16 priority
@@ -203,5 +203,5 @@ title: "Load types and priorities"
     We recommend that load that have strict latency requirements are priorities
     high or above. Load that may be throttled by priority should be low or less.
   </p>
-
+  
 

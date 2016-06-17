@@ -3,7 +3,7 @@
 title: "Tuning"
 ---
 
-  <h2 id="redundancy">Redundancy</h2>
+  <h1 id="redundancy">Redundancy</h1>
   <p>
     The redundancy factor sets how many backend instances stores copies of the
     same data. Having many copies allows for more nodes to go down without
@@ -28,7 +28,7 @@ title: "Tuning"
     cluster will keep attempting to self-correct until this is resolved.
   </p>
 
-  <h2 id="distributionkey">Distribution keys</h2>
+  <h1 id="distributionkey">Distribution keys</h1>
   <p>
     Distribution keys are used to identify nodes and groups for the
     distribution algorithm. If a node changes distribution key, the distribution
@@ -54,7 +54,7 @@ title: "Tuning"
     unique among groups that share the same parent group.
   </p>
 
-  <h2>Number of threads per backend partition - Latency or throughput</h2>
+  <h1>Number of threads per backend partition - Latency or throughput</h1>
   <p>
     The service layer runs a number of threads to process requests found in the
     per partition priority queue. Using many threads, many requests can be
@@ -81,7 +81,7 @@ title: "Tuning"
     priority operations will be delayed.
   </p>
 
-  <h2>Reserving threads for high priority operations</h2>
+  <h1>Reserving threads for high priority operations</h1>
   <p>
     It is possible to set up threads reserved for messages above a given
     priority boundary. As requests can not be paused/resumed or aborted, if all
@@ -105,7 +105,7 @@ title: "Tuning"
     on what priorities exist.
   </p>
 
-  <h2>Bucket split sizes</h2>
+  <h1>Bucket split sizes</h1>
   <p>
     The content layer tries to ensure there is a suitable amount of buckets to
     divide among the nodes. All documents are divided into buckets in the
@@ -134,8 +134,8 @@ title: "Tuning"
     less often.
   </p>
 
-  <h2>Elasticity tuning</h2>
-  <h3>Transition time</h3>
+  <h1>Elasticity tuning</h1>
+  <h2>Transition time</h2>
   <p>
     The transition time states how long a node will be in maintenance mode
     during what looks like a controlled restart. Keeping a node in maintenance
@@ -145,7 +145,7 @@ title: "Tuning"
     set down, in which case, new full bucket copies will be created.
   </p>
 
-  <h3>Removing unstable nodes</h3>
+  <h2>Removing unstable nodes</h2>
   <p>
     Nodes that keep crashing may cause issues for a cluster. See
     <a href="admin-automatic.html#constantly_crashing">automatically handled doc</a>
@@ -158,7 +158,7 @@ title: "Tuning"
     time to look at it, and possibly fix or replace it.
   </p>
 
-  <h3>Minimal amount of nodes required to be available</h3>
+  <h2>Minimal amount of nodes required to be available</h2>
   <p>
     A cluster is typically sized to handle a given amount of load. A given
     percentage of the cluster resources are required for normal operations, and
@@ -189,5 +189,5 @@ title: "Tuning"
     the distributors and two thirds of the service layer nodes to be available,
     though always allowing at least one node down for small clusters.
   </p>
-
+  
 

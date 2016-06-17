@@ -3,7 +3,7 @@
 title: "Tuning Vespa JVMs"
 ---
 
-<p>
+<p class="ingress">
 Some of the Vespa services are implemented in Java. Setting the
 correct settings for memory usage etc. is non-trivial, and the Vespa
 defaults are most often good for production &mdash; not your development
@@ -14,7 +14,9 @@ for information about settings for the JDisc Container in Vespa.
 </p>
 
 
+
 <h1 id="when-to-tune">When to tune</h1>
+
 <p>
 If things work when you run Vespa, you can skip reading here. However,
 if parts of Vespa fail at startup or while running, and you suspect it
@@ -23,7 +25,7 @@ find <code>vespa.log</code> entries looking like these:
 </p>
 
 <pre class="brush: text">
-1222175132.631524       mynode.mydomain.com   12213   config-sentinel config-sentinel.service event   stopped/1 name="qrserver" pid=15414 exitcode=32768
+1222175132.631524       mynode.mydomain.com   12213   config-sentinel config-sentinel.service event   stopped/1 name=&quot;qrserver&quot; pid=15414 exitcode=32768
 1222175132.631583       mynode.mydomain.com   12213   config-sentinel config-sentinel.service error   qrserver: Attempted to start, but fork() failed: Cannot allocate memory
 
 &hellip;
@@ -31,7 +33,7 @@ find <code>vespa.log</code> entries looking like these:
 1222175132.52427        mynode.mydomain.com   15381   logserver       stdout  info    Java HotSpot(TM) 64-Bit Server VM warning: Attempt to deallocate stack guard pages failed.
 1222175132.52480        mynode.mydomain.com   15381   logserver       stdout  info    Java HotSpot(TM) 64-Bit Server VM warning: Attempt to allocate stack guard pages failed.
 1222175132.036          mynode.mydomain.com   -/10    -       ADM.com.yahoo.logserver.handlers.HandlerThread  config  logserver.queue.size=200
-1222175132.52521        mynode.mydomain.com   15381   logserver       stderr  warning Exception in thread "main" java.lang.OutOfMem
+1222175132.52521        mynode.mydomain.com   15381   logserver       stderr  warning Exception in thread &quot;main&quot; java.lang.OutOfMem
 oryError: unable to create new native thread
 
 &hellip;
@@ -59,9 +61,9 @@ and restart the relevant services. The example below shows how to run
 
 <pre class="brush: xml">
 &lt;jdisc id="default" version="1.0"&gt;
-  &lt;nodes jvmargs="-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+CMSIncrementalPacing"&gt;
-    &lt;node hostalias="node0" /&gt;
-    &lt;node hostalias="node1" /&gt;
+  &lt;nodes jvmargs=&quot;-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+CMSIncrementalPacing&quot;&gt;
+    &lt;node hostalias=&quot;node0&quot; /&gt;
+    &lt;node hostalias=&quot;node1&quot; /&gt;
   &lt;/nodes&gt;
 &lt;/jdisc&gt;
 </pre>
@@ -72,7 +74,7 @@ collection:
 </p>
 
 <pre class="brush: xml">
-&lt;logserver hostalias="node0" jvmargs="-verbose:gc"/&gt;
+&lt;logserver hostalias=&quot;node0&quot; jvmargs=&quot;-verbose:gc&quot;/&gt;
 </pre>
 
 <p>
@@ -103,7 +105,8 @@ given by default in the start script, for example -Xmx, the last one
 
 
 
-<h1 id="tune-config">JVM Tuning for Config Server and Config Proxy</h1>
+<h1 id="tune-config">JVM Tuning for Config Server, Config Proxy and
+Metrics Proxy</h1>
 
 <p>
 The config server and proxy are not executed based on the model
@@ -120,6 +123,7 @@ cannot be set in services.xml either, and can be set the same way. Example:
 <pre class="brush: cli">
 cloudconfig_server.jvmargs      -verbose:gc
 services.jvmargs_configproxy    -verbose:gc -Xmx256m
+vespa_metrics_proxy.jvmargs     -verbose:gc
 </pre>
 
 <p>

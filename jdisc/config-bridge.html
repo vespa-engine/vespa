@@ -144,7 +144,7 @@ complete file should look like this:
 &lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;jdisc version="1.0"&gt;
   &lt;handler id="com.yahoo.demo.LegacyHandler" bundle="legacy_handler"&gt;
-    &lt;binding&gt;http://*:8080/legacy&lt;/binding&gt;
+    &lt;binding&gt;http://*:4080/legacy&lt;/binding&gt;
 
     &lt;component id="com.yahoo.demo.LegacyConfigProvider" bundle="legacy_handler" &gt;
       &lt;config name='demo.response'&gt;
@@ -154,16 +154,15 @@ complete file should look like this:
 
   &lt;/handler&gt;
 &lt;/jdisc&gt;
-</pre>
+</pre> 
 
-<p><a href="../setting-vespa-variables.html">Set the variable</a>
-'standalone_jdisc_container.app_location' to
-'/absolutepath/legacy_handler', rebuild the maven project and restart the JDisc container.
-</p>
-
-<p>You can now try it out:
+<p>Now, we can build our new application, and try it:</p>
 <pre class="brush: cli">
-$ curl localhost:8080/legacy
+$ cd legacy_handler
+$ mvn install
+$ yinst set standalone_jdisc_container.app_location=/absolutepath/legacy_handler
+$ yinst restart standalone_jdisc_container
+$ curl localhost:4080/legacy
 </pre>
 
 

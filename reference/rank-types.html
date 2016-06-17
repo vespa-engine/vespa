@@ -3,7 +3,7 @@
 title: "Setting rank type for a document field"
 ---
 
-<h2>Setting rank type for a document field</h2>
+<h1>Setting rank type for a document field</h1>
 
 <p class="ingress" data-annotation="FIXME: Mismatch between filename and document title, needs to be more similar.  Also needs a cleanup of the markup">
 This document presents the rank types that are supported by nativeRank
@@ -15,14 +15,14 @@ rank types are explained. Then, each ranking type will be described,
 with details of how it uses the different ranking controls.
 </p>
 
-    <h2 id="ranking-controls">Ranking controls</h2>
+    <h1 id="ranking-controls">Ranking controls</h1>
 
     <p>
       This section describes the different generic ranking controls
       that are influenced by the ranking type selection.
    </p>
 
-    <h3 id="firstocc-boost">FirstOcc boost</h3>
+    <h2 id="firstocc-boost">FirstOcc boost</h2>
 
     <p>
         The position of the first occurrence of a term in a document field
@@ -31,7 +31,7 @@ with details of how it uses the different ranking controls.
         For FirstOcc equal to or above the size of the table (default 256), the value
         for the last table element is used.
    </p>
-    <h4>Equation 1. Example FirstOcc boost table function</h4>
+    <h3>Equation 1. Example FirstOcc boost table function</h3>
 
     <div class="calc">
     <table>
@@ -46,22 +46,22 @@ with details of how it uses the different ranking controls.
     slope). The curve shapes are illustrated in Figure 1-2.
     </p>
 
-    <h4>Figure 1. FirstOcc Plot weight: increasing w lifts
+    <h3>Figure 1. FirstOcc Plot weight: increasing w lifts
     amplitude (x-axis is first occurrence position, and y-axis is
-    firstocc boost)</h4>
+    firstocc boost)</h3>
     <p><img
     src="../img/reference/relevance/plot-firstocc-weight.png" alt="FirstOcc
     Plot weight" />
     </p>
 
-    <h4>Figure 2. FirstOcc
+    <h3>Figure 2. FirstOcc
     Plot tune: Increasing t reduces exponential falloff (x-axis is first occurrence position, and y-axis is
-    firstocc boost)</h4>
+    firstocc boost)</h3>
     <p><img src="../img/reference/relevance/plot-firstocc-tune.png" alt="FirstOcc
     Plot tune" /></p>
 
 
-    <h3 id="numocc-boost">NumOcc boost</h3>
+    <h2 id="numocc-boost">NumOcc boost</h2>
     <p>
         The number of occurrences of a term in a document field is called
         the <tt class="literal">NumOcc</tt>. A NumOcc boost table map a given
@@ -70,7 +70,7 @@ with details of how it uses the different ranking controls.
         the size of the table (default 256), the value for the last table
         element is used.
    </p>
-        <h4>Equation 2. Example NumOcc boost table function</h4>
+        <h3>Equation 2. Example NumOcc boost table function</h3>
       <div class="calc">
     <table>
         <tr>
@@ -86,21 +86,21 @@ with details of how it uses the different ranking controls.
     to the numocc variable x).
     </p>
 
-    <h4>Figure 3. NumOcc Plot weight: increasion w
+    <h3>Figure 3. NumOcc Plot weight: increasion w
     scales log amplitude/shape (x-axis is number of occurrences in the field and y-axis is
-    numocc boost) </h4>
+    numocc boost) </h3>
         <p><img
     src="../img/reference/relevance/plot-numocc-weight.png" alt="NumOcc Plot
     weight" /></p>
 
-    <h4>Figure 4. NumOcc Plot
+    <h3>Figure 4. NumOcc Plot
     tune: increasing t increases boost by offset value (x-axis is number of occurrences in the field and y-axis is
-    numocc boost)</h4>
+    numocc boost)</h3>
     <p><img src="../img/reference/relevance/plot-numocc-tune.png" alt="NumOcc Plot
     tune" /></p>
 
 
-    <h3 id="proximity-boost"></a>Proximity boost</h3>
+    <h2 id="proximity-boost"></a>Proximity boost</h2>
 
     <p>
         When a query with more than one query term is executed,
@@ -128,7 +128,7 @@ with details of how it uses the different ranking controls.
         be higher than the reverse proximity table, giving an overall
         asymmetrical ranking function.
    </p>
-        <h4>Equation 3. Example Proximity boost table function</h4>
+        <h3>Equation 3. Example Proximity boost table function</h3>
       <div class="calc">
     <table>
         <tr>
@@ -146,27 +146,27 @@ with details of how it uses the different ranking controls.
       but with different parameters.
       </p>
 
-      <h4>Figure 5. Proximity Plot weight: w scales
+      <h3>Figure 5. Proximity Plot weight: w scales
       amplitude (x-axis is proximity term pair distance and y-axis is
-    proximity boost)</h4>
+    proximity boost)</h3>
     <p><img
       src="../img/reference/relevance/plot-proximity-weight.png" alt="Proximity
       Plot weight" /></p>
 
-      <h4>Figure 6. Proximity
+      <h3>Figure 6. Proximity
       Plot tune: Increasing t reduces curve fall-off (x-axis is proximity term pair distance and y-axis is
-    proximity boost)</h4>
+    proximity boost)</h3>
     <p><img src="../img/reference/relevance/plot-proximity-tune.png"
     alt="Proximity Plot tune" /></p>
 
 
-    <h3 id="weight_boost">Weight boost</h3>
+    <h2 id="weight_boost">Weight boost</h2>
 
     <p>
         The weightboost table is for calculating the rank boost contribution from attributes.
         Equation 4 shows how attribute weight values are used for table look-ups in the weightboost table.
         </p>
-      <h4>Equation 4. Example Weightboost boost table</h4>
+      <h3>Equation 4. Example Weightboost boost table</h3>
       <div class="calc">
     <table>
         <tr>
@@ -185,7 +185,7 @@ with details of how it uses the different ranking controls.
 
 
 
-    <h2 id="rank-types">Rank types</h2>
+    <h1 id="rank-types">Rank types</h1>
 
     <p>
       This section describes each individual ranking type, and details
@@ -193,7 +193,7 @@ with details of how it uses the different ranking controls.
     </p>
 
 
-    <h3 id="identity-rank-type"><tt class="literal">identity</tt> rank type</h3>
+    <h2 id="identity-rank-type"><tt class="literal">identity</tt> rank type</h2>
 
     <p>
         This ranking type is for fields that contain the identity of
@@ -226,7 +226,7 @@ with details of how it uses the different ranking controls.
     </p>
 
 
-    <h3 id="about-rank-type"><tt class="literal">about</tt> rank type</h3>
+    <h2 id="about-rank-type"><tt class="literal">about</tt> rank type</h2>
 
     <p>
         This is for fields that contain information directly relating
@@ -273,14 +273,14 @@ with details of how it uses the different ranking controls.
     Figure 7 shows these curves together, where the firstocc and numocc curves have been divided by the mean divtable value to get a feeling of their average contribution
     </p>
 
-    <h4>Figure 7: Zoomed boost table plot of rank type "about" (firstocc
-    and numocc divided by mean divtable value)</h4>
+    <h3>Figure 7: Zoomed boost table plot of rank type "about" (firstocc
+    and numocc divided by mean divtable value)</h3>
     <p><img src="../img/reference/relevance/ranktype-about.png" alt="Rank type
     About Boost tables" /></p>
     -->
 
 <!-- Tags begin -->
-    <h3 id="tags_rank_type"><tt class="literal">tags</tt> rank type</h3>
+    <h2 id="tags_rank_type"><tt class="literal">tags</tt> rank type</h2>
 
     <p>
     This is for search in attributes when they are used as tags,
@@ -304,8 +304,8 @@ with details of how it uses the different ranking controls.
     </p>
 
     <!-- Shows the default tables used for classicRank
-    <h4>Figure 8: Zoomed boost table plot of rank type "tags" (firstocc
-    and numocc divided by mean divtable value)</h4>
+    <h3>Figure 8: Zoomed boost table plot of rank type "tags" (firstocc
+    and numocc divided by mean divtable value)</h3>
     <p><img src="../img/reference/relevance/ranktype-tags.png" alt="Rank type Tags
     boost tables" /></p>
     -->
@@ -313,7 +313,7 @@ with details of how it uses the different ranking controls.
 <!-- Tags end -->
 
 
-    <h3 id="empty_rank_type"><tt class="literal">empty</tt> rank type</h3>
+    <h2 id="empty_rank_type"><tt class="literal">empty</tt> rank type</h2>
 
     <p>
       This is used for fields where you do not want matches to have

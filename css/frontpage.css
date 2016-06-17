@@ -1,0 +1,9 @@
+.row {
+	padding-left: 80px;
+	padding-right: 80px;
+}
+
+* {
+   font-size: 16px;
+   line-height: 1.6;
+}

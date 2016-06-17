@@ -3,12 +3,12 @@
 title: "Query result grouping"
 ---
 
-    <h2>Query result grouping</h2>
+    <h1>Query result grouping</h1>
     <p class="ingress">
       This is the reference document for the advanced grouping syntax available in Vespa.
     </p>
 
-    <h2>Highlights</h2>
+    <h1>Highlights</h1>
     <ul>
       <li>
         Group query results using a custom expression (using the <code>group</code> clause):
@@ -82,7 +82,7 @@ title: "Query result grouping"
       </li>
     </ul>
 
-    <h2 id="grammar">Select parameter language grammar</h2>
+    <h1 id="grammar">Select parameter language grammar</h1>
     <pre class="code">
 request    ::= group [ "where" "(" ( "true" | "$query" ) ")" ]
 group      ::= ( "all" | "each") "(" operations ")" [ "as" "(" identifier ")" ]
@@ -155,7 +155,7 @@ bucket     ::= "bucket" ( "(" | "[" | "&lt;" )
 rawvalue   ::= "{" ( ( string | number ) "," )* "}"
 </pre>
 
-    <h2 id="output">Output format</h2>
+    <h1 id="output">Output format</h1>
     <p>
       When grouping results you produce <strong>groups</strong> that contain <strong>outputs</strong>, <strong>group lists</strong>,
       and <strong>hit lists</strong>.  Group lists contain sub-groups, and hit lists contain hits that are part of the
@@ -177,7 +177,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       statement.
     </p>
 
-    <h2 id="continue">Continue parameter</h2>
+    <h1 id="continue">Continue parameter</h1>
     <p>
       Pagination of grouping results are managed by "continuations". These are
       opaque objects that can be combined and re-submitted using the
@@ -220,7 +220,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     </p>
     <pre class="code">/search/?yql=select (&hellip;) | [{ 'continuations':['BGAAABEBCA'] }]all(&hellip;);</pre>
 
-    <h2 id="aggregation">Aggregators</h2>
+    <h1 id="aggregation">Aggregators</h1>
     <table>
       <tr><td colspan="4"><h2>Group list aggregators</h2></td></tr>
       <tr><th>Name</th><th>Description</th><th>Arguments</th><th>Result</th></tr>
@@ -250,7 +250,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       within an aggregator.
     </p>
 
-    <h2 id="expression">Expressions</h2>
+    <h1 id="expression">Expressions</h1>
     <table>
       <tr><td colspan="4"><h2>Arithmetic expressions</h2></td></tr>
       <tr><th>Name</th><th>Description</th><th>Arguments</th><th>Result</th></tr>
@@ -383,8 +383,8 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       </tr>
     </table>
 
-    <h2 id="examples">Examples</h2>
-    <h3 id="fullgrouping">TopN / Full corpus</h3>
+    <h1 id="examples">Examples</h1>
+    <h2 id="fullgrouping">TopN / Full corpus</h2>
     <p>Simple grouping where you count the number of documents in each group:</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a) each(output(count())));</pre>
 
@@ -398,28 +398,28 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     <p>In streaming search you may also group all searched documents by adding a <code>where(true)</code> clause:</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a) each(output(count()))) where(true);</pre>
 
-    <h3 id="selection">Selecting groups</h3>
+    <h2 id="selection">Selecting groups</h2>
     <p>Here you do a modulo 5 operation before selecting the group you want:</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a % 5) each(output(count())));</pre>
 
     <p>Here you perform <code>a + b * c</code> before selecting the group you want:</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a + b * c) each(output(count())));</pre>
 
-    <h3 id="map">Grouping on maps</h3>
+    <h2 id="map">Grouping on maps</h2>
     <p>For streaming search, the field path syntax may also be used when searching,
     which enables structs and maps to be searched. The following syntax can be
     used when grouping maps, and will create a group for values whose keys match
     "foo":</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(mymap{&quot;foo&quot;}) each(output(count())));</pre>
 
-    <h3 id="uca">Locale aware sorting</h3>
+    <h2 id="uca">Locale aware sorting</h2>
     <p>Here, the groups will be sorted using locale aware sorting, with the default and primary strength values, respectively:</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(s) order(max(uca(s, &quot;sv&quot;)))
                               each(output(count())));</pre>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(s) order(max(uca(s, &quot;sv&quot;, &quot;PRIMARY&quot;)))
                               each(output(count())));</pre>
 
-    <h3 id="ordering">Ordering groups</h3>
+    <h2 id="ordering">Ordering groups</h2>
     <p>Here you do a modulo 5 operation before selecting the group you want. The groups are then ordered by
     their aggregated sum of attribute "b":</p>
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a % 5) order(sum(b))
@@ -444,7 +444,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     <pre class="code">/search/?yql=select (&hellip;) | all(group(a) order(max(attr) * count())
                               each(output(count())));</pre>
 
-    <h3 id="Collecting">Collecting aggregates</h3>
+    <h2 id="Collecting">Collecting aggregates</h2>
     <p>Simple grouping where you count number of documents in each group and return the best hit in each
     group:</p>
     <pre class="code">/search/?yql=select (&hellip;) |
@@ -461,7 +461,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
              all(group(a) each(max(1) output(count(), sum(b), xor(md5(cat(a, b, c), 64)))
                                each(output(summary()))));</pre>
 
-    <h3 id="predefined">Predefined buckets</h3>
+    <h2 id="predefined">Predefined buckets</h2>
     <p>Group on predefined buckets for raw attribute and use infinity to make
     sure the buckets cover the whole possible range:</p>
     <pre class="code">/search/?yql=select (&hellip;) |
@@ -476,7 +476,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
              all(group(predefined(r, bucket[-inf, "bar"&gt;, bucket["bar"], bucket&lt;"bar", inf]))
                  each(output(count())));</pre>
 
-    <h3 id="grouping">Grouping</h3>
+    <h2 id="grouping">Grouping</h2>
     <p>Single level grouping on "a" attribute, returning at most 5 groups with full hit count as well as the
     69 best hits.</p>
     <pre class="code">/search/?yql=select (&hellip;) |
@@ -541,7 +541,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
                      all(group(c) each(output(count())
                          all(max(1) each(output(summary())))))))));</pre>
 
-    <h3 id="time">Time aware grouping</h3>
+    <h2 id="time">Time aware grouping</h2>
     <p>Group by year:</p>
     <pre class="code">/search/?yql=select (&hellip;) |
              all(group(time.year(a)) each(output(count())));</pre>
@@ -570,7 +570,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
                      all(group((now() - a) / (60 * 60 * 24)) each(output(count())
                          all(max(2) each(output(summary())))))));</pre>
 
-    <h3 id="countGroups">Counting unique groups</h3>
+    <h2 id="countGroups">Counting unique groups</h2>
     <p>
     The <code>count</code> aggregator can be applied on list of groups to determine the number of
     unique groups without having to explicitly retrieve all groups. Another use case for this aggregator is
@@ -600,7 +600,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     <pre class="code">/search/?yql=select (&hellip;) |
              all(group(a) max(10) output(count()) each(group(b) output(count())))</pre>
 
-    <h2 id="sessionCache">Using the grouping session cache</h2>
+    <h1 id="sessionCache">Using the grouping session cache</h1>
     <p>
     When having multi-level grouping expressions, the search query is normally
     re-run for each level. The drawback of this is that if you have an expensive
@@ -629,7 +629,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     </p>
 
 
-    <h2 id="multivalue-grouping">Grouping of multivalue attributes</h2>
+    <h1 id="multivalue-grouping">Grouping of multivalue attributes</h1>
     <p>
       Some grouping operators may be used with multivalue attributes.
       Note that using a multivalued attribute (such as an array of doubles)
@@ -640,7 +640,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       a bottleneck on memory bandwidth.
     </p>
 
-    <h3 id="multivalue-caveats">Caveats</h3>
+    <h2 id="multivalue-caveats">Caveats</h2>
     <p>For streaming search, multi-value fields such as maps, arrays etc. can be
     used for grouping. However, using aggregation functions such as sum() on
     such fields can give misleading results. Assume a map from strings to
@@ -655,7 +655,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
     <pre class"code">/search/?yql=select (&hellip;) | all(group(mymap{&quot;foo&quot;}) each(output(sum(mymap.value))));</pre>
     <p class="alert alert-success">This syntax is map-specific, it does NOT apply to weighted sets.</p>
 
-    <h3 id="aggregators-multivalue">Using sum, max, etc on a multivalued attribute</h3>
+    <h2 id="aggregators-multivalue">Using sum, max, etc on a multivalued attribute</h2>
     <p>
       Doing an operation such as <code>output(sum(myarray))</code> will
       run the sum over each element value in each document.  So you will
@@ -664,7 +664,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       and so on.
     </p>
 
-    <h3 id="arrayat">Array at: element access</h3>
+    <h2 id="arrayat">Array at: element access</h2>
     <p>
       The expression <code>array.at(myarray, idx)</code> will yield one
       value per document by evaluating the <code>idx</code> expression
@@ -677,7 +677,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       which will sum the first element in the array of each document.
     </p>
 
-    <h3 id="interpolatedlookup">Interpolated lookup (BETA)</h3>
+    <h2 id="interpolatedlookup">Interpolated lookup (BETA)</h2>
     <p>
       The operation <code>interpolatedlookup(myarray, expr)</code> is
       intended for generic graph/function lookup.  The data
@@ -742,7 +742,7 @@ rawvalue   ::= "{" ( ( string | number ) "," )* "}"
       </ul>
     </p>
 
-    <h4 id="usecase-interpolatedlookup">Use case: Impression counting</h4>
+    <h3 id="usecase-interpolatedlookup">Use case: Impression counting</h3>
     <p>
       If you have the impression logs for a specific user, you can
       make a function that maps from rankscore to the number of impressions
