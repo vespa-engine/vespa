@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.errors;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class MissingResourceException extends StateRestApiException {
     public MissingResourceException(String resource) {

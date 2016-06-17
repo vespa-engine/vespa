@@ -18,7 +18,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeTest {
     private StorDevicesConfig getConfig(boolean useVdsEngine) {

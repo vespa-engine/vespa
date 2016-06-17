@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeStatsTest {
     @Test

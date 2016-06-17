@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * The response returned by the cluster controller's set-node-state APIs.
  *
- * @author hakon
+ * @author hakonhall
  */
 public class ClusterControllerStateResponse {
     @JsonProperty("wasModified")

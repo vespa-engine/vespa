@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class ClusterControllerStateRequest {
 

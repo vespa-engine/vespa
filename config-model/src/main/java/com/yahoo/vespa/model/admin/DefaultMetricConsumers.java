@@ -154,7 +154,7 @@ public class DefaultMetricConsumers {
         metrics.add(new Metric("cluster-controller.cluster-state-change.count", "content.cluster-controller.cluster-state-change.count"));
 
         metrics.add(new Metric("cluster-controller.is-master.last"));
-        // TODO(hakon): Update this name once persistent "count" metrics has been implemented.
+        // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
         // DO NOT RELY ON THIS METRIC YET.
         metrics.add(new Metric("cluster-controller.node-event.count"));
 

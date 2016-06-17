@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 /**
  * Contains stats related to a single storage node.
  *
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeStats {
 

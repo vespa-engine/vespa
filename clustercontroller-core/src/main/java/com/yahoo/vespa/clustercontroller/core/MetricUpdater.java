@@ -81,11 +81,11 @@ public class MetricUpdater {
     }
 
     public void recordNewNodeEvent() {
-        // TODO(hakon): Replace add() with a persistent aggregate metric.
+        // TODO(hakonhall): Replace add() with a persistent aggregate metric.
         metricReporter.add("node-event", 1);
     }
 
     public void updateMergeOpMetrics(Map<String, NodeMergeStats> storageNodeStats) {
-        // TODO(hakon): Remove this method once we figure out how to propagate metrics to state HTTP API.
+        // TODO(hakonhall): Remove this method once we figure out how to propagate metrics to state HTTP API.
     }
 }

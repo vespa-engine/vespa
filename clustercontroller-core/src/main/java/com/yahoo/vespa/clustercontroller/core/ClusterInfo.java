@@ -17,7 +17,7 @@ import java.util.TreeMap;
 /**
  * Detail information about the current state of all the distributor and storage nodes of the cluster.
  *
- * @author hakon
+ * @author hakonhall
  * @author bratseth
  */
 public class ClusterInfo {

@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * are mostly represented by the ClusterState. The dynamic parts include stats for tracking outstanding
  * merges before steady-state is reached.
  *
- * @author hakon
+ * @author hakonhall
  * @since 5.33
  */
 public class ClusterStateView {

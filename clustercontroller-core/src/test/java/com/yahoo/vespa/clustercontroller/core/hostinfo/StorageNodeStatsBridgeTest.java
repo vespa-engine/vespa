@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeStatsBridgeTest {
 

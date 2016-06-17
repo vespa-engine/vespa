@@ -25,7 +25,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.fest.assertions.Assertions.assertThat;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class VespaModelUtilTest {
     // Cluster Controller Service Cluster

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
- * @author hakon
+ * @author hakonhall
  * @since 5.34
  */
 public class ClusterStateViewTest {

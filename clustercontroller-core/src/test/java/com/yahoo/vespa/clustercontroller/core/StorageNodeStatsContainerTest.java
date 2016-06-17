@@ -11,7 +11,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeStatsContainerTest {
     @Test

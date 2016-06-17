@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * that class is already fairly complicated, and may perhaps best be screened from JSON annotations - the only
  * thing we need is the enum &lt; - &gt; String conversions).
  *
- * @author hakon
+ * @author hakonhall
  */
 public enum ClusterControllerState {
     MAINTENANCE("maintenance"),
