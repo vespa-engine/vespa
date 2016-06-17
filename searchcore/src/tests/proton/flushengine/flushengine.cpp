@@ -440,12 +440,18 @@ TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
 
     EXPECT_TRUE(fooH->_done.await(LONG_TIMEOUT));
     EXPECT_EQUAL(25ul, fooH->_oldestSerial);
-    EXPECT_EQUAL(std::vector<search::SerialNum>({ 10, 20, 25 }),
-                 fooH->_flushDoneHistory);
+    // Both [ 10, 25 ] and [ 10, 20, 25 } are legal histories
+    if (fooH->_flushDoneHistory != std::vector<search::SerialNum>({ 10, 25 })) {
+        EXPECT_EQUAL(std::vector<search::SerialNum>({ 10, 20, 25 }),
+                     fooH->_flushDoneHistory);
+    }
     EXPECT_TRUE(barH->_done.await(LONG_TIMEOUT));
     EXPECT_EQUAL(20ul, barH->_oldestSerial);
-    EXPECT_EQUAL(std::vector<search::SerialNum>({ 5, 15, 20 }),
-                 barH->_flushDoneHistory);
+    // Both [ 5, 20 ] and [ 5, 15, 20 } are legal histories
+    if (barH->_flushDoneHistory != std::vector<search::SerialNum>({ 5, 20 })) {
+        EXPECT_EQUAL(std::vector<search::SerialNum>({ 5, 15, 20 }),
+                     barH->_flushDoneHistory);
+    }
 }
 
 TEST_F("require that target can refuse flush", Fixture(2, IINTERVAL))
