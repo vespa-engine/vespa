@@ -61,6 +61,7 @@ findroot
 # END environment bootstrap section
 
 [ "$VESPA_HOME" ] || { echo "Missing VESPA_HOME variable" 1>&2; exit 1; }
+[ "$VESPA_USER" ] || { echo "Missing VESPA_USER variable" 1>&2; exit 1; }
 
 cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
 
@@ -77,30 +78,33 @@ fixdir () {
 
 # BEGIN directory fixups
 
-fixdir yahoo wheel  755  libdata/yell/exception
-fixdir yahoo wheel  775  libexec/vespa/modelplugins
-fixdir yahoo wheel  755  libexec/vespa/plugins/qrs
-fixdir root  wheel 1777  logs
-fixdir yahoo wheel 1777  logs/vespa
-fixdir yahoo wheel  755  logs/vespa/qrs
-fixdir yahoo wheel  755  logs/vespa/search
-fixdir root  wheel 1777  tmp
-fixdir yahoo wheel 1777  tmp/vespa
-fixdir yahoo wheel  755  var/cache/vespa/config
-fixdir yahoo wheel 1777  var/crash
-fixdir yahoo wheel  755  var/db/vespa
-fixdir yahoo wheel  755  var/db/vespa/config_server
-fixdir yahoo wheel  755  var/db/vespa/config_server/serverdb
-fixdir yahoo wheel  755  var/db/vespa/config_server/serverdb/applications
-fixdir yahoo wheel  755  var/db/vespa/config_server/serverdb/configs
-fixdir yahoo wheel  755  var/db/vespa/config_server/serverdb/configs/application
-fixdir yahoo wheel  755  var/db/vespa/index
-fixdir yahoo wheel  755  var/db/vespa/search
-fixdir yahoo wheel  755  var/db/vespa/logcontrol
-fixdir root  wheel 1777  var/run
+fixdir   root        wheel 1777  logs
+fixdir   root        wheel 1777  tmp
+fixdir   root        wheel 1777  var/run
+fixdir ${VESPA_USER} wheel 1777  var/crash
+fixdir ${VESPA_USER} wheel 1777  logs/vespa
+fixdir ${VESPA_USER} wheel 1777  tmp/vespa
+fixdir ${VESPA_USER} wheel  755  libdata/yell/exception
+fixdir ${VESPA_USER} wheel  755  libexec/vespa/plugins/qrs
+fixdir ${VESPA_USER} wheel  755  logs/vespa/qrs
+fixdir ${VESPA_USER} wheel  755  logs/vespa/search
+fixdir ${VESPA_USER} wheel  755  var/cache/vespa/config
+fixdir ${VESPA_USER} wheel  755  var/db/vespa
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb/applications
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb/configs
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb/configs/application
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/index
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/logcontrol
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/search
+fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache
+fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache/configserver
+fixdir ${VESPA_USER} wheel  755  var/vespa/cache/config/
+fixdir ${VESPA_USER} wheel  775  libexec/vespa/modelplugins
 
-chown -hR yahoo logs/vespa
-chown -hR yahoo var/db/vespa
+chown -hR ${VESPA_USER} logs/vespa
+chown -hR ${VESPA_USER} var/db/vespa
 
 # END directory fixups
 
