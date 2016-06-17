@@ -16,13 +16,13 @@ class CloudConfigYinstVariablesTest {
 
   @Test
   def test_configserver_parsing {
-    val parsed = convert("test2-lulf.trondheim.corp.yahoo.com")
+    val parsed = convert("myhost.mydomain.com")
     assertThat(parsed.length, is(1))
   }
 
   @Test
   def port_can_be_configured {
-    val parsed = convert("test1-tonyv:123")
+    val parsed = convert("myhost:123")
     val port: Int = parsed(0).port.get()
     assertThat(port, is(123))
   }
@@ -38,12 +38,12 @@ class CloudConfigYinstVariablesTest {
 
   @Test(expected = classOf[IllegalArgumentException])
   def missing_port_gives_exception {
-    convert("test1-tonyv:")
+    convert("myhost:")
   }
 
   @Test(expected = classOf[IllegalArgumentException])
   def non_numeric_port_gives_exception {
-    convert("test1-tonyv:non-numeric")
+    convert("myhost:non-numeric")
   }
 
   @Test
