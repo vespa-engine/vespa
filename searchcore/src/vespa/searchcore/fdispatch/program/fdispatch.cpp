@@ -42,7 +42,7 @@ namespace fdispatch
 
 FastS_FNETAdapter::FastS_FNETAdapter(FastS_AppContext *appCtx)
     : _appCtx(appCtx),
-      _nodeManager(NULL),
+      _nodeManager(),
       _timeKeeper(NULL),
       _transport(NULL),
       _last_now(0.0),
@@ -92,57 +92,57 @@ FastS_FNETAdapter::fini()
 
 Fdispatch::~Fdispatch(void)
 {
-    if (_transportServer != NULL) {
+    if (_transportServer) {
         _transportServer->shutDown(); // sync shutdown
     }
     _FNET_adapter.fini();
-    if (_nodeManager != NULL)
+    if (_nodeManager) {
         _nodeManager->ShutdownConfig();
-    if (_transport != NULL && _transportStarted)
+    }
+    if (_transport && _transportStarted) {
         _transport->ShutDown(true); // sync shutdown
-    if (_rpc != NULL)
+    }
+    if (_rpc) {
         _rpc->ShutDown(); // sync shutdown
+    }
 
     LOG(debug, "Will close threadpool");
     _mypool->Close();
     LOG(debug, "Has closed threadpool");
-    delete _transportServer;
-    delete _engineAdapter;
-    delete _nodeManager;
-    if (_transport != NULL) {
-        delete _transport;
-    }
-    delete _rpc;
-    delete _mypool;
+    _transportServer.reset();
+    _engineAdapter.reset();
+    _nodeManager.reset();
+    _transport.reset();
+    _rpc.reset();
+    _mypool.reset();
 }
 
 
 FNET_Transport *
 Fdispatch::GetFNETTransport()
 {
-    return _transport;
+    return _transport.get();
 }
 
 
 FNET_Scheduler *
 Fdispatch::GetFNETScheduler()
 {
-    return (_transport == NULL) ?
-                        NULL :  _transport->GetScheduler();
+    return ( ! _transport) ? NULL : _transport->GetScheduler();
 }
 
 
 FastS_NodeManager *
 Fdispatch::GetNodeManager()
 {
-    return _nodeManager;
+    return _nodeManager.get();
 }
 
 
 FastS_DataSetCollection *
 Fdispatch::GetDataSetCollection()
 {
-    if (_nodeManager == NULL)
+    if ( ! _nodeManager)
         return NULL;
     return _nodeManager->GetDataSetCollection();
 }
@@ -151,14 +151,14 @@ Fdispatch::GetDataSetCollection()
 FastOS_ThreadPool *
 Fdispatch::GetThreadPool()
 {
-    return _mypool;
+    return _mypool.get();
 }
 
 
 bool
 Fdispatch::Failed(void)
 {
-    return ( (_transportServer != NULL && _transportServer->isFailed()));
+    return ( (_transportServer && _transportServer->isFailed()));
 }
 
 
@@ -204,7 +204,7 @@ Fdispatch::CheckTempFail(void)
     if (failflag == _tempFail)
         return ret;
 
-    if (_transportServer != NULL) {
+    if (_transportServer) {
         if (failflag) {
             _transportServer->setListen(false);
             LOG(error, "Disabling fnet server interface");
@@ -223,14 +223,14 @@ Fdispatch::CheckTempFail(void)
  * Set up stuff as specified in the fdispatch-rc-file.
  */
 Fdispatch::Fdispatch(const config::ConfigUri &configUri)
-    : _mypool(NULL),
-      _engineAdapter(NULL),
-      _transportServer(NULL),
+    : _mypool(),
+      _engineAdapter(),
+      _transportServer(),
       _componentConfig(),
-      _nodeManager(NULL),
-      _transport(NULL),
+      _nodeManager(),
+      _transport(),
       _FNET_adapter(this),
-      _rpc(NULL),
+      _rpc(),
       _config(),
       _configUri(configUri),
       _partition(0),
@@ -287,7 +287,7 @@ Fdispatch::Init(void)
     
 
     LOG(debug, "Creating FNET transport");
-    _transport = new FNET_Transport(_config->transportthreads);
+    _transport = std::make_unique<FNET_Transport>(_config->transportthreads);
 
     // grab node slowness limit defaults
 
@@ -297,13 +297,13 @@ Fdispatch::Init(void)
     FastS_DataSetDesc::SetDefaultSlowDocsumLimitBias(_config->defaultslowdocsumlimitbias);
 
     maxthreads = _config->maxthreads;
-    _mypool = new FastOS_ThreadPool(256 * 1024, maxthreads);
+    _mypool = std::make_unique<FastOS_ThreadPool>(256 * 1024, maxthreads);
 
     // Max interval betw read from socket.
     FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] =
         _config->maxsocksilent;
 
-    if (_transport != NULL) {
+    if (_transport) {
         _transport->SetIOCTimeOut((uint32_t)
                                   (FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] * 1000.0));
     }
@@ -330,24 +330,21 @@ Fdispatch::Init(void)
 
     LOG(debug, "Using port number %d", ptportnum);
 
-    _nodeManager = new FastS_NodeManager(_componentConfig, this, _partition);
+    _nodeManager = std::make_unique<FastS_NodeManager>(_componentConfig, this, _partition);
 
     GetFNETTransport()->SetTCPNoDelay(_config->transportnodelay);
     GetFNETTransport()->SetDirectWrite(_config->transportdirectwrite);
 
     assert (ptportnum != 0);
 
-    _engineAdapter = new fdispatch::EngineAdapter(this, _mypool);
-    _transportServer = new search::engine::TransportServer
-        (*_engineAdapter, *_engineAdapter, *_engineAdapter, ptportnum, search::engine::TransportServer::DEBUG_ALL);
+    _engineAdapter = std::make_unique<fdispatch::EngineAdapter>(this, _mypool.get());
+    _transportServer = std::make_unique<TransportServer>(*_engineAdapter, *_engineAdapter, *_engineAdapter, ptportnum, search::engine::TransportServer::DEBUG_ALL);
     _transportServer->setTCPNoDelay(_config->transportnodelay);
     _transportServer->setDirectWrite(_config->transportdirectwrite);
 
     if (!_transportServer->start()) {
-        delete _transportServer;
-        _transportServer = NULL;
-        delete _engineAdapter;
-        _engineAdapter = NULL;
+        _transportServer.reset();
+        _engineAdapter.reset();
         LOG(error, "CRITICAL: Failed to init upwards FNET transport on port %d", ptportnum);
         return false;
     }
@@ -355,21 +352,19 @@ Fdispatch::Init(void)
     _nodeManager->SubscribePartMap(_configUri);
 
     if (_config->frtport != 0) {
-        _rpc = new FastS_fdispatch_RPC(this);
-        FastS_assert(_rpc != NULL);
+        _rpc = std::make_unique<FastS_fdispatch_RPC>(this);
         if (!_rpc->Init(_config->frtport, _configUri.getConfigId())) {
             LOG(error, "RPC init failed");
-            delete _rpc;
-            _rpc = NULL;
+            _rpc.reset();
         }
     } else {
-        _rpc = NULL;
+        _rpc.reset();
     }
 
     // Kick off fdispatch administrative threads.
-    if (_transport != NULL) {
+    if (_transport) {
         _FNET_adapter.init();
-        bool rc = _transport->Start(_mypool);
+        bool rc = _transport->Start(_mypool.get());
         if (rc) {
             LOG(debug, "Started FNET transport");
             _transportStarted = true;
@@ -378,7 +373,7 @@ Fdispatch::Init(void)
         }
     }
     FastOS_Thread::Sleep(1000);
-    if (_rpc != NULL) {
+    if (_rpc) {
         _rpc->Start();
     }
     _healthPort = _config->healthport;

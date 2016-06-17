@@ -56,30 +56,31 @@ public:
 class Fdispatch : public FastS_AppContext
 {
 private:
+    typedef search::engine::TransportServer TransportServer;
     Fdispatch(const Fdispatch &);
     Fdispatch& operator=(const Fdispatch &);
 
-    FastOS_ThreadPool *_mypool;
-    EngineAdapter        *_engineAdapter;
-    search::engine::TransportServer *_transportServer;
+    std::unique_ptr<FastOS_ThreadPool>      _mypool;
+    std::unique_ptr<EngineAdapter>          _engineAdapter;
+    std::unique_ptr<TransportServer>        _transportServer;
     vespalib::SimpleComponentConfigProducer _componentConfig;
-    FastS_NodeManager *_nodeManager;
-    FNET_Transport *_transport;
-    FastS_FNETAdapter _FNET_adapter;
-    FastS_fdispatch_RPC *_rpc;
+    std::unique_ptr<FastS_NodeManager>      _nodeManager;
+    std::unique_ptr<FNET_Transport>         _transport;
+    FastS_FNETAdapter                       _FNET_adapter;
+    std::unique_ptr<FastS_fdispatch_RPC>    _rpc;
     std::unique_ptr<vespa::config::search::core::FdispatchrcConfig> _config;
     config::ConfigUri _configUri;
     unsigned int _partition;
-    bool _tempFail;
-    bool _FNETLiveCounterDanger;
-    bool _FNETLiveCounterWarned;
-    bool _FNETLiveCounterFailed;
-    bool _transportStarted;
+    bool         _tempFail;
+    bool         _FNETLiveCounterDanger;
+    bool         _FNETLiveCounterWarned;
+    bool         _FNETLiveCounterFailed;
+    bool         _transportStarted;
     unsigned int _lastFNETLiveCounter;
-    FastOS_Time _FNETLiveCounterDangerStart;
+    FastOS_Time  _FNETLiveCounterDangerStart;
     unsigned int _timeouts;
     unsigned int _checkLimit;
-    int _healthPort;
+    int          _healthPort;
 public:
     // Implements FastS_AppContext
     virtual FNET_Transport *GetFNETTransport();
