@@ -10,4 +10,5 @@ vespa_add_library(storage_testbucketdb TEST
     distribution_hash_normalizer_test.cpp
     AFTER
     storage_storageconfig
+    storage_bucketdb
 )
