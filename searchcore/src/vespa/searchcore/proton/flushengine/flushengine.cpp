@@ -395,6 +395,7 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
 void
 FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
+    vespalib::LockGuard strategyLock(_strategyLock);
     MonitorGuard strategyGuard(_strategyMonitor);
     if (_closed) {
         return;
