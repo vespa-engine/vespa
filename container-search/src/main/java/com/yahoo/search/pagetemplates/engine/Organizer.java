@@ -17,7 +17,7 @@ import java.util.Map;
  * Reorganizes and prunes a result as prescribed by a resolved template.
  * This class is multithread safe.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Organizer {
 

@@ -8,7 +8,7 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 /**
  * Interface implemented by the concrete application message protocol.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public interface Protocol {

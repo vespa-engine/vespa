@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Vertical streaming matcher summary specification
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
     private Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);

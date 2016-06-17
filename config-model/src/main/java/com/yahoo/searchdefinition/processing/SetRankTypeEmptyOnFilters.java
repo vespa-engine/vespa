@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * All rank: filter fields should have rank type empty.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SetRankTypeEmptyOnFilters extends Processor {
 

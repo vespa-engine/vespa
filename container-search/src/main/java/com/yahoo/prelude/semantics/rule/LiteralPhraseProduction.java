@@ -15,7 +15,7 @@ import com.yahoo.protect.Validator;
 /**
  * A literal phrase produced by a production rule
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class LiteralPhraseProduction extends TermProduction {
 

@@ -9,7 +9,7 @@ import com.yahoo.search.result.HitGroup;
 /**
  * Tests the speed of accessing hits in the query by id
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ResultBenchmark {
 

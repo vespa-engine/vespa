@@ -6,7 +6,7 @@ import com.yahoo.search.Query;
 /**
  * Tests blending rules
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class BlendingTestCase extends RuleBaseAbstractTestCase {
 

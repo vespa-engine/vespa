@@ -10,7 +10,7 @@ import com.yahoo.processing.Response;
  * An execution which has a response which is returned when this gets to the end of the chain.
  * This is useful to run processing chains where a response exists up front, typically for on completion listeners.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ExecutionWithResponse extends Execution {
 

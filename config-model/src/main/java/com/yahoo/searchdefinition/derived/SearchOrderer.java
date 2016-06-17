@@ -15,7 +15,7 @@ import java.util.*;
  * <p>This class is <b>not</b> multithread safe. Only one ordering must be done
  * at the time in any instance.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class SearchOrderer {
 

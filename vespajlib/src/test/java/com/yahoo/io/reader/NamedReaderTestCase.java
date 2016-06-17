@@ -13,7 +13,7 @@ import com.yahoo.protect.ClassValidator;
 /**
  * Tests all method of NamedReader.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class NamedReaderTestCase extends junit.framework.TestCase {

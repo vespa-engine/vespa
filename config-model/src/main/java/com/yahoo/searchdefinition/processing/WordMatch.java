@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * be left as in the input document, and trivially written queries to work by default. However, this may easily lead to
  * data which cannot be matched at all as the indexing and query side does not agree.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class WordMatch extends Processor {
 

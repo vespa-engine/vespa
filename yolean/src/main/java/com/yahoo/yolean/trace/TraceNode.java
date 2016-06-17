@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
  * need to synchronize their access on the <tt>TraceNode</tt>.</p>
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.15
  */
 public class TraceNode {

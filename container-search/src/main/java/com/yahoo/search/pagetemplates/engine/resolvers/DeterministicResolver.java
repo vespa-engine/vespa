@@ -23,7 +23,7 @@ import java.util.Map;
  * <p>
  * The id of this if <code>native.deterministic</code>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DeterministicResolver extends Resolver {
     public static final String nativeId = "native.deterministic";

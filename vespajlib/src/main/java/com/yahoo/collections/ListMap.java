@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * A map holding multiple items at each key (using ArrayList and HashMap).
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class ListMap<K, V> {
 

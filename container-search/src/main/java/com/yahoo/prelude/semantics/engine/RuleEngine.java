@@ -13,7 +13,7 @@ import java.util.ListIterator;
  * Evaluates the rules of a rule base. This method is thread safe on analyze calls, but
  * not on modification calls.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class RuleEngine {
 

@@ -26,7 +26,7 @@ import java.util.Set;
  * <p>
  * Queries are eligible if they do sorting, don't do grouping, and the first sort criteria is a fast-search attribute.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 
 // This writes fields to query.getRanking which are moved to rank.properties during query.prepare()

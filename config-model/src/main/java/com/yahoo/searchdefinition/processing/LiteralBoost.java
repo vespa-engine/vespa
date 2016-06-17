@@ -21,7 +21,7 @@ import java.util.Iterator;
  * of complete-boosted fields indexed to <i>indexname</i>. A search for indexname
  * will be rewritten to also search <i>indexname</i>_exaxt
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class LiteralBoost extends Processor {
 

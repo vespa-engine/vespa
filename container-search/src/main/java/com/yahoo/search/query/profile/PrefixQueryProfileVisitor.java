@@ -6,7 +6,7 @@ import com.yahoo.processing.request.CompoundName;
 /**
  * A query profile visitor which keeps track of name prefixes and can skip values outside a given prefix
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
 

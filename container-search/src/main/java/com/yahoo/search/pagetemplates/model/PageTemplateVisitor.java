@@ -6,7 +6,7 @@ import com.yahoo.search.pagetemplates.PageTemplate;
 /**
  * Superclass of visitors over the page template object structure
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PageTemplateVisitor {
 

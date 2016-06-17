@@ -10,7 +10,7 @@ import java.util.List;
  * A data list backed by an array.
  * This implementation supports subclassing.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ArrayDataList<DATATYPE extends Data> extends AbstractDataList<DATATYPE> {
 

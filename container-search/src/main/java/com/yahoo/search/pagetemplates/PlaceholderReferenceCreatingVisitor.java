@@ -10,7 +10,7 @@ import java.util.Map;
  * Creates references from all placeholders to the choices which resolves them.
  * If a placeholder is encountered which is not resolved by any choice, an IllegalArgumentException is thrown.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class PlaceholderReferenceCreatingVisitor extends PageTemplateVisitor {
 

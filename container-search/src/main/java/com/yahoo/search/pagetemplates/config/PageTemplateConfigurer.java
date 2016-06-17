@@ -14,7 +14,7 @@ import java.util.List;
  * Provides a static method to convert a page template config into a PageTemplateRegistry.
  * In addition, instances of this can be created to subscribe to config and keep an up to date registry reference.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PageTemplateConfigurer {
 

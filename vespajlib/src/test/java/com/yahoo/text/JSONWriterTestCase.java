@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * Tests the JSON writer
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("deprecation")
 public class JSONWriterTestCase {

@@ -22,7 +22,7 @@ import java.util.ListIterator;
  * This is not thread safe.
  * </p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class CallStack {
 

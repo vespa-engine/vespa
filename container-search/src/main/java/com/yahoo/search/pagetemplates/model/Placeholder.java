@@ -6,7 +6,7 @@ package com.yahoo.search.pagetemplates.model;
  * Source placeholders may not have any content themselves - attempting to call any setter on this
  * results in a IllegalStateException.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Placeholder implements PageElement {
 

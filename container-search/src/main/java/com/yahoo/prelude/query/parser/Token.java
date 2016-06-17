@@ -7,7 +7,7 @@ import com.yahoo.prelude.query.Substring;
 /**
  * A query token.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Token {
 

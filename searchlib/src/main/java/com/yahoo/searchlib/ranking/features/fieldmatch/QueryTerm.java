@@ -4,7 +4,7 @@ package com.yahoo.searchlib.ranking.features.fieldmatch;
 /**
  * A query term. Query terms are equal if they have the same term string.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public final class QueryTerm {
 

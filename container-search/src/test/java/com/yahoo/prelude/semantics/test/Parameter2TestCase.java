@@ -6,7 +6,7 @@ import com.yahoo.search.Query;
 /**
  * Tests parameter matching and production
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Parameter2TestCase extends RuleBaseAbstractTestCase {
 

@@ -14,7 +14,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * <p>Detects query phrases using an automaton. This class is thread safe.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class PhraseMatcher {
 

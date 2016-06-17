@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
-
 import java.util.List;
-
 
 /**
  * Tests the URI class
  *
- * @author  <a href="mailto:bratseth@fast.no">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class URITestCase extends junit.framework.TestCase {
 
@@ -472,41 +470,43 @@ public class URITestCase extends junit.framework.TestCase {
 
         // Error reported int bug #2466528
         public void testFileURIEmptyHost() {
-                URI uri = new URI("file:///C:/Inetpub/wwwroot/DW_SHORTCUTS.htm");
-        List<URI.Token> tokens = uri.tokenize();
-        URI.Token token;
-        token = tokens.get(0);
-        assertEquals("file", token.getToken());
-        assertEquals(URI.URLContext.URL_SCHEME, token.getContext());
+            URI uri = new URI("file:///C:/Inetpub/wwwroot/DW_SHORTCUTS.htm");
+            List<URI.Token> tokens = uri.tokenize();
+            URI.Token token;
+            token = tokens.get(0);
+            assertEquals("file", token.getToken());
+            assertEquals(URI.URLContext.URL_SCHEME, token.getContext());
 
-        token = tokens.get(1);
-        assertEquals("localhost", token.getToken());
-        assertEquals(URI.URLContext.URL_HOST, token.getContext());
+            token = tokens.get(1);
+            assertEquals("localhost", token.getToken());
+            assertEquals(URI.URLContext.URL_HOST, token.getContext());
 
-        token = tokens.get(2);
-        assertEquals("C", token.getToken());
-        assertEquals(URI.URLContext.URL_PATH, token.getContext());
+            token = tokens.get(2);
+            assertEquals("C", token.getToken());
+            assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-        token = tokens.get(3);
-        assertEquals("Inetpub", token.getToken());
-        assertEquals(URI.URLContext.URL_PATH, token.getContext());
+            token = tokens.get(3);
+            assertEquals("Inetpub", token.getToken());
+            assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-        token = tokens.get(4);
-        assertEquals("wwwroot", token.getToken());
-        assertEquals(URI.URLContext.URL_PATH, token.getContext());
+            token = tokens.get(4);
+            assertEquals("wwwroot", token.getToken());
+            assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-        token = tokens.get(5);
-        assertEquals("DW_SHORTCUTS", token.getToken());
-        assertEquals(URI.URLContext.URL_PATH, token.getContext());
+            token = tokens.get(5);
+            assertEquals("DW_SHORTCUTS", token.getToken());
+            assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-        token = tokens.get(6);
-        assertEquals("htm", token.getToken());
-        assertEquals(URI.URLContext.URL_PATH, token.getContext());
+            token = tokens.get(6);
+            assertEquals("htm", token.getToken());
+            assertEquals(URI.URLContext.URL_PATH, token.getContext());
 
-        try {
-            tokens.get(7);
-            fail();
-        } catch (IndexOutOfBoundsException ioobe) {
+            try {
+                tokens.get(7);
+                fail();
+            } catch (IndexOutOfBoundsException ioobe) {
+                // Success
+            }
         }
-        }
+
 }

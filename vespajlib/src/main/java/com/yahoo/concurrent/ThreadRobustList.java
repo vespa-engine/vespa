@@ -16,7 +16,7 @@ import java.util.NoSuchElementException;
  *
  * @since 4.2
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ThreadRobustList<T> implements Iterable<T> {
 

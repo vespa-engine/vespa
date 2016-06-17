@@ -7,7 +7,7 @@ package com.yahoo.processing.response;
  * until it is completed. This is useful in cases where some decision making which may impact the content of the list
  * must be deferred until the list is complete.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.19
  */
 public interface Streamed {

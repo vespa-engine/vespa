@@ -6,7 +6,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A condition given a name which enables it to be referenced from other conditions.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class NamedCondition {
 

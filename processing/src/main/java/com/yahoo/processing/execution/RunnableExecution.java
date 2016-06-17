@@ -8,7 +8,7 @@ import com.yahoo.processing.Response;
  * An adaptor of an Execution to a runnable. Calling run on this causes process to be called on the
  * given processor.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RunnableExecution implements Runnable {
 

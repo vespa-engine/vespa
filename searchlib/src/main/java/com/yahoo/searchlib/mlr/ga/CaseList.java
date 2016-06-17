@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * A producer of a list of cases for function training.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface CaseList {
 

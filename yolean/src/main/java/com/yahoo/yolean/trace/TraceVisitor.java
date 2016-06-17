@@ -4,7 +4,7 @@ package com.yahoo.yolean.trace;
 /**
  * <p>This class is an abstract visitor of {@link TraceNode}. See {@link TraceNode#accept(TraceVisitor)}.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.15
  */
 public abstract class TraceVisitor {

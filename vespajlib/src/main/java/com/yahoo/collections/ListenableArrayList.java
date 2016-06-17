@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * An array list which notifies listeners after one or more items are added
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.17
  */
 @SuppressWarnings("serial")

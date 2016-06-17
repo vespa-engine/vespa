@@ -5,7 +5,7 @@ package com.yahoo.prelude.semantics.test;
  * Experiments with a way to match only if it doesn't remove all hard conditions in the query.
  * The problem is that a straightforward use case of replacement leads to nonsensical queries as shown.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MatchOnlyIfNotOnlyTermTestCase extends RuleBaseAbstractTestCase {
 

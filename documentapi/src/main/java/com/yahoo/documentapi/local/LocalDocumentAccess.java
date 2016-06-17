@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * The main class of the local implementation of the document api
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class LocalDocumentAccess extends DocumentAccess {
 

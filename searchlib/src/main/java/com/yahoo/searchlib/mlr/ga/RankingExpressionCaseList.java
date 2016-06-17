@@ -15,7 +15,7 @@ import java.util.List;
  * from a Ranking Expression.
  * Useful for testing.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RankingExpressionCaseList implements CaseList {
 

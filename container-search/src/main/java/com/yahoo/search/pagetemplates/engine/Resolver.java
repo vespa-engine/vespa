@@ -19,7 +19,7 @@ import com.yahoo.search.pagetemplates.model.PageTemplateVisitor;
  * All subclasses of this must be multithread safe. I.e multiple calls may be made
  * to resolve at the same time from different threads.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class Resolver extends AbstractComponent {
 

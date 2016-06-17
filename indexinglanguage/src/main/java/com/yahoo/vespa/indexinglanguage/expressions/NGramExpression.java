@@ -15,7 +15,7 @@ import java.util.Iterator;
 /**
  * A filter which splits incoming text into n-grams
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NGramExpression extends Expression {
 

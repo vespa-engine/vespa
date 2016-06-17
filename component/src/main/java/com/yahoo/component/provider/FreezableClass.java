@@ -4,7 +4,7 @@ package com.yahoo.component.provider;
 /**
  * Convenience superclass of non-component freezables
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class FreezableClass implements Freezable {
 

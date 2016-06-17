@@ -7,7 +7,7 @@ import com.yahoo.search.result.Hit;
 import java.util.Comparator;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class RelevanceComparator extends ChainableComparator {
 

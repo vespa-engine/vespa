@@ -6,7 +6,7 @@ import java.util.Iterator;
 /**
  * Tests call stacks
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class CallStackTestCase extends junit.framework.TestCase {
 

@@ -14,7 +14,7 @@ import java.util.Set;
  * <p>
  * Dimensional maps are immutable and created through a DimensionalMap.Builder
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DimensionalMap<KEY, VALUE> {
 

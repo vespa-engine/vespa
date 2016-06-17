@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 /**
  * Representation of a Processor in the configuration model
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.6
  */
 public class Processor extends ChainedComponent<ChainedComponentModel> {

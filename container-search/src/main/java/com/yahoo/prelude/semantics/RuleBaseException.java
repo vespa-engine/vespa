@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics;
 /**
  * Thrown on rule base consistency problems
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("serial")
 public class RuleBaseException extends RuntimeException {

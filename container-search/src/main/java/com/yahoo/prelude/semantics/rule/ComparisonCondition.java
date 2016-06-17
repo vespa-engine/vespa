@@ -12,7 +12,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
  * A condition which is true of the <i>values</i> of its two subconditions are true
  * and both have the same value
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ComparisonCondition extends CompositeCondition {
 

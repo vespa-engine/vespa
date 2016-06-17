@@ -20,7 +20,7 @@ import java.util.logging.Level;
  * Each summary definition have at least one summary, the default
  * which has the same name as the search definition.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class SummaryClass extends Derived {
 

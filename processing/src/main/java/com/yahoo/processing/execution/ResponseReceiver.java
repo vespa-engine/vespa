@@ -8,7 +8,7 @@ import com.yahoo.processing.Response;
  * Freeze listeners may implement this to be handed the response
  * before they are run. There is probably no other sensible use for this.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface ResponseReceiver {
 

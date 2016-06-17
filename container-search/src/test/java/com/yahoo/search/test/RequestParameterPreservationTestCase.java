@@ -4,7 +4,7 @@ package com.yahoo.search.test;
 import com.yahoo.search.Query;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RequestParameterPreservationTestCase extends junit.framework.TestCase {
 

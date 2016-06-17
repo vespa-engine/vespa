@@ -11,7 +11,7 @@ import java.util.Arrays;
 /**
  * Tests VSM configuration deriving for structs
  *
- * @author  <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class StreamingStructTestCase extends AbstractExportingTestCase {
 

@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
  * A helper for making processing requests and rendering their responses.
  * Create an instance of this to test making processing requests and get the response or response data.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.21
  */
 @Beta

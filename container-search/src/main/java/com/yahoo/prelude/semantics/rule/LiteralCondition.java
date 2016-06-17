@@ -6,7 +6,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A condition which is always true, and which has it's own value as return value
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class LiteralCondition extends Condition {
 

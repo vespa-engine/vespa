@@ -18,7 +18,7 @@ import java.util.Set;
  * addCommand sets both types.
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class Index {
 

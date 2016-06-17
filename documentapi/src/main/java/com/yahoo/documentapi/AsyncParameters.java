@@ -4,7 +4,7 @@ package com.yahoo.documentapi;
 /**
  * Parameters for creating an async session
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class AsyncParameters extends Parameters {
 

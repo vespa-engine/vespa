@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * tests importing of document containing array type fields
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ArraysTestCase extends SearchDefinitionTestCase {
 

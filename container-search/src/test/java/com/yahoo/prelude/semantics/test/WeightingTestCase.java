@@ -2,7 +2,7 @@
 package com.yahoo.prelude.semantics.test;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class WeightingTestCase extends RuleBaseAbstractTestCase {
 

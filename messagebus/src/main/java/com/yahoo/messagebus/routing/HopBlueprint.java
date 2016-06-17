@@ -7,7 +7,7 @@ import java.util.*;
  * A hop blueprint is a stored prototype of a hop that has been created from a {@link HopSpec} object. A map of these
  * are stored in a {@link RoutingTable}.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class HopBlueprint {

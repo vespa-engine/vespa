@@ -4,7 +4,7 @@ package com.yahoo.prelude.fastsearch;
 /**
  * Information about a rank profile
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class RankProfile {
 

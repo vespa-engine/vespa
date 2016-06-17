@@ -8,7 +8,7 @@ import java.awt.event.KeyEvent;
 /**
  * TODO
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class KeyboardChecker {
 

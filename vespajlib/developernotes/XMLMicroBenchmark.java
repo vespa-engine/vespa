@@ -4,7 +4,7 @@ package com.yahoo.text;
 /**
  * It is what it says
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class XMLMicroBenchmark {
 

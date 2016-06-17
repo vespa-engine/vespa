@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * The implementation of exact matching
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ExactMatch extends Processor {
 

@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * tersts the ellipsis rule base
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Ellipsis2TestCase extends RuleBaseAbstractTestCase {
 

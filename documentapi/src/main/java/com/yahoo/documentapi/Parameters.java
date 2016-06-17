@@ -6,7 +6,7 @@ package com.yahoo.documentapi;
  * but keeping this parameter hierarchy in place means that we can later add parameters with default values that all
  * clients will be able to use with no code changes.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Parameters {
     // empty

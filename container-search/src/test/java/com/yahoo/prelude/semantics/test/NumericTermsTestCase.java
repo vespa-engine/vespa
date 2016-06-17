@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Tests numeric terms
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NumericTermsTestCase extends RuleBaseAbstractTestCase {
 

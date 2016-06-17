@@ -6,7 +6,7 @@ import org.junit.Test;
 /**
  * Compares alternative ways of appending strings
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class StringAppendMicroBenchmarkTest {
 

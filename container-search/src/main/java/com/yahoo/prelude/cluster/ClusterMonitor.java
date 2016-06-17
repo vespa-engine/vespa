@@ -16,7 +16,7 @@ import com.yahoo.search.result.ErrorMessage;
  * Monitors of a cluster of remote nodes. The monitor uses an internal thread
  * for node monitoring.
  *
- * @author <a href="mailto:jon.bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class ClusterMonitor implements Runnable, Freezable {

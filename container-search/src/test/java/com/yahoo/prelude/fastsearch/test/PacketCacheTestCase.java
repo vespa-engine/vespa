@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 /**
  * Tests the packet cache. Also tested in FastSearcherTestCase.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class PacketCacheTestCase extends junit.framework.TestCase {
 

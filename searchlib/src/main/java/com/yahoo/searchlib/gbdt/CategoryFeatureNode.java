@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * A GBDT node representing a set inclusion test: feature IN [value-list] where values can be strings or numbers.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class CategoryFeatureNode extends FeatureNode {
 

@@ -10,7 +10,7 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * A searcher to which we can send a ping to probe if it is alive
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class PingableSearcher extends Searcher {
 

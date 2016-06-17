@@ -15,7 +15,7 @@ import java.util.*;
  * A resolver which makes all choices by random.
  * The id of this is <code>native.random</code>.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RandomResolver extends Resolver {
 

@@ -43,7 +43,7 @@ import java.util.Set;
  *
  * <p>This class is not multithread safe, but is reusable across queries for a single thread.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public final class FieldMatchMetricsComputer {
 

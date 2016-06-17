@@ -6,7 +6,7 @@ import com.yahoo.search.Query;
 /**
  * Tests the speed of accessing the query
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryBenchmark {
 

@@ -30,7 +30,7 @@ import com.yahoo.processing.response.DataList;
  * A response from running a request through processing. This response is just a
  * wrapper of the knowhow needed to render the Response from processing.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since 5.1.12
  */

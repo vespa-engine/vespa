@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Tests working with url indexes
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class UrlTestCase extends RuleBaseAbstractTestCase {
 

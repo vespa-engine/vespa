@@ -12,7 +12,7 @@ import java.util.*;
 /**
  * A particular evalutation of a particular rule.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class RuleEvaluation {
 

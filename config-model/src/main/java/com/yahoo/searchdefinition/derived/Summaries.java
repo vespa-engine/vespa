@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * A list of derived summaries
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class Summaries extends Derived implements SummaryConfig.Producer {
 

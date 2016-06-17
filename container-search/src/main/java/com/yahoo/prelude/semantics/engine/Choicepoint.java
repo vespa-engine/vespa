@@ -8,7 +8,7 @@ import com.yahoo.prelude.semantics.rule.Condition;
  * closed if there are no further choices. In addition it contains enough information to enable
  * the rule evaluation to backtrack to this point
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class Choicepoint {
 

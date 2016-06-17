@@ -11,7 +11,7 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * A searchable database of documents
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class DocumentDb extends Searcher {
 

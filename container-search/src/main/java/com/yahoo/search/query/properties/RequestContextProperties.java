@@ -11,7 +11,7 @@ import java.util.Map;
  * This is used to allow the query's request to be supplied to all property requests
  * without forcing users of the query.properties() to supply this explicitly.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RequestContextProperties extends Properties {
 

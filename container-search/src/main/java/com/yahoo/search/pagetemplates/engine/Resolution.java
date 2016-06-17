@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * A resolution of choices within a template.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Resolution {
 

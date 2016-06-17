@@ -4,7 +4,7 @@ package com.yahoo.searchlib.ranking.features.fieldmatch;
 /**
  * A computation trace
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Trace {
 

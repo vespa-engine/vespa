@@ -12,7 +12,7 @@ import java.util.List;
  * A hit group corresponding to a section - contains some additional information
  * in proper getters and setters which is used during rendering.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SectionHitGroup extends HitGroup {
 

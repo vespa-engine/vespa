@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * A set of (immutable) computed features
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @Beta
 public class Features {

@@ -6,7 +6,7 @@ package com.yahoo.documentapi;
  * A result is either a success or not. If it is not a success, it will contain an explanation of why.
  * Document repositories may return subclasses which contain more information.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Result {
 

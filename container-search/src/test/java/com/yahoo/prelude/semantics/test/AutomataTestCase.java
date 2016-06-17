@@ -7,7 +7,7 @@ import com.yahoo.prelude.semantics.RuleBase;
 /**
  * Tests rule bases using automatas for matching
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class AutomataTestCase extends RuleBaseAbstractTestCase {
 

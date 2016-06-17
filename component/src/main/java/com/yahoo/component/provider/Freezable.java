@@ -5,7 +5,7 @@ package com.yahoo.component.provider;
  * A class which may be irreversibly frozen. Any attempt to change the state of this class after
  * freezing throws an IllegalStateException.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface Freezable {
 

@@ -12,7 +12,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Check that fields with index settings actually creates an index or attribute
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
 

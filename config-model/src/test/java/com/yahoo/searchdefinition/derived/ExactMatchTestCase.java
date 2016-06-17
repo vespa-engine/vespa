@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ExactMatchTestCase extends AbstractExportingTestCase {
     @Test

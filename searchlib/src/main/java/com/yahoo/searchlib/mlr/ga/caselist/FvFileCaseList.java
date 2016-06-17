@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * <p>Comment lines starting with "#" are ignored.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 // NOTE: If we get another type of case list it is time to abstract into a common CaseList base class
 public class FvFileCaseList extends FileCaseList {

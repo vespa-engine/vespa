@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Reports the result of optimizations of a ranking expression.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class OptimizationReport {
 

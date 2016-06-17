@@ -9,7 +9,7 @@ import org.junit.Test;
 /**
  * Tests parsing of a single line of a .def file
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  * @author gjoranv
  */
 public class DefLineParsingTest {

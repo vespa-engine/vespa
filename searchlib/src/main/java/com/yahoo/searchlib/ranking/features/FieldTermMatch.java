@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Calculates the fieldTermMatch features
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @Beta
 public class FieldTermMatch {

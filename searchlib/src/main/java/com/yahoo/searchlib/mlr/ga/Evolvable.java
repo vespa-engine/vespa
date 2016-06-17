@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * An entity which may evolve over time
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class Evolvable implements Comparable<Evolvable> {
 

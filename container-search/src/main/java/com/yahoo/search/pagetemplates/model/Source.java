@@ -11,7 +11,7 @@ import java.util.*;
  * <p>
  * Two sources are equal if they have the same name and parameters.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Source extends FreezableClass implements PageElement {
 

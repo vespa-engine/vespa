@@ -9,7 +9,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A set of conditions which much match the query in sequence
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class SequenceCondition extends CompositeCondition {
 

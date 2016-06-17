@@ -9,7 +9,7 @@ import com.yahoo.processing.Request;
  * <p>
  * If a data item is <i>frozen</i> it is illegal to make further changes to its payload or referenced request.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 // TODO: Have DataList implement this instead, probably (should be a safe change in practise)
 public interface Data extends ListenableFreezable {

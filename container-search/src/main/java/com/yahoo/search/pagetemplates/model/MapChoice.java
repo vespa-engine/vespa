@@ -13,7 +13,7 @@ import java.util.List;
  * Each unique set of mappings (pairs) from values to placeholder ids is a separate possible
  * alternative of this choice. The alternatives are not listed explicitly but are generated as needed.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MapChoice extends AbstractChoice {
 

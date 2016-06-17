@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 /**
  * Classes exportable to configurations
  *
- * @author  <a href="mailto:bratseth@overture.com">bratseth</a>
+ * @author  bratseth
  */
 public interface Exportable {
 

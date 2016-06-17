@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 /**
  * Tests inheritance
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class InheritanceTestCase extends AbstractExportingTestCase {
 

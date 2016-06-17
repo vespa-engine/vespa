@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * Ensure that summary field transforms for fields having the same name
  * are consistent across summary classes
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SummaryConsistency extends Processor {
 

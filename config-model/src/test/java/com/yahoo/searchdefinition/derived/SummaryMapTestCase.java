@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests summary map extraction
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class SummaryMapTestCase extends SearchDefinitionTestCase {
     @Test

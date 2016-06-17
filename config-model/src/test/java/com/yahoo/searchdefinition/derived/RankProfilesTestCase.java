@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Tests a search definition with various rank profiles having different settings
  *
- * @author  <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class RankProfilesTestCase extends AbstractExportingTestCase {
     @Test

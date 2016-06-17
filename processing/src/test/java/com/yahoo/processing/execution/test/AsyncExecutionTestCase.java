@@ -12,7 +12,7 @@ import static com.yahoo.processing.test.ProcessorLibrary.*;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class AsyncExecutionTestCase {
 

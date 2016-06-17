@@ -25,7 +25,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  *
  * <p>This must be done after other summary processors.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class MakeDefaultSummaryTheSuperSet extends Processor {
 

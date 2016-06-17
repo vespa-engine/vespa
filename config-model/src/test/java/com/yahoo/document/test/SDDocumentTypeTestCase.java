@@ -14,10 +14,8 @@ import java.util.Iterator;
 import static org.junit.Assert.*;
 
 /**
-   TODO: Document purpose
-
-   @author  <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
-   @author  <a href="bratseth@yahoo-inc.com>Jon S Bratseth</a>
+ * @author Thomas Gundersen
+ * @author bratseth
 */
 public class SDDocumentTypeTestCase extends SearchDefinitionTestCase {
 
@@ -34,7 +32,6 @@ public class SDDocumentTypeTestCase extends SearchDefinitionTestCase {
     }
     @Test
     public void testInheritance() {
-
         SDDocumentType child=new SDDocumentType("child");
         Iterator<SDDocumentType> inherited=child.getInheritedTypes().iterator();
         assertTrue(inherited.hasNext());
@@ -100,30 +97,5 @@ public class SDDocumentTypeTestCase extends SearchDefinitionTestCase {
 
         // TODO: Test uninheriting
     }
-    /* What is this?.. DocumentTypeIds aren't used for anything as far as I can see, and is now ignored by document, H\u00F9kon
-    public void testId() {
-        Search search = new Search("cocacola");
-        SDDocumentType sugar = new SDDocumentType("sugar", 3, true, new DocumentTypeId(5), search);
-        search.addDocument(sugar);
-        try {
-            SDDocumentType color = new SDDocumentType("color", 2, true, new DocumentTypeId(5), search);
-            fail();
-        } catch (RuntimeException re) {
-        }
-
-        SDDocumentType taste = new SDDocumentType("taste", 3, true, search);
-        search.addDocument(taste);
-        try {
-            SDDocumentType secondtaste = new SDDocumentType("taste", 3, true, search);
-            fail();
-        } catch (RuntimeException re) {
-        }
-
-        SDDocumentType goodtaste = new SDDocumentType("goodtaste", 3, true, search);
-        search.addDocument(taste);
-        SDDocumentType badtaste = new SDDocumentType("badtaste", 3, true, search);
-        search.addDocument(taste);
-    }
-    */
 
 }

@@ -7,7 +7,7 @@ package com.yahoo.search.federation.http;
  * contain an open connection later.
  * The host and port state is immutable.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Connection {
 

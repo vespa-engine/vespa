@@ -7,7 +7,7 @@ import java.util.Comparator;
  * Superclass of hit comparators which delegates comparisons of hits which are
  * equal according to this comparator, to a secondary comparator.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class ChainableComparator implements Comparator<Hit> {
 

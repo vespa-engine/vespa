@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Main class - drives a learning session from the command line.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class ExampleLearningSessions {
 

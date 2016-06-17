@@ -10,7 +10,7 @@ package com.yahoo.messagebus;
  *
  * <p>This class is <b>immutable</b>.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Result {
 

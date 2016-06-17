@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests listening on every available new piece of data in a response
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class StreamingTestCase {
 

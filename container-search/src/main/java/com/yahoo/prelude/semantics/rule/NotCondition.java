@@ -9,7 +9,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
  * NotCondition inverts the term checking but not the label checking.
  * That is, it means "label:!term", it does not mean "!label:term".
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NotCondition extends Condition {
 

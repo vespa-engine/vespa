@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * A document summary definition - a list of summary fields.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class DocumentSummary extends FieldView {
 

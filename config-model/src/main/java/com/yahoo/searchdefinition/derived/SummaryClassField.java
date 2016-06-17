@@ -10,7 +10,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 /**
  * A summary field derived from a search definition
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class SummaryClassField {
 

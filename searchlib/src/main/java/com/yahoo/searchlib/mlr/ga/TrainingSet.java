@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * A training set: a set of <i>cases</i>: Input data to output value pairs
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TrainingSet {
 

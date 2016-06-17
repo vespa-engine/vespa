@@ -5,7 +5,7 @@ package com.yahoo.prelude.semantics.test;
  * Tests that ![a] is interpreted as "default:![a]", not as "!default:[a]",
  * that is, in negative conditions we still only want to match the default index by default.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class AutomataNotTestCase extends RuleBaseAbstractTestCase {
 

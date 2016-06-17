@@ -4,7 +4,7 @@ package com.yahoo.component.provider;
 /**
  * A freezable which supports listening
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.13
  */
 public interface ListenableFreezable extends Freezable {

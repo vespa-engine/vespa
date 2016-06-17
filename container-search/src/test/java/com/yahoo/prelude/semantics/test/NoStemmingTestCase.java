@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Tests a case reported by tularam
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NoStemmingTestCase extends RuleBaseAbstractTestCase {
 

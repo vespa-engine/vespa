@@ -6,7 +6,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
 

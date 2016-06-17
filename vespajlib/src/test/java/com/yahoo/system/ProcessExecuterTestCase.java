@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ProcessExecuterTestCase extends junit.framework.TestCase {
 

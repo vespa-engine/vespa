@@ -33,7 +33,7 @@ public class Main {
     private static void printUsage() {
         System.out.println("Computes the string segment match metrics of a query and field.");
         System.out.println("Usage: java -jar searchlib.jar query field");
-        System.out.println("By: Jon Bratseth (bratseth@yahoo-inc.com)");
+        System.out.println("Author: bratseth");
     }
 
 }

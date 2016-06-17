@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * A node in the <a href="TODO">intent model tree</a>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class Node implements Comparable<Node> {
 

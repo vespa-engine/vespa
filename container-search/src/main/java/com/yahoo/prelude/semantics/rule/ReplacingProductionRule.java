@@ -7,7 +7,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A production rule which <i>replaces</i> matched terms by the production
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ReplacingProductionRule extends ProductionRule {
 
