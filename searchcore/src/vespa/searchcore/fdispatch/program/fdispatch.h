@@ -95,10 +95,6 @@ public:
     int getHealthPort() const { return _healthPort; }
     vespalib::SimpleComponentConfigProducer &getComponentConfig() { return _componentConfig; }
 
-    void
-    CheckCacheMaxEntries(unsigned int queryCacheMaxEntries,
-                         unsigned int queryAttrCacheMaxEntries);
-
     Fdispatch(const config::ConfigUri &configUri);
     ~Fdispatch(void);
 };

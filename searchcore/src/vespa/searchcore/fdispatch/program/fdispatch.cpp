@@ -247,29 +247,12 @@ Fdispatch::Fdispatch(const config::ConfigUri &configUri)
 {
     int64_t cfgGen = -1;
     _config = config::ConfigGetter<FdispatchrcConfig>::
-              getConfig(cfgGen,
-                        _configUri.getConfigId(),
-                        _configUri.getContext());
+              getConfig(cfgGen, _configUri.getConfigId(), _configUri.getContext());
     LOG(config, "fdispatch version %s (RPC-port: %d, transport at %d)",
                 FastS_VersionTag, _config->frtport, _config->ptport);
 
     _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("fdispatch", cfgGen,
                                        "config only obtained at startup"));
-}
-
-
-void
-Fdispatch::CheckCacheMaxEntries(unsigned int queryCacheMaxEntries,
-                                      unsigned int queryAttrCacheMaxEntries)
-{
-    if (queryAttrCacheMaxEntries == 0)
-        return;
-
-    if ((queryAttrCacheMaxEntries <= queryCacheMaxEntries) ||
-        (queryCacheMaxEntries == 0)) {
-        FastS_abort("Please edit fdispatchrc such that "
-                    "queryattrcachequeries > querycachequeries.");
-    }
 }
 
 namespace {
@@ -298,12 +281,9 @@ Fdispatch::Init(void)
     _timeouts = 0;
     _checkLimit = 60;
 
-    FS4PersistentPacketStreamer::Instance.SetCompressionLimit(
-            _config->packetcompresslimit);
-    FS4PersistentPacketStreamer::Instance.SetCompressionLevel(
-            _config->packetcompresslevel);
-    FS4PersistentPacketStreamer::Instance.SetCompressionType(
-            convert(_config->packetcompresstype));
+    FS4PersistentPacketStreamer::Instance.SetCompressionLimit(_config->packetcompresslimit);
+    FS4PersistentPacketStreamer::Instance.SetCompressionLevel(_config->packetcompresslevel);
+    FS4PersistentPacketStreamer::Instance.SetCompressionType(convert(_config->packetcompresstype));
     
 
     LOG(debug, "Creating FNET transport");
@@ -323,16 +303,14 @@ Fdispatch::Init(void)
     FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] =
         _config->maxsocksilent;
 
-    if (_transport != NULL)
+    if (_transport != NULL) {
         _transport->SetIOCTimeOut((uint32_t)
                                   (FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] * 1000.0));
+    }
 
     char timestr[40];
-    FastS_TimeOut::WriteTime(timestr, sizeof(timestr),
-                             FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent]);
-    LOG(debug,
-        "VERBOSE: Max time between successful read from a socket: %s",
-        timestr);
+    FastS_TimeOut::WriteTime(timestr, sizeof(timestr), FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent]);
+    LOG(debug, "VERBOSE: Max time between successful read from a socket: %s", timestr);
 
     FastS_QueryCacheUtil::_systemMaxHits = std::numeric_limits<int>::max();
     LOG(debug, "VERBOSE: maxhits: %d", FastS_QueryCacheUtil::_systemMaxHits);
@@ -341,9 +319,7 @@ Fdispatch::Init(void)
     const uint32_t linesize = 1;
     if (FastS_QueryCacheUtil::_systemMaxHits < linesize
         && FastS_QueryCacheUtil::_maxOffset < linesize - FastS_QueryCacheUtil::_systemMaxHits) {
-        LOG(warning,
-            "maxoffset must be >= %d! (overriding config value)",
-            linesize - FastS_QueryCacheUtil::_systemMaxHits);
+        LOG(warning, "maxoffset must be >= %d! (overriding config value)", linesize - FastS_QueryCacheUtil::_systemMaxHits);
         FastS_QueryCacheUtil::_maxOffset = linesize - FastS_QueryCacheUtil::_systemMaxHits;
     }
     LOG(debug, "VERBOSE: maxoffset: %d", FastS_QueryCacheUtil::_maxOffset);
@@ -355,7 +331,6 @@ Fdispatch::Init(void)
     LOG(debug, "Using port number %d", ptportnum);
 
     _nodeManager = new FastS_NodeManager(_componentConfig, this, _partition);
-
 
     GetFNETTransport()->SetTCPNoDelay(_config->transportnodelay);
     GetFNETTransport()->SetDirectWrite(_config->transportdirectwrite);
