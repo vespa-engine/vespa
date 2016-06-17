@@ -57,26 +57,26 @@ flush.idleinterval double default=10.0 restart
 flush.strategy enum {SIMPLE, MEMORY} default=MEMORY restart
 
 ## Total number of bytes allowed before forcing flush.
-flush.memory.maxmemory long default=4294967296 restart
+flush.memory.maxmemory long default=4294967296
 
 ## Maximum total disk bloat factor before forcing flush.
-flush.memory.diskbloatfactor double default=0.2 restart
+flush.memory.diskbloatfactor double default=0.2
 
 ## Max disk usage (in bytes) for all transaction logs before forcing flush.
-flush.memory.maxtlssize long default=21474836480 restart
+flush.memory.maxtlssize long default=21474836480
 
 ## Number of bytes allowed per component before forcing memory prioritization.
-flush.memory.each.maxmemory long default=1073741824 restart
+flush.memory.each.maxmemory long default=1073741824
 
 ## Maximum disk bloat factor per component before forcing flush.
-flush.memory.each.diskbloatfactor double default=0.2 restart
+flush.memory.each.diskbloatfactor double default=0.2
 
 ## Age of unflushed content before forcing age prioritization.
 ## Unit is seconds with 1 day being the default.
-flush.memory.maxage.time double default=86400.0 restart
+flush.memory.maxage.time double default=86400.0
 
 ## Max diff in serial number allowed before that takes precedence.
-flush.memory.maxage.serial long default=1000000 restart
+flush.memory.maxage.serial long default=1000000
 
 ## The cost of doing replay when replaying the transaction log.
 ##
