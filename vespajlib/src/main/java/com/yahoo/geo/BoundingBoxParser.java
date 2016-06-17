@@ -30,7 +30,7 @@ import com.yahoo.text.DoubleParser;
  * s=40.183868,w=-74.819519,n=40.248291,e=-74.728798
  * </pre>
  *
- * @author Arne J
+ * @author arnej27959
  */
 public class BoundingBoxParser {
 

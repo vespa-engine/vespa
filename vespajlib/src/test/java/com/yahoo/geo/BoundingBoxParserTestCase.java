@@ -4,7 +4,7 @@ package com.yahoo.geo;
 /**
  * Tests for the BoundingBoxParser class.
  *
- * @author Arne J
+ * @author arnej27959
  */
 public class BoundingBoxParserTestCase extends junit.framework.TestCase {
 
