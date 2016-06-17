@@ -94,8 +94,6 @@ rm -f $ZOOKEEPER_LOG_FILE*lck
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}logs/vespa/vespa.log
 export VESPA_LOG_CONTROL_DIR="${VESPA_HOME}var/db/vespa/logcontrol"
-export VESPA_LOG_CONTROL_DIR=${VESPA_HOME}var/db/vespa/logcontrol
-export VESPA_LOG_CONTROL_FILE=${VESPA_HOME}var/db/vespa/logcontrol/configserver.logcontrol
 export VESPA_LOG_CONTROL_FILE="${VESPA_HOME}var/db/vespa/logcontrol/configserver.logcontrol"
 export VESPA_SERVICE_NAME=configserver
 export LD_LIBRARY_PATH=${VESPA_HOME}lib64
@@ -130,6 +128,7 @@ jvmargs="$baseuserargs $serveruserargs"
 
 printenv > $cfpfile
 mkdir -p $bundlecachedir
+chown -R yahoo $bundlecachedir
 
 run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	java \
