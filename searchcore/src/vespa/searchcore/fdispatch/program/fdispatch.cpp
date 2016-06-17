@@ -158,7 +158,7 @@ Fdispatch::GetThreadPool()
 bool
 Fdispatch::Failed(void)
 {
-    return ( (_transportServer && _transportServer->isFailed()));
+    return ( (_transportServer && _transportServer->isFailed())) || _needRestart;
 }
 
 
@@ -233,6 +233,7 @@ Fdispatch::Fdispatch(const config::ConfigUri &configUri)
       _rpc(),
       _config(),
       _configUri(configUri),
+      _fdispatchrcFetcher(configUri.getContext()),
       _partition(0),
       _tempFail(false),
       _FNETLiveCounterDanger(false),
@@ -243,7 +244,8 @@ Fdispatch::Fdispatch(const config::ConfigUri &configUri)
       _FNETLiveCounterDangerStart(),
       _timeouts(0u),
       _checkLimit(0u),
-      _healthPort(0)
+      _healthPort(0),
+      _needRestart(false)
 {
     int64_t cfgGen = -1;
     _config = config::ConfigGetter<FdispatchrcConfig>::
@@ -253,6 +255,41 @@ Fdispatch::Fdispatch(const config::ConfigUri &configUri)
 
     _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("fdispatch", cfgGen,
                                        "config only obtained at startup"));
+    _fdispatchrcFetcher.subscribe<FdispatchrcConfig>(configUri.getConfigId(), this);
+    _fdispatchrcFetcher.start();
+}
+
+namespace {
+
+bool needRestart(const FdispatchrcConfig & curr, const FdispatchrcConfig & next)
+{
+    if (curr.frtport != next.frtport) {
+        LOG(error, "FRT port has changed from %d to %d.", curr.frtport, next.frtport);
+        return true;
+    }
+    if (curr.ptport != next.ptport) {
+        LOG(error, "PT port has changed from %d to %d.", curr.ptport, next.ptport);
+        return true;
+    }
+    if (curr.healthport != next.healthport) {
+        LOG(error, "Health port has changed from %d to %d.", curr.healthport, next.healthport);
+        return true;
+    }
+    return false;
+}
+
+}
+
+void Fdispatch::configure(std::unique_ptr<FdispatchrcConfig> cfg)
+{
+    if (cfg && _config) {
+        if ( needRestart(*_config, *cfg) ) {
+            const int sleepMS = rand()%(30*1000);
+            LOG(error, "Will restart by abort in %d ms.", sleepMS);
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMS));
+            _needRestart.store(true);
+        }
+    }
 }
 
 namespace {

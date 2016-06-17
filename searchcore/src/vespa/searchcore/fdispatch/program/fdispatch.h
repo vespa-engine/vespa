@@ -53,10 +53,12 @@ public:
 /**
  * Note: There is only one instance of this.
  */
-class Fdispatch : public FastS_AppContext
+class Fdispatch : public FastS_AppContext,
+                  public config::IFetcherCallback<vespa::config::search::core::FdispatchrcConfig>
 {
 private:
     typedef search::engine::TransportServer TransportServer;
+    typedef vespa::config::search::core::FdispatchrcConfig FdispatchrcConfig;
     Fdispatch(const Fdispatch &);
     Fdispatch& operator=(const Fdispatch &);
 
@@ -68,8 +70,9 @@ private:
     std::unique_ptr<FNET_Transport>         _transport;
     FastS_FNETAdapter                       _FNET_adapter;
     std::unique_ptr<FastS_fdispatch_RPC>    _rpc;
-    std::unique_ptr<vespa::config::search::core::FdispatchrcConfig> _config;
-    config::ConfigUri _configUri;
+    std::unique_ptr<FdispatchrcConfig>      _config;
+    config::ConfigUri                       _configUri;
+    config::ConfigFetcher                   _fdispatchrcFetcher;
     unsigned int _partition;
     bool         _tempFail;
     bool         _FNETLiveCounterDanger;
@@ -81,6 +84,8 @@ private:
     unsigned int _timeouts;
     unsigned int _checkLimit;
     int          _healthPort;
+    std::atomic<bool> _needRestart;
+    void configure(std::unique_ptr<FdispatchrcConfig> cfg);
 public:
     // Implements FastS_AppContext
     virtual FNET_Transport *GetFNETTransport();
