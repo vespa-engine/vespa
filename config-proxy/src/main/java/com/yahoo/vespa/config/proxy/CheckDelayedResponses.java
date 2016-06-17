@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * The run method of this class is executed periodically to
  * return requests that are about to time out.
  *
- * @author musum
+ * @author hmusum
  */
 public class CheckDelayedResponses implements Runnable {
 

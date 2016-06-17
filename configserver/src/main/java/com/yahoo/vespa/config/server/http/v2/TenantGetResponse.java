@@ -8,7 +8,7 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
 /**
  * Response for tenant create
  *
- * @author musum
+ * @author hmusum
  */
 public class TenantGetResponse extends SessionResponse {
 

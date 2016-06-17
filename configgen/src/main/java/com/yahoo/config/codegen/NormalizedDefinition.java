@@ -16,7 +16,7 @@ import java.nio.charset.Charset;
  * Does normalizing (removing comments, trimming whitespace etc.) and calculation of md5sum
  * of config definitions
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class NormalizedDefinition {
     /* Patterns used for finding ranges in config definitions */

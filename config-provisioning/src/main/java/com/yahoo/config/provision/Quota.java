@@ -2,7 +2,7 @@
 package com.yahoo.config.provision;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class Quota {
 

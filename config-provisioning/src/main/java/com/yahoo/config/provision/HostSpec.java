@@ -11,7 +11,7 @@ import java.util.Optional;
  * A specification of a host and its role.
  * The identity of a host is determined by its name.
  *
- * @author musum
+ * @author hmusum
  */
 public class HostSpec implements Comparable<HostSpec> {
 

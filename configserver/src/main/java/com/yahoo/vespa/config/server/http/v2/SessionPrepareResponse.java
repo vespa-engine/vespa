@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.server.session.Session;
 /**
  * Creates a response for SessionPrepareHandler.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.28
  */
 class SessionPrepareResponse extends SessionResponse {

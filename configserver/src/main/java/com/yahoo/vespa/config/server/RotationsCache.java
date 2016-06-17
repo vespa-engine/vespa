@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * Rotations for an application. Persisted in ZooKeeper.
  *
- * @author musum
+ * @author hmusum
  */
 public class RotationsCache {
 

@@ -5,7 +5,7 @@ import com.yahoo.foo.AppConfig;
 import com.yahoo.vespa.config.TimingValues;
 
 /**
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  *
  * Application that subscribes to config defined in app.def and
  * generated code in AppConfig.java.

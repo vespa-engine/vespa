@@ -33,7 +33,7 @@ import java.util.concurrent.Executor;
 /**
  * Handler for deleting a currently active application for a tenant.
  *
- * @author musum
+ * @author hmusum
  * @since 5.4
  */
 public class ApplicationHandler extends HttpHandler {

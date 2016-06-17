@@ -24,7 +24,7 @@ import java.util.*;
 /**
  * A class used for reading and writing application data to zookeeper.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1
  */
 public class ZooKeeperClient {

@@ -50,7 +50,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.4
  */
 public class ApplicationHandlerTest {

@@ -21,7 +21,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class SessionExampleHandlerTest {
@@ -48,7 +48,7 @@ public class SessionExampleHandlerTest {
     /**
      * A handler that prepares a session given by an id in the request.
      *
-     * @author musum
+     * @author hmusum
      * @since 5.1.14
      */
     public static class SessionExampleHandler extends ThreadedHttpRequestHandler {

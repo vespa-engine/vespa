@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
-* @author musum
+* @author hmusum
 * @since 5.1
 */
 class GetConfigProcessor implements Runnable {

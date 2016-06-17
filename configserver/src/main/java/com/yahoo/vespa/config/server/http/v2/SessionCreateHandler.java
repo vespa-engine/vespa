@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * or create a new session from a previous session (with id or the "active" session).
  * Handles /application/v2/ requests
  *
- * @author musum
+ * @author hmusum
  * @since 5.1
  */
 public class SessionCreateHandler extends SessionHandler {

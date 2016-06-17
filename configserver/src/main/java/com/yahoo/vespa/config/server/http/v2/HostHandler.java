@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
 /**
  * Handler for getting tenant and application for a given hostname.
  *
- * @author musum
+ * @author hmusum
  * @since 5.19
  */
 public class HostHandler extends HttpHandler {

@@ -7,7 +7,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 /**
  * A config provider for the model config. The ModelConfig is a common config and produced by {@link ApplicationConfigProducerRoot} , this config
  * producer exists to make the admin/model config id exist for legacy reasons.
- * @author <a href="mailto:musum@yahoo-inc.com">musum</a>
+ * @author hmusum
  * @author gjoranv
  * @since 5.0.8
  */

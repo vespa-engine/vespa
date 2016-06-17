@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Class to hold config definitions and resolving requests for the correct definition
  *
- * @author Harald Musum &lt;musum@yahoo-inc.com&gt;
+ * @author hmusum
  * @since 5.1
  */
 public class ConfigDefinitionSet {

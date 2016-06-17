@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * Updates clients subscribing to config when config changes or the
  * timeout they have specified has elapsed.
  *
- * @author musum
+ * @author hmusum
  */
 public class ClientUpdater {
     final static Logger log = Logger.getLogger(ClientUpdater.class.getName());

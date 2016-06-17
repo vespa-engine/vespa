@@ -31,7 +31,7 @@ import static org.junit.Assert.*;
  * Unit tests for SearchCluster. Please use this instead of SearchModelTestCase if possible and
  * write _unit_ tests. Thanks.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class SearchClusterTest {
 

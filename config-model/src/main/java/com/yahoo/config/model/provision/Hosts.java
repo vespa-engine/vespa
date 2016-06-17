@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * TODO: What is this?
  *
- * @author musum
+ * @author hmusum
  */
 public class Hosts {
 

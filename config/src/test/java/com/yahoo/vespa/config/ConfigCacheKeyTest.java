@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigCacheKeyTest {
     @Test

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.9
  */
 public class Helper {

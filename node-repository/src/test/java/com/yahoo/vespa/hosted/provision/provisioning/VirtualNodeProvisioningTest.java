@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Tests provisioning of virtual nodes
  *
- * @author musum
+ * @author hmusum
  * @author mpolden
  */
 public class VirtualNodeProvisioningTest {

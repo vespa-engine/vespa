@@ -5,7 +5,7 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class MockRpcServer implements RpcServer {
 

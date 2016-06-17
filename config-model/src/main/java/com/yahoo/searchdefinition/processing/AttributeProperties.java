@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Checks that attribute properties only are set for attributes that have data (are created by an indexing statement).
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class AttributeProperties extends Processor {
 

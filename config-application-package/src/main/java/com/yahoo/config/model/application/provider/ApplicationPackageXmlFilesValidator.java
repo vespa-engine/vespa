@@ -19,7 +19,7 @@ import java.util.Optional;
 /**
  * Validation of xml files in application package against RELAX NG schemas.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ApplicationPackageXmlFilesValidator {
 

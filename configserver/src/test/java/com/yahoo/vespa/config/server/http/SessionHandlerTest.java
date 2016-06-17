@@ -23,7 +23,7 @@ import java.util.Optional;
 /**
  * Base class for session handler tests
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class SessionHandlerTest {

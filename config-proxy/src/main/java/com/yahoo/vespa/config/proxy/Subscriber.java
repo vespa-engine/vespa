@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.proxy;
 /**
  * Interface for subscribing to config from upstream config sources.
  *
- * @author musum
+ * @author hmusum
  * @since 5.5
  */
 public interface Subscriber extends Runnable {

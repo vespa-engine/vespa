@@ -10,7 +10,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 /**
  * Class for holding the key when doing cache look-ups and other management of config instances.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable<ConfigKey<?>> {
 

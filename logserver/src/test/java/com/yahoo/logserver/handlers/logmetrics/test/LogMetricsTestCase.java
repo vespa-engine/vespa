@@ -13,7 +13,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 
 /**
- * @author  <a href="mailto:musum@europe.yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class LogMetricsTestCase {
 	// Some of the tests depend upon the number of messages for a

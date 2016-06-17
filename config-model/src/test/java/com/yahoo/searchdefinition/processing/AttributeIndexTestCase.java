@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 /**
  *  Test AttributeIndex processor.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class AttributeIndexTestCase extends SearchDefinitionTestCase {
     @Test

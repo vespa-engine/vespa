@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests ConfigDefinitionKey
  *
- * @author musum
+ * @author hmusum
  */
 public class ConfigDefinitionKeyTest {
 

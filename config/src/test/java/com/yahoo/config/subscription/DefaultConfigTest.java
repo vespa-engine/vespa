@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
  * <li>Reference
  * </ul>
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class DefaultConfigTest {
     static final String CONFIG_ID = "raw:" +

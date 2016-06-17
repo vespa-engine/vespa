@@ -13,7 +13,7 @@ import java.util.*;
  * Includes an RPC server interface for communicating
  * with test classes that implement the {@link Tester} interface.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.5
  */
 public class StressTester {

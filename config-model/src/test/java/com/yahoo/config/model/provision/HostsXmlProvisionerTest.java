@@ -13,7 +13,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class HostsXmlProvisionerTest {
     private static final String oneHost = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +

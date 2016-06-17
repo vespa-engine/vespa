@@ -13,7 +13,7 @@ import java.util.Collections;
 /**
  * An HTTP response as an opaque payload with headers and content type.
  *
- * @author musum
+ * @author hmusum
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since 5.1
  */

@@ -21,7 +21,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class UpstreamConfigSubscriberTest {
     private final ConfigSourceSet sourceSet = new ConfigSourceSet("tcp/foo:78");

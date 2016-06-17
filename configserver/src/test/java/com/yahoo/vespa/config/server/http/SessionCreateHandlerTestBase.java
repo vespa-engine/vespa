@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for session create handlers, to make it easier to have
  * similar tests for more than one version of the API.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.28
  */
 public abstract class SessionCreateHandlerTestBase extends SessionHandlerTest {

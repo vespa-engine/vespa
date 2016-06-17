@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * Utilities for XML.
  *
- * @author musum
+ * @author hmusum
  */
 public class Xml {
     private static final Logger log = Logger.getLogger(Xml.class.getPackage().toString());

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config;
 
 /**
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public final class ErrorCode {
     // Cannot find a config with this name, version and config md5sum

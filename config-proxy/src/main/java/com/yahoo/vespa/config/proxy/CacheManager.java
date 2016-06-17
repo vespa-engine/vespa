@@ -6,7 +6,7 @@ import com.yahoo.vespa.config.RawConfig;
 /**
  * Manages memory and disk caches.
  *
- * @author musum
+ * @author hmusum
  */
 public class CacheManager {
 

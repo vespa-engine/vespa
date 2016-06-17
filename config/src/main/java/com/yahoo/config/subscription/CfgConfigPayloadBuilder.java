@@ -13,7 +13,7 @@ import java.util.*;
 /**
  * Deserializes config payload (cfg format) to a ConfigPayload.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.6
  */
 public class CfgConfigPayloadBuilder {

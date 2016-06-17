@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * This class generates a tree of CNodes from a .def file.
  *
  * @author gjoranv
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class DefParser {
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");

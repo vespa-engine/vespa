@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 /**
  * Interface for creating responses for SessionCreateHandler.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.27
  */
 public interface SessionCreateResponse {

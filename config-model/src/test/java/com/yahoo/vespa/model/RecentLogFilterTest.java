@@ -13,7 +13,7 @@ import static junit.framework.TestCase.assertTrue;
 
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1
  */
 public class RecentLogFilterTest {

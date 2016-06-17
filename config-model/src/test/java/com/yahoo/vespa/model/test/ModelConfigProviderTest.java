@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test HostSystem
  *
- * @author musum
+ * @author hmusum
  */
 public class ModelConfigProviderTest {
 

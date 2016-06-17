@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
  * Tests that qrserver is assigned port Defaults.getDefaults().vespaWebServicePort() even if there is a HTTP gateway configured earlier in
  * vespa-services.xml
  *
- * @author musum
+ * @author hmusum
  */
 public class QrserverAndGatewayPortAllocationTest {
 

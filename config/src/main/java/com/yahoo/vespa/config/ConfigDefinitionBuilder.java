@@ -9,7 +9,7 @@ import java.util.Arrays;
 /**
  * Builds a ConfigDefinition from a tree of CNodes.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigDefinitionBuilder {
 

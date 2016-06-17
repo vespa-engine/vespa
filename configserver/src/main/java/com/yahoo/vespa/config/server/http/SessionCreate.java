@@ -25,7 +25,7 @@ import java.io.IOException;
  * Handles /application/v2 requests
  *
  * @author lulf
- * @author musum
+ * @author hmusum
  * @since 5.1.27
  */
 // TODO Rename class

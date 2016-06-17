@@ -13,7 +13,7 @@ import java.net.URI;
 /**
  * Utilities for handlers.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class Utils {

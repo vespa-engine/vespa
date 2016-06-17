@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * Checks that bolding or dynamic summary is turned on only for text fields. Throws exception if it is turned on for any
  * other fields (otherwise will cause indexing failure)
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class Bolding extends Processor {
 

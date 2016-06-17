@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public abstract class SessionPrepareHandlerTestBase extends SessionHandlerTest {
