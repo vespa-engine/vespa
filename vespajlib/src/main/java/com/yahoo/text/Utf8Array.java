@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * This is a class that has speed as its primary purpose.
  * If you have a string, consider Utf8String
  * If you have a large backing array consider Utf8PartialArray
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 

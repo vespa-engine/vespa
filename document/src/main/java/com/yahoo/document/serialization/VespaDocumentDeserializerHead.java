@@ -12,7 +12,7 @@ import com.yahoo.io.GrowableByteBuffer;
 /**
  * Class used for de-serializing documents on the current head document format.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
 

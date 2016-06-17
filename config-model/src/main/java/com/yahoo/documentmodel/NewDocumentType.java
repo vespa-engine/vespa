@@ -15,7 +15,7 @@ import java.util.*;
 /**
  * TODO: What is this and why?
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public final class NewDocumentType extends StructuredDataType implements DataTypeCollection {
 

@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public abstract class IndexedSearchCluster extends SearchCluster
     implements

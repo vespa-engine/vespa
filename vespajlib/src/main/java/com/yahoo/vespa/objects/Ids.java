@@ -5,7 +5,7 @@ package com.yahoo.vespa.objects;
  * This is a class containing the global ids that are given out.
  * Must be in sync with version for c++ in staging_vespalib/src/vespalib/objects/ids.h
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public interface Ids {
     public static int document = 0x1000;

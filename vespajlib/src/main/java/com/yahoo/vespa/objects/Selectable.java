@@ -2,7 +2,7 @@
 package com.yahoo.vespa.objects;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  *
  * This class acts as an interface for traversing a tree, or a graph.
  * Every non leaf Object implements {@link #selectMembers(ObjectPredicate, ObjectOperation)} implementing

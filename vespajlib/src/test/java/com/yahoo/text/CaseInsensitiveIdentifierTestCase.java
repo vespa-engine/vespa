@@ -6,11 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 11:37
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class CaseInsensitiveIdentifierTestCase {
     @Test

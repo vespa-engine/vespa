@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<MessagetyperouteselectorpolicyConfig> {
 

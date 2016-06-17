@@ -5,7 +5,7 @@ package com.yahoo.search.result;
  * The coverage report for a result set.
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author balder
+ * @author baldersheim
  */
 public class Coverage extends com.yahoo.container.handler.Coverage {
 

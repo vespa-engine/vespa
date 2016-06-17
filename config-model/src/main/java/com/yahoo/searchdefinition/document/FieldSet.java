@@ -8,7 +8,7 @@ import java.util.TreeSet;
 /**
  * Searchable collection of fields.
  * 
- * @author balder
+ * @author baldersheim
  */
 public class FieldSet {
     

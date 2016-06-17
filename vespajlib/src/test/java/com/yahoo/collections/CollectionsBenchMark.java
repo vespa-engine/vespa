@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Created by balder on 1/20/14.
+ * @author baldersheim
  */
 public class CollectionsBenchMark {
     abstract static class BenchMark {

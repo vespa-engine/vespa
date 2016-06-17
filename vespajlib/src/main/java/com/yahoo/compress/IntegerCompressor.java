@@ -4,7 +4,9 @@ package com.yahoo.compress;
 import java.nio.ByteBuffer;
 
 /**
- * TODO: balder
+ * Utility for bytewise compressing of integers into a ByteBuffer.
+ *
+ * @author: baldersheim
  */
 public class IntegerCompressor {
 

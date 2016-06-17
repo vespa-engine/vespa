@@ -2,7 +2,7 @@
 package com.yahoo.document.select.simple;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class OperatorParser extends Parser {
     private String operator;

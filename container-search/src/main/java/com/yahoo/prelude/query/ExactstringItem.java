@@ -2,9 +2,9 @@
 package com.yahoo.prelude.query;
 
 /**
- * @author balder
+ * @author baldersheim
  */
-// TODO: balder to fix javadoc
+// TODO: baldersheim to fix javadoc
 public class ExactstringItem extends WordItem {
 
     public ExactstringItem(String substring) {

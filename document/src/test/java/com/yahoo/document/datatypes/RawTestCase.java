@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.*;
 
 /**
- * Created by balder on 10/21/14.
+ * @author baldersheim
  */
 public class RawTestCase {
     @Test

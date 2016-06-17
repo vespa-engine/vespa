@@ -2,7 +2,7 @@
 package com.yahoo.collections;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public abstract class ResourceFactory<T> {

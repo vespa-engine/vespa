@@ -12,7 +12,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 import junit.framework.TestCase;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class AggregationTestCase extends TestCase {
 

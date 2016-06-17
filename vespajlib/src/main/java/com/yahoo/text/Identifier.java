@@ -2,11 +2,9 @@
 package com.yahoo.text;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 10:37
  * This class is used to represent a legal identifier of [a-zA-Z_][a-zA-Z_0-9]*
+ *
+ * @author baldersheim
  */
 public class Identifier extends Utf8Array {
     public Identifier(String s) {

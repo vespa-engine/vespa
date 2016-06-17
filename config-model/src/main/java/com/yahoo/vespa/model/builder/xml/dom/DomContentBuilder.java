@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class DomContentBuilder extends ConfigModelBuilder<Content> {
 

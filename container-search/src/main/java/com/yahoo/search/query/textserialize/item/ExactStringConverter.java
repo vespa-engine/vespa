@@ -4,9 +4,9 @@ package com.yahoo.search.query.textserialize.item;
 import com.yahoo.prelude.query.ExactstringItem;
 
 /**
- * @author balder
+ * @author baldersheim
  */
-// TODO: balder to fix javadoc
+// TODO: baldersheim to fix javadoc
 public class ExactStringConverter extends WordConverter {
     @Override
     ExactstringItem newTermItem(String word) {

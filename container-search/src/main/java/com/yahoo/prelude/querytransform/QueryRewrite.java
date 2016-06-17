@@ -17,7 +17,7 @@ import com.yahoo.search.query.Model;
 import com.yahoo.search.result.Hit;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class QueryRewrite {
 

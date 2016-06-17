@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * This class represents a range of characters from a string.&nbsp;This is the leaf node
  * in a Span tree. Its boundaries are defined as inclusive-from and exclusive-to.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
 public class Span extends SpanNode {

@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a sort-function in a {@link GroupingExpression}. It evaluates to a list that equals the list
  * result of the argument, sorted in ascending order.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class SortFunction  extends FunctionNode {
 

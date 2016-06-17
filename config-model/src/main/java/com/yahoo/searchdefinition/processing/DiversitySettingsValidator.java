@@ -9,7 +9,7 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * Created by balder on 3/10/15.
+ * @author baldersheim
  */
 public class DiversitySettingsValidator extends Processor {
     public DiversitySettingsValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {

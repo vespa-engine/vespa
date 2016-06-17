@@ -4,11 +4,7 @@ package com.yahoo.prelude.query;
 import java.nio.ByteBuffer;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 07.12.12
- * Time: 13:24
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 // TODO: Fix javadoc
 public abstract class PureWeightedItem extends Item {

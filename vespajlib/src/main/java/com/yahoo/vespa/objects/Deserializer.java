@@ -2,7 +2,7 @@
 package com.yahoo.vespa.objects;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public interface Deserializer {
     byte getByte(FieldBase field);

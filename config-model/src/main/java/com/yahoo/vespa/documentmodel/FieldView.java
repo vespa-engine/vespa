@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class FieldView implements Serializable {

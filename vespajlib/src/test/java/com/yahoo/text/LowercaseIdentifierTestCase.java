@@ -6,11 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 20:54
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class LowercaseIdentifierTestCase {
     @Test

@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * The node is a request to retrieve the namespace-specific content of a document id.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class GetDocIdNamespaceSpecificFunctionNode extends DocumentAccessorNode {

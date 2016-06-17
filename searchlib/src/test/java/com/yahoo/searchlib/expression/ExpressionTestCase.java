@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class ExpressionTestCase extends TestCase {
 

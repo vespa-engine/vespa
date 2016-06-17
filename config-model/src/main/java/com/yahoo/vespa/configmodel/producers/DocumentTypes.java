@@ -14,7 +14,7 @@ import com.yahoo.vespa.documentmodel.DocumentModel;
 import java.util.*;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class DocumentTypes {
 

@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class BufferSerializer implements Serializer, Deserializer {
     protected GrowableByteBuffer buf;

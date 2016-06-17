@@ -2,7 +2,7 @@
 package com.yahoo.vespa.objects;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class FieldBase {
     private final String name;

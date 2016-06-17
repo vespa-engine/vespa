@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Created by balder on 8/6/15.
+ * @author baldersheim
  */
 public class NumericFieldValueTestCase {
     @Test

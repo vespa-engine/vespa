@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by balder on 3/10/15.
+ * @author baldersheim
  */
 public class DiversityTestCase {
     @Test

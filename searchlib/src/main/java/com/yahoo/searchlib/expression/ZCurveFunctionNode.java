@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This function decompose two-dimensonal zcurve values into x and y values.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class ZCurveFunctionNode extends UnaryFunctionNode {
 

@@ -2,7 +2,7 @@
 package com.yahoo.searchlib.expression;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class PositiveInfinityResultNode extends ResultNode {
     // The global class identifier shared with C++.

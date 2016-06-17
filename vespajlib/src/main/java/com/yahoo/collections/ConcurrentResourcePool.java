@@ -8,11 +8,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 13.11.12
- * Time: 20:57
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class ConcurrentResourcePool<T> implements Iterable<T> {
 
