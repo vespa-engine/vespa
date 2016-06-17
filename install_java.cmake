@@ -1,5 +1,7 @@
 function(install_java_artifact NAME)
-    install(FILES "${NAME}/target/${NAME}.jar" DESTINATION lib/jars/)
+    if (EXISTS "${NAME}/target/${NAME}.jar")
+        install(FILES "${NAME}/target/${NAME}.jar" DESTINATION lib/jars/)
+    endif()
     if (IS_DIRECTORY "${NAME}/target/dependency")
         install(DIRECTORY "${NAME}/target/dependency" DESTINATION lib/jars/ FILES_MATCHING PATTERN "*.jar")
     endif()
@@ -10,7 +12,9 @@ function(install_fat_java_artifact NAME)
 endfunction()
 
 install_java_artifact(document)
+install_java_artifact(jdisc_jetty)
 install_java_artifact(searchlib)
+install_java_artifact(vespa_jersey2)
 install_java_artifact(vespajlib)
 
 install_fat_java_artifact(application-preprocessor)

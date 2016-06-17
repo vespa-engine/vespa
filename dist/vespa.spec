@@ -114,6 +114,7 @@ mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/config_server/serverdb/application
 mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/logcontrol/
 mkdir -p %{buildroot}/%{_prefix}/var/jdisc_container/
 mkdir -p %{buildroot}/%{_prefix}/var/jdisc_core/
+mkdir -p %{buildroot}/%{_prefix}/var/run/
 mkdir -p %{buildroot}/%{_prefix}/var/spool/vespa/
 mkdir -p %{buildroot}/%{_prefix}/var/spool/master/inbox/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/bundlecache/
@@ -166,6 +167,7 @@ exit 0
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/logcontrol/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/jdisc_container/
 %dir %attr( 777,     -,     -) %{_prefix}/var/jdisc_core/
+%dir %attr( 755, vespa, vespa) %{_prefix}/var/run/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/vespa/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/master/inbox/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/bundlecache/
