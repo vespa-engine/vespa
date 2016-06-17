@@ -4,10 +4,10 @@ MYPATH=`dirname ${0}`
 DIFF=/usr/bin/diff
 LOGFMT=${1}
 
-if [ -e "/usr/local/bin/perl" ]; then
+if which perl &> /dev/null; then
     echo "Running jdisc_logfmt test suite."
 else
-    echo "Ignoring jdisc_logfmt test suite as there is no /usr/local/bin/perl"
+    echo "Ignoring jdisc_logfmt test suite as there is no perl executable."
     exit 0
 fi
 
