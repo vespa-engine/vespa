@@ -191,5 +191,6 @@ exit 0
 %{_prefix}/man/*
 %{_prefix}/include/*
 %{_prefix}/etc/*
+%{_prefix}/conf/*
 
 %changelog
