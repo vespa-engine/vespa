@@ -9,7 +9,7 @@ import java.io.InputStream;
 
 /**
  * For creating MockReader of innput stream.
- * @author dybdahl
+ * @author dybis
  */
 public class MockFeedReaderFactory extends FeedReaderFactory {
 

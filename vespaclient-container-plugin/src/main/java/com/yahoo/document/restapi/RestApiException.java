@@ -4,7 +4,7 @@ package com.yahoo.document.restapi;
 /**
  * Exceptions for Rest API
  *
- * @author dybdahl
+ * @author dybis
  */
 public class RestApiException extends Exception {
 

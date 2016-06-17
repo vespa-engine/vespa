@@ -23,7 +23,7 @@ import java.util.Optional;
  * Fetches log entries from logserver with level errors and fatal. The logserver only return
  * a log entry once over this API so doing repeated call will not give the same results.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class LogServerLogGrabber extends AbstractComponent {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(LogServerLogGrabber.class.getName());

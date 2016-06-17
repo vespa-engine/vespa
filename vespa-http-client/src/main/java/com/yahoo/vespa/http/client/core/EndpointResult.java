@@ -5,7 +5,7 @@ import com.yahoo.vespa.http.client.Result;
 
 /**
  * Result from a single endpoint.
- * @author dybdahl
+ * @author dybis
  */
 public class EndpointResult {
     private final String operationId;

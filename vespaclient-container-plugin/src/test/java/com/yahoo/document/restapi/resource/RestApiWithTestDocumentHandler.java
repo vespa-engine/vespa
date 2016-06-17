@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 /**
  * For setting up RestApi with a simple document type manager.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class RestApiWithTestDocumentHandler extends RestApi{
 

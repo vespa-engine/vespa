@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 /**
  * Merges several endpointResult into one Result and does the callback.
- * @author dybdahl
+ * @author dybis
  * @since 5.1.20
  */
 @Beta

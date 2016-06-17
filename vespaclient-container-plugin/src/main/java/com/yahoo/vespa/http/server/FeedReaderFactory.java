@@ -11,7 +11,7 @@ import java.io.InputStream;
 
 /**
  * Class for creating FeedReader based on dataFormat.
- * @author dybdahl
+ * @author dybis
  */
 public class FeedReaderFactory {
 

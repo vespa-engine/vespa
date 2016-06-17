@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * much less frequently to reduce CPU usage and latency impact. It only samples successful requests and requests
  * that starts with /search.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class AccessLogSampler implements AccessLogInterface {
 

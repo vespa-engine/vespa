@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests for the API, using dryrun option to mock gateway.
- * @author dybdahl
+ * @author dybis
  */
 public class FeedClientTest {
 

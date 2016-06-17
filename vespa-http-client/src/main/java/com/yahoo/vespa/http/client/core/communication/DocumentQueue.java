@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Document queue that only gives you document operations on documents for which there are no already in flight operations for.
- * @author dybdahl
+ * @author dybis
  */
 class DocumentQueue {
     private final Deque<Document> queue;

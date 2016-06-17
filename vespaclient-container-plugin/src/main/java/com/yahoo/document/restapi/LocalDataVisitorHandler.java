@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Handling data from visit.
  *
- * @author dybdahl
+ * @author dybis
  */
 class LocalDataVisitorHandler extends DumpVisitorDataHandler {
 

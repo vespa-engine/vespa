@@ -7,7 +7,7 @@ import java.io.IOException;
 
 /**
  * Class for throwing exception from endpoint.
- * @author dybdahl
+ * @author dybis
 */
 public class EndpointIOException extends IOException {
     private final Endpoint endpoint;

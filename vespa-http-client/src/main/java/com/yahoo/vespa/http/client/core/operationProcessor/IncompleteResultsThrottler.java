@@ -27,7 +27,7 @@ import java.util.Random;
  *
  * Class is fully thread safe, i.e. all public methods are thread safe.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class IncompleteResultsThrottler {
     private final ConcurrentDocumentOperationBlocker blocker = new ConcurrentDocumentOperationBlocker();

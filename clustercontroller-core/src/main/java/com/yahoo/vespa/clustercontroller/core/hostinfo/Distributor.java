@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
   * Class for handling Distributor part of HostInfo.
-  * @author dybdahl
+  * @author dybis
   */
 public class Distributor {
 

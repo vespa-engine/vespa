@@ -15,7 +15,7 @@ import static com.yahoo.jdisc.Response.Status.*;
 /**
  * Represents the request URI with its values.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class RestUri {
 

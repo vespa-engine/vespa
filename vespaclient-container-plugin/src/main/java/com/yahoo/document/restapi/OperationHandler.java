@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * Abstract the backend stuff for the REST API, such as retrieving or updating documents.
  *
- * @author dybdahl
+ * @author dybis
  */
 public interface OperationHandler {
 

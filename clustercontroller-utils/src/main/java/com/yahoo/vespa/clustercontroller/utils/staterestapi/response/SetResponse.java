@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.response;
 
 /**
  * The response of a set operation.
- * @author dybdahl
+ * @author dybis
  */
 public class SetResponse {
     private final String reason;

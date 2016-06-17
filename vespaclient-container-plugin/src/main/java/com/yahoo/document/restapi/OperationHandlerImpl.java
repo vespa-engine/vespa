@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  * Sends operations to messagebus via document api.
  *
- * @author dybdahl 
+ * @author dybis 
  */
 public class OperationHandlerImpl implements OperationHandler {
 
