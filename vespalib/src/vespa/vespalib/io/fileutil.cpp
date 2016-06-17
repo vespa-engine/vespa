@@ -335,6 +335,13 @@ File::read(void *buf, size_t bufsize, off_t offset) const
             remaining -= bytesread;
             buf = ((char*) buf) + bytesread;
             offset += bytesread;
+            if (((_flags & DIRECTIO) != 0) && ((bytesread % 512) != 0) &&
+		(offset == getFileSize())) {
+	      LOG(spam, "read(%s): Found EOF. Directio read to unaligned "
+		  "file end at offset %" PRIu64 ".",
+		  _filename.c_str(), offset);
+	      break;
+            }
         } else if (bytesread == 0) { // EOF
             LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %"
                       PRIu64 ".",
