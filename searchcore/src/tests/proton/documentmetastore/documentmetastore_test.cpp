@@ -44,6 +44,15 @@ using proton::bucketdb::BucketState;
 
 namespace proton {
 
+namespace
+{
+
+static constexpr uint32_t numBucketBits = UINT32_C(20);
+static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
+
+}
+
+
 class DummyTlsSyncer : public ITlsSyncer
 {
 public:
@@ -552,23 +561,21 @@ TEST("requireThatWeCanStoreBucketIdAndTimestamp")
 {
     DocumentMetaStore dms(createBucketDB());
     uint32_t numLids = 1000;
-    uint32_t bkBits = UINT32_C(20);
-    uint64_t tsbias = UINT64_C(2000000000000);
 
     dms.constructFreeList();
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + tsbias));
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
+        bucketId.setUsedBits(numBucketBits);
         EXPECT_TRUE(assertGid(gid, lid, dms, bucketId,
-                              Timestamp(lid + tsbias)));
+                              Timestamp(lid + timestampBias)));
         EXPECT_TRUE(assertLid(lid, gid, dms));
     }
 }
@@ -577,8 +584,6 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
 {
     DocumentMetaStore dms1(createBucketDB());
     uint32_t numLids = 1000;
-    uint32_t bkBits = UINT32_C(20);
-    uint64_t tsbias = UINT64_C(2000000000000);
     std::vector<uint32_t> removeLids;
     removeLids.push_back(10);
     removeLids.push_back(20);
@@ -588,8 +593,8 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
-        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + tsbias));
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (size_t i = 0; i < removeLids.size(); ++i) {
@@ -612,10 +617,10 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
+        bucketId.setUsedBits(numBucketBits);
         if (std::count(removeLids.begin(), removeLids.end(), lid) == 0) {
             EXPECT_TRUE(assertGid(gid, lid, dms2, bucketId,
-                                  Timestamp(lid + tsbias)));
+                                  Timestamp(lid + timestampBias)));
             EXPECT_TRUE(assertLid(lid, gid, dms2));
         } else {
             LOG(info, "Lid %u was removed before saving", lid);
@@ -629,7 +634,7 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (size_t i = 0; i < removeLids.size(); ++i) {
         LOG(info, "Re-use remove lid %u", removeLids[i]);
         GlobalId gid = createGid(removeLids[i]);
-        BucketId bucketId(bkBits,
+        BucketId bucketId(numBucketBits,
                           gid.convertToBucketId().getRawId());
         // re-use removeLid[i]
         uint32_t addLid = addGid(dms2, gid, bucketId, Timestamp(43u + i));
@@ -1876,12 +1881,10 @@ namespace {
 void
 addLid(DocumentMetaStore &dms, uint32_t lid)
 {
-    uint32_t bkBits = UINT32_C(20);
-    uint64_t tsbias = UINT64_C(2000000000000);
     GlobalId gid = createGid(lid);
     BucketId bucketId(gid.convertToBucketId());
-    bucketId.setUsedBits(bkBits);
-    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + tsbias));
+    bucketId.setUsedBits(numBucketBits);
+    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
     EXPECT_EQUAL(lid, addedLid);
 }
 
