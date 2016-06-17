@@ -22,5 +22,4 @@ vespa_define_module(
 
     TESTS
     src/tests
-    test
 )
