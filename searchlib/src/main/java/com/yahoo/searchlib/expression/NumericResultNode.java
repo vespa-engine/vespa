@@ -4,7 +4,7 @@ package com.yahoo.searchlib.expression;
 /**
  * This is a superclass for all numerical results.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 abstract public class NumericResultNode extends SingleResultNode {

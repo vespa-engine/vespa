@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This abstract expression node represents a document whose content is accessed depending on the subclass
  * implementation of this.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public abstract class DocumentAccessorNode extends ExpressionNode {

@@ -11,7 +11,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This is an aggregated result holding the average of all results.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class AverageAggregationResult extends AggregationResult {

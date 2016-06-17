@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This is the superclass of all bucket values
  *
  * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 abstract public class BucketResultNode extends ResultNode {

@@ -4,7 +4,7 @@ package com.yahoo.text;
 import java.nio.ByteBuffer;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public abstract class AbstractUtf8Array implements Comparable<AbstractUtf8Array> {

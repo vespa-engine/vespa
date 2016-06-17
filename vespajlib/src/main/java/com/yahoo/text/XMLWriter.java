@@ -15,7 +15,7 @@ import java.util.List;
  * using these methods, start tags are closed and newlines inserted automatically as appropriate.
  *
  * @author bratseth
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class XMLWriter extends ForwardWriter {
 

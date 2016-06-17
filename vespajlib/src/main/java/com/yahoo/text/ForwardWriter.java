@@ -6,7 +6,7 @@ import java.io.IOException;
 /**
  * Wraps another writer and also converting IOException to Exceptions.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public class ForwardWriter extends GenericWriter {

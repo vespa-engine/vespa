@@ -4,7 +4,7 @@ package com.yahoo.documentmodel;
 import java.util.Collection;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public interface DocumentTypeCollection {
     public NewDocumentType getDocumentType(NewDocumentType.Name name);

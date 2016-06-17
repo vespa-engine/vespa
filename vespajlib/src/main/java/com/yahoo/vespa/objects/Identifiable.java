@@ -15,7 +15,7 @@ import java.util.HashMap;
  * of an identifiable object is done through the {@link #create(Deserializer)} or {@link #createFromId(int)} factory
  * methods.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class Identifiable extends Selectable implements Cloneable {

@@ -7,7 +7,7 @@ import java.io.Writer;
 /**
  * Wraps a simple java.lang.Writer. Of course you loose the possible optimizations.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public final class JavaWriterWriter extends GenericWriter {

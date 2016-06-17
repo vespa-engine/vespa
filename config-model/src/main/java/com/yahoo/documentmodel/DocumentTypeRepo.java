@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class DocumentTypeRepo implements DocumentTypeCollection {
     final Map<Integer, NewDocumentType> typeById = new LinkedHashMap<>();

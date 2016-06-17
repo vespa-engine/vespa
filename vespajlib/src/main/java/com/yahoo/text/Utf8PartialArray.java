@@ -3,7 +3,7 @@ package com.yahoo.text;
 
 /**
  * This wraps a window in a backing byte array. Without doing any copying.
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public class Utf8PartialArray extends Utf8Array {

@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This is an aggregated result holding the xor of the aggregating expression for all matching hits.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class XorAggregationResult extends AggregationResult {

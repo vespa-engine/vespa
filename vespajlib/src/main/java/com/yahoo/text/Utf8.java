@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author arnej27959
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  *
  */
 public final class Utf8 {

@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This class will revert the order on any multivalues. Nothing is done to single value types such as integers, float,
  * strings and Raw values.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class ReverseFunctionNode extends UnaryFunctionNode {
 

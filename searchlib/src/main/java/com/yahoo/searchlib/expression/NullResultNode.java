@@ -6,7 +6,7 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 /**
  * This result holds nothing.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class NullResultNode extends ResultNode {

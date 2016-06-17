@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * Pool of com.yahoo.io.Listener instances for shared use by Vespa backend
  * searchers.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.3.0
  */
 public final class ListenerPool {

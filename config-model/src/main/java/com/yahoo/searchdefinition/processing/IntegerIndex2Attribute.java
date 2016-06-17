@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * Replaces the 'index' statement of all numerical fields to 'attribute' because we no longer support numerical indexes.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class IntegerIndex2Attribute extends Processor {
 

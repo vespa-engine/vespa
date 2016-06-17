@@ -9,7 +9,7 @@ import java.util.Iterator;
  * <p>This implements a simple stack based resource pool. If you are out of resources new are allocated from the
  * factory.</p>
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public final class ResourcePool<T> implements Iterable<T> {

@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class ZCurveXFunction extends FunctionNode {
     /**

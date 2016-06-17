@@ -12,7 +12,7 @@ import java.util.Set;
  * it back as active again. Here are no locks, but the cost is that inserts will happen a lot more than necessary. The
  * map reference is volatile, but on most multicpu machines that has no cost unless modified.</p>
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public class CopyOnWriteHashMap<K, V> implements Map<K, V> {

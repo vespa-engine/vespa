@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This function is a request to use the Unicode Collation Algorithm specification when sorting this field.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class UcaFunctionNode extends UnaryFunctionNode {
 

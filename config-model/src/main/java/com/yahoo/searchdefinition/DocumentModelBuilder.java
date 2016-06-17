@@ -20,7 +20,7 @@ import com.yahoo.vespa.documentmodel.SearchField;
 import java.util.*;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class DocumentModelBuilder {
 

@@ -4,7 +4,7 @@ package com.yahoo.messagebus.routing;
 /**
  * This replaces the incredibly slow javacc RouteParser.jj. It is a has its c++ sibling and
  * the implementation is a a copy of the C++ version.
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 

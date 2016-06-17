@@ -11,7 +11,7 @@ import java.util.Arrays;
 /**
  * This result holds a byte array value.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class RawResultNode extends SingleResultNode {

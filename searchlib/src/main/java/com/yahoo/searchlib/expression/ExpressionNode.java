@@ -12,7 +12,7 @@ import java.io.Serializable;
  * This is the base class for all expression node types. There is no execution logic implemented in Java, since that all
  * happens in the C++ backend. This class hierarchy is for <b>building</b> the expression tree to pass to the backend.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public abstract class ExpressionNode extends Identifiable implements Serializable {

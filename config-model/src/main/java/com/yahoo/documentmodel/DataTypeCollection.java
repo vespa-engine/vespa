@@ -6,7 +6,7 @@ import com.yahoo.document.DataType;
 import java.util.Collection;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public interface DataTypeCollection {
     public DataType getDataType(String name);

@@ -10,7 +10,7 @@ import com.yahoo.document.PositionDataType;
  * Remember that changes here must be compatible. Changes to types of fields can not be done here.
  * This must also match the mirroring class in c++.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class VespaDocumentType {
 

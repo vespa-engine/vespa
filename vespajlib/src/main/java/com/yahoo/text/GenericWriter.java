@@ -9,7 +9,7 @@ import java.io.Writer;
  * java.io.Writer, but it allows for more overrides for speed.
  * This introduces additional interfaces in addition to the java.lang.Writer.
  * The purpose is to allow for optimizations.
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 
