@@ -123,7 +123,6 @@ function Start {
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/vespa:$VESPA_HOME/var/vespa" \
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/yca:$VESPA_HOME/var/yca" \
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/ycore++:$VESPA_HOME/var/ycore++" \
-           --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/ymon:$VESPA_HOME/var/ymon" \
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/zookeeper:$VESPA_HOME/var/zookeeper" \
            --env "CONFIG_SERVER_ADDRESS=$CONFIG_SERVER_HOSTNAME" \
            --env "NETWORK_TYPE=$NETWORK_TYPE" \
