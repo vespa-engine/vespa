@@ -14,7 +14,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * @author hakon
+ * @author hakonhall
  * @since 5.34
  */
 @RunWith(MockitoJUnitRunner.class)

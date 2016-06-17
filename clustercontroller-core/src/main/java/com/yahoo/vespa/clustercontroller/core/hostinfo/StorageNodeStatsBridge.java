@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * Class used to create a StorageNodeStatsContainer from HostInfo.
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeStatsBridge {
 

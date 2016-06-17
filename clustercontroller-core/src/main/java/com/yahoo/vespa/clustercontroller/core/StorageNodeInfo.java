@@ -9,7 +9,7 @@ import com.yahoo.vdslib.state.NodeType;
  * Class encapsulating what the Cluster Controller knows about a storage node. Most of the information is
  * common between Storage- and Distributor- nodes, and stored in the base class NodeInfo.
  *
- * @author hakon
+ * @author hakonhall
  */
 public class StorageNodeInfo extends NodeInfo {
 

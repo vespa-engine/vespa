@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Class for storing the pending merge operation stats for all the storage nodes.
  *
- * @author hakon
+ * @author hakonhall
  * @since 5.34
  */
 public class StorageMergeStats implements Iterable<NodeMergeStats> {

@@ -25,7 +25,7 @@ import static com.yahoo.collections.CollectionUtil.first;
  * Utility methods for working with Vespa-specific model entities (see OrchestratorUtil
  * for more generic model utilities).
  *
- * @author hakon
+ * @author hakonhall
  */
 public class VespaModelUtil {
     private static final Logger log = Logger.getLogger(VespaModelUtil.class.getName());

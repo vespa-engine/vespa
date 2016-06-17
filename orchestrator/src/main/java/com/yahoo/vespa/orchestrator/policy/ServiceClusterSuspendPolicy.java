@@ -5,7 +5,7 @@ import com.yahoo.vespa.orchestrator.VespaModelUtil;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 
 /**
- * @author hakon
+ * @author hakonhall
  * @author bakksjo
  */
 public final class ServiceClusterSuspendPolicy {

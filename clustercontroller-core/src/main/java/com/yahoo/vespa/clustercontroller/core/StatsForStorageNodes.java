@@ -8,7 +8,7 @@ import java.util.Map;
  * by Distributors from their getnodestate RPCs. The stats for a single storage node
  * is represented by the StorageNodeStats class.
  *
- * @author hakon
+ * @author hakonhall
  */
 public class StatsForStorageNodes {
 

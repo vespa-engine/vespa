@@ -11,7 +11,7 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
  * Class encapsulating what the Cluster Controller knows about a distributor node. Most of the information is
  * common between Storage- and Distributor- nodes, and stored in the base class NodeInfo.
  *
- * @author hakon
+ * @author hakonhall
  */
 public class DistributorNodeInfo extends NodeInfo {
 

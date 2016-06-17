@@ -29,7 +29,7 @@ import com.yahoo.log.LogLevel;
  * for a given storage nodes. So we need to keep track of the latest info
  * from each distributor.
  *
- * @author hakon
+ * @author hakonhall
  * @since 5.34
  */
 public class ClusterStatsAggregator {
