@@ -100,7 +100,12 @@ populate_environment () {
     # VESPA_USE_NO_VESPAMALLOC - list of programs that should use normal system malloc
 
     read_conf_file
-    consider_fallback ROOT ${VESPA_HOME}
+    consider_fallback ROOT ${VESPA_HOME%/}
+    if id yahoo >/dev/null 2>&1 ; then
+        consider_fallback VESPA_USER "yahoo"
+    elif id vespa >/dev/null 2>&1 ; then
+        consider_fallback VESPA_USER "vespa"
+    fi
 }
 
 populate_environment
