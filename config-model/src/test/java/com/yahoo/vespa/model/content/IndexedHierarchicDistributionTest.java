@@ -31,7 +31,7 @@ import static com.yahoo.vespa.model.search.utils.DispatchUtils.getDataset;
 /**
  * Unit tests for hierarchic distribution in an indexed content cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class IndexedHierarchicDistributionTest {
 

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class FSAIteratorTestCase extends junit.framework.TestCase {
 

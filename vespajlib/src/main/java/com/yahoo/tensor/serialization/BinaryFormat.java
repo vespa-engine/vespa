@@ -9,7 +9,7 @@ import com.yahoo.tensor.Tensor;
  * Representation of a specific binary format with functions for serializing a Tensor object into
  * this format or de-serializing binary data into a Tensor object.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 interface BinaryFormat {

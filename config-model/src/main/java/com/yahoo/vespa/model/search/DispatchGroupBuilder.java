@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Class used to build the mid-level dispatch groups in an indexed content cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DispatchGroupBuilder {
 

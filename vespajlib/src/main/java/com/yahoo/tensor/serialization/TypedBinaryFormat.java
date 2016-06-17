@@ -12,7 +12,7 @@ import com.yahoo.tensor.Tensor;
  * The actual binary format used is not a concern for the client and
  * is hidden in this class and in the binary data.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 public class TypedBinaryFormat {

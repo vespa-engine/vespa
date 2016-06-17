@@ -15,7 +15,7 @@ import java.util.Set;
  * the dimensions specified explicitly and the ones specified in the
  * tensor cell addresses.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 public class MapTensorBuilder {

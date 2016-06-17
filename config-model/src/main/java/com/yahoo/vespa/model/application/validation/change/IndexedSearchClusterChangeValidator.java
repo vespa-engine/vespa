@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Validates the changes between all current and next indexed search clusters in a vespa model.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-11-18
  */
 public class IndexedSearchClusterChangeValidator implements ChangeValidator {

@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Helper class with utils used in serialization and deserialization test cases.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class SerializationTestUtils {
 

@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * Class used to validate that multilevel dispatch is correctly setup in an indexed content cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class MultilevelDispatchValidator {
 

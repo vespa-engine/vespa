@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 /**
  * Class for parsing a tensor type spec.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 class TensorTypeParser {

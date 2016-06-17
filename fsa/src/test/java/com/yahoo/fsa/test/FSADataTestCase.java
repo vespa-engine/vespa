@@ -10,7 +10,7 @@ import java.util.List;
 import java.nio.BufferUnderflowException;
 
 /**
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class FSADataTestCase extends junit.framework.TestCase {
 

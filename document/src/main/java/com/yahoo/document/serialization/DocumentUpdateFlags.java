@@ -8,7 +8,7 @@ package com.yahoo.document.serialization;
  * Flags currently used:
  *   0) create-if-non-existent.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DocumentUpdateFlags {
     private byte flags;

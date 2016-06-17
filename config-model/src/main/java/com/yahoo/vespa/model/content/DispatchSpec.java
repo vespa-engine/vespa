@@ -6,10 +6,9 @@ import java.util.List;
 
 /**
  * Represents the dispatch setup for a content cluster.
- * This EITHER has a number of dispatch groups OR a an explicit list of groups,
- * for unknown reasons (talk to Geir).
+ * This EITHER has a number of dispatch groups OR a an explicit list of groups.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DispatchSpec {
 

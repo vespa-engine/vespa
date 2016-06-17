@@ -7,7 +7,7 @@ import com.yahoo.io.GrowableByteBuffer;
 /**
  * Factory for creating document de-serializers tied to a document format.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DocumentDeserializerFactory {
 

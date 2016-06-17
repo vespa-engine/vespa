@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Class used to build a message describing the changes in a given field.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-12-09
  */
 public class ChangeMessageBuilder {

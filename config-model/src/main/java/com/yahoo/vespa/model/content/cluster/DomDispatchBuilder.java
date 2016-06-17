@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Builder for the dispatch setup for a content cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DomDispatchBuilder {
 

@@ -18,7 +18,7 @@ import java.util.Optional;
 /**
  * Validates the indexing script changes in all fields in the current and next search model.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-12-08
  */
 public class IndexingScriptChangeValidator {

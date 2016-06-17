@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * A set of rank type definitions used for native rank features.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class NativeRankTypeDefinitionSet {
 

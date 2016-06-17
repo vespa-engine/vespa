@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 /**
  * Testing stuff related to native rank type definitions
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class NativeRankTypeDefinitionsTestCase extends SearchDefinitionTestCase {
     @Test

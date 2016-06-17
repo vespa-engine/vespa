@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 /**
  * Builder for the tuning config for a search cluster.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Tuning> {
 

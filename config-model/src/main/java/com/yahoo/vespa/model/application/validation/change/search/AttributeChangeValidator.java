@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Validates the changes between the current and next set of attribute fields in a document database.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-12-04
  */
 public class AttributeChangeValidator {

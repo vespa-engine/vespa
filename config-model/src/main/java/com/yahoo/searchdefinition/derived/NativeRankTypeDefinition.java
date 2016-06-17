@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * The definition of a rank type used for native rank features.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class NativeRankTypeDefinition {
 
