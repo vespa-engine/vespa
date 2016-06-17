@@ -433,7 +433,7 @@ function(__add_test_target_to_module TARGET)
     set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_TEST_TARGETS ${TARGET})
 endfunction()
 
-function(__handle_test_targets)
+macro(__handle_test_targets)
     # If this is a test executable, add it to the test target for this module
     # If building of unit tests is not specified, exclude this target from the all target
     if(ARG_TEST)
@@ -443,7 +443,7 @@ function(__handle_test_targets)
             set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         endif()
     endif()
-endfunction()
+endmacro()
 
 function(__create_module_targets PROPERTY_POSTFIX TARGET_POSTFIX)
     get_property(VESPA_MODULES GLOBAL PROPERTY VESPA_MODULES)
