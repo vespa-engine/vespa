@@ -73,7 +73,6 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.prelude.searcher.FillSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.JSONDebugSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.JuniperSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.prelude.searcher.KeyValueSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.MultipleResultsSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.PosSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.prelude.searcher.QuerySnapshotSearcher", searchAndDocprocBundle);
