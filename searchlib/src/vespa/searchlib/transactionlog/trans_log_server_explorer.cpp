@@ -21,7 +21,7 @@ struct DomainExplorer : vespalib::StateExplorer {
         DomainInfo info = domain->getDomainInfo();
         state.setLong("from", info.range.from());
         state.setLong("to", info.range.to());
-        state.setLong("count", info.count);
+        state.setLong("numEntries", info.numEntries);
         state.setLong("byteSize", info.byteSize);
         if (full) {
             Cursor &array = state.setArray("parts");
@@ -29,7 +29,7 @@ struct DomainExplorer : vespalib::StateExplorer {
                 Cursor &part = array.addObject();
                 part.setLong("from", part_in.range.from());
                 part.setLong("to", part_in.range.to());
-                part.setLong("count", part_in.count);
+                part.setLong("numEntries", part_in.numEntries);
                 part.setLong("byteSize", part_in.byteSize);
                 part.setString("file", part_in.file);
                 {

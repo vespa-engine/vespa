@@ -10,25 +10,25 @@ namespace transactionlog {
 
 struct PartInfo {
     SerialNumRange range;
-    size_t count;
+    size_t numEntries;
     size_t byteSize;
     vespalib::string file;
-    PartInfo(SerialNumRange range_in, size_t count_in,
+    PartInfo(SerialNumRange range_in, size_t numEntries_in,
              size_t byteSize_in,
              vespalib::stringref file_in)
-        : range(range_in), count(count_in), byteSize(byteSize_in),
+        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in),
           file(file_in) {}
 };
 
 struct DomainInfo {
     SerialNumRange range;
-    size_t count;
+    size_t numEntries;
     size_t byteSize;
     std::vector<PartInfo> parts;
-    DomainInfo(SerialNumRange range_in, size_t count_in, size_t byteSize_in)
-        : range(range_in), count(count_in), byteSize(byteSize_in), parts() {}
+    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in)
+        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), parts() {}
     DomainInfo()
-        : range(), count(0), byteSize(0), parts() {}
+        : range(), numEntries(0), byteSize(0), parts() {}
 };
 
 typedef std::map<vespalib::string, DomainInfo> DomainStats;

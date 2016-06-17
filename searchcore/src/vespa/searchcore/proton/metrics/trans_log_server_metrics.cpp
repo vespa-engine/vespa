@@ -19,7 +19,7 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
 void
 TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
 {
-    entries.set(stats.count);
+    entries.set(stats.numEntries);
 }
 
 void
