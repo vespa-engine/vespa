@@ -39,7 +39,7 @@ import static org.mockito.Mockito.spy;
 /**
  * Test Orchestrator with a mock backend (the InMemoryStatusService)
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class OrchestratorImplTest {
 

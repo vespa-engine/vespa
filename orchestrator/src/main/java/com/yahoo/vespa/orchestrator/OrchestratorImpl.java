@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author oyving
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class OrchestratorImpl implements Orchestrator {
 

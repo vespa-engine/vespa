@@ -12,7 +12,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class OrchestratorUtilTest {
 
