@@ -22,6 +22,7 @@ install_fat_java_artifact(jdisc_core)
 install_fat_java_artifact(jdisc_http_service)
 install_fat_java_artifact(persistence)
 install_fat_java_artifact(simplemetrics)
+install_fat_java_artifact(standalone-container)
 install_fat_java_artifact(vespaclient-container-plugin)
 
 vespa_install_script(jdisc_core/src/main/perl/jdisc_logfmt bin)
