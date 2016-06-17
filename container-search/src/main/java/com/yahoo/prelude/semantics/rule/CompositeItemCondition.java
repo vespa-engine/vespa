@@ -8,7 +8,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A condition on the presense of a particular kind of composite item (possibly also with a particular content)
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.15
  */
 public class CompositeItemCondition extends CompositeCondition {

@@ -22,7 +22,7 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
  * Class used for serializing documents on the Vespa 4.2 document format.
  *
  * @deprecated Please use {@link com.yahoo.document.serialization.VespaDocumentSerializerHead} instead for new code.
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 @Deprecated // OK: Don't remove on Vespa 6: Mail may have documents on this format still
 // When removing: Move content into VespaDocumentSerializerHead

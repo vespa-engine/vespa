@@ -5,7 +5,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public interface Connection {
 

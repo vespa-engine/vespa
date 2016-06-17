@@ -16,7 +16,7 @@ import java.io.IOException;
 /**
  * Tests deriving rank for files from search definitions
  *
- * @author <a href="mailto:Jon S Bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class EmptyRankProfileTestCase extends SearchDefinitionTestCase {
 

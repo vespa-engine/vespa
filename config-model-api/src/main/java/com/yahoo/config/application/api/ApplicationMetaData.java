@@ -10,7 +10,7 @@ import java.io.*;
 /**
  * Metadata about an application package.
  *
- * @author musum
+ * @author hmusum
  * @since 5.0
  */
 public class ApplicationMetaData {

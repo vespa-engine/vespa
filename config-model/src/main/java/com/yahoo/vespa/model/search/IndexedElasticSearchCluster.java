@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class IndexedElasticSearchCluster extends IndexedSearchCluster {
 

@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * Represents a rank profile - a named set of ranking settings
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RankProfile implements Serializable, Cloneable {
 

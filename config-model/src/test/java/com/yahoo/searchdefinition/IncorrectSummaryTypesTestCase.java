@@ -11,7 +11,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests importing a search definition with conflicting summary types
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class IncorrectSummaryTypesTestCase extends SearchDefinitionTestCase {
     @Test

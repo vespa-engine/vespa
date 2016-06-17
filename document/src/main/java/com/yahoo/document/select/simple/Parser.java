@@ -2,7 +2,7 @@
 package com.yahoo.document.select.simple;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public abstract class Parser {
     public abstract boolean parse(CharSequence s);

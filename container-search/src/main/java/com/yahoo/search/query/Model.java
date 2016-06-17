@@ -26,7 +26,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * The parameters defining the recall of a query.
  *
  * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Model implements Cloneable {
 

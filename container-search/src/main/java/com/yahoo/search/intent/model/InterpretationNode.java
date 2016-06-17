@@ -7,7 +7,7 @@ import com.yahoo.text.interpretation.Interpretation;
  * An interpretation which may have multiple intents. The score of this node is the probability of
  * the wrapped interpretation.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class InterpretationNode extends ParentNode<IntentNode> {
 

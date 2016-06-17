@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * A node which is not a leaf in the intent tree
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class ParentNode<T extends Node> extends Node {
 

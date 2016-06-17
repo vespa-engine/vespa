@@ -15,7 +15,7 @@ import java.util.Objects;
  *
  * <p>You specify an additional attribute to be the diversifier and also min diversity needed.</p>
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class Diversity implements Cloneable {
 

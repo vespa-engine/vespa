@@ -2,11 +2,7 @@
 package com.yahoo.text;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 11:25
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class CaseInsensitiveIdentifier extends Identifier {
     private final Identifier original;

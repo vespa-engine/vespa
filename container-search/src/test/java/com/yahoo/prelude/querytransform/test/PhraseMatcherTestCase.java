@@ -9,7 +9,7 @@ import com.yahoo.prelude.querytransform.PhraseMatcher;
 import java.util.List;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PhraseMatcherTestCase extends junit.framework.TestCase {
 

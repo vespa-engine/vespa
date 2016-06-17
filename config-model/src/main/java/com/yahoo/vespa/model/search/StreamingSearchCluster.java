@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * A search cluster of type streaming.
  * 
- * @author balder
+ * @author baldersheim
  * @author vegardh
  */
 public class StreamingSearchCluster extends SearchCluster implements 

@@ -8,7 +8,7 @@ import com.yahoo.document.serialization.*;
 import java.io.FileOutputStream;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SerializationTestCase extends junit.framework.TestCase {
 

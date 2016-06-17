@@ -5,7 +5,7 @@ package com.yahoo.vespa.model.search;
  * This represents an interface for searching.
  * It can be both a backend search node or a dispatcher.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public interface SearchInterface {
 

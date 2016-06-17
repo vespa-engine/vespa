@@ -16,7 +16,7 @@ import static com.yahoo.config.subscription.util.JsonHelper.inputJson;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @author Vegard Sjonfjell
  * @since 5.1
  */

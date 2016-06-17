@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.yahoo.vespa.config.server.monitoring.Metrics.getMetricName;
 /**
- * @author musum
+ * @author hmusum
  */
 // TODO javadoc, thread non-safeness maybe
 public class MetricUpdater {

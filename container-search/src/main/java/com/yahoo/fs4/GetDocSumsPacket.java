@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * <p>A packet for requesting a list of document summaries.
  * This packet can be encoded only.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class GetDocSumsPacket extends Packet {
 

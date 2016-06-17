@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Class to hold config definitions and resolving requests for the correct definition
  *
- * @author Harald Musum <musum@yahoo-inc.com>
+ * @author hmusum
  * @since 2011-11-18
  */
 public class ConfigDefinitionSetTest {

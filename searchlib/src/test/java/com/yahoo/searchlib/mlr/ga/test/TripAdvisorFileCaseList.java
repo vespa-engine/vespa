@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Reads a tripadvisor Kaggle challenge training set
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TripAdvisorFileCaseList implements CaseList {
 

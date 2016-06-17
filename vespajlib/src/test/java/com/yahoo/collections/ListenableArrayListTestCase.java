@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.ListIterator;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ListenableArrayListTestCase {
 

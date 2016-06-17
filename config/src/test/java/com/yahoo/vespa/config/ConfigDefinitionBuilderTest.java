@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for ConfigDefinitionBuilder.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigDefinitionBuilderTest {
 

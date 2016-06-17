@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Representation of a back-end document database.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DocumentDatabase {
 

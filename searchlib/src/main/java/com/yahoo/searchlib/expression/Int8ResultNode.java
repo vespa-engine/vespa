@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 /**
  * This result holds an integer value.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class Int8ResultNode extends NumericResultNode {

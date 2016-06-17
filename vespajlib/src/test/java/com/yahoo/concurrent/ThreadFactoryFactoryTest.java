@@ -9,11 +9,7 @@ import java.util.concurrent.ThreadFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 26.04.13
- * Time: 12:01
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class ThreadFactoryFactoryTest {
 

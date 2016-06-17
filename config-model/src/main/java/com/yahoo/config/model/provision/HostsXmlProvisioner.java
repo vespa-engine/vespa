@@ -13,7 +13,7 @@ import java.util.List;
  * No state in this provisioner, i.e it does not know anything about the active
  * application if one exists. Pre-condition: A valid hosts file.
  *
- * @author musum
+ * @author hmusum
  * @since 5.11
  */
 public class HostsXmlProvisioner implements HostProvisioner {

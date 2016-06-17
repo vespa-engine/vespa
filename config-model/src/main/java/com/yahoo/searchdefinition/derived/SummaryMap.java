@@ -15,7 +15,7 @@ import java.util.Map;
  * A summary map (describing search-time summary field transformations)
  * derived from a search definition
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class SummaryMap extends Derived implements SummarymapConfig.Producer {
 

@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Tests deriving of various field types
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class PrefixExactAttributeTestCase extends AbstractExportingTestCase {
     @Test

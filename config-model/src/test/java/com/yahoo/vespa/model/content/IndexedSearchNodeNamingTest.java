@@ -15,7 +15,7 @@ import static junit.framework.TestCase.assertEquals;
 
 /**
  * Unit tests for the naming of search nodes base dir and config ids in an indexed content cluster.
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class IndexedSearchNodeNamingTest {
 

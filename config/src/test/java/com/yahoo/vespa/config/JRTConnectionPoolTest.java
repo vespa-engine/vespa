@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  * Tests for the JRTConnectionPool class.
  *
  * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
- * @author musum
+ * @author hmusum
  */
 public class JRTConnectionPoolTest {
     private static final List<String> sources = new ArrayList<>((Arrays.asList("host0", "host1", "host2")));

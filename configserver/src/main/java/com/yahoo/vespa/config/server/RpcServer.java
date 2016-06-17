@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  * An RPC server class that handles the config protocol RPC method "getConfigV3".
  * Mandatory hooks need to be implemented by subclasses.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class RpcServer implements Runnable, ReloadListener, TenantListener {
 

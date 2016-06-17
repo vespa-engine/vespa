@@ -10,7 +10,7 @@ import java.util.*;
  *
  * Each @link{Dispatch} has a reference to an instance of this class and use it when producing config.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class DispatchGroup {
 

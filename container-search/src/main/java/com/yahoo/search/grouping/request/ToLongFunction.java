@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class represents a tolong-function in a {@link GroupingExpression}. It converts the result of the argument to a
  * long. If the argument can not be converted, this function returns 0.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class ToLongFunction extends FunctionNode {
 

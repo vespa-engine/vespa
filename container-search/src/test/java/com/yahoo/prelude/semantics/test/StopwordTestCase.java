@@ -7,7 +7,7 @@ import com.yahoo.search.test.QueryTestCase;
 /**
  * Tests numeric terms
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class StopwordTestCase extends RuleBaseAbstractTestCase {
 

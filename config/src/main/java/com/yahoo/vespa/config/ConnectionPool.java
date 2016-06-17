@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public interface ConnectionPool {
 

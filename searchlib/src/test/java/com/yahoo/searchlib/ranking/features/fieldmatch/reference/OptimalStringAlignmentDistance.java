@@ -8,7 +8,7 @@ import java.util.Arrays;
  * and which uses 2*query length memory rather than field length*query length.
  * This class is not thread safe.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class OptimalStringAlignmentDistance {
 

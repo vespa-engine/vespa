@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Element;
 
 /**
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class TransactionLogServer extends AbstractService  {
 

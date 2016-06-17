@@ -18,7 +18,7 @@ import java.util.concurrent.Executor;
  * Content in a frozen list may be returned to the requesting client immediately by the underlying engine,
  * even if the Response owning the list is not returned yet.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface DataList<DATATYPE extends Data> extends Data {
 

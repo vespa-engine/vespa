@@ -15,7 +15,7 @@ import java.util.Map;
  * This visitor will throw an IllegalArgumentException if the same placeholder id
  * is referenced by two choices.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class PlaceholderMappingVisitor extends PageTemplateVisitor {
 

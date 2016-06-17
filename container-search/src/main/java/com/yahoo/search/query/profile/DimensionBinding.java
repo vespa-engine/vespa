@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * An immutable, binding of a list of dimensions to dimension values
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DimensionBinding {
 

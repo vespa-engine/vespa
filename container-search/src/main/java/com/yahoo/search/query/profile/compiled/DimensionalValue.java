@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * Contains the values a given key in a DimensionalMap may take for different dimensional contexts.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DimensionalValue<VALUE> {
 

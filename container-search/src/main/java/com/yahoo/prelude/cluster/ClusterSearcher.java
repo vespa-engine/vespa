@@ -57,7 +57,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
  *
  * @author bratseth
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @After("*")
 public class ClusterSearcher extends Searcher {

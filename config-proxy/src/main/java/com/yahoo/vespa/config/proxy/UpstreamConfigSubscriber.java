@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.5
  */
 public class UpstreamConfigSubscriber implements Subscriber {

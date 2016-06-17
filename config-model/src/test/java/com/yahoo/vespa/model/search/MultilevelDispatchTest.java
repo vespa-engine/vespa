@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Unit tests for multi-level dispatchers in an indexed content cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class MultilevelDispatchTest {
 

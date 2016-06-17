@@ -10,7 +10,7 @@ import java.util.List;
  * <p>This is an abstract super-class for all functions that accepts multiple arguments. This node implements the
  * necessary API for manipulating arguments.</p>
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public abstract class MultiArgFunctionNode extends FunctionNode {

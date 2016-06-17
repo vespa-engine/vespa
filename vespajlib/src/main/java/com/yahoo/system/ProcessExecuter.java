@@ -12,12 +12,13 @@ import com.yahoo.collections.Pair;
 /**
  * Executes a system command synchronously.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ProcessExecuter {
 
     /**
      * Executes the given command synchronously without timeout.
+     * 
      * @return Retcode and stdout/stderr merged
      */
     public Pair<Integer, String> exec(String command) throws IOException {
@@ -29,6 +30,7 @@ public class ProcessExecuter {
     
     /**
      * Executes the given command synchronously without timeout.
+     * 
      * @param command tokens
      * @return Retcode and stdout/stderr merged
      */

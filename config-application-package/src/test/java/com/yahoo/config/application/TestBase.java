@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Utilities for tests
  *
- * @author musum
+ * @author hmusum
  */
 public class TestBase {
     static {

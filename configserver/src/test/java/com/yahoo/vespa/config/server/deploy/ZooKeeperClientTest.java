@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for ZooKeeperClient.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ZooKeeperClientTest extends TestWithCurator {
 

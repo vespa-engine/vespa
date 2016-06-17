@@ -33,7 +33,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method;
  * and are thus immutable. If you need mutable abstractions, use a higher level
  * framework, e.g. Processing.
  *
- * @author musum
+ * @author hmusum
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since 5.1
  */

@@ -27,7 +27,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization.GBDTOpt
  * <p>
  * Instances of this class are not multithread safe.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ExpressionOptimizer {
 

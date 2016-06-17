@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * Reads all page template XML files from a given directory (or list of readers).
  * Instances of this are for single-thread usage only.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PageTemplateXMLReader {
 

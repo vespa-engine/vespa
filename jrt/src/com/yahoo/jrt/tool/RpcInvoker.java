@@ -10,7 +10,7 @@ import java.util.ArrayList;
 /**
  * A generic rpc invoker for use by command line tools
  *
- * @author  <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class RpcInvoker {
 

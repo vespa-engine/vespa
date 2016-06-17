@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * A mathematical operator
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public enum TruthOperator  implements Serializable {
 

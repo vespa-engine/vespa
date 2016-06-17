@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * When calling {@link #setError(Connection, int)}, {#link #setNewCurrentConnection} will always be called.
  *
  * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
- * @author musum
+ * @author hmusum
  */
 public class JRTConnectionPool implements ConnectionPool {
     private static final Logger log = Logger.getLogger(JRTConnectionPool.class.getName());

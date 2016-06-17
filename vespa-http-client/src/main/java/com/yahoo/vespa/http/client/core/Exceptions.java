@@ -6,7 +6,7 @@ import com.google.common.annotations.Beta;
 /**
  * Helper methods for handling exceptions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @Beta
 public abstract class Exceptions {

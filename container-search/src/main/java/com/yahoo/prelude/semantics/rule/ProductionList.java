@@ -11,7 +11,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A list of the productions of a rule
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ProductionList {
 

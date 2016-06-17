@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.admin;
 /**
  * Interface for different monitoring services
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public interface MonitoringSystem {
     /**

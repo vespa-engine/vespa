@@ -5,7 +5,7 @@ import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.search.Query;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryCloneMicroBenchmark {
 

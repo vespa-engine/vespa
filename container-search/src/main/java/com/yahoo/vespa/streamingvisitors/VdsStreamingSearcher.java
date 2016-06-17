@@ -38,7 +38,7 @@ import com.yahoo.vdslib.SearchResult;
  * The searcher is a visitor client responsible for starting search
  * visitors in storage and collecting and merging the results.
  *
- * @author  <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author  baldersheim
  * @author  <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
 @SuppressWarnings("deprecation")

@@ -7,7 +7,7 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.ArrayList;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class RawBucketResultNodeVector extends ResultNodeVector {
     // The global class identifier shared with C++.

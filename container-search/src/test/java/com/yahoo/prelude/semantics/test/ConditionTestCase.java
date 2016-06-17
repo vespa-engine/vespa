@@ -14,7 +14,7 @@ import com.yahoo.prelude.semantics.rule.SequenceCondition;
 import com.yahoo.prelude.semantics.rule.TermCondition;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ConditionTestCase extends junit.framework.TestCase {
 

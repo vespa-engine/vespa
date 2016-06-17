@@ -15,7 +15,7 @@ import static java.lang.Math.min;
 /**
  * A class which returns a mutated, recombined genome from a list of parent genomes.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Recombiner {
 

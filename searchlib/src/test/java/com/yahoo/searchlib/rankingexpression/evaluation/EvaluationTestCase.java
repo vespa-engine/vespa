@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * Tests expression evaluation
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class EvaluationTestCase extends junit.framework.TestCase {
 

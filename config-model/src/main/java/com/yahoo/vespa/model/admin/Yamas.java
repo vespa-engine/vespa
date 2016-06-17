@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * Properties for yamas monitoring service
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.20
  */
 public class Yamas extends AbstractMonitoringSystem implements Serializable {

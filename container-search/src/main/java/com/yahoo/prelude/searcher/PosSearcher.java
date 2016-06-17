@@ -28,7 +28,7 @@ import com.yahoo.prelude.Location;
  *        internal units (no suffix), meter (m), kilometer (km) or miles (mi)
  * </ul>
  *
- * @author Arne J
+ * @author arnej27959
  */
 @After(PhaseNames.RAW_QUERY)
 @Before(PhaseNames.TRANSFORMED_QUERY)

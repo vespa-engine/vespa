@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 /**
  * Static methods for helping dom building
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class XmlHelper {
     private static final Logger log = Logger.getLogger(XmlHelper.class.getPackage().toString());

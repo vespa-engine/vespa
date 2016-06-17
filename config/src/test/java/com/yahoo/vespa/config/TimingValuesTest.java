@@ -10,7 +10,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Note: Most of the functionality is tested implicitly by other tests
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class TimingValuesTest {
     @Test

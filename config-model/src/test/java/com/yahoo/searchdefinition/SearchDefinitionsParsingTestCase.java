@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
  * Tests that search definitions are parsed correctly and that correct line number is reported in
  * error message.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class SearchDefinitionsParsingTestCase extends SearchDefinitionTestCase {
 

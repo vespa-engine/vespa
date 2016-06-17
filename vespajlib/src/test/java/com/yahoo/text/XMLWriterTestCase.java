@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * This test is currently incomplete. Also much tested in the prelude module though.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("deprecation")
 public class XMLWriterTestCase {

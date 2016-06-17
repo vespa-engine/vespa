@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * Handles getting properties from services.xml and replacing references to properties with their real values
  *
- * @author musum
+ * @author hmusum
  * @since 5.22
  */
 class PropertiesProcessor implements PreProcessor {

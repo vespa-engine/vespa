@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * A query id which is unique across this cluster - consisting of
  * container runtime id + timestamp + serial.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SessionId {
 

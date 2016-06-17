@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * A data list own once instance of this which can be used to provide data asynchronously to the list,
  * and consume, wait for or be notified upon the arrival of such data.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface IncomingData<DATATYPE extends Data> {
 

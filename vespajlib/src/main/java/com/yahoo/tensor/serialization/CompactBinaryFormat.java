@@ -20,7 +20,7 @@ import java.util.*;
  * Note that the dimensions are sorted and the tensor address labels are given in the same sorted order.
  * Unspecified labels are encoded as the empty string "".
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 class CompactBinaryFormat implements BinaryFormat {

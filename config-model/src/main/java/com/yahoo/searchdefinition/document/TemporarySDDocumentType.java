@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.document;
 import com.yahoo.document.DataTypeName;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class TemporarySDDocumentType extends SDDocumentType {
     public TemporarySDDocumentType(DataTypeName name) {

@@ -14,7 +14,7 @@ import java.util.Set;
  * A search-time document attribute (per-document in-memory value).
  * This belongs to the field defining the attribute.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public final class Attribute implements Cloneable, Serializable {
 

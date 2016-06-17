@@ -9,7 +9,7 @@ import java.util.ArrayList;
 /**
  * This result holds nothing.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class FloatResultNodeVector extends ResultNodeVector {

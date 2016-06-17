@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NGramTestCase extends SearchDefinitionTestCase {
 

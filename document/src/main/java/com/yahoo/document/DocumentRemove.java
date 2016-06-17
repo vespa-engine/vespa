@@ -2,7 +2,7 @@
 package com.yahoo.document;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class DocumentRemove extends DocumentOperation {
 

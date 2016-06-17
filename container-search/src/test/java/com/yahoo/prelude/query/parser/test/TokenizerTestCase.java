@@ -18,7 +18,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
 /**
  * Tests the tokenizer
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class TokenizerTestCase extends junit.framework.TestCase {
 

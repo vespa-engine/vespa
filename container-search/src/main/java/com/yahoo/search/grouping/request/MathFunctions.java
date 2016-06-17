@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public abstract class MathFunctions {
     /**

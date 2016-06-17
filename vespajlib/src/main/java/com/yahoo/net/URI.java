@@ -13,13 +13,10 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * <p>This does more normalization of hierarchical URIs (URLs) than
  * described in the RFC and allows hosts with underscores.</p>
  *
- * @author  <a href="mailto:bratseth@fast.no">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 2271558213498856909L;
 
     /** The uri string */
@@ -795,7 +792,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         }
     }
 
-    public static enum URLContext {
+    public enum URLContext {
         URL_SCHEME(0, "scheme"),
         URL_HOST(1, "host"),
         URL_DOMAIN(2, "domain"),
@@ -811,9 +808,10 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         public final int id;
         public final String name;
 
-        private URLContext(int id, String name) {
+        URLContext(int id, String name) {
             this.id = id;
             this.name = name;
         }
     }
+
 }

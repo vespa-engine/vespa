@@ -8,7 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
  * A value which is either true or false.
  * In numerical context true is interpreted as 1 and false as 0.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.21
  */
 public class BooleanValue extends DoubleCompatibleValue {

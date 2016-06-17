@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 /**
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class TensorFieldTestCase {
 

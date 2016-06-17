@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * A node which flips the sign of the value produced from the nested expression
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class NegativeNode extends CompositeNode {
 

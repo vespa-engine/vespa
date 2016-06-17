@@ -5,7 +5,7 @@ package com.yahoo.prelude.semantics.engine;
  * A collection of facts (addressed by namespace.fact in conditions)
  * over which we may write conditions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class NameSpace {
 

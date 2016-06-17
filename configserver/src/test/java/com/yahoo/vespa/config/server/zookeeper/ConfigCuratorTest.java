@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 /**
  * Tests the ZKFacade using a curator mock.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigCuratorTest {
 

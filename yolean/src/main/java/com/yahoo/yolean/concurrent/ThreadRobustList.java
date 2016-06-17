@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
  * <p>The usage of <tt>ThreadRobustList</tt> has no memory consistency effects. </p>
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.15
  */
 public class ThreadRobustList<T> implements Iterable<T> {

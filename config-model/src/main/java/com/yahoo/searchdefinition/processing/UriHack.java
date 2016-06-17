@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class UriHack extends Processor {
     private static final List<String> URL_SUFFIX =

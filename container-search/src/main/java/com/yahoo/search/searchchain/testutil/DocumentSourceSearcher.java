@@ -28,7 +28,7 @@ import com.yahoo.search.searchchain.Execution;
  * Any field in the configured hits which has a name starting by attribute
  * will be returned when attribute prefetch filling is requested.</p>
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class DocumentSourceSearcher extends Searcher {
 

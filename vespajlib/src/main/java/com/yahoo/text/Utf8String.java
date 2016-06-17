@@ -4,7 +4,7 @@ package com.yahoo.text;
 
 /**
  * String with Utf8 backing.
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @since 5.2
  */
 public final class Utf8String extends Utf8Array implements CharSequence

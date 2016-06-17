@@ -15,7 +15,8 @@ import java.util.Set;
 /**
  * Validates that the attribute given as match-phase override is actually a valid numeric attribute
  * with fast-search enabled.
- * Created by balder on 1/21/15.
+ *
+ * @author baldersheim
  */
 public class ValidateMatchPhaseSearcher extends Searcher {
     private Set<String> validMatchPhaseAttributes = new HashSet<>();

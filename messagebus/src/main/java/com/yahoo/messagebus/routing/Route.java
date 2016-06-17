@@ -15,7 +15,7 @@ import java.util.List;
  * #parse(String)} to produce a route instance from a string representation, or
  * you may build one programatically through the hop accessors.</p>
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class Route {

@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * {@link #handle(HttpRequest)} method in this class and the
  * {@link HttpResponse#render(java.io.OutputStream)} method.
  *
- * @author musum
+ * @author hmusum
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @author bratseth
  * @since 5.1

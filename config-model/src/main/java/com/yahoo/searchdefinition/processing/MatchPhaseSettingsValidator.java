@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Validates the match phase settings for all registered rank profiles.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class MatchPhaseSettingsValidator extends Processor {
 

@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 /**
  * Reserved words that cannot be used as variable names in a config definition file.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 2009-06-24
  */
 

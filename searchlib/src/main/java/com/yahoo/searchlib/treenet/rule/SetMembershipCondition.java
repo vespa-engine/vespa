@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Represents a set membership test on the form <code>feature IN (integer1, integer2 ...)</code>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since   5.1.21
  */
 public class SetMembershipCondition extends Condition {

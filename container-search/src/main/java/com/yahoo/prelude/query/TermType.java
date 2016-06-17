@@ -5,7 +5,7 @@ package com.yahoo.prelude.query;
 /**
  * A term type enumeration
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class TermType {

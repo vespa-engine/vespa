@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * The node is a request to retrieve the content of a document field.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class DocumentFieldNode extends DocumentAccessorNode {

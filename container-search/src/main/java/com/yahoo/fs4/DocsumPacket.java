@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  * packets used today, they allow more flexible sets of parameters
  * to be shipped with query results. This packet can be decoded only.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class DocsumPacket extends Packet {
 

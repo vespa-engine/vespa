@@ -15,7 +15,7 @@ import java.util.Map;
  * This is multithread safe or not depending on the status of the passed map of aliases.
  * Cloning will not deep copy the set of aliases.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PropertyAliases extends Properties {
 

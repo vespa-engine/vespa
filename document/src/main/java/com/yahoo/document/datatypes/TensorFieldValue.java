@@ -15,7 +15,7 @@ import java.util.Optional;
 /**
  * Field value class that wraps a tensor.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class TensorFieldValue extends FieldValue {
 

@@ -8,7 +8,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 /**
  * A condition which consists of a list of alternatives to match at a specific location
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class ChoiceCondition extends CompositeCondition {
 

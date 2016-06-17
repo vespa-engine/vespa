@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Makes implicitly defined summaries into explicit summaries
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ImplicitSummaries extends Processor {
 

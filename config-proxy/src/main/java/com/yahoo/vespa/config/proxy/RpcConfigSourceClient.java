@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * An Rpc client to a config source
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.9
  */
 public class RpcConfigSourceClient extends ConfigSourceClient {

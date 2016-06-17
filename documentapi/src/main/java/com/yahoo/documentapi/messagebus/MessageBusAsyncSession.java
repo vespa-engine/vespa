@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * An access session which wraps a messagebus source session sending document messages.
  * The sessions are multithread safe.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar Rosenvinge</a>
  */
 public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {

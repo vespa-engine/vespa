@@ -15,7 +15,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 /**
  * Represents a document database and the backend configuration needed for this database.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DocumentDatabase extends AbstractConfigProducer implements
     IndexInfoConfig.Producer,

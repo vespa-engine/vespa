@@ -16,7 +16,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
 /**
  * Query tokenizer. Singlethreaded.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public final class Tokenizer {
 

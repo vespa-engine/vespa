@@ -7,11 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 6/12/13
- * Time: 9:03 AM
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public final class MethodCache {
     private final String methodName;

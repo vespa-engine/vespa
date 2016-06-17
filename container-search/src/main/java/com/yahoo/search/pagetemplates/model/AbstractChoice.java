@@ -6,7 +6,7 @@ import com.yahoo.component.provider.FreezableClass;
 /**
  * Abstract superclass of various kinds of choices.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class AbstractChoice extends FreezableClass implements PageElement {
 

@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.VespaModel;
 /**
  * Abstract superclass of all application package validators.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 2010-01-29
  */
 public abstract class Validator {

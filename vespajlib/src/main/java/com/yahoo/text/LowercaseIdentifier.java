@@ -2,11 +2,7 @@
 package com.yahoo.text;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 20:50
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class LowercaseIdentifier extends Identifier {
     public LowercaseIdentifier(String s) {

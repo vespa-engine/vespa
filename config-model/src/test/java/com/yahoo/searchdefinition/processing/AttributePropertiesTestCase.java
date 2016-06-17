@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 /**
  *  Test AttributeProperties processor.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class AttributePropertiesTestCase extends SearchDefinitionTestCase {
     @Test

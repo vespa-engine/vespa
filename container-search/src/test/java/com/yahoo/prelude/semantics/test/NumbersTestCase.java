@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Tests numbers as conditions and productions
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class NumbersTestCase extends RuleBaseAbstractTestCase {
 

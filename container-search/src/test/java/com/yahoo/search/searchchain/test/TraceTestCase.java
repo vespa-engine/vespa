@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Tests tracing scenarios where traces from multiple executions over the same query are involved.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class TraceTestCase extends junit.framework.TestCase {
 

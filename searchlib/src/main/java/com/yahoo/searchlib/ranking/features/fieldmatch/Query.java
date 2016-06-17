@@ -12,7 +12,7 @@ import java.util.Arrays;
  * explicitly. This allows us to model the matchWeight rank feature of a field as dependent of
  * the weights of all the terms in the query.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class Query {
 

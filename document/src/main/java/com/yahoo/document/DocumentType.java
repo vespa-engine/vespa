@@ -17,7 +17,7 @@ import java.util.*;
  * any document, it will always inherit the document "document.0".</p>
  *
  * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class DocumentType extends StructuredDataType {
 

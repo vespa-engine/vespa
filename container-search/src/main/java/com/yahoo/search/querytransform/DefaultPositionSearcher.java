@@ -18,7 +18,7 @@ import java.util.Set;
 /**
  * If default position has not been set, it will be set here.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 @After({PhaseNames.RAW_QUERY, POSITION_PARSING})
 @Before(PhaseNames.TRANSFORMED_QUERY)

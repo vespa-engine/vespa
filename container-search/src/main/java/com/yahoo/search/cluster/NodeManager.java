@@ -7,7 +7,7 @@ import java.util.concurrent.Executor;
  * Must be implemented by a node collection which wants
  * it's node state monitored by a ClusterMonitor
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public interface NodeManager<T> {
 

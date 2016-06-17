@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class DataTypeRepo implements DataTypeCollection {
     Map<Integer, DataType> typeById = new LinkedHashMap<>();

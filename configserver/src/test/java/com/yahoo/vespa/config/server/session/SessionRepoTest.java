@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class SessionRepoTest {

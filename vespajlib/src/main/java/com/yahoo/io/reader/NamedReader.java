@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * A reader with a name. All reader methods are delegated to the wrapped reader.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @Beta
 public class NamedReader extends Reader {

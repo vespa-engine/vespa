@@ -12,7 +12,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Class that processes and validates tensor fields.
  *
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class TensorFieldProcessor extends Processor {
 

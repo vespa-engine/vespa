@@ -32,7 +32,7 @@ import java.util.Optional;
  * in the model.
  *
  * @author arnej27959
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 @RestartConfigs({ProtonConfig.class, MetricsmanagerConfig.class, TranslogserverConfig.class,
                  StorDevicesConfig.class, StorFilestorConfig.class, StorBucketmoverConfig.class,

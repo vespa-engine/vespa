@@ -7,7 +7,7 @@ import java.io.Serializable;
  * A search-time document attribute sort specification(per-document in-memory value).
  * This belongs to the attribute or field(implicitt attribute).
  *
- * @author  <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author  baldersheim
  */
 public final class Sorting implements Cloneable, Serializable {
 

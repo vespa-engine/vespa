@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  * If a range is specified in brackets, it is also permissible to add a third number specifying the number of hits this
  * will match on each node - [from;to;hitLimit]
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class IntItem extends TermItem {
 

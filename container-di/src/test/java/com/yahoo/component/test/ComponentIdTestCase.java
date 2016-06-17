@@ -5,7 +5,7 @@ import com.yahoo.component.ComponentId;
 import junit.framework.TestCase;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class ComponentIdTestCase extends TestCase {
 

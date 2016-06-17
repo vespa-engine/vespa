@@ -48,7 +48,7 @@ import java.util.logging.Level;
 /**
  * Superclass for backend searchers.
  *
- * @author  <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author  baldersheim
  */
 @SuppressWarnings("deprecation")
 public abstract class VespaBackEndSearcher extends PingableSearcher {

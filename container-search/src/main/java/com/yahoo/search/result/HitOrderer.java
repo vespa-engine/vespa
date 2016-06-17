@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A class capable of ordering a list of hits
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 
 public abstract class HitOrderer {

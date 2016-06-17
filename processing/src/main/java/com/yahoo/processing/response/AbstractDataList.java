@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * A convenience superclass for dataList implementations which handles references to the request and to incoming data.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class AbstractDataList<DATATYPE extends Data> extends ListenableFreezableClass implements DataList<DATATYPE>, Streamed, Ordered  {
 

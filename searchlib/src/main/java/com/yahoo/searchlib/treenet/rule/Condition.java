@@ -6,7 +6,7 @@ import java.util.Iterator;
 /**
  * Represents a condition
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public abstract class Condition extends TreeNode {
 

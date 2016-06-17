@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * index through indexing and how data from documents should be served at search time.</p> <p>The identity of this
  * class is its name.</p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 // TODO: Make a class owned by this, for each of these responsibilities:
 // Managing indexes, managing attributes, managing summary classes.

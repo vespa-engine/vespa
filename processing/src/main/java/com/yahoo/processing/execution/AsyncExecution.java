@@ -32,7 +32,7 @@ import java.util.concurrent.*;
  * The request is not thread safe. A clone() must be made for each parallel processing.
  * </p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @see Execution
  */
 public class AsyncExecution {

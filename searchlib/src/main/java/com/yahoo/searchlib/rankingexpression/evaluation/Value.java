@@ -11,7 +11,7 @@ import com.yahoo.tensor.MapTensor;
  * Concrete subclasses of this provides implementations of these methods or throws
  * UnsupportedOperationException if the operation is not supported.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.5
  */
 public abstract class Value {

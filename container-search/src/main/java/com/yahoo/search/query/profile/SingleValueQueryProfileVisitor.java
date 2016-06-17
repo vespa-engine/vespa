@@ -10,7 +10,7 @@ import java.util.List;
  * value, or query profile, whichever is encountered first which matches the name.
  * <p>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
 

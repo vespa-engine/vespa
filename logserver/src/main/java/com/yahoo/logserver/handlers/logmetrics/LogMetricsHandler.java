@@ -25,7 +25,7 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * per level per host and sends an event count for this five minutes.
  *
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class LogMetricsHandler extends AbstractLogHandler
 {

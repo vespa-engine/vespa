@@ -23,7 +23,7 @@ import com.yahoo.jdisc.Metric;
  * Request an Executor injected in your component constructor if you want to use it.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  * @author bratseth
  */
 public class ThreadPoolProvider extends AbstractComponent implements Provider<Executor> {

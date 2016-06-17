@@ -11,7 +11,7 @@ import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 /**
  * A standalone tool for dumping query profile properties
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class DumpTool {
 

@@ -7,7 +7,7 @@ import com.yahoo.search.result.HitGroup;
 import java.util.Arrays;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class HitGroupTestCase extends junit.framework.TestCase {
 

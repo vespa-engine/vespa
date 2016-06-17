@@ -19,7 +19,7 @@ import java.util.logging.Level;
 /**
  * Abstract superclass of all search definition processors.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public abstract class Processor {
 

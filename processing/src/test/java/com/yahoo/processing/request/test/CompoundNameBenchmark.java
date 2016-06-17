@@ -4,7 +4,7 @@ package com.yahoo.processing.request.test;
 import com.yahoo.processing.request.CompoundName;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class CompoundNameBenchmark {
     public void run() {

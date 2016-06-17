@@ -17,7 +17,7 @@ import static junit.framework.TestCase.assertEquals;
 /**
  * Unit tests for content search cluster.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class ContentSearchClusterTest {
 

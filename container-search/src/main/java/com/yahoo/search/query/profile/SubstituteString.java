@@ -16,7 +16,7 @@ import java.util.Map;
  * <p>
  * This is a value object. Lookups in this are thread safe.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class SubstituteString {
 

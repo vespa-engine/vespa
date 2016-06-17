@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
  * Tests scenarios where a data producer returns a promise of some future data rather than the data itself.
  * As no processor waits for the data it is returned all the way to the caller.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public class FutureDataTestCase {
 

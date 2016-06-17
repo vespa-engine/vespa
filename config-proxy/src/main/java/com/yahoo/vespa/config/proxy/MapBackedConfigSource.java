@@ -14,7 +14,7 @@ import java.util.List;
  * A simple class to be able to test config proxy without having an RPC config
  * source.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.10
  */
 public class MapBackedConfigSource extends ConfigSourceClient implements ConfigSource {

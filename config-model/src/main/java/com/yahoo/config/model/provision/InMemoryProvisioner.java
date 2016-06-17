@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * In memory host provisioner. NB! ATM cannot be reused after allocate has been called.
  *
- * @author musum
+ * @author hmusum
  * @author bratseth
  */
 public class InMemoryProvisioner implements HostProvisioner {

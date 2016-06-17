@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Tests the main class used from the command line
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MainTestCase {
 

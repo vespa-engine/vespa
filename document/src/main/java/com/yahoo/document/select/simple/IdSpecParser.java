@@ -4,7 +4,7 @@ package com.yahoo.document.select.simple;
 import com.yahoo.document.select.rule.IdNode;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class IdSpecParser extends Parser {
     private IdNode id;

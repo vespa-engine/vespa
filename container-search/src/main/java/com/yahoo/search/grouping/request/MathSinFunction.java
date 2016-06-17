@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 import java.util.Arrays;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class MathSinFunction extends FunctionNode {
     /**

@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Root config producer for processing
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  * @since   5.1.6
  */
 public class ProcessingChains extends Chains<ProcessingChain> {

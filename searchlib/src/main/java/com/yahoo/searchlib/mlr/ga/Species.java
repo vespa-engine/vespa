@@ -11,7 +11,7 @@ import java.util.List;
  * Contrary to a real species, a species population may contain (sub)species
  * rather than individuals - at all levels but the lowest.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Species extends Evolvable {
 

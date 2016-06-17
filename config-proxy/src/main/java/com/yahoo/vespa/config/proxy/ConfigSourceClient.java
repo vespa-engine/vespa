@@ -13,7 +13,7 @@ import java.util.List;
  * A client to a config source, which could be an RPC config server or some other backing for
  * getting config.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.9
  */
 public abstract class ConfigSourceClient {

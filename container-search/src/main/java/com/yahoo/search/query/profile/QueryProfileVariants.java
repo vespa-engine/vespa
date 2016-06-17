@@ -20,7 +20,7 @@ import java.util.*;
  * A set of virtual profiles are always owned by a single profile, which is also their parent
  * in the inheritance hierarchy.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryProfileVariants implements Freezable, Cloneable {
 

@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.engine;
 /**
  * Thrown on semantic exceptions on evaluation over a rule base
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("serial")
 public class EvaluationException extends RuntimeException {

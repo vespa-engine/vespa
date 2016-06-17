@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * A collection of evolvables
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Population {
 

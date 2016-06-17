@@ -8,7 +8,7 @@ import com.yahoo.prelude.semantics.parser.ParseException;
 /**
  * Tests label-dependent matching
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class LabelMatchingTestCase extends RuleBaseAbstractTestCase {
 

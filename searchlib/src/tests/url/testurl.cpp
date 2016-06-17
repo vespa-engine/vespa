@@ -580,7 +580,7 @@ int main(int, char **)
                        "SCHEME:http,DOMAIN:sony,DOMAIN:co,MAINTLD:uk");// Tokenstring
 #endif
     // Test fixes for bugs reported in cvs commit:
-    // tegge       2000/10/27 22:42:59 CEST
+    // toregge       2000/10/27 22:42:59 CEST
     success = success &&
               CheckURL("http://somehost.somedomain/this!is!it/boom", // URL
                        "http", // scheme

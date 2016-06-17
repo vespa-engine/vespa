@@ -5,7 +5,7 @@ package com.yahoo.documentapi;
  * This class provides document <i>subscription</i> - accessing document changes to a
  * document repository.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public interface SubscriptionSession extends Session {
 

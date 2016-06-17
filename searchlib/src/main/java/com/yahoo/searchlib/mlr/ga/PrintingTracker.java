@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * A tracker which prints a summary of training events to standard out
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class PrintingTracker implements Tracker {
 

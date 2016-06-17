@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests settings outside the document
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class OutsideTestCase extends SearchDefinitionTestCase {
     @Test

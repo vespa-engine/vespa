@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 /**
  * A query item which never matches. This is sometimes an useful output of query rewriting.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class FalseItem extends Item {
 

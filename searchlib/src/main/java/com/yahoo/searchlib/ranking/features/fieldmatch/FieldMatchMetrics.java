@@ -11,7 +11,7 @@ import static java.lang.Math.*;
 /**
  * The collection of metrics calculated by the string match metric calculator.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 public final class FieldMatchMetrics implements Cloneable {
 

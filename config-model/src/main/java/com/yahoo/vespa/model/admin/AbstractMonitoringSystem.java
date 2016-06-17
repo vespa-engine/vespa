@@ -7,7 +7,7 @@ import java.util.Objects;
  *
  * Represents an abstract monitoring service
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.20
  *
 */

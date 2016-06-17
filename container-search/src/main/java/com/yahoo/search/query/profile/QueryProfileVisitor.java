@@ -17,7 +17,7 @@ package com.yahoo.search.query.profile;
  * The first enter call will be on the root node, which has an empt reference name.
  * </code>
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 abstract class QueryProfileVisitor {
 

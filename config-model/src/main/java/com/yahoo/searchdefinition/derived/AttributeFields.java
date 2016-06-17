@@ -16,9 +16,10 @@ import java.util.*;
 /**
  * The set of all attribute fields defined by a search definition
  *
- * @author <a href="mailto:bratseth@overture.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class AttributeFields extends Derived implements AttributesConfig.Producer {
+
     private Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
 
     /**

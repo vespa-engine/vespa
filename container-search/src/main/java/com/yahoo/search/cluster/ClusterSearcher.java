@@ -30,7 +30,7 @@ import java.util.concurrent.*;
  * The type argument is the class (of any type) representing the connections.
  * The connection objects should implement a good toString to ease diagnostics.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
  */
 public abstract class ClusterSearcher<T> extends PingableSearcher implements NodeManager<T> {

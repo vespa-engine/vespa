@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.rule;
 /**
  * A production rule which <i>adds</i> the production to the matched query
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class AddingProductionRule extends ProductionRule {
 

@@ -4,7 +4,7 @@ package com.yahoo.config.codegen;
 /**
  * An immutable class representing a default value of a config variable
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class DefaultValue {
 

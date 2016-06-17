@@ -10,7 +10,7 @@ import java.util.Iterator;
  * <p>A composite item where the first item is positive and the following
  * items are negative items which should be excluded from the result.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author  bratseth
  */
 // TODO: Handle nulls by creating nullItem or checking in encode/toString
 public class NotItem extends CompositeItem {

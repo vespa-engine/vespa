@@ -15,7 +15,7 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
  * Superclass for responses from session HTTP handlers.  Implements the
  * render method.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class SessionResponse extends HttpResponse {

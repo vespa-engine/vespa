@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
  * This node holds the index of an ExpressionNode in an external array, and is used as a proxy in the back-end to allow
  * aggregators to be used in expressions.
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author baldersheim
  */
 public class AggregationRefNode extends ExpressionNode {
 

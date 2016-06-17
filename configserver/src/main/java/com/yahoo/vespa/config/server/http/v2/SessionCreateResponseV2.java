@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
 /**
  * Creates a response for SessionCreateHandler (v2).
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.27
  */
 public class SessionCreateResponseV2 extends SessionResponse implements SessionCreateResponse {

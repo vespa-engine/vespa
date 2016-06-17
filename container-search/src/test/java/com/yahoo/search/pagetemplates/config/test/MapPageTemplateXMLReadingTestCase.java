@@ -9,7 +9,7 @@ import com.yahoo.search.pagetemplates.model.*;
 import java.util.List;
 
 /**
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class MapPageTemplateXMLReadingTestCase extends junit.framework.TestCase {
 

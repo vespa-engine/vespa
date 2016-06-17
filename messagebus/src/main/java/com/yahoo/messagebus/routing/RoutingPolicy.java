@@ -17,8 +17,8 @@ package com.yahoo.messagebus.routing;
  * <p>
  * This class is pluggable per template point in the address of a hop.
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
- * @author <a href="bratseth@yahoo-inc.com">Simon Thoresen</a>
+ * @author bratseth
+ * @author Simon Thoresen
  */
 public interface RoutingPolicy {
 
@@ -29,7 +29,7 @@ public interface RoutingPolicy {
      *
      * @param context the complete context for the invocation of this policy. Contains all available data.
      */
-    public void select(RoutingContext context);
+    void select(RoutingContext context);
 
     /**
      * This function is called when all replies have arrived for some message. The implementation is responsible for
@@ -38,11 +38,12 @@ public interface RoutingPolicy {
      *
      * @param context the complete context for the invocation of this policy. Contains all available data.
      */
-    public void merge(RoutingContext context);
+    void merge(RoutingContext context);
 
     /**
      * Destroys this factory and frees up any resources it has held. Making further calls on a destroyed
      * factory causes a runtime exception.
      */
-    public void destroy();
+    void destroy();
+
 }

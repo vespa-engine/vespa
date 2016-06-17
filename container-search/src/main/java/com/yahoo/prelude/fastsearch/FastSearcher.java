@@ -41,7 +41,7 @@ import static com.yahoo.container.util.Util.quote;
  * The searcher which forwards queries to fdispatch nodes, using the fnet/fs4
  * network layer.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 // TODO: Clean up all the duplication in the various search methods by
 // switching to doing all the error handling using exceptions below doSearch2.

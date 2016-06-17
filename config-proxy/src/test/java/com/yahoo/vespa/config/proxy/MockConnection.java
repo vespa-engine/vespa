@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 /**
  * For unit testing
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.11
  */
 public class MockConnection extends com.yahoo.config.subscription.impl.MockConnection {

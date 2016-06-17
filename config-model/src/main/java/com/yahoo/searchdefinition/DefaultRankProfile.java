@@ -11,7 +11,7 @@ import java.util.Set;
  * The rank profile containing default settings. This is derived from the fields
  * whenever this is accessed.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class DefaultRankProfile extends RankProfile {
 

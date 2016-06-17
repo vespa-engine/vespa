@@ -16,7 +16,7 @@ import java.net.UnknownHostException;
  * No state in this provisioner, i.e it does not know anything about the active
  * application if one exists.
  *
- * @author musum
+ * @author hmusum
  * @since 5.11
  */
 public class SingleNodeProvisioner implements HostProvisioner {

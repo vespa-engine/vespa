@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 /**
  * Returns the correct package for a package byte stream
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  * @author  <a href="mailto:borud@yahoo-inc.com">Bj\u00f8rn Borud</a>
  */
 public class PacketDecoder {

@@ -14,7 +14,7 @@ import java.util.Set;
  * An evaluation of a query over a rule base. There is one evaluation for each evaluation
  * of one query over one rule base.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Evaluation {
 

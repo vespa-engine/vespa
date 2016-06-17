@@ -10,7 +10,7 @@ import java.util.Set;
  * The rank type of a field. For now this is just a container of a string name.
  * This class is immutable.
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public enum RankType {
 

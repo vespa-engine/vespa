@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
 import static com.yahoo.jdisc.http.HttpRequest.Method.*;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1
  */
 public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {

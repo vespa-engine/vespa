@@ -6,7 +6,7 @@ import java.util.concurrent.DelayQueue;
 /**
  * Queue for requests that have no corresponding config in cache and which we are awaiting response from server for
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1.7
  */
 class DelayedResponses {

@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Learns a ranking expression from some seed expressions and a training set.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Trainer {
 

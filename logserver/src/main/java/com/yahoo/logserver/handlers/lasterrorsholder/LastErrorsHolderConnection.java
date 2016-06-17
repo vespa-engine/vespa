@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * LastErrorsHandler client connection.
  *
- * @author musum
+ * @author hmusum
  */
 public class LastErrorsHolderConnection implements Connection, LogFilter {
     private static final Logger log = Logger.getLogger(LastErrorsHolderConnection.class.getName());

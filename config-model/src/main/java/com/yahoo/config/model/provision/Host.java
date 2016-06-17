@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A hostname with zero or more aliases.
  *
- * @author musum
+ * @author hmusum
  */
 public class Host {
 

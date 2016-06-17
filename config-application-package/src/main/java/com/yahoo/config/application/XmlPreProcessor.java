@@ -21,7 +21,7 @@ import java.util.List;
  * A preprocessor for services.xml files that handles deploy:environment, deploy:region, preprocess:properties, preprocess:include
  * and create a new Document which is based on the supplied environment and region
  *
- * @author musum
+ * @author hmusum
  * @since 5.22
  */
 public class XmlPreProcessor {

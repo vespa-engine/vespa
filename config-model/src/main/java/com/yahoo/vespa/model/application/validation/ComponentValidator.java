@@ -21,7 +21,7 @@ import java.util.zip.ZipException;
 /**
  * A validator for bundles.  Uses BND library for some of the validation (not active yet)
  *
- * @author musum
+ * @author hmusum
  * @since 2010-11-11
  */
 public class ComponentValidator extends Validator {

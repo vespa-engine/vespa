@@ -16,7 +16,7 @@ import java.util.Set;
  * Two indices are equal if they have the same name and the same settings, except
  * alias settings (which are excluded).
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author  bratseth
  */
 public class Index implements Cloneable, Serializable {
 

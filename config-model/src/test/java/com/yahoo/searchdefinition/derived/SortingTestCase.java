@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Tests sort settings
  *
- * @author <a href="mailto:balder@yahoo-inc.com">Henning Baldersheim</a>
+ * @author baldersheim
  */
 public class SortingTestCase extends AbstractExportingTestCase {
     @Test

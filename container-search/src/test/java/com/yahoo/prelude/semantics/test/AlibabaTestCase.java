@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.test;
 /**
  * Test a case reported by Alibaba
  *
- * @author <a href="bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class AlibabaTestCase extends RuleBaseAbstractTestCase {
 

@@ -14,7 +14,7 @@ import java.util.Map;
  * All data items has a default renderer. This can be overridden or parametrized by
  * an explicit renderer.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class Renderer extends FreezableClass implements PageElement {
 

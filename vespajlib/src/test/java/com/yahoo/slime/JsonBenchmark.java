@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.lang.Integer;
 
 /**
- * Created by balder on 2/26/14.
+ * @author baldersheim
  */
 public class JsonBenchmark {
     private static byte [] createJson(int numElements) {

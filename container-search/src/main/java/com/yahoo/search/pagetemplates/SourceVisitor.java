@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Visits a page template object structure and records the sources mentioned.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 class SourceVisitor extends PageTemplateVisitor {
 

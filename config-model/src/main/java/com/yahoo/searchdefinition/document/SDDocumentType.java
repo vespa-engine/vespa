@@ -19,7 +19,7 @@ import java.util.logging.Logger;
    any document, it will always inherit the document "document.0".</p>
 
    @author  <a href="thomasg@yahoo-inc.com">Thomas Gundersen</a>
-   @author  <a href="bratseth@yahoo-inc.com">Jon S Bratseth</a>
+   @author  bratseth
 */
 public class SDDocumentType implements Cloneable, Serializable {
     public static final SDDocumentType VESPA_DOCUMENT;

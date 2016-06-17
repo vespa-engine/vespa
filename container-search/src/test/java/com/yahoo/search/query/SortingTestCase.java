@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class SortingTestCase {
     @Test

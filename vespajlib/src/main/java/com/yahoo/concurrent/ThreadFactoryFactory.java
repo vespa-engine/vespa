@@ -7,11 +7,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 24.04.13
- * Time: 19:00
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class ThreadFactoryFactory {
     static public synchronized ThreadFactory getThreadFactory(String name) {

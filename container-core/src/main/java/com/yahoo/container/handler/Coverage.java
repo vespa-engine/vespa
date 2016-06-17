@@ -6,7 +6,7 @@ package com.yahoo.container.handler;
  * The coverage report for a result set.
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author balder
+ * @author baldersheim
  */
 public class Coverage {
 

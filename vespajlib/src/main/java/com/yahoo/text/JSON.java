@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Static methods for working with the map textual format which is parsed by {@link MapParser}
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public final class JSON {
 

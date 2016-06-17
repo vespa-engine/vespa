@@ -14,7 +14,7 @@ import com.yahoo.statistics.Statistics;
  * Superclass for http client searchers which depends on config. All this is doing is translating
  * the provider and cache configurations to parameters which are passed upwards.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public abstract class ConfiguredHTTPClientSearcher extends HTTPClientSearcher {
 

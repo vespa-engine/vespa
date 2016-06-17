@@ -9,7 +9,7 @@ package com.yahoo.search.intent.model;
  * <p>
  * Intent ids should be human readable, start with lower case and use camel casing
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class Intent {
 

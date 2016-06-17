@@ -14,7 +14,7 @@ import java.util.logging.Level;
  * index (typically in an index-to statement), and if they have
  * output a warning and use the first ranktype.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class RankTypeResolver extends MultiFieldResolver {
 

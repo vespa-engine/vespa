@@ -18,7 +18,7 @@ import java.util.Optional;
  * Encapsulates config, usually associated with a {@link JRTConfigRequest}. An instance of this class can represent
  * either a config that is not yet resolved, a successfully resolved config, or an error.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class RawConfig {
 

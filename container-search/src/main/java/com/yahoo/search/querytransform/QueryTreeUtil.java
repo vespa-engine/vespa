@@ -9,7 +9,7 @@ import com.yahoo.search.query.QueryTree;
 /**
  * Utility class for manipulating a QueryTree.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class QueryTreeUtil {
 

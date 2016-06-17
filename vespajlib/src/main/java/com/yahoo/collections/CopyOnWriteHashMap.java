@@ -17,7 +17,7 @@ import java.util.Set;
  * As with regular maps, this can only be used safely if the content of the map is immutable.
  * If not, the {@link #copyMap} method can be overridden to perform a deep clone.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @Beta
 public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneable {

@@ -16,7 +16,7 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class RankFeaturesTestCase {
 

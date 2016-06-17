@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * Returns any change to the indexing mode of a cluster.
  *
- * @author musum
+ * @author hmusum
  */
 public class IndexingModeChangeValidator implements ChangeValidator {
 

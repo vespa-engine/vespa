@@ -7,7 +7,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 /**
  * A value which acts as a double in numerical context.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  * @since 5.1.21
  */
 public abstract class DoubleCompatibleValue extends Value {

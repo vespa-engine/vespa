@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.content.ResourceLimits;
 /**
  * Builder for resource limits for a content cluster with engine proton.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DomResourceLimitsBuilder {
 

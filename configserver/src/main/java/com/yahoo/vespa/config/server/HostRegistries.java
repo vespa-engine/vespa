@@ -9,7 +9,7 @@ import java.util.HashMap;
 /**
  * Component to hold host registries.
  *
- * @author musum
+ * @author hmusum
  */
 public class HostRegistries {
 

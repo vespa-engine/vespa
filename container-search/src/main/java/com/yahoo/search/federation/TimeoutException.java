@@ -4,7 +4,7 @@ package com.yahoo.search.federation;
 /**
  * Thrown on timeouts
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 @SuppressWarnings("serial")
 public class TimeoutException extends RuntimeException {

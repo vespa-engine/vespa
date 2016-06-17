@@ -8,7 +8,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class IndexTo2FieldSet extends Processor {
 

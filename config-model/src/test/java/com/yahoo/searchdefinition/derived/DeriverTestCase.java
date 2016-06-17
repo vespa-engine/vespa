@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests deriving using the Deriver facade
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a>
+ * @author bratseth
  */
 public class DeriverTestCase extends SearchDefinitionTestCase {
 

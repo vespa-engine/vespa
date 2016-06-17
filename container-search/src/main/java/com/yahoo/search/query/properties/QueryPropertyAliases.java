@@ -9,7 +9,7 @@ import java.util.Map;
  * Property aliases which contains some hardcoded unaliasing of prefixes of
  * rankfeature and rankproperty maps.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author bratseth
  */
 public class QueryPropertyAliases extends PropertyAliases {
 
