@@ -7,6 +7,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class GroupAutoTakedownTest {
 
@@ -308,7 +310,6 @@ public class GroupAutoTakedownTest {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
-        final Node node = new Node(NodeType.STORAGE, 4);
         final NodeState newState = new NodeState(NodeType.STORAGE, State.INITIALIZING);
         newState.setInitProgress(0.5);
 
@@ -365,6 +366,38 @@ public class GroupAutoTakedownTest {
                 verboseStateAfterStorageTransition(fixture, 4, State.DOWN));
         assertEquals("version:3 distributor:9 storage:9 .5.s:d .5.m:borkbork",
                 verboseStateAfterStorageTransition(fixture, 4, State.UP));
+    }
+
+    @Test
+    public void previously_cleared_start_timestamps_are_not_reintroduced_on_up_edge() throws Exception {
+        ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
+                DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
+
+        final NodeState newState = new NodeState(NodeType.STORAGE, State.UP);
+        newState.setStartTimestamp(123456);
+
+        fixture.reportStorageNodeState(4, newState);
+
+        SystemStateListener listener = mock(SystemStateListener.class);
+        assertTrue(fixture.generator.notifyIfNewSystemState(fixture.cluster, listener));
+
+        assertEquals("version:1 distributor:6 storage:6 .4.t:123456", fixture.generatedClusterState());
+
+        DatabaseHandler handler = mock(DatabaseHandler.class);
+        DatabaseHandler.Context context = mock(DatabaseHandler.Context.class);
+        when(context.getCluster()).thenReturn(fixture.cluster);
+
+        fixture.generator.handleAllDistributorsInSync(handler, context);
+        assertTrue(fixture.generator.notifyIfNewSystemState(fixture.cluster, listener));
+
+        // Timestamp should now be cleared from state
+        assertEquals("version:2 distributor:6 storage:6", fixture.generatedClusterState());
+
+        // Trigger a group down+up edge. Timestamp should _not_ be reintroduced since it was previously cleared.
+        assertEquals("version:3 distributor:6 storage:4",
+                stateAfterStorageTransition(fixture, 5, State.DOWN));
+        assertEquals("version:4 distributor:6 storage:6",
+                stateAfterStorageTransition(fixture, 5, State.UP));
     }
 
 }

@@ -336,6 +336,16 @@ public class SystemStateGenerator {
                 baseline.setState(wanted.getState());
             }
         }
+        // Don't reintroduce start timestamp to the node's state if it has already been
+        // observed by all distributors. This matches how handleNewReportedNodeState() sets timestamps.
+        // TODO make timestamp semantics clearer. Non-obvious what the two different timestamp stores imply.
+        // For posterity: reported.getStartTimestamp() is the start timestamp the node itself has stated.
+        // info.getStartTimestamp() is the timestamp written as having been observed by all distributors
+        // (which is done in handleAllDistributorsInSync()).
+        if (reported.getStartTimestamp() <= info.getStartTimestamp()) {
+            baseline.setStartTimestamp(0);
+        }
+
         return baseline;
     }
 
@@ -349,24 +359,32 @@ public class SystemStateGenerator {
             final Node node = storageNode(i);
             final NodeInfo info = cluster.getNodeInfo(node);
             final NodeState currentState = candidateState.getNodeState(node);
-            if (currentState.getState() == State.DOWN) {
-                if (mayClearNodeDownState(info)) {
-                    candidateState.setNodeState(node, baselineNodeState(info));
-                    clearedNodes.add(i);
-                }
+            if (mayClearCurrentNodeState(currentState, info)) {
+                candidateState.setNodeState(node, baselineNodeState(info));
+                clearedNodes.add(i);
             }
         }
         return clearedNodes;
     }
 
-    private boolean mayClearNodeDownState(NodeInfo info) {
+    private boolean mayClearCurrentNodeState(NodeState currentState, NodeInfo info) {
+        if (currentState.getState() != State.DOWN) {
+            return false;
+        }
         if (info == null) {
             // Nothing known about node in cluster info; we definitely don't want it
             // to be taken up at this point.
             return false;
         }
+        // Rationale: we can only enter this statement if the _current_ (generated) state
+        // of the node is Down. Aside from the group take-down logic, there should not exist
+        // any other edges in the cluster controller state transition logic where a node
+        // may be set Down while both its reported state, RPC connectivity and wanted state
+        // imply that a better state should already have been chosen. Consequently we allow
+        // the node to have its Down-state cleared.
         return (info.getReportedState().getState() != State.DOWN
-                && info.getWantedState().getState().oneOf("ur"));
+                && !info.isRpcAddressOutdated()
+                && !info.getWantedState().getState().oneOf("d"));
     }
 
     private ClusterStateView createNextVersionOfClusterStateView(ContentCluster cluster) {
@@ -736,7 +754,7 @@ public class SystemStateGenerator {
                 triggeredAnyTimers = true;
             }
 
-            // If node haven't increased its initializing progress within initprogresstime, mark it down.
+            // If node hasn't increased its initializing progress within initprogresstime, mark it down.
             if (!currentStateInSystem.getState().equals(State.DOWN)
                 && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
                 && lastReportedState.getState().equals(State.INITIALIZING)
