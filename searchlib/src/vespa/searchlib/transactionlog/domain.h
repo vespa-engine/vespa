@@ -69,7 +69,6 @@ public:
     bool getMarkedDeleted(void) const { return _markedDeleted; }
     void markDeleted(void) { _markedDeleted = true; }
 
-    uint64_t count() const { return _count; }
     size_t byteSize() const;
     size_t getNumSessions() const { return _sessions.size(); }
 
@@ -103,7 +102,6 @@ private:
 
     DomainPart::Crc     _defaultCrcType;
     Executor          & _executor;
-    uint64_t            _count;
     int                 _sessionId;
     const bool          _useFsync;
     vespalib::Monitor   _syncMonitor;
