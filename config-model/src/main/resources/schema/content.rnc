@@ -60,6 +60,10 @@ PersistenceThreads = element persistence-threads {
   Thread+
 }
 
+MinNodeRatioPerGroup = element min-node-ratio-per-group {
+  xsd:double { minInclusive = "0" maxInclusive = "1" }
+}
+
 ClusterControllerTuning = element cluster-controller {
     element init-progress-time { xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" } }? &
     element transition-time {  xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" }  }? &
@@ -85,7 +89,8 @@ ClusterTuning = element tuning {
    VisitorTuning? &
    ClusterControllerTuning? &
    Maintenance? &
-   PersistenceThreads?
+   PersistenceThreads? &
+   MinNodeRatioPerGroup?
 }
 
 Content = element content {

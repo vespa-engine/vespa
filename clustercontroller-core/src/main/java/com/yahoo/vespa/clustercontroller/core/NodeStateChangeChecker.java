@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -79,7 +80,7 @@ public class NodeStateChangeChecker {
     }
 
     public Result evaluateTransition(
-            Node node, int clusterStateVersion, SetUnitStateRequest.Condition condition,
+            Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
             NodeState oldState, NodeState newState) {
         if (condition == SetUnitStateRequest.Condition.FORCE) {
             return Result.allowSettingOfWantedState();
@@ -107,7 +108,7 @@ public class NodeStateChangeChecker {
             case UP:
                 return canSetStateUp(node, oldState.getState());
             case MAINTENANCE:
-                return canSetStateMaintenance(node, clusterStateVersion);
+                return canSetStateMaintenance(node, clusterState);
             default:
                 return Result.createDisallowed("Safe only supports state UP and MAINTENANCE, you tried: " + newState);
         }
@@ -127,17 +128,17 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result canSetStateMaintenance(Node node, int clusterStateVersion) {
+    private Result canSetStateMaintenance(Node node, ClusterState clusterState) {
         NodeInfo nodeInfo = clusterInfo.getNodeInfo(node);
         if (nodeInfo == null) {
             return Result.createDisallowed("Unknown node " + node);
         }
-        NodeState reportedState = nodeInfo.getReportedState();
-        if (reportedState.getState() == State.DOWN) {
+        NodeState currentState = clusterState.getNodeState(node);
+        if (currentState.getState() == State.DOWN) {
             return Result.allowSettingOfWantedState();
         }
 
-        Result checkDistributorsResult = checkDistributors(node, clusterStateVersion);
+        Result checkDistributorsResult = checkDistributors(node, clusterState.getVersion());
         if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
             return checkDistributorsResult;
         }
@@ -151,7 +152,7 @@ public class NodeStateChangeChecker {
             return Result.createDisallowed("There are only " + clusterInfo.getStorageNodeInfo().size() +
                     " storage nodes up, while config requires at least " + minStorageNodesUp);
         }
-        Result fractionCheck = isFractionHighEnough();
+        Result fractionCheck = isFractionHighEnough(clusterState);
         if (!fractionCheck.settingWantedStateIsAllowed()) {
             return fractionCheck;
         }
@@ -168,16 +169,23 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result isFractionHighEnough() {
+    private int contentNodesWithAvailableNodeState(ClusterState clusterState) {
+        final int nodeCount = clusterState.getNodeCount(NodeType.STORAGE);
         int upNodesCount = 0;
-        int nodesCount = 0;
-        for (StorageNodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfo()) {
-            nodesCount++;
-            State state = storageNodeInfo.getReportedState().getState();
+        for (int i = 0; i < nodeCount; ++i) {
+            final Node node = new Node(NodeType.STORAGE, i);
+            final State state = clusterState.getNodeState(node).getState();
             if (state == State.UP || state == State.RETIRED || state == State.INITIALIZING) {
                 upNodesCount++;
             }
         }
+        return upNodesCount;
+    }
+
+    private Result isFractionHighEnough(ClusterState clusterState) {
+        final int nodesCount = clusterInfo.getStorageNodeInfo().size();
+        final int upNodesCount = contentNodesWithAvailableNodeState(clusterState);
+
         if (nodesCount == 0) {
             return Result.createDisallowed("No storage nodes in cluster state, not safe to restart.");
         }

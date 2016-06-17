@@ -416,8 +416,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         systemStateGenerator.setStableStateTimePeriod(options.stableStateTimePeriod);
         systemStateGenerator.setMinNodesUp(options.minDistributorNodesUp, options.minStorageNodesUp,
                                            options.minRatioOfDistributorNodesUp, options.minRatioOfStorageNodesUp);
+        systemStateGenerator.setMinNodeRatioPerGroup(options.minNodeRatioPerGroup);
         systemStateGenerator.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         systemStateGenerator.setDistributionBits(options.distributionBits);
+        systemStateGenerator.setDistribution(options.storageDistribution);
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount);
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod);
 
@@ -426,9 +428,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs, options.rpcPort);
             } catch (ListenFailedException e) {
-                log.log(LogLevel.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster have altered the services running on this node: " + e.getMessage());
+                log.log(LogLevel.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initailize RPC server socket: " + e.getMessage());
+                log.log(LogLevel.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
             }
         }
 
@@ -436,7 +438,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 statusPageServer.setPort(options.httpPort);
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to initialize status server socket. This may be natural if cluster have altered the services running on this node: " + e.getMessage());
+                log.log(LogLevel.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             }
         }
 
@@ -503,7 +505,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             didWork |= systemStateBroadcaster.processResponses();
             if (masterElectionHandler.isMaster()) {
                 didWork |= broadcastClusterStateToEligibleNodes();
-
             }
 
             didWork |= processAnyPendingStatusPageRequest();
@@ -637,7 +638,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // Send getNodeState requests to zero or more nodes.
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
         didWork |= systemStateGenerator.watchTimers(cluster, this);
-        didWork |= systemStateGenerator.notifyIfNewSystemState(this);
+        didWork |= systemStateGenerator.notifyIfNewSystemState(cluster, this);
 
         if ( ! isStateGatherer) {
             if ( ! isMaster) {

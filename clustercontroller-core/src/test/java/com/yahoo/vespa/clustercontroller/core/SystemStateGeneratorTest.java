@@ -99,7 +99,7 @@ public class SystemStateGeneratorTest extends TestCase {
     }
 
     private void assertNewClusterStateReceived() {
-        assertTrue(generator.notifyIfNewSystemState(systemStateListener));
+        assertTrue(generator.notifyIfNewSystemState(cluster, systemStateListener));
         assertTrue(systemStateListener.toString(), systemStateListener.states.size() == 1);
         systemStateListener.states.clear();
     }
@@ -147,7 +147,7 @@ public class SystemStateGeneratorTest extends TestCase {
 
     private void verifyClusterStateChanged(Node node, State state) {
         log.info("Verifying cluster state has been updated for " + node + " to " + state);
-        assertTrue(generator.notifyIfNewSystemState(systemStateListener));
+        assertTrue(generator.notifyIfNewSystemState(cluster, systemStateListener));
         assertEquals(1, systemStateListener.states.size());
         assertEquals(state, systemStateListener.states.get(0).getNodeState(node).getState());
         systemStateListener.states.clear();

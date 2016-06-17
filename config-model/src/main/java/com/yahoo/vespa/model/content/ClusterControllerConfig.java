@@ -31,8 +31,12 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.getChild("tuning");
+            Integer bucketSplittingMinimumBits = null;
+            Double minNodeRatioPerGroup = null;
             if (clusterTuning != null) {
                 tuning = clusterTuning.getChild("cluster-controller");
+                minNodeRatioPerGroup = clusterTuning.childAsDouble("min-node-ratio-per-group");
+                bucketSplittingMinimumBits = clusterTuning.childAsInteger("bucket-splitting.minimum-bits");
             }
 
             if (tuning != null) {
@@ -43,10 +47,11 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                         tuning.childAsDuration("stable-state-period"),
                         tuning.childAsDouble("min-distributor-up-ratio"),
                         tuning.childAsDouble("min-storage-up-ratio"),
-                        clusterElement.childAsInteger("tuning.bucket-splitting.minimum-bits"));
+                        bucketSplittingMinimumBits,
+                        minNodeRatioPerGroup);
             } else {
                 return new ClusterControllerConfig(ancestor, clusterName, null, null, null, null, null, null,
-                        clusterElement.childAsInteger("tuning.bucket-splitting.minimum-bits"));
+                        bucketSplittingMinimumBits, minNodeRatioPerGroup);
             }
         }
     }
@@ -59,7 +64,9 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
     Double minDistributorUpRatio;
     Double minStorageUpRatio;
     Integer minSplitBits;
+    private Double minNodeRatioPerGroup;
 
+    // TODO refactor; too many args
     private ClusterControllerConfig(AbstractConfigProducer parent,
                                     String clusterName,
                                     Duration initProgressTime,
@@ -68,7 +75,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
                                     Duration stableStateTimePeriod,
                                     Double minDistributorUpRatio,
                                     Double minStorageUpRatio,
-                                    Integer minSplitBits) {
+                                    Integer minSplitBits,
+                                    Double minNodeRatioPerGroup) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -79,6 +87,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         this.minDistributorUpRatio = minDistributorUpRatio;
         this.minStorageUpRatio = minStorageUpRatio;
         this.minSplitBits = minSplitBits;
+        this.minNodeRatioPerGroup = minNodeRatioPerGroup;
     }
 
     @Override
@@ -116,6 +125,9 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         }
         if (minSplitBits != null) {
             builder.ideal_distribution_bits(minSplitBits);
+        }
+        if (minNodeRatioPerGroup != null) {
+            builder.min_node_ratio_per_group(minNodeRatioPerGroup);
         }
     }
 }

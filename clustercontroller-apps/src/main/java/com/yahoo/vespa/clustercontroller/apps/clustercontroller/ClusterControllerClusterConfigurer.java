@@ -69,6 +69,7 @@ public class ClusterControllerClusterConfigurer {
         options.minTimeBetweenNewSystemStates = config.min_time_between_new_systemstates();
         options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
         options.distributionBits = config.ideal_distribution_bits();
+        options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
     }
 
     private void configure(SlobroksConfig config) {
