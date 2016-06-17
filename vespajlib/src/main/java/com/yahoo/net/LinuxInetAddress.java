@@ -22,6 +22,13 @@ public class LinuxInetAddress {
 
     private static Logger log = Logger.getLogger(LinuxInetAddress.class.getName());
 
+    private static boolean isGood(InetAddress addr) {
+        if (addr.isLoopbackAddress()) return false;
+        String asAddr = addr.getHostAddress();
+        String asName = addr.getCanonicalHostName();
+        return ! asAddr.equals(asName);
+    }
+
     /**
      * Returns an InetAddress representing the address of the localhost.
      * A non-loopback address is preferred if available.
@@ -38,10 +45,10 @@ public class LinuxInetAddress {
             return InetAddress.getLoopbackAddress();
         }
 
-        if ( ! localAddress.isLoopbackAddress())  return localAddress;
+        if (isGood(localAddress)) return localAddress;
 
         List<InetAddress> nonLoopbackAddresses = 
-                getAllLocalFromNetwork().stream().filter(a -> ! a.isLoopbackAddress()).collect(Collectors.toList());
+                getAllLocalFromNetwork().stream().filter(a -> isGood(a)).collect(Collectors.toList());
         if (nonLoopbackAddresses.isEmpty()) return localAddress;
 
         List<InetAddress> ipV4NonLoopbackAddresses = 
