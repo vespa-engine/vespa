@@ -31,12 +31,6 @@ using document::CompressionConfig;
 
 char FastS_VersionTag[] = V_TAG;
 
-int		FastS_verbose 		= 0;
-/** @todo Use a config file for these variables */
-int		FastS_nsearches;
-double		FastS_searchtime;
-
-
 namespace fdispatch
 {
 
