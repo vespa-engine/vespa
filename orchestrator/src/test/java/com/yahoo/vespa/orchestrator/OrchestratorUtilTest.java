@@ -18,12 +18,12 @@ public class OrchestratorUtilTest {
 
     private static final ApplicationId APPID_1 = ApplicationId.from(
             TenantName.from("mediasearch"),
-            ApplicationName.from("tumblr-search"),
+            ApplicationName.from("imagesearch"),
             InstanceName.defaultName());
 
     private static final ApplicationInstanceReference APPREF_1 = new ApplicationInstanceReference(
-            new TenantId("test-tenant"),
-            new ApplicationInstanceId("test-application:test-environment:test-region:test-instance-key"));
+            new TenantId("test-tenant-id"),
+            new ApplicationInstanceId("application:prod:utopia-1:instance"));
 
     /**
      * Here we don't care how the internal of the different application

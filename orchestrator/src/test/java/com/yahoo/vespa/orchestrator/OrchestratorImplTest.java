@@ -216,7 +216,7 @@ public class OrchestratorImplTest {
         InstanceLookupService service = new DummyInstanceLookupService();
         String applicationInstanceId = service.findInstanceByHost(DummyInstanceLookupService.TEST1_HOST_NAME).get()
                 .reference().toString();
-        assertEquals("test-tenant-id:application:instance", applicationInstanceId);
+        assertEquals("test-tenant-id:application:prod:utopia-1:instance", applicationInstanceId);
     }
 
     @Test

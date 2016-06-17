@@ -16,8 +16,8 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -113,34 +113,44 @@ public class OrchestratorUtil {
                                                                               InstanceLookupService instanceLookupService)
             throws ApplicationIdNotFoundException {
 
-        String appRegex = String.format("^%s:.*:.*:%s$",appId.application().toString(), appId.instance().toString());
         Set<ApplicationInstanceReference> appRefs = instanceLookupService.knownInstances();
-        Optional<ApplicationInstanceReference> appRef = appRefs.stream()
-                .filter(a -> a.tenantId().equals(appId.tenant()))
-                .filter(a -> a.applicationInstanceId().toString().matches(appRegex))
-                .findFirst();
-        return appRef.orElseThrow(() -> new ApplicationIdNotFoundException());
+        List<ApplicationInstanceReference> appRefList = appRefs.stream()
+                .filter(a -> matchAppInstanceAndId(a, appId))
+                .collect(Collectors.toList());
+
+        if (appRefList.size() != 1) {
+            throw new ApplicationIdNotFoundException();
+        }
+
+        return appRefList.get(0);
+    }
+
+    private static boolean matchAppInstanceAndId(ApplicationInstanceReference appInstanceRef, ApplicationId appId) {
+        // Match tenant first
+        if (!appInstanceRef.tenantId().toString().equals(appId.tenant().toString())) {
+            return false;
+        }
+
+        // Match appId and InstanceId
+        String[] appInstancePart = appInstanceRef.applicationInstanceId().toString().split(":");
+        if (appInstancePart.length != 4) {
+            throw new RuntimeException("Found inconsistent");
+        }
+        return appId.application().toString().equals(appInstancePart[0])
+                && appId.instance().toString().equals(appInstancePart[3]);
     }
 
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {
-        TenantName tenantName = TenantName.from(appRef.tenantId().toString());
 
-        // Now for the application/instance pair we need to split this
-        String appNameStr = appRef.applicationInstanceId().toString();
+        String appNameStr = appRef.toString();
         String[] appNameParts = appNameStr.split(":");
-
-        // We assume a valid application reference has at lest two parts appname:instancename
-        if (appNameParts.length < 2)  {
-            throw new IllegalArgumentException("Application reference not valid: " + appRef);
+        // This assumption will soon be validated in the AppRef model
+        if (appNameParts.length != 5)  {
+            throw new IllegalArgumentException("Application reference not valid (not 5 parts): " + appRef);
         }
 
-        // Last part of string is the instance name
-        InstanceName instanceName = InstanceName.from(appNameParts[appNameParts.length-1]);
-
-        // The rest is application
-        int whereAppNameEnds = appNameStr.lastIndexOf(":");
-        ApplicationName appName = ApplicationName.from(appNameStr.substring(0, whereAppNameEnds));
-
-        return ApplicationId.from(tenantName, appName, instanceName);
+        return ApplicationId.from(TenantName.from(appNameParts[0]),
+                ApplicationName.from(appNameParts[1]),
+                InstanceName.from(appNameParts[4]));
     }
 }
