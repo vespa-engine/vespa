@@ -19,7 +19,6 @@ public class ForceLoad {
                 "VdsHit",
                 "Grouping",
                 "Hit",
-                "ForceLoad",
                 "MinAggregationResult",
                 "GroupingLevel",
                 "MaxAggregationResult",
@@ -27,10 +26,10 @@ public class ForceLoad {
                 "AverageAggregationResult",
                 "ExpressionCountAggregationResult",
                 "hll.SparseSketch",
-                "hll.NormalSketch",
-                "ForceLoad"
+                "hll.NormalSketch"
         };
-        com.yahoo.system.ForceLoad.forceLoad(pkg, classes);
+        com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
+                                             ForceLoad.class.getClassLoader());
     }
 
     public static boolean forceLoad() {
