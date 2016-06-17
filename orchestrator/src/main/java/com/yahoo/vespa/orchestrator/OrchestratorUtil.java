@@ -115,36 +115,27 @@ public class OrchestratorUtil {
 
         Set<ApplicationInstanceReference> appRefs = instanceLookupService.knownInstances();
         List<ApplicationInstanceReference> appRefList = appRefs.stream()
-                .filter(a -> matchAppInstanceAndId(a, appId))
+                .filter(a -> OrchestratorUtil.toApplicationId(a).equals(appId))
+                .filter(a -> a.equals(appId))
                 .collect(Collectors.toList());
 
-        if (appRefList.size() != 1) {
+        if (appRefList.size() > 1) {
+            String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s", appId, appRefList);
+            throw new ApplicationIdNotFoundException(msg);
+        }
+
+        if (appRefList.size() == 0) {
             throw new ApplicationIdNotFoundException();
         }
 
         return appRefList.get(0);
     }
 
-    private static boolean matchAppInstanceAndId(ApplicationInstanceReference appInstanceRef, ApplicationId appId) {
-        // Match tenant first
-        if (!appInstanceRef.tenantId().toString().equals(appId.tenant().toString())) {
-            return false;
-        }
-
-        // Match appId and InstanceId
-        String[] appInstancePart = appInstanceRef.applicationInstanceId().toString().split(":");
-        if (appInstancePart.length != 4) {
-            throw new RuntimeException("Found inconsistent");
-        }
-        return appId.application().toString().equals(appInstancePart[0])
-                && appId.instance().toString().equals(appInstancePart[3]);
-    }
-
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {
 
         String appNameStr = appRef.toString();
         String[] appNameParts = appNameStr.split(":");
-        // This assumption will soon be validated in the AppRef model
+        // TODO model ApplicationInstanceReference properly and validate this there
         if (appNameParts.length != 5)  {
             throw new IllegalArgumentException("Application reference not valid (not 5 parts): " + appRef);
         }
