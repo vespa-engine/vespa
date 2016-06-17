@@ -86,7 +86,7 @@ flush.memory.maxage.serial long default=1000000
 ## The prepare for restart flush strategy will choose a set of components to flush
 ## such that the cost of flushing these + the cost of replaying the transaction log
 ## is as low as possible.
-flush.preparerestart.replaycost double default=4.0 restart
+flush.preparerestart.replaycost double default=4.0
 
 ## The cost of doing writes when flushing components to disk.
 ##
@@ -96,7 +96,7 @@ flush.preparerestart.replaycost double default=4.0 restart
 ## The prepare for restart flush strategy will choose a set of components to flush
 ## such that the cost of flushing these + the cost of replaying the transaction log
 ## is as low as possible.
-flush.preparerestart.writecost double default=1.0 restart
+flush.preparerestart.writecost double default=1.0
 
 ## Control io options during write both under dump and fusion.
 indexing.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
