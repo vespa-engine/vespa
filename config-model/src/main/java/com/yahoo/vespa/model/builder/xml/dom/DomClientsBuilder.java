@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Builds the Clients plugin
  *
- * @author musum
+ * @author hmusum
  */
 public class DomClientsBuilder extends LegacyConfigModelBuilder<Clients> {
 

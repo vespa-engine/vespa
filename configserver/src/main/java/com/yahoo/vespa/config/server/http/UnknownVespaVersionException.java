@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.http;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.39
  */
 public class UnknownVespaVersionException extends RuntimeException {

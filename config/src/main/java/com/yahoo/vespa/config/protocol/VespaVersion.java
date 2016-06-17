@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.protocol;
 /**
  * A wrapper class for Vespa version
  *
- * @author musum
+ * @author hmusum
  * @since 5.39
  */
 public class VespaVersion {

@@ -12,7 +12,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 
 /**
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class NormalizedDefinitionTest {
 

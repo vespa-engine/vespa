@@ -16,7 +16,7 @@ import org.json.*;
 
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.1.22
  */
 @org.apache.maven.plugins.annotations.Mojo(name = "deploy", defaultPhase = LifecyclePhase.GENERATE_SOURCES)

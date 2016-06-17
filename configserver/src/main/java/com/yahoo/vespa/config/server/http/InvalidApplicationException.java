@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.http;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class InvalidApplicationException extends RuntimeException {
 

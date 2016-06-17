@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
-* @author musum
+* @author hmusum
 */
 public class MockModelContext implements ModelContext {
     private final ApplicationPackage applicationPackage;

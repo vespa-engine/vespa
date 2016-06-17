@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * Base class for handler tests
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class HandlerTest {

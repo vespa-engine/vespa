@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * 'default' and 'memorycache', where the last one will not get config from an upstream
  * config source, but will serve config only from memory cache.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ProxyServer implements Runnable {
 

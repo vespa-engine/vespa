@@ -15,7 +15,7 @@ import java.util.Optional;
 /**
  * Helper class for memory and disk cache unit tests
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.10
  */
 public class CacheTest {

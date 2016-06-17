@@ -11,7 +11,7 @@ import static com.yahoo.vespa.config.ConfigPayloadApplier.IdentityPathAcquirer;
 /**
  * A utility class that can be used to transform config from one format to another.
  *
- * @author lulf, musum, tonyv
+ * @author lulf, hmusum, tonyv
  * @since 5.1.6
  */
 public class ConfigTransformer<T extends ConfigInstance> {

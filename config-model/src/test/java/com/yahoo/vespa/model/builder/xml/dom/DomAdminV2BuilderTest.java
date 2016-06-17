@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class DomAdminV2BuilderTest extends DomBuilderTest {
 

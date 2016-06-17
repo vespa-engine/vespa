@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * A handler that prepares a session given by an id in the request. v2 of application API
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.29
  */
 public class SessionPrepareHandler extends SessionHandler {

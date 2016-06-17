@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Status and md5sum for files within an application package.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.15
  */
 class SessionContentStatusListResponse extends SessionResponse {

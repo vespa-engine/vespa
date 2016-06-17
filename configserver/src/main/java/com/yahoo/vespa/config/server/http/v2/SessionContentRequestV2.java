@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
  * Requests for content and content status (v2)
  * are handled by this class.
  *
- * @author musum
+ * @author hmusum
  * @since 5.3
  */
 class SessionContentRequestV2 extends ContentRequest {

@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
 /**
  * Test Position processor.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class PositionTestCase {
 

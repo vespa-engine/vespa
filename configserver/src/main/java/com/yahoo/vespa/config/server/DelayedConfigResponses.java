@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * A delayed response is a response sent at request (server) timeout
  * for a config which has not changed since the request was initiated.
  *
- * @author musum
+ * @author hmusum
  */
 public class DelayedConfigResponses {
     private static final Logger log = Logger.getLogger(DelayedConfigResponses.class.getName());

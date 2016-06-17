@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * messages at level error or higher. Connecting to this handler
  * will return a Json object with the last errors (default is last 100 errors)
  *
- * @author musum
+ * @author hmusum
  */
 public class LastErrorsHolder extends AbstractLogHandler implements ConnectionFactory {
     private static final Logger log = Logger.getLogger(LastErrorsHolder.class.getName());

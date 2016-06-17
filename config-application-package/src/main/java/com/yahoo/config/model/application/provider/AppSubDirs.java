@@ -9,7 +9,7 @@ import java.io.File;
 /**
  * Definitions of sub-directories of an application package.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class AppSubDirs {
 

@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
  * methods for a request. Session handlers should subclass this method and
  * implement the handleMETHOD methods that it supports.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.14
  */
 public class SessionHandler extends HttpHandler {

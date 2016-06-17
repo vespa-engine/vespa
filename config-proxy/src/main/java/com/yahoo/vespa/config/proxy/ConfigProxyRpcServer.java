@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * A proxy server that handles RPC config requests.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 5.1
  */
 public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer {

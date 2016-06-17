@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class XmlPreprocessorTest {
 

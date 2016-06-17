@@ -7,7 +7,7 @@ import java.io.Reader;
 /**
  * Simple Validation of services.xml for unit tests against RELAX NG schemas.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class SimpleApplicationValidator {
 

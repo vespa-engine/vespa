@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Validates that deployment file (deployment.xml) has valid values (for now
  * only global-service-id is validated)
  *
- * @author musum
+ * @author hmusum
  */
 public class DeploymentFileValidator extends Validator {
 

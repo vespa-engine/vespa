@@ -16,7 +16,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class JRTConfigRequestFactoryTest {
     private static VespaVersion defaultVespaVersion = JRTConfigRequestFactory.getCompiledVespaVersion();

@@ -15,7 +15,7 @@ import java.io.*;
 /**
  * Unit tests for DefParser.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
  */
 public class DefParserTest {

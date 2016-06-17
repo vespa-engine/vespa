@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests ConfigUtils.
  *
- * @author <a href="musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  */
 public class ConfigUtilsTest {
 

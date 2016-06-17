@@ -8,7 +8,7 @@ import javax.annotation.concurrent.Immutable;
  * is increased when an action (restart services or reboot are the available
  * actions) is wanted, current is updated when the action has been done on the node.
  *
- * @author musum
+ * @author hmusum
  */
 @Immutable
 public class Generation {

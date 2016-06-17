@@ -12,7 +12,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author musum
+ * @author hmusum
  */
 public class ModeTest {
 

@@ -27,7 +27,7 @@ import static java.util.stream.Collectors.toList;
  * Validators that must be run after search cluster search definition deriving are
  * defined in PostSdValidation.
  *
- * @author <a href="mailto:musum@yahoo-inc.com">Harald Musum</a>
+ * @author hmusum
  * @since 2010-01-29
  */
 public class Validation {

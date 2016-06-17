@@ -15,7 +15,7 @@ import java.util.List;
  * Requests for content and content status, both for prepared and active sessions,
  * are handled by this class.
  *
- * @author musum
+ * @author hmusum
  * @since 5.1.15
  */
 public class ContentHandler {

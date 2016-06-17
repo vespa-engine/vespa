@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * An immutable config payload
  *
- * @author musum
+ * @author hmusum
  * @author bratseth
  */
 public class Payload {

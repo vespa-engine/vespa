@@ -12,7 +12,7 @@ import java.util.Set;
  * and no new config having been sent from server. When in 'memorycache' mode, there is no connection
  * to another config source, the proxy only serves from (memory) cache.
  *
- * @author musum
+ * @author hmusum
  */
 class Mode {
     private final ModeName mode;

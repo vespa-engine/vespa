@@ -19,7 +19,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author musum
+ * @author hmusum
  * @since 5.4
  */
 public class HostHandlerTest {
