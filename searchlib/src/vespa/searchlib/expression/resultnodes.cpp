@@ -7,6 +7,7 @@
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/expression/positiveinfinityresultnode.h>
+#include <math.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentexpressions");
