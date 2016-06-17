@@ -228,6 +228,7 @@ Fdispatch::Fdispatch(const config::ConfigUri &configUri)
       _config(),
       _configUri(configUri),
       _fdispatchrcFetcher(configUri.getContext()),
+      _rndGen(),
       _partition(0),
       _tempFail(false),
       _FNETLiveCounterDanger(false),
@@ -278,7 +279,7 @@ void Fdispatch::configure(std::unique_ptr<FdispatchrcConfig> cfg)
 {
     if (cfg && _config) {
         if ( needRestart(*_config, *cfg) ) {
-            const int sleepMS = rand()%(30*1000);
+            const int sleepMS = (1.0 + 30 * _rndGen.nextDouble()) * 1000;
             LOG(error, "Will restart by abort in %d ms.", sleepMS);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepMS));
             _needRestart.store(true);

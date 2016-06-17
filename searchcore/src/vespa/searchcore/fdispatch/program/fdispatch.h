@@ -10,6 +10,7 @@
 #include <vespa/searchcore/config/config-fdispatchrc.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/util/random.h>
 
 class FastS_NodeManager;
 class FastS_fdispatch_RPC;
@@ -73,6 +74,7 @@ private:
     std::unique_ptr<FdispatchrcConfig>      _config;
     config::ConfigUri                       _configUri;
     config::ConfigFetcher                   _fdispatchrcFetcher;
+    vespalib::RandomGen                     _rndGen;
     unsigned int _partition;
     bool         _tempFail;
     bool         _FNETLiveCounterDanger;
