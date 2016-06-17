@@ -160,7 +160,7 @@ public class NodeAgentImplTest {
         final String vespaVersion = "7.8.9";
 
         when(docker.imageIsDownloaded(wantedDockerImage)).thenReturn(true);
-        when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);;
+        when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
