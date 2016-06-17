@@ -4,7 +4,7 @@ package com.yahoo.vespa.orchestrator;
 /**
  * Thrown when applicationId is invalid or not found.
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class ApplicationIdNotFoundException extends Exception {
 }

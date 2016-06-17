@@ -12,7 +12,7 @@ package com.yahoo.vespa.orchestrator.status;
  *
  * @see HostStatus
  * @author andreer
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public enum ApplicationInstanceStatus {
     NO_REMARKS,

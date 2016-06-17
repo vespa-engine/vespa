@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests the implementation of the orchestrators ApplicationAPI.
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class ApplicationSuspensionResourceTest {
 
