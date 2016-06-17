@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.nio.charset.Charset;
 
 /**
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class UTF8TestCase extends junit.framework.TestCase {
 

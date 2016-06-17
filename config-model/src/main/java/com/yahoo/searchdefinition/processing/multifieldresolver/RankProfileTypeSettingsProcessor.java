@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  *
  * Currently, type settings are limited to the type of tensor attribute fields and tensor query features.
  *
- * @author <a href="geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class RankProfileTypeSettingsProcessor extends Processor {
 

@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 /**
  * The rank settings of a field used for native rank features.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class FieldRankSettings {
 

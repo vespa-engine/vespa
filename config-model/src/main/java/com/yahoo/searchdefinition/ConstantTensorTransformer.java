@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Transforms named references to constant tensors with the rank feature 'constant'.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 class ConstantTensorTransformer extends ExpressionTransformer {
 

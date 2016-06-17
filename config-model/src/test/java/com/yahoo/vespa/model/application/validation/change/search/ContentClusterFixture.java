@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Test fixture to setup current and next content clusters used for change validation.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public abstract class ContentClusterFixture {
     protected ContentCluster currentCluster;

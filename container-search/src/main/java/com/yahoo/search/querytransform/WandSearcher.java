@@ -23,7 +23,7 @@ import com.yahoo.yolean.Exceptions;
  * IndexFacts is used to determine which WAND to create.
  *
  * @since 5.1.11
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @author bratseth
  */
 public class WandSearcher extends Searcher {

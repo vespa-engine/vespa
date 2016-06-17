@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 /**
  * A named rank table of a certain type.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class NativeTable {
 

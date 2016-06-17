@@ -8,7 +8,7 @@ import com.yahoo.document.DocumentTypeManager;
 /**
  * Helper class for creating a document for a given document type.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class TestDocumentFactory {
 

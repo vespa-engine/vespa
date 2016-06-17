@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
  * The resulting dot product will be available as a raw score in the rank framework.
  *
  * @since 5.1.27
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class WandItem extends WeightedSetItem {
 

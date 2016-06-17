@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * but is instead used in the context of com.yahoo.vespa.model.ConfigProducer.validate() such that it can be unit tested
  * without having to build the complete vespa model.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class IndexedHierarchicDistributionValidator {
 

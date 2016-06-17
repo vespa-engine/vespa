@@ -18,7 +18,7 @@ import java.util.Optional;
 
 /**
  * For testing purposes only.
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class ContentClusterUtils {
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class DomSearchTuningBuilderTest extends DomBuilderTest {
 

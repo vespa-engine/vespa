@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * A dimension can be indexed (bound or unbound) or mapped.
  * Currently, we only support tensor types where all dimensions have the same type.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 @Beta
 public class TensorType {

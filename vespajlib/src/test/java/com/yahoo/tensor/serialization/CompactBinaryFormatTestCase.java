@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
  * TODO: When new formats are added we should refactor this test to test all formats
  *       with the same set of tensor inputs (if feasible).
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class CompactBinaryFormatTestCase {
 

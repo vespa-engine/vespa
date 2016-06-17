@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.search;
 /**
  * Represents the row id and partition id of a search interface node.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class NodeSpec {
 

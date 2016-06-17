@@ -13,7 +13,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
  * Class used to build a message describing the usual field changes causing changes in the indexing script.
  * This message should be more descriptive for the end-user than just seeing the changed indexing script.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-12-09
  */
 public class IndexingScriptChangeMessageBuilder {

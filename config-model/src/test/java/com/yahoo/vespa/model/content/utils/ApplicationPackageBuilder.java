@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Class for building an application package with content clusters (used for testing only).
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class ApplicationPackageBuilder {
 

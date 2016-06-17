@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * Class containing the action to be performed on the given services to handle a config change
  * between the current active vespa model and the next vespa model to prepare.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-11-18
  */
 public abstract class VespaConfigChangeAction implements ConfigChangeAction {

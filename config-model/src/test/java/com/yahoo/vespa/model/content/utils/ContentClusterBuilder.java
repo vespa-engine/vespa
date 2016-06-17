@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Class for building a content cluster with indexed search (used for testing only).
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class ContentClusterBuilder {
 

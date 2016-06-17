@@ -13,7 +13,7 @@ import java.util.*;
 /**
  * Deriver of indexschema config containing information of all index fields with name and data type.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
 

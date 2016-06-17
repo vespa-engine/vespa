@@ -8,7 +8,7 @@ import com.yahoo.io.GrowableByteBuffer;
  *
  * A particular instance of this class is tied to a version of the document format.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public interface DocumentSerializer extends DocumentWriter, SpanNodeWriter, AnnotationWriter, SpanTreeWriter, DocumentUpdateWriter {
 

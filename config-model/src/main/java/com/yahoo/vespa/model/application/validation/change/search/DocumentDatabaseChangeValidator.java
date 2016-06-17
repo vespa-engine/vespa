@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Validates the changes between a current and next document database that is part of an indexed search cluster.
  *
- * @author  <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  * @since 2014-11-18
  */
 public class DocumentDatabaseChangeValidator {

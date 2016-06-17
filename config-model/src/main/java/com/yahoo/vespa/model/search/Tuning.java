@@ -12,7 +12,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * Class representing the tuning config used for a search cluster.
  * Take a look at proton.def and vespa doc for detailed explanations.
  *
- * @author <a href="mailto:geirst@yahoo-inc.com">Geir Storli</a>
+ * @author geirst
  */
 public class Tuning extends AbstractConfigProducer implements PartitionsConfig.Producer, ProtonConfig.Producer {
 
