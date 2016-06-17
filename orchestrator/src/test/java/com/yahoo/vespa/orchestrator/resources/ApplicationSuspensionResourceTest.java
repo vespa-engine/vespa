@@ -141,4 +141,3 @@ public class ApplicationSuspensionResourceTest {
         assertEquals(RESOURCE_2, responses.iterator().next());
     }
 }
-

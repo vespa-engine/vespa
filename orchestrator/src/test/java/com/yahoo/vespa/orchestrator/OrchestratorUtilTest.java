@@ -47,4 +47,3 @@ public class OrchestratorUtilTest {
         Assert.assertEquals(APPREF_1, appRefRoundTrip);
     }
 }
-
