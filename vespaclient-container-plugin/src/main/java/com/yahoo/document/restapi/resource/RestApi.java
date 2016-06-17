@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * API for handling single operation on a document and visiting.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class RestApi extends LoggingRequestHandler {
 

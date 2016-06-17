@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Keeping information about a storage node seen from the distributor.
- * @author dybdahl
+ * @author dybis
  */
 public class StorageNode {
 

@@ -16,7 +16,7 @@ import java.util.concurrent.Executor;
 /**
  * Exposes access log through http.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
     private final CircularArrayAccessLogKeeper circularArrayAccessLogKeeper;

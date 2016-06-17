@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Reads an input stream of xml, sends these to session.
- * @author dybdahl
+ * @author dybis
 */
 public class XmlFeedReader {
 

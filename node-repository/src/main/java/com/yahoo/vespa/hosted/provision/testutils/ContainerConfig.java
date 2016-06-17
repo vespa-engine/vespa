@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
  * For running NodeRepository API with some mocked data.
  * This is used by both NodeAdmin and NodeRepository tests.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class ContainerConfig {
         public static final String servicesXmlV2(int port) {

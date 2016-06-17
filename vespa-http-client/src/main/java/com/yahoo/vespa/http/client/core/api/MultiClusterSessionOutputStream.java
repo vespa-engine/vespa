@@ -9,7 +9,7 @@ import java.io.IOException;
 
 /**
  * Class for wiring up the Session API. It is the return value of stream() in the Session API.
- * @author dybdahl
+ * @author dybis
 */
 class MultiClusterSessionOutputStream extends ByteArrayOutputStream {
     private final CharSequence documentId;

@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Dummy implementation.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class DryRunGatewayConnection implements GatewayConnection {
 

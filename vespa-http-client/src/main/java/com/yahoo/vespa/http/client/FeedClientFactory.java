@@ -9,7 +9,7 @@ import static com.yahoo.vespa.http.client.SessionFactory.createTimeoutExecutor;
 
 /**
  * Factory for creating FeedClient.
- * @author dybdahl
+ * @author dybis
  */
 public class FeedClientFactory {
 

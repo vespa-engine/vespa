@@ -14,7 +14,7 @@ import java.io.InputStream;
 /**
  * Parser that supports parsing PUT operation and UPDATE operation.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class SingleDocumentParser {
     private static final JsonFactory jsonFactory = new JsonFactory();

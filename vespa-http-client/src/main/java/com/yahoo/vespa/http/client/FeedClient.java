@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * A {@link FeedClientFactory} is provided to instantiate Sessions.
  *
- * @author dybdahl
+ * @author dybis
  * @see FeedClientFactory
  * @since 5.29.0
  */

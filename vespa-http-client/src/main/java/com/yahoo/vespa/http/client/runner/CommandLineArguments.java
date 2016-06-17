@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Commandline interface for the binary.
- * @author dybdahl
+ * @author dybis
  */
 @Beta
 @Command(name = "vespa-http-client",

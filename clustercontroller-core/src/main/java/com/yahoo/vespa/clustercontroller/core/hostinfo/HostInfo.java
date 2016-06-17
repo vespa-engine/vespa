@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 /**
  * Parsing and keeping of host info from nodes.
- * @author dybdahl
+ * @author dybis
  */
 public class HostInfo {
 

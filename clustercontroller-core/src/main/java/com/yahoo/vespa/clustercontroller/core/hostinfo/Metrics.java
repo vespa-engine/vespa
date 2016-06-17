@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Keeper for Metrics for HostInfo.
- * @author dybdahl
+ * @author dybis
  */
 public class Metrics {
 

@@ -20,7 +20,7 @@ import com.yahoo.yolean.Exceptions;
  *
  * This implementation is based on V2, but the code is restructured.
  *
- * @author dybdahl
+ * @author dybis
  */
 class DocumentOperationMessageV3 {
 

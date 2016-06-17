@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * The new API has more logic for shutting down cleanly as the server is more likely to be upgraded.
  * The code is restructured a bit.
  * 
- * @author dybdahl
+ * @author dybis
  */
 public class FeedHandlerV3 extends LoggingRequestHandler {
 

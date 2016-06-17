@@ -7,7 +7,7 @@ import static java.lang.Math.min;
 
 /**
  * Class that has a method for finding next maxInFlight.
- * @author dybdahl
+ * @author dybis
  */
 public class ThrottlePolicy {
 

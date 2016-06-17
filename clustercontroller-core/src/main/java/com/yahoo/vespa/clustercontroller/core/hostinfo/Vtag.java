@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Class for handling version.
- * @author dybdahl
+ * @author dybis
  */
 public class Vtag {
 

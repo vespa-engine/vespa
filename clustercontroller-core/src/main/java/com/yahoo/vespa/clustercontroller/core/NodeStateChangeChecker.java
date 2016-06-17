@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Checks if a node can be upgraded.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class NodeStateChangeChecker {
 

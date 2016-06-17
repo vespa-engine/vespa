@@ -7,7 +7,7 @@ import java.util.Random;
  * When the gateways says it can not handle more load, we should send less load. That is the responsibility
  * of this component
  *
- * @author dybdahl
+ * @author dybis
  */
 public class GatewayThrottler {
     private long backOffTimeMs = 0;

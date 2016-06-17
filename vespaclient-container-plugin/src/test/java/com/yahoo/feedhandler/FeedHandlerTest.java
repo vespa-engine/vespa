@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for FeedHandler class.
  *
- * @author dybdahl
+ * @author dybis
  */
 public class FeedHandlerTest {
 

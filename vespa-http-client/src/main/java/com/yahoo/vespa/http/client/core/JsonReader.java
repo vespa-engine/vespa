@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Reads a stream of json documents and sends them to feedClient.
- * @author dybdahl
+ * @author dybis
  */
 public class JsonReader {
 

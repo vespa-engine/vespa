@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Unit test that test documentation code.
- * @author dybdahl
+ * @author dybis
  */
 public class ExampleUsageFeedClientTest {
 

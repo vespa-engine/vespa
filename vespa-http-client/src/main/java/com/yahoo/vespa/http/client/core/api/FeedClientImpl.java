@@ -15,7 +15,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Implementation of FeedClient. It is a thin layer on top of multiClusterHandler and multiClusterResultAggregator.
- * @author dybdahl
+ * @author dybis
  */
 public class FeedClientImpl implements FeedClient {
 
