@@ -151,7 +151,7 @@ endfunction()
 
 function(vespa_add_library TARGET)
     cmake_parse_arguments(ARG
-        "STATIC;OBJECT;INTERFACE"
+        "STATIC;OBJECT;INTERFACE;TEST"
         "INSTALL;OUTPUT_NAME"
         "DEPENDS;AFTER;SOURCES"
         ${ARGN})
@@ -178,6 +178,8 @@ function(vespa_add_library TARGET)
     add_library(${TARGET} ${LINKAGE} ${LIBRARY_TYPE} ${SOURCE_FILES})
     __add_dependencies_to_target()
 
+    __handle_test_targets()
+
     if(ARG_INSTALL)
         install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
     endif()
@@ -201,15 +203,7 @@ function(vespa_add_executable TARGET)
     add_executable(${TARGET} ${ARG_SOURCES})
     __add_dependencies_to_target()
 
-    # If this is a test executable, add it to the test target for this module
-    # If building of unit tests is not specified, exclude this target from the all target
-    if(ARG_TEST)
-        __add_test_target_to_module(${TARGET})
-
-        if(EXCLUDE_TESTS_FROM_ALL)
-            set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-        endif()
-    endif()
+    __handle_test_targets()
 
     if(ARG_INSTALL)
         install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
@@ -438,6 +432,18 @@ endfunction()
 function(__add_test_target_to_module TARGET)
     set_property(GLOBAL APPEND PROPERTY MODULE_${MODULE_NAME}_TEST_TARGETS ${TARGET})
 endfunction()
+
+macro(__handle_test_targets)
+    # If this is a test executable, add it to the test target for this module
+    # If building of unit tests is not specified, exclude this target from the all target
+    if(ARG_TEST)
+        __add_test_target_to_module(${TARGET})
+
+        if(EXCLUDE_TESTS_FROM_ALL)
+            set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+        endif()
+    endif()
+endmacro()
 
 function(__create_module_targets PROPERTY_POSTFIX TARGET_POSTFIX)
     get_property(VESPA_MODULES GLOBAL PROPERTY VESPA_MODULES)
