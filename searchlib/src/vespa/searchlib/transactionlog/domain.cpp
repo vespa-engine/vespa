@@ -38,7 +38,6 @@ Domain::Domain(const string &domainName,
                const FileHeaderContext &fileHeaderContext) :
     _defaultCrcType(defaultCrcType),
     _executor(executor),
-    _count(0),
     _sessionId(1),
     _useFsync(useFsync),
     _syncMonitor(),
@@ -83,7 +82,6 @@ void Domain::addPart(int64_t partId, bool isLastPart) {
     } else {
         {
             LockGuard guard(_lock);
-            _count += dp->size();
             _parts[partId] = dp;
         }
         if (! isLastPart) {
@@ -119,7 +117,7 @@ DomainInfo
 Domain::getDomainInfo() const
 {
     LockGuard guard(_lock);
-    DomainInfo info(SerialNumRange(begin(), end()), count(), byteSize());
+    DomainInfo info(SerialNumRange(begin(), end()), size(guard), byteSize());
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
         info.parts.emplace_back(PartInfo(part.range(), part.size(),
@@ -272,12 +270,8 @@ void Domain::commit(const Packet & packet)
         }
         dp = _parts.rbegin()->second;
     }
-    size_t oldSz(dp->size());
     dp->commit(entry.serial(), packet);
     cleanSessions();
-    // If commit fails no updates should be sent to subscribers either.
-    // Is is better to keep a consistent behaviour.
-    _count += dp->size() - oldSz;
 
     LockGuard guard(_sessionLock);
     for (auto & it : _sessions) {

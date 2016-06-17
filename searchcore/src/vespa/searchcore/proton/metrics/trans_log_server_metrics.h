@@ -16,6 +16,7 @@ public:
     struct DomainMetrics : public metrics::MetricSet
     {
         metrics::LongValueMetric entries;
+        metrics::LongValueMetric diskUsage;
 
         typedef std::unique_ptr<DomainMetrics> UP;
         DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);
