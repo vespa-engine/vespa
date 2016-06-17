@@ -183,7 +183,7 @@ exit 0
 %{_prefix}/libexec/vespa/start-logd
 %{_prefix}/libexec/vespa/stop-configserver
 %{_prefix}/var/db/vespa/config_server/serverdb/classes/*.def
-%{_prefix}/lib/vespa/jars/*.jar
+%{_prefix}/lib/jars/*.jar
 %{_prefix}/lib/perl5/site_perl/Yahoo/Vespa/*.pm
 %{_prefix}/lib64/*.so
 %{_prefix}/bin/*

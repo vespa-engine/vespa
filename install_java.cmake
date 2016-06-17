@@ -1,9 +1,9 @@
 function(install_java_artifact NAME)
-    install(FILES "${NAME}/target/${NAME}.jar" DESTINATION lib/vespa/jars/)
+    install(FILES "${NAME}/target/${NAME}.jar" DESTINATION lib/jars/)
 endfunction()
 
 function(install_fat_java_artifact NAME)
-    install(FILES "${NAME}/target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/vespa/jars/)
+    install(FILES "${NAME}/target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
 
 install_java_artifact(document)
