@@ -15,14 +15,14 @@ public class ForceLoad {
      * @param classNames array of names of classes (without package prefix)
      *                   to force load.
      **/
-    public static void forceLoad(String packageName, String[] classNames)
+    public static void forceLoad(String packageName, String[] classNames, ClassLoader loader)
         throws ForceLoadError
     {
         String fullClassName = "";
         try {
             for (String className : classNames) {
                 fullClassName = packageName + "." + className;
-                Class.forName(fullClassName);
+                loader.loadClass(fullClassName);
             }
         } catch (Exception e) {
             throw new ForceLoadError(fullClassName, e);

@@ -58,7 +58,6 @@ public class ForceLoad {
                 "FloatResultNodeVector",
                 "StringResultNodeVector",
                 "RawResultNodeVector",
-                "ForceLoad",
                 "MultiplyFunctionNode",
                 "IntegerBucketResultNode",
                 "FloatBucketResultNode",
@@ -77,10 +76,10 @@ public class ForceLoad {
                 "ZCurveFunctionNode",
                 "XorBitFunctionNode",
                 "MultiArgFunctionNode",
-                "DebugWaitFunctionNode",
-                "ForceLoad"
+                "DebugWaitFunctionNode"
         };
-        com.yahoo.system.ForceLoad.forceLoad(pkg, classes);
+        com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
+                                             ForceLoad.class.getClassLoader());
     }
 
     public static boolean forceLoad() {

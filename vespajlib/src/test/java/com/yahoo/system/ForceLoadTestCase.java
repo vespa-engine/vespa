@@ -8,8 +8,10 @@ public class ForceLoadTestCase extends junit.framework.TestCase {
     }
 
     public void testLoadClasses() {
+
         try {
-            ForceLoad.forceLoad(getClass().getPackage().getName(), new String[] { "Foo", "Bar" });
+            ForceLoad.forceLoad(getClass().getPackage().getName(), new String[] { "Foo", "Bar" },
+                                this.getClass().getClassLoader());
         } catch (ForceLoadError e) {
             e.printStackTrace();
             assertTrue(false);
@@ -18,7 +20,8 @@ public class ForceLoadTestCase extends junit.framework.TestCase {
 
     public void testLoadBogusClass() {
         try {
-            ForceLoad.forceLoad(getClass().getPackage().getName(), new String[] { "Foo", "Bar", "Baz" });
+            ForceLoad.forceLoad(getClass().getPackage().getName(), new String[] { "Foo", "Bar", "Baz" },
+                                this.getClass().getClassLoader());
         } catch (ForceLoadError e) {
             return;
         }
