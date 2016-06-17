@@ -5,11 +5,7 @@ import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.search.SearchNode;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 20.11.12
- * Time: 20:04
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class ProtonProvider extends RPCEngine {
     public ProtonProvider(StorageNode parent, SearchNode searchNode) {

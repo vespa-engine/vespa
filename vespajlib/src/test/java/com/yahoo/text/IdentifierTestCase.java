@@ -5,11 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Created with IntelliJ IDEA.
- * User: balder
- * Date: 11.11.12
- * Time: 10:58
- * To change this template use File | Settings | File Templates.
+ * @author baldersheim
  */
 public class IdentifierTestCase {
     @Test
