@@ -7,18 +7,22 @@
 
 /**
  * small utility to use instead of "su" when we want to just
- * switch to the "yahoo" user without any more fuss
+ * switch to the vespa user without any more fuss
  **/
 
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        fprintf(stderr, "missing arguments, usage: run-as-yahoo <cmd> [args ...]");
+        fprintf(stderr, "missing arguments, usage: run-as-yahoo <cmd> [args ...]\n");
         exit(1);
     }
-    struct passwd *p = getpwnam("yahoo");
+    const char *username = getenv("VESPA_USER");
+    if (username == NULL) {
+        username = "yahoo";
+    }
+    struct passwd *p = getpwnam(username);
     if (p == NULL) {
-        perror("FATAL error: user 'yahoo' missing in passwd file");
+        fprintf(stderr, "FATAL error: user '%s' missing in passwd file\n", username);
         exit(1);
     }
     gid_t g = p->pw_gid;
