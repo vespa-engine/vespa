@@ -159,11 +159,11 @@ fixlimits () {
 }
 
 checkjava () {
-    if java -version 2>&1 | grep "Java HotSpot.* 64-Bit Server VM" >/dev/null ; then
+    if java -version 2>&1 | grep "64-Bit Server VM" >/dev/null ; then
 	: OK
     else
 	echo
-	echo "java must invoke the 64-bit Sun Java VM"
+	echo "java must invoke the 64-bit Java VM"
 	echo "Got:"
 	java -version
 	echo "Path: $PATH"
