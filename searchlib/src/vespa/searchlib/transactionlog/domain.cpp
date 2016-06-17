@@ -119,7 +119,7 @@ DomainInfo
 Domain::getDomainInfo() const
 {
     LockGuard guard(_lock);
-    DomainInfo info(SerialNumRange(begin(), end()), count(), byteSize());
+    DomainInfo info(SerialNumRange(begin(), end()), size(guard), byteSize());
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
         info.parts.emplace_back(PartInfo(part.range(), part.size(),
