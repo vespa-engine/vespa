@@ -2,7 +2,7 @@
 package com.yahoo.component;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class ComponentIdBenchmark {
     public void run() {

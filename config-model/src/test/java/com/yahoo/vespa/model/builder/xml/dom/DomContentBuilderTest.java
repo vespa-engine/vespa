@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class DomContentBuilderTest extends DomBuilderTest {
     private ContentCluster createContent(String xml) throws Exception {

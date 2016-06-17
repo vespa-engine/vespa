@@ -19,7 +19,7 @@ import java.util.Set;
  * </p>
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author balder
+ * @author baldersheim
  * @since 5.1.4
  *
  * @param <E>

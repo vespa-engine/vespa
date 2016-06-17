@@ -4,7 +4,7 @@ package com.yahoo.vespa.objects;
 import java.nio.ByteBuffer;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public interface Serializer {
     Serializer putByte(FieldBase field, byte value);

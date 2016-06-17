@@ -7,7 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class SearchResultTestCase {
 

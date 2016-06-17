@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class SearchField extends Field {

@@ -21,7 +21,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class ValidateMatchPhaseSearcherTestCase {
 

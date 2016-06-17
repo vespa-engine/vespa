@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class SearchDef {

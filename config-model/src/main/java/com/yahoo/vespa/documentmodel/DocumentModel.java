@@ -9,7 +9,7 @@ import com.yahoo.documentmodel.DocumentTypeRepo;
  * It contains a search manager managing all specified search definitions.
  * It contains a storage manager managing all specified storage definitions.
  *
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class DocumentModel {

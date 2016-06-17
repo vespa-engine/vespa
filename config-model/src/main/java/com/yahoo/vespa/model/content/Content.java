@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * The config model from a content tag in services.
  * This consists mostly of a ContentCluster.
  *
- * @author balder
+ * @author baldersheim
  */
 public class Content extends ConfigModel {
 

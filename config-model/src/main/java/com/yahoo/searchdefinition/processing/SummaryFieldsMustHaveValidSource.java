@@ -12,7 +12,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Verifies that the source fields actually refers to a valid field.
  *
- * @author balder
+ * @author baldersheim
  *
  */
 public class SummaryFieldsMustHaveValidSource extends Processor {

@@ -5,7 +5,7 @@ import com.yahoo.document.select.rule.ComparisonNode;
 import com.yahoo.document.select.rule.ExpressionNode;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class SelectionParser extends Parser {
     private ExpressionNode node;

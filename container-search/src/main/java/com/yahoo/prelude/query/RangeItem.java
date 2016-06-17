@@ -9,7 +9,7 @@ package com.yahoo.prelude.query;
  * its way towards 'to' until it has reached its limit or range is exhausted. Negative number means that it will start
  * from 'to' and work its way towards 'from'.
  *
- * @author balder
+ * @author baldersheim
  * @author bratseth
  * @since  5.1.23
  */

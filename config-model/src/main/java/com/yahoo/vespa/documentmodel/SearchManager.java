@@ -4,7 +4,7 @@ package com.yahoo.vespa.documentmodel;
 import java.util.TreeMap;
 
 /**
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class SearchManager {

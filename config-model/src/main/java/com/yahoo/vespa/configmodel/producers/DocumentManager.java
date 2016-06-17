@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author    balder
+ * @author    baldersheim
  * @since     2010-02-19
  */
 public class DocumentManager {

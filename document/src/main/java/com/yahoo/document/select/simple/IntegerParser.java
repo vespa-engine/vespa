@@ -4,7 +4,7 @@ package com.yahoo.document.select.simple;
 import com.yahoo.document.select.rule.LiteralNode;
 
 /**
- * @author balder
+ * @author baldersheim
  */
 public class IntegerParser extends Parser {
     private LiteralNode value;
