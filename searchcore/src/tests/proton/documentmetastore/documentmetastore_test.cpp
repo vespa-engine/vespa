@@ -44,6 +44,15 @@ using proton::bucketdb::BucketState;
 
 namespace proton {
 
+namespace
+{
+
+static constexpr uint32_t numBucketBits = UINT32_C(20);
+static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
+
+}
+
+
 class DummyTlsSyncer : public ITlsSyncer
 {
 public:
@@ -552,23 +561,21 @@ TEST("requireThatWeCanStoreBucketIdAndTimestamp")
 {
     DocumentMetaStore dms(createBucketDB());
     uint32_t numLids = 1000;
-    uint32_t bkBits = UINT32_C(20);
-    uint64_t tsbias = UINT64_C(2000000000000);
 
     dms.constructFreeList();
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + tsbias));
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
+        bucketId.setUsedBits(numBucketBits);
         EXPECT_TRUE(assertGid(gid, lid, dms, bucketId,
-                              Timestamp(lid + tsbias)));
+                              Timestamp(lid + timestampBias)));
         EXPECT_TRUE(assertLid(lid, gid, dms));
     }
 }
@@ -577,8 +584,6 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
 {
     DocumentMetaStore dms1(createBucketDB());
     uint32_t numLids = 1000;
-    uint32_t bkBits = UINT32_C(20);
-    uint64_t tsbias = UINT64_C(2000000000000);
     std::vector<uint32_t> removeLids;
     removeLids.push_back(10);
     removeLids.push_back(20);
@@ -588,8 +593,8 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
-        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + tsbias));
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addGid(dms1, gid, bucketId, Timestamp(lid + timestampBias));
         EXPECT_EQUAL(lid, addLid);
     }
     for (size_t i = 0; i < removeLids.size(); ++i) {
@@ -612,10 +617,10 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
         GlobalId gid = createGid(lid);
         BucketId bucketId(gid.convertToBucketId());
-        bucketId.setUsedBits(bkBits);
+        bucketId.setUsedBits(numBucketBits);
         if (std::count(removeLids.begin(), removeLids.end(), lid) == 0) {
             EXPECT_TRUE(assertGid(gid, lid, dms2, bucketId,
-                                  Timestamp(lid + tsbias)));
+                                  Timestamp(lid + timestampBias)));
             EXPECT_TRUE(assertLid(lid, gid, dms2));
         } else {
             LOG(info, "Lid %u was removed before saving", lid);
@@ -629,7 +634,7 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     for (size_t i = 0; i < removeLids.size(); ++i) {
         LOG(info, "Re-use remove lid %u", removeLids[i]);
         GlobalId gid = createGid(removeLids[i]);
-        BucketId bucketId(bkBits,
+        BucketId bucketId(numBucketBits,
                           gid.convertToBucketId().getRawId());
         // re-use removeLid[i]
         uint32_t addLid = addGid(dms2, gid, bucketId, Timestamp(43u + i));
@@ -1868,6 +1873,69 @@ TEST("requireThatShrinkViaFlushTargetWorks")
     EXPECT_TRUE(assertLidSpace(shrinkTarget, shrinkTarget, shrinkTarget - 1, false, false, *dms));
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
+}
+
+
+namespace {
+
+void
+addLid(DocumentMetaStore &dms, uint32_t lid)
+{
+    GlobalId gid = createGid(lid);
+    BucketId bucketId(gid.convertToBucketId());
+    bucketId.setUsedBits(numBucketBits);
+    uint32_t addedLid = addGid(dms, gid, bucketId, Timestamp(lid + timestampBias));
+    EXPECT_EQUAL(lid, addedLid);
+}
+
+void
+removeLid(DocumentMetaStore &dms, uint32_t lid)
+{
+    dms.remove(lid);
+    dms.removeComplete(lid);
+}
+
+
+void
+assertCompact(DocumentMetaStore &dms, uint32_t docIdLimit,
+              uint32_t committedDocIdLimit,
+              uint32_t compactTarget, uint32_t numUsedLids)
+{
+    EXPECT_TRUE(assertLidSpace(docIdLimit, committedDocIdLimit, numUsedLids, false, false, dms));
+    dms.compactLidSpace(compactTarget);
+    EXPECT_TRUE(assertLidSpace(docIdLimit, compactTarget, numUsedLids, true, false, dms));
+    dms.holdUnblockShrinkLidSpace();
+    EXPECT_TRUE(assertLidSpace(docIdLimit, compactTarget, numUsedLids, true, true, dms));
+}
+
+
+void
+assertShrink(DocumentMetaStore &dms, uint32_t shrinkTarget,
+             uint32_t numUsedLids)
+{
+    dms.shrinkLidSpace();
+    TEST_DO(EXPECT_TRUE(assertLidSpace(shrinkTarget, shrinkTarget, numUsedLids, false, false, dms)));
+}
+
+}
+
+
+TEST("requireThatSecondShrinkWorksAfterCompactAndInactiveInsert")
+{
+    DocumentMetaStore dms(createBucketDB());
+    dms.constructFreeList();
+    TEST_DO(addLid(dms, 1));
+    TEST_DO(addLid(dms, 2));
+    TEST_DO(addLid(dms, 3));
+    removeLid(dms, 2);
+    removeLid(dms, 3);
+    EXPECT_TRUE(assertLidSpace(4, 4, 1, false, false, dms));
+    TEST_DO(assertCompact(dms, 4, 4, 2, 1));
+    TEST_DO(addLid(dms, 2));
+    TEST_DO(assertShrink(dms, 3, 2));
+    removeLid(dms, 2);
+    TEST_DO(assertCompact(dms, 3, 3, 2, 1));
+    TEST_DO(assertShrink(dms, 2, 1));
 }
 
 }

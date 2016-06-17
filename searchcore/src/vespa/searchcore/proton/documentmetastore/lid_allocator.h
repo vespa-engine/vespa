@@ -45,7 +45,6 @@ public:
                      uint32_t newSize,
                      uint32_t newCapacity);
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
-    void markAsActive(DocId lid);
     void unregisterLid(DocId lid);
     size_t getUsedLidsSize() const;
     void trimHoldLists(generation_t firstUsed);

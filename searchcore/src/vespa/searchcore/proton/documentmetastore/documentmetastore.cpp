@@ -178,9 +178,8 @@ DocumentMetaStore::insert(DocId lid,
                       metaData.getBucketId().stripUnused(),
                       metaData.getTimestamp(),
                       _subDbType);
-    if (state.isActive()) {
-        _lidAlloc.markAsActive(lid);
-    }
+    _lidAlloc.updateActiveLids(lid, state.isActive());
+    _lidAlloc.commitActiveLids();
     updateCommittedDocIdLimit();
     return true;
 }
