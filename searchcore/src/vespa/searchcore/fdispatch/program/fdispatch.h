@@ -10,6 +10,7 @@
 #include <vespa/searchcore/config/config-fdispatchrc.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/util/random.h>
 
 class FastS_NodeManager;
 class FastS_fdispatch_RPC;
@@ -53,33 +54,40 @@ public:
 /**
  * Note: There is only one instance of this.
  */
-class Fdispatch : public FastS_AppContext
+class Fdispatch : public FastS_AppContext,
+                  public config::IFetcherCallback<vespa::config::search::core::FdispatchrcConfig>
 {
 private:
+    typedef search::engine::TransportServer TransportServer;
+    typedef vespa::config::search::core::FdispatchrcConfig FdispatchrcConfig;
     Fdispatch(const Fdispatch &);
     Fdispatch& operator=(const Fdispatch &);
 
-    FastOS_ThreadPool *_mypool;
-    EngineAdapter        *_engineAdapter;
-    search::engine::TransportServer *_transportServer;
+    std::unique_ptr<FastOS_ThreadPool>      _mypool;
+    std::unique_ptr<EngineAdapter>          _engineAdapter;
+    std::unique_ptr<TransportServer>        _transportServer;
     vespalib::SimpleComponentConfigProducer _componentConfig;
-    FastS_NodeManager *_nodeManager;
-    FNET_Transport *_transport;
-    FastS_FNETAdapter _FNET_adapter;
-    FastS_fdispatch_RPC *_rpc;
-    std::unique_ptr<vespa::config::search::core::FdispatchrcConfig> _config;
-    config::ConfigUri _configUri;
+    std::unique_ptr<FastS_NodeManager>      _nodeManager;
+    std::unique_ptr<FNET_Transport>         _transport;
+    FastS_FNETAdapter                       _FNET_adapter;
+    std::unique_ptr<FastS_fdispatch_RPC>    _rpc;
+    std::unique_ptr<FdispatchrcConfig>      _config;
+    config::ConfigUri                       _configUri;
+    config::ConfigFetcher                   _fdispatchrcFetcher;
+    vespalib::RandomGen                     _rndGen;
     unsigned int _partition;
-    bool _tempFail;
-    bool _FNETLiveCounterDanger;
-    bool _FNETLiveCounterWarned;
-    bool _FNETLiveCounterFailed;
-    bool _transportStarted;
+    bool         _tempFail;
+    bool         _FNETLiveCounterDanger;
+    bool         _FNETLiveCounterWarned;
+    bool         _FNETLiveCounterFailed;
+    bool         _transportStarted;
     unsigned int _lastFNETLiveCounter;
-    FastOS_Time _FNETLiveCounterDangerStart;
+    FastOS_Time  _FNETLiveCounterDangerStart;
     unsigned int _timeouts;
     unsigned int _checkLimit;
-    int _healthPort;
+    int          _healthPort;
+    std::atomic<bool> _needRestart;
+    void configure(std::unique_ptr<FdispatchrcConfig> cfg);
 public:
     // Implements FastS_AppContext
     virtual FNET_Transport *GetFNETTransport();
@@ -94,10 +102,6 @@ public:
     bool Init(void);
     int getHealthPort() const { return _healthPort; }
     vespalib::SimpleComponentConfigProducer &getComponentConfig() { return _componentConfig; }
-
-    void
-    CheckCacheMaxEntries(unsigned int queryCacheMaxEntries,
-                         unsigned int queryAttrCacheMaxEntries);
 
     Fdispatch(const config::ConfigUri &configUri);
     ~Fdispatch(void);
