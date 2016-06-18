@@ -314,6 +314,8 @@ int main(int argc, char *argv[])
     const char *pidfile = "vespa-runserver.pid"; // XXX bad default?
     const char *killcmd = NULL;
 
+    signal(SIGQUIT, SIG_IGN);
+
     int ch;
     while ((ch = getopt(argc, argv, "k:s:r:p:Sh")) != -1) {
         switch (ch) {
