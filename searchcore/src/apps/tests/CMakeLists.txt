@@ -23,4 +23,3 @@ vespa_add_executable(searchcore_persistenceconformance_test_app TEST
     vdstestlib
     persistence_persistence_conformancetest
 )
-vespa_add_test(NAME searchcore_persistenceconformance_test_app COMMAND searchcore_persistenceconformance_test_app)
