@@ -424,11 +424,7 @@ public class ConfigUtils {
     }
 
     public static String getCanonicalHostName() {
-        try {
-            return com.yahoo.net.LinuxInetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        return com.yahoo.net.LinuxInetAddress.getLocalHost().getCanonicalHostName();
     }
 
     /**
