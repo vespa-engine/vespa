@@ -15,29 +15,48 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
+%if 0%{?centos}
 BuildRequires: epel-release 
 BuildRequires: centos-release-scl
 BuildRequires: devtoolset-6-gcc-c++
 BuildRequires: devtoolset-6-libatomic-devel
 BuildRequires: devtoolset-6-binutils
+%define _devtoolset_enable /opt/rh/devtoolset-6/enable
+%endif
 BuildRequires: Judy-devel
+%if 0%{?centos}
 BuildRequires: cmake3
+BuildRequires: llvm3.9-devel
+BuildRequires: vespa-boost-devel >= 1.59.0-6
+BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
+%endif
+%if 0%{?fedora}
+BuildRequires: cmake >= 3.9.1
+%if 0%{?fc25}
+BuildRequires: llvm-devel >= 3.9.1
+BuildRequires: boost-devel >= 1.60
+%endif
+%if 0%{?fc26}
+BuildRequires: llvm-devel >= 4.0
+BuildRequires: boost-devel >= 1.63
+%endif
+BuildRequires: zookeeper-devel >= 3.4.9
+%endif
 BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
 BuildRequires: maven
 BuildRequires: libicu-devel
-BuildRequires: llvm3.9-devel
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
-BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-cppunit-devel >= 1.12.1-6
 BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
-BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 BuildRequires: systemd
-Requires: epel-release 
+%if 0%{?centos}
+Requires: epel-release
+%endif
 Requires: which
 Requires: initscripts
 Requires: valgrind
@@ -46,13 +65,33 @@ Requires: lz4
 Requires: libzstd
 Requires: zlib
 Requires: libicu
+%if 0%{?centos}
 Requires: llvm3.9
+Requires: vespa-boost >= 1.59.0-6
+Requires: vespa-zookeeper-c-client >= 3.4.9-6
+%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib
+%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include
+%endif
+%if 0%{?fedora}
+%if 0%{?fc25}
+Requires: llvm >= 3.9.1
+Requires: boost >= 1.60
+%endif
+%if 0%{?fc26}
+Requires: llvm >= 4.0
+Requires: boost >= 1.63
+%define _vespa_llvm_version 4.0
+%endif
+Requires: zookeeper >= 3.4.9
+%define _extra_link_directory /opt/vespa-libtorrent/lib;/opt/vespa-cppunit/lib
+%define _extra_include_directory /opt/vespa-libtorrent/include;/opt/vespa-cppunit/include
+%define _vespa_boost_lib_suffix %{nil}
+%define _vespa_cxx_abi_flags -D_GLIBCXX_USE_CXX11_ABI=1
+%endif
 Requires: java-1.8.0-openjdk
 Requires: openssl
-Requires: vespa-boost >= 1.59.0-6
 Requires: vespa-cppunit >= 1.12.1-6
 Requires: vespa-libtorrent >= 1.0.11-6
-Requires: vespa-zookeeper-c-client >= 3.4.9-6
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
@@ -67,15 +106,19 @@ Vespa - The open big data serving engine
 %setup -q
 
 %build
-source /opt/rh/devtoolset-6/enable || true
+%if 0%{?_devtoolset_enable:1}
+source %{_devtoolset_enable} || true
+%endif
 sh bootstrap.sh java
 mvn -nsu -T 2C install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-       -DEXTRA_LINK_DIRECTORY="/usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib" \
-       -DEXTRA_INCLUDE_DIRECTORY="/usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
-       -DCMAKE_BUILD_RPATH=%{_prefix}/lib64 \
+       -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
+       -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
+       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
+       %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
+       %{?_vespa_boost_lib_suffix:-DVESPA_BOOST_LIB_SUFFIX="%{_vespa_boost_lib_suffix}"} \
+       %{?_vespa_cxx_abi_flags:-DVESPA_CXX_ABI_FLAGS="%{_vespa_cxx_abi_flags}"} \
        .
 
 make %{_smp_mflags}
