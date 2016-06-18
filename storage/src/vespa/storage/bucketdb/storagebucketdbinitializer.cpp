@@ -507,7 +507,7 @@ StorageBucketDBInitializer::onDown(
     std::ostringstream ost;
     ost << "Cannot perform operation " << msg->getType() << " now because "
         << "we are still listing buckets from disk.";
-    LOGBP(warning, ost.str().c_str());
+    LOGBP(warning, "%s", ost.str().c_str());
     std::unique_ptr<api::StorageReply> reply(
             static_cast<api::StorageCommand&>(*msg).makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
