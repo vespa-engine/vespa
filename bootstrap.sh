@@ -14,10 +14,16 @@ MODULES="
   scalalib
   bundle-plugin
   config-class-plugin
+  config-lib
   yolean
   vespajlib
   jrt
+  vespalog
+  testutil
+  config
+  config-bundle
   component
+  configdefinitions
   messagebus
   filedistributionmanager"
 
