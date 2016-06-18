@@ -54,9 +54,6 @@ vespa_define_module(
     src/apps/vespa-proton-cmd
     src/apps/vespa-transactionlog-inspect
 
-    APP_DEPENDS
-    persistence_persistence_conformancetest
-
     TESTS
     src/tests/applyattrupdates
     src/tests/fdispatch/randomrow
