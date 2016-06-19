@@ -12,7 +12,7 @@ vespa_define_module(
     vdslib
     vsm
 
-    EXTERNAL_DEPENDS
+    TEST_EXTERNAL_DEPENDS
     cppunit
 
     LIBS
