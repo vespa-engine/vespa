@@ -12,14 +12,16 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
                                                     const vespalib::string &documentType)
     : metrics::MetricSet("transactionlog", {{"documenttype", documentType}},
             "Transaction log metrics for a document type", parent),
-      entries("entries", "", "The current number of entries in the transaction log", this)
+      entries("entries", "", "The current number of entries in the transaction log", this),
+      diskUsage("disk_usage", "", "The disk usage (in bytes) of the transaction log", this)
 {
 }
 
 void
 TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
 {
-    entries.set(stats.count);
+    entries.set(stats.numEntries);
+    diskUsage.set(stats.byteSize);
 }
 
 void

@@ -9,12 +9,10 @@ namespace proton {
 
 FlushTask::FlushTask(uint32_t taskId,
                      FlushEngine &engine,
-                     const FlushContext::SP &ctx,
-                     search::SerialNum serial)
+                     const FlushContext::SP &ctx)
     : _taskId(taskId),
       _engine(engine),
-      _context(ctx),
-      _serial(serial)
+      _context(ctx)
 {
     LOG_ASSERT(_context.get() != NULL);
 }
@@ -34,7 +32,6 @@ FlushTask::run()
     }
     task->run();
     task.reset();
-    _context->getHandler()->flushDone(_serial);
 }
 
 } // namespace proton

@@ -22,7 +22,7 @@ public class ForceLoad {
         try {
             for (String className : classNames) {
                 fullClassName = packageName + "." + className;
-                loader.loadClass(fullClassName);
+                Class.forName(fullClassName, true, loader);
             }
         } catch (Exception e) {
             throw new ForceLoadError(fullClassName, e);

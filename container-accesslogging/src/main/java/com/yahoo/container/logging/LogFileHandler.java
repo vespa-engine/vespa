@@ -45,6 +45,7 @@ public class LogFileHandler extends StreamHandler {
         LogFileHandler logFileHandler;
         public LogThread(LogFileHandler logFile) {
             super("Logger");
+            setDaemon(true);
             logFileHandler = logFile;
         }
         @Override

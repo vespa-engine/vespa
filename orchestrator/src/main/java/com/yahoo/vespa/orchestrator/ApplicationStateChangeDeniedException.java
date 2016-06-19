@@ -5,7 +5,7 @@ package com.yahoo.vespa.orchestrator;
  * Exception covering all cases where the state change could not
  * be executed.
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class ApplicationStateChangeDeniedException extends Exception {
 

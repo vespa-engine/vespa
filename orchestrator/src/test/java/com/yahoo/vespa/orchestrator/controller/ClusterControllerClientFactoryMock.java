@@ -20,7 +20,7 @@ import java.util.Set;
  * Mock implementation of ClusterControllerClient
  * <p>
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class ClusterControllerClientFactoryMock implements ClusterControllerClientFactory {
     Map<String, ClusterControllerState> nodes = new HashMap<>();

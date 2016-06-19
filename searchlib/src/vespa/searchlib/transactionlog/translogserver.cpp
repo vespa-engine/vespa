@@ -219,7 +219,6 @@ void TransLogServer::logMetric() const
         EV_COUNT((prefix + "last").c_str(),  it->second->end());
         EV_COUNT((prefix + "first").c_str(), it->second->begin());
         EV_VALUE((prefix + "numused").c_str(), it->second->size());
-        EV_COUNT((prefix + "count").c_str(), it->second->count());
     }
 }
 

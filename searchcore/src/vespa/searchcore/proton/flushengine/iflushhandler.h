@@ -76,9 +76,10 @@ public:
      * up to the given serial number can be pruned from the domain of this
      * handler. This method is called by an arbitrary worker thread.
      *
-     * @param oldestSerial The oldest transaction that is still in use.
+     * @param flushedSerial Serial number flushed for all flush
+     *                      targets belonging to this handler.
      */
-    virtual void flushDone(SerialNum oldestSerial) = 0;
+    virtual void flushDone(SerialNum flushedSerial) = 0;
 
     /*
      * This method is called to sync tls to stable media, up to and

@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <linux/mman.h>
 #include <algorithm>
+#include <errno.h>
 
 namespace vespamalloc {
 

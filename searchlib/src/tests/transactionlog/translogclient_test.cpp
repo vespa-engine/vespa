@@ -715,7 +715,7 @@ void Test::testErase()
                 "count %zu, numBytes %zu",
                 partId,
                 (uint64_t) part.range.from(), (uint64_t) part.range.to(),
-                part.count, part.byteSize);
+                part.numEntries, part.byteSize);
         }
         ASSERT_LESS_EQUAL(2u, numParts);
         // Erase everything before second to last domainpart file
@@ -726,8 +726,8 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 2].count +
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 2].numEntries +
+                             domainInfo.parts[numParts - 1].numEntries));
         // No apparent effect of erasing just first entry in 2nd to last part
         s1->erase(eraseSerial + 1);
         TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
@@ -735,8 +735,8 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 2].count +
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 2].numEntries +
+                             domainInfo.parts[numParts - 1].numEntries));
         // No apparent effect of erasing almost all of 2nd to last part
         SerialNum eraseSerial2 = domainInfo.parts[numParts - 2].range.to();
         s1->erase(eraseSerial2);
@@ -745,8 +745,8 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 2].count +
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 2].numEntries +
+                             domainInfo.parts[numParts - 1].numEntries));
         // Erase everything before last domainpart file
         eraseSerial = domainInfo.parts[numParts - 1].range.from();
         s1->erase(eraseSerial);
@@ -755,7 +755,7 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 1].numEntries));
         // No apparent effect of erasing just first entry in last part
         s1->erase(eraseSerial + 1);
         TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
@@ -763,7 +763,7 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 1].numEntries));
         // No apparent effect of erasing almost all of last part
         eraseSerial2 = domainInfo.parts[numParts - 1].range.to();
         s1->erase(eraseSerial2);
@@ -772,7 +772,7 @@ void Test::testErase()
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
                                  TOTAL_NUM_ENTRIES - eraseSerial));
         TEST_DO(assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].count));
+                             domainInfo.parts[numParts - 1].numEntries));
     }
 }
 

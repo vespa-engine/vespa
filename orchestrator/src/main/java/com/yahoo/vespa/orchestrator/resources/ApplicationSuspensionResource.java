@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 @Path(ApplicationSuspensionApi.PATH_PREFIX)
 public class ApplicationSuspensionResource implements ApplicationSuspensionApi {

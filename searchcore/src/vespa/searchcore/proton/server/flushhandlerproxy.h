@@ -28,7 +28,7 @@ public:
     getCurrentSerialNumber(void) const;
 
     virtual void
-    flushDone(SerialNum oldestSerial);
+    flushDone(SerialNum flushedSerial);
 
     virtual void
     syncTls(SerialNum syncTo);

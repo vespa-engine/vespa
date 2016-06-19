@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Utilities for returning localhost addresses on Linux.
- * See 
+ * See
  * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4665037
  * on why this is necessary.
  *
@@ -25,30 +25,37 @@ public class LinuxInetAddress {
     /**
      * Returns an InetAddress representing the address of the localhost.
      * A non-loopback address is preferred if available.
-     * IPv4 is preferred over IPv6 if available.
+     * An address that resolves to a hostname is preferred among non-loopback addresses.
+     * IPv4 is preferred over IPv6 among resolving addresses.
      *
      * @return a localhost address
-     * @throws UnknownHostException if an address could not be determined
      */
-    public static InetAddress getLocalHost() throws UnknownHostException {
-        InetAddress localAddress;
+    public static InetAddress getLocalHost() {
+        InetAddress fallback = InetAddress.getLoopbackAddress();
         try {
-            localAddress = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            return InetAddress.getLoopbackAddress();
-        }
-
-        if ( ! localAddress.isLoopbackAddress())  return localAddress;
-
-        List<InetAddress> nonLoopbackAddresses = 
+            InetAddress localAddress = InetAddress.getLocalHost();
+            fallback = localAddress;
+            List<InetAddress> nonLoopback =
                 getAllLocalFromNetwork().stream().filter(a -> ! a.isLoopbackAddress()).collect(Collectors.toList());
-        if (nonLoopbackAddresses.isEmpty()) return localAddress;
-
-        List<InetAddress> ipV4NonLoopbackAddresses = 
-                nonLoopbackAddresses.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
-        if ( ! ipV4NonLoopbackAddresses.isEmpty()) return ipV4NonLoopbackAddresses.get(0);
-        
-        return nonLoopbackAddresses.get(0);
+            if (nonLoopback.isEmpty()) {
+                return fallback;
+            }
+            fallback = nonLoopback.get(0);
+            List<InetAddress> resolving =
+                    nonLoopback.stream().filter(a -> doesResolve(a)).collect(Collectors.toList());
+            if (resolving.isEmpty()) {
+                return fallback;
+            }
+            fallback = resolving.get(0);
+            List<InetAddress> ipV4 =
+                    resolving.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
+            if (ipV4.isEmpty()) {
+                return fallback;
+            }
+            return ipV4.get(0);
+        } catch (UnknownHostException e) {
+            return fallback;
+        }
     }
 
     /**
@@ -79,6 +86,12 @@ public class LinuxInetAddress {
         catch (SocketException ex) {
             throw new UnknownHostException("127.0.0.1");
         }
+    }
+
+    private static boolean doesResolve(InetAddress addr) {
+        String asAddr = addr.getHostAddress();
+        String asName = addr.getCanonicalHostName();
+        return ! asAddr.equals(asName);
     }
 
 }

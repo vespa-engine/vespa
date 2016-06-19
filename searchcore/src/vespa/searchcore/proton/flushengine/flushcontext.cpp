@@ -10,13 +10,11 @@ namespace proton {
 FlushContext::FlushContext(
         const IFlushHandler::SP &handler,
         const IFlushTarget::SP &target,
-        search::SerialNum oldestFlushable,
         search::SerialNum lastSerial)
     : _name(createName(*handler, *target)),
       _handler(handler),
       _target(target),
       _task(),
-      _oldestFlushable(oldestFlushable),
       _lastSerial(lastSerial)
 {
     // empty

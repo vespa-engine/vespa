@@ -8,7 +8,7 @@ import java.io.IOException;
 /**
  * Default implementation of the ClusterControllerClient.
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class ClusterControllerClientImpl implements ClusterControllerClient{
     public static final String REQUEST_REASON = "Orchestrator";

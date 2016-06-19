@@ -6,7 +6,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 /**
  * Exception thrown if hostname is not found in the system (i.e node repo)
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public class HostNameNotFoundException extends OrchestrationException {
     public HostNameNotFoundException(HostName hostName) {

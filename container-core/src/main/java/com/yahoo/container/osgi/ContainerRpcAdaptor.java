@@ -43,13 +43,8 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
 
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
-        supervisor = new Supervisor(new Transport());
-
-        try {
-            this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Failed gettting local hostname", e);
-        }
+        this.supervisor = new Supervisor(new Transport());
+        this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
 
         bindCommands(supervisor);
     }

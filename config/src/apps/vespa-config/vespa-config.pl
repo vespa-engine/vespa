@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
 # Various small functions used when bootstrapping the config system
@@ -6,6 +6,7 @@
 # BEGIN perl environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
 
+use warnings;
 use File::Basename;
 use File::Path;
 

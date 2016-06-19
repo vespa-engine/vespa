@@ -22,16 +22,13 @@ namespace {
 
 search::SerialNum
 findOldestFlushedSerial(const IFlushTarget::List &lst,
-                        const IFlushHandler &handler,
-                        const IFlushTarget *self)
+                        const IFlushHandler &handler)
 {
     search::SerialNum ret(handler.getCurrentSerialNumber());
     for (const IFlushTarget::SP & target : lst) {
-        if (self != target.get()) {
-            ret = std::min(ret, target->getFlushedSerialNum());
-        }
+        ret = std::min(ret, target->getFlushedSerialNum());
     }
-    LOG(debug, "Oldest flushed serial for '%s' will be %" PRIu64 " after flush.", handler.getName().c_str(), ret);
+    LOG(debug, "Oldest flushed serial for '%s' is %" PRIu64 ".", handler.getName().c_str(), ret);
     return ret;
 }
 
@@ -55,11 +52,10 @@ FlushEngine::FlushInfo::FlushInfo(uint32_t taskId,
 FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
                          tlsStatsFactory,
                          IFlushStrategy::SP strategy, uint32_t numThreads,
-                         uint32_t idleIntervalMS, bool enableAutoPrune)
+                         uint32_t idleIntervalMS)
     : _closed(false),
       _maxConcurrent(numThreads),
       _idleIntervalMS(idleIntervalMS),
-      _enableAutoPrune(enableAutoPrune),
       _taskId(0),
       _threadPool(128 * 1024),
       _strategy(strategy),
@@ -70,7 +66,8 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
       _flushing(),
       _strategyLock(),
       _strategyMonitor(),
-      _tlsStatsFactory(tlsStatsFactory)
+      _tlsStatsFactory(tlsStatsFactory),
+      _pendingPrune()
 {
     // empty
 }
@@ -128,10 +125,10 @@ bool
 FlushEngine::wait(size_t minimumWaitTimeIfReady)
 {
     MonitorGuard guard(_monitor);
-    if ( (minimumWaitTimeIfReady > 0) && canFlushMore(guard)) {
+    if ( (minimumWaitTimeIfReady > 0) && canFlushMore(guard) && _pendingPrune.empty()) {
         guard.wait(minimumWaitTimeIfReady);
     }
-    while ( ! canFlushMore(guard) ) {
+    while ( ! canFlushMore(guard) && _pendingPrune.empty()) {
         guard.wait(1000); // broadcast when flush done
     }
     return !_closed;
@@ -146,6 +143,9 @@ FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
     vespalib::string prevFlushName;
     while (wait(shouldIdle ? _idleIntervalMS : 0)) {
         shouldIdle = false;
+        if (prune()) {
+            continue; // Prune attempted on one or more handlers
+        }
         prevFlushName = flushNextTarget(prevFlushName);
         if ( ! prevFlushName.empty()) {
             // Sleep at least 10 ms after a successful flush in order to avoid busy loop in case
@@ -154,23 +154,26 @@ FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
         } else {
             shouldIdle = true;
         }
-        if (_enableAutoPrune) {
-            prune();
-        }
         LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'", shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
     }
 }
 
-void FlushEngine::prune()
+bool
+FlushEngine::prune()
 {
-    if (_flushing.empty()) {
+    std::set<IFlushHandler::SP> toPrune;
+    {
         MonitorGuard guard(_monitor);
-        for (const auto & it : _handlers) {
-            IFlushHandler & handler(*it.second);
-            IFlushTarget::List lst = handler.getFlushTargets();
-            handler.flushDone(findOldestFlushedSerial(lst, handler, NULL));
+        if (_pendingPrune.empty()) {
+            return false;
         }
+        _pendingPrune.swap(toPrune);
     }
+    for (const auto &handler : toPrune) {
+        IFlushTarget::List lst = handler->getFlushTargets();
+        handler->flushDone(findOldestFlushedSerial(lst, *handler));
+    }
+    return true;
 }
 
 bool FlushEngine::isFlushing(const MonitorGuard & guard, const vespalib::string & name) const
@@ -201,7 +204,6 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
                 if (!isFlushing(guard, FlushContext::createName(handler, *target)) || includeFlushingTargets) {
                     ret.push_back(FlushContext::SP(new FlushContext(it.second,
                                                                     IFlushTarget::SP(new CachedFlushTarget(target)),
-                                                                    findOldestFlushedSerial(lst, handler, target.get()),
                                                                     serial)));
                 } else {
                     LOG(debug, "Target '%s' with flushedSerialNum = %ld already has a flush going. Local last serial = %ld.",
@@ -263,7 +265,7 @@ FlushEngine::flushAll(const FlushContext::List &lst)
                            ctx->getName().c_str(),
                            ctx->getTarget()->getFlushedSerialNum() + 1,
                            ctx->getHandler()->getCurrentSerialNumber());
-                _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx, ctx->getOldestFlushable())));
+                _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx)));
             } else {
                 LOG(debug, "Target '%s' failed to initiate flush of transactions %" PRIu64 " through %" PRIu64 ".",
                            ctx->getName().c_str(),
@@ -303,7 +305,7 @@ FlushEngine::flushNextTarget(const vespalib::string & name)
                   name.c_str(), lst.first.size());
         FastOS_Thread::Sleep(1000);
     }
-    _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx, ctx->getOldestFlushable())));
+    _executor.execute(Task::UP(new FlushTask(initFlush(*ctx), *this, ctx)));
     return ctx->getName();
 }
 
@@ -340,6 +342,8 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, duration.sec());
     MonitorGuard guard(_monitor);
     _flushing.erase(taskId);
+    assert(ctx.getHandler());
+    _pendingPrune.insert(ctx.getHandler());
     guard.broadcast();
 }
 
@@ -348,7 +352,12 @@ FlushEngine::putFlushHandler(const DocTypeName &docTypeName,
                              const IFlushHandler::SP &flushHandler)
 {
     MonitorGuard guard(_monitor);
-    return _handlers.putHandler(docTypeName, flushHandler);
+    IFlushHandler::SP result(_handlers.putHandler(docTypeName, flushHandler));
+    if (result) {
+        _pendingPrune.erase(result);
+    }
+    _pendingPrune.insert(flushHandler);
+    return std::move(result);
 }
 
 IFlushHandler::SP
@@ -362,7 +371,9 @@ IFlushHandler::SP
 FlushEngine::removeFlushHandler(const DocTypeName &docTypeName)
 {
     MonitorGuard guard(_monitor);
-    return _handlers.removeHandler(docTypeName);
+    IFlushHandler::SP result(_handlers.removeHandler(docTypeName));
+    _pendingPrune.erase(result);
+    return std::move(result);
 }
 
 FlushEngine::FlushMetaSet
@@ -395,6 +406,7 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
 void
 FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
+    vespalib::LockGuard strategyLock(_strategyLock);
     MonitorGuard strategyGuard(_strategyMonitor);
     if (_closed) {
         return;

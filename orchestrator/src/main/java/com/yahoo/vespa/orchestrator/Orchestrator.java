@@ -26,7 +26,7 @@ import java.util.Set;
  * host level state and the host level policies.
  * This is used for parallel upgrade and larger maintenance tasks.
  *
- * @author <a href="mailto:smorgrav@yahoo-inc.com">Toby</a>
+ * @author smorgrav
  */
 public interface Orchestrator {
 

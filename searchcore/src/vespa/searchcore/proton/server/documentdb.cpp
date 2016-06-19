@@ -648,13 +648,13 @@ DocumentDB::onTransactionLogReplayDone()
 
 
 void
-DocumentDB::onPerformPrune(SerialNum oldestSerial)
+DocumentDB::onPerformPrune(SerialNum flushedSerial)
 {
     if (!getAllowPrune()) {
         assert(_state.getClosed());
         return;
     }
-    _config_store->prune(oldestSerial);
+    _config_store->prune(flushedSerial);
 }
 
 
@@ -760,9 +760,9 @@ DocumentDB::getFlushTargets()
 }
 
 void
-DocumentDB::flushDone(SerialNum oldestSerial)
+DocumentDB::flushDone(SerialNum flushedSerial)
 {
-    _feedHandler.flushDone(oldestSerial);
+    _feedHandler.flushDone(flushedSerial);
 }
 
 void
