@@ -14,7 +14,7 @@ bool log_enabled() {
 }
 
 void log_debug(vespalib::string &str) {
-    LOG(debug, str.c_str());
+    LOG(debug, "%s", str.c_str());
 }
 
 } // namespace simpleindex

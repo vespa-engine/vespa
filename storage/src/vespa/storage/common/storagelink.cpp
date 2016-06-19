@@ -163,7 +163,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
                 << vespalib::getStackTrace(0);
             if (!msg->getType().isReply()) {
                 //if (!_closed) {
-                    LOGBP(warning, ost.str().c_str());
+                LOGBP(warning, "%s", ost.str().c_str());
                 //}
                 StorageCommand& cmd = static_cast<StorageCommand&>(*msg);
                 shared_ptr<StorageReply> reply(cmd.makeReply().release());
@@ -177,7 +177,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
                 ost << " Return code: "
                     << static_cast<StorageReply&>(*msg).getResult();
                 //if (!_closed) {
-                    LOGBP(warning, ost.str().c_str());
+                LOGBP(warning, "%s", ost.str().c_str());
                 //}
             }
         //}
@@ -225,7 +225,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
             ost << vespalib::getStackTrace(0);
             if (!msg->getType().isReply()) {
                 //if (!_closed) {
-                    LOGBP(warning, ost.str().c_str());
+                LOGBP(warning, "%s", ost.str().c_str());
                 //}
                 StorageCommand& cmd = static_cast<StorageCommand&>(*msg);
                 shared_ptr<StorageReply> reply(cmd.makeReply().release());
@@ -239,7 +239,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
                 ost << " Return code: "
                     << static_cast<StorageReply&>(*msg).getResult();
                 //if (!_closed) {
-                    LOGBP(warning, ost.str().c_str());
+                LOGBP(warning, "%s", ost.str().c_str());
                 //}
             }
         //}

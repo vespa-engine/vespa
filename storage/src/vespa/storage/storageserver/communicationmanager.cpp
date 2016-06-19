@@ -498,7 +498,7 @@ CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
         ost << "Failed to aquire " << (memoryFootprint * 2)
             << " bytes of memory to handle command of type "
             << msg->getType() << "\n";
-        LOG(spam, ost.str().c_str());
+        LOG(spam, "%s", ost.str().c_str());
         api::StorageCommand* cmd(dynamic_cast<api::StorageCommand*>(msg.get()));
 
         if (cmd) {
