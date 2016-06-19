@@ -9,6 +9,7 @@ function(install_fat_java_artifact NAME)
     install(FILES "${NAME}/target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
 
+install_java_artifact(config-model-fat)
 install_java_artifact(document)
 install_java_artifact(searchlib)
 install_java_artifact(vespajlib)
@@ -27,13 +28,21 @@ install_fat_java_artifact(defaults)
 install_fat_java_artifact(docprocs)
 install_fat_java_artifact(jdisc_core)
 install_fat_java_artifact(jdisc_http_service)
+install_fat_java_artifact(node-repository)
+install_fat_java_artifact(orchestrator)
 install_fat_java_artifact(persistence)
 install_fat_java_artifact(simplemetrics)
 install_fat_java_artifact(standalone-container)
 install_fat_java_artifact(vespaclient-container-plugin)
+install_fat_java_artifact(zkfacade)
 
 vespa_install_script(jdisc_core/src/main/perl/jdisc_logfmt bin)
 install(FILES jdisc_core/src/main/perl/jdisc_logfmt.1 DESTINATION man/man1)
+
+install(FILES
+    config-model-fat/src/main/resources/config-models.xml
+    node-repository/src/main/config/node-repository.xml
+    DESTINATION conf/configserver-app)
 
 install(FILES
     chain/src/main/resources/configdefinitions/chains.def

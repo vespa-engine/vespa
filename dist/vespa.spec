@@ -121,6 +121,12 @@ mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
 mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/
 
+ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/config-model-fat.jar
+ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/orchestrator.jar
+ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/node-repository.jar
+ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/zkfacade.jar
+ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
+
 %clean
 
 rm -rf $RPM_BUILD_ROOT
