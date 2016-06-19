@@ -1,0 +1,30 @@
+FROM centos:7
+
+# Needed to build vespa
+RUN yum -y install epel-release
+RUN yum -y install centos-release-scl
+RUN yum -y install Judy
+RUN yum -y install cmake3
+RUN yum -y install lz4
+RUN yum -y install zlib
+RUN yum -y install libicu
+RUN yum -y install llvm
+RUN yum -y install java-1.8.0-openjdk
+RUN yum -y install openssl
+RUN yum -y install perl
+RUN yum -y install libatomic
+
+# Install vespa dependencies
+RUN curl -o /etc/yum.repos.d/vespa-deps.repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+RUN yum -y install vespa-boost
+RUN yum -y install vespa-libtorrent
+RUN yum -y install vespa-zookeeper-c-client
+RUN yum -y install vespa-cppunit # Should not be needed ?
+
+#RUN yum -y install vespa
+
+# Build    : docker build -t vesparun -f Dockerfile.run .
+# Run      : docker run -ti --rm vesparun <path to service startup script>
+#            Need -v options to map directories used to store data
+#            ONLY MANUAL INSTALL OF VESPA RPM TESTED
+#
