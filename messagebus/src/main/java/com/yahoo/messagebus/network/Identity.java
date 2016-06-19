@@ -30,12 +30,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        InetAddress addr;
-        try {
-            addr = LinuxInetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        InetAddress addr = LinuxInetAddress.getLocalHost();
         if (addr instanceof Inet6Address) {
             log.log(LogLevel.WARNING, "Local host resolved to IPv6 address '" + addr.getHostAddress() +
                                       "', this might be problematic.");
