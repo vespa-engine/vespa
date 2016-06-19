@@ -122,10 +122,11 @@ mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
 mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/
 
-ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/config-model-fat.jar
-ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/orchestrator.jar
-ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/node-repository.jar
-ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/zkfacade.jar
+ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/components/configserver-app/config-model-fat.jar
+ln -s %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/configserver.jar
+ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/orchestrator.jar
+ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/node-repository.jar
+ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/zkfacade.jar
 ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
 
 %clean
@@ -191,7 +192,7 @@ exit 0
 %{_prefix}/libexec/vespa/start-logd
 %{_prefix}/libexec/vespa/stop-configserver
 %{_prefix}/var/db/vespa/config_server/serverdb/classes/*.def
-%{_prefix}/lib/jars/*.jar
+%{_prefix}/lib/jars/*
 %{_prefix}/lib/perl5/site_perl/Yahoo/Vespa/*.pm
 %{_prefix}/lib64/*.so
 %{_prefix}/bin/*
