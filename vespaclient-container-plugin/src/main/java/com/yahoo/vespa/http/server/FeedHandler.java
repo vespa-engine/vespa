@@ -283,7 +283,7 @@ public class FeedHandler extends LoggingRequestHandler {
        if (hostname.equals("localhost")) {
            return "";
        }
-       return inetAddress.getCanonicalHostName();
+       return hostname;
     }
 
     /**
