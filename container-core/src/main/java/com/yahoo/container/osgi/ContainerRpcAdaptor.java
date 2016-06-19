@@ -18,7 +18,6 @@ import com.yahoo.osgi.Osgi;
 import com.yahoo.yolean.Exceptions;
 import org.osgi.framework.Bundle;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -44,13 +43,7 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
         supervisor = new Supervisor(new Transport());
-
-        try {
-            this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Failed gettting local hostname", e);
-        }
-
+        this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
         bindCommands(supervisor);
     }
 

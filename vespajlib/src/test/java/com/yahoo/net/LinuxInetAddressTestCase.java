@@ -10,7 +10,7 @@ import java.net.Inet4Address;
  */
 public class LinuxInetAddressTestCase extends junit.framework.TestCase {
 
-    public void testPreferIPv4() throws UnknownHostException {
+    public void testPreferIPv4() {
         try {
             // This test only works if there is at least one inet address returned.
             InetAddress[] arr = LinuxInetAddress.getAllLocal();
