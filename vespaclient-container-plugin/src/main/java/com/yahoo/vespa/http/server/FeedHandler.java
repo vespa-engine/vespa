@@ -278,16 +278,12 @@ public class FeedHandler extends LoggingRequestHandler {
     }
 
     private static String resolveLocalHostname() {
-        try {
-            InetAddress inetAddress = LinuxInetAddress.getLocalHost();
-            String hostname = inetAddress.getCanonicalHostName();
-            if (hostname.equals("localhost")) {
-                return "";
-            }
-            return inetAddress.getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            return "";
-        }
+       InetAddress inetAddress = LinuxInetAddress.getLocalHost();
+       String hostname = inetAddress.getCanonicalHostName();
+       if (hostname.equals("localhost")) {
+           return "";
+       }
+       return inetAddress.getCanonicalHostName();
     }
 
     /**

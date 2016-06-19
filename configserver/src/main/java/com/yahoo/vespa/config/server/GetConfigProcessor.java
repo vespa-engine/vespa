@@ -154,13 +154,7 @@ class GetConfigProcessor implements Runnable {
      * Do not call  java.net.Inet4AddressImpl.getLocalHostName() on each request, as this causes CPU bottlenecks.
      */
     static {
-        String hostName = "unknown";
-        try {
-            hostName = LinuxInetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            // ignore if it fails
-        }
-        localHostName = hostName;
+        localHostName = LinuxInetAddress.getLocalHost().getHostName();
     }
 
     static boolean logDebug(Trace trace) {
