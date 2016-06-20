@@ -13,7 +13,7 @@ TEST("simple run, ignore output, failure") {
 }
 
 TEST("simple run, ignore output, timeout") {
-    EXPECT_TRUE(!SlaveProc::run("sleep 60", 10));
+    EXPECT_TRUE(!SlaveProc::run("exec sleep 60", 10));
 }
 
 TEST("simple run") {
@@ -58,16 +58,17 @@ TEST("simple run with input, don't strip multi-line output") {
 TEST_MT("simple run, partial output due to timeout", 2) {
     std::string out;
     std::vector<size_t> timeouts({150, 300, 3000, 6000, 60000});
+    const char *my_cmd = "exec perl -e '$| = 1; print \"foo\\\n\"; sleep(600); print \"bar\\\n\"'";
     for (size_t timeout: timeouts) {
         fprintf(stderr, "... verifying partial output with%s input (timeout = %zu)\n",
                 (thread_id == 0) ? "out" : "", timeout);
         if (thread_id == 0) {
             out.clear();
-            EXPECT_TRUE(!SlaveProc::run("echo foo; sleep 600; echo bar", out, timeout));
+            EXPECT_TRUE(!SlaveProc::run(my_cmd, out, timeout));
         } else {
             out.clear();
             std::string in = "ignored\n";
-            EXPECT_TRUE(!SlaveProc::run(in, "echo foo; sleep 600; echo bar", out, timeout));
+            EXPECT_TRUE(!SlaveProc::run(in, my_cmd, out, timeout));
         }
         if (out == "foo") {
             break;
