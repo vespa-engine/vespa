@@ -172,7 +172,7 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            sbcfg.setTimeout(1000);
+            // sbcfg.setTimeout(1000);
             slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
@@ -254,172 +254,178 @@ public:
             _target = _supervisor->GetTarget(spec.c_str());
         }
 
-        bool invoked = false;
-
-        if (strcmp(_argv[2], "enableSearching") == 0) {
-            _req->SetMethodName("proton.enableSearching");
-        } else if (strcmp(_argv[2], "disableSearching") == 0) {
-            _req->SetMethodName("proton.disableSearching");
-        } else if (strcmp(_argv[2], "getState") == 0 &&
-                   _argc >= 3) {
-            _req->SetMethodName("pandora.rtc.getState");
-
-            FRT_Values &params = *_req->GetParams();
-
-            params.AddInt32(_argc > 3 ? atoi(_argv[3]) : 0);
-            params.AddInt32(_argc > 4 ? atoi(_argv[4]) : 0);
-            invokeRPC(false);
-            invoked = true;
-
-            FRT_Values &rvals = *_req->GetReturn();
-
-            if (!_req->IsError()) {
-                FRT_Value &names = rvals.GetValue(0);
-                FRT_Value &values = rvals.GetValue(1);
-                FRT_Value &gencnt = rvals.GetValue(2);
-
-                for (unsigned int i = 0;
-                     i < names._string_array._len &&
-                                      i < values._string_array._len;
-                     i++)
-                {
-                    printf("\"%s\", \"%s\"\n",
-                           names._string_array._pt[i]._str,
-                           values._string_array._pt[i]._str);
-                }
-                printf("gencnt=%u\n",
-                       static_cast<unsigned int>(gencnt._intval32));
-            }
-        } else if (strcmp(_argv[2], "getProtonStatus") == 0 &&
-                   _argc >= 3) {
-
-            _req->SetMethodName("proton.getStatus");
-            FRT_Values &params = *_req->GetParams();
-            params.AddString(_argc > 3 ? _argv[3] : "");
-            invokeRPC(false);
-            invoked = true;
-            FRT_Values &rvals = *_req->GetReturn();
-            if (!_req->IsError()) {
-                FRT_Value &components = rvals.GetValue(0);
-                FRT_Value &states = rvals.GetValue(1);
-                FRT_Value &internalStates = rvals.GetValue(2);
-                FRT_Value &messages = rvals.GetValue(3);
-                for (unsigned int i = 0; i < components._string_array._len &&
-                                         i < states._string_array._len &&
-                                         i < internalStates.
-                                               _string_array._len &&
-                                         i < messages._string_array._len;
-                                       i++) {
-                    printf("\"%s\",\"%s\",\"%s\",\"%s\"\n",
-                           components._string_array._pt[i]._str,
-                           states._string_array._pt[i]._str,
-                           internalStates._string_array._pt[i]._str,
-                           messages._string_array._pt[i]._str);
-                }
-
-            }
-        } else if (strcmp(_argv[2], "triggerFlush") == 0) {
-            _req->SetMethodName("proton.triggerFlush");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: flush trigger enabled\n");
-            }
-        } else if (strcmp(_argv[2], "prepareRestart") == 0) {
-            _req->SetMethodName("proton.prepareRestart");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: prepareRestart enabled\n");
-            }
-        } else if (strcmp(_argv[2], "listDocTypes") == 0) {
-            _req->SetMethodName("proton.listDocTypes");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "S") == 0) {
-                    uint32_t dtLen = ret[0]._string_array._len;
-                    const FRT_StringValue *dt = ret[0]._string_array._pt;
-                    for (uint32_t i = 0; i < dtLen; ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s", dt[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "listSchema") == 0 && _argc == 4) {
-            _req->SetMethodName("proton.listSchema");
-            FRT_Values &arg = *_req->GetParams();
-            arg.AddString(_argv[3]);
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "SSSS") == 0) {
-                    uint32_t fnLen = ret[0]._string_array._len;
-                    const FRT_StringValue *fn = ret[0]._string_array._pt;
-                    uint32_t fdtLen = ret[1]._string_array._len;
-                    const FRT_StringValue *fdt = ret[1]._string_array._pt;
-                    uint32_t fctLen = ret[2]._string_array._len;
-                    const FRT_StringValue *fct = ret[2]._string_array._pt;
-                    uint32_t flLen = ret[3]._string_array._len;
-                    const FRT_StringValue *fl = ret[3]._string_array._pt;
-                    for (uint32_t i = 0;
-                         i < fnLen && i < fdtLen && i < fctLen && i < flLen;
-                         ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s/%s/%s/%s",
-                               fn[i]._str,
-                               fdt[i]._str,
-                               fct[i]._str,
-                               fl[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "getConfigTime") == 0) {
-            _req->SetMethodName("proton.getConfigTime");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "l") == 0) {
-                    uint64_t configTime = ret[0]._intval64;
-                    printf("%" PRId64 "\n", configTime);
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "wipeHistory") == 0) {
-            _req->SetMethodName("proton.wipeHistory");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: history wiped\n");
-            }
-        } else if (strcmp(_argv[2], "die") == 0) {
-            _req->SetMethodName("pandora.rtc.die");
-
-        } else if (strcmp(_argv[2], "monitor") == 0) {
-            invoked = true;
-            monitorLoop();
-        } else {
-            finiRPC();
-            return usage();
+        std::vector<const char *> args;
+        for (size_t i(3); i < _argc; i++) {
+            args.push_back(_argv[i]);
         }
-        if (!invoked)
-            invokeRPC(true);
+        runCommand(_argv[2], args, _req);
         finiRPC();
         return 0;
     }
+    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req);
 };
+
+void
+App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req) {
+    bool invoked = false;
+
+    if (strcmp(cmd, "enableSearching") == 0) {
+        req->SetMethodName("proton.enableSearching");
+    } else if (strcmp(cmd, "disableSearching") == 0) {
+        req->SetMethodName("proton.disableSearching");
+    } else if (strcmp(cmd, "getState") == 0) {
+        req->SetMethodName("pandora.rtc.getState");
+
+        FRT_Values &params = *req->GetParams();
+
+        params.AddInt32(args.size() > 0 ? atoi(args[1]) : 0);
+        params.AddInt32(args.size() > 1 ? atoi(args[1]) : 0);
+        invokeRPC(false);
+        invoked = true;
+
+        FRT_Values &rvals = *req->GetReturn();
+
+        if (!req->IsError()) {
+            FRT_Value &names = rvals.GetValue(0);
+            FRT_Value &values = rvals.GetValue(1);
+            FRT_Value &gencnt = rvals.GetValue(2);
+
+            for (unsigned int i = 0;
+                 i < names._string_array._len &&
+                 i < values._string_array._len;
+                 i++)
+            {
+                printf("\"%s\", \"%s\"\n",
+                       names._string_array._pt[i]._str,
+                       values._string_array._pt[i]._str);
+            }
+            printf("gencnt=%u\n", static_cast<unsigned int>(gencnt._intval32));
+        }
+    } else if (strcmp(cmd, "getProtonStatus") == 0) {
+        req->SetMethodName("proton.getStatus");
+        FRT_Values &params = *req->GetParams();
+        params.AddString(args.size() > 0 ? args[0] : "");
+        invokeRPC(false);
+        invoked = true;
+        FRT_Values &rvals = *req->GetReturn();
+        if (!req->IsError()) {
+            FRT_Value &components = rvals.GetValue(0);
+            FRT_Value &states = rvals.GetValue(1);
+            FRT_Value &internalStates = rvals.GetValue(2);
+            FRT_Value &messages = rvals.GetValue(3);
+            for (unsigned int i = 0; i < components._string_array._len &&
+                                     i < states._string_array._len &&
+                                     i < internalStates.
+                                         _string_array._len &&
+                                     i < messages._string_array._len;
+                 i++) {
+                printf("\"%s\",\"%s\",\"%s\",\"%s\"\n",
+                       components._string_array._pt[i]._str,
+                       states._string_array._pt[i]._str,
+                       internalStates._string_array._pt[i]._str,
+                       messages._string_array._pt[i]._str);
+            }
+
+        }
+    } else if (strcmp(cmd, "triggerFlush") == 0) {
+        req->SetMethodName("proton.triggerFlush");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: flush trigger enabled\n");
+        }
+    } else if (strcmp(cmd, "prepareRestart") == 0) {
+        req->SetMethodName("proton.prepareRestart");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: prepareRestart enabled\n");
+        }
+    } else if (strcmp(cmd, "listDocTypes") == 0) {
+        req->SetMethodName("proton.listDocTypes");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "S") == 0) {
+                uint32_t dtLen = ret[0]._string_array._len;
+                const FRT_StringValue *dt = ret[0]._string_array._pt;
+                for (uint32_t i = 0; i < dtLen; ++i) {
+                    if (i > 0)
+                        printf(" ");
+                    printf("%s", dt[i]._str);
+                }
+                printf("\n");
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "listSchema") == 0 && args.size() == 1) {
+        req->SetMethodName("proton.listSchema");
+        FRT_Values &arg = *req->GetParams();
+        arg.AddString(args[0]);
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "SSSS") == 0) {
+                uint32_t fnLen = ret[0]._string_array._len;
+                const FRT_StringValue *fn = ret[0]._string_array._pt;
+                uint32_t fdtLen = ret[1]._string_array._len;
+                const FRT_StringValue *fdt = ret[1]._string_array._pt;
+                uint32_t fctLen = ret[2]._string_array._len;
+                const FRT_StringValue *fct = ret[2]._string_array._pt;
+                uint32_t flLen = ret[3]._string_array._len;
+                const FRT_StringValue *fl = ret[3]._string_array._pt;
+                for (uint32_t i = 0;
+                     i < fnLen && i < fdtLen && i < fctLen && i < flLen;
+                     ++i) {
+                    if (i > 0)
+                        printf(" ");
+                    printf("%s/%s/%s/%s",
+                           fn[i]._str,
+                           fdt[i]._str,
+                           fct[i]._str,
+                           fl[i]._str);
+                }
+                printf("\n");
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "getConfigTime") == 0) {
+        req->SetMethodName("proton.getConfigTime");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "l") == 0) {
+                uint64_t configTime = ret[0]._intval64;
+                printf("%" PRId64 "\n", configTime);
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "wipeHistory") == 0) {
+        req->SetMethodName("proton.wipeHistory");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: history wiped\n");
+        }
+    } else if (strcmp(cmd, "die") == 0) {
+        req->SetMethodName("pandora.rtc.die");
+
+    } else if (strcmp(cmd, "monitor") == 0) {
+        invoked = true;
+        monitorLoop();
+    } else {
+        usage();
+    }
+    if (!invoked) {
+        invokeRPC(true);
+    }
+}
 
 
 void
