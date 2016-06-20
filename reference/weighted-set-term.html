@@ -3,7 +3,7 @@
 title: "Weighted Set Query Term"
 ---
 
-<p class="ingress">
+<p>
 <a href="#what-is">WeightedSetItem</a> is a query term available in
 the container that can be used to search for a collection of tokens
 with individual weights.  It has similar semantics to EQUIV, since it
@@ -17,7 +17,6 @@ operators.
 
 
 <h1 id="usecase">Use Case</h1>
-
 <p>
 The actual use cases for this feature are for limiting the search
 result to documents with specific properties that can have a large
@@ -47,7 +46,6 @@ that field is recommended.
 
 
 <h1 id="activate">How to Introduce WeightedSetItem terms in Your Application</h1>
-
 <p>
 The decision to use a <code>WeightedSetItem</code> must be taken by
 application-specific logic.  This must be in the form of a QRS plugin
@@ -71,24 +69,24 @@ tokens:
 
 <pre class="brush: java">
 private Result hardCoded(Query query, Execution execution) {
-    WeightedSetItem filter = new WeightedSetItem(&quot;author&quot;);
-    filter.addToken(&quot;magazine1&quot;, 2);
-    filter.addToken(&quot;magazine2&quot;, 2);
-    filter.addToken(&quot;magazine3&quot;, 2);
-    filter.addToken(&quot;tv&quot;, 3);
-    filter.addToken(&quot;tabloid1&quot;, 1);
-    filter.addToken(&quot;tabloid2&quot;, 1);
-    filter.addToken(&quot;tabloid3&quot;, 1);
-    filter.addToken(&quot;tabloid4&quot;, 1);
-    filter.addToken(&quot;tabloid5&quot;, 1);
-    filter.addToken(&quot;tabloid6&quot;, 1);
+    WeightedSetItem filter = new WeightedSetItem("author");
+    filter.addToken("magazine1", 2);
+    filter.addToken("magazine2", 2);
+    filter.addToken("magazine3", 2);
+    filter.addToken("tv", 3);
+    filter.addToken("tabloid1", 1);
+    filter.addToken("tabloid2", 1);
+    filter.addToken("tabloid3", 1);
+    filter.addToken("tabloid4", 1);
+    filter.addToken("tabloid5", 1);
+    filter.addToken("tabloid6", 1);
     QueryTree tree = query.getModel().getQueryTree();
     Item oldroot = tree.getRoot();
     AndItem newtop = new AndItem();
     newtop.addItem(oldroot);
     newtop.addItem(filter);
     tree.setRoot(newtop);
-    query.trace(&quot;FriendFilterSearcher added hardcoded filter: &quot;, true, 2);
+    query.trace("FriendFilterSearcher added hardcoded filter: ", true, 2);
     return execution.search(query);
 }
 </pre>
@@ -111,14 +109,9 @@ index can be matched.
 </p>
 
 <p>
-For more real-world examples on how the code might look there is a
-<a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/weightedsetterm/WeightedSetTermTester.java?view=markup">
-detailed code example
-</a>
-from the system test in the source code repository and there is
+For more examples on how the code might look there is
 <a href="../javadoc/index.html?com/yahoo/prelude/query/WeightedSetItem.html">
-container javadoc
-</a> available.
+container javadoc</a> available.
 </p>
 
 

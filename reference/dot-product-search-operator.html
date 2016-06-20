@@ -3,7 +3,7 @@
 title: "Dot Product Search Operator"
 ---
 
-<p class="ingress">
+<p>
 <code>DotProductItem</code> is a query item available in the search
 container that can be used to search for documents matching a subset
 of weighted tokens while at the same time calculating the sparse dot
@@ -88,10 +88,7 @@ field features type weightedset&lt;string&gt; {
 <p>
 The query needs to be prepared by a custom searcher or sent
 using <a href=" ../search/yql-in-vespa.html#dot-product">YQL</a>. The code below
-shows the relevant part. For a full example that is actually somewhat
-generic, take a look at
-the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/dot_product_search/DotProductTestSearcher.java?view=markup">searcher
-used by the system test</a>. If you use multiple dot products in the
+shows the relevant part. If you use multiple dot products in the
 same query it is a good idea to label them. This enables us to use
 individual dot product scores when ranking results later.
 </p>
