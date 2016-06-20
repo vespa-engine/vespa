@@ -3,23 +3,20 @@
 title: "RESTified Document Operation API"
 ---
 
-<p class="ingress">
-This document explains the REST API for insert, update, removal and visit operations to a Vespa cluster.
-It is not a high throughput API, but designed for ease of use.
+<p>
+  This document explains the JSON REST API for insert, update, removal and visit operations to a Vespa cluster.
+  It is not a high throughput API, but designed for ease of use.
 </p>
 
-<h1 id="preparing">Document Format</h1>
+<h2 id="preparing">Document Format</h2>
 <p>
-The format of the operation is JSON. The JSON structure is based on the format <a href="reference/document-json-format.html">documented here</a>, but the ID is moved to the request URI instead of begining in the document itself.
+  The structure is based on the <a href="reference/document-json-format.html">document format</a>,
+  but the ID is moved to the request URI instead of begining in the document itself.
+  A request for inserting a document can look like this:
 </p>
-<p>
-A request for inserting a document can look like this:
-</p>
-
 <pre class="brush: xml">
 PUT: [host]:[port]/document/v1/music/music/docid/123
 </pre>
-
 <pre class="brush: xml">
 {
     "fields": {
@@ -29,50 +26,53 @@ PUT: [host]:[port]/document/v1/music/music/docid/123
     }
 }
 </pre>
-
-
 <p>
-Please notice that the structure of the document reflects the search definition.
+Please note that the structure of the document must match the search definition.
 </p>
 
-<h1 id="using">Enabling the API</h1>
 
+<h2 id="using">Enabling the API</h2>
 <p>
-In order to be able to use the REST API you need to make sure that <pre class="brush: xml">&lt;document-api/&gt;</pre> is in the services.xml.
-This enables the <a href="httpgateway.html">HTTP gateway</a> which is the access point for all operations.
-Please refer to the HTTP gateway documentation for more details.
+  In order to be able to use the REST API,
+  add <pre class="brush: xml">&lt;document-api/&gt;</pre> under
+  <em>jdisc</em> in <em>services.xml</em>.
+  This enables the HTTP gateway which is the access point for all operations.
+  Please refer to the <a href="httpgateway.html">HTTP gateway documentation</a> for details.
 </p>
 
 
-<h1 id="using">The Operations</h1>
-
+<h2 id="using">The Operations</h2>
 <p>
-One way of understanding the API can be to <a href="https://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/httpgateway/documentv1.rb">look at the system test</a>. It covers all usage of the API.
+  The URL's structure is like:
 </p>
-
+<pre class="brush: xml">[Gateway]/document/v1/[namespace]/[documenttype]/docid/[document ID]</pre>
 <p>
-The URL is <pre class="brush: xml">[Gateway]/document/v1/[namespace]/[documenttype]/docid/[document ID]</pre>
+  Operations:
 </p>
-
+  <ul>
+    <li>Insert new document. HTTP POST. Can take condition query parameter, see below.</li>
+    <li>Update a document. HTTP PUT.   Can take condition amd create query parameters, see below.</li>
+    <li>Delete a document. HTTP DELETE. Can take condition query parameter, see below.</li>
+    <li>Get one or many documents. HTTP GET. If [document ID] is not specified,
+      selection query parameter is supported and several documents can be returned.
+      Can take continuation parameter, see below.</li>
+  </ul>
 <p>
-These are the supported operations:
-<ul>
-<li>Insert new document. HTTP post. Can take condition query parameter, see below.</li>
-<li>Update a document. HTTP put.   Can take condition amd create query parameters, see below.</li>
-<li>Delete a document. HTTP delete. Can take condition query parameter, see below.</li>
-<li>Get one or many documents. HTTP get. If [document ID] is not specified, selection query parameter is supported and several documents can be returned. Can take continuation parameter, see below.</li>
-</ul>
+  Query parameters:
 </p>
+  <ul>
+  <li>condition: Requires that this condition is true, otherwise a 40x is returned.
+    See <a href="reference/document-json-format.html">json format</a> for details.</li>
+  <li>create: true | false. If set to true, updates will create new document if not existing.
+    See <a href="partial-update.html">partial updates</a>
+    for more details on updates to non existing documents.</li>
+  <li>selection: See <a href="reference/document-select-language.html">document selector language</a>
+    for more details.</li>
+  <li>continuation: When retrieving several documents and all does not fit in the result,
+    a continuation token is returned in the response,
+    and this can be put in the request URI parameters (otherwise equal)
+    to get the next set of documents.</li>
+  </ul>
 
-<p>
-The query parameters are:
-</p>
-<ul>
-<li>condition: Requires that this condition is true, otherwise a 40x is returned. See <a href="reference/document-json-format.html">json format</a> for details.</li>
-<li>create: true | false. If set to true, updates will create new document if not existing. See <a href="partial-update.html">partial updates</a> for more details on updates to non existing documents.</li>
-<li>selection: See <a href="reference/document-select-language.html">document selector language</a> for more details.</li>
-<li>continuation: When retrieving several documents and all does not fit in the result, a continuation token is returned in the answer, and this can be put in the request URI parameters (otherwise equal) to get the next set of documents.</li>
-</ul>
-</p>
 
 
