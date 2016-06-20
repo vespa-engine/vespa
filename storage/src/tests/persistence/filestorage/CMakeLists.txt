@@ -12,5 +12,6 @@ vespa_add_library(storage_testfilestorage TEST
     deletebuckettest.cpp
     singlebucketjointest.cpp
     AFTER
+    storage_bucketdb
     storage_storageconfig
 )
