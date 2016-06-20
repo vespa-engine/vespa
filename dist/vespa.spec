@@ -122,7 +122,7 @@ mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
 mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/
 
-ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/components/configserver-app/config-model-fat.jar
+ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/config-model-fat.jar
 ln -s %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/configserver.jar
 ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/orchestrator.jar
 ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/node-repository.jar
