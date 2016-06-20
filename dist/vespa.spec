@@ -201,5 +201,6 @@ exit 0
 %{_prefix}/include/*
 %{_prefix}/etc/*
 %{_prefix}/conf/*
+%{_prefix}/share/vespa/schema/*
 
 %changelog
