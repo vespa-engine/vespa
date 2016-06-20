@@ -57,7 +57,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             switch (request.getMethod()) {
                 case GET: return handleGET(request);
                 case PUT: return handlePUT(request);
-                case POST: return handlePOST(request);
+                case POST: return isPatchOverride(request) ? handlePATCH(request) : handlePOST(request);
                 case DELETE: return handleDELETE(request);
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
@@ -227,6 +227,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
         return path.substring(lastSlash + 1, path.length());
+    }
+
+    private boolean isPatchOverride(HttpRequest request) {
+        //Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
+        String override = request.getHeader("X-HTTP-Method-Override");
+        return override != null && override.equals("PATCH");
     }
 
 }
