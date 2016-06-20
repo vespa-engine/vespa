@@ -68,10 +68,13 @@ ItemRawScoreBlueprint::resolve(const search::fef::IQueryEnvironment &env,
 {
     HandleVector handles;
     const ITermData *term = util::getTermByLabel(env, label);
-    for (uint32_t i = 0; (term != 0) && (i < term->numFields()); ++i) {
-        TermFieldHandle handle = term->field(i).getHandle();
-        if (handle != IllegalHandle) {
-            handles.push_back(handle);
+    if (term != nullptr) {
+        uint32_t numFields(term->numFields());
+        for (uint32_t i(0); i < numFields; ++i) {
+            TermFieldHandle handle = term->field(i).getHandle();
+            if (handle != IllegalHandle) {
+                handles.push_back(handle);
+            }
         }
     }
     return handles;

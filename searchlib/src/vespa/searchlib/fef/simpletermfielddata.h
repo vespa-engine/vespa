@@ -38,14 +38,14 @@ public:
      *
      * @return field id
      **/
-    virtual uint32_t getFieldId() const { return _fieldId; }
+    uint32_t getFieldId() const override final { return _fieldId; }
 
     /**
      * Obtain the document frequency.
      *
      * @return document frequency
      **/
-    virtual double getDocFreq() const { return _docFreq; }
+    double getDocFreq() const override final { return _docFreq; }
 
     /**
      * Obtain the match handle for this field.
