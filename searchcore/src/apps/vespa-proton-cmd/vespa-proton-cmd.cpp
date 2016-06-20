@@ -172,6 +172,7 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
+            sbcfg.setTimeout(1000);
             slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
