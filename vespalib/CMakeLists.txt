@@ -54,7 +54,6 @@ vespa_define_module(
     src/tests/net/socket
     src/tests/objects/nbostream
     src/tests/optimized
-    src/tests/placement-delete
     src/tests/printable
     src/tests/priority_queue
     src/tests/random
