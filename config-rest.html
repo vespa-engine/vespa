@@ -3,7 +3,7 @@
 title: "Cloud Config REST API for listing and retrieving config"
 ---
 
-<p class="ingress">
+<p>
 The Cloud Config System (CCS) provides a REST API for listing and retrieving config. This
 API is useful for users of CCS that for various reasons do not want to use the
 <a href="cloudconfig/configapi-dev-cpp.html">C++</a> or <a
@@ -83,19 +83,17 @@ URLs. A list response will include two arrays:
 <h3 id="list-configs-example1">Sample Response: GET /config/v1/</h3>
 <pre>
 {
-  &quot;children&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.metricsproxy/hosts/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.model/admin/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/container.components/search/&quot;,
+  "children": [
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;/",
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts/",
+    "http://&lt;host&gt;:19071/config/v1/config.model/admin/",
+    "http://&lt;host&gt;:19071/config/v1/container.components/search/",
   &hellip;
-  &quot;configs&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.metricsproxy/hosts&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.model/admin&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/container.components/search&quot;,
+  "configs": [
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;",
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts",
+    "http://&lt;host&gt;:19071/config/v1/config.model/admin",
+    "http://&lt;host&gt;:19071/config/v1/container.components/search",
   &hellip;
 </pre>
 
@@ -103,10 +101,9 @@ URLs. A list response will include two arrays:
 <h3 id="list-configs-example2">Sample response: GET /config/v1/?recursive=true</h3>
 <pre>
 {
-  &quot;configs&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts/&lt;host&gt;&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/config.metricsproxy/hosts/&lt;host&gt;/metricsproxy&quot;,
+  "configs": [
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/&lt;host&gt;",
+    "http://&lt;host&gt;:19071/config/v1/config.sentinel/hosts/&lt;host&gt;",
 </pre>
 
 
@@ -131,15 +128,15 @@ Same as above.
 <h3 id="list-namespace-example1">Sample Response: GET /config/v1/vespaclient.config.feeder/</h3>
 <pre>
 {
-  &quot;children&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/docproc/&quot;
+  "children": [
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/docproc/"
   ]
-  &quot;configs&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/docproc&quot;
+  "configs": [
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/docproc"
   ]
 }
 </pre>
@@ -148,10 +145,10 @@ Same as above.
 
 <pre>
 {
-  &quot;configs&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/default&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/gateways&quot;,
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/gateways/gateway&quot;,
+  "configs": [
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/default",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/gateways",
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/clients/gateways/gateway",
 </pre>
 
 
@@ -178,11 +175,11 @@ Same as above.
 <h3 id="list-prefix-example1">Sample Response: GET /config/v1/vespaclient.config.feeder/search/</h3>
 <pre>
 {
-  &quot;children&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/&quot;
+  "children": [
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/"
   ]
-  &quot;configs&quot;: [
-    &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters&quot;
+  "configs": [
+    "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters"
   ]
 }
 </pre>
@@ -191,8 +188,8 @@ Same as above.
 
 <pre>
 {
-    &quot;configs&quot;: [
-        &quot;http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/default&quot;
+    "configs": [
+        "http://&lt;host&gt;:19071/config/v1/vespaclient.config.feeder/search/qrsclusters/default"
     ]
 }
 </pre>
@@ -219,14 +216,14 @@ Same as above.
 <h3 id="payload-example1">Sample response: GET /config/v1/container.core.container-http/search/qrsclusters/default/qrserver.0</h3>
 <pre>
 {
-  &quot;enabled&quot;: &quot;true&quot;,
-  &quot;requestbuffersize&quot;: &quot;65536&quot;,
-  &quot;port&quot;: {
-    &quot;search&quot;: &quot;8080&quot;,
-    &quot;host&quot;: &quot;&quot;
+  "enabled": "true",
+  "requestbuffersize": "65536",
+  "port": {
+    "search": "8080",
+    "host": ""
   },
-  &quot;fileserver&quot;: {
-    &quot;throughsearch&quot;: &quot;true&quot;
+  "fileserver": {
+    "throughsearch": "true"
   }
 }
 </pre>

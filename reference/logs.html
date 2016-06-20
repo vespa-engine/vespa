@@ -3,9 +3,9 @@
 title: "Vespa log files"
 ---
 
-<h1>Vespa log files</h1>
+<h2>Vespa log files</h2>
 
-<p class="ingress">
+<p>
 This reference contains an overview of how to handle Vespa logs.  All
 Vespa components use a common log module for logging. These log
 messages are added to a local logfile in <em>$VESPA_HOME/logs/vespa/</em> on each
@@ -15,7 +15,7 @@ rotation</a>.
 </p>
 
 
-    <h1 id="contents">Logfile content</h1>
+    <h2 id="contents">Logfile content</h2>
 
     <p>Logfiles are in a machine-readable log format, which can be made
     more human-readable by the <a href="logfmt.html">logfmt</a> program. Each line that is logged
@@ -72,7 +72,7 @@ rotation</a>.
 
 
 
-    <h1 id="reading_logs">Reading logs</h1>
+    <h2 id="reading_logs">Reading logs</h2>
 
     <p>Logs can be read directly, but they are usually easier to read when
     using the <em>logfmt</em> program. This program can filter out log messages
@@ -84,7 +84,7 @@ rotation</a>.
 
 
 
-    <h1 id="controlling_log_level">Controlling log levels</h1>
+    <h2 id="controlling_log_level">Controlling log levels</h2>
 
     <p>Vespa programs running as services can have their active log levels modified at
     run-time by the logctl program. Standalone programs (such as vespafeeder) will
@@ -109,7 +109,7 @@ rotation</a>.
 
 
 
-    <h1 id="real_time">Real-time monitoring of logs</h1>
+    <h2 id="real_time">Real-time monitoring of logs</h2>
 
     <p>
         One of the standard plugins in the log server is the
@@ -148,7 +148,7 @@ use system.all
 </pre>
 
 
-    <h1 id="log_rotation">Log rotation</h1>
+    <h2 id="log_rotation">Log rotation</h2>
 
     <p>
         On the log server on the administration node, the <em>Archiver</em>
@@ -186,7 +186,7 @@ logarchive/2016/07/20/08-0
     </p>
 
 
-    <h1 id="queryaccesslog">QRS log file content</h1>
+    <h2 id="queryaccesslog">QRS log file content</h2>
 
     <p>QRS logs each query it executes in its access log.
     The log files are named QueryAccessLog.&lt;timestamp&gt; and can be found in $VESPA_HOME/logs/vespa/qrs/ on QRS nodes.
@@ -223,16 +223,16 @@ logarchive/2016/07/20/08-0
     <pre class="code">127.0.0.1 - - [24/Jan/2008:05:29:04 -0800] "GET search/?query=yahoo HTTP/1.1" 200 270 ""
    "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.12) Gecko/20050915 Firefox/1.0.7" 2.792 1 0 1</pre>
 
-    <h2 id="events-and-access-log">Time values in the access log compared to
-            metrics and log events</h2>
+    <h3 id="events-and-access-log">Time values in the access log compared to
+            metrics and log events</h3>
 
       <p>The timing in the access log will in general be slightly off compared
-      to the timing values in the vespa.log or available from the metrics proxy.
+      to the timing values in the vespa.log.
       The reason is the “probes” into the system are placed at slightly
       different levels of abstraction. The explanations here are directed at
       experienced users and troubleshooting.</p>
 
-      <h3>Definition of processing time in the access log</h3>
+      <h4>Definition of processing time in the access log</h4>
 
       <p>Processing time in the access log starts when the execution is first
       invoked from the search handler. The end is dependent on whether
@@ -244,10 +244,10 @@ logarchive/2016/07/20/08-0
       search chains, but before any network traffic or rendering has been
       done.</p>
 
-      <h3>Definition of processing time in the vespa.log and metrics proxy</h3>
+      <h4>Definition of processing time in the vespa.log</h4>
 
-      <p>StatisticsSearcher defines the metric “query_latency” and the log event
-      “mean_query_latency”. The data fed into these is identical. The start of
+      <p>StatisticsSearcher defines the metric <em>query_latency</em> and the log event
+      <em>mean_query_latency</em>. The data fed into these is identical. The start of
       the interval is defined as when the control flow enters
       StatisticsSearcher, the end as when the next searcher after
       StatisticsSearcher returns from search(). This has the unfortunate side
@@ -256,7 +256,7 @@ logarchive/2016/07/20/08-0
       SearchHandler has to invoke fill() itself, e.g. if no searchers need to
       access hit fields.</p>
 
-      <h3>Timing summary</h3>
+      <h4>Timing summary</h4>
 
       <p>The access log includes everything happening before rendering, but
       will exclude expensive rendering logic and slow networks. The query
@@ -264,7 +264,7 @@ logarchive/2016/07/20/08-0
       chain where StatisticsSearcher is placed, and may exclude summary
       fetching.</p>
 
-    <h2 id="zookeeper">ZooKeeper Log</h2>
+    <h3 id="zookeeper">ZooKeeper Log</h3>
     <p>
     The ZooKeeper log file is normally not necessary to monitor on a regular basis,
     but is mentioned here as a possible source of information in case you

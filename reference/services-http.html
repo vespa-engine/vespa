@@ -72,8 +72,8 @@ please refer to <a href="services-search.html#binding">search bindings</a>.
   <h3>Example</h3>
   <pre>
 &lt;http&gt;
-  &lt;server id='server1' port='4080' /&gt;
-  &lt;server id='server2' port='5000' /&gt;
+  &lt;server id='server1' port='8080' /&gt;
+  &lt;server id='server2' port='9000' /&gt;
 
   &lt;filtering&gt;
     &lt;filter id='request-filter1' class='com.yahoo.test.RequestFilter1' /&gt;
@@ -86,8 +86,8 @@ please refer to <a href="services-search.html#binding">search bindings</a>.
     &lt;/request-chain&gt;
 
     &lt;response-chain id='test-response-chain'&gt;
-      &lt;binding&gt;http://*:4080/*&lt;/binding&gt;
-      &lt;binding&gt;http://*:5000/path&lt;/binding&gt;
+      &lt;binding&gt;http://*:8080/*&lt;/binding&gt;
+      &lt;binding&gt;http://*:9000/path&lt;/binding&gt;
       &lt;filter id='response-filter1 '/&gt;
       &lt;filter id='response-filter2' class='com.yahoo.test.ResponseFilter2' /&gt;
     &lt;/response-chain&gt;
@@ -125,7 +125,7 @@ please refer to <a href="services-search.html#binding">search bindings</a>.
     <h3>Example</h3>
 
     <pre>
-&lt;server id='server1' port='4080'&gt;
+&lt;server id='server1' port='8080'&gt;
   &lt;config name="container.jdisc.config.http-server"&gt;
     &lt;idleConnectionTimeout&gt;90&lt;/idleConnectionTimeout&gt;
   &lt;/config&gt;
@@ -217,8 +217,8 @@ please refer to <a href="services-search.html#binding">search bindings</a>.
 
     <pre>
 &lt;response-chain id='response-filters'&gt;
-  &lt;binding&gt;http://*:4080/*&lt;/binding&gt;
-  &lt;binding&gt;http://*:5000/path&lt;/binding&gt;
+  &lt;binding&gt;http://*:8080/*&lt;/binding&gt;
+  &lt;binding&gt;http://*:9000/path&lt;/binding&gt;
   &lt;filter id='com.yahoo.test.ResponseFilter'/&gt;
 &lt;/response-chain&gt;
 </pre>

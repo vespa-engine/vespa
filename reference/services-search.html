@@ -3,7 +3,7 @@
 title: "services.xml - 'search'"
 ---
 
-<h1 class="title">services.xml: search</h1>
+<h2 class="title">services.xml: search</h2>
 
 <p class="ingress">
 This document explains in detail the syntax and semantics of the
@@ -12,7 +12,7 @@ introduction, see the
 <a href="../configuring-search-chains.html">search chain</a> and <a href="../federation-platform.html">federation</a> tutorials.
 </p>
 
-<h1 id="sec-1">search root </h1>
+<h2 id="sec-1">search root </h2>
 <p>The root element of the search configuration, declared as a subelement to <a href="services-jdisc.html">jdisc</a>.
 </p>
 <p>
@@ -52,7 +52,7 @@ overridden by individual search chains or searchers.
 </li>
 </ul>
 
-<h1 id="binding">binding</h2>
+<h2 id="binding">binding</h3>
 <p>
     The URI to map the SearchHandler to. The default binding is
   <code>http://*/search/*</code>. Multiple elements are allowed.
@@ -64,7 +64,7 @@ overridden by individual search chains or searchers.
 </pre>
 </p>
 
-<h1 id="sec-2">Searcher elements </h1>
+<h2 id="sec-2">Searcher elements </h2>
 <p>Searcher elements are contained in <a href="#sec-3.1">chain elements</a> or in the <a href="#sec-1">search root</a>.
 </p>
 <p>
@@ -131,7 +131,7 @@ placed earlier in the search chain than this searcher.
 <p>For more information on provides, before and after, see <a href="../chains-in-vespa.html">ordering components</a>.
 </p>
 
-<h2 id="sec-2.1">searcher </h2>
+<h3 id="sec-2.1">searcher </h3>
 
 <p>Defines a searcher instance of a user specified class.
 </p>
@@ -157,7 +157,7 @@ The class is retrieved from this bundle. If missing, copied from class.
 </ul>
 
 
-<h2 id="sec-2.2">federation</h2>
+<h3 id="sec-2.2">federation</h3>
 
 <p>Defines a searcher instance that sends each query to a set of search chains in parallel and combines the results.
 </p>
@@ -184,7 +184,7 @@ Optional sub-elements:
 </ul>
 
 
-<h3 id="sec-2.2.1">source reference </h3>
+<h4 id="sec-2.2.1">source reference </h4>
 
 <p>Contained in <a href="#sec-2.2">federation</a>.
 Specifies a search chain that should be used by the enclosing federation searcher.
@@ -204,7 +204,7 @@ Optional sub-elements
 </li>
 </ul>
 
-<h3 id="sec-2.2.4">source-set </h3>
+<h4 id="sec-2.2.4">source-set </h4>
 
 <p>Contained in <a href="#sec-2.2">federation</a>. This can be used to duplicate
 the sources of e.g. the built-in federation searcher:
@@ -216,7 +216,7 @@ the sources of e.g. the built-in federation searcher:
 &lt;/federation&gt;
 </pre>
 
-<h3 id="sec-2.2.2">federationoptions </h3>
+<h4 id="sec-2.2.2">federationoptions </h4>
 
 <p>Contained in <a href="#sec-2.2.1">source reference</a>, <a href="#sec-3.3">source</a> or <a href="#sec-3.2">provider</a>.
 Specifies <em>how</em> a federation searcher should federate to a given search chain.
@@ -269,14 +269,14 @@ All search chains are per default mandatory.
 </li>
 </ul>
 
-<h3 id="sec-2.2.3">target-selector</h3>
+<h4 id="sec-2.2.3">target-selector</h4>
 <p>Contained in <a href="#sec-2.2">federation</a>.
 Specifies a componen that should be used to select search chains to federate to.
 This component must inherit from com.yahoo.search.federation.selection.TargetSelector.
 See <a href="services-jdisc.html#component">component</a> for attributes and subelements.
 </p>
 
-<h2 id="sec-2.3">renderer </h2>
+<h3 id="sec-2.3">renderer </h3>
 <p>
   Contained in <code><a href="#sec-1">search</a></code>.
 </p>
@@ -290,7 +290,7 @@ See <a href="services-jdisc.html#component">component</a> for attributes and sub
   <a href="../search/result-rendering.html">search result renderer</a>. It
   has one mandatory attribute, <code>id</code>.
 </p>
-    <h3>Attributes:</h3>
+    <h4>Attributes:</h4>
 
     <dl>
         <dt>id</dt>
@@ -307,7 +307,7 @@ See <a href="services-jdisc.html#component">component</a> for attributes and sub
             to class or id (if no class is given).</dd>
     </dl>
 
-    <h3>Optional Sub-elements</h3>
+    <h4>Optional Sub-elements</h4>
 
     <ul>
         <li><a href="config-files.html#configuration_format_in_services.xml">config</a></li>
@@ -315,7 +315,7 @@ See <a href="services-jdisc.html#component">component</a> for attributes and sub
 
 
 
-<h1 id="sec-3">Chain elements </h1>
+<h2 id="sec-3">Chain elements </h2>
 
 <p>Specifies how a search chain should be instantiated, and how the contained
 searchers should be ordered.
@@ -336,7 +336,7 @@ Types:
 </ul>
 
 
-<h2 id="sec-3.1">chain </h2>
+<h3 id="sec-3.1">chain </h3>
 
 <p>Contained in <a href="#sec-1">search</a>. Example:
 </p>
@@ -400,12 +400,12 @@ the application package using <a
 contain one <code>&lt;search&gt;</code> element like above. Vespa
 behaves as if each chain configured within was "inline" in
 <code>services.xml</code>. This is handy when multiple developers need
-to deploy individual search chains, say in different yinst
+to deploy individual search chains, say in different
 packages. Please note that if you are using multiple JDisc
 clusters, the modular search chains will be available in all the
 clusters.  </p>
 
-<h3 id="sec-3.1.1">Searcher reference </h3>
+<h4 id="sec-3.1.1">Searcher reference </h4>
 
 <p>The searcher references determines which searcher instances are used in the
 resulting search chain instance.
@@ -430,7 +430,7 @@ determined by the version) is used.
 </p>
 
 
-<h3 id="sec-3.1.2">Search chain inheritance </h3>
+<h4 id="sec-3.1.2">Search chain inheritance </h4>
 
 <p>When a search chain inherits from another search chain, it subsumes the phases
 and the <em>searcher references</em> (both implicitly and explicitly defined) from the
@@ -445,7 +445,7 @@ chains).
 </p>
 
 
-<h3 id="sec-3.1.3">Phase </h3>
+<h4 id="sec-3.1.3">Phase </h4>
 <p>
   A phase is a named checkpoint.  They are used to help create a linear ordering
   of the searcher instances inside each resulting search chain instance. For
@@ -481,7 +481,7 @@ chains).
   <li>after, a single name that should be added to the after list.</li>
 </ul>
 
-<h2 id="sec-3.2">provider </h2>
+<h3 id="sec-3.2">provider </h3>
 
 <p>Contained in <a href="#sec-1">search</a>.
 A search chain responsible for talking to an external service.
@@ -522,9 +522,9 @@ Optional attributes:
 </ul>
 
 
-<h3 id="sec-3.2.1">Provider types </h3>
+<h4 id="sec-3.2.1">Provider types </h4>
 
-<h4 id="sec-3.2.1.1">Http providers </h4>
+<h5 id="sec-3.2.1.1">Http providers </h5>
 
 <p>Http providers are providers which either have the attribute <code>type=vespa</code>
 or no type but contains a component subclassing HTTPSearcher.</p>
@@ -567,7 +567,7 @@ Each node element consists of a <em>host</em> element and a <em>port</em> elemen
 </ul>
 
 
-<h4 id="sec-3.2.1.2">Local providers </h4>
+<h5 id="sec-3.2.1.2">Local providers </h5>
 
 <p>Local providers are provider with the type set to "local".
 They are used to talk to a local vespa cluster.
@@ -580,10 +580,10 @@ mandatory attribute: cluster, the name of the local cluster. In the cluster attr
 </pre>
 
 
-<h3>Cluster</h3>
+<h4>Cluster</h4>
 
 
-<h2 id="sec-3.3">source</h2>
+<h3 id="sec-3.3">source</h3>
 
 <p>
 Contained in <a href="#sec-3.2">provider</a>.
