@@ -1,21 +1,23 @@
 ---
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-title: "The Vespa HTTP Client - Feeding to Vespa from External Sources"
+title: "The Vespa HTTP Client - Feeding to Vespa"
 ---
 
 <p>
     This document describes the Vespa HTTP Client - a Java API and commandline util to feed document
     operations to Vespa content clusters.
-    Even though it is possible to feed xml directly to the gateway through a simple HTTP protocol,
+    Even though it is possible to feed directly to the gateway through a simple HTTP protocol,
     there are several advantages by using the client:
 </p>
     <ul>
         <li>Feeds in parallel to <strong>one or more</strong> Vespa clusters, ordering still guaranteed</li>
         <li>Programmatic Java API that has <em>very few</em> runtime dependencies in its <em>pom.xml</em>, and which is completely independent of Vespa</li>
         <li>Easy feeding from sources like e.g. Hadoop or Storm, or any other Java process</li>
-        <li>Feed document operations in XML or JSON format</li>
-        <li>Feed with <strong>much higher performance</strong> than all na&iuml;ve HTTP feeding approaches towards the <a href="httpgateway.html">HTTP gateway</a></li>
-        <li>Automatic retries, re-connect, performance tuning through parameters, compression, statistics supported.</li>
+        <li>Feed document operations in
+          <a href="reference/document-json-format.html">JSON</a> or
+          <a href="reference/document-xml-format.html">XML</a></li>
+        <li>Feed with <strong>much higher performance</strong> than all na&iuml;ve HTTP feeding approaches</li>
+        <li>Automatic retries, re-connect, performance tuning through parameters, compression, statistics supported</li>
         <li>Supports unlimited sized data sources, it is processed streaming (the simple HTTP protocol is batch)</li>
         <li>Built in back throttling, it is hard to flood the system using this library.</li>
     </ul>
