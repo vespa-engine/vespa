@@ -1,75 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <title>{{ site.title | escape }}</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-    <link type="text/css" rel="stylesheet" media="all" href="{{ site.github.url }}/css/bs-vespacorp.css" />
-    <link type="text/css" rel="stylesheet" media="all" href="{{ site.github.url }}/css/mathquill.css" />
-    <link type="text/css" rel="stylesheet" media="all" href="{{ site.github.url }}/css/sh.css" />
-    <link type="text/css" rel="stylesheet" media="all" href="{{ site.github.url }}/css/prettify.css" />
-    <!--[if IE]>
-        <link rel="stylesheet" type="text/css" href="{{ site.github.url }}/css/ie_hacks.css" />
-    <![endif]-->
     <link type="text/css" rel="stylesheet" media="print" href="{{ site.github.url }}/css/print.css" />
-
-    <link rel="icon" href="{{ site.github.url }}/icons/favicon2.ico" type="image/x-icon" />
-    <link rel="shortcut icon" href="{{ site.github.url }}/icons/favicon2.ico" type="image/x-icon" />
-
-    <!--
-    <script type="text/javascript" src="{{ site.github.url }}/js/jquery.min.js"></script>
-    <script type="text/javascript" src="{{ site.github.url }}/js/vespacorp.js"></script>
-    <script type="text/javascript" src="{{ site.github.url }}/js/jquery.thickbox.vespacorp.js"></script>
-    <script type="text/javascript" src="{{ site.github.url }}/js/jquery.stickyfloat.js"></script>
-    <script type="text/javascript" src="{{ site.github.url }}/js/mathquill.js"></script>
-    <script type="text/javascript" src="{{ site.github.url }}/js/prettify.js"></script>
-    -->
-
 </head>
 <body>
 
-    <!-- header -->
-    <div id="vc-hd-top" class="vc-layout-width yui-d3f">
-        <div id="vc-hd-toplinks" style="float: right; text-align: right;">
-            <div id="vc-hd-form" style="position: absolute; text-align: right;">
-                <!--
-                <form method="get" action="/search">
-                    <input type="text" name="q" value="" tabindex="1" placeholder="Search documentation" />
-                    <input type="submit" value="Search" />
-                </form>
-                -->
-            </div>
-        </div>
-        <div id="vc-hd-logo">
-            <a href="/"><img src="{{ site.github.url }}/img/vespa-corp-logo3.png" alt="vespa.corp" /></a>
-        </div>
-    </div>
+<!-- Header -->
+<div class="menupartial">
+<div class="row" style="background-color:#4040b0; color:#88d;">
+<div class="col-md-10 col-md-offset-1">
+<h1><a href="http://yahoo.github.io/vespa/">Vespa</a> documentation</h1>
+<p class="lead">The open big data serving engine</p>
+</a>
+</div>
+</div>
 
-    <!-- content -->
-    <div class="vc-layout-width yui-d3f">
-        <div class="page-header">
-            <h1>{{ page.title | escape }}</h1>
-        </div>
+<!-- Content -->
+<div class="container">
+<div class="row">
+<div class="col-md-12">
 
-        <div id="vc-bd">
-            <div id="mainContent" class="yui-u">
-                {{ content }}
-            </div>
-        </div>
-    </div>
+<h1>{{ page.title | escape }}</h1>
 
+{{ content }}
 
-    <!-- footer -->
-    <div id="ft" class="yui-d0">
-       <div id="ftContent" class="vc-layout-width yui-d3f">
-         <div id="ft-legal">
-             <a href="mailto:vespa-helpers@yahoo-inc.com">Help us improve this website</a>
-         </div>
-       </div>
-     </div>
+</div>
+</div>
+</div>
 
 </body>
 </html>
