@@ -3,7 +3,7 @@
 title: "The EQUIV Operator"
 ---
 
-<p class="ingress">
+<p>
 <a href="#what-is">EQUIV</a> is a query operator that can be used to
 add synonyms for words where the various synonyms should be
 equivalent.
@@ -20,19 +20,19 @@ The typical use case is something like this:
 <ul>
   <li>The user's query is something like <code>(used AND
       automobile)</code></li>
-  <li>We somehow&mdash;probably by using a dictionary&mdash;have
-      knowledge that &ldquo;automobile&rdquo; is a synonym for
-      &ldquo;car&rdquo;</li>
+  <li>We somehow - probably by using a dictionary - have
+      knowledge that <em>automobile</em> is a synonym for
+      <em>car</em></li>
   <li>We rewrite the query to <code>(used AND (automobile EQUIV
       car))</code></li>
-  <li>We do not care if a document contains &ldquo;automobile&rdquo;
-      or &ldquo;car&rdquo;, they are equivalent.</li>
+  <li>We do not care if a document contains <em>automobile</em>
+      or <em>car</em>, they are equivalent.</li>
 </ul>
 
 <p>
 The last point deserves some elaboration: In this case, we want the
-query to behave as if all occurrences of &ldquo;car&rdquo; in the
-document corpus had been replaced by &ldquo;automobile&rdquo; and we
+query to behave as if all occurrences of <em>car</em> in the
+document corpus had been replaced by <em>automobile</em> and we
 were running the original query <code>(used AND automobile)</code>.
 </p>
 
@@ -63,31 +63,31 @@ EQUIV however, it looks like a single word:
 
 <p>
 In many cases it may still be more appropriate to use OR instead of
-EQUIV.  When looking for an entity like Sean &ldquo;Diddy&rdquo; Combs
+EQUIV.  When looking for an entity like Sean <em>Diddy</em> Combs
 this might look appropriate:
 </p>
 
 <pre class="brush: text">
-&quot;Diddy&quot; EQUIV &quot;Sean Combs&quot; EQUIV &quot;Sean John&quot; EQUIV &quot;Puff Daddy&quot; EQUIV &quot;P. Diddy&quot;
+"Diddy" EQUIV "Sean Combs" EQUIV "Sean John" EQUIV "Puff Daddy" EQUIV "P. Diddy"
 </pre>
 
 <p>
-But &ldquo;Diddy&rdquo; is used by other people&mdash;even other pop
-artists&mdash;so matching that alone is not a sure hit for the entity
+But <em>Diddy</em> is used by other people - even other pop
+artists - so matching that alone is not a sure hit for the entity
 we are looking for, and finding more than one of the synonyms in the
 same text would give better confidence.  This is exactly what OR does,
 so something like:
 </p>
 
 <pre class="brush: text">
-&quot;Diddy&quot;!20 OR &quot;Sean Combs&quot;!75 OR &quot;Sean John&quot;!75 OR &quot;Puff Daddy&quot;!80 OR &quot;P. Diddy&quot;!60 OR &quot;Sean John Combs&quot;!100
+"Diddy"!20 OR "Sean Combs"!75 OR "Sean John"!75 OR "Puff Daddy"!80 OR "P. Diddy"!60 OR "Sean John Combs"!100
 </pre>
 
 <p>
 might be better, with lower weights on the alternatives giving less
 confidence.  If it looks like the many words and phrases inside the OR
 overwhelms other words in the query, giving even lower weights may be
-useful, for example making the sum of weights 100 &mdash; the default
+useful, for example making the sum of weights 100 - the default
 weight for just one alternative.
 </p>
 
@@ -116,11 +116,7 @@ where the query object can be manipulated as follows:
 </ul>
 
 <p>
-For ideas on how the code might look there is a
-<a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/equiv/EquivTestSearcher.java?view=markup">
-detailed code example
-</a>
-in the source code repository and there is
+For ideas on how the code might look there is
 <a href="../javadoc/index.html?com/yahoo/prelude/query/EquivItem.html">
 javadoc
 </a> available, with a typical insertion of <code>EquivItem</code>

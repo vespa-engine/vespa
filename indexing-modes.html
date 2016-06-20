@@ -14,7 +14,6 @@ Note that switching indexing modes requires refeeding your data.
 </p>
 
 <h1 id="real-time">Index mode</h1>
-
 <p>
 For document corpuses in <code>index</code> mode, Vespa maintains reverse indexes
 which supports low latency searches across a large corpus - a core
@@ -23,7 +22,6 @@ feature of search engines. Indexes in Vespa can be updated synchronously.
 
 
 <h1 id="streaming">Streaming mode</h1>
-
 <p>
 <code>streaming</code> mode is useful in the case where the document corpus is statically split
 into many subsets and all searches go to just one (or a few) of the small subsets,
@@ -77,14 +75,13 @@ be specified either at query time or at configuration time:
       <td>exact</td>
       <td><a href="javadoc/index.html?com/yahoo/prelude/query/ExactstringItem.html">Exact string item</a></td>
       <td><a href="reference/search-definitions.html#match"><code>match:exact</code></a></td>
-      <td>Here is a the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/ExactMatchSearcher.java?view=markup">searcher</a> that we use to test the feature. You can also find the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/exactmatch.sd?view=markup">searchdefinition</a>, the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/feed.xml?view=markup">feed</a>, and the <a href="http://git.corp.yahoo.com/vespa/systemtests/blob/master/tests/search/exactmatch_streaming/exactmatch_streaming.rb?view=markup">test</a></td>
+      <td>Text ToDo</td>
     </tr>
   </tbody>
 </table>
 
 
 <h2 id="using-streaming-mode">Using streaming mode</h2>
-
 <p>
 To use streaming mode, add an attribute to the document type in question in the
 appropriate content cluster:
@@ -98,8 +95,7 @@ appropriate content cluster:
   &lt;/content&gt;
 </pre>
 
-<p>For good query performance you should also tell the engine to reorder documents in bucket order in the background:
-
+<p>For good query performance, let the engine reorder documents in bucket order in the background:
 <pre>
   &lt;content id="mycluster" version="1.0"&gt;
     &lt;config name="vespa.config.search.core.proton"&gt;
@@ -110,13 +106,13 @@ appropriate content cluster:
     ...
   &lt;/content&gt;
 </pre>
-
 <p>
-To run a streaming search query you need to
-
+To run a streaming search query:
 <ul>
-<li>specify the subset group membership of every document in the document id, see groupname in <a href="document-ids.html">document ids</a>.
-<li>specify the group to search in every query using the query request attribute <a href="reference/search-api.html#streaming.groupname">streaming.groupname</a>
+  <li>specify the subset group membership of every document in the document id,
+    see groupname in <a href="document-ids.html">document ids</a></li>
+  <li>specify the group to search in every query using the query request attribute
+    <a href="reference/search-api.html#streaming.groupname">streaming.groupname</a></li>
 </ul>
 
 
