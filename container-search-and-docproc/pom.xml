@@ -82,10 +82,6 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>jrt</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>searchlib</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -121,10 +117,6 @@
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>jrt</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>searchlib</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
