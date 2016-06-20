@@ -53,6 +53,7 @@ This is the Vespa!
 
 source /opt/rh/devtoolset-4/enable || true
 sh bootstrap.sh
+mvn install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm" \
@@ -62,7 +63,6 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        .
 
 make %{_smp_mflags}
-mvn install -DskipTests -Dmaven.javadoc.skip=true
 
 %install
 
