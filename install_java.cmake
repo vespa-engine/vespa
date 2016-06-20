@@ -50,8 +50,8 @@ vespa_install_script(config-model/src/main/perl/expand-config.pl bin)
 vespa_install_script(config-model/src/main/perl/vespa-replicate-log-stream bin)
 vespa_install_script(config-model/src/main/sh/validate-application bin)
 
-install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa)
-install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa/schema/version/6.x)
+install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
+install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa/schema/version/6.x PATTERN ".gitignore" EXCLUDE)
 
 install(FILES jdisc_core/src/main/perl/jdisc_logfmt.1 DESTINATION man/man1)
 
