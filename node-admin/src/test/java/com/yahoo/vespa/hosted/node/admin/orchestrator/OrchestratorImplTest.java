@@ -5,10 +5,22 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.LocalPassThroughJaxRsStrategy;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
+import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
+import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
+import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
-import static org.mockito.Matchers.anyString;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,16 +28,29 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author bakksjo
+ * @author dybis
  */
 public class OrchestratorImplTest {
-    @Test
-    public void redundantResumesAreFilteredOut() throws Exception {
-        final HostApi hostApi = mock(HostApi.class);
-        final JaxRsStrategy<HostApi> hostApiClient = new LocalPassThroughJaxRsStrategy<>(hostApi);
-        final OrchestratorImpl orchestrator = new OrchestratorImpl(hostApiClient);
-        final String hostNameString = "host";
-        final HostName hostName = new HostName(hostNameString);
+    private HostApi hostApi;
+    private OrchestratorImpl orchestrator;
+    private HostSuspensionApi hostSuspensionApi;
+    final String hostNameString = "host";
+    final HostName hostName = new HostName(hostNameString);
+    final List<String> hosts = new ArrayList<>();
 
+    @Before
+    public void before() {
+        hostApi = mock(HostApi.class);
+        final JaxRsStrategy<HostApi> hostApiClient = new LocalPassThroughJaxRsStrategy<>(hostApi);
+
+        hostSuspensionApi = mock(HostSuspensionApi.class);
+        final JaxRsStrategy<HostSuspensionApi> hostSuspendClient = new LocalPassThroughJaxRsStrategy<>(hostSuspensionApi);
+
+        orchestrator = new OrchestratorImpl(hostApiClient, hostSuspendClient);
+    }
+
+    @Test
+    public void testSingleOperations() throws Exception {
         // Make resume and suspend always succeed.
         when(hostApi.resume(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, null));
         when(hostApi.suspend(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, null));
@@ -33,18 +58,43 @@ public class OrchestratorImplTest {
         orchestrator.resume(hostName);
         verify(hostApi, times(1)).resume(hostNameString);
 
-        // A subsequent resume does not cause a network trip.
-        orchestrator.resume(hostName);
-        verify(hostApi, times(1)).resume(anyString());
-
         orchestrator.suspend(hostName);
         verify(hostApi, times(1)).suspend(hostNameString);
 
-        orchestrator.resume(hostName);
-        verify(hostApi, times(2)).resume(hostNameString);
+        hosts.add(hostNameString);
+        orchestrator.resume(hosts);
+    }
 
-        // A subsequent resume does not cause a network trip.
-        orchestrator.resume(hostName);
-        verify(hostApi, times(2)).resume(anyString());
+    @Test
+    public void testListResumeOk() {
+        when(hostApi.resume(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, null));
+        hosts.add(hostNameString);
+        final Optional<String> resume = orchestrator.resume(hosts);
+        assertFalse(resume.isPresent());
+        verify(hostApi, times(1)).resume(hostNameString);
+    }
+
+    @Test
+    public void testListResumeFailed() {
+        when(hostApi.resume(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, new HostStateChangeDenialReason("", "", "")));
+        hosts.add(hostNameString);
+        final Optional<String> resume = orchestrator.resume(hosts);
+        assertTrue(resume.isPresent());
+        assertThat(resume.get(), is("Could not resume host"));
+        verify(hostApi, times(1)).resume(hostNameString);
+    }
+
+    @Test
+    public void testListSuspendOk() throws Exception {
+        hosts.add(hostNameString);
+        when(hostSuspensionApi.suspendAll(Mockito.any())).thenReturn(new BatchOperationResult(null));
+        assertThat(orchestrator.suspend("parent", hosts), is(Optional.empty()));
+    }
+
+    @Test
+    public void testListSuspendFailed() throws Exception {
+        hosts.add(hostNameString);
+        when(hostSuspensionApi.suspendAll(Mockito.any())).thenReturn(new BatchOperationResult("no no"));
+        assertThat(orchestrator.suspend("parent", hosts), is(Optional.of("no no")));
     }
 }

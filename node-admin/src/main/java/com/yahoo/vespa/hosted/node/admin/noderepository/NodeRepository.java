@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface NodeRepository {
     List<ContainerNodeSpec> getContainersToRun() throws IOException;
 
-    Optional<ContainerNodeSpec> getContainer(HostName hostname) throws IOException;
+    Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException;
 
     void updateNodeAttributes(
             HostName hostName,

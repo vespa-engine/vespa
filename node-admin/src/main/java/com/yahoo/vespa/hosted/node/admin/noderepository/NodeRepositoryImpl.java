@@ -29,40 +29,18 @@ import java.util.logging.Logger;
  */
 public class NodeRepositoryImpl implements NodeRepository {
     private static final Logger logger = Logger.getLogger(NodeRepositoryImpl.class.getName());
-    private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
     private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
-    private static final String ENV_HOSTNAME = "HOSTNAME";
 
     private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
     private final String baseHostName;
 
-    public NodeRepositoryImpl() {
-        baseHostName = Optional.ofNullable(System.getenv(ENV_HOSTNAME))
-                .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
-        nodeRepositoryClient = getApi();
-    }
-
-    // For testing
-    NodeRepositoryImpl(String baseHostName, String configserver, int configport) {
+    public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
+        final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
+        final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
+                configServerHosts, configPort, jaxRsClientFactory);
+        this.nodeRepositoryClient = jaxRsStrategyFactory.apiWithRetries(
+                NodeRepositoryApi.class, NODEREPOSITORY_PATH_PREFIX_NODES_API);
         this.baseHostName = baseHostName;
-        final Set<HostName> configServerHosts = new HashSet<>();
-        configServerHosts.add(new HostName(configserver));
-
-        final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
-        final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
-                configServerHosts, configport, jaxRsClientFactory);
-        nodeRepositoryClient =  jaxRsStrategyFactory.apiWithRetries(NodeRepositoryApi.class, NODEREPOSITORY_PATH_PREFIX_NODES_API);
-    }
-
-    private static JaxRsStrategy<NodeRepositoryApi> getApi() {
-        final Set<HostName> configServerHosts = Environment.getConfigServerHostsFromYinstSetting();
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
-        final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
-        final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
-                configServerHosts, HARDCODED_NODEREPOSITORY_PORT, jaxRsClientFactory);
-        return jaxRsStrategyFactory.apiWithRetries(NodeRepositoryApi.class, NODEREPOSITORY_PATH_PREFIX_NODES_API);
     }
 
     @Override
@@ -92,11 +70,15 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainer(HostName hostname) throws IOException {
-        // TODO Use proper call to node repository
-        return getContainersToRun().stream()
-                .filter(cns -> Objects.equals(hostname, cns.hostname))
-                .findFirst();
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
+        final GetNodesResponse response = nodeRepositoryClient.apply(nodeRepositoryApi -> nodeRepositoryApi.getNode(hostName.toString(), true));
+        if (response.nodes.size() == 0) {
+            return Optional.empty();
+        }
+        if (response.nodes.size() != 1) {
+            throw new RuntimeException("Did not get data for one node using hostname=" + hostName.toString() + "\n" + response.toString());
+        }
+        return Optional.of(createContainerNodeSpec(response.nodes.get(0)));
     }
 
     private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)

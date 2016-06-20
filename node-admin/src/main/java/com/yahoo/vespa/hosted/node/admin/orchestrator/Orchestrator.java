@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Abstraction for communicating with Orchestrator.
  *
@@ -18,4 +21,14 @@ public interface Orchestrator {
      * Invokes orchestrator resume of a host. Returns whether resume was granted.
      */
     boolean resume(HostName hostName);
+
+    /**
+     * Invokes orchestrator suspend hosts. Returns failure reasons when failing.
+     */
+    Optional<String> suspend(String parentHostName, List<String> hostNames);
+
+    /**
+     * Invokes orchestrator resume of hosts. Returns failure reasons when failing.
+     */
+    Optional<String> resume(List<String> hostName);
 }

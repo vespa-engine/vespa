@@ -1,0 +1,40 @@
+package com.yahoo.vespa.hosted.node.admin.integrationTests;
+
+import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Mock with some simple logic
+ * @autor dybis
+ */
+public class NodeRepoMock implements NodeRepository {
+
+    public List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+
+    @Override
+    public List<ContainerNodeSpec> getContainersToRun() throws IOException {
+        return containerNodeSpecs;
+    }
+
+    @Override
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void updateNodeAttributes(HostName hostName, long restartGeneration, DockerImage dockerImage, String containerVespaVersion) throws IOException {
+
+    }
+
+    @Override
+    public void markAsReady(HostName hostName) throws IOException {
+
+    }
+}
