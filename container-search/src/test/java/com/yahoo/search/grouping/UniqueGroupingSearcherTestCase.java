@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="http://techyard.corp.yahoo-inc.com/en/user/andreer">﻿Andreas Eriksen</a>
+ * @author andreer
  */
 public class UniqueGroupingSearcherTestCase {
 
