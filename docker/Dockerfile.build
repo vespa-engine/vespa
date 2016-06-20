@@ -5,7 +5,6 @@ RUN yum -y install epel-release
 RUN yum -y install centos-release-scl
 RUN yum -y install devtoolset-4-gcc-c++
 RUN yum -y install devtoolset-4-libatomic-devel
-RUN yum -y install ccache
 RUN yum -y install Judy-devel
 RUN yum -y install cmake3
 RUN yum -y install lz4-devel

@@ -22,8 +22,16 @@ RUN yum -y install vespa-zookeeper-c-client
 RUN yum -y install vespa-cppunit # Should not be needed ?
 
 #RUN yum -y install vespa
+# Workaround while we wait for a published rpm
+COPY <path-to-my-vespa-rpm> /vespa.rpm
+RUN rpm -i vespa.rpm
+
+# Workaround for user name and permissions
+RUN useradd yahoo
+RUN chown -R yahoo:yahoo /opt/vespa
 
 # Build    : docker build -t vesparun -f Dockerfile.run .
+#            IMORTANT: Need to put the local vespa rpm name in the copy command.
 # Run      : docker run -ti --rm vesparun <path to service startup script>
 #            Need -v options to map directories used to store data
 #            ONLY MANUAL INSTALL OF VESPA RPM TESTED
