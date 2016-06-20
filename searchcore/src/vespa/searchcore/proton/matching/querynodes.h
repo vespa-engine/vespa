@@ -76,7 +76,7 @@ uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) {
 } // namespace proton::matching::<unnamed>
 
 template <typename Base>
-struct ProtonTermNonFinal : public Base,
+struct ProtonTermBase : public Base,
                           public ProtonTermData
 {
     using Base::Base;
@@ -96,8 +96,8 @@ struct ProtonTermNonFinal : public Base,
 };
 
 template <typename Base>
-struct ProtonTerm : public ProtonTermNonFinal<Base> {
-    using ProtonTermNonFinal<Base>::ProtonTermNonFinal;
+struct ProtonTerm : public ProtonTermBase<Base> {
+    using ProtonTermBase<Base>::ProtonTermBase;
 };
 
 typedef search::query::SimpleAnd     ProtonAnd;
@@ -108,10 +108,10 @@ typedef search::query::SimpleOr      ProtonOr;
 typedef search::query::SimpleRank    ProtonRank;
 typedef search::query::SimpleWeakAnd ProtonWeakAnd;
 
-struct ProtonEquiv final : public ProtonTermNonFinal<search::query::Equiv>
+struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
 {
     search::fef::MatchDataLayout children_mdl;
-    using ProtonTermNonFinal::ProtonTermNonFinal;
+    using ProtonTermBase::ProtonTermBase;
 };
 
 typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;
