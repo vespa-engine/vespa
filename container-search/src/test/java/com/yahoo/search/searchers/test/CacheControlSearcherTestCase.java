@@ -17,7 +17,7 @@ import static com.yahoo.search.searchers.CacheControlSearcher.CACHE_CONTROL_HEAD
 /**
  * Unit test cases for CacheControlSearcher.
  *
- * @author <a href="http://techyard.corp.yahoo-inc.com/en/user/frodelu">Frode Lundgren</a>
+ * @author frodelu
  */
 @SuppressWarnings("deprecation")
 public class CacheControlSearcherTestCase extends TestCase {
