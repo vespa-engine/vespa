@@ -24,6 +24,7 @@ install_fat_java_artifact(config-bundle)
 install_fat_java_artifact(config-model-api)
 install_fat_java_artifact(config-model)
 install_fat_java_artifact(config-provisioning)
+install_fat_java_artifact(config-proxy)
 install_fat_java_artifact(configdefinitions)
 install_fat_java_artifact(configserver)
 install_fat_java_artifact(container-disc)
@@ -42,6 +43,9 @@ install_fat_java_artifact(vespaclient-container-plugin)
 install_fat_java_artifact(zkfacade)
 
 vespa_install_script(jdisc_core/src/main/perl/jdisc_logfmt bin)
+vespa_install_script(config-proxy/src/main/sh/config-ctl bin)
+vespa_install_script(config-model/src/main/perl/deploy bin)
+
 install(FILES jdisc_core/src/main/perl/jdisc_logfmt.1 DESTINATION man/man1)
 
 install(FILES
