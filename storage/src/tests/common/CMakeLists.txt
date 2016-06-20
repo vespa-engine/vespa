@@ -8,4 +8,5 @@ vespa_add_library(storage_testcommon TEST
     teststorageapp.cpp
     AFTER
     storage_storageconfig
+    storage_bucketdb
 )

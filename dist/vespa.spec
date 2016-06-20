@@ -53,16 +53,16 @@ This is the Vespa!
 
 source /opt/rh/devtoolset-4/enable || true
 sh bootstrap.sh
+mvn install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm" \
        -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include" \
-       -DCMAKE_INSTALL_RPATH=%{_prefix}/lib64 \
+       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
        -DCMAKE_BUILD_RPATH=%{_prefix}/lib64 \
        .
 
 make %{_smp_mflags}
-mvn install -DskipTests -Dmaven.javadoc.skip=true
 
 %install
 
@@ -114,12 +114,20 @@ mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/config_server/serverdb/application
 mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/logcontrol/
 mkdir -p %{buildroot}/%{_prefix}/var/jdisc_container/
 mkdir -p %{buildroot}/%{_prefix}/var/jdisc_core/
+mkdir -p %{buildroot}/%{_prefix}/var/run/
 mkdir -p %{buildroot}/%{_prefix}/var/spool/vespa/
 mkdir -p %{buildroot}/%{_prefix}/var/spool/master/inbox/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/bundlecache/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
 mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/
+
+ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/config-model-fat.jar
+ln -s %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/configserver.jar
+ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/orchestrator.jar
+ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/node-repository.jar
+ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/zkfacade.jar
+ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
 
 %clean
 
@@ -166,6 +174,7 @@ exit 0
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/logcontrol/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/jdisc_container/
 %dir %attr( 777,     -,     -) %{_prefix}/var/jdisc_core/
+%dir %attr( 755, vespa, vespa) %{_prefix}/var/run/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/vespa/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/master/inbox/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/bundlecache/
@@ -183,7 +192,7 @@ exit 0
 %{_prefix}/libexec/vespa/start-logd
 %{_prefix}/libexec/vespa/stop-configserver
 %{_prefix}/var/db/vespa/config_server/serverdb/classes/*.def
-%{_prefix}/lib/jars/*.jar
+%{_prefix}/lib/jars/*
 %{_prefix}/lib/perl5/site_perl/Yahoo/Vespa/*.pm
 %{_prefix}/lib64/*.so
 %{_prefix}/bin/*

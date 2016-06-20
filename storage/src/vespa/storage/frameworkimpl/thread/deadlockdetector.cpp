@@ -171,7 +171,7 @@ namespace {
             } else if (state != DeadLockDetector::OK) {
                 vespalib::asciistream ost;
                 ost << "Thread " << id << " has registered tick again.\n";
-                LOGBT(info, "%s", ost.str().c_str());
+                LOGBP(info, "%s", ost.str().c_str());
                 state = DeadLockDetector::OK;
             }
         }

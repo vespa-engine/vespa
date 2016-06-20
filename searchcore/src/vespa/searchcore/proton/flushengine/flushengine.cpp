@@ -90,8 +90,8 @@ FlushEngine::start()
 FlushEngine &
 FlushEngine::close()
 {
-    MonitorGuard strategyGuard(_strategyMonitor);
     {
+        MonitorGuard strategyGuard(_strategyMonitor);
         MonitorGuard guard(_monitor);
         _closed = true;
         guard.broadcast();

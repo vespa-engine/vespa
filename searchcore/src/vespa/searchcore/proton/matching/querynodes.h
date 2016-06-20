@@ -27,7 +27,7 @@ class ProtonTermData : public search::fef::ITermData
 public:
     typedef search::queryeval::FieldSpec FieldSpec;
 
-    struct FieldEntry : search::fef::SimpleTermFieldData {
+    struct FieldEntry final : search::fef::SimpleTermFieldData {
         vespalib::string field_name;
         bool attribute_field;
         bool filter_field;
@@ -42,7 +42,7 @@ public:
             return FieldSpec(field_name, getFieldId(),
                              getHandle(), filter_field);
         }
-        virtual search::fef::TermFieldHandle getHandle() const;
+        search::fef::TermFieldHandle getHandle() const override;
     };
 
 private:
@@ -62,9 +62,9 @@ public:
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
 
     // ITermData interface
-    virtual size_t numFields() const;
-    virtual const FieldEntry &field(size_t i) const;
-    virtual const FieldEntry *lookupField(uint32_t fieldId) const;
+    size_t numFields() const override final { return _fields.size(); }
+    const FieldEntry &field(size_t i) const override final { return _fields[i]; }
+    const FieldEntry *lookupField(uint32_t fieldId) const override final;
 };
 
 namespace {
@@ -76,8 +76,8 @@ uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) {
 } // namespace proton::matching::<unnamed>
 
 template <typename Base>
-struct ProtonTerm : public Base,
-                    public ProtonTermData
+struct ProtonTermBase : public Base,
+                          public ProtonTermData
 {
     using Base::Base;
 
@@ -89,10 +89,15 @@ struct ProtonTerm : public Base,
     }
 
     // ITermData interface
-    virtual uint32_t getPhraseLength() const { return numTerms<Base>(*this); }
-    virtual uint32_t getTermIndex() const { return -1; }
-    virtual search::query::Weight getWeight() const { return Base::getWeight(); }
-    virtual uint32_t getUniqueId() const { return Base::getId(); }
+    uint32_t getPhraseLength() const override final { return numTerms<Base>(*this); }
+    uint32_t getTermIndex() const override final { return -1; }
+    search::query::Weight getWeight() const override final { return Base::getWeight(); }
+    uint32_t getUniqueId() const override final { return Base::getId(); }
+};
+
+template <typename Base>
+struct ProtonTerm : public ProtonTermBase<Base> {
+    using ProtonTermBase<Base>::ProtonTermBase;
 };
 
 typedef search::query::SimpleAnd     ProtonAnd;
@@ -103,10 +108,10 @@ typedef search::query::SimpleOr      ProtonOr;
 typedef search::query::SimpleRank    ProtonRank;
 typedef search::query::SimpleWeakAnd ProtonWeakAnd;
 
-struct ProtonEquiv : public ProtonTerm<search::query::Equiv>
+struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv>
 {
     search::fef::MatchDataLayout children_mdl;
-    using ProtonTerm::ProtonTerm;
+    using ProtonTermBase::ProtonTermBase;
 };
 
 typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;

@@ -987,7 +987,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
 
     if (_env._fileStorHandler.isMerging(id)) {
         const char* err = "A merge is already running on this bucket.";
-        LOG(debug, err);
+        LOG(debug, "%s", err);
         tracker->fail(ReturnCode::BUSY, err);
         return tracker;
     }

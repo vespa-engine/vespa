@@ -13,7 +13,7 @@ import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTe
 /**
  * Test validation of changes between a current and next document type used in a document database.
  *
- * @author  <a href="mailto:Tor.Egge@yahoo-inc.com">Tor Egge</a>
+ * @author toregge
  * @since 2014-11-25
  */
 public class DocumentTypeChangeValidatorTest {

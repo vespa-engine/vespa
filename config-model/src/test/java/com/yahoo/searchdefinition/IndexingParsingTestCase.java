@@ -9,7 +9,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Tests that indexing statements are parsed correctly.
  *
- * @author <a href="mailto:frodelu@yahoo-inc.com">Frode Lundgren</a>
+ * @author frodelu
  */
 public class IndexingParsingTestCase extends SearchDefinitionTestCase {
 

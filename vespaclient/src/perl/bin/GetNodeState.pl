@@ -63,12 +63,12 @@ my $VESPA_HOME = $ENV{'VESPA_HOME'};
 # END perl environment bootstrap section
 
 use lib $ENV{'VESPA_HOME'} . '/lib/perl5/site_perl';
+use lib $ENV{'VESPA_HOME'} . '/lib64/perl5/site_perl';
 use Yahoo::Vespa::Defaults;
 readConfFile();
 
 use strict;
 use warnings;
-use lib '$VESPA_HOME/lib/perl5/site_perl';
 
 use Yahoo::Vespa::Bin::GetNodeState;
 

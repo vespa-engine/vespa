@@ -204,6 +204,7 @@ File::open(int flags, bool autoCreateDirectories) {
                           VESPA_STRLOC);
     }
     _flags = flags;
+    if (_close && _fd != -1) close();
     _fd = fd;
     LOG(debug, "open(%s, %d). File opened with file descriptor %d.",
         _filename.c_str(), flags, fd);

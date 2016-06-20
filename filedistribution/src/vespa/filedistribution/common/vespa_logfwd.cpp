@@ -42,6 +42,6 @@ void filedistribution::logfwd::log(LogLevel level, const char* file, int line, c
         vsnprintf(payload.get(), maxSize, fmt, args);
         va_end(args);
 
-        logger.doLog(vespaLogLevel, file, line, payload.get());
+        logger.doLog(vespaLogLevel, file, line, "%s", payload.get());
     }
 }

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Validates the changes between a current and next document type used in a document database.
  *
- * @author  <a href="mailto:Tor.Egge@yahoo-inc.com">Tor Egge</a>
+ * @author toregge
  * @since 2014-11-25
  */
 public class DocumentTypeChangeValidator {

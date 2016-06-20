@@ -7,7 +7,7 @@ data can be performed at serving time.
 This README describes how to build and develop the Vespa engine.
 For user documentation see TODO: Github pages link
 
-## Getting started
+## Getting started developing
 
 ### Setting up local git config
 
@@ -49,3 +49,7 @@ TODO: List required build dependencies
 
 
 Code licensed under the Apache 2.0 license. See LICENSE file for terms.
+
+## Documenting your features
+
+See [README-documentation.md](README-documentation.md).

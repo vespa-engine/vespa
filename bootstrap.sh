@@ -16,9 +16,6 @@ MODULES="
   config-class-plugin
   yolean
   vespajlib
-  jrt
-  component
-  messagebus
   filedistributionmanager"
 
 for module in $MODULES; do

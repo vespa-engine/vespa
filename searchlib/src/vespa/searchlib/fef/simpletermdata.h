@@ -14,7 +14,7 @@ namespace fef {
 /**
  * Static match data for a single unit (term/phrase/etc).
  **/
-class SimpleTermData : public ITermData
+class SimpleTermData final : public ITermData
 {
 private:
     query::Weight   _weight;
@@ -40,37 +40,37 @@ public:
     /**
      * Returns the term weight.
      **/
-    virtual query::Weight getWeight() const { return _weight; }
+    query::Weight getWeight() const override { return _weight; }
 
     /**
      * Returns the number of terms represented by this term data object.
      **/
-    virtual uint32_t getPhraseLength() const { return _numTerms; }
+    uint32_t getPhraseLength() const override { return _numTerms; }
 
     /**
      * Obtain the location of this term in the original user query.
      *
      * @return term index
      **/
-    virtual uint32_t getTermIndex() const { return _termIndex; }
+    uint32_t getTermIndex() const override { return _termIndex; }
 
     /**
      * Obtain the unique id of this term. 0 means not set.
      *
      * @return unique id or 0
      **/
-    virtual uint32_t getUniqueId() const { return _uniqueId; }
+    uint32_t getUniqueId() const override { return _uniqueId; }
 
     /**
      * Get number of fields searched
      **/
-    virtual size_t numFields() const { return _fields.size(); }
+    size_t numFields() const override { return _fields.size(); }
 
     /**
      * Direct access to data for individual fields
      * @param i local index, must have: 0 <= i < numFields()
      */
-    virtual const ITermFieldData &field(size_t i) const {
+    const ITermFieldData &field(size_t i) const override {
         return _fields[i];
     }
 
@@ -81,7 +81,7 @@ public:
      *
      * @return term field data, or NULL if not found
      **/
-    virtual const ITermFieldData *lookupField(uint32_t fieldId) const {
+    const ITermFieldData *lookupField(uint32_t fieldId) const override {
         for (size_t fieldIdx(0), m(numFields()); fieldIdx < m; ++fieldIdx) {
             const ITermFieldData &tfd = field(fieldIdx);
             if (tfd.getFieldId() == fieldId) {
