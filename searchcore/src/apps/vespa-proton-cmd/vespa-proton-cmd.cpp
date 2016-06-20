@@ -6,6 +6,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <math.h>
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-proton-cmd");
 
@@ -196,6 +197,7 @@ public:
         return "";
     }
 
+    typedef std::chrono::duration<double, std::ratio<1>> Timeout;
 
     int Main()
     {
@@ -203,14 +205,25 @@ public:
             return usage();
         }
 
-        initRPC();
-
         int port = 0;
         std::string spec = _argv[1];
-        std::chrono::seconds timeout(60);
+        Timeout timeout(60.0);
 
+        const char * timeoutStr = getenv("VESPA_CLIENT_TIMEOUT");
+        if (timeoutStr != nullptr) {
+            char * e = nullptr;
+            double tmpTimeout = strtod(timeoutStr, &e);
+            if (((e == nullptr) || (e[0] = 0)) && (tmpTimeout >= 1.0)) {
+                timeout = Timeout(tmpTimeout);
+            } else {
+                fprintf(stderr, "VESPA_CLIENT_TIMEOUT=%s is illegal value.", timeoutStr);
+                return 4;
+            }
+        }
+
+        initRPC();
         try {
-            std::chrono::milliseconds timeoutMS = timeout;;
+            std::chrono::milliseconds timeoutMS = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
             if (spec == "--local") {
                 spec = findRTC(timeoutMS);
             } else if (spec.compare(0, 5, "--id=") == 0) {
@@ -247,11 +260,11 @@ public:
         finiRPC();
         return 0;
     }
-    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req, std::chrono::seconds timeout);
+    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req, Timeout timeout);
 };
 
 void
-App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req, std::chrono::seconds timeout) {
+App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req, Timeout timeout) {
     bool invoked = false;
 
     if (strcmp(cmd, "enableSearching") == 0) {
