@@ -52,4 +52,4 @@ Code licensed under the Apache 2.0 license. See LICENSE file for terms.
 
 ## Documenting your features
 
-See [README-documentation.md].
+See [README-documentation.md](README-documentation.md).

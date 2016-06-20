@@ -6,9 +6,9 @@ This document explains how to add documentation.
 ## Practical information
 
 Vespa documentation is served using straightforward 
-[https://help.github.com/categories/github-pages-basics/](GitHub Project pages)
+[GitHub Project pages](https://help.github.com/categories/github-pages-basics/)
 with
-[https://help.github.com/categories/customizing-github-pages/](Jekyll).
+[Jekyll](https://help.github.com/categories/customizing-github-pages/).
 To edit documentation check out and work off the branch gh-pages from Vespa repo.
 This branch contains documentation instead of the code.
 
@@ -21,7 +21,7 @@ With Jekyll installed (follow the link above) you can use
 to set up a local server at localhost:4000 to see the pages as they will look when served.
 
 The layout is written in Bootstrap and we refer directly to the Bootstrap CSS.
-Refer to [http://getbootstrap.com/css/](Bootstrap documentation) if you need to
+Refer to [Bootstrap documentation](http://getbootstrap.com/css/) if you need to
 add style effects to your page. Note that the enture documentation page content
 is contained in a Bootstrap layout column with cilumn with 12. Please do not add custom style sheets
 as it is a pain to maintain.
@@ -69,7 +69,7 @@ Add an *id* attribute to each heading such that link can refer to it: Use the ex
 can be made without checking the source. Don't change headings/ids unless completely necessary as that breaks links.
 
 Example:
-<h2 id="my-nice-heading">My nice Heading</h2>
-If this algorithmic transformation is followed it is possible to link to this section using <a href="doc.html#my-nice-heading"> without having to consult the html source of the page to find the right id.
+&lt;h2 id=&quot;my-nice-heading&quot;&gt;My nice Heading&lt;/h2&gt;
+If this algorithmic transformation is followed it is possible to link to this section using &lt;a href=&quot;doc.html#my-nice-heading&quot;&gt; without having to consult the html source of the page to find the right id.
 
 *By Jon Bratseth in June 2016*
