@@ -13,6 +13,7 @@ RUN yum -y install java-1.8.0-openjdk
 RUN yum -y install openssl
 RUN yum -y install perl
 RUN yum -y install perl-Env
+RUN yum -y install perl-JSON
 RUN yum -y install libatomic
 
 # Install vespa dependencies
