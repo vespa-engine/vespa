@@ -135,6 +135,7 @@ struct Fixture
           _views(),
           _configurer()
     {
+        vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);
         initViewSet(_views);
         _configurer.reset(new Configurer(_views._summaryMgr,
@@ -146,7 +147,6 @@ struct Fixture
                                          0));
     }
     ~Fixture() {
-        vespalib::rmdir(BASE_DIR, true);
     }
     void initViewSet(ViewSet &views);
 };
@@ -293,11 +293,11 @@ struct FastAccessFixture
           _configurer(_view._feedView,
                   IAttributeAdapterFactory::UP(new AttributeAdapterFactory), "test")
     {
+        vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);
     }
     ~FastAccessFixture() {
         _writeService.sync();
-        vespalib::rmdir(BASE_DIR, true);
     }
 };
 
@@ -608,4 +608,5 @@ TEST_F("require that we can reconfigure matchers", Fixture)
 TEST_MAIN()
 {
     TEST_RUN_ALL();
+    vespalib::rmdir(BASE_DIR, true);
 }

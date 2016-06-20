@@ -7,10 +7,12 @@ vespa_define_module(
     staging_vespalib
     config_cloudconfig
 
+    LIBS
+    src/vespa/metrics
+
     TEST_EXTERNAL_DEPENDS
     cppunit
 
     TESTS
     src/tests
-    src/vespa/metrics
 )
