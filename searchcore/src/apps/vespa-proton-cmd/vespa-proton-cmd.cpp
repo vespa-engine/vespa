@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-proton-cmd");
 #include <vespa/fnet/frt/frt.h>
 #include <algorithm>
 #include <string>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-proton-cmd");
 
+using slobrok::api::MirrorAPI;
 
 namespace pandora {
 namespace rtc_cmd {
@@ -27,15 +28,13 @@ public:
     App() : _supervisor(NULL),
             _target(NULL),
             _req(NULL) {}
-    virtual ~App()
-    {
+    virtual ~App() {
         assert(_supervisor == NULL);
         assert(_target == NULL);
         assert(_req == NULL);
     }
 
-    int usage()
-    {
+    int usage() {
         fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", _argv[0]);
         fprintf(stderr, "die\n");
         fprintf(stderr, "getConfigTime\n");
@@ -52,15 +51,13 @@ public:
         return 1;
     }
 
-    void initRPC()
-    {
+    void initRPC() {
         _supervisor = new FRT_Supervisor();
         _req = _supervisor->AllocRPCRequest();
         _supervisor->Start();
     }
 
-    void invokeRPC(bool print, double timeout=5.0)
-    {
+    void invokeRPC(bool print, double timeout=5.0) {
         if (_req == NULL)
             return;
 
@@ -69,8 +66,7 @@ public:
             _req->Print(0);
     }
 
-    void finiRPC()
-    {
+    void finiRPC() {
         if (_req != NULL) {
             _req->SubRef();
             _req = NULL;
@@ -86,11 +82,9 @@ public:
         }
     }
 
-    void
-    monitorLoop(void);
+    void monitorLoop(void);
 
-    void
-    scanSpecs(slobrok::api::MirrorAPI::SpecList &specs,
+    void scanSpecs(MirrorAPI::SpecList &specs,
               const std::string &me,
               std::string &service,
               std::string &spec,
@@ -109,7 +103,7 @@ public:
         }
     }
 
-    std::string findRTC() {
+    std::string findRTC(std::chrono::milliseconds timeout) {
         std::string me = "tcp/";
         me += vespalib::HostName::get().c_str();
         me += ":";
@@ -120,69 +114,59 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
-            for (int timeout = 1; timeout < 20; timeout++) {
-                if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
-                }
+            sbcfg.setTimeout(timeout);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now() + timeout;
+            MirrorAPI sbmirror(*_supervisor, sbcfg);
+            while (!sbmirror.ready() && std::chrono::steady_clock::now() < end) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             if (!sbmirror.ready()) {
-                fprintf(stderr,
-                        "ERROR: no data from service location broker\n");
-                exit(1);
+                throw std::runtime_error("ERROR: no data from service location broker");
             }
-            slobrok::api::MirrorAPI::SpecList specs =
-                sbmirror.lookup(rtcPattern);
-            slobrok::api::MirrorAPI::SpecList specs2 =
-                sbmirror.lookup(rtcPattern2);
-            slobrok::api::MirrorAPI::SpecList specs3 =
-                sbmirror.lookup(rtcPattern3);
+            MirrorAPI::SpecList specs = sbmirror.lookup(rtcPattern);
+            MirrorAPI::SpecList specs2 = sbmirror.lookup(rtcPattern2);
+            MirrorAPI::SpecList specs3 = sbmirror.lookup(rtcPattern3);
 
             int found = 0;
             std::string service;
             std::string spec;
 
-            printf("looking for RTCs matching '%s' (length %d)\n",
-                   me.c_str(), (int)me.length());
+            printf("looking for RTCs matching '%s' (length %d)\n", me.c_str(), (int)me.length());
             scanSpecs(specs, me, service, spec, found);
             scanSpecs(specs2, me, service, spec, found);
             scanSpecs(specs3, me, service, spec, found);
             if (found > 1) {
-                fprintf(stderr, "found more than one local RTC, you must use --id=<name>\n");
-                exit(1);
+                throw std::runtime_error("found more than one local RTC, you must use --id=<name>");
             }
             if (found < 1) {
-                fprintf(stderr, "found no local RTC, you must use --id=<name> (list follows):\n");
+                std::string msg = "found no local RTC, you must use --id=<name> (list follows):\n";
                 for (size_t j = 0; j < specs.size(); ++j) {
-                    printf("RTC name %s with connection spec %s\n",
-                           specs[j].first.c_str(), specs[j].second.c_str());
+                    msg += vespalib::make_string("RTC name %s with connection spec %s\n", specs[j].first.c_str(), specs[j].second.c_str());
                 }
-                exit(1);
+                throw std::runtime_error(msg);
             }
             return spec;
         } catch (config::InvalidConfigException& e) {
-            fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
-            exit(1);
+            throw std::runtime_error("ERROR: failed to get service location broker configuration");
         }
         return "";
     }
 
-    std::string findRTC(std::string id) {
+    std::string findRTC(std::string id, std::chrono::milliseconds timeout) {
         std::string rtcPattern = "search/cluster.*/c*/r*/realtimecontroller";
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            // sbcfg.setTimeout(1000);
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
-            for (int timeout = 1; timeout < 20; timeout++) {
-                if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
-                }
+            sbcfg.setTimeout(timeout);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now() + timeout;
+            MirrorAPI sbmirror(*_supervisor, sbcfg);
+            while (!sbmirror.ready() && std::chrono::steady_clock::now() < end) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             if (!sbmirror.ready()) {
                 throw std::runtime_error("ERROR: no data from service location broker");
             }
-            slobrok::api::MirrorAPI::SpecList specs = sbmirror.lookup(id);
+            MirrorAPI::SpecList specs = sbmirror.lookup(id);
 
             int found = 0;
             std::string spec;
@@ -190,8 +174,7 @@ public:
             for (size_t j = 0; j < specs.size(); ++j) {
                 std::string name = specs[j].first;
                 spec = specs[j].second;
-                printf("found RTC '%s' with connection spec %s\n",
-                       name.c_str(), spec.c_str());
+                printf("found RTC '%s' with connection spec %s\n", name.c_str(), spec.c_str());
                 ++found;
             }
             if (found > 1) {
@@ -224,12 +207,14 @@ public:
 
         int port = 0;
         std::string spec = _argv[1];
+        std::chrono::seconds timeout(60);
 
         try {
+            std::chrono::milliseconds timeoutMS = timeout;;
             if (spec == "--local") {
-                spec = findRTC();
+                spec = findRTC(timeoutMS);
             } else if (spec.compare(0, 5, "--id=") == 0) {
-                spec = findRTC(spec.substr(5));
+                spec = findRTC(spec.substr(5), timeoutMS);
             } else {
                 port = atoi(_argv[1]);
             }
@@ -255,18 +240,18 @@ public:
         }
 
         std::vector<const char *> args;
-        for (size_t i(3); i < _argc; i++) {
+        for (int i(3); i < _argc; i++) {
             args.push_back(_argv[i]);
         }
-        runCommand(_argv[2], args, _req);
+        runCommand(_argv[2], args, _req, timeout);
         finiRPC();
         return 0;
     }
-    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req);
+    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req, std::chrono::seconds timeout);
 };
 
 void
-App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req) {
+App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req, std::chrono::seconds timeout) {
     bool invoked = false;
 
     if (strcmp(cmd, "enableSearching") == 0) {
@@ -275,12 +260,10 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
         req->SetMethodName("proton.disableSearching");
     } else if (strcmp(cmd, "getState") == 0) {
         req->SetMethodName("pandora.rtc.getState");
-
         FRT_Values &params = *req->GetParams();
-
         params.AddInt32(args.size() > 0 ? atoi(args[1]) : 0);
         params.AddInt32(args.size() > 1 ? atoi(args[1]) : 0);
-        invokeRPC(false);
+        invokeRPC(false, timeout.count());
         invoked = true;
 
         FRT_Values &rvals = *req->GetReturn();
@@ -291,8 +274,7 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
             FRT_Value &gencnt = rvals.GetValue(2);
 
             for (unsigned int i = 0;
-                 i < names._string_array._len &&
-                 i < values._string_array._len;
+                 i < names._string_array._len && i < values._string_array._len;
                  i++)
             {
                 printf("\"%s\", \"%s\"\n",
@@ -305,7 +287,7 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
         req->SetMethodName("proton.getStatus");
         FRT_Values &params = *req->GetParams();
         params.AddString(args.size() > 0 ? args[0] : "");
-        invokeRPC(false);
+        invokeRPC(false, timeout.count());
         invoked = true;
         FRT_Values &rvals = *req->GetReturn();
         if (!req->IsError()) {
@@ -318,7 +300,8 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
                                      i < internalStates.
                                          _string_array._len &&
                                      i < messages._string_array._len;
-                 i++) {
+                 i++)
+            {
                 printf("\"%s\",\"%s\",\"%s\",\"%s\"\n",
                        components._string_array._pt[i]._str,
                        states._string_array._pt[i]._str,
@@ -351,8 +334,9 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
                 uint32_t dtLen = ret[0]._string_array._len;
                 const FRT_StringValue *dt = ret[0]._string_array._pt;
                 for (uint32_t i = 0; i < dtLen; ++i) {
-                    if (i > 0)
+                    if (i > 0) {
                         printf(" ");
+                    }
                     printf("%s", dt[i]._str);
                 }
                 printf("\n");
@@ -379,9 +363,11 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
                 const FRT_StringValue *fl = ret[3]._string_array._pt;
                 for (uint32_t i = 0;
                      i < fnLen && i < fdtLen && i < fctLen && i < flLen;
-                     ++i) {
-                    if (i > 0)
+                     ++i)
+                {
+                    if (i > 0) {
                         printf(" ");
+                    }
                     printf("%s/%s/%s/%s",
                            fn[i]._str,
                            fdt[i]._str,
@@ -423,7 +409,7 @@ App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPC
         usage();
     }
     if (!invoked) {
-        invokeRPC(true);
+        invokeRPC(true, timeout.count());
     }
 }
 
@@ -449,9 +435,8 @@ App::monitorLoop(void)
         struct timeval tnow;
         gettimeofday(&tnow, NULL);
 
-        for (unsigned int i = 0;
-             i < names._string_array._len &&
-                              i < values._string_array._len;
+        for (uint32_t i = 0;
+             i < names._string_array._len && i < values._string_array._len;
              i++)
         {
             time_t now;
