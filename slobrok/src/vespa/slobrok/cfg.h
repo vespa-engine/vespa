@@ -40,7 +40,7 @@ public:
     ConfiguratorFactory(const config::ConfigUri & uri);
     // Convenience. Might belong somewhere else
     ConfiguratorFactory(const std::vector<std::string> & spec);
-    ConfiguratorFactory & setTimeout(std::chrono::milliseconds timeout) { _timeout = timeout; }
+    ConfiguratorFactory & setTimeout(std::chrono::milliseconds timeout) { _timeout = timeout; return *this; }
 
     Configurator::UP create(Configurable &target) const;
 };
