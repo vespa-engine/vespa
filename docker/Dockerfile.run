@@ -4,7 +4,6 @@ FROM centos:7
 RUN yum -y install epel-release
 RUN yum -y install centos-release-scl
 RUN yum -y install Judy
-RUN yum -y install cmake3
 RUN yum -y install lz4
 RUN yum -y install zlib
 RUN yum -y install libicu
