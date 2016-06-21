@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -83,35 +82,6 @@ public class DockerImplTest {
         final CompletableFuture<DockerImage> asyncPollFuture3 = docker.pullImageAsync(dockerImage);
 
         assertThat(asyncPollFuture3, is(not(sameInstance(asyncPollFuture1))));
-    }
-
-    @Test
-    public void vespaVersionIsParsed() {
-        assertThat(DockerImpl.parseVespaVersion("vespa-5.119.53"), is(Optional.of("5.119.53")));
-    }
-
-    @Test
-    public void vespaVersionIsParsedWithTrailingNewline() {
-        assertThat(DockerImpl.parseVespaVersion("vespa-5.119.53\n"), is(Optional.of("5.119.53")));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void vespaVersionIsNotParsedFromNull() {
-        assertThat(DockerImpl.parseVespaVersion(null), is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromEmptyString() {
-        assertThat(DockerImpl.parseVespaVersion(""), is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromUnexpectedContent() {
-        assertThat(DockerImpl.parseVespaVersion("honda-5.119.53"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa 5.119.53"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa- 5.119.53"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa-"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("No such command 'yinst'"), is(Optional.empty()));
     }
 
     @Test
