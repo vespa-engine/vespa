@@ -16,4 +16,6 @@ public interface NodeAdmin {
      boolean setFreezeAndCheckIfAllFrozen(boolean freeze);
 
      Set<HostName> getListOfHosts();
+
+     String debugInfo();
 }

@@ -36,7 +36,7 @@ public class ResumeTest {
                 Optional.empty(),
                 Optional.empty()));
 
-        NodeAdminStateUpdater updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdminMock, 1, 1, orchestratorMock);
+        NodeAdminStateUpdater updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdminMock, 1, 1, orchestratorMock, "basehostname");
         // Wait for node admin to be notified with node repo state
         while (nodeAdminMock.getListOfHosts().size() == 0) {
             Thread.sleep(1);
@@ -45,25 +45,26 @@ public class ResumeTest {
         // Make node admin and orchestrator block suspend
         orchestratorMock.suspendReturnValue = Optional.of("orch reject suspend");
         nodeAdminMock.frozen.set(false);
-        assertThat(updater.setResumeStateAndCheckIfResumed(false), is(Optional.of("Not all node agents in correct state yet.")));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Not all node agents are frozen.")));
 
         // Now, change data in node repo, should not propagate.
         nodeRepositoryMock.containerNodeSpecs.clear();
 
         // Set node admin not blocking for suspend
         nodeAdminMock.frozen.set(true);
-        assertThat(updater.setResumeStateAndCheckIfResumed(false), is(Optional.of("orch reject suspend")));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("orch reject suspend")));
 
         // Make orchestrator allow suspend
         orchestratorMock.suspendReturnValue = Optional.empty();
-        assertThat(updater.setResumeStateAndCheckIfResumed(false), is(Optional.empty()));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
         // Now suspended, new node repo state should have not propagated to node admin
         Thread.sleep(2);
         assertThat(nodeAdminMock.getListOfHosts().size(), is(1));
 
         // Now resume
-        assertThat(updater.setResumeStateAndCheckIfResumed(true), is(Optional.empty()));
+        nodeAdminMock.frozen.set(false);
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED), is(Optional.empty()));
 
         // Now node repo state should propagate to node admin again
         while (nodeAdminMock.getListOfHosts().size() != 0) {

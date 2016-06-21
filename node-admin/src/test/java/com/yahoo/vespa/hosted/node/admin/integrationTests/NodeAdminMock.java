@@ -11,9 +11,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Mock with some simple logic
+ *
  * @autor dybis
  */
 public class NodeAdminMock implements NodeAdmin {
+
+    StringBuilder info = new StringBuilder();
 
     Set<HostName> hostnames = new HashSet<>();
 
@@ -33,6 +36,7 @@ public class NodeAdminMock implements NodeAdmin {
 
     @Override
     public boolean setFreezeAndCheckIfAllFrozen(boolean freeze) {
+        info.append(" Freeze called with " + freeze + " while in state " + frozen.get());
         freezeSetState = freeze;
         return frozen.get();
     }
@@ -42,5 +46,13 @@ public class NodeAdminMock implements NodeAdmin {
         synchronized (monitor) {
             return hostnames;
         }
+    }
+
+    /*
+     * We use this to get some information easily out of the mock in the integration test here.
+     */
+    @Override
+    public String debugInfo() {
+        return info.toString();
     }
 }

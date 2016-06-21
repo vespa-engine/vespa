@@ -72,6 +72,16 @@ public class NodeAdminImpl implements NodeAdmin {
         return nodeAgents.keySet();
     }
 
+    @Override
+    public String debugInfo() {
+        StringBuilder debug = new StringBuilder();
+        for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
+            debug.append("Node ").append(node.getKey().toString());
+            debug.append(" state ").append(node.getValue().getState());
+        }
+        return debug.toString();
+    }
+
     private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
         final Set<DockerImage> deletableDockerImages = getDeletableDockerImages(
                 docker.getUnusedDockerImages(), containersToRun);

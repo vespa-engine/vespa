@@ -22,6 +22,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -33,26 +35,21 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class NodeAdminStateUpdater extends AbstractComponent {
     private static final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
 
-    private static final long INITIAL_SCHEDULER_DELAY_SECONDS = 0;
-    private static final long INTERVAL_SCHEDULER_IN_SECONDS = 60;
-
-    private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    private static final String ENV_HOSTNAME = "HOSTNAME";
     private final NodeAdmin nodeAdmin;
     private boolean isRunningUpdates = true;
     private final Object monitor = new Object();
     final Orchestrator orchestrator;
+    private final String baseHostName;
 
-    // For testing.
     public NodeAdminStateUpdater(
             final NodeRepository nodeRepository,
             final NodeAdmin nodeAdmin,
             long initialSchedulerDelayMillis,
             long intervalSchedulerInMillis,
-            Orchestrator orchestrator) {
+            Orchestrator orchestrator,
+            String baseHostName) {
         scheduler.scheduleWithFixedDelay(
                 ()-> fetchContainersToRunFromNodeRepository(nodeRepository),
                 initialSchedulerDelayMillis,
@@ -60,44 +57,44 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 MILLISECONDS);
         this.nodeAdmin = nodeAdmin;
         this.orchestrator = orchestrator;
+        this.baseHostName = baseHostName;
     }
 
-    @Inject
-    public NodeAdminStateUpdater(final Docker docker) {
-        // TODO: This logic does not belong here, NodeAdminScheduler should not build NodeAdmin with all
-        // belonging parts.
-        String baseHostName = java.util.Optional.ofNullable(System.getenv(ENV_HOSTNAME))
-                .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
-
-        final Set<HostName> configServerHosts = Environment.getConfigServerHostsFromYinstSetting();
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
-
-        final NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
-
-        orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
-        final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, docker, nodeRepository, orchestrator);
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
-        scheduler.scheduleWithFixedDelay(()-> fetchContainersToRunFromNodeRepository(nodeRepository),
-                INITIAL_SCHEDULER_DELAY_SECONDS, INTERVAL_SCHEDULER_IN_SECONDS, SECONDS);
-        this.nodeAdmin = nodeAdmin;
-    }
-
-    public Optional<String> setResumeStateAndCheckIfResumed(boolean resume) {
+    public String getDebugPage() {
+        StringBuilder info = new StringBuilder();
         synchronized (monitor) {
-            isRunningUpdates = resume;
+            info.append("isRunningUpdates is " + isRunningUpdates+ ". ");
+            info.append("NodeAdmin: ");
+            info.append(nodeAdmin.debugInfo());
         }
-        if (! nodeAdmin.setFreezeAndCheckIfAllFrozen(resume)) {
-            return Optional.of("Not all node agents in correct state yet.");
+        return info.toString();
+    }
+
+    public enum State { RESUMED, SUSPENDED}
+
+    /**
+     * @return empty on success and failure message on failure.
+     */
+    public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
+        synchronized (monitor) {
+            isRunningUpdates = wantedState == RESUMED;
         }
+        if (wantedState == SUSPENDED) {
+            if (! nodeAdmin.setFreezeAndCheckIfAllFrozen(true)) {
+                return Optional.of("Not all node agents are frozen.");
+            }
+        } else {
+            if (nodeAdmin.setFreezeAndCheckIfAllFrozen(false)) {
+                return Optional.of("Not all node agents are unfrozen.");
+            }
+        }
+
         List<String> hosts = new ArrayList<>();
         nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
-        if (resume) {
+        if (wantedState == RESUMED) {
             return orchestrator.resume(hosts);
         }
-        return orchestrator.suspend("parenthost", hosts);
+        return orchestrator.suspend(baseHostName, hosts);
     }
 
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {

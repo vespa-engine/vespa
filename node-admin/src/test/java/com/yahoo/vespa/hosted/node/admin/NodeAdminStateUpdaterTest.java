@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.node.admin;
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -49,15 +51,20 @@ public class NodeAdminStateUpdaterTest {
         containersToRun.add(createSample());
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
-        NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, 1, 1, null /* orchestrator*/);
+        OrchestratorMock orchestratorMock = new OrchestratorMock();
+        NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
+                nodeRepository, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
         latch.await();
         int numberOfElements = accumulatedArgumentList.size();
-        assertThat(refresher.setResumeStateAndCheckIfResumed(false), is(Optional.of("Not all node agents in correct state yet.")));
+        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
+                is(Optional.of("Not all node agents are frozen.")));
         assertTrue(numberOfElements > 4);
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
         Thread.sleep(2);
         assertThat(accumulatedArgumentList.size(), is(numberOfElements));
-        assertThat(refresher.setResumeStateAndCheckIfResumed(true), is(Optional.of("Not all node agents in correct state yet.")));
+        when(nodeAdmin.setFreezeAndCheckIfAllFrozen(false)).thenReturn(false);
+        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
+                is(Optional.empty()));
         while (accumulatedArgumentList.size() == numberOfElements) {
             Thread.sleep(1);
         }
