@@ -16,7 +16,7 @@ RUN yum -y install perl-JSON
 RUN yum -y install libatomic
 
 # Install vespa dependencies
-RUN curl -o /etc/yum.repos.d/vespa-deps.repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
 RUN yum -y install vespa-boost
 RUN yum -y install vespa-libtorrent
 RUN yum -y install vespa-zookeeper-c-client
