@@ -16,7 +16,7 @@ fi
 cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 DISCRIMINATOR=`echo ${VESPA_CONFIG_ID} | md5sum | cut -d' ' -f1`
-CONTAINER_HOME="$VESPA_HOME/var/jdisc_container/${DISCRIMINATOR}/"
+CONTAINER_HOME="${VESPA_HOME}var/jdisc_container/${DISCRIMINATOR}/"
 
 ZOOKEEPER_LOG_FILE="${VESPA_HOME}logs/vespa/zookeeper.${VESPA_SERVICE_NAME}.log"
 rm -f $ZOOKEEPER_LOG_FILE*lck
@@ -78,4 +78,4 @@ exec java \
 	-Dfile.encoding=UTF-8 \
 	-Dzookeeperlogfile="${ZOOKEEPER_LOG_FILE}" \
 	-cp "$CP" \
-	com.yahoo.jdisc.core.StandaloneMain file:/home/y/lib/jars/container-disc-jar-with-dependencies.jar
+	com.yahoo.jdisc.core.StandaloneMain file:${VESPA_HOME}lib/jars/container-disc-jar-with-dependencies.jar
