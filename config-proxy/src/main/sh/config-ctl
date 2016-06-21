@@ -67,8 +67,8 @@ cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 # get common PATH:
 . $ROOT/libexec/vespa/common-env.sh
 
-P_SENTINEL=var/run/vespa-configsentinel.pid
-P_CONFIG_PROXY=var/run/vespa-configproxy.pid
+P_SENTINEL=var/run/sentinel.pid
+P_CONFIG_PROXY=var/run/configproxy.pid
 
 export P_SENTINEL P_CONFIG_PROXY
 
