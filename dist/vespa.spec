@@ -130,6 +130,10 @@ ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_pre
 ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
 ln -s storaged-bin %{buildroot}/%{_prefix}/sbin/distributord-bin
 
+mkdir -p %{buildroot}/usr/lib/systemd/service
+cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/service
+cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/service
+
 %clean
 
 rm -rf $RPM_BUILD_ROOT
@@ -203,5 +207,7 @@ exit 0
 %{_prefix}/etc/*
 %{_prefix}/conf/*
 %{_prefix}/share/vespa/schema/*
+/usr/lib/systemd/system/vespa.service
+/usr/lib/systemd/system/vespa-configserver.service
 
 %changelog
