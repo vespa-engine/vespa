@@ -3,9 +3,10 @@ Description=Vertical Search Platform
 
 [Service]
 Type=forking
-Environment="VESPA_HOME=/opt/vespa"
 PIDFile=${VESPA_HOME}/var/run/sentinel.pid
+ExecPreStart=/usr/bin/systemctl set-environment VESPA_HOME=/opt/vespa
 ExecStart=${VESPA_HOME}/bin/vespa-start-services.sh
+ExecPreStop=/usr/bin/systemctl set-environment VESPA_HOME=/opt/vespa
 ExecStop=${VESPA_HOME}/bin/vespa-stop-services.sh
 
 [Install]
