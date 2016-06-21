@@ -120,4 +120,4 @@ perl -pi -e 's/^ulimit -S -c 0/ulimit -S -c unlimited/' /etc/profile
 
 # Don't fail script if this command fails.
 #  * sysctl will always return error on openvz jails
-sysctl kernel.core_pattern="|/home/y/bin/vespa-core-dumper /home/y/bin64/lz4 /home/y/var/crash/%e.core.%p.lz4" || true
+sysctl kernel.core_pattern="|${VESPA_HOME}bin/vespa-core-dumper lz4 ${VESPA_HOME}var/crash/%e.core.%p.lz4" || true
