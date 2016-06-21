@@ -101,7 +101,6 @@ public class DockerImpl implements Docker {
             getDefaults().underVespaHome("var/vespa"),
             getDefaults().underVespaHome("var/yca"),
             getDefaults().underVespaHome("var/ycore++"),
-            getDefaults().underVespaHome("var/ymon"),
             getDefaults().underVespaHome("var/zookeeper"));
 
     private final DockerClient docker;
