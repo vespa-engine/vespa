@@ -41,6 +41,10 @@ public class ServletOutputStreamWriter {
 
     private static final Logger log = Logger.getLogger(ServletOutputStreamWriter.class.getName());
 
+    // TODO: This reference is not guaranteed to be unique; ByteBuffer.allocate(0) MAY in principle return a singleton!
+    // If so, application code could fake a close by writing such a byte buffer.
+    // The problem can be solved by filtering out zero-length byte buffers from application code.
+    // Other ways to express this are also possible, e.g. with a 'closed' state checked when queue goes empty.
     private static final ByteBuffer CLOSE_STREAM_BUFFER = ByteBuffer.allocate(0);
 
     private final Object monitor = new Object();
@@ -74,6 +78,7 @@ public class ServletOutputStreamWriter {
 
     public void setSendingError() {
         synchronized (monitor) {
+            // TODO: This assert seems fishy. Investigate.
             assertStateIs(state, State.NOT_STARTED);
             state = State.FINISHED_OR_ERROR;
         }
@@ -109,6 +114,7 @@ public class ServletOutputStreamWriter {
         }
 
         if (thisThreadShouldWrite) {
+            // TODO: Consider refactoring to avoid multiple monitor entry-exit.
             writeBuffersInQueueToOutputStream();
         }
     }

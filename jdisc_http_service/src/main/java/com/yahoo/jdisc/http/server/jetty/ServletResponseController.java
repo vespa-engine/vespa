@@ -115,6 +115,8 @@ public class ServletResponseController {
         }
 
         try {
+            // TODO: sendError() is a synchronous call. Refactor. (Also, we should control the response content -
+            // this method generates a response body based on Jetty's own response templates ("Powered by Jetty").
             servletResponse.sendError(
                     statusCode,
                     reasonPhrase);
@@ -166,10 +168,14 @@ public class ServletResponseController {
 
     private static void setStatus_holdingLock(Response jdiscResponse, HttpServletResponse servletResponse) {
         if (jdiscResponse instanceof HttpResponse) {
+            // TODO: Figure out what this does to the response (with Jetty), and move to non-deprecated APIs.
+            // Deprecate our own code as necessary.
             servletResponse.setStatus(jdiscResponse.getStatus(), ((HttpResponse) jdiscResponse).getMessage());
         } else {
             Optional<String> errorMessage = getErrorMessage(jdiscResponse);
             if (errorMessage.isPresent()) {
+                // TODO: Figure out what this does to the response (with Jetty), and move to non-deprecated APIs.
+                // Deprecate our own code as necessary.
                 servletResponse.setStatus(jdiscResponse.getStatus(), errorMessage.get());
             } else {
                 servletResponse.setStatus(jdiscResponse.getStatus());
