@@ -121,13 +121,7 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespajlib</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <!-- Used for export-package parsing. Ideally, that should have been a separate artifact. -->
+            <!-- This seems odd. Used for export-package parsing. Lazy stuff. Should be separated out. -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>bundle-plugin</artifactId>
             <version>${project.version}</version>
@@ -212,7 +206,6 @@
                                 <argument>${project.build.directory}/dependency/log4j-over-slf4j.jar</argument>
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>
                                 <argument>${project.build.directory}/dependency/yolean.jar</argument>
-                                <argument>${project.build.directory}/dependency/vespajlib.jar</argument>
                             </arguments>
                         </configuration>
                     </execution>
