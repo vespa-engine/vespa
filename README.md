@@ -17,8 +17,20 @@ For user documentation see TODO: Github pages link
 
 ### Setting up build environment
 
-    sudo yum -y  install epel-release
-    # TODO: Install build deps or depend on Build-Require in .spec file?
+C++ building is currently supported on CentOS 7.
+
+#### Install required build dependencies
+
+    sudo yum -y install epel-release centos-release-scl
+    sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+    sudo yum -y install RUN yum -y install devtoolset-4-gcc-c++ devtoolset-4-libatomic-devel \
+        Judy-devel cmake3 ccache lz4-devel zlib-devel maven libicu-devel llvm-devel \
+        llvm-static java-1.8.0-openjdk-devel openssl-devel rpm-build make \
+        vespa-boost-devel vespa-libtorrent-devel vespa-zookeeper-c-client-devel vespa-cppunit-devel
+
+or use our prebuilt docker image
+
+    # TODO: Add docker command
 
 ### Building Java modules
 
@@ -29,10 +41,7 @@ Java modules can be built on any environment having Java and Maven:
 
 ### Building C++ modules
 
-C++ building is currently supported on CentOS 7:
-
-TODO: List required build dependencies
-
+    source /opt/rh/devtoolset-4/enable
     sh bootstrap.sh
     cmake .
     make
