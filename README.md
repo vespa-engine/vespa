@@ -43,6 +43,7 @@ Java modules can be built on any environment having Java and Maven:
 
     source /opt/rh/devtoolset-4/enable
     sh bootstrap.sh
+    mvn install -DskipTests -Dmaven.javadoc.skip=true
     cmake .
     make
     make test
