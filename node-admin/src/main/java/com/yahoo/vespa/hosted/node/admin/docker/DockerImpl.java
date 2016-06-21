@@ -79,7 +79,7 @@ public class DockerImpl implements Docker {
     }
 
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = RELATIVE_APPLICATION_STORAGE_PATH.resolve("../container-storage-cleanup");
+    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage-cleanup");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final Path CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
