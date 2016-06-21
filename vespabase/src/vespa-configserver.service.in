@@ -1,0 +1,11 @@
+[Unit]
+Description=Vertical Search Platform Config Server
+
+[Service]
+Type=forking
+PIDFile=@CMAKE_INSTALL_PREFIX@/var/run/configserver.pid
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/vespa-start-configserver
+ExecStop=@CMAKE_INSTALL_PREFIX@/bin/vespa-stop-configserver
+
+[Install]
+WantedBy=multi-user.target
