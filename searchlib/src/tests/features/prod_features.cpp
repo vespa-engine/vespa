@@ -9,6 +9,7 @@ LOG_SETUP("prod_features_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/features/countmatchesfeature.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -87,6 +88,7 @@ Test::Main()
     TEST_DO(testAttribute());           TEST_FLUSH();
     TEST_DO(testAttributeMatch());      TEST_FLUSH();
     TEST_DO(testCloseness());           TEST_FLUSH();
+    TEST_DO(testCountMatches());        TEST_FLUSH();
     TEST_DO(testDistance());            TEST_FLUSH();
     TEST_DO(testDistanceToPath());      TEST_FLUSH();
     TEST_DO(testDotProduct());          TEST_FLUSH();
@@ -1457,6 +1459,70 @@ Test::testMatch()
 }
 
 void
+Test::testCountMatches()
+{
+    { // Test blueprint.
+        CountMatchesBlueprint pt;
+
+        EXPECT_TRUE(assertCreateInstance(pt, "countmatches"));
+
+        FtFeatureTest ft(_factory, "");
+        ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
+
+        StringList params, in, out;
+        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1-2 parameters
+        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params.add("baz")); // cannot find the field
+        FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo"), in, out.add("out"));
+        FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
+        FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"), in, out);
+        FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
+
+        FT_DUMP_EMPTY(_factory, "countmatches");
+    }
+    { // Test executor for index fields
+        EXPECT_TRUE(assertMatches(0, "x", "a", "countmatches(foo)"));
+        EXPECT_TRUE(assertMatches(1, "a", "a", "countmatches(foo)"));
+        EXPECT_TRUE(assertMatches(2, "a b", "a b", "countmatches(foo)"));
+        // change docId to indicate no matches in the field
+        EXPECT_TRUE(assertMatches(0, "a", "a", "countmatches(foo)", 2));
+        // specify termIdx as second parameter
+        EXPECT_TRUE(assertMatches(0, "x", "a", "countmatches(foo,0)"));
+        EXPECT_TRUE(assertMatches(1, "a", "a", "countmatches(foo,0)"));
+        EXPECT_TRUE(assertMatches(0, "a", "a", "countmatches(foo,1)"));
+        EXPECT_TRUE(assertMatches(0, "x b", "a b", "countmatches(foo,0)"));
+        EXPECT_TRUE(assertMatches(1, "x b", "a b", "countmatches(foo,1)"));
+    }
+    { // Test executor for attribute fields
+        FtFeatureTest ft(_factory, StringList().add("countmatches(foo)").
+                                                add("countmatches(baz)").
+                                                add("countmatches(foo,0)").
+                                                add("countmatches(foo,1)").
+                                                add("countmatches(foo,2)").
+                                                add("countmatches(foo,3)"));
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "baz");
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != NULL);   // query term 0, hit in foo
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != NULL);   // query term 1, hit in bar
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != NULL);   // query term 2, hit in foo
+        ASSERT_TRUE(ft.setup());
+
+        MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
+        mdb->setWeight("foo", 0, 0);
+        mdb->setWeight("bar", 1, 0);
+        mdb->setWeight("foo", 2, 0);
+        mdb->apply(1);
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(foo)", 1)));
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(baz)", 0)));
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(foo,0)", 1)));
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(foo,1)", 0)));
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(foo,2)", 0)));
+        EXPECT_TRUE(ft.execute(RankResult().addScore("countmatches(foo,3)", 0)));
+    }
+}
+
+void
 Test::testMatches()
 {
     { // Test blueprint.
@@ -1479,9 +1545,9 @@ Test::testMatches()
         FT_DUMP_EMPTY(_factory, "matches");
     }
     { // Test executor for index fields
-        EXPECT_TRUE(assertMatches(0, "x", "a"));
-        EXPECT_TRUE(assertMatches(1, "a", "a"));
-        EXPECT_TRUE(assertMatches(1, "a b", "a b"));
+        EXPECT_TRUE(assertMatches(0, "x", "a", "matches(foo)"));
+        EXPECT_TRUE(assertMatches(1, "a", "a", "matches(foo)"));
+        EXPECT_TRUE(assertMatches(1, "a b", "a b", "matches(foo)"));
         // change docId to indicate no matches in the field
         EXPECT_TRUE(assertMatches(0, "a", "a", "matches(foo)", 2));
         // specify termIdx as second parameter

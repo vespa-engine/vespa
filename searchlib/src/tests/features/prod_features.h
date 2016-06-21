@@ -16,6 +16,7 @@ public:
     void testAttribute();
     void testAttributeMatch();
     void testCloseness();
+    void testCountMatches();
     void testDistance();
     void testDistanceToPath();
     void testDotProduct();
@@ -37,108 +38,40 @@ public:
     void testUtils();
 
 private:
-    void
-    testFieldMatchBluePrint();
-
-    void
-    testFieldMatchExecutor();
-
-    void
-    testFieldMatchExecutorOutOfOrder();
-
-    void
-    testFieldMatchExecutorSegments();
-
-    void
-    testFieldMatchExecutorGaps();
-
-    void
-    testFieldMatchExecutorHead();
-
-    void
-    testFieldMatchExecutorTail();
-    
-    void
-    testFieldMatchExecutorLongestSequence();
-    
-    void
-    testFieldMatchExecutorMatches();
-    
-    void
-    testFieldMatchExecutorCompleteness();
-
-    void
-    testFieldMatchExecutorOrderness();
-    
-    void
-    testFieldMatchExecutorRelatedness();
-    
-    void
-    testFieldMatchExecutorLongestSequenceRatio();
-    
-    void
-    testFieldMatchExecutorEarliness();
-    
-    void
-    testFieldMatchExecutorWeight();
-    
-    void
-    testFieldMatchExecutorSignificance();
-    
-    void
-    testFieldMatchExecutorImportance();
-    
-    void
-    testFieldMatchExecutorOccurrence();
-    
-    void
-    testFieldMatchExecutorAbsoluteOccurrence();
-    
-    void
-    testFieldMatchExecutorWeightedOccurrence();
-    
-    void
-    testFieldMatchExecutorWeightedAbsoluteOccurrence();
-    
-    void
-    testFieldMatchExecutorSignificantOccurrence();
-    
-    void
-    testFieldMatchExecutorUnweightedProximity();
-    
-    void
-    testFieldMatchExecutorReverseProximity();
-
-    void
-    testFieldMatchExecutorAbsoluteProximity();
-
-    void
-    testFieldMatchExecutorMultiSegmentProximity();
-
-    void
-    testFieldMatchExecutorSegmentDistance();
-
-    void
-    testFieldMatchExecutorSegmentProximity();
-
-    void
-    testFieldMatchExecutorSegmentStarts();
-
-    void
-    testFieldMatchExecutorMoreThanASegmentLengthOfUnmatchedQuery();
-
-    void
-    testFieldMatchExecutorQueryRepeats();
-
-    void
-    testFieldMatchExecutorZeroCases();
-
-    void
-    testFieldMatchExecutorExceedingIterationLimit();
-
-    void
-    testFieldMatchExecutorRemaining();
-
+    void testFieldMatchBluePrint();
+    void testFieldMatchExecutor();
+    void testFieldMatchExecutorOutOfOrder();
+    void testFieldMatchExecutorSegments();
+    void testFieldMatchExecutorGaps();
+    void testFieldMatchExecutorHead();
+    void testFieldMatchExecutorTail();
+    void testFieldMatchExecutorLongestSequence();
+    void testFieldMatchExecutorMatches();
+    void testFieldMatchExecutorCompleteness();
+    void testFieldMatchExecutorOrderness();
+    void testFieldMatchExecutorRelatedness();
+    void testFieldMatchExecutorLongestSequenceRatio();
+    void testFieldMatchExecutorEarliness();
+    void testFieldMatchExecutorWeight();
+    void testFieldMatchExecutorSignificance();
+    void testFieldMatchExecutorImportance();
+    void testFieldMatchExecutorOccurrence();
+    void testFieldMatchExecutorAbsoluteOccurrence();
+    void testFieldMatchExecutorWeightedOccurrence();
+    void testFieldMatchExecutorWeightedAbsoluteOccurrence();
+    void testFieldMatchExecutorSignificantOccurrence();
+    void testFieldMatchExecutorUnweightedProximity();
+    void testFieldMatchExecutorReverseProximity();
+    void testFieldMatchExecutorAbsoluteProximity();
+    void testFieldMatchExecutorMultiSegmentProximity();
+    void testFieldMatchExecutorSegmentDistance();
+    void testFieldMatchExecutorSegmentProximity();
+    void testFieldMatchExecutorSegmentStarts();
+    void testFieldMatchExecutorMoreThanASegmentLengthOfUnmatchedQuery();
+    void testFieldMatchExecutorQueryRepeats();
+    void testFieldMatchExecutorZeroCases();
+    void testFieldMatchExecutorExceedingIterationLimit();
+    void testFieldMatchExecutorRemaining();
 
     void assertAge(feature_t expAge, const vespalib::string & attr, uint64_t now, uint64_t docTime);
     void setupForAgeTest(FtFeatureTest & ft, uint64_t docTime);
