@@ -196,7 +196,7 @@ instance - which services to run and how many nodes per service:
     for document, query and result processing.
     The empty <em>search</em> element
     sets up an HTTP search interface for Vespa queries.
-    The default HTTP port for JDisc container nodes is 4080.
+    The default HTTP port for JDisc container nodes is 8080.
     <em>nodes</em> defines the number of nodes required per service</li>
 <li>
   <em>content</em> defines how documents are stored
@@ -229,9 +229,9 @@ as in the search definition <em>song.sd</em>.
 Feed it to your application (replace with your own endpoint url):</p>
 <pre>
 $ curl -X POST --data-binary  @music-data-1.json \
-  http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 | python -m json.tool
+  http://myhost.mydomain.com:8080/document/v1/music/music/docid/1 | python -m json.tool
 $ curl -X POST --data-binary  @music-data-2.json \
-  http://myhost.mydomain.com:4080/document/v1/music/music/docid/2 | python -m json.tool
+  http://myhost.mydomain.com:8080/document/v1/music/music/docid/2 | python -m json.tool
 </pre>
 <p>
 For applications with high feed throughput requirements we recommend using the
@@ -240,7 +240,7 @@ For applications with high feed throughput requirements we recommend using the
   you may fetch individual documents based on document id:
 </p>
 <pre>
-$ curl http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 | python -m json.tool
+$ curl http://myhost.mydomain.com:8080/document/v1/music/music/docid/1 | python -m json.tool
 </pre>
 
 
@@ -253,7 +253,7 @@ which is done by sending requests to the <em>JDisc
 Container</em>. Replace the hostname with your endpoint:
 </p>
 <pre>
-http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+%22bad%22%3B
+http://myhost.mydomain.com:8080/search/?yql=select+*+from+sources+*+where+default+contains+%22bad%22%3B
 </pre>
 <p>
 Looking at the output, please note:
@@ -286,7 +286,7 @@ also be field sets, like the <em>default field set</em> (remember the
 <em>fieldset default</em> statement in our search definition).
 </p><p>
 Try out the following examples by querying your url endpoint
-(e.g. <em>http://myhost.mydomain.com:4080/search/</em>):
+(e.g. <em>http://myhost.mydomain.com:8080/search/</em>):
 </p>
 
 <dl>
@@ -486,8 +486,8 @@ Now try to send the following queries to Vespa and look at the order
 of the hits:
 </p>
 <pre>
-http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year%3B
-http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year+desc%3B
+http://myhost.mydomain.com:8080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year%3B
+http://myhost.mydomain.com:8080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"+order+by+year+desc%3B
 </pre>
 <p>
 As you can see, adding the keyword <em>desc</em> after the attribute name leads
@@ -911,10 +911,10 @@ the <em>artistId</em> is empty for all results. Then re-feed your data:
 </p>
 <pre>
 $ curl -X POST --data-binary \
-@music-data-1.json http://myhost.mydomain.com:4080/document/v1/music/music/docid/1 \
+@music-data-1.json http://myhost.mydomain.com:8080/document/v1/music/music/docid/1 \
 | python -m json.tool
 $ curl -X POST --data-binary \
-@music-data-2.json http://myhost.mydomain.com:4080/document/v1/music/music/docid/2 \
+@music-data-2.json http://myhost.mydomain.com:8080/document/v1/music/music/docid/2 \
 | python -m json.tool
 </pre>
 <p>
@@ -1055,8 +1055,8 @@ to re-calculate the popularity scores, e.g from a grid job).
 Once the configuration has been reloaded, try out the following queries in your browser:
 </p>
 <pre>
-http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B
-http://myhost.mydomain.com:4080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B&amp;ranking.profile=song
+http://myhost.mydomain.com:8080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B
+http://myhost.mydomain.com:8080/search/?yql=select+*+from+sources+*+where+default+contains+"bad"%3B&amp;ranking.profile=song
 </pre>
 <p>
 In the first query we do not use our new rank profile at all, and

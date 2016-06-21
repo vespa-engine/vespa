@@ -3,7 +3,7 @@
 title: "Cluster Controller"
 ---
 
-<h1 id="overview">Responsibilities</h1>
+<h2 id="overview">Responsibilities</h2>
 <dl>
   <dt>Give the cluster a uniform view of its state</dt><dd>
     The main responsibility of the cluster controller is to give the entire
@@ -32,7 +32,7 @@ title: "Cluster Controller"
   </dd>
 </dl>
 
-<h1 id="uniform-state-view">Giving the cluster a uniform state view</h1>
+<h2 id="uniform-state-view">Giving the cluster a uniform state view</h2>
 <p>
   The main responsibility of the cluster controller is to give the cluster
   a uniform view of its <a href="admin-states.html">state</a>. This is
@@ -55,7 +55,7 @@ title: "Cluster Controller"
     <img src="../img/design/clustercontroller-overview.png"/>
 </figure>
 
-<h2 id="state-gather">Gathering node states</h2>
+<h3 id="state-gather">Gathering node states</h3>
 <p>
   The cluster state needs availability and capacity information from all the
   distributor and content nodes. The cluster controller retrieves this
@@ -85,7 +85,7 @@ title: "Cluster Controller"
   signal.
 </p>
 
-<h2 id="state-combine">Combining node states into a cluster state</h2>
+<h3 id="state-combine">Combining node states into a cluster state</h3>
 <p>
   The node states kept in the cluster state doesn't need to match the states
   reported from the node themselves. For instance, while a node may return that
@@ -113,7 +113,7 @@ title: "Cluster Controller"
   the user state for the node, the state is adjusted based on it.
 </p>
 
-<h2 id="state-broadcast">Cluster state broadcasting</h2>
+<h3 id="state-broadcast">Cluster state broadcasting</h3>
 <p>
   When node states are received, an cluster controller internal cluster state
   is updated. To limit the amount of cluster states broadcasted to the cluster,
@@ -133,7 +133,7 @@ title: "Cluster Controller"
   all the nodes.
 </p>
 
-<h1 id="master-election">Master election</h1>
+<h2 id="master-election">Master election</h2>
 <p>
   Having only a single cluster controller, if the controller goes down for any
   reason, there is no longer a cluster controller alive to adjust the cluster
@@ -170,7 +170,7 @@ title: "Cluster Controller"
   minimal resources, meaning they can probably be set to run anywhere.
 </p>
 
-<h1 id="historic-state">Historic state</h1>
+<h2 id="historic-state">Historic state</h2>
 <p>
   Very little state is currently persisted by the cluster controllers. If the
   master changes, or is restarted, historic knowledge built up is typically
@@ -194,7 +194,7 @@ Note: ZooKeeper data tends to be corrupted if the disk they store data on
   states must be reset. Cluster state versions will start back at zero.
 </p>
 
-<h2 id="version-reset">Cluster State Version Reset</h2>
+<h3 id="version-reset">Cluster State Version Reset</h3>
 <p>
   If ZooKeeper data goes missing, the cluster state version will be reset to
   zero. This is not an issue for distributors and content nodes, as these will
@@ -217,9 +217,9 @@ Note: ZooKeeper data tends to be corrupted if the disk they store data on
   confused.
 </p>
 
-<h1 id="monitoring">Monitoring cluster controller state</h1>
+<h2 id="monitoring">Monitoring cluster controller state</h2>
 
-<h2 id="rest-api">State Rest API</h2>
+<h3 id="rest-api">State Rest API</h3>
 <p>
   Basic cluster and node state information is available through the
   <a href="api-state-rest-api.html">State Rest API</a>. This API can also be
@@ -228,7 +228,7 @@ Note: ZooKeeper data tends to be corrupted if the disk they store data on
   disrupting the cluster.
 </p>
 
-<h2 id="console-tools">Command line tools</h2>
+<h3 id="console-tools">Command line tools</h3>
 <p>
   For simpler manual usage, a few command line tools have been implemented using
   the State Rest API. These are:
@@ -243,7 +243,7 @@ Note: ZooKeeper data tends to be corrupted if the disk they store data on
   command line.
 </p>
 
-<h2 id="monitoring">Monitoring cluster controller state</h2>
+<h3 id="monitoring">Monitoring cluster controller state</h3>
 <p>
   There is an internal status page for the cluster controller available at
   the status port. This page is located at

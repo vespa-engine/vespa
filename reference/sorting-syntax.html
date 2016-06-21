@@ -3,7 +3,7 @@
 title: "General query result sorting"
 ---
 
-<h1>General query result sorting</h1>
+<h2>General query result sorting</h2>
 
 
     <p class="ingress">
@@ -41,7 +41,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
 
 
 
-    <h1 id="sort-order">Sorting order</h1>
+    <h2 id="sort-order">Sorting order</h2>
     <p>
       For sort order, <code>+</code> denotes ascending sorting order,
       while <code>-</code> gives descending order.
@@ -60,12 +60,12 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       For consistency, <code>-</code> can be encoded as %2D.
     </p>
 
-    <h2 id="default-sort-order">Default sorting order</h2>
+    <h3 id="default-sort-order">Default sorting order</h3>
     <p>
       Default sort order is <code>+</code> or ascending, except for the special builtin <code>[rank]</code> which has <code>-</code> or descending.
     </p>
 
-    <h1 id="sort-attribute">Sorting attribute</h1>
+    <h2 id="sort-attribute">Sorting attribute</h2>
     <p>
       The sorting attribute in a sort expression is the name of an
       attribute in the index. Attribute names will often be the same
@@ -83,7 +83,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       score and sort by the specificed sorting specification.
    </p>
 
-    <h1 id="sort-function">Sorting function</h1>
+    <h2 id="sort-function">Sorting function</h2>
     <p>
       It is possible to specify how sorting should be done.
       The default depends on configuration of attributes and
@@ -99,7 +99,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
     </p>
 
 
-    <h2 id="raw">Raw byteorder</h2>
+    <h3 id="raw">Raw byteorder</h3>
     <p>
       Here a simple and fast ordering based on memcmp of utf8 for
       strings and correct sort order compliant binary rep for other
@@ -108,13 +108,13 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
     </p>
 
 
-    <h2 id="lowercase">Lowercase</h2>
+    <h3 id="lowercase">Lowercase</h3>
     <p>
       This improves the sorting by first lowercasing and normalising the strings before sorting. This is
       slightly more correct and might be enough for what you want. It is not that much more costly than raw sort.
     </p>
 
-    <h2 id="uca">UCA</h2>
+    <h3 id="uca">UCA</h3>
     <p>
       This sorting is based on the
       <a href="http://site.icu-project.org/">icu</a> library that follows the
@@ -134,7 +134,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       need to set strength you must also specify locale.
     </p>
 
-    <h3>Default sort locale</h3>
+    <h4>Default sort locale</h4>
     <p>
       Locale is default derived from query unless overriden in
       <a href="search-definitions.html#sorting">searchdefinition</a>,
@@ -145,7 +145,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       lowercase function instead.
     </p>
 
-    <h3>Default sort strength</h3>
+    <h4>Default sort strength</h4>
     <p>
       Strength is <code>PRIMARY</code> unless overriden
       in <a href="search-definitions.html#sorting">searchdefinition</a>,
@@ -153,7 +153,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
     </p>
 
 
-    <h2 id="default-sort-function">Default sort function</h2>
+    <h3 id="default-sort-function">Default sort function</h3>
     <p>
       Numeric fields are sorted based on their numerical value. This is the only option.
     </p>
@@ -163,7 +163,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       or given explicitly in sortspec.
     </p>
 
-    <h1 id="special-sorting-attributes">Special sorting attributes</h1>
+    <h2 id="special-sorting-attributes">Special sorting attributes</h2>
     <p>
       Three special attributes are available for sorting in addition to
       the index specific attributes:
@@ -200,7 +200,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       deterministic.
     </p>
 
-    <h1 id="limitations">Limitations</h1>
+    <h2 id="limitations">Limitations</h2>
 
     <p>
       <strong>Note that it is only possible to sort on attributes</strong>. Trying
@@ -209,7 +209,7 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
       not work; the sort expression will be ignored.
     </p>
 
-    <h1 id="examples">Examples</h1>
+    <h2 id="examples">Examples</h2>
     <pre class="code">+surname</pre>
     <p>
       Sort the hits according to the surname attribute in ascending
@@ -256,14 +256,14 @@ SortAttribute ::= ID                          /* A valid attribute name */</pre>
     </p>
 
 
-    <h1 id="yql">Sorting in YQL</h1>
+    <h2 id="yql">Sorting in YQL</h2>
 
     <p>
       Refer to <a href="../search/yql-in-vespa.html#sorting">YQL Vespa
       reference</a> for how to set sorting parameters in YQL.
     </p>
 
-    <h1 id="example-queries">Example queries</h1>
+    <h2 id="example-queries">Example queries</h2>
     <p>
       See the sorting examples in the <a href="../tutorial.html#sorting">Tutorial</a>.
     </p>

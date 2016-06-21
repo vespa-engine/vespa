@@ -3,7 +3,7 @@
 title: "Document selector language"
 ---
 
-<h1>Document selector language</h1>
+<h2>Document selector language</h2>
 
 <p class="ingress">
   This document describes the document select language (DSL), which is used to
@@ -13,7 +13,7 @@ title: "Document selector language"
 </p>
 
 
-<h1 id="examples">Examples</h1>
+<h2 id="examples">Examples</h2>
 
 <p>
 For those wanting just a quick view of the language, here are some examples of
@@ -60,7 +60,7 @@ Other advanced examples:
 
 
 
-<h1 id="case">Case sensitiveness</h1>
+<h2 id="case">Case sensitiveness</h2>
 
 The identifiers used in this language (<code>and or not true false null id
 scheme namespace specific user group</code>) are not case sensitive. The casing
@@ -69,7 +69,7 @@ consistency.
 
 
 
-<h1 id="branch-operators">Branch operators</h1>
+<h2 id="branch-operators">Branch operators</h2>
 <p>
   The branch operators are used to combine other nodes in the parse tree
   generated from the text format. The different branch nodes existing is
@@ -94,7 +94,7 @@ consistency.
 
 
 
-<h1 id="grouping">Grouping</h1>
+<h2 id="grouping">Grouping</h2>
 <p>
   To get around the default presedence, parentheses are used around the
   expressions that should be evaluated first.
@@ -118,7 +118,7 @@ consistency.
 
 
 
-<h1 id="primitives">Primitives</h1>
+<h2 id="primitives">Primitives</h2>
 
 <table>
   <tr>
@@ -148,7 +148,7 @@ consistency.
 </table>
 
 
-<h2 id="comparison">Comparison</h2>
+<h3 id="comparison">Comparison</h3>
 
 Comparisons are probably the most useful feature in the language. It compares
 any two values using an operator. All the operators are infix and take two
@@ -219,13 +219,13 @@ arguments aren't strings.
   </tr>
 </table>
 
-<h3>Locale / Character sets</h3>
+<h4>Locale / Character sets</h4>
 The language currently does nothing to support various character sets. Thus
 glob and regex matching of single characters are not guaranteed to match exactly
 one character, but might match a part of a character represented by multiple
 byte values.
 
-<h3>Values</h3>
+<h4>Values</h4>
 The comparison operator compares two values. A value can be any of the
 following:
 
@@ -318,14 +318,14 @@ following:
 	</li>
 </ul>
 
-<h3>Value arithmetics</h3>
+<h4>Value arithmetics</h4>
 
 In addition to single values you can also do arithmetics on values. The common
 arithmetics operators addition (<code>+</code>), subtraction (<code>-</code>),
 multiplication (<code>*</code>), division (<code>/</code>) and modula
 (<code>%</code>) are supported.
 
-<h3>Functions</h3>
+<h4>Functions</h4>
 
 Functions are called on something and returns a value that can be used in
 comparison expressions:
@@ -368,7 +368,7 @@ comparison expressions:
 
 </ul>
 
-<h2 id="nowfunction">Now function</h2>
+<h3 id="nowfunction">Now function</h3>
 <p>
 Document selection provides a <em>now()</em> function, which returns the
 current date timestamp. By putting an expiration date or insertion date field in the search definition,
@@ -384,7 +384,7 @@ The now function can be used with the &lt;documents&gt; tag for search, or in a 
 a visitor in VDS.
 </p>
 
-<h1 id="constraints">Constraints</h1>
+<h2 id="constraints">Constraints</h2>
 
 Due to the language being so implicit, language identifiers restricts what can
 be used as document type names. The following values are not legal document
@@ -394,10 +394,10 @@ type names:
 
 
 
-<h1 id="grammar">Grammar</h1>
+<h2 id="grammar">Grammar</h2>
 
 
-<h2 id="ebnf">EBNF of the language</h2>
+<h3 id="ebnf">EBNF of the language</h3>
 
 To simplify this overview of the EBNF double casing of strings has not been included.
 The identifiers &quot;null&quot;, &quot;true&quot;, &quot;false&quot; etc can be written in any case,
