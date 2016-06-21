@@ -7,3 +7,6 @@ Environment="VESPA_HOME=/opt/vespa"
 PIDFile=${VESPA_HOME}/var/run/sentinel.pid
 ExecStart=${VESPA_HOME}/bin/vespa-start-services.sh
 ExecStop=${VESPA_HOME}/bin/vespa-stop-services.sh
+
+[Install]
+WantedBy=multi-user.target

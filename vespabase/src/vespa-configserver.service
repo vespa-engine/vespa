@@ -7,3 +7,6 @@ Environment="VESPA_HOME=/opt/vespa"
 PIDFile=${VESPA_HOME}/var/run/configserver.pid
 ExecStart=${VESPA_HOME}/bin/vespa-start-configserver.sh
 ExecStop=${VESPA_HOME}/bin/vespa-stop-configserver.sh
+
+[Install]
+WantedBy=multi-user.target
