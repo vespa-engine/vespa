@@ -4,6 +4,6 @@ Description=Vertical Search Platform Config Server
 [Service]
 Type=forking
 Environment="VESPA_HOME=/opt/vespa"
-PidFile=${VESPA_HOME}/var/run/configserver.pid
+PIDFile=${VESPA_HOME}/var/run/configserver.pid
 ExecStart=${VESPA_HOME}/bin/vespa-start-configserver.sh
 ExecStop=${VESPA_HOME}/bin/vespa-stop-configserver.sh

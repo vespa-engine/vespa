@@ -4,6 +4,6 @@ Description=Vertical Search Platform
 [Service]
 Type=forking
 Environment="VESPA_HOME=/opt/vespa"
-PidFile=${VESPA_HOME}/var/run/sentinel.pid
+PIDFile=${VESPA_HOME}/var/run/sentinel.pid
 ExecStart=${VESPA_HOME}/bin/vespa-start-services.sh
 ExecStop=${VESPA_HOME}/bin/vespa-stop-services.sh
