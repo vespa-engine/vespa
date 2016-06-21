@@ -1,6 +1,6 @@
 [
   {
-    "put": "id:music:music::http://mymusic.com/Michael-Jackson-Bad",
+    "put": "id:music:music::Michael-Jackson-Bad",
     "fields": {
          "album": "Bad",
          "artist": "Michael Jackson",
@@ -10,7 +10,7 @@
      }
   },
   {
-    "put": "id:music:music::http://mymusic.com/Eminem-Recovery",
+    "put": "id:music:music::Eminem-Recovery",
     "fields": {
         "album": "Recovery",
         "artist": "Eminem",
