@@ -1,2 +1,4 @@
 build
 lib
+/vespa-configserver.service
+/vespa.service
