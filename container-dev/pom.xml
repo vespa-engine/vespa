@@ -118,10 +118,5 @@
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>searchlib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 </project>
