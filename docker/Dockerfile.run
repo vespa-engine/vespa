@@ -22,19 +22,6 @@ RUN yum -y install vespa-libtorrent
 RUN yum -y install vespa-zookeeper-c-client
 RUN yum -y install vespa-cppunit # Should not be needed ?
 
-#RUN yum -y install vespa
-# Workaround while we wait for a published rpm
-COPY vespa-7.0-1.el7.centos.x86_64.rpm /vespa.rpm
-RUN rpm -i vespa.rpm
+# Utilities
+RUN yum -y install net-tools less
 
-# Workaround for user name and permissions and vespa home detetction
-RUN useradd yahoo
-RUN chown -R yahoo:yahoo /opt/vespa
-ENV VESPA_HOME /opt/vespa
-
-# Build    : docker build -t vesparun -f Dockerfile.run .
-#            IMORTANT: Need to put the local vespa rpm name in the copy command.
-# Run      : docker run -ti --rm --net=host vesparun <path to service startup script>
-#            Need -v options to map directories used to store data
-#            ONLY MANUAL INSTALL OF VESPA RPM TESTED
-#
