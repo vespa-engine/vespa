@@ -130,9 +130,9 @@ ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_pre
 ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
 ln -s storaged-bin %{buildroot}/%{_prefix}/sbin/distributord-bin
 
-mkdir -p %{buildroot}/usr/lib/systemd/service
-cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/service
-cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/service
+mkdir -p %{buildroot}/usr/lib/systemd/system
+cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
+cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 
 %clean
 
