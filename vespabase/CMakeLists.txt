@@ -39,5 +39,6 @@ vespa_install_script(vespa-core-dumper.sh vespa-core-dumper bin)
 
 configure_file(src/vespa.service.in src/vespa.service @ONLY)
 configure_file(src/vespa-configserver.service.in src/vespa-configserver.service @ONLY)
+install(FILES src/vespa.service src/vespa-configserver.service DESTINATION etc/systemd/system)
 
 install(FILES src/Defaults.pm DESTINATION lib/perl5/site_perl/Yahoo/Vespa)
