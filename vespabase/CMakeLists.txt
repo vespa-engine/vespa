@@ -36,6 +36,6 @@ vespa_install_script(src/vespa-start-container-daemon.sh vespa-start-container-d
 vespa_install_script(src/vespa-start-services.sh vespa-start-services bin)
 vespa_install_script(src/vespa-stop-configserver.sh vespa-stop-configserver bin)
 vespa_install_script(src/vespa-stop-services.sh vespa-stop-services bin)
-vespa_install_script(vespa-core-dumper.sh vespa-core-dumper bin)
+vespa_install_script(src/vespa-core-dumper.sh vespa-core-dumper bin)
 
 install(FILES src/Defaults.pm DESTINATION lib/perl5/site_perl/Yahoo/Vespa)
