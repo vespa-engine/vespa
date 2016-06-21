@@ -4,8 +4,11 @@ Vespa is an engine for low-latency computation over large data sets.
 It stores and indexes your data such that queries, selection and processing over the
 data can be performed at serving time.
 
-This README describes how to build and develop the Vespa engine.
-For user documentation see TODO: Github pages link
+This README describes how to build and develop the Vespa engine. If you want to use Vespa
+you can go to the
+[quick start guide](http://yahoo.github.io/vespa/vespa-quick-start.html), or take a
+look at our
+[user documentation](http://yahoo.github.io/vespa/vespatoc.html).
 
 ## Getting started developing
 
@@ -13,7 +16,6 @@ For user documentation see TODO: Github pages link
 
     git config --global user.name "John Doe"
     git config --global user.email johndoe@host.com
-
 
 ### Setting up build environment
 
@@ -46,7 +48,6 @@ TODO: List required build dependencies
 
 * OS X : See [node-admin/README_MAC.md](node-admin/README_MAC.md)
 * Linux : See [node-admin/README_LINUX.md](node-admin/README_LINUX.md)
-
 
 Code licensed under the Apache 2.0 license. See LICENSE file for terms.
 

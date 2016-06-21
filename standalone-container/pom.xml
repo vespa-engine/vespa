@@ -85,7 +85,8 @@
             config-bundle-jar-with-dependencies.jar,
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
-            container-disc-jar-with-dependencies.jar
+            container-disc-jar-with-dependencies.jar,
+            vespajlib.jar
           </discPreInstallBundle>
           <bundleActivator>com.yahoo.container.standalone.StandaloneContainerActivator</bundleActivator>
           <jdiscPrivilegedActivator>true</jdiscPrivilegedActivator>
