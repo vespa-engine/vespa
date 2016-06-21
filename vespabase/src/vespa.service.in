@@ -4,8 +4,8 @@ Description=Vertical Search Platform
 [Service]
 Type=forking
 PIDFile=@CMAKE_INSTALL_PREFIX@/var/run/sentinel.pid
-ExecStart=@CMAKE_INSTALL_PREFIX@/bin/vespa-start-services.sh
-ExecStop=@CMAKE_INSTALL_PREFIX@/bin/vespa-stop-services.sh
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/vespa-start-services
+ExecStop=@CMAKE_INSTALL_PREFIX@/bin/vespa-stop-services
 
 [Install]
 WantedBy=multi-user.target
