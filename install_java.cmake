@@ -18,6 +18,11 @@ install_java_artifact_dependencies(vespa_jersey2)
 install_java_artifact(vespajlib)
 
 install_fat_java_artifact(application-preprocessor)
+install_fat_java_artifact(clustercontroller-apps)
+install_fat_java_artifact(clustercontroller-apputil)
+install_fat_java_artifact(clustercontroller-utils)
+install_fat_java_artifact(clustercontroller-core)
+
 install_fat_java_artifact(component)
 install_fat_java_artifact(config-bundle)
 install_fat_java_artifact(config-model-api)
