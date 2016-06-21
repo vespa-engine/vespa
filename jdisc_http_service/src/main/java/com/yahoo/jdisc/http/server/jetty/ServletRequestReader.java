@@ -133,9 +133,8 @@ class ServletRequestReader implements ReadListener {
             numberOfOutstandingUserCalls += 2;
         }
         try {
-            requestContentChannel.write(buf, writeCompletionHandler);
-
             int bytesReceived = buf.remaining();
+            requestContentChannel.write(buf, writeCompletionHandler);
             metricReporter.successfulRead(bytesReceived);
         } catch (final Throwable t) {
             finishedFuture.completeExceptionally(t);
