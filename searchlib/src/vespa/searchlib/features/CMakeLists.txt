@@ -25,6 +25,7 @@ vespa_add_library(searchlib_features OBJECT
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
     matchesfeature.cpp
+    countmatchesfeature.cpp
     matchfeature.cpp
     native_dot_product_feature.cpp
     nativeattributematchfeature.cpp
