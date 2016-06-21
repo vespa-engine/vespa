@@ -128,6 +128,7 @@ ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{
 ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/node-repository.jar
 ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/zkfacade.jar
 ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
+ln -s storaged-bin %{buildroot}/%{_prefix}/sbin/distributord-bin
 
 %clean
 
@@ -201,5 +202,6 @@ exit 0
 %{_prefix}/include/*
 %{_prefix}/etc/*
 %{_prefix}/conf/*
+%{_prefix}/share/vespa/schema/*
 
 %changelog
