@@ -29,11 +29,3 @@ RUN yum -y install vespa-cppunit-devel
 # Enable devtoolset-4 by default
 RUN echo "source /opt/rh/devtoolset-4/enable" > /etc/profile.d/devtoolset-4.sh
 
-# Build    : docker build -t vespabuild -f Dockerfile.build .
-# Run      : docker run -ti --rm -v <path to vespa source>:/vespa -v <path to rpmbuild dir>:/root/rpmbuild vespabuild
-# Make RPM : cd /vespa 
-#            ./dist.sh <vespa version> 
-#            rpmbuild ~/rpmbuild/SPECS/vespa-<vespa version>.spec
-#
-# vespa RPM should now be in <path to rpmbuild dir>/RPMS/x86_64/vespa*.rpm
-#
