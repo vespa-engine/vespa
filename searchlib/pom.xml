@@ -34,7 +34,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
