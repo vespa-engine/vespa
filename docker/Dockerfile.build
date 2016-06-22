@@ -26,6 +26,9 @@ RUN yum -y install vespa-libtorrent-devel
 RUN yum -y install vespa-zookeeper-c-client-devel
 RUN yum -y install vespa-cppunit-devel
 
+# Install utilities
+RUN yum -y install sudo
+
 # Enable devtoolset-4 by default
 RUN echo "source /opt/rh/devtoolset-4/enable" > /etc/profile.d/devtoolset-4.sh
 
