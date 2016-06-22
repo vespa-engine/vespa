@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
  */
 public class LinuxInetAddress {
 
-    private static Logger log = Logger.getLogger(LinuxInetAddress.class.getName());
-
     /**
      * Returns an InetAddress representing the address of the localhost.
      * A non-loopback address is preferred if available.

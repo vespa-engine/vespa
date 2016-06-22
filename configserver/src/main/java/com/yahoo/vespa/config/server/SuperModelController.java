@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.yahoo.cloud.config.ElkConfig;
-
 /**
  * Controls the lifetime of the {@link SuperModel} and the {@link SuperModelRequestHandler}.
  *
@@ -32,6 +30,7 @@ import com.yahoo.cloud.config.ElkConfig;
  * @since 5.9
  */
 public class SuperModelController implements RequestHandler {
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SuperModelController.class.getName());
     private volatile SuperModelRequestHandler handler;
     private final GenerationCounter generationCounter;
@@ -39,14 +38,12 @@ public class SuperModelController implements RequestHandler {
     private final long masterGeneration;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ConfigResponseFactory responseFactory;
-    private final ElkConfig elkConfig;
     private volatile boolean enabled = false;
 
 
-    public SuperModelController(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, ConfigserverConfig configserverConfig, ElkConfig elkConfig) {
+    public SuperModelController(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, ConfigserverConfig configserverConfig) {
         this.generationCounter = generationCounter;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.elkConfig = elkConfig;
         this.masterGeneration = configserverConfig.masterGeneration();
         this.responseFactory = ConfigResponseFactoryFactory.createFactory(configserverConfig);
         this.zone = new Zone(configserverConfig);
@@ -85,7 +82,7 @@ public class SuperModelController implements RequestHandler {
 
     private SuperModelRequestHandler createNewHandler(Map<TenantName, Map<ApplicationId, Application>> newModels) {
         long generation = generationCounter.get() + masterGeneration;
-        SuperModel model = new SuperModel(newModels, elkConfig, zone);
+        SuperModel model = new SuperModel(newModels, zone);
         return new SuperModelRequestHandler(model, configDefinitionRepo, generation, responseFactory);
     }
 

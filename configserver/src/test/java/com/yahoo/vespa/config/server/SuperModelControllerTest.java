@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-import com.yahoo.cloud.config.ElkConfig;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -43,8 +41,8 @@ public class SuperModelControllerTest {
     public void setup() throws IOException {
         counter = new SuperModelGenerationCounter(new MockCurator());
         controller = new SuperModelController(counter,
-                new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                        new ElkConfig(new ElkConfig.Builder()));
+                                              new TestConfigDefinitionRepo(),
+                                              new ConfigserverConfig(new ConfigserverConfig.Builder()));
     }
 
     @Test
@@ -94,11 +92,11 @@ public class SuperModelControllerTest {
         TenantName tenantA = TenantName.from("a");
         long masterGen = 10;
         controller = new SuperModelController(counter,
-                new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen)),
-                        new ElkConfig(new ElkConfig.Builder()));
+                                              new TestConfigDefinitionRepo(), 
+                                              new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen)));
 
         long gen = counter.increment();
-        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3l, 1));
+        controller.reloadConfig(tenantA, createApp(tenantA, "foo", 3L, 1));
         assertThat(controller.getHandler().getGeneration(), is(masterGen + gen));
     }
 
