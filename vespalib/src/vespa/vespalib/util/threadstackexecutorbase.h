@@ -52,16 +52,30 @@ private:
         void completeBarrier() { gate.countDown(); }
     };
 
+    struct BlockedThread {
+        const uint32_t wait_task_count;
+        Monitor monitor;
+        bool blocked;
+        BlockedThread(uint32_t wait_task_count_in)
+            : wait_task_count(wait_task_count_in), monitor(), blocked(true) {}
+        void wait() const;
+        void unblock();
+    };
+
     FastOS_ThreadPool               _pool;
     Monitor                         _monitor;
     Stats                           _stats;
     Gate                            _executorCompletion;
     ArrayQueue<TaggedTask>          _tasks;
     ArrayQueue<Worker*>             _workers;
+    std::vector<BlockedThread*>     _blocked;
     EventBarrier<BarrierCompletion> _barrier;
     uint32_t                        _taskCount;
     uint32_t                        _taskLimit;
     bool                            _closed;
+
+    void block_thread(const LockGuard &, BlockedThread &blocked_thread);
+    void unblock_threads(const MonitorGuard &);
 
     /**
      * Assign the given task to the given idle worker. This will wake
@@ -151,6 +165,14 @@ public:
      * @return this object; for chaining
      **/
     virtual ThreadStackExecutorBase &sync();
+
+    /**
+     * Block the calling thread until the current task count is equal
+     * to or lower than the given value.
+     *
+     * @param task_count target value to wait for
+     **/
+    void wait_for_task_count(uint32_t task_count);
 
     /**
      * Shut down this executor. This will make this executor reject

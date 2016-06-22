@@ -116,4 +116,45 @@ TEST_F("requireThatNewTasksAreDroppedAfterShutdown", MyState()) {
     TEST_DO(f1.open().shutdown().execute(5).sync().check(5, 0, 0, 0));
 }
 
+
+struct WaitTask : public Executor::Task {
+    Gate &gate;
+    WaitTask(Gate &g) : gate(g) {}
+    virtual void run() { gate.await(); }
+};
+
+struct WaitState {
+    ThreadStackExecutor executor;
+    std::vector<Gate> block_task;
+    std::vector<Gate> wait_done;
+    WaitState(size_t num_threads)
+        : executor(num_threads / 2, 128000), block_task(num_threads - 2), wait_done(num_threads - 1)
+    {
+        for (auto &gate: block_task) {
+            auto result = executor.execute(std::make_unique<WaitTask>(gate));
+            ASSERT_TRUE(result.get() == nullptr);
+        }
+    }
+    void wait(size_t count) {
+        executor.wait_for_task_count(count);
+        wait_done[count].countDown();
+    }
+};
+
+TEST_MT_F("require that threads can wait for a specific task count", 7, WaitState(num_threads)) {
+    if (thread_id == 0) {
+        for (size_t next_done = (num_threads - 2); next_done-- > 0;) {
+            if (next_done < f1.block_task.size()) {
+                f1.block_task[f1.block_task.size() - 1 - next_done].countDown();
+            }
+            EXPECT_TRUE(f1.wait_done[next_done].await(25000));
+            for (size_t i = 0; i < next_done; ++i) {
+                EXPECT_TRUE(!f1.wait_done[i].await(20));
+            }
+        }
+    } else {
+        f1.wait(thread_id - 1);
+    }
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
