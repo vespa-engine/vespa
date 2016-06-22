@@ -18,6 +18,11 @@ install_java_artifact_dependencies(vespa_jersey2)
 install_java_artifact(vespajlib)
 
 install_fat_java_artifact(application-preprocessor)
+install_fat_java_artifact(clustercontroller-apps)
+install_fat_java_artifact(clustercontroller-apputil)
+install_fat_java_artifact(clustercontroller-utils)
+install_fat_java_artifact(clustercontroller-core)
+
 install_fat_java_artifact(component)
 install_fat_java_artifact(config-bundle)
 install_fat_java_artifact(config-model-api)
@@ -50,6 +55,8 @@ vespa_install_script(config-model/src/main/perl/deploy-application bin)
 vespa_install_script(config-model/src/main/perl/expand-config.pl bin)
 vespa_install_script(config-model/src/main/perl/vespa-replicate-log-stream bin)
 vespa_install_script(config-model/src/main/sh/validate-application bin)
+vespa_install_script(container-disc/src/main/sh/vespa-start-container-daemon.sh vespa-start-container-daemon bin)
+
 vespa_install_script(logserver/bin/logserver-start.sh logserver-start bin)
 
 install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
