@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -82,6 +83,42 @@ public class DockerImplTest {
         final CompletableFuture<DockerImage> asyncPollFuture3 = docker.pullImageAsync(dockerImage);
 
         assertThat(asyncPollFuture3, is(not(sameInstance(asyncPollFuture1))));
+    }
+
+    @Test
+    public void vespaVersionIsParsed() {
+        assertThat(DockerImpl.parseVespaVersion("5.119.53"), is(Optional.of("5.119.53")));
+    }
+
+    @Test
+    public void vespaVersionIsParsedWithTrailingNewline() {
+        assertThat(DockerImpl.parseVespaVersion("5.119.53\n"), is(Optional.of("5.119.53")));
+    }
+
+    @Test
+    public void vespaVersionIsParsedWithIrregularVersionScheme() {
+        assertThat(DockerImpl.parseVespaVersion("7.2"), is(Optional.of("7.2")));
+        assertThat(DockerImpl.parseVespaVersion("8.0-beta"), is(Optional.of("8.0-beta")));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void vespaVersionIsNotParsedFromNull() {
+        assertThat(DockerImpl.parseVespaVersion(null), is(Optional.empty()));
+    }
+
+    @Test
+    public void vespaVersionIsNotParsedFromEmptyString() {
+        assertThat(DockerImpl.parseVespaVersion(""), is(Optional.empty()));
+    }
+
+    @Test
+    public void vespaVersionIsNotParsedFromUnexpectedContent() {
+        assertThat(DockerImpl.parseVespaVersion("foo"), is(Optional.empty()));
+        assertThat(DockerImpl.parseVespaVersion("119"), is(Optional.empty()));
+        assertThat(DockerImpl.parseVespaVersion("vespa-5.119.53"), is(Optional.empty()));
+        assertThat(DockerImpl.parseVespaVersion("vespa- 5.119.53"), is(Optional.empty()));
+        assertThat(DockerImpl.parseVespaVersion("vespa-"), is(Optional.empty()));
+        assertThat(DockerImpl.parseVespaVersion("No such command 'vespanodectl'"), is(Optional.empty()));
     }
 
     @Test
