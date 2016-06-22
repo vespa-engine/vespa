@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <vespa version>"
+  exit 1
+fi
+
+DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+cd $DIR
+
+VESPA_VERSION=$1
+DOCKER_IMAGE=vesparun
+
+docker build -t "$DOCKER_IMAGE" -f Dockerfile.run .
+docker run -d -v $(pwd)/..:/vespa --entrypoint /vespa/docker/run-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION"
+
