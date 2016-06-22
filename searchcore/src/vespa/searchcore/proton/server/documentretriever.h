@@ -24,8 +24,8 @@ public:
                       const search::IDocumentStore &doc_store);
 
     document::Document::UP getDocument(search::DocumentIdT lid) const override;
-    void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;
-    void populate(search::DocumentIdT lid, document::Document & doc) const;
+    void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency consistency) const override;
+    void populate(search::DocumentIdT lid, document::Document & doc, ReadConsistency consistency) const;
 private:
     const search::index::Schema     &_schema;
     const search::IAttributeManager &_attr_manager;

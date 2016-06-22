@@ -123,7 +123,7 @@ void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocument
     _doc_store.visit(lids, getDocumentTypeRepo(), populater);
 }
 
-void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
+void DocumentRetriever::populate(DocumentIdT lid, Document & doc, ReadConsistency consistency) const
 {
     for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
@@ -131,6 +131,10 @@ void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
         if (attrGuard.get() && attrGuard->valid()) {
             const search::attribute::IAttributeVector & attr = **attrGuard;
             if (lid < attr.getNumDocs()) {
+                if (consistency != ReadConsistency::STRONG) {
+                    // Lock must be retaken to ensure as non-strong consitency allows lids to arrive later on.
+                    attrGuard = _attr_manager.getAttribute(field.getName());
+                }
                 DocumentFieldRetriever::populate(lid, doc, field, attr, _schema.isIndexField(field.getName()));
             }
         }
