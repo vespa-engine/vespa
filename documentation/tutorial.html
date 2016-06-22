@@ -173,14 +173,18 @@ instance - which services to run and how many nodes per service:
  &lt;jdisc version="1.0" id="default"&gt;
   &lt;search/&gt;
   &lt;document-api/&gt;
-  &lt;nodes count="1"/&gt;
+  &lt;nodes/&gt;
+    &lt;node hostalias="node1"/&gt;
+  &lt;/nodes/&gt;
  &lt;/jdisc&gt;
  &lt;content version="1.0" id="music"&gt;
   &lt;redundancy&gt;1&lt;/redundancy&gt;
   &lt;documents&gt;
    &lt;document type="music" mode="index"/&gt;
   &lt;/documents&gt;
-  &lt;nodes count="1"/&gt;
+  &lt;nodes/&gt;
+    &lt;node hostalias="node1"/&gt;
+  &lt;/nodes/&gt;
   &lt;engine&gt;
    &lt;proton&gt;
     &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;
@@ -212,6 +216,19 @@ instance - which services to run and how many nodes per service:
 </li>
 </ul>
 
+
+<h2 id="app-hosts">src/main/application/hosts.xml</h2>
+<p>
+<a href="reference/hosts.html">hosts.xml</a>
+maps from logical to actual host name:
+</p>
+<pre>
+&lt;hosts&gt;
+  &lt;host name="localhost"&gt;
+    &lt;alias&gt;node1&lt;/alias&gt;
+  &lt;/host&gt;
+&lt;/hosts&gt;
+</pre>
 
 
 <h1 id="deploying-basic">Deploy the application package</h1>
@@ -888,7 +905,9 @@ Extend <em>jdisc</em> in <em>src/main/application/services.xml</em>:
       &lt;/chain&gt;
     &lt;/search&gt;
     &lt;document-api /&gt;
-    &lt;nodes count="1" /&gt;
+    &lt;nodes/&gt;
+      &lt;node hostalias="node1"/&gt;
+    &lt;/nodes/&gt;
   &lt;/jdisc&gt;
 </pre>
 <dl>

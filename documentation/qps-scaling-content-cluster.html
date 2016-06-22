@@ -90,13 +90,18 @@ sure the transition is smooth.
 </p>
 
 <h2>Example - migrate to using groups</h2>
-<p>Starting point - a cluster with 8 nodes and flat distribution and redundancy 2:</p>
+<p>Starting point - a cluster with 4 nodes and flat distribution and redundancy 2. End state: all 4 nodes with all documents:</p>
 <pre>&lt;content id='music' version='1.0'&gt;
   &lt;redundancy&gt;2&lt;/redundancy&gt;
   &lt;documents&gt;
     &lt;document mode='index' type='music' /&gt;
   &lt;/documents&gt;
-  &lt;nodes count='8' /&gt;
+  &lt;nodes /&gt;
+    &lt;node hostalias='node0'/&gt;
+    &lt;node hostalias='node1'/&gt;
+    &lt;node hostalias='node2'/&gt;
+    &lt;node hostalias='node3'/&gt;
+  &lt;/nodes&gt;
   &lt;engine&gt;
     &lt;proton&gt;
       &lt;searchable-copies&gt;2&lt;/searchable-copies&gt;
@@ -104,27 +109,46 @@ sure the transition is smooth.
   &lt;/engine&gt;
 &lt;/content&gt;</pre>
 
-<p>Increase <em>redundancy</em> and <em>searchable-copies</em> to 8. After deploying this, wait for all search nodes to finish redistribution (i.e. all nodes have all documents):</p>
+<p>Increase <em>redundancy</em> and <em>searchable-copies</em> to 4. After deploying this, wait for all search nodes to finish redistribution (i.e. all nodes have all documents):</p>
 <pre>&lt;content id='music' version='1.0'&gt;
-  &lt;redundancy&gt;8&lt;/redundancy&gt;
+  &lt;redundancy&gt;4&lt;/redundancy&gt;
   &lt;documents&gt;
     &lt;document mode='index' type='music' /&gt;
   &lt;/documents&gt;
-  &lt;nodes count='8' /&gt;
+  &lt;nodes /&gt;
+    &lt;node hostalias='node0'/&gt;
+    &lt;node hostalias='node1'/&gt;
+    &lt;node hostalias='node2'/&gt;
+    &lt;node hostalias='node3'/&gt;
+  &lt;/nodes&gt;
   &lt;engine&gt;
     &lt;proton&gt;
-      &lt;searchable-copies&gt;8&lt;/searchable-copies&gt;
+      &lt;searchable-copies&gt;4&lt;/searchable-copies&gt;
     &lt;/proton&gt;
   &lt;/engine&gt;
 &lt;/content&gt;</pre>
 
-<p>Reconfigure to 8 groups, setting <em>redundancy</em> and <em>searchable-copies</em> to 1:</p>
+<p>Reconfigure to 4 groups, setting <em>redundancy</em> and <em>searchable-copies</em> to 1:</p>
 <pre>&lt;content id='music' version='1.0'&gt;
   &lt;redundancy&gt;1&lt;/redundancy&gt;
   &lt;documents&gt;
     &lt;document mode='index' type='music' /&gt;
   &lt;/documents&gt;
-  &lt;nodes count='8' groups='8' /&gt;
+  &lt;group distribution-key='0' name='mytopgroup'&gt;
+    &lt;distribution partitions='1|*'/&gt;
+    &lt;group distribution-key='0' name='mygroup0'&gt;
+      &lt;node distribution-key='0' hostalias='node0'/&gt;
+    &lt;/group&gt;
+    &lt;group distribution-key='1' name='mygroup1'&gt;
+      &lt;node distribution-key='0' hostalias='node1'/&gt;
+    &lt;/group&gt;
+    &lt;group distribution-key='2' name='mygroup2'&gt;
+      &lt;node distribution-key='0' hostalias='node1'/&gt;
+    &lt;/group&gt;
+    &lt;group distribution-key='3' name='mygroup3'&gt;
+      &lt;node distribution-key='0' hostalias='node1'/&gt;
+    &lt;/group&gt;
+  &lt;/group&gt;
   &lt;engine&gt;
     &lt;proton&gt;
       &lt;searchable-copies&gt;1&lt;/searchable-copies&gt;

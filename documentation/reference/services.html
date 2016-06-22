@@ -44,11 +44,15 @@ title: "services.xml"
 &lt;services version=&quot;1.0&quot;&gt;
   &lt;jdisc version=&quot;1.0&quot; id=&quot;container&quot;&gt;
     &lt;search /&gt;
-    &lt;nodes count="1" /&gt;
+    &lt;nodes&gt;
+      &lt;node hostalias="node0"/&gt;
+    &lt;/nodes&gt;
   &lt;/jdisc&gt;
   &lt;content id="music" version="1.0"&gt;
     &lt;redundancy&gt;2&lt;/redundancy&gt;
-    &lt;nodes count="2" /&gt;
+    &lt;nodes&gt;
+      &lt;node hostalias="node0"/&gt;
+    &lt;/nodes&gt;
     &lt;documents&gt;
       &lt;document type="music" mode="store-only" /&gt;
     &lt;/documents&gt;
@@ -80,7 +84,9 @@ title: "services.xml"
       &lt;response&gt;configured string&lt;/response&gt;
     &lt;/config&gt;</strong>
   &lt;/handler&gt;
-  &lt;nodes count="1" /"&gt;
+  &lt;nodes&gt;
+    &lt;node hostalias="node0"/&gt;
+  &lt;/nodes&gt;
 &lt;/jdisc&gt;
 </pre>
 
