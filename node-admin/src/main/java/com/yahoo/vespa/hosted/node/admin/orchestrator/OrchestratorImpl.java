@@ -119,7 +119,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     public static OrchestratorImpl createOrchestratorFromSettings() {
-        final Set<HostName> configServerHosts = Environment.getConfigServerHostsFromYinstSetting();
+        final Set<HostName> configServerHosts = Environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }

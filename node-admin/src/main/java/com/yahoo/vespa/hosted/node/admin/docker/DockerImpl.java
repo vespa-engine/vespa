@@ -232,7 +232,7 @@ public class DockerImpl implements Docker {
                                     .networkMode("none")
                                     .binds(applicationStorageToMount(containerName.asString()))
                                     .build())
-                    .env("CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHostsFromYinstSetting())).
+                    .env("CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())).
                             hostname(hostName.s());
             if (minMainMemoryAvailableGb > 0.00001) {
                 containerConfigBuilder.memory((long) (GIGA * minMainMemoryAvailableGb));
