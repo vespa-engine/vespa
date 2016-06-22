@@ -9,7 +9,7 @@ title: "services.xml - 'content'"
         <a href="#document">document [type, selection, mode]</a>
         <a href="#document-processing">document-processing [cluster, chain]</a>
     <a href="#redundancy">redundancy [repldy-after]</a>
-    <a href="#nodes">nodes [count] [groups] [flavor]</a>
+    <a href="#nodes">nodes</a>
         <a href="#node">node [baseport, hostalias, jvmargs??, preload, distribution-key, capacity]</a>
     <a href="#group">group [distribution-key, name]</a>
         <a href="#distribution">distribution</a>
@@ -242,26 +242,7 @@ Attributes:
 <h1 id="nodes">nodes</h1>
 <p>
 Contained in <code><a href="#content">content</a></code>.
-Defines the set of content nodes in the cluster.
-Attributes:
-<ul>
-  <li><strong>count (optional)</strong>: Non-negative integer.
-    Sets the number of content nodes for the cluster when deploying to hosted Vespa. If this is set, no nodes can be specified as subelements of this.
-  </li>
-  <li><strong>groups (optional)</strong>: Non-negative integer.
-    Sets the number of <em>groups</em> into which the nodes should be divided. Each group will have an equal share of the nodes and <em>redundancy</em> copies of the
-    corpus, and each query will be routed to just one group. This allows scaling to a higher query load than is efficient within a single group.
-    If this is set, no groups can be specified as subelements of this. <a href="../qps-scaling-content-cluster.html">Example</a>.
-    WARNING: Changing from a non-grouped configuration to multiple groups will lead to temporary coverage loss in query serving.
-    Live instances should be failed out to another serving instance during this change.
-  </li>
-  <li><strong>flavor (optional)</strong>: A flavor name.
-    The node flavor to use for this cluster. If omitted the default flavor type will be used.
-  </li>
-  <li>
-      <strong>deploy (optional)</strong>: Refer to <a href="../reference/application-packages-reference.html#multi_environment_application_packages">deployment directives</a> for how to configure per-region/environment overrides (e.g. different number of nodes per region)
-  </li>
-</ul>
+Defines the set of content nodes in the cluster - parent for node-elements.
 </p>
 
 
@@ -952,7 +933,11 @@ quick-start</a> and modify <em>services.xml</em>. Feed, dump using vespavisit an
       &lt;documents&gt;
         &lt;document type="music" mode="index" /&gt;
       &lt;/documents&gt;
-      &lt;nodes count="5"/&gt;
+      &lt;nodes&gt;
+        &lt;node hostalias="node0"/&gt;
+        &lt;node hostalias="node1"/&gt;
+        &lt;node hostalias="node2"/&gt;
+      &lt;/nodes&gt;
     &lt;/content&gt;
   &lt;/services&gt;
 </pre>

@@ -39,7 +39,11 @@ For a complete list of files and directories in an application package, see the 
     &lt;processing/&gt;      <strong style="background-color: yellow;">&lt;!-- Request-response processors go here. --&gt;</strong>
     &lt;search/&gt;          <strong style="background-color: yellow;">&lt;!-- Use to run the search middleware. Searchers go here. --&gt;</strong>
     &lt;docproc/&gt;         <strong style="background-color: yellow;">&lt;!-- Use to run the document processing middleware. DocumentProcessors go here. --&gt;</strong>
-    &lt;nodes count="5"/&gt; <strong style="background-color: yellow;">&lt;!-- # nodes in the jdisc cluster --&gt;</strong>
+    &lt;nodes&gt;            <strong style="background-color: yellow;">&lt;!-- Nodes in the jdisc cluster --&gt;</strong>
+      &lt;node hostalias="node1"/&gt;
+      &lt;node hostalias="node2"/&gt;
+      &lt;node hostalias="node3"/&gt;
+    &lt;/nodes/&gt;
   &lt;/jdisc&gt;
 
   &lt;content id="my-content" version="1.0"&gt;
@@ -48,7 +52,11 @@ For a complete list of files and directories in an application package, see the 
       &lt;document type="my-searchable-type" mode="index"/&gt;
       &lt;document type="my-other-type" mode="store-only"/&gt;
     &lt;/documents&gt;
-    &lt;nodes count="10"/&gt; <strong style="background-color: yellow;">&lt;!-- # nodes in the content cluster --&gt;</strong>
+    &lt;nodes&gt;             <strong style="background-color: yellow;">&lt;!-- # nodes in the content cluster --&gt;</strong>
+      &lt;node hostalias="node4"/&gt;
+      &lt;node hostalias="node5"/&gt;
+      &lt;node hostalias="node6"/&gt;
+    &lt;/nodes/&gt;
   &lt;/content&gt;
 
 &lt;/services&gt;

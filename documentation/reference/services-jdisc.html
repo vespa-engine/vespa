@@ -3,7 +3,7 @@
 title: "services.xml - 'jdisc'"
 ---
 
-<p class="ingress">
+<p>
     This document provides a complete reference for configuration of a
     JDisc cluster in Vespa. The JDisc model elements are:
 </p>
@@ -53,7 +53,7 @@ title: "services.xml - 'jdisc'"
     <a href="#client">client</a>
     <a href="#server">server</a>
     <a href="config-files.html#configuration_format_in_services.xml">config</a>
-    <a href="#nodes">nodes [jvmargs, count, flavor]</a>
+    <a href="#nodes">nodes [jvmargs]</a>
         <a href="#node">node</a>
 
 </pre>
@@ -508,16 +508,6 @@ Refer to <a href="../jdisc/injecting-components.html">Injecting components</a> f
 <ul>
     <li>
         <strong>jvmargs (optional)</strong>: The default for JVM arguments to set for nodes in this cluster.
-    </li>
-    <li>
-        <strong>count (optional)</strong>: Sets the number of nodes for the cluster, when deploying to a hosted Vespa system.
-        This is mutually exclusive with respect to the <code>&lt;node&gt;</code> sub element below.
-    </li>
-    <li>
-        <strong>flavor (optional)</strong>: The node flavor to use. If omitted the default flavor will be used.
-    </li>
-    <li>
-        <strong>deploy (optional)</strong>: Refer to <a href="application-packages-reference.html#deploy">deployment directives</a> for how to configure per-region/environment overrides (e.g. different number of nodes per region)
     </li>
 </ul>
 </p>
