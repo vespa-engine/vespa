@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * Converts {@link Node.Type} to/from serialized form in REST APIs.
- * @author dybdahl
+ * @author dybis
  */
 public class NodeTypeSerializer {
 
