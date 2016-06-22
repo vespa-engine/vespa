@@ -12,8 +12,7 @@ cd $DIR
 
 VESPA_VERSION=$1
 
-rpm -i "vespa-${VESPA_VERSION}-1.el7.centos.x86_64.rpm"
-rpm -i "vespa-debuginfo-${VESPA_VERSION}-1.el7.centos.x86_64.rpm"
+rpm -i "vespa*-${VESPA_VERSION}-*.rpm"
 
 # Workaround until we figure out why rpm does not set the ownership.
 chown -R vespa:vespa /opt/vespa
@@ -21,5 +20,5 @@ chown -R vespa:vespa /opt/vespa
 /opt/vespa/bin/vespa-start-configserver
 /opt/vespa/bin/vespa-start-services
 
-# Output log until killed
-/opt/vespa/bin/logfmt -f
+# Sleep forever
+tail -f /dev/null
