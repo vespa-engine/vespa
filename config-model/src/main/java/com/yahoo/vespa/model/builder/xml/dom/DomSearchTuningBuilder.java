@@ -70,6 +70,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 handleAttribute(e, t.searchNode);
             } else if (equals("summary", e)) {
                 handleSummary(e, t.searchNode);
+            } else if (equals("initialize", e)) {
+                handleInitialize(e, t.searchNode);
             }
         }
     }
@@ -244,4 +246,14 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             }
         }
     }
+
+    private void handleInitialize(Element spec, Tuning.SearchNode sn) {
+        sn.initialize = new Tuning.SearchNode.Initialize();
+        for (Element e : XML.getChildren(spec)) {
+            if (equals("threads", e)) {
+                sn.initialize.threads = asInt(e);
+            }
+        }
+    }
+
 }
