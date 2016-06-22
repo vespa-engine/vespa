@@ -225,4 +225,14 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("summary.log.chunk.compression.level 5"));
     }
 
+    @Test
+    public void requireThatWeCanParseInitializeTag() {
+        Tuning t = createTuning(parseXml("<initialize>",
+                "<threads>7</threads>",
+                "</initialize>"));
+        assertEquals(7, t.searchNode.initialize.threads.intValue());
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("initialize.threads 7"));
+    }
+
 }

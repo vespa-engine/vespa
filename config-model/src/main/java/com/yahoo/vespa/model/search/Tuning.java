@@ -167,7 +167,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
         }
 
-         public static class Attribute implements ProtonConfig.Producer {
+        public static class Attribute implements ProtonConfig.Producer {
             public static class Io implements ProtonConfig.Producer {
                 public IoType write = null;
 
@@ -337,12 +337,24 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             }
         }
 
+        public static class Initialize implements ProtonConfig.Producer {
+            public Integer threads = null;
+
+            @Override
+            public void getConfig(ProtonConfig.Builder builder) {
+                if (threads != null) {
+                    builder.initialize(new ProtonConfig.Initialize.Builder().threads(threads));
+                }
+            }
+        }
+
         public RequestThreads threads = null;
         public FlushStrategy strategy = null;
         public Resizing resizing = null;
         public Index index = null;
         public Attribute attribute = null;
         public Summary summary = null;
+        public Initialize initialize = null;
 
         @Override
         public void getConfig(ProtonConfig.Builder builder) {
@@ -352,6 +364,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             if (index != null) index.getConfig(builder);
             if (attribute != null) attribute.getConfig(builder);
             if (summary != null) summary.getConfig(builder);
+            if (initialize != null) initialize.getConfig(builder);
         }
     }
 
