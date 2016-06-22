@@ -6,9 +6,8 @@ data can be performed at serving time.
 
 This README describes how to build and develop the Vespa engine. If you want to use Vespa
 you can go to the
-[quick start guide](http://yahoo.github.io/vespa/vespa-quick-start.html), or take a
-look at our
-[user documentation](http://yahoo.github.io/vespa/vespatoc.html).
+[quick start guide](http://yahoo.github.io/vespa/vespa-quick-start.html), or find the full
+documentation and other resources at http://yahoo.github.io/vespa/.
 
 ## Getting started developing
 
