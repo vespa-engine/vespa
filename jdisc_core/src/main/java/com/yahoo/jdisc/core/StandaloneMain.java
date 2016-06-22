@@ -36,16 +36,17 @@ public class StandaloneMain {
 
     void run(String bundleLocation) {
         try {
-		log.info("Initializing application without privileges.");
-		loader.init(bundleLocation, false);
-		loader.start();
-		setupSigTermHandler();
-		waitForShutdown();
-		// Event.stopping(APPNAME, "shutdown");
-		loader.stop();
-		// Event.stopped(APPNAME, 0, 0);
-		loader.destroy();
-        // System.exit(0);
+            System.out.println("debug\tInitializing application without privileges.");
+            loader.init(bundleLocation, false);
+            loader.start();
+            setupSigTermHandler();
+            waitForShutdown();
+            System.out.println("debug\tTrying to shutdown in a controlled manner.");
+            loader.stop();
+            System.out.println("debug\tTrying to clean up in a controlled manner.");
+            loader.destroy();
+            System.out.println("debug\tStopped ok.");
+            System.exit(0);
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected: ", e);
             System.exit(6);
