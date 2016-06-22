@@ -55,10 +55,10 @@ public class RunInContainerTest {
         container = JDisc.fromServicesXml(createServiceXml(port), Networking.enable);
     }
 
-    private boolean doPutCall(boolean resume) throws IOException {
+    private boolean doPutCall(String command) throws IOException {
         HttpClient httpclient = HttpClientBuilder.create().build();
         HttpHost target = new HttpHost("localhost", port, "http");
-        HttpPut getRequest = new HttpPut(resume ? "/rest/resume" : "/rest/suspend");
+        HttpPut getRequest = new HttpPut("/rest/" + command);
         HttpResponse httpResponse = httpclient.execute(target, getRequest);
         return httpResponse.getStatusLine().getStatusCode() == 200;
     }
@@ -105,11 +105,11 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
-        assertThat(doPutCall(true), is(true));
-        assertThat(doPutCall(false), is(false));
+        assertThat(doPutCall("resume"), is(true));
+        assertThat(doPutCall("suspend"), is(false));
         assertThat(doGetInfoCall(), is("{ \"jsonMessage\":\"isRunningUpdates is false. NodeAdmin:  " +
-                "Freeze called with false while in state false " +
-                "Freeze called with true while in state false\"}"));
+                "Unfreeze called while in state false " +
+                "Freeze called while in state false\"}"));
     }
 
 

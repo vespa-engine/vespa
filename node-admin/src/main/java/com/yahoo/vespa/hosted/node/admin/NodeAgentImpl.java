@@ -390,28 +390,37 @@ public class NodeAgentImpl implements NodeAgent {
         monitor.notifyAll();
     }
 
-    private void maintainWantedState()  {
-        while (true) {
+    private void blockUntilNotWaitingOrFrozen() {
             try {
                 synchronized (monitor) {
-                    switch (wantedState) {
-                        case WAITING:
-                            state = State.WAITING;
-                            monitor.wait();
-                            continue;
-                        case WORKING:
-                            state = State.WORKING;
-                            break;
-                        case FROZEN:
-                            state = State.FROZEN;
-                            monitor.wait();
-                            break;
-                        case TERMINATED:
-                            return;
+                    while (wantedState == State.WAITING || wantedState == State.FROZEN) {
+                        state = wantedState;
+                        monitor.wait();
+                        continue;
                     }
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+    }
+
+    private void maintainWantedState()  {
+        while (true) {
+            blockUntilNotWaitingOrFrozen();
+            synchronized (monitor) {
+                switch (wantedState) {
+                    case WAITING:
+                        state = State.WAITING;
+                        continue;
+                    case WORKING:
+                        state = State.WORKING;
+                        break;
+                    case FROZEN:
+                        state = State.FROZEN;
+                        continue;
+                    case TERMINATED:
+                        return;
+                }
             }
             // This is WORKING state.
             try {

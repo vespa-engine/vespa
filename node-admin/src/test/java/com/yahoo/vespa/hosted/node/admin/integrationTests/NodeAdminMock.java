@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Mock with some simple logic
  *
- * @autor dybis
+ * @author dybis
  */
 public class NodeAdminMock implements NodeAdmin {
 
@@ -35,10 +35,16 @@ public class NodeAdminMock implements NodeAdmin {
     }
 
     @Override
-    public boolean setFreezeAndCheckIfAllFrozen(boolean freeze) {
-        info.append(" Freeze called with " + freeze + " while in state " + frozen.get());
-        freezeSetState = freeze;
+    public boolean freezeAndCheckIfAllFrozen() {
+        info.append(" Freeze called while in state " + frozen.get());
+        freezeSetState = true;
         return frozen.get();
+    }
+
+    @Override
+    public void unfreeze() {
+        info.append(" Unfreeze called while in state " + frozen.get());
+        freezeSetState = false;
     }
 
     @Override

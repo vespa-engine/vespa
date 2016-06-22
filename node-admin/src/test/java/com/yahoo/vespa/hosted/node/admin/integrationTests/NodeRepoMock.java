@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * Mock with some simple logic
- * @autor dybis
+ * @author dybis
  */
 public class NodeRepoMock implements NodeRepository {
 

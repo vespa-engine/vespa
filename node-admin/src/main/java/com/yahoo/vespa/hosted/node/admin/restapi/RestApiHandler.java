@@ -24,7 +24,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
  *
  * There is one debug call: /info
  *
- * @autor dybis
+ * @author dybis
  */
 public class RestApiHandler extends LoggingRequestHandler{
 

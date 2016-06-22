@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * Mock with some simple logic
- * @autor dybis
+ * @author dybis
  */
 public class OrchestratorMock implements Orchestrator {
 

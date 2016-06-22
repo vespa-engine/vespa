@@ -62,7 +62,6 @@ public class NodeAdminStateUpdaterTest {
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
         Thread.sleep(2);
         assertThat(accumulatedArgumentList.size(), is(numberOfElements));
-        when(nodeAdmin.setFreezeAndCheckIfAllFrozen(false)).thenReturn(false);
         assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
                 is(Optional.empty()));
         while (accumulatedArgumentList.size() == numberOfElements) {

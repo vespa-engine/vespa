@@ -56,16 +56,22 @@ public class NodeAdminImpl implements NodeAdmin {
         garbageCollectDockerImages(containersToRun);
     }
 
-    public boolean setFreezeAndCheckIfAllFrozen(boolean freeze) {
+    public boolean freezeAndCheckIfAllFrozen() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(freeze ? NodeAgent.Command.FREEZE : NodeAgent.Command.UNFREEZE);
+            nodeAgent.execute(NodeAgent.Command.FREEZE);
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (freeze && nodeAgent.getState() != NodeAgent.State.FROZEN) {
+            if (nodeAgent.getState() != NodeAgent.State.FROZEN) {
                 return false;
             }
         }
         return true;
+    }
+
+    public void unfreeze() {
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            nodeAgent.execute(NodeAgent.Command.UNFREEZE);
+        }
     }
 
     public Set<HostName> getListOfHosts() {

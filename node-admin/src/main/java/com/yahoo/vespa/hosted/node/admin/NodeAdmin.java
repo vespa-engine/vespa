@@ -11,11 +11,13 @@ import java.util.Set;
  */
 public interface NodeAdmin {
 
-     void setState(final List<ContainerNodeSpec> containersToRun);
+    void setState(final List<ContainerNodeSpec> containersToRun);
 
-     boolean setFreezeAndCheckIfAllFrozen(boolean freeze);
+    boolean freezeAndCheckIfAllFrozen();
 
-     Set<HostName> getListOfHosts();
+    void unfreeze();
 
-     String debugInfo();
+    Set<HostName> getListOfHosts();
+
+    String debugInfo();
 }

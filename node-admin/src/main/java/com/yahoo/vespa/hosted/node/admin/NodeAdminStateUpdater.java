@@ -80,13 +80,11 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             isRunningUpdates = wantedState == RESUMED;
         }
         if (wantedState == SUSPENDED) {
-            if (! nodeAdmin.setFreezeAndCheckIfAllFrozen(true)) {
+            if (! nodeAdmin.freezeAndCheckIfAllFrozen()) {
                 return Optional.of("Not all node agents are frozen.");
             }
         } else {
-            if (nodeAdmin.setFreezeAndCheckIfAllFrozen(false)) {
-                return Optional.of("Not all node agents are unfrozen.");
-            }
+            nodeAdmin.unfreeze();
         }
 
         List<String> hosts = new ArrayList<>();
@@ -103,7 +101,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 log.log(Level.FINE, "Is frozen, skipping");
                 return;
             }
-            // TODO: should the result from the config server contain both active and inactive?
             final List<ContainerNodeSpec> containersToRun;
             try {
                 containersToRun = nodeRepository.getContainersToRun();
