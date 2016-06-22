@@ -9,26 +9,35 @@
     <version>6-SNAPSHOT</version>
     <name>parent</name>
     <description>Parent artifact for all Vespa maven projects.</description>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>scala-tools.org</id>
-            <name>Scala-tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-    <repositories>
+    <url>http://yahoo.github.io/vespa</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Yahoo Inc.</name>
+            <url>https://github.com/yahoo</url>
+        </developer>
+    </developers>
+
+    <distributionManagement>
         <repository>
-            <id>scala-tools.org</id>
-            <name>Scala-tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
+            <id>bintray-vespa-repo</id>
+            <url>https://api.bintray.com/maven/yahoo/maven/vespa;publish=1</url>
         </repository>
-    </repositories>
+    </distributionManagement>
+
+    <scm>
+        <connection>scm:git:git@github.com:yahoo/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:yahoo/vespa.git</developerConnection>
+        <url>git@github.com:yahoo/vespa.git</url>
+    </scm>
+
     <build>
         <finalName>${project.artifactId}</finalName>
         <extensions>
