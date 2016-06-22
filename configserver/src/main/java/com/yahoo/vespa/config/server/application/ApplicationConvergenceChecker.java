@@ -38,6 +38,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
 
     private final static Set<String> serviceTypes = new HashSet<>(Arrays.asList(
             "container",
+            "container-clustercontroller",
             "qrserver",
             "docprocservice",
             "searchnode",
