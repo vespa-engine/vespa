@@ -91,19 +91,23 @@ void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetrieve
 class PopulateVisitor : public search::IDocumentVisitor
 {
 public:
-    PopulateVisitor(const DocumentRetriever & retriever, search::IDocumentVisitor & visitor) :
+    PopulateVisitor(const DocumentRetriever & retriever,
+                    search::IDocumentVisitor & visitor,
+                    IDocumentRetriever::ReadConsistency consistency) :
+        _consistency(consistency),
         _retriever(retriever),
         _visitor(visitor)
     { }
     void visit(uint32_t lid, document::Document::UP doc) override {
         if (doc) {
-            _retriever.populate(lid, *doc);
+            _retriever.populate(lid, *doc, _consistency);
             _visitor.visit(lid, std::move(doc));
         }
     }
 private:
-    const DocumentRetriever  & _retriever;
-    search::IDocumentVisitor & _visitor;
+    IDocumentRetriever::ReadConsistency  _consistency;
+    const DocumentRetriever            & _retriever;
+    search::IDocumentVisitor           & _visitor;
 };
 
 }  // namespace
@@ -112,14 +116,14 @@ Document::UP DocumentRetriever::getDocument(DocumentIdT lid) const
 {
     Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {
-        populate(lid, *doc);
+        populate(lid, *doc, ReadConsistency::STRONG);
     }
     return doc;
 }
 
-void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const
+void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency consistency) const
 {
-    PopulateVisitor populater(*this, visitor);
+    PopulateVisitor populater(*this, visitor, consistency);
     _doc_store.visit(lids, getDocumentTypeRepo(), populater);
 }
 
