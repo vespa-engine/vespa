@@ -377,6 +377,7 @@ public:
     }
 
     BucketGuard::UP lockBucket(const document::BucketId &bucket);
+    void commitAndWait() { _visibility.commitAndWait(); }
 
     virtual SerialNum getOldestFlushedSerial();
 

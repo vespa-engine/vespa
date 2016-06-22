@@ -273,7 +273,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     handleJoin(FeedToken token,
                const storage::spi::Bucket &source1,
                const storage::spi::Bucket &source2,
-               const storage::spi::Bucket &target)
+               const storage::spi::Bucket &target) override
     {
         (void) source1;
         (void) source2;
@@ -282,7 +282,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         token.ack();
     }
 
-    virtual RetrieversSP getDocumentRetrievers() {
+    virtual RetrieversSP getDocumentRetrievers() override {
         RetrieversSP ret(new std::vector<IDocumentRetriever::SP>);
         ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(
                                 0, Timestamp(), lastDocId)));
@@ -291,12 +291,14 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         return ret;
     }
 
-    virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &b) {
+    virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &b) override {
         return BucketGuard::UP(new BucketGuard(b.getBucketId(), *this));
     }
 
+    void commitAndWait() override { }
+
     virtual void
-    handleListActiveBuckets(IBucketIdListResultHandler &resultHandler)
+    handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override
     {
         BucketIdListResult::List list;
         resultHandler.handle(BucketIdListResult(list));
@@ -304,25 +306,25 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     virtual void
     handlePopulateActiveBuckets(document::BucketId::List &buckets,
-                                IGenericResultHandler &resultHandler)
+                                IGenericResultHandler &resultHandler) override
     {
         (void) buckets;
         resultHandler.handle(Result());
     }
 
-    virtual void freezeBucket(BucketId bucket) {
+    virtual void freezeBucket(BucketId bucket) override {
         frozen.insert(bucket.getId());
         was_frozen.insert(bucket.getId());
     }
-    virtual void thawBucket(BucketId bucket) {
+    virtual void thawBucket(BucketId bucket) override {
         std::multiset<uint64_t>::iterator it = frozen.find(bucket.getId());
         ASSERT_TRUE(it != frozen.end());
         frozen.erase(it);
     }
-    bool isFrozen(const Bucket &bucket) {
+    bool isFrozen(const Bucket &bucket) override {
         return frozen.find(bucket.getBucketId().getId()) != frozen.end();
     }
-    bool wasFrozen(const Bucket &bucket) {
+    bool wasFrozen(const Bucket &bucket) override {
         return was_frozen.find(bucket.getBucketId().getId())
             != was_frozen.end();
     }

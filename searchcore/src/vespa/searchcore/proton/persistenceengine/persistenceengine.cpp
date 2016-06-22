@@ -515,6 +515,10 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 
     DocumentIterator &iterator = it->second->it;
     try {
+        HandlerSnapshot::UP snapshot = getHandlerSnapshot();
+        for (PersistenceHandlerSequence & handlers = snapshot->handlers(); handlers.valid(); handlers.next()) {
+            handlers.get()->commitAndWait();
+        }
         IterateResult result = iterator.iterate(maxByteSize);
         LockGuard guard2(_iterators_lock);
         it->second->in_use = false;
