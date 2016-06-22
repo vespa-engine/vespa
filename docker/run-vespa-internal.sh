@@ -21,5 +21,5 @@ chown -R vespa:vespa /opt/vespa
 /opt/vespa/bin/vespa-start-configserver
 /opt/vespa/bin/vespa-start-services
 
-# Sleep until killed
-tail -f /dev/null
+# Outpu log until killed
+/opt/vespa/bin/logfmt -f
