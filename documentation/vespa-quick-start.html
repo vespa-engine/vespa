@@ -9,18 +9,14 @@ This guide will give you a single&ndash;node Vespa installation.
 
 
 <h1 id="requirements">Requirements</h1>
-
 <ul>
   <li>A machine (real or virtual) running CentOS Linux node with at least 2GB RAM</li>
 </ul>
 
 
 <h1 id="running-vespa">Install and run Vespa</h1>
-
 <ol>
-
 <li><p><strong>Install Vespa:</strong></p>
-
 <pre class="brush: cli">
 TODO: Install command(s)
 </pre>
@@ -41,12 +37,13 @@ TODO: Start config server command.
 </pre>
 </li>
 
-
-<li><p><strong>Deploy an application:</strong> An example application is provided
-in <em>$VESPA_HOME/share/vespa/sampleapps/search/music</em>, deploy it:</p>
+<li><p><strong>Deploy an application:</strong> An example application is found
+at <a href="https://github.com/yahoo/vespa">github.com/yahoo/vespa</a>,
+deploy it:</p>
 <pre class="brush: cli">
-$ deploy prepare $VESPA_HOME/share/vespa/sampleapps/search/music
-$ deploy activate
+$ git clone git@github.com:yahoo/vespa.git
+$ cd vespa/sample-apps/basic-search
+$ deploy prepare src/main/application &amp;&amp; deploy activate
 </pre>
 </li>
 
@@ -56,20 +53,15 @@ TODO: Start services command
 </pre>
 </li>
 
-<li><p><strong>Feed data:</strong> A few documents for the example
-application is prepared in
-<em>$VESPA_HOME/share/vespa/sampleapps/search/musicdata.xml</em>.
-Use the command line tool
-<code>vespafeeder</code> to create an index:</p>
+<li><p><strong>Create the index:</strong> Feed sample documents:
 <pre class="brush: cli">
-$ vespafeeder $VESPA_HOME/share/vespa/sampleapps/search/musicdata.xml
+$ java -jar $VESPA_HOME/lib/jars/vespa-http-client-jar-with-dependencies.jar --file music-data-feed.json --host localhost
 </pre>
-TODO: Change this to json docs and curl?
 </li>
 
 <li><p><strong>Query the index:</strong></p>
 <pre class="code">
-curl http://`hostname`:8080/search/?query=best
+curl http://localhost:8080/search/?query=michael
 </pre>
 </li>
 </ol>
@@ -78,7 +70,8 @@ curl http://`hostname`:8080/search/?query=best
 <p>
 Congratulations! You have now successfully installed and run
 Vespa and can head right over to the
-<a href="tutorial.html">Vespa Tutorial</a> to learn more.
+<a href="tutorial.html">Vespa Tutorial</a> to learn more. Find more pointers in
+<a href="develop-with-vespa.html">develop with Vespa</a>.
 </p>
 
 
