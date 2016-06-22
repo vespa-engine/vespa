@@ -121,7 +121,7 @@ public class OrchestratorImpl implements Orchestrator {
     public static OrchestratorImpl createOrchestratorFromSettings() {
         final Set<HostName> configServerHosts = Environment.getConfigServerHostsFromYinstSetting();
         if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Emnvironment setting for config servers missing or empty.");
+            throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
         final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
         final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
