@@ -75,14 +75,22 @@ FieldValue::UP positionFromZcurve(int64_t zcurve) {
     return value;
 }
 
-void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
+void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields,
+                          const IAttributeManager & attr_manager, IDocumentRetriever::ReadConsistency consistency)
 {
     for (const auto & it : possiblePositionFields) {
         if (doc.hasValue(*it.first)) {
-            AttributeGuard::UP attr = attr_manager.getAttribute(it.second);
-            if (attr.get() && attr->valid()) {
-                int64_t zcurve = (*attr)->getInt(lid);
-                doc.setValue(*it.first, *positionFromZcurve(zcurve));
+            AttributeGuard::UP attrGuard = attr_manager.getAttribute(it.second);
+            if (attrGuard.get() && attrGuard->valid()) {
+                const search::attribute::IAttributeVector & attr = **attrGuard;
+                if (lid < attr.getNumDocs()) {
+                    if (consistency != ReadConsistency::STRONG) {
+                        // Lock must be retaken to ensure as non-strong consitency allows lids to arrive later on.
+                        attrGuard = _attr_manager.getAttribute(field.getName());
+                    }
+                    int64_t zcurve = attr.getInt(lid);
+                    doc.setValue(*it.first, *positionFromZcurve(zcurve));
+                }
             }
         }
     }
@@ -143,7 +151,7 @@ void DocumentRetriever::populate(DocumentIdT lid, Document & doc, ReadConsistenc
             }
         }
     }
-    fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);
+    fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager, consistency);
 }
 
 const Schema &
