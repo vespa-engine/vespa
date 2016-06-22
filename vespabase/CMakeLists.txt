@@ -35,7 +35,6 @@ vespa_install_script(src/vespa-start-configserver.sh vespa-start-configserver bi
 vespa_install_script(src/vespa-start-services.sh vespa-start-services bin)
 vespa_install_script(src/vespa-stop-configserver.sh vespa-stop-configserver bin)
 vespa_install_script(src/vespa-stop-services.sh vespa-stop-services bin)
-vespa_install_script(src/vespa-core-dumper.sh vespa-core-dumper bin)
 
 configure_file(src/vespa.service.in src/vespa.service @ONLY)
 configure_file(src/vespa-configserver.service.in src/vespa-configserver.service @ONLY)

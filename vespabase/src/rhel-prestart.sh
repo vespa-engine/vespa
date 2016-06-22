@@ -110,14 +110,3 @@ chown -hR ${VESPA_USER} var/db/vespa
 
 # Delete temporary files created by storage when running.
 rm -f /home/y/tmp/hostinfo.*.*.report
-
-# Add $VESPA_HOME/bin to default path
-perl -pi -e 'm=^pathmunge /usr/X11R6/bin after= and s=^=pathmunge /home/y/bin after; =' /etc/profile
-
-#Enable core files by default
-perl -pi -e 's/^# No core files by default/# Vespa: Enable core files by default/' /etc/profile
-perl -pi -e 's/^ulimit -S -c 0/ulimit -S -c unlimited/' /etc/profile
-
-# Don't fail script if this command fails.
-#  * sysctl will always return error on openvz jails
-sysctl kernel.core_pattern="|${VESPA_HOME}bin/vespa-core-dumper lz4 ${VESPA_HOME}var/crash/%e.core.%p.lz4" || true
