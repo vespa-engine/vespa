@@ -226,6 +226,7 @@ private:
 void
 DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, IterateResult::List & list)
 {
+    IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
     search::DocumentMetaData::Vector metaData;
     source.getBucketMetaData(_bucket, metaData);
     if (metaData.empty()) {

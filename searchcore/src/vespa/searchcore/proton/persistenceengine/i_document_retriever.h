@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchlib/query/base.h>
 #include <memory>
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
 namespace proton
 {
@@ -24,6 +25,7 @@ class IDocumentRetriever
 {
 public:
     using ReadConsistency = storage::spi::ReadConsistency;
+    using ReadGuard = IDocumentMetaStoreContext::IReadGuard::UP;
     typedef std::unique_ptr<IDocumentRetriever> UP;
     typedef std::shared_ptr<IDocumentRetriever> SP;
 
@@ -34,6 +36,7 @@ public:
     virtual void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const = 0;
     virtual search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const = 0;
     virtual document::Document::UP getDocument(search::DocumentIdT lid) const = 0;
+    virtual ReadGuard getReadGuard() const = 0;
     /**
      * Will visit all documents in the the given list. Visit order is undefined and will
      * be conducted in most efficient retrieval order.
@@ -47,7 +50,8 @@ public:
 
 class DocumentRetrieverBaseForTest : public IDocumentRetriever {
 public:
-    virtual void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
+    void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
+    ReadGuard getReadGuard() const override { return ReadGuard(); }
 };
 
 } // namespace proton
