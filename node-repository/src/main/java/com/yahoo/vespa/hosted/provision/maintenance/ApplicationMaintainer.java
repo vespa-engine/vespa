@@ -35,7 +35,7 @@ public class ApplicationMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         Set<ApplicationId> applications =
-            nodeRepository().getNodes(Node.State.active).stream().map(node -> node.allocation().get().owner()).collect(Collectors.toSet());
+            nodeRepository().getNodes(Node.Type.tenant, Node.State.active).stream().map(node -> node.allocation().get().owner()).collect(Collectors.toSet());
 
         for (ApplicationId application : applications) {
             try {

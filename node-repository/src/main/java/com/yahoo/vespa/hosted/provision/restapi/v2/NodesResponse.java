@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.restapi.NodeStateSerializer;
+import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +43,7 @@ class NodesResponse extends HttpResponse {
 
     private final Slime slime;
 
-    public NodesResponse(ResponseType type, HttpRequest request, NodeRepository nodeRepository) {
+    public NodesResponse(ResponseType responseType, HttpRequest request, NodeRepository nodeRepository) {
         super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
@@ -52,7 +53,7 @@ class NodesResponse extends HttpResponse {
 
         slime = new Slime();
         Cursor root = slime.setObject();
-        switch (type) {
+        switch (responseType) {
             case nodeList: nodesToSlime(root); break;
             case stateList : statesToSlime(root); break;
             case nodesInStateList: nodesToSlime(stateFromString(lastElement(parentUrl)), root); break;
@@ -103,14 +104,17 @@ class NodesResponse extends HttpResponse {
     /** Outputs the nodes in the given state to a node array */
     private void nodesToSlime(Node.State state, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.getNodes(state), nodeArray);
+        for (Node.Type type : Node.Type.values())
+            toSlime(nodeRepository.getNodes(type, state), nodeArray);
     }
 
     /** Outputs all the nodes to a node array */
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        for (Node.State state : Node.State.values())
-            toSlime(nodeRepository.getNodes(state), nodeArray);
+        for (Node.State state : Node.State.values()) {
+            for (Node.Type type : Node.Type.values())
+                toSlime(nodeRepository.getNodes(type, state), nodeArray);
+        }
     }
 
     private void toSlime(List<Node> nodes, Cursor array) {
@@ -132,6 +136,7 @@ class NodesResponse extends HttpResponse {
         if ( ! allFields) return;
         object.setString("id", node.id());
         object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
+        object.setString("type", NodeTypeSerializer.wireNameOf(node.type()));
         object.setString("hostname", node.hostname());
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());

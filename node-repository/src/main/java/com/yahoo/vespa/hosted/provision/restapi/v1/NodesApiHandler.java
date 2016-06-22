@@ -78,13 +78,15 @@ public class
         }
 
         private void toSlime(Node.State state, Cursor object) {
-            List<Node> nodes = nodeRepository.getNodes(state);
             Cursor nodeArray = null; // create if there are nodes
-            for (Node node : nodes) {
-                if (hostnameFilter.isPresent() && ! node.hostname().equals(hostnameFilter.get())) continue;
-                if (nodeArray == null)
-                    nodeArray = object.setArray(state.name());
-                toSlime(node, nodeArray.addObject());
+            for (Node.Type type : Node.Type.values()) {
+                List<Node> nodes = nodeRepository.getNodes(type, state);
+                for (Node node : nodes) {
+                    if (hostnameFilter.isPresent() && !node.hostname().equals(hostnameFilter.get())) continue;
+                    if (nodeArray == null)
+                        nodeArray = object.setArray(state.name());
+                    toSlime(node, nodeArray.addObject());
+                }
             }
         }
 

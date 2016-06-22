@@ -85,14 +85,15 @@ public class PopulateClient {
 
     private Node buildNode(String hostname, String clusterType, String clusterId, int nodeIndex) {
         return new Node(
-                hostname,                                                                          // Id
-                hostname,                                                                          // Hostname
-                Optional.empty(),                                                                  // parent hostname
-                new Configuration(getFlavor(clusterType, clusterId).get()),                        // Flavor
+                hostname /* id */,
+                hostname /* Hostname */,
+                Optional.empty() /* parent hostname */,
+                new Configuration(getFlavor(clusterType, clusterId).get()),
                 Status.initial(),
-                Node.State.active,                                                                 // State = active/allocated
-                Optional.empty(),                                                                  // Allocation
-                History.empty())                                                                   // History
+                Node.State.active,
+                Optional.empty() /* Allocation */,
+                History.empty(),
+                Node.Type.tenant)                                                                   // History
 
                 .allocate(
                         ApplicationId.from(

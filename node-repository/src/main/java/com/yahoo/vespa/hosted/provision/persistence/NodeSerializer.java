@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -55,6 +56,9 @@ public class NodeSerializer {
     private static final String stateVersionKey = "stateVersion";
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
+    private static final String nodeTypeKey = "type";
+    private static final String nodeTypeTenant = "tenant";
+    private static final String nodeTypeHost = "host";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -71,7 +75,7 @@ public class NodeSerializer {
     private static final String dockerImageKey = "dockerImage";
 
     // History event fields
-    private static final String typeKey = "type";
+    private static final String historyEventTypeKey = "type";
     private static final String atKey = "at";
     private static final String agentKey = "agent"; // retired events only
 
@@ -107,6 +111,15 @@ public class NodeSerializer {
         object.setBool(hardwareFailureKey, node.status().hardwareFailure());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
+        object.setString(nodeTypeKey, nodeTypeToString(node.type()));
+    }
+
+    private String nodeTypeToString(Node.Type type) {
+        switch (type) {
+            case tenant: return nodeTypeTenant;
+            case host: return nodeTypeHost;
+        }
+        throw new IllegalArgumentException("Unknown node type '" + type.toString() + "'");
     }
 
     private void toSlime(Configuration configuration, Cursor object) {
@@ -131,7 +144,7 @@ public class NodeSerializer {
     }
 
     private void toSlime(History.Event event, Cursor object) {
-        object.setString(typeKey, toString(event.type()));
+        object.setString(historyEventTypeKey, toString(event.type()));
         object.setLong(atKey, event.at().toEpochMilli());
         if (event instanceof History.RetiredEvent)
             object.setString(agentKey, toString(((History.RetiredEvent)event).agent()));
@@ -151,7 +164,8 @@ public class NodeSerializer {
                         statusFromSlime(object),
                         state,
                         allocationFromSlime(object.field(instanceKey)),
-                        historyFromSlime(object.field(historyKey)));
+                        historyFromSlime(object.field(historyKey)),
+                        typeFromSlime(object));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -194,8 +208,19 @@ public class NodeSerializer {
         return new History(events);
     }
 
+    private Node.Type typeFromSlime(Inspector object) {
+        String typeString = object.field(nodeTypeKey).asString();
+        switch (typeString) {
+            case nodeTypeTenant : return Node.Type.tenant;
+            case nodeTypeHost : return Node.Type.host;
+            // TODO: Remove this when all data is converted
+            case "" : return Node.Type.tenant;
+        }
+        throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
+    }
+
     private History.Event eventFromSlime(Inspector object) {
-        History.Event.Type type = eventTypeFromString(object.field(typeKey).asString());
+        History.Event.Type type = eventTypeFromString(object.field(historyEventTypeKey).asString());
         if (type == null) return null;
         Instant at = Instant.ofEpochMilli(object.field(atKey).asLong());
         if (type.equals(History.Event.Type.retired))

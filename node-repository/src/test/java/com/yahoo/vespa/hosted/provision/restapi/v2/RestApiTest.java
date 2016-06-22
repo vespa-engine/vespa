@@ -60,7 +60,7 @@ public class RestApiTest {
                         new byte[0], Request.Method.POST));
         assertReboot(2, new Request("http://localhost:8080/nodes/v2/command/reboot?application=tenant2.application2.instance2",
                         new byte[0], Request.Method.POST));
-        assertReboot(8, new Request("http://localhost:8080/nodes/v2/command/reboot",
+        assertReboot(9, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host3.yahoo.com"),
                                "\"rebootGeneration\":3");
@@ -69,13 +69,15 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default") + "," +
                                            asNodeJson("host9.yahoo.com", "large-variant") + "," +
+                                           asHostJson("parent2.yahoo.com", "large-variant") + "," +
                                            asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
-                        "{\"message\":\"Added 3 nodes to the provisioned state\"}");
+                        "{\"message\":\"Added 4 nodes to the provisioned state\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com"), "node8.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com"), "node9.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
         // PUT nodes ready
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
@@ -215,6 +217,12 @@ public class RestApiTest {
     private String asNodeJson(String hostname, String flavor) {
         return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"}";
     }
+
+    private String asHostJson(String hostname, String flavor) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"" +
+                ", \"type\":\"host\"}";
+    }
+
 
     /** Asserts a particular response and 200 as response status */
     private void assertResponse(Request request, String responseMessage) throws IOException {

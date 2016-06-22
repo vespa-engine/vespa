@@ -49,6 +49,7 @@ public class ApplicationMaintainerTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
 
         createReadyNodes(15, nodeRepository, nodeFlavors);
+        createHostNodes(2, nodeRepository, nodeFlavors);
 
         Fixture fixture = new Fixture(zone, nodeRepository, nodeFlavors);
 
@@ -63,22 +64,24 @@ public class ApplicationMaintainerTest {
         int failedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 - failedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedInApp2, nodeRepository.getNodes(Node.State.failed).size());
-        assertEquals(3, nodeRepository.getNodes(Node.State.ready).size());
+        assertEquals(failedInApp1 + failedInApp2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+        assertEquals(3, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals(2, nodeRepository.getNodes(Node.Type.host, Node.State.ready).size());
+
 
         // Cause maintenance deployment which will allocate replacement nodes
         fixture.runApplicationMaintainer();
         assertEquals(fixture.wantedNodesApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(Node.State.ready).size());
+        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
 
         // Unfail the previously failed nodes
-        nodeRepository.unfail(nodeRepository.getNodes(Node.State.failed).get(0).hostname());
-        nodeRepository.unfail(nodeRepository.getNodes(Node.State.failed).get(0).hostname());
-        nodeRepository.unfail(nodeRepository.getNodes(Node.State.failed).get(0).hostname());
+        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
         int unfailedInApp1 = 1;
         int unfailedInApp2 = 2;
-        assertEquals(0, nodeRepository.getNodes(Node.State.failed).size());
+        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
         assertEquals(fixture.wantedNodesApp1 + unfailedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 + unfailedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
         assertEquals("The unfailed nodes are now active but not part of the application",
@@ -95,7 +98,15 @@ public class ApplicationMaintainerTest {
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default"))));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes = nodeRepository.addNodes(nodes);
+        nodeRepository.setReady(nodes);
+    }
+
+    private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
+        List<Node> nodes = new ArrayList<>(count);
+        for (int i = 0; i < count; i++)
+            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
@@ -140,7 +151,7 @@ public class ApplicationMaintainerTest {
         }
 
         NodeList getNodes(Node.State ... states) {
-            return new NodeList(nodeRepository.getNodes(states));
+            return new NodeList(nodeRepository.getNodes(Node.Type.tenant, states));
         }
 
     }

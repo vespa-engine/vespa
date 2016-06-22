@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
+import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
 import com.yahoo.yolean.Exceptions;
 
@@ -44,6 +45,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
+    private static final String nodeTypeKey = "type";
+
 
     public NodesApiHandler(Executor executor, AccessLog accessLog, NodeRepository nodeRepository, NodeFlavors flavors) {
         super(executor, accessLog);
@@ -189,7 +192,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
                 parentHostname,
-                new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())));
+                new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())),
+                NodeTypeSerializer.fromWireName(inspector.field(nodeTypeKey).asString()));
     }
 
     // TODO: Move most of this to node repo

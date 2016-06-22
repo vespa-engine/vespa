@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/parent2.yahoo.com",
+  "id": "parent2.yahoo.com",
+  "state": "provisioned",
+  "type": "host",
+  "hostname": "parent2.yahoo.com",
+  "openStackId": "parent2.yahoo.com",
+  "flavor": "large-variant",
+  "minDiskAvailableGb": 2000.0,
+  "minMainMemoryAvailableGb": 128.0,
+  "description": "Flavor-name-is-large-variant",
+  "minCpuCores": 64.0,
+  "canonicalFlavor": "large",
+  "environment": "env",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "history": []
+}

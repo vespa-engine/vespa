@@ -94,7 +94,9 @@ public class NodeRepository extends AbstractComponent {
         return zkClient.getNode(state, hostname);
     }
 
-    public List<Node> getNodes(Node.State ... inState) { return zkClient.getNodes(inState); }
+    public List<Node> getNodes(Node.Type type, Node.State ... inState) {
+        return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
+    }
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
@@ -108,8 +110,9 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo */
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Configuration configuration) {
-        return Node.create(openStackId, hostname, parentHostname, configuration);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
+                           Configuration configuration, Node.Type type) {
+        return Node.create(openStackId, hostname, parentHostname, configuration, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */

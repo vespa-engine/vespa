@@ -2,6 +2,7 @@
   "url":"http://localhost:8080/nodes/v2/node/host11.yahoo.com",
   "id":"host11.yahoo.com",
   "state":"provisioned",
+  "type": "tenant",
   "hostname":"host11.yahoo.com",
   "parentHostname":"parent.host.yahoo.com",
   "openStackId":"host11.yahoo.com",

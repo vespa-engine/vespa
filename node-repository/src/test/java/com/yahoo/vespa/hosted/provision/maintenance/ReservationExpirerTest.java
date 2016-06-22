@@ -41,25 +41,26 @@ public class ReservationExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default"))));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.host));
         nodes = nodeRepository.addNodes(nodes);
 
         // Reserve 2 nodes
-        assertEquals(2, nodeRepository.getNodes(Node.State.provisioned).size());
+        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.provisioned).size());
         nodeRepository.setReady(nodes);
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
-        assertEquals(2, nodeRepository.getNodes(Node.State.reserved).size());
+        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.reserved).size());
 
         // Reservation times out
         clock.advance(Duration.ofMinutes(14)); // Reserved but not used time out
         new ReservationExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
 
         // Assert nothing is reserved
-        assertEquals(0, nodeRepository.getNodes(Node.State.reserved).size());
-        List<Node> dirty = nodeRepository.getNodes(Node.State.dirty);
+        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.reserved).size());
+        List<Node> dirty = nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty);
         assertEquals(2, dirty.size());
         assertFalse(dirty.get(0).allocation().isPresent());
         assertFalse(dirty.get(1).allocation().isPresent());

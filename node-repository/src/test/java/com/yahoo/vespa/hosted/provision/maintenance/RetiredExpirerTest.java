@@ -49,6 +49,7 @@ public class RetiredExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(7, nodeRepository, nodeFlavors);
+        createHostNodes(4, nodeRepository, nodeFlavors);
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
@@ -86,6 +87,7 @@ public class RetiredExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(8, nodeRepository, nodeFlavors);
+        createHostNodes(4, nodeRepository, nodeFlavors);
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
@@ -120,7 +122,15 @@ public class RetiredExpirerTest {
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "node" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default"))));
+            nodes.add(nodeRepository.createNode("node" + i, "node" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes = nodeRepository.addNodes(nodes);
+        nodeRepository.setReady(nodes);
+    }
+
+    private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
+        List<Node> nodes = new ArrayList<>(count);
+        for (int i = 0; i < count; i++)
+            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
