@@ -62,6 +62,10 @@ Make the text as short, clear, and easy to read as possible:
 * Avoid superfluous words such as "very".
 * Avoid filler sentences intended to improve the flow of the text - documents are usually browsed, not read anyway.
 * Use consistent terminology even when it leads to repetition which would be bad in other kind of writing.
+* Use active form "index the documents", not passive "indexing the documents"
+* Avoid making it personal - do not use "we", "you", "our"
+* Do not use &amp;quot; , &amp;mdash; and the likes - makes the document harder to edit, and no need to use it.
+* Less is more - &lt;em&gt; and &lt;strong&gt; is sufficient formatting in most cases
 
 ### Links
 
