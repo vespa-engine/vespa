@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
-import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
 import com.yahoo.yolean.Exceptions;
 
@@ -193,7 +192,22 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 inspector.field("hostname").asString(),
                 parentHostname,
                 new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())),
-                NodeTypeSerializer.fromWireName(inspector.field(nodeTypeKey).asString()));
+                nodeTypeFromSlime(inspector.field(nodeTypeKey)));
+    }
+
+    private Node.Type nodeTypeFromSlime(Inspector object) {
+        // TODO: Remove this when we are sure type is everywhere.
+        if (! object.valid()) {
+            log.severe("Not valid nodeType key, defaulting to tenant.");
+            return Node.Type.tenant;
+        }
+        String typeString = object.asString();
+        switch (typeString) {
+            case "tenant" : return Node.Type.tenant;
+            case "host" : return Node.Type.host;
+        }
+        log.severe("Not valid nodeType key, defaulting to tenant: '" + typeString + "'");
+        return Node.Type.tenant;
     }
 
     // TODO: Move most of this to node repo

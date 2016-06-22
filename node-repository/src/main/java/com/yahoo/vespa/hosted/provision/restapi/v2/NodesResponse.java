@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.restapi.NodeStateSerializer;
-import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -136,7 +134,7 @@ class NodesResponse extends HttpResponse {
         if ( ! allFields) return;
         object.setString("id", node.id());
         object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
-        object.setString("type", NodeTypeSerializer.wireNameOf(node.type()));
+        object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());

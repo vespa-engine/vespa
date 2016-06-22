@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.restapi.NodeTypeSerializer;
 
 import java.io.IOException;
 import java.time.Instant;
