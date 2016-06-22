@@ -120,7 +120,7 @@ public class OrchestratorUtil {
                 .collect(Collectors.toList());
 
         if (appRefList.size() > 1) {
-            String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s", appId, appRefList);
+            String msg = String.format("ApplicationId '%s' was not unique but mapped to '%s'", appId, appRefList);
             throw new ApplicationIdNotFoundException(msg);
         }
 
