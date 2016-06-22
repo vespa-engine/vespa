@@ -35,7 +35,7 @@ C++ building is currently supported on CentOS 7:
 
 TODO: List required build dependencies
 
-    sh bootstrap.sh
+    sh bootstrap.sh full
     cmake .
     make
     make test
