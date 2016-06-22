@@ -17,7 +17,7 @@ For user documentation see TODO: Github pages link
 
 ### Setting up build environment
 
-C++ building is currently supported on CentOS 7.
+C++ building is supported on CentOS 7.
 
 #### Install required build dependencies
 
