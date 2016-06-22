@@ -6,7 +6,7 @@
 
 *On OS X, the native Docker engine (Beta) has NOT been tested. Please use the [Docker Toolbox](https://www.docker.com/products/docker-toolbox).*
 
-*On Linux, the default storage device is devicemapper with loopback device and max 10GB container size. This size is too small for a full build. Please see [here](http://www.projectatomic.io/blog/2016/03/daemon_option_basedevicesize/) and [here](http://www.projectatomic.io/blog/2015/06/notes-on-fedora-centos-and-docker-storage-drivers/) to overcome this limitation.
+*On Linux, the default storage device is devicemapper with loopback device and max 10GB container size. This size is too small for a full build. Please see [here](http://www.projectatomic.io/blog/2016/03/daemon_option_basedevicesize/) and [here](http://www.projectatomic.io/blog/2015/06/notes-on-fedora-centos-and-docker-storage-drivers/) to overcome this limitation.*
 
 ## Building the Vespa RPM
 *On OS X, execute ```source osx-setup-docker-machine.sh``` to setup the Docker VM in which to run Docker.*
