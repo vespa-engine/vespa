@@ -21,6 +21,18 @@ public interface NodeRepositoryApi {
             @QueryParam("parentHost") String hostname,
             @QueryParam("recursive") boolean recursive);
 
+    /**
+     * What is called "host" in NodeRepo is called "node" in node admin in this case.
+     * @param node the node to get data about.
+     * @param recursive set this to true, or you will not get the data you expect.
+     * @return
+     */
+    @GET
+    @Path("/nodes/v2/node/")
+    GetNodesResponse getNode(
+            @QueryParam("hostname") String node,
+            @QueryParam("recursive") boolean recursive);
+
     @PUT
     @Path("/nodes/v2/state/ready/{hostname}")
     // TODO: remove fake return String body; should be void and empty

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
+import com.google.inject.Inject;
 import com.spotify.docker.client.ContainerNotFoundException;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
@@ -114,13 +115,15 @@ public class DockerImpl implements Docker {
         this.docker = dockerClient;
     }
 
-    public static DockerClient newDockerClientFromConfig(final DockerConfig config) {
-        return DefaultDockerClient.builder().
+    @Inject
+    public DockerImpl(final DockerConfig config) {
+        this(DefaultDockerClient.builder().
                 uri(config.uri()).
                 dockerCertificates(certificates(config)).
                 readTimeoutMillis(TimeUnit.MINUTES.toMillis(30)). // Some operations may take minutes.
-                build();
+                build());
     }
+
 
     private static DockerCertificates certificates(DockerConfig config) {
         try {

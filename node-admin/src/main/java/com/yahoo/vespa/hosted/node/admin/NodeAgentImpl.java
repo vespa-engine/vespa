@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,17 +42,18 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final Thread thread;
 
-    private enum State { WAIT, WORK, STOP }
-
     private final Object monitor = new Object();
     @GuardedBy("monitor")
-    private State state = State.WAIT;
+    private State state = State.WAITING;
+    @GuardedBy("monitor")
+    private State wantedState = State.WAITING;
 
     // The attributes of the last successful noderepo attribute update for this node. Used to avoid redundant calls.
     // Only used internally by maintenance thread; no synchronization necessary.
     private NodeAttributes lastAttributesSet = null;
     // Whether we have successfully started the node using the node program. Used to avoid redundant start calls.
     private boolean nodeStarted = false;
+
 
 
 
@@ -75,17 +77,34 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void update() {
-        changeStateAndNotify(() -> {
-            this.state = State.WORK;
-        });
+    public void execute(Command command) {
+        synchronized (monitor) {
+            switch (command) {
+                case UPDATE_FROM_NODE_REPO:
+                    wantedState = State.WORKING;
+                    break;
+                case FREEZE:
+                    wantedState = State.FROZEN;
+                    break;
+                case UNFREEZE:
+                    wantedState = State.WORKING;
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public State getState() {
+        synchronized (monitor) {
+            return state;
+        }
     }
 
     @Override
     public void start() {
         logger.log(LogLevel.INFO, logPrefix + "Scheduling start of NodeAgent");
         synchronized (monitor) {
-            if (state == State.STOP) {
+            if (state == State.TERMINATED) {
                 throw new IllegalStateException("Cannot re-start a stopped node agent");
             }
         }
@@ -93,14 +112,15 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void stop() {
+    public void terminate() {
         logger.log(LogLevel.INFO, logPrefix + "Scheduling stop of NodeAgent");
-        changeStateAndNotify(() -> {
-            if (state == State.STOP) {
+        synchronized (monitor) {
+            if (state == State.TERMINATED) {
                 throw new IllegalStateException("Cannot stop an already stopped node agent");
             }
-            state = State.STOP;
-        });
+            wantedState = State.TERMINATED;
+        }
+        monitor.notifyAll();
         try {
             thread.join();
         } catch (InterruptedException e) {
@@ -360,38 +380,51 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void scheduleWork() {
-        changeStateAndNotify(() -> state = State.WORK);
-    }
-
-    private void changeStateAndNotify(final Runnable stateChanger) {
         synchronized (monitor) {
-            if (state == State.STOP) {
-                return;
+            if (wantedState != State.FROZEN) {
+                wantedState = State.WORKING;
+            } else {
+                logger.log(Level.FINE, "Not scheduling work since in freeze.");
             }
-            stateChanger.run();
-            monitor.notifyAll();
         }
+        monitor.notifyAll();
     }
 
-    private void maintainWantedState() {
-        while (true) {
-            synchronized (monitor) {
-                while (state == State.WAIT) {
-                    try {
+    private void blockUntilNotWaitingOrFrozen() {
+            try {
+                synchronized (monitor) {
+                    while (wantedState == State.WAITING || wantedState == State.FROZEN) {
+                        state = wantedState;
                         monitor.wait();
-                    } catch (InterruptedException e) {
-                        // Ignore, properly handled by next loop iteration.
+                        continue;
                     }
                 }
-                if (state == State.STOP) {
-                    return;
-                }
-                assert state == State.WORK;
-                state = State.WAIT;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+    }
 
+    private void maintainWantedState()  {
+        while (true) {
+            blockUntilNotWaitingOrFrozen();
+            synchronized (monitor) {
+                switch (wantedState) {
+                    case WAITING:
+                        state = State.WAITING;
+                        continue;
+                    case WORKING:
+                        state = State.WORKING;
+                        break;
+                    case FROZEN:
+                        state = State.FROZEN;
+                        continue;
+                    case TERMINATED:
+                        return;
+                }
+            }
+            // This is WORKING state.
             try {
-                final ContainerNodeSpec nodeSpec = nodeRepository.getContainer(hostname)
+                final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                         .orElseThrow(() ->
                                 new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
                 final Optional<Container> existingContainer = docker.getContainer(hostname);
