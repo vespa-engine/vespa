@@ -13,7 +13,7 @@ echo "<pre class=\"prettyprint linenums\">"
 (cd $dirname && cat $filename) | ./vespalib_xml_escape_app
 echo "</pre>"
 echo "<pre class=\"output\">"
-(cd $dirname && make all > /dev/null 2>&1)
-(cd $dirname && make test 2>&1) | ./vespalib_xml_escape_app
+DIRNAME=`(cd $dirname && /bin/pwd)`
+(cd $dirname && ./vespalib_${filename%.cpp}_app 2>&1) | perl -pe "s{$DIRNAME/}{}g" | ./vespalib_xml_escape_app
 echo "</pre>"
 echo "</div>"
