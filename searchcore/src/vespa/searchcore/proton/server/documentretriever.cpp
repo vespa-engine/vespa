@@ -127,9 +127,12 @@ void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
 {
     for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
-        AttributeGuard::UP attr = _attr_manager.getAttribute(field.getName());
-        if (attr.get() && attr->valid()) {
-            DocumentFieldRetriever::populate(lid, doc, field, **attr, _schema.isIndexField(field.getName()));
+        AttributeGuard::UP attrGuard = _attr_manager.getAttribute(field.getName());
+        if (attrGuard.get() && attrGuard->valid()) {
+            const search::attribute::IAttributeVector & attr = **attrGuard;
+            if (lid < attr.getNumDocs()) {
+                DocumentFieldRetriever::populate(lid, doc, field, attr, _schema.isIndexField(field.getName()));
+            }
         }
     }
     fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);
