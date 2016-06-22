@@ -84,9 +84,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * VespaSerializer.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:stiankri@yahoo-inc.com">Stian Kristoffersen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Steinar Knutsen
+ * @author stiankri
+ * @author Simon Thoresen
  */
 @Beta
 public class YqlParser implements Parser {

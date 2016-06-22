@@ -25,8 +25,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * Ensure the fields specified in {@link Presentation#getSummaryFields()} are
  * available after filling phase.
  *
- * @author <a href="mailto:stiankri@yahoo-inc.com">Stian Kristoffersen</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author stiankri
+ * @author Steinar Knutsen
  */
 @Beta
 @After(MinimalQueryInserter.EXTERNAL_YQL)

@@ -101,6 +101,13 @@ class HttpRequestDispatch {
         HttpRequestDispatch parent = this; //used to avoid binding uninitialized variables
 
         completeRequestCallback = (result, error) -> {
+            boolean alreadyCalled = completeRequestCalled.getAndSet(true);
+            if (alreadyCalled) {
+                AssertionError e = new AssertionError("completeRequest called more than once");
+                log.log(Level.WARNING, "Assertion failed.", e);
+                throw e;
+            }
+
             boolean reportedError = false;
 
             if (error != null) {
@@ -111,14 +118,6 @@ class HttpRequestDispatch {
                 parent.metricReporter.failedResponse();
             } else {
                 parent.metricReporter.successfulResponse();
-            }
-
-
-            boolean alreadyCalled = completeRequestCalled.getAndSet(true);
-            if (alreadyCalled) {
-                AssertionError e = new AssertionError("completeRequest called more than once");
-                log.log(Level.WARNING, "Assertion failed.", e);
-                throw e;
             }
 
             try {

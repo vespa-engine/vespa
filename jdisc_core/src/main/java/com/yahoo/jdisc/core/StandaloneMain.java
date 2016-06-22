@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.yahoo.system.CatchSigTerm;
+import com.yahoo.yolean.system.CatchSigTerm;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,16 +36,17 @@ public class StandaloneMain {
 
     void run(String bundleLocation) {
         try {
-		log.info("Initializing application without privileges.");
-		loader.init(bundleLocation, false);
-		loader.start();
-		setupSigTermHandler();
-		waitForShutdown();
-		// Event.stopping(APPNAME, "shutdown");
-		loader.stop();
-		// Event.stopped(APPNAME, 0, 0);
-		loader.destroy();
-        // System.exit(0);
+            System.out.println("debug\tInitializing application without privileges.");
+            loader.init(bundleLocation, false);
+            loader.start();
+            setupSigTermHandler();
+            waitForShutdown();
+            System.out.println("debug\tTrying to shutdown in a controlled manner.");
+            loader.stop();
+            System.out.println("debug\tTrying to clean up in a controlled manner.");
+            loader.destroy();
+            System.out.println("debug\tStopped ok.");
+            System.exit(0);
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected: ", e);
             System.exit(6);

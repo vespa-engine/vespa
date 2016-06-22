@@ -51,8 +51,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,8 +63,7 @@ public class DockerImpl implements Docker {
 
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-    private static final String[] COMMAND_YINST_LS_VESPA = new String[]{"yinst", "ls", "vespa"};
-    private static final Pattern VESPA_PACKAGE_VERSION_PATTERN = Pattern.compile("^vespa-(\\S+)", Pattern.MULTILINE);
+    static final String[] COMMAND_GET_VESPA_VERSION = new String[]{"vespa-nodectl", "vespa-version"};
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
@@ -79,7 +76,7 @@ public class DockerImpl implements Docker {
     }
 
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = RELATIVE_APPLICATION_STORAGE_PATH.resolve("../container-storage-cleanup");
+    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = RELATIVE_APPLICATION_STORAGE_PATH.resolve("cleanup");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final Path CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
@@ -101,7 +98,6 @@ public class DockerImpl implements Docker {
             getDefaults().underVespaHome("var/vespa"),
             getDefaults().underVespaHome("var/yca"),
             getDefaults().underVespaHome("var/ycore++"),
-            getDefaults().underVespaHome("var/ymon"),
             getDefaults().underVespaHome("var/zookeeper"));
 
     private final DockerClient docker;
@@ -259,16 +255,13 @@ public class DockerImpl implements Docker {
 
     @Override
     public String getVespaVersion(final ContainerName containerName) {
-        ProcessResult result = executeInContainer(containerName, COMMAND_YINST_LS_VESPA);
+        ProcessResult result = executeInContainer(containerName, COMMAND_GET_VESPA_VERSION);
         if (!result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() + ": Command "
-                    + Arrays.toString(COMMAND_YINST_LS_VESPA) + " failed: " + result);
+                    + Arrays.toString(COMMAND_GET_VESPA_VERSION) + " failed: " + result);
         }
 
-        return parseVespaVersion(result.getOutput())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Container " + containerName.asString() + ": Failed to parse vespa version from "
-                                    + result.getOutput()));
+        return result.getOutput();
     }
 
     @Override
@@ -296,12 +289,6 @@ public class DockerImpl implements Docker {
             throw new RuntimeException("Container " + containerName.asString()
                     + " failed to execute " + Arrays.toString(args));
         }
-    }
-
-    // Returns empty if vespa version cannot be parsed.
-    static Optional<String> parseVespaVersion(final String outputFromYinstLsVespa) {
-        final Matcher matcher = VESPA_PACKAGE_VERSION_PATTERN.matcher(outputFromYinstLsVespa);
-        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
     private void setupContainerNetworking(ContainerName containerName,

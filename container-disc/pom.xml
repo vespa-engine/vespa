@@ -94,7 +94,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -118,7 +117,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchlib</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
@@ -156,18 +154,17 @@
           <Bundle-Activator>com.yahoo.container.jdisc.osgi.ContainerBundleActivator</Bundle-Activator>
           <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <discPreInstallBundle>
-                component-jar-with-dependencies.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 container-jersey2-jar-with-dependencies.jar,
                 container-search-and-docproc-jar-with-dependencies.jar,
-                defaults-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
                 jdisc_http_service-jar-with-dependencies.jar,
                 persistence-jar-with-dependencies.jar,
-                searchlib-jar-with-dependencies.jar,
-                simplemetrics-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
+                simplemetrics-jar-with-dependencies.jar,
+                defaults-jar-with-dependencies.jar,
+                component-jar-with-dependencies.jar,
                 <!-- jersey2 -->
                 aopalliance-repackaged-2.3.0-b05.jar,
                 hk2-api-2.3.0-b05.jar,
