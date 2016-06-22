@@ -110,7 +110,3 @@ chown -hR ${VESPA_USER} var/db/vespa
 
 # Delete temporary files created by storage when running.
 rm -f /home/y/tmp/hostinfo.*.*.report
-
-# Don't fail script if this command fails.
-#  * sysctl will always return error on openvz jails
-sysctl kernel.core_pattern="|${VESPA_HOME}bin/vespa-core-dumper lz4 ${VESPA_HOME}var/crash/%e.core.%p.lz4" || true
