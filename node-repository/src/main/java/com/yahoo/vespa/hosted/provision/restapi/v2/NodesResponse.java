@@ -136,6 +136,7 @@ class NodesResponse extends HttpResponse {
         object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
+        object.setString("type", toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
@@ -178,6 +179,15 @@ class NodesResponse extends HttpResponse {
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure());
         toSlime(node.history(), object.setArray("history"));
+    }
+
+    private String toString(Node.Type type) {
+        switch(type) {
+            case tenant: return "tenant";
+            case host: return "host";
+            default:
+                throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
+        }
     }
 
     private void toSlime(ApplicationId id, Cursor object) {

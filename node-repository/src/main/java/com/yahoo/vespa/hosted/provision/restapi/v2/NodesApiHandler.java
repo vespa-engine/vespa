@@ -196,9 +196,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private Node.Type nodeTypeFromSlime(Inspector object) {
-        // TODO: Remove this when we are sure type is everywhere.
+        // TODO: Remove this when 6.13 is deployed everywhere.
         if (! object.valid()) {
-            log.severe("Not valid nodeType key, defaulting to tenant.");
             return Node.Type.tenant;
         }
         String typeString = object.asString();
@@ -206,7 +205,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             case "tenant" : return Node.Type.tenant;
             case "host" : return Node.Type.host;
         }
-        log.severe("Not valid nodeType key, defaulting to tenant: '" + typeString + "'");
+        // TODO: Change this to throw an exception when 6.13 is deployed everywhere.
         return Node.Type.tenant;
     }
 
