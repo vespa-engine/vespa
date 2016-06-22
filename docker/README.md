@@ -20,9 +20,9 @@ The produced rpms will be available in this folder after compiliation.
 
 Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
 
-This will create a Docker image which has the rpms from the build step installed. Vespa will be started inside the container.
+This will create a Docker image which has the rpms from the build step (or downloaded rpms to this folder) installed. Vespa will be started inside the container.
 
-*On OS X, the container runs inside the Docker VM. Execute ```docker-machine ssh vespa-docker-machine``` to enter the VM.*
+*On OS X, the container runs inside the Docker VM. Execute ```docker-machine ssh vespa-docker-machine``` to enter the VM. The services can also be reached directly from the host on the IP given by ```docker-machine ip vespa-docker-machine```*
 
 ## Building Vespa inside a Docker container
 *On OS X, execute ```source osx-setup-docker-machine.sh``` to setup the Docker VM in which to run Docker.*
