@@ -376,14 +376,24 @@ public class SystemStateGenerator {
             // to be taken up at this point.
             return false;
         }
+        // There exists an edge in watchTimers where a node in Maintenance is implicitly
+        // transitioned into Down without being Down in either reported or wanted states
+        // iff isRpcAddressOutdated() is true. To avoid getting into an edge where we
+        // inadvertently clear this state because its reported/wanted states seem fine,
+        // we must also check if that particular edge could have happened. I.e. whether
+        // the node's RPC address is marked as outdated.
+        // It also makes sense in general to not allow taking a node back up automatically
+        // if its RPC connectivity appears to be bad.
+        if (info.isRpcAddressOutdated()) {
+            return false;
+        }
         // Rationale: we can only enter this statement if the _current_ (generated) state
         // of the node is Down. Aside from the group take-down logic, there should not exist
         // any other edges in the cluster controller state transition logic where a node
-        // may be set Down while both its reported state, RPC connectivity and wanted state
-        // imply that a better state should already have been chosen. Consequently we allow
-        // the node to have its Down-state cleared.
+        // may be set Down while both its reported state and wanted state imply that a better
+        // state should already have been chosen. Consequently we allow the node to have its
+        // Down-state cleared.
         return (info.getReportedState().getState() != State.DOWN
-                && !info.isRpcAddressOutdated()
                 && !info.getWantedState().getState().oneOf("d"));
     }
 
