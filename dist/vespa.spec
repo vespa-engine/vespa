@@ -120,7 +120,7 @@ mkdir -p %{buildroot}/%{_prefix}/var/spool/master/inbox/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/bundlecache/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
 mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
-mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/
+mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/version-2/
 
 ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/config-model-fat.jar
 ln -s %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/configserver.jar
@@ -185,7 +185,7 @@ exit 0
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/bundlecache/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/cache/config/
 %dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/cmdlines/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/zookeeper/
+%dir %attr( 755, vespa, vespa) %{_prefix}/var/zookeeper/version-2/
 
 %{_prefix}/libexec/vespa/vespa-config.pl
 %{_prefix}/libexec/vespa/common-env.sh
