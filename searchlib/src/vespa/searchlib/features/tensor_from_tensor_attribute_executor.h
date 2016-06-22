@@ -17,7 +17,6 @@ class TensorFromTensorAttributeExecutor : public fef::FeatureExecutor
 private:
     const search::attribute::TensorAttribute *_attribute;
     vespalib::eval::TensorValue::UP _tensor;
-    vespalib::tensor::DefaultTensor::builder _builder;
     vespalib::eval::TensorValue::UP _emptyTensor;
 
 public:

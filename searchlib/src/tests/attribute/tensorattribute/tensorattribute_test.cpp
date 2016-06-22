@@ -214,4 +214,12 @@ TEST_F("Test tensortype file header tag", Fixture("tensor(x[10])"))
     EXPECT_EQUAL("tensor(x[10])", header.getTag("tensortype").asString());
 }
 
+TEST_F("Require that tensor attribute can provide empty tensor of correct type", Fixture("tensor(x[10])"))
+{
+    const TensorAttribute &tensorAttr = *f._tensorAttr;
+    Tensor::UP emptyTensor = tensorAttr.getEmptyTensor();
+    EXPECT_EQUAL(emptyTensor->getType(), tensorAttr.getConfig().tensorType());
+    EXPECT_EQUAL(emptyTensor->getType(), TensorType::fromSpec("tensor(x[10])"));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

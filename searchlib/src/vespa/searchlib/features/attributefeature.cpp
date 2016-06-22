@@ -391,19 +391,19 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(tensorType);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::SINGLE ||
             attribute->getBasicType() != search::attribute::BasicType::TENSOR) {
         LOG(warning, "The attribute vector '%s' is NOT of type tensor."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(tensorType);
     }
     const TensorAttribute *tensorAttribute = dynamic_cast<const TensorAttribute *>(attribute);
     if (tensorAttribute == nullptr) {
         LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(tensorType);
     }
     if (tensorType != tensorAttribute->getConfig().tensorType()) {
         LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
@@ -411,7 +411,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorAttribute->getName().c_str(),
                 tensorAttribute->getConfig().tensorType().toSpec().c_str(),
                 tensorType.toSpec().c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(tensorType);
     }
     return FeatureExecutor::LP(new TensorFromTensorAttributeExecutor(tensorAttribute));
 }

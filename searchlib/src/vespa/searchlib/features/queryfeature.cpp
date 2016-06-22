@@ -132,7 +132,7 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
         }
         return ConstantTensorExecutor::create(std::move(tensor));
     }
-    return ConstantTensorExecutor::createEmpty();
+    return ConstantTensorExecutor::createEmpty(tensorType);
 }
 
 }

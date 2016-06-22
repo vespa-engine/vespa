@@ -35,7 +35,7 @@ public:
     static std::unique_ptr<Tensor>
     mapToDense(const Tensor &tensor, const TensorType &type);
 
-    std::unique_ptr<Tensor> map(const Tensor &tensor);
+    std::unique_ptr<Tensor> map(const Tensor &tensor) const;
 };
 
 
