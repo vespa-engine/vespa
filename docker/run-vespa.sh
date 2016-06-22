@@ -13,5 +13,5 @@ VESPA_VERSION=$1
 DOCKER_IMAGE=vesparun
 
 docker build -t "$DOCKER_IMAGE" -f Dockerfile.run .
-docker run -d -v $(pwd)/..:/vespa --entrypoint /vespa/docker/run-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION"
+docker run -d -v $(pwd)/..:/vespa --net=host --privileged  --entrypoint /vespa/docker/run-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION"
 

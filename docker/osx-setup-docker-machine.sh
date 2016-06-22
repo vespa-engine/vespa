@@ -38,5 +38,12 @@ if [ "$VESPA_VM_STATUS" != "Running" ]; then
   exit 1
 fi
 
+if $DOCKER_VM_WAS_STARTED; then
+  # Hostname should match the public IP
+  docker-machine ssh "$DOCKER_VM_NAME" "sudo sed -i \"s/127.0.0.1 $DOCKER_VM_NAME/127.0.0.1/\" /etc/hosts"
+  docker-machine ssh "$DOCKER_VM_NAME" "sudo sed -i \"/$DOCKER_VM_NAME/d\" /etc/hosts"
+  docker-machine ssh "$DOCKER_VM_NAME" "sudo echo $(docker-machine ip $DOCKER_VM_NAME) $DOCKER_VM_NAME | sudo tee -a /etc/hosts" > /dev/null
+fi
+
 eval $(docker-machine env "$DOCKER_VM_NAME")
 
