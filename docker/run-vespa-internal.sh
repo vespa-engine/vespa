@@ -20,5 +20,8 @@ chown -R vespa:vespa /opt/vespa
 /opt/vespa/bin/vespa-start-configserver
 /opt/vespa/bin/vespa-start-services
 
-# Sleep forever
-tail -f /dev/null
+# Print log forever
+while true; do
+  /opt/vespa/bin/logfmt -f /opt/vespa/logs/vespa/vespa.log
+  sleep 10
+done
