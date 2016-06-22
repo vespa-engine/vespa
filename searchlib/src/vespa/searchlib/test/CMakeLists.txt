@@ -5,7 +5,7 @@ vespa_add_library(searchlib_test
     statestring.cpp
     initrange.cpp
     document_weight_attribute_helper.cpp
-    $<TARGET_OBJECTS:searchlib_fakedata>
+    $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
     DEPENDS
     searchlib_searchlib_test_memoryindex
