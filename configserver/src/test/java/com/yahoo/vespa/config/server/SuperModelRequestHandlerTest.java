@@ -2,20 +2,16 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.cloud.config.ElkConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.*;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications;
 import com.yahoo.vespa.config.protocol.CompressionType;
-import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.model.SuperModel;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -32,9 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.yahoo.cloud.config.ElkConfig.Logstash;
-
-import com.yahoo.vespa.config.server.model.ElkProducer;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -55,33 +48,7 @@ public class SuperModelRequestHandlerTest {
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
         models.get(app.tenant()).put(app, new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp)), new ServerCache(), 4l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app));
-        handler = new SuperModelRequestHandler(new SuperModel(models, new ElkConfig(new ElkConfig.Builder()), Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
-    }
-    
-    @Test
-    public void test_super_model_resolve_elk() {
-        ConfigResponse response = handler.resolveConfig(new GetConfigRequest() {
-            @Override
-            public ConfigKey<?> getConfigKey() {
-                return new ConfigKey<>(ElkConfig.class, "dontcare");
-            }
-
-            @Override
-            public DefContent getDefContent() {
-                return DefContent.fromClass(ElkConfig.class);
-            }
-
-            @Override
-            public Optional<VespaVersion> getVespaVersion() {
-                return Optional.empty();
-            }
-
-            @Override
-            public boolean noCache() {
-                return false;
-            }
-        });
-        assertThat(response.getGeneration(), is(2l));
+        handler = new SuperModelRequestHandler(new SuperModel(models, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
     
     @Test
@@ -124,7 +91,7 @@ public class SuperModelRequestHandlerTest {
         models.get(TenantName.from("t2")).put(applicationId("minetooadvancedapp"),
                 new Application(new VespaModel(FilesApplicationPackage.fromFile(testApp3)), new ServerCache(), 4l, vespaVersion, MetricUpdater.createTestUpdater(), applicationId("minetooadvancedapp")));
 
-        SuperModelRequestHandler han = new SuperModelRequestHandler(new SuperModel(models, new ElkConfig(new ElkConfig.Builder()), Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
+        SuperModelRequestHandler han = new SuperModelRequestHandler(new SuperModel(models, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
         LbServicesConfig lbc = new LbServicesConfig(lb);
@@ -157,47 +124,7 @@ public class SuperModelRequestHandlerTest {
         org.junit.Assert.fail("No qrserver service in config");
     }
 
-    @Test
-    public void testElkConfig() {
-        ElkConfig ec = new ElkConfig(new ElkConfig.Builder().elasticsearch(new ElkConfig.Elasticsearch.Builder().host("es1").port(99)).
-                        logstash(new ElkConfig.Logstash.Builder().
-                                        config_file("/cfgfile").
-                                        source_field("srcfield").
-                                        spool_size(345).
-                                        network(new Logstash.Network.Builder().
-                                                        servers(new Logstash.Network.Servers.Builder().
-                                                                        host("ls1").
-                                                                        port(999)).
-                                                        servers(new Logstash.Network.Servers.Builder().
-                                                                        host("ls2").
-                                                                        port(998)).          
-                                                        timeout(78)).
-                                        files(new ElkConfig.Logstash.Files.Builder().
-                                                        paths("path1").
-                                                        paths("path2").
-                                                        fields("field1", "f1val").
-                                                        fields("field2", "f2val"))));
-        ElkProducer ep = new ElkProducer(ec);
-        ElkConfig.Builder newBuilder = new ElkConfig.Builder();
-        ep.getConfig(newBuilder);
-        ElkConfig elkConfig = new ElkConfig(newBuilder);
-        assertThat(elkConfig.elasticsearch(0).host(), is("es1"));
-        assertThat(elkConfig.elasticsearch(0).port(), is(99));        
-        assertThat(elkConfig.logstash().network().servers(0).host(), is("ls1"));
-        assertThat(elkConfig.logstash().network().servers(0).port(), is(999));
-        assertThat(elkConfig.logstash().network().servers(1).host(), is("ls2"));
-        assertThat(elkConfig.logstash().network().servers(1).port(), is(998));
-        assertThat(elkConfig.logstash().network().timeout(), is(78));
-        assertThat(elkConfig.logstash().config_file(), is("/cfgfile"));
-        assertThat(elkConfig.logstash().source_field(), is("srcfield"));
-        assertThat(elkConfig.logstash().spool_size(), is(345));
-        assertThat(elkConfig.logstash().files().size(), is(1));
-        assertThat(elkConfig.logstash().files(0).paths(0), is("path1"));
-        assertThat(elkConfig.logstash().files(0).paths(1), is("path2"));
-        assertThat(elkConfig.logstash().files(0).fields("field1"), is("f1val"));
-        assertThat(elkConfig.logstash().files(0).fields("field2"), is("f2val"));
-    }
- }
+}
 
 
 

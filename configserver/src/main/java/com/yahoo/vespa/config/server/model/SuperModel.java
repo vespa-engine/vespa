@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.model;
 
-import com.yahoo.cloud.config.ElkConfig;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
@@ -22,19 +21,16 @@ import java.util.Map;
  * 
  * @author vegardh
  * @since 5.9
- *
  */
-public class SuperModel implements LbServicesConfig.Producer, ElkConfig.Producer, RoutingConfig.Producer  {
+public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Producer  {
 
     private final Map<TenantName, Map<ApplicationId, Application>> models;
     private final LbServicesProducer lbProd;
-    private final ElkProducer elkProd;
     private final RoutingProducer zoneProd;
     
-    public SuperModel(Map<TenantName, Map<ApplicationId, Application>> newModels, ElkConfig elkConfig, Zone zone) {
+    public SuperModel(Map<TenantName, Map<ApplicationId, Application>> newModels, Zone zone) {
         this.models = newModels;
         this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(models), zone);
-        this.elkProd = new ElkProducer(elkConfig);
         this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(models));
     }
 
@@ -44,10 +40,6 @@ public class SuperModel implements LbServicesConfig.Producer, ElkConfig.Producer
             LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
             getConfig(builder);
             return ConfigPayload.fromInstance(new LbServicesConfig(builder));
-        } else if (configKey.equals(new ConfigKey<>(ElkConfig.class, configKey.getConfigId()))) {
-            ElkConfig.Builder builder = new ElkConfig.Builder();
-            getConfig(builder);
-            return ConfigPayload.fromInstance(new ElkConfig(builder));
         } else if (configKey.equals(new ConfigKey<>(RoutingConfig.class, configKey.getConfigId()))) {
             RoutingConfig.Builder builder = new RoutingConfig.Builder();
             getConfig(builder);
@@ -66,11 +58,6 @@ public class SuperModel implements LbServicesConfig.Producer, ElkConfig.Producer
         lbProd.getConfig(builder);
     }
     
-    @Override
-    public void getConfig(com.yahoo.cloud.config.ElkConfig.Builder builder) {
-        elkProd.getConfig(builder);
-    }
-
     @Override
     public void getConfig(RoutingConfig.Builder builder) {
         zoneProd.getConfig(builder);

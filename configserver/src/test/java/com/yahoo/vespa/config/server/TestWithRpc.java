@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.cloud.config.ElkConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
@@ -65,7 +64,7 @@ public class TestWithRpc {
     protected void createAndStartRpcServer(boolean hostedVespa) {
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
                 new SuperModelController(generationCounter,
-                        new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder()), new ElkConfig(new ElkConfig.Builder())),
+                        new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder())),
                 Metrics.createTestMetrics(), new HostRegistries());
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
