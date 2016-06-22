@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.net.UnknownHostException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;

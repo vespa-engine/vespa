@@ -20,7 +20,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.protocol.JRTConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
@@ -289,7 +288,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
         RequestHandler handler = context.requestHandler();
         return handler.resolveConfig(context.applicationId(), request, vespaVersion);
-
     }
 
     protected Supervisor getSupervisor() {

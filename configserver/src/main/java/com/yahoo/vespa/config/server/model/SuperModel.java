@@ -45,7 +45,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
             getConfig(builder);
             return ConfigPayload.fromInstance(new RoutingConfig(builder));
         } else {
-            return null;
+            throw new RuntimeException(configKey + " is not valid when asking for config from SuperModel");
         }
     }
 
