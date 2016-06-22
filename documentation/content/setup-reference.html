@@ -35,6 +35,7 @@ title: "services.xml - 'content'"
             <a href="#dispatch-node">node [distribution-key]</a>
     <a href="#tuning">tuning</a>
         <a href="#bucket-splitting">bucket-splitting [max-documents, max-size, minimum-bits]</a>
+        <a href="#min-node-ratio-per-group">min-node-ratio-per-group</a>
         <a href="#distribution_type">distribution [type]</a>
         <a href="#maintenance">maintenance [start, stop, high]</a>
         <a href="#merges">merges [max-per-node, max-queue-size]</a>
@@ -579,6 +580,7 @@ content/search node. Attribute:
 <h1 id="tuning">tuning</h1>
 <p>Contained in <a href="#content"><code>content</code></a>, optional. Optional tuning parameters are:
 <a href="#bucket-splitting"><code>bucket-splitting</code></a>,
+<a href="#min-node-ratio-per-group">min-node-ratio-per-group</a>,
 <a href="#cluster-controller"><code>cluster-controller</code></a>,
 <a href="#dispatch-tuning"><code>dispatch</code></a>,
 <a href="#distribution_type"><code>distribution</code></a>,
@@ -617,6 +619,40 @@ to inspect your cluster's buckets.  Attributes:
   </li>
 </ul>
 </p>
+
+<h2 id="min-node-ratio-per-group">min-node-ratio-per-group</h2>
+<p>Contained in <a href="#tuning"><code>tuning</code></a>.
+States a lower bound requirement on the ratio of nodes within <em>individual</em> <a href="#group">groups</a>
+that must be online and able to accept traffic before the entire group is automatically taken
+out of service. Groups are automatically brought back into service when the availability
+of its nodes has been restored to a level equal to or above this limit.</p>
+
+<p>Elastic content clusters are often configured to use multiple groups
+for the sake of horizontal traffic scaling and/or data availability. The content distribution
+system will try to ensure a configured number of replicas is always present within a group in
+order to maintain data redundancy. If the number of available nodes in a group drops too far,
+it's possible for the remaining nodes in the group to not have sufficient capacity to take over
+storage and serving for the replicas they now must assume responsibility for.
+Such situations are likely to result in increased latencies and/or feed rejections caused
+by resource exhaustion. Setting this tuning parameter allows the system to instead automatically
+take down the remaining nodes in the group, allowing feed and query traffic to fail completely
+over to the remaining groups.</p>
+
+<p>Valid parameter is a decimal value in the range [0, 1]. Default is 0, which means that
+the automatic group out-of-service functionality will <em>not</em> automatically take effect.</p>
+
+<p>Example: assume a cluster has been configured with <em>n</em> groups of 4 nodes each and the
+following tuning config:</p>
+<pre class="code">
+  &lt;tuning&gt;
+    &lt;min-node-ratio-per-group&gt;0.75&lt;/min-node-ratio-per-group&gt;
+  &lt/tuning&gt;
+</pre>
+<p>This tuning allows for 1 node to be down in a group to be down. If 2 or more nodes go down, all nodes
+in the group will be marked as down, letting the <em>n-1</em> remaining groups handle all the traffic.</p>
+
+<p>This configuration can be changed live as the system is running and altered
+limits will take effect immediately.</p>
 
 <h2 id="distribution_type">distribution (in tuning)</h2>
 <p>Contained in <a href="#tuning"><code>tuning</code></a>.
