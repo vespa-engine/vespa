@@ -478,8 +478,8 @@ PersistenceEngine::createIterator(const Bucket &bucket,
     RWLockReader rguard(getRLock());
     HandlerSnapshot::UP snapshot = getHandlerSnapshot();
 
-    IteratorEntry *entry = new IteratorEntry(context.getReadConsistency(), bucket, fields, selection,
-                                             versions, _defaultSerializedSize, _ignoreMaxBytes);
+    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, fields, selection,
+                                                 versions, _defaultSerializedSize, _ignoreMaxBytes);
     entry->bucket_guards.reserve(snapshot->size());
     for (PersistenceHandlerSequence & handlers = snapshot->handlers(); handlers.valid(); handlers.next()) {
         entry->bucket_guards.push_back(handlers.get()->lockBucket(bucket));
@@ -493,7 +493,7 @@ PersistenceEngine::createIterator(const Bucket &bucket,
     LockGuard guard(_iterators_lock);
     static IteratorId id_counter(0);
     IteratorId id(++id_counter);
-    _iterators[id] = entry;
+    _iterators[id] = entry.release();
     return CreateIteratorResult(id);
 }
 
