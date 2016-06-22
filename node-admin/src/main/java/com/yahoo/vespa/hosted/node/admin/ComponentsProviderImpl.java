@@ -33,7 +33,7 @@ public class ComponentsProviderImpl implements ComponentsProvider{
         String baseHostName = java.util.Optional.ofNullable(System.getenv(ENV_HOSTNAME))
                 .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
 
-        Set<HostName> configServerHosts = Environment.getConfigServerHostsFromYinstSetting();
+        Set<HostName> configServerHosts = Environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }

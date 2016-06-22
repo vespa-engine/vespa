@@ -22,13 +22,13 @@ public class Environment {
 
     public enum NetworkType { normal, local, vm }
 
-    public static Set<HostName> getConfigServerHostsFromYinstSetting() {
-        final String yinstSetting = System.getenv(ENV_CONFIGSERVERS);
-        if (yinstSetting == null) {
+    public static Set<HostName> getConfigServerHosts() {
+        final String configServerHosts = System.getenv(ENV_CONFIGSERVERS);
+        if (configServerHosts == null) {
             return Collections.emptySet();
         }
 
-        final List<String> hostNameStrings = Arrays.asList(yinstSetting.split("[,\\s]+"));
+        final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
         return hostNameStrings.stream()
                 .map(HostName::new)
                 .collect(Collectors.toSet());
