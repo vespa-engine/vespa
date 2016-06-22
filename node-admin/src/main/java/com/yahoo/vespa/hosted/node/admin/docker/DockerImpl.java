@@ -76,9 +76,7 @@ public class DockerImpl implements Docker {
     }
 
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH = RELATIVE_APPLICATION_STORAGE_PATH.resolve("cleanup");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_CLEANUP_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
@@ -201,7 +199,7 @@ public class DockerImpl implements Docker {
             log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
-        Path to = CLEANUP_APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString() + "_" + filenameFormatter
+        Path to = applicationStoragePathForNodeAdmin("cleanup_" + containerName.asString() + "_" + filenameFormatter
                 .format(Date.from(Instant.now())));
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         Files.move(from, to);
