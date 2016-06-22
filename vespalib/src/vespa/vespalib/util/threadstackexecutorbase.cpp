@@ -6,6 +6,47 @@
 namespace vespalib {
 
 void
+ThreadStackExecutorBase::BlockedThread::wait() const
+{
+    MonitorGuard guard(monitor);
+    while (blocked) {
+        guard.wait();
+    }
+}
+
+void
+ThreadStackExecutorBase::BlockedThread::unblock()
+{
+    MonitorGuard guard(monitor);
+    blocked = false;
+    guard.signal();
+}
+
+//-----------------------------------------------------------------------------
+
+void
+ThreadStackExecutorBase::block_thread(const LockGuard &, BlockedThread &blocked_thread)
+{
+    auto pos = _blocked.begin();
+    while ((pos != _blocked.end()) &&
+           ((*pos)->wait_task_count < blocked_thread.wait_task_count))
+    {
+        ++pos;
+    }
+    _blocked.insert(pos, &blocked_thread);
+}
+
+void
+ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
+{
+    while (!_blocked.empty() && (_taskCount <= _blocked.back()->wait_task_count)) {
+        BlockedThread &blocked_thread = *(_blocked.back());
+        _blocked.pop_back();
+        blocked_thread.unblock();
+    }
+}
+
+void
 ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
 {
     MonitorGuard monitor(worker.monitor);
@@ -26,6 +67,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             _barrier.completeEvent(worker.task.token);
             worker.task.task = 0;
         }
+        unblock_threads(monitor);
         if (!_tasks.empty()) {
             worker.task = _tasks.front();
             _tasks.pop();
@@ -168,6 +210,19 @@ ThreadStackExecutorBase::sync()
 }
 
 void
+ThreadStackExecutorBase::wait_for_task_count(uint32_t task_count)
+{
+    LockGuard lock(_monitor);
+    if (_taskCount <= task_count) {
+        return;
+    }
+    BlockedThread self(task_count);
+    block_thread(lock, self);
+    lock.unlock(); // <- UNLOCK
+    self.wait();
+}
+
+void
 ThreadStackExecutorBase::cleanup()
 {
     shutdown().sync();
@@ -179,6 +234,7 @@ ThreadStackExecutorBase::~ThreadStackExecutorBase()
 {
     assert(_pool.isClosed());
     assert(_taskCount == 0);
+    assert(_blocked.empty());
 }
 
 } // namespace vespalib
