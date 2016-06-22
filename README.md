@@ -21,9 +21,9 @@ C++ building is currently supported on CentOS 7.
 
 #### Install required build dependencies
 
-    sudo yum -y install epel-release centos-release-scl
+    sudo yum -y install epel-release centos-release-scl yum-utils
     sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-    sudo yum -y install RUN yum -y install devtoolset-4-gcc-c++ devtoolset-4-libatomic-devel \
+    sudo yum -y install devtoolset-4-gcc-c++ devtoolset-4-libatomic-devel \
         Judy-devel cmake3 ccache lz4-devel zlib-devel maven libicu-devel llvm-devel \
         llvm-static java-1.8.0-openjdk-devel openssl-devel rpm-build make \
         vespa-boost-devel vespa-libtorrent-devel vespa-zookeeper-c-client-devel vespa-cppunit-devel
