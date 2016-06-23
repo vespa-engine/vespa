@@ -99,6 +99,8 @@ public class DockerImplTest {
     public void vespaVersionIsParsedWithIrregularVersionScheme() {
         assertThat(DockerImpl.parseVespaVersion("7.2"), is(Optional.of("7.2")));
         assertThat(DockerImpl.parseVespaVersion("8.0-beta"), is(Optional.of("8.0-beta")));
+        assertThat(DockerImpl.parseVespaVersion("foo"), is(Optional.of("foo")));
+        assertThat(DockerImpl.parseVespaVersion("119"), is(Optional.of("119")));
     }
 
     @Test(expected = NullPointerException.class)
@@ -113,11 +115,6 @@ public class DockerImplTest {
 
     @Test
     public void vespaVersionIsNotParsedFromUnexpectedContent() {
-        assertThat(DockerImpl.parseVespaVersion("foo"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("119"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa-5.119.53"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa- 5.119.53"), is(Optional.empty()));
-        assertThat(DockerImpl.parseVespaVersion("vespa-"), is(Optional.empty()));
         assertThat(DockerImpl.parseVespaVersion("No such command 'vespanodectl'"), is(Optional.empty()));
     }
 

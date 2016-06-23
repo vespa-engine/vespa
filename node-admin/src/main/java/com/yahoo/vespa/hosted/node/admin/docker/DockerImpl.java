@@ -67,7 +67,7 @@ public class DockerImpl implements Docker {
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
     static final String[] COMMAND_GET_VESPA_VERSION = new String[]{"vespa-nodectl", "vespa-version"};
-    private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\S*)", Pattern.MULTILINE);
+    private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
