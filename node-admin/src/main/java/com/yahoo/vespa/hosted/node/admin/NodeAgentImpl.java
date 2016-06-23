@@ -429,8 +429,8 @@ public class NodeAgentImpl implements NodeAgent {
                                 new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
                 final Optional<Container> existingContainer = docker.getContainer(hostname);
                 synchronizeLocalContainerState(nodeSpec, existingContainer);
-            } catch (IllegalStateException e) {
-                logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception.", e);
+            } catch (RuntimeException e) {
+                logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception, ignoring.", e);
             }
             catch (Throwable t) {
                 logger.log(LogLevel.ERROR, logPrefix + "Unhandled throwable, taking down system.", t);
