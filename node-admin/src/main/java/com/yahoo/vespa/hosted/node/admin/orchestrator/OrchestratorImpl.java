@@ -108,16 +108,6 @@ public class OrchestratorImpl implements Orchestrator {
         }
     }
 
-    @Override
-    public Optional<String> resume(List<String> hostNames) {
-        for (String host : hostNames) {
-            if (! resume(new HostName(host))) {
-                return Optional.of("Could not resume " + host);
-            }
-        }
-        return Optional.empty();
-    }
-
     public static OrchestratorImpl createOrchestratorFromSettings() {
         final Set<HostName> configServerHosts = Environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {

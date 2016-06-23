@@ -28,9 +28,4 @@ public class OrchestratorMock implements Orchestrator {
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
         return suspendReturnValue;
     }
-
-    @Override
-    public Optional<String> resume(List<String> hostName) {
-        return Optional.empty();
-    }
 }

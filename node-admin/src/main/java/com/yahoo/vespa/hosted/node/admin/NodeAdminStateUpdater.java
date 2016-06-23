@@ -69,21 +69,20 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
             isRunningUpdates = wantedState == RESUMED;
-        }
-        if (wantedState == SUSPENDED) {
-            if (! nodeAdmin.freezeAndCheckIfAllFrozen()) {
-                return Optional.of("Not all node agents are frozen.");
-            }
-        } else {
-            nodeAdmin.unfreeze();
-        }
 
-        List<String> hosts = new ArrayList<>();
-        nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
-        if (wantedState == RESUMED) {
-            return orchestrator.resume(hosts);
+            if (wantedState == SUSPENDED) {
+                if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
+                    return Optional.of("Not all node agents are frozen.");
+                }
+                List<String> hosts = new ArrayList<>();
+                nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
+                return orchestrator.suspend(baseHostName, hosts);
+            } else {
+                nodeAdmin.unfreeze();
+                // we let the NodeAgent do the resume against the orchestrator.
+                return Optional.empty();
+            }
         }
-        return orchestrator.suspend(baseHostName, hosts);
     }
 
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
