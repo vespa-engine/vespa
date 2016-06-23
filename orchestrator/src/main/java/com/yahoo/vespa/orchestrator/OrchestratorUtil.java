@@ -116,7 +116,6 @@ public class OrchestratorUtil {
         Set<ApplicationInstanceReference> appRefs = instanceLookupService.knownInstances();
         List<ApplicationInstanceReference> appRefList = appRefs.stream()
                 .filter(a -> OrchestratorUtil.toApplicationId(a).equals(appId))
-                .filter(a -> a.equals(appId))
                 .collect(Collectors.toList());
 
         if (appRefList.size() > 1) {
