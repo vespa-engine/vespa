@@ -727,7 +727,7 @@ DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistenc
     std::shared_ptr<std::vector<IDocumentRetriever::SP> > list = _subDBs.getRetrievers();
 
     if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
-        std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>();
+        std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
         wrappedList->reserve(list->size());
         for (const IDocumentRetriever::SP & retriever : *list) {
             wrappedList->emplace_back(new CommitAndWaitDocumentRetriever(retriever, _visibility));
