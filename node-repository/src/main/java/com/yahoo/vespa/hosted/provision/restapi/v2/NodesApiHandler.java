@@ -14,10 +14,10 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Configuration;
+import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
@@ -232,7 +232,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private boolean isPatchOverride(HttpRequest request) {
         //Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
         String override = request.getHeader("X-HTTP-Method-Override");
-        return override != null && override.equals("PATCH");
+        if (override != null) {
+            if (override.equals("PATCH")) {
+                return true;
+            } else {
+                String msg = String.format("Illegal X-HTTP-Method-Override header for POST request. Accepts 'PATCH' but got '%s'", override);
+                throw new IllegalArgumentException(msg);
+            }
+        }
+        return false;
     }
-
 }
