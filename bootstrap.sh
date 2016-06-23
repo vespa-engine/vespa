@@ -18,14 +18,14 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # These modules are required to be available to maven for it to calculate the
 # Vespa java dependency graph.
 MODULES="
-  parent
+  .
   annotations
   scalalib
   bundle-plugin
   "
 
 for module in $MODULES; do
-    (cd $module && mvn_install)
+    (cd $module && mvn_install -N)
 done
 
 mvn_install -am -pl config-class-plugin -rf configgen

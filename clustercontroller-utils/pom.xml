@@ -7,7 +7,6 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
-        <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>clustercontroller-utils</artifactId>
     <version>6-SNAPSHOT</version>
