@@ -18,7 +18,10 @@ This guide will give you a single&ndash;node Vespa installation.
 <ol>
 <li><p><strong>Install Vespa:</strong></p>
 <pre class="brush: cli">
-TODO: Install command(s)
+TODO: Insert path to Vespa RPM repo when available
+yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+yum-config-manager --add-repo <insert path to Vespa RPM repo>
+yum install vespa
 </pre>
 </li>
 
@@ -33,7 +36,7 @@ TODO: Set configserver address command.
 Start the Vespa config server, which needs to be up and running
 before deploying your application (wait five seconds after start, then proceed to next step):</p>
 <pre class="brush: cli">
-TODO: Start config server command.
+service vespa-configserver start
 </pre>
 </li>
 
@@ -49,7 +52,7 @@ $ deploy prepare src/main/application &amp;&amp; deploy activate
 
 <li><p><strong>Start Vespa:</strong></p>
 <pre class="brush: cli">
-TODO: Start services command
+service vespa start
 </pre>
 </li>
 
@@ -68,10 +71,44 @@ curl http://localhost:8080/search/?query=michael
 
 <h1 id="next-steps">Next Steps</h1>
 <p>
-Congratulations! You have now successfully installed and run
-Vespa and can head right over to the
-<a href="tutorial.html">Vespa Tutorial</a> to learn more. Find more pointers in
-<a href="develop-with-vespa.html">develop with Vespa</a>.
+Congratulations - Vespa is successfully installed and tested!
+Head right over to the
+<a href="http://yahoo.github.io/vespa/tutorial.html">Vespa Tutorial</a> to learn more.
+Refer to <a href="http://yahoo.github.io/vespa/indexing-modes.html">indexing modes</a>
+for streaming search applications.
+</p>
+<h2 id="documents">More on documents and feeding</h2>
+<p>
+In step 6 above, the index was created, using the
+<a href="http://yahoo.github.io/vespa/vespa-http-client.html">high-performance feed client</a>.
+Read more in
+<a href="http://yahoo.github.io/vespa/api.html">Vespa APIs</a>.
+Try out a few commands from the
+<a href="http://yahoo.github.io/vespa/document_api_v1.html">Document Operation API</a>:
 </p>
 
+<ol>
+<li><p><strong>Dump documents:</strong></p>
+<pre class="code">
+$ curl http://localhost:4080/document/v1/music/music/docid/
+</pre>
+</li>
 
+<li><p><strong>Get a document:</strong></p>
+<pre class="code">
+$ curl http://localhost:4080/document/v1/music/music/docid/Eminem-Recovery
+</pre>
+</li>
+
+<li><p><strong>Delete a document:</strong></p>
+<pre class="code">
+$ curl -X DELETE http://localhost:4080/document/v1/music/music/docid/Eminem-Recovery
+</pre>
+</li>
+
+<li><p><strong>Put a new document:</strong></p>
+<pre class="code">
+$ curl -X POST --data-binary @music-data-2.json http://localhost:4080/document/v1/music/music/docid/Eminem-So-Bad
+</pre>
+</li>
+</ol>
