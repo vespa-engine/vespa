@@ -22,9 +22,9 @@ vespalib::string readFile(const vespalib::string &fileName) {
     FastOS_File file;
     ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
 
-    char buf[1024];
-    uint32_t len = file.Read(buf, 1024);
-    EXPECT_TRUE(len != 1024); // make sure we got everything
+    char buf[4096];
+    uint32_t len = file.Read(buf, sizeof(buf));
+    EXPECT_LESS(len, sizeof(buf)); // make sure we got everything
 
     vespalib::string str(buf, len);
     file.Close();
