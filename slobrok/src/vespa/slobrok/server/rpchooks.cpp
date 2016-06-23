@@ -352,7 +352,7 @@ RPCHooks::rpc_wantAdd(FRT_RPCRequest *req)
     const char *dSpec  = args[2]._string._str;
     FRT_Values &retval = *req->GetReturn();
     OkState state = _rpcsrvmanager.addRemReservation(remsb, dName, dSpec);
-    if (state.failed() > 1) {
+    if (state.failed()) {
         req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
     }
     retval.AddInt32(state.errorCode);
