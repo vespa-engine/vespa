@@ -78,35 +78,6 @@ def get_net_namespace_for_pid(pid):
     create_symlink_ignore_exists(net_ns_path,  "/var/run/netns/%d" % pid)
     return NetNS(str(pid))
 
-
-flag_local_mode = "--local"
-local_mode = flag_local_mode in sys.argv
-if local_mode:
-    sys.argv.remove(flag_local_mode)
-
-flag_vm_mode = "--vm"
-vm_mode = flag_vm_mode in sys.argv
-if vm_mode:
-    sys.argv.remove(flag_vm_mode)
-
-if local_mode and vm_mode:
-    raise RuntimeError("Cannot specify both --local and --vm")
-
-if len(sys.argv) != 3:
-    raise RuntimeError("Usage: %s <container-pid> <ip>" % sys.argv[0])
-
-container_pid_arg = sys.argv[1]
-container_ip_arg = sys.argv[2]
-
-try:
-    container_pid = int(container_pid_arg)
-except ValueError:
-    raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
-container_ip = ipaddress.ip_address(unicode(container_ip_arg))
-
-host_ns = get_net_namespace_for_pid(1)
-container_ns = get_net_namespace_for_pid(container_pid)
-
 # ipv4 address format: {
 #     'index': 3,
 #     'family': 2,
@@ -139,21 +110,51 @@ container_ns = get_net_namespace_for_pid(container_pid)
 #     'scope': 0,
 #     'event': 'RTM_NEWADDR'
 # }
-# Note: This only fetches ipv4 addresses
-host_ips = host_ns.get_addr(family=AF_INET)
+def ip_with_most_specific_network_for_address(address, ipv4_ips):
+    host_ips_with_network_matching_address = [host_ip for host_ip in ipv4_ips if address in network(host_ip)]
 
-host_ips_with_network_matching_container_ip = [host_ip for host_ip in host_ips if container_ip in network(host_ip)]
+    host_ip_best_match_for_address = None
+    for host_ip in host_ips_with_network_matching_address:
+        if not host_ip_best_match_for_address:
+            host_ip_best_match_for_address = host_ip
+        elif host_ip['prefixlen'] < host_ip_best_match_for_address['prefixlen']:
+            host_ip_best_match_for_address = host_ip
 
-host_ip_best_match_for_container = None
-for host_ip in host_ips_with_network_matching_container_ip:
-    if not host_ip_best_match_for_container:
-        host_ip_best_match_for_container = host_ip
-    elif host_ip['prefixlen'] < host_ip_best_match_for_container['prefixlen']:
-        host_ip_best_match_for_container = host_ip
+    if not host_ip_best_match_for_address:
+        raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(host_ip)) for host_ip in ipv4_ips])))
+    return host_ip_best_match_for_address
 
-if not host_ip_best_match_for_container:
-    raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (container_ip, ', '.join([str(network(host_ip)) for host_ip in host_ips])))
 
+flag_local_mode = "--local"
+local_mode = flag_local_mode in sys.argv
+if local_mode:
+    sys.argv.remove(flag_local_mode)
+
+flag_vm_mode = "--vm"
+vm_mode = flag_vm_mode in sys.argv
+if vm_mode:
+    sys.argv.remove(flag_vm_mode)
+
+if local_mode and vm_mode:
+    raise RuntimeError("Cannot specify both --local and --vm")
+
+if len(sys.argv) != 3:
+    raise RuntimeError("Usage: %s <container-pid> <ip>" % sys.argv[0])
+
+container_pid_arg = sys.argv[1]
+container_ip_arg = sys.argv[2]
+
+try:
+    container_pid = int(container_pid_arg)
+except ValueError:
+    raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
+container_ip = ipaddress.ip_address(unicode(container_ip_arg))
+
+host_ns = get_net_namespace_for_pid(1)
+container_ns = get_net_namespace_for_pid(container_pid)
+
+all_host_ipv4_ips = host_ns.get_addr(family=AF_INET)
+host_ip_best_match_for_container = ip_with_most_specific_network_for_address(container_ip, all_host_ipv4_ips)
 host_device_index_for_container = host_ip_best_match_for_container['index']
 container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
 
