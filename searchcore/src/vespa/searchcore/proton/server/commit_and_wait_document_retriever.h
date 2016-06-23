@@ -53,6 +53,9 @@ public:
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
         return _retriever->parseSelect(selection);
     }
+    ReadGuard getReadGuard() const override {
+        return _retriever->getReadGuard();
+    }
     uint32_t getDocIdLimit() const override {
         return _retriever->getDocIdLimit();
     }
