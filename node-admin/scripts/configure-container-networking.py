@@ -130,6 +130,38 @@ def delete_interface_by_name(interface_name):
     for interface_index in ipr.link_lookup(ifname=interface_name):
         ipr.link('delete', index=interface_index)
 
+def create_interface_in_namespace(network_namespace, ip_address_textual, interface_name, link_device_index):
+    mac_address = generate_mac_address(
+        gethostname(),
+        ip_address_textual)
+
+    # For traceability.
+    with open('/tmp/container_mac_address_' + ip_address_textual, 'w') as f:
+        f.write(mac_address)
+
+    # result = [{
+    #     'header': {
+    #         'pid': 240,
+    #         'length': 36,
+    #         'flags': 0,
+    #         'error': None,
+    #         'type': 2,
+    #         'sequence_number': 256
+    #     },
+    #     'event': 'NLMSG_ERROR'
+    # }]
+    result = network_namespace.link_create(
+        ifname=interface_name,
+        kind='macvlan',
+        link=link_device_index,
+        macvlan_mode='bridge',
+        address=mac_address)
+    if result[0]['header']['error']:
+        raise RuntimeError("Failed creating link, result = %s" % result )
+
+    index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
+    return index_of_created_interface
+
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
 if local_mode:
@@ -179,45 +211,19 @@ assert len(container_interface_name) <= 15 # linux requirement
 delete_interface_by_name(temporary_interface_name_while_in_host_ns)
 
 if not container_ns.link_lookup(ifname=container_interface_name):
-
-    mac_address = generate_mac_address(
-        gethostname(),
-        container_ip_arg)
-
-    # For traceability.
-    with open('/tmp/container_mac_address_' + container_ip_arg, 'w') as f:
-        f.write(mac_address)
-
     # Must be created in the host_ns to have the same lifetime as the host.
     # Otherwise, it will be deleted when the node-admin container stops.
     # (Only temporarily there, moved to the container namespace later.)
-    # result = [{
-    #     'header': {
-    #         'pid': 240,
-    #         'length': 36,
-    #         'flags': 0,
-    #         'error': None,
-    #         'type': 2,
-    #         'sequence_number': 256
-    #     },
-    #     'event': 'NLMSG_ERROR'
-    # }]
     #
-    # TODO: Here we're linking against the most_specific_address device. For
-    # the sake of argument, as of 2015-12-17, this device is always named
+    # TODO: Here we're linking against the device with the best matching network.
+    # For the sake of argument, as of 2015-12-17, this device is always named
     # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
     # interface (typically eth0 or em1). So could we link against eth0 or em1
     # (or whatever) instead here? What's the difference?
-    result = host_ns.link_create(
-        ifname=temporary_interface_name_while_in_host_ns,
-        kind='macvlan',
-        link=host_device_index_for_container,
-        macvlan_mode='bridge',
-        address=mac_address)
-    if result[0]['header']['error']:
-        raise RuntimeError("Failed creating link, result = %s" % result )
-
-    interface_index = host_ns.link_lookup(ifname=temporary_interface_name_while_in_host_ns)[0]
+    interface_index = create_interface_in_namespace(host_ns,
+                                                    container_ip_arg,
+                                                    temporary_interface_name_while_in_host_ns,
+                                                    host_device_index_for_container)
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
