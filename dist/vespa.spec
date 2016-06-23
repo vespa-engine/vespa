@@ -25,7 +25,6 @@ BuildRequires: zlib-devel
 BuildRequires: maven
 BuildRequires: libicu-devel
 BuildRequires: llvm-devel
-BuildRequires: llvm-static
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
@@ -34,24 +33,19 @@ BuildRequires: vespa-boost-devel >= 1.59
 BuildRequires: vespa-cppunit-devel >= 1.12.1
 BuildRequires: vespa-libtorrent-devel >= 1.0.9
 BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.8
+BuildRequires: systemd
 Requires: epel-release 
 Requires: Judy
-Requires: cmake3
 Requires: lz4
 Requires: zlib
-Requires: maven
 Requires: libicu
 Requires: llvm
-Requires: llvm-static
 Requires: java-1.8.0-openjdk
 Requires: openssl
-Requires: rpm-build
-Requires: make
 Requires: vespa-boost >= 1.59
 Requires: vespa-cppunit >= 1.12.1
 Requires: vespa-libtorrent >= 1.0.9
 Requires: vespa-zookeeper-c-client >= 3.4.8
-Requires: numactl
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
@@ -155,22 +149,34 @@ rm -rf $RPM_BUILD_ROOT
 %pre
 getent group vespa >/dev/null || groupadd -r vespa
 getent passwd vespa >/dev/null || \
-    useradd -r -g vespa -d /opt/vespa -s /sbin/nologin \
+    useradd -r -g vespa -d %{_prefix} -s /sbin/nologin \
     -c "Create owner of all Vespa data files" vespa
+echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
+echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
+chmod +x /etc/profile.d/vespa.sh
 exit 0
 
 %post
+%systemd_post vespa-configserver.service 
+%systemd_post vespa.service 
 
 %preun
+%systemd_preu vespa.service
+%systemd_preu vespa-configserver.service
 
 %postun
+%systemd_postun_with_restart vespa.service 
+%systemd_postun_with_restart vespa-configserver.service 
+rm -f /etc/profile.d/vespa.sh
+userdel vespa 
+groupdel vespa 
 
 
 %files
 %defattr(-,vespa,vespa,-)
 %doc
 %{_prefix}/*
-/usr/lib/systemd/system/vespa.service
-/usr/lib/systemd/system/vespa-configserver.service
+%attr(644,root,root) /usr/lib/systemd/system/vespa.service
+%attr(644,root,root) /usr/lib/systemd/system/vespa-configserver.service
 
 %changelog
