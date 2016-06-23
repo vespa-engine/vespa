@@ -5,10 +5,10 @@ usage() {
     echo "Usage: $0 [full | java | default]" >&2
 }
 
-# Build minimal set of java modules required to run cmake
-MODE=default
-
-if [ "$1" = "full" ]; then
+if [ $# -eq 0 ]; then
+    # Build minimal set of java modules required to run cmake
+    MODE=default
+elif [ "$1" = "full" ]; then
     # Build all java modules required by C++ testing
     MODE=full
 elif [ "$1" = "java" ]; then
