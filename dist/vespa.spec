@@ -161,8 +161,8 @@ exit 0
 %systemd_post vespa.service 
 
 %preun
-%systemd_preu vespa.service
-%systemd_preu vespa-configserver.service
+%systemd_preun vespa.service
+%systemd_preun vespa-configserver.service
 
 %postun
 %systemd_postun_with_restart vespa.service 
