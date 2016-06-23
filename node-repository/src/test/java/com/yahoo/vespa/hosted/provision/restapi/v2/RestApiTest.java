@@ -153,6 +153,22 @@ public class RestApiTest {
     }
 
     @Test
+    public void post_with_patch_method_override_in_header_is_handled_as_patch() throws IOException  {
+        Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
+        req.getHeaders().add("X-HTTP-Method-Override", "PATCH");
+        assertResponse(req, "{\"message\":\"Updated host4.yahoo.com\"}");
+    }
+
+    @Test
+    public void post_with_invalid_method_override_in_header_gives_sane_error_message() throws IOException  {
+        Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
+        req.getHeaders().add("X-HTTP-Method-Override", "GET");
+        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Illegal X-HTTP-Method-Override header for POST request. Accepts 'PATCH' but got 'GET'\"}");
+    }
+
+    @Test
     public void testInvalidRequests() throws IOException {
         // Attempt to DELETE a node which is not put in failed first
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
