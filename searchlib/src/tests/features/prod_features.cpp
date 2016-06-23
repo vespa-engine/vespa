@@ -9,7 +9,7 @@ LOG_SETUP("prod_features_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/features/countMatchesfeature.h>
+#include <vespa/searchlib/features/countmatchesfeature.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -1474,9 +1474,7 @@ Test::testCountMatches()
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1-2 parameters
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params.add("baz")); // cannot find the field
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo"), in, out.add("out"));
-        FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"), in, out);
-        FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
 
         FT_DUMP_EMPTY(_factory, "countMatches");
     }

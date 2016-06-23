@@ -14,15 +14,13 @@ using namespace search::fef;
 namespace search {
 namespace features {
 
-CountMatchesExecutor::CountMatchesExecutor(uint32_t fieldId,
-                                 const search::fef::IQueryEnvironment &env,
-                                 uint32_t begin, uint32_t end)
+CountMatchesExecutor::CountMatchesExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
       _handles()
 {
-    for (uint32_t i = begin; i < end; ++i) {
-        search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
-        if (handle != search::fef::IllegalHandle) {
+    for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
+        TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
+        if (handle != IllegalHandle) {
             _handles.push_back(handle);
         }
     }
@@ -44,8 +42,7 @@ CountMatchesExecutor::execute(MatchData &match)
 
 CountMatchesBlueprint::CountMatchesBlueprint() :
     Blueprint("countMatches"),
-    _field(NULL),
-    _termIdx(std::numeric_limits<uint32_t>::max())
+    _field(NULL)
 {
 }
 
@@ -58,9 +55,6 @@ bool
 CountMatchesBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
 {
     _field = params[0].asField();
-    if (params.size() == 2) {
-        _termIdx = params[1].asInteger();
-    }
     describeOutput("out", "Returns 1 if the given field is matched by the query, 0 otherwise");
     return true;
 }
@@ -74,14 +68,10 @@ CountMatchesBlueprint::createInstance() const
 FeatureExecutor::LP
 CountMatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
 {
-    if (_field == 0) {
-        return search::fef::FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+    if (_field == nullptr) {
+        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
     }
-    if (_termIdx != std::numeric_limits<uint32_t>::max()) {
-        return FeatureExecutor::LP(new CountMatchesExecutor(_field->id(), queryEnv, _termIdx, _termIdx + 1));
-    } else {
-        return FeatureExecutor::LP(new CountMatchesExecutor(_field->id(), queryEnv, 0, queryEnv.getNumTerms()));
-    }
+    return FeatureExecutor::LP(new CountMatchesExecutor(_field->id(), queryEnv));
 }
 
 } // namespace features

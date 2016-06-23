@@ -18,9 +18,7 @@ private:
     std::vector<fef::TermFieldHandle> _handles;
 
 public:
-    CountMatchesExecutor(uint32_t fieldId,
-                         const fef::IQueryEnvironment &env,
-                         uint32_t begin, uint32_t end);
+    CountMatchesExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
     void execute(fef::MatchData & data) override;
 };
 
@@ -36,7 +34,6 @@ class CountMatchesBlueprint : public fef::Blueprint
 {
 private:
     const fef::FieldInfo *_field;
-    uint32_t                      _termIdx;
 
 public:
     /**
@@ -49,21 +46,19 @@ public:
                            fef::IDumpFeatureVisitor & visitor) const override;
 
     // Inherit doc from Blueprint.
-    search::fef::Blueprint::UP createInstance() const override;
+    fef::Blueprint::UP createInstance() const override;
 
     // Inherit doc from Blueprint.
-    search::fef::ParameterDescriptions getDescriptions() const override {
-        return search::fef::ParameterDescriptions().
-            desc().field().
-            desc().field().number();
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().field();
     }
 
     // Inherit doc from Blueprint.
-    bool setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment & env,
+               const fef::ParameterList & params) override;
 
     // Inherit doc from Blueprint.
-    search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const override;
+    fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
 };
 
 } // namespace features
