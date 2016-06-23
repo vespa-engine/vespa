@@ -2,6 +2,7 @@
   "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com",
   "id": "host4.yahoo.com",
   "state": "reserved",
+  "type": "tenant",
   "hostname": "host4.yahoo.com",
   "parentHostname": "parent.yahoo.com",
   "openStackId": "node4",

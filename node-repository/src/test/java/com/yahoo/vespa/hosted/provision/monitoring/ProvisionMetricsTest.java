@@ -28,8 +28,10 @@ public class ProvisionMetricsTest {
         final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         final Curator curator = new MockCurator();
         final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator);
-        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")));
+        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
+        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host);
+        nodeRepository.addNodes(Collections.singletonList(hostNode));
 
         final Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);

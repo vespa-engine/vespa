@@ -166,7 +166,7 @@ public class ProvisioningTester implements AutoCloseable {
     public void fail(HostSpec host) {
         int beforeFailCount = nodeRepository.getNode(Node.State.active, host.hostname()).get().status().failCount();
         Node failedNode = nodeRepository.fail(host.hostname());
-        assertTrue(nodeRepository.getNodes(Node.State.failed).contains(failedNode));
+        assertTrue(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 
@@ -205,7 +205,7 @@ public class ProvisioningTester implements AutoCloseable {
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
                                                 UUID.randomUUID().toString(),
                                                 Optional.empty(),
-                                                new Configuration(nodeFlavors.getFlavorOrThrow(flavor))));
+                                                new Configuration(nodeFlavors.getFlavorOrThrow(flavor)), Node.Type.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
         return nodes;
@@ -222,7 +222,7 @@ public class ProvisioningTester implements AutoCloseable {
         for (int i = 0; i < n; i++) {
             final String hostname = UUID.randomUUID().toString();
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                    new Configuration(nodeFlavors.getFlavorOrThrow(flavor))));
+                    new Configuration(nodeFlavors.getFlavorOrThrow(flavor)), Node.Type.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);

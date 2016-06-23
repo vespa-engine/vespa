@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -42,7 +41,7 @@ class NodesResponse extends HttpResponse {
 
     private final Slime slime;
 
-    public NodesResponse(ResponseType type, HttpRequest request, NodeRepository nodeRepository) {
+    public NodesResponse(ResponseType responseType, HttpRequest request, NodeRepository nodeRepository) {
         super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
@@ -52,7 +51,7 @@ class NodesResponse extends HttpResponse {
 
         slime = new Slime();
         Cursor root = slime.setObject();
-        switch (type) {
+        switch (responseType) {
             case nodeList: nodesToSlime(root); break;
             case stateList : statesToSlime(root); break;
             case nodesInStateList: nodesToSlime(stateFromString(lastElement(parentUrl)), root); break;
@@ -103,14 +102,17 @@ class NodesResponse extends HttpResponse {
     /** Outputs the nodes in the given state to a node array */
     private void nodesToSlime(Node.State state, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.getNodes(state), nodeArray);
+        for (Node.Type type : Node.Type.values())
+            toSlime(nodeRepository.getNodes(type, state), nodeArray);
     }
 
     /** Outputs all the nodes to a node array */
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        for (Node.State state : Node.State.values())
-            toSlime(nodeRepository.getNodes(state), nodeArray);
+        for (Node.State state : Node.State.values()) {
+            for (Node.Type type : Node.Type.values())
+                toSlime(nodeRepository.getNodes(type, state), nodeArray);
+        }
     }
 
     private void toSlime(List<Node> nodes, Cursor array) {
@@ -132,7 +134,9 @@ class NodesResponse extends HttpResponse {
         if ( ! allFields) return;
         object.setString("id", node.id());
         object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
+        object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
+        object.setString("type", toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
@@ -175,6 +179,15 @@ class NodesResponse extends HttpResponse {
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure());
         toSlime(node.history(), object.setArray("history"));
+    }
+
+    private String toString(Node.Type type) {
+        switch(type) {
+            case tenant: return "tenant";
+            case host: return "host";
+            default:
+                throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
+        }
     }
 
     private void toSlime(ApplicationId id, Cursor object) {

@@ -56,14 +56,14 @@ public class ProvisionResourceTest {
         List<Node> readyNodes = new ArrayList<>();
         for (HostInfo hostInfo : createHostInfos(readyCount, 0))
             readyNodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname,
-                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default"))));
+                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
         readyNodes = nodeRepository.addNodes(readyNodes);
         nodeRepository.setReady(readyNodes);
 
         List<Node> provisionedNodes = new ArrayList<>();
         for (HostInfo hostInfo : createHostInfos(provisionedCount, readyCount))
             provisionedNodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname,
-                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default"))));
+                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
         nodeRepository.addNodes(provisionedNodes);
     }
 
@@ -111,12 +111,12 @@ public class ProvisionResourceTest {
         assignNode(application, 2);
         nodeRepository.deactivate(application);
         List<Node> nodes = nodeRepository.deallocate(nodeRepository.getNodes(application, Node.State.inactive));
-        assertEquals(0, nodeRepository.getNodes(Node.State.ready).size());
-        assertEquals(2, nodeRepository.getNodes(Node.State.dirty).size());
+        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty).size());
         provisionResource.setReady(nodes.get(0).hostname());
         provisionResource.setReady(nodes.get(1).hostname());
-        assertEquals(2, nodeRepository.getNodes(Node.State.ready).size());
-        assertEquals(0, nodeRepository.getNodes(Node.State.dirty).size());
+        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty).size());
     }
 
     @Test(expected = IllegalArgumentException.class)

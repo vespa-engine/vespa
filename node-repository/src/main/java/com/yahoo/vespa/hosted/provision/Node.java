@@ -30,6 +30,7 @@ public final class Node {
     private final Configuration configuration;
     private final Status status;
     private final State state;
+    private final Type type;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -38,19 +39,20 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Configuration configuration) {
+    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Configuration configuration, Type type) {
         return new Node(openStackId, hostname, parentHostname, configuration, Status.initial(), State.provisioned,
-                        Optional.empty(), History.empty());
+                        Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
-                Configuration configuration, Status status, State state, Allocation allocation, History history) {
-        this(openStackId, hostname, parentHostname, configuration, status, state, Optional.of(allocation), history);
+                Configuration configuration, Status status, State state, Allocation allocation, History history, Type type) {
+        this(openStackId, hostname, parentHostname, configuration, status, state, Optional.of(allocation), history, type);
     }
 
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
-                Configuration configuration, Status status, State state, Optional<Allocation> allocation, History history) {
+                Configuration configuration, Status status, State state, Optional<Allocation> allocation,
+                History history, Type type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
         Objects.requireNonNull(hostname, "A node must have a hostname");
         Objects.requireNonNull(parentHostname, "A null parentHostname is not permitted.");
@@ -59,6 +61,7 @@ public final class Node {
         Objects.requireNonNull(state, "A null node state is not permitted");
         Objects.requireNonNull(allocation, "A null node allocation is not permitted");
         Objects.requireNonNull(history, "A null node history is not permitted");
+        Objects.requireNonNull(type, "A null node type is not permitted");
 
         this.id = hostname;
         this.hostname = hostname;
@@ -69,6 +72,7 @@ public final class Node {
         this.state = state;
         this.allocation = allocation;
         this.history = history;
+        this.type = type;
     }
 
     /**
@@ -95,6 +99,9 @@ public final class Node {
 
     /** Returns the current state of this node (in the node state machine) */
     public State state() { return state; }
+
+    /** Returns the type of this node */
+    public Type type() { return type; }
 
     /** Returns the current allocation of this, if any */
     public Optional<Allocation> allocation() { return allocation; }
@@ -135,24 +142,29 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node setStatus(Status status) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history);
+        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+    }
+
+    /** Returns a node with the type assigned to the given value */
+    public Node setType(Type type) {
+        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
     }
 
     /** Returns a node with the hardware configuration assigned to the given value */
     public Node setConfiguration(Configuration configuration) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history);
+        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the current generation set to generation */
     public Node setReboot(Generation generation) {
         return new Node(openStackId, hostname, parentHostname, configuration, status.setReboot(generation), state,
-                        allocation, history);
+                        allocation, history, type);
     }
 
     /** Returns a copy of this with the flavor set to flavor */
     public Node setFlavor(Flavor flavor) {
         return new Node(openStackId, hostname, parentHostname, new Configuration(flavor), status, state,
-                        allocation, history);
+                        allocation, history, type);
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
@@ -176,17 +188,17 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node setAllocation(Allocation allocation) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history);
+        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node setParentHostname(String parentHostname) {
-        return new Node(openStackId, hostname, Optional.of(parentHostname), configuration, status, state, allocation, history);
+        return new Node(openStackId, hostname, Optional.of(parentHostname), configuration, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the given history. */
     private Node setHistory(History history) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history);
+        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
     }
 
     @Override
@@ -208,6 +220,8 @@ public final class Node {
                (allocation.isPresent() ? " " + allocation.get() : "") +
                (parentHostname.isPresent() ? " [on: " + parentHostname.get() + "]" : "");
     }
+
+
 
     public enum State {
 
@@ -236,7 +250,10 @@ public final class Node {
         public boolean isAllocated() {
             return this == reserved || this == active || this == inactive || this == failed;
         }
-
     }
 
+    public enum Type {
+        tenant,
+        host;
+    }
 }

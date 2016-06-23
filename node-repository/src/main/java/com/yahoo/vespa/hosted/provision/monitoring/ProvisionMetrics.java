@@ -50,7 +50,7 @@ public class ProvisionMetrics extends AbstractComponent {
             log.log(LogLevel.DEBUG, "Running provision metrics task");
             try {
                 for (Node.State state : Node.State.values())
-                    metric.set("hostedVespa." + state.name() + "Hosts", nodeRepository.getNodes(state).size(), null);
+                    metric.set("hostedVespa." + state.name() + "Hosts", nodeRepository.getNodes(Node.Type.tenant, state).size(), null);
             } catch (RuntimeException e) {
                 log.log(LogLevel.INFO, "Failed gathering metrics data: " + e.getMessage());
             }

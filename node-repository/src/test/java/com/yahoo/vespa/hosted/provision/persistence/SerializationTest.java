@@ -65,6 +65,7 @@ public class SerializationTest {
         node = node.setStatus(node.status().setVespaVersion(Version.fromString("1.2.3")));
         node = node.setStatus(node.status().increaseFailCount().increaseFailCount());
         node = node.setStatus(node.status().setHardwareFailure(true));
+        node = node.setType(Node.Type.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(node.id(), copy.id());
@@ -83,10 +84,22 @@ public class SerializationTest {
         assertEquals(node.allocation().get().removable(), copy.allocation().get().removable());
         assertEquals(1, copy.history().events().size());
         assertEquals(clock.instant(), copy.history().event(History.Event.Type.reserved).get().at());
+        assertEquals(Node.Type.tenant, copy.type());
     }
 
     @Test
-    public void testRebootAndRestartNoCurrentValuesSerialization() {
+    public void testDefaultType() {
+        Node node = createNode().allocate(ApplicationId.from(TenantName.from("myTenant"),
+                ApplicationName.from("myApplication"),
+                InstanceName.from("myInstance")),
+                ClusterMembership.from("content/myId/0/0", Optional.empty()),
+                clock.instant());
+        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        assertEquals(Node.Type.host, copy.type());
+    }
+
+    @Test
+    public void testRebootAndRestartandTypeNoCurrentValuesSerialization() {
         String nodeData = "{\n" +
                 "   \"rebootGeneration\" : 0,\n" +
                 "   \"configuration\" : {\n" +
@@ -116,6 +129,7 @@ public class SerializationTest {
         assertEquals(0, node.status().reboot().current());
         assertEquals(0, node.allocation().get().restartGeneration().wanted());
         assertEquals(0, node.allocation().get().restartGeneration().current());
+        assertEquals(Node.Type.tenant, node.type());
     }
 
     @Test
@@ -194,7 +208,7 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), new Configuration(nodeFlavors.getFlavorOrThrow("default")));
+        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -234,7 +248,7 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", "myHostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")));
+        return Node.create("myId", "myHostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host);
     }
 
 }

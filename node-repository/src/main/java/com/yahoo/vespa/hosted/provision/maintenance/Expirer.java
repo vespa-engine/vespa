@@ -47,7 +47,7 @@ public abstract class Expirer extends Maintainer {
     @Override
     protected void maintain() {
         List<Node> expired = new ArrayList<>();
-        for (Node node : nodeRepository().getNodes(fromState)) {
+        for (Node node : nodeRepository().getNodes(Node.Type.tenant, fromState)) {
             Optional<History.Event> event = node.history().event(eventType);
             if (event.isPresent() && event.get().at().plus(expiryTime).isBefore(clock.instant()))
                 expired.add(node);

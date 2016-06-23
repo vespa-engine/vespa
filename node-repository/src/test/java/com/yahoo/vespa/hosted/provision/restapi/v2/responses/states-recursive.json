@@ -9,6 +9,7 @@
     "ready": {
       "url": "http://localhost:8080/nodes/v2/state/ready",
       "nodes": [
+        @include(parent1.json)
       ]
     },
     "reserved": {

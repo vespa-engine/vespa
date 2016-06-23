@@ -1,6 +1,7 @@
 {
   "nodes": [
     @include(node7.json),
+    @include(parent1.json),
     @include(node10.json),
     @include(node4.json),
     @include(node6.json),

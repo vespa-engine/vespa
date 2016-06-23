@@ -2,6 +2,7 @@
   "url": "http://localhost:8080/nodes/v2/node/host5.yahoo.com",
   "id": "host5.yahoo.com",
   "state": "failed",
+  "type": "tenant",
   "hostname": "host5.yahoo.com",
   "parentHostname":"dockerhost",
   "openStackId": "node5",

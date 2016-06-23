@@ -2,6 +2,7 @@
   "url": "http://localhost:8080/nodes/v2/node/host2.yahoo.com",
   "id": "host2.yahoo.com",
   "state": "active",
+  "type": "tenant",
   "hostname": "host2.yahoo.com",
   "openStackId": "node2",
   "flavor": "default",

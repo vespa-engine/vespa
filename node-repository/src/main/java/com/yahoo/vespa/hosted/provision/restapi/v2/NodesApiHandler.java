@@ -44,6 +44,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
+    private static final String nodeTypeKey = "type";
+
 
     public NodesApiHandler(Executor executor, AccessLog accessLog, NodeRepository nodeRepository, NodeFlavors flavors) {
         super(executor, accessLog);
@@ -189,7 +191,22 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
                 parentHostname,
-                new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())));
+                new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())),
+                nodeTypeFromSlime(inspector.field(nodeTypeKey)));
+    }
+
+    private Node.Type nodeTypeFromSlime(Inspector object) {
+        // TODO: Remove this when 6.13 is deployed everywhere.
+        if (! object.valid()) {
+            return Node.Type.tenant;
+        }
+        String typeString = object.asString();
+        switch (typeString) {
+            case "tenant" : return Node.Type.tenant;
+            case "host" : return Node.Type.host;
+        }
+        // TODO: Change this to throw an exception when 6.13 is deployed everywhere.
+        return Node.Type.tenant;
     }
 
     // TODO: Move most of this to node repo

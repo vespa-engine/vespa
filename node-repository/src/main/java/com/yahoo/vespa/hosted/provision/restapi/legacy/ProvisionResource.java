@@ -47,7 +47,7 @@ public class ProvisionResource {
     public void addNodes(List<HostInfo> hostInfoList) {
         List<Node> nodes = new ArrayList<>();
         for (HostInfo hostInfo : hostInfoList)
-            nodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow(hostInfo.flavor))));
+            nodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow(hostInfo.flavor)), Node.Type.tenant));
         nodeRepository.addNodes(nodes);
     }
 
@@ -94,7 +94,7 @@ public class ProvisionResource {
 
         Map<String, TenantStatus.ApplicationUsage> appinstanceUsageMap = new HashMap<>();
 
-        nodeRepository.getNodes(Node.State.active).stream()
+        nodeRepository.getNodes(Node.Type.tenant, Node.State.active).stream()
                 .filter(node -> {
                     return node.allocation().get().owner().tenant().value().equals(tenantId);
                 })
@@ -115,11 +115,12 @@ public class ProvisionResource {
     }
 
     //TODO: move this to nodes/v2/ when the spec for this has been nailed.
+    //TODO: Change it to list host nodes, instead of hosts for tenant nodes.
     @GET
     @Path("/dockerhost/{hostname}")
     public ContainersForHost getContainersForHost(@PathParam("hostname") String hostname) {
         List<DockerContainer> dockerContainersForHost =
-                nodeRepository.getNodes(State.active, State.inactive).stream()
+                nodeRepository.getNodes(Node.Type.tenant, State.active, State.inactive).stream()
                         .filter(runsOnDockerHost(hostname))
                         .flatMap(ProvisionResource::toDockerContainer)
                         .collect(Collectors.toList());
