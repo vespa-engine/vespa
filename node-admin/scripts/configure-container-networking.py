@@ -124,6 +124,11 @@ def ip_with_most_specific_network_for_address(address, ipv4_ips):
         raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(host_ip)) for host_ip in ipv4_ips])))
     return host_ip_best_match_for_address
 
+ipr = IPRoute()
+
+def delete_interface_by_name(interface_name):
+    for interface_index in ipr.link_lookup(ifname=interface_name):
+        ipr.link('delete', index=interface_index)
 
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
@@ -158,8 +163,6 @@ host_ip_best_match_for_container = ip_with_most_specific_network_for_address(con
 host_device_index_for_container = host_ip_best_match_for_container['index']
 container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
 
-ipr = IPRoute()
-
 
 # Create new interface for the container.
 
@@ -172,8 +175,8 @@ assert len(temporary_interface_name_while_in_host_ns) <= 15 # linux requirement
 container_interface_name = "vespa"
 assert len(container_interface_name) <= 15 # linux requirement
 
-for interface_index in ipr.link_lookup(ifname=temporary_interface_name_while_in_host_ns):
-    ipr.link('delete', index=interface_index)
+# Clean up any leftovers from the past.
+delete_interface_by_name(temporary_interface_name_while_in_host_ns)
 
 if not container_ns.link_lookup(ifname=container_interface_name):
 
