@@ -52,7 +52,7 @@ public class RestApiHandler extends LoggingRequestHandler{
 
     private HttpResponse handleGet(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.endsWith("info")) {
+        if (path.endsWith("/info")) {
             return new SimpleResponse(200, refresher.getDebugPage());
         }
         return new SimpleResponse(400, "unknown path" + path);
@@ -61,14 +61,14 @@ public class RestApiHandler extends LoggingRequestHandler{
     private HttpResponse handlePut(HttpRequest request) {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
-        if (path.endsWith("resume")) {
+        if (path.endsWith("/resume")) {
             final Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
             if (errorMessage.isPresent()) {
                 return new SimpleResponse(400, errorMessage.get());
             }
             return new SimpleResponse(200, "ok.");
         }
-        if (path.endsWith("suspend")) {
+        if (path.endsWith("/suspend")) {
             Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
             if (errorMessage.isPresent()) {
                 return new SimpleResponse(423, errorMessage.get());
