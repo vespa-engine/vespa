@@ -1483,7 +1483,7 @@ Test::testCountMatches()
     { // Test executor for index fields
         EXPECT_TRUE(assertMatches(0, "x", "a", "countmatches(foo)"));
         EXPECT_TRUE(assertMatches(1, "a", "a", "countmatches(foo)"));
-        EXPECT_TRUE(assertMatches(2, "a b", "a b", "countmatches(foo)"));
+        EXPECT_TRUE(assertMatches(1, "a b", "a b", "countmatches(foo)"));
         // change docId to indicate no matches in the field
         EXPECT_TRUE(assertMatches(0, "a", "a", "countmatches(foo)", 2));
         // specify termIdx as second parameter
