@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -59,17 +59,23 @@ public class NodeFailer extends Maintainer {
 
     @Override
     protected void maintain() {
-        List<Node> downNodes = maintainDownStatus();
-
-        for (Node node : downNodes) {
-            // Grace time before failing the node
+        for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
-
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node))
-                fail(node);
+                failActive(node);
+        }
+        
+        for (Node node : readyNodesWithHardwareFailure()) {
+            nodeRepository().fail(node.hostname());
         }
     }
 
+    private List<Node> readyNodesWithHardwareFailure() {
+        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
+                .filter(n -> n.status().hardwareFailure())
+                .collect(Collectors.toList());
+    }
+    
     private boolean applicationSuspended(Node node) {
         try {
             return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())
@@ -86,7 +92,7 @@ public class NodeFailer extends Maintainer {
      *
      * @return a list of all nodes which are positively currently in the down state
      */
-    private List<Node> maintainDownStatus() {
+    private List<Node> determineActiveNodeDownStatus() {
         List<Node> downNodes = new ArrayList<>();
         for (ApplicationInstance<ServiceMonitorStatus> application : serviceMonitor.queryStatusOfAllApplicationInstances().values()) {
             for (ServiceCluster<ServiceMonitorStatus> cluster : application.serviceClusters()) {
@@ -133,7 +139,7 @@ public class NodeFailer extends Maintainer {
      * which is when the node repo has available capacity to replace the node.
      * Otherwise not replacing the node ensures (by Orchestrator check) that no further action will be taken.
      */
-    private void fail(Node node) {
+    private void failActive(Node node) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
         if ( ! deployment.isPresent()) return; // this will be done at another config server
@@ -147,7 +153,7 @@ public class NodeFailer extends Maintainer {
             catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().unfail(node.hostname());
+                nodeRepository().reactivate(node.hostname());
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
             }

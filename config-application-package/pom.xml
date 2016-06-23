@@ -92,11 +92,6 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -121,7 +116,6 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
-                        <arg>-Xlint:-try</arg>
                         <arg>-Werror</arg>
                     </compilerArgs>
                 </configuration>

@@ -7,4 +7,12 @@ package com.yahoo.vespa.orchestrator;
  * @author smorgrav
  */
 public class ApplicationIdNotFoundException extends Exception {
+
+    public ApplicationIdNotFoundException() {
+        super();
+    }
+
+    public ApplicationIdNotFoundException(String reason) {
+        super(reason);
+    }
 }

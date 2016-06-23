@@ -48,5 +48,4 @@ public class StateFilter extends NodeFilter {
         return new StateFilter(HostFilter.split(states).stream().map(Node.State::valueOf).collect(Collectors.toSet()), next);
     }
 
-
 }

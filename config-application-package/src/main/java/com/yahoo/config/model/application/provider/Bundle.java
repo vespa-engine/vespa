@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
-import com.google.common.base.Charsets;
 import com.yahoo.collections.Tuple2;
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -171,7 +169,7 @@ public class Bundle {
                 return new StringReader("");
             }
             try {
-                return new InputStreamReader(bundle.jarFile.getInputStream(zipEntry), Charsets.UTF_8);
+                return new InputStreamReader(bundle.jarFile.getInputStream(zipEntry), StandardCharsets.UTF_8);
             }  catch (IOException e) {
                 throw new IllegalArgumentException("IOException", e);
             }

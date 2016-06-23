@@ -20,6 +20,9 @@
     },
     "failed": {
       "url": "http://localhost:8080/nodes/v2/state/failed"
+    },
+    "parked": {
+      "url": "http://localhost:8080/nodes/v2/state/parked"
     }
   }
 }

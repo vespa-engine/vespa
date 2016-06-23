@@ -216,7 +216,7 @@ public class OrchestratorImplTest {
         InstanceLookupService service = new DummyInstanceLookupService();
         String applicationInstanceId = service.findInstanceByHost(DummyInstanceLookupService.TEST1_HOST_NAME).get()
                 .reference().toString();
-        assertEquals("test-tenant-id:application:instance", applicationInstanceId);
+        assertEquals("test-tenant-id:application:prod:utopia-1:instance", applicationInstanceId);
     }
 
     @Test
@@ -291,7 +291,7 @@ public class OrchestratorImplTest {
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
         for (ApplicationInstance<ServiceMonitorStatus> app : DummyInstanceLookupService.getApplications()) {
-            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId))) {
+            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId,new DummyInstanceLookupService()))) {
                 return clustercontroller.isInMaintenance(app, hostName);
             }
         }

@@ -141,7 +141,7 @@ struct FileDownloader::EventHandler
         BOOST_THROW_EXCEPTION(std::runtime_error(alert.message()));
     }
     void operator()(const libtorrent::fastresume_rejected_alert& alert) const {
-        LOG(info, "alert %s: %s", alert.what(), alert.message().c_str());
+        LOG(debug, "alert %s: %s", alert.what(), alert.message().c_str());
     }
     void operator()(const libtorrent::torrent_delete_failed_alert& alert) const {
         LOG(warning, "alert %s: %s", alert.what(), alert.message().c_str());

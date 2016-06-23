@@ -6,4 +6,3 @@ target
 *.iws
 /pom.xml.build
 Makefile
-Testing

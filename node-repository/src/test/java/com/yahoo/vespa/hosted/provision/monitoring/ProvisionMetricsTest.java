@@ -35,6 +35,7 @@ public class ProvisionMetricsTest {
 
         final Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
+        expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
         expectedMetrics.put("hostedVespa.reservedHosts", 0);
         expectedMetrics.put("hostedVespa.activeHosts", 0);

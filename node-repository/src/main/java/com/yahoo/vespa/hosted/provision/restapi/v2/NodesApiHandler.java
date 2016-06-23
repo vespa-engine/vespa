@@ -14,10 +14,10 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Configuration;
+import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
@@ -59,7 +59,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             switch (request.getMethod()) {
                 case GET: return handleGET(request);
                 case PUT: return handlePUT(request);
-                case POST: return handlePOST(request);
+                case POST: return isPatchOverride(request) ? handlePATCH(request) : handlePOST(request);
                 case DELETE: return handleDELETE(request);
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
@@ -99,12 +99,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.fail(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to failed");
         }
+        else if (path.startsWith("/nodes/v2/state/parked/")) {
+            nodeRepository.park(lastElement(path));
+            return new MessageResponse("Moved " + lastElement(path) + " to parked");
+        }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             nodeRepository.deallocate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.unfail(lastElement(path));
+            nodeRepository.reactivate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else {
@@ -221,7 +225,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if ( ! node.isPresent())
             node = nodeRepository.getNode(Node.State.failed, hostname);
         if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty or failed");
+            node = nodeRepository.getNode(Node.State.parked, hostname);
+        if ( ! node.isPresent())
+            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty, failed or parked");
+
+        if (node.get().allocation().isPresent())
+            throw new IllegalArgumentException("Could not set " + hostname + " ready: Node is allocated and must be moved to dirty instead");
 
         nodeRepository.setReady(Collections.singletonList(node.get()));
         return "Moved " + hostname + " to ready";
@@ -246,4 +255,17 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return path.substring(lastSlash + 1, path.length());
     }
 
+    private boolean isPatchOverride(HttpRequest request) {
+        //Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
+        String override = request.getHeader("X-HTTP-Method-Override");
+        if (override != null) {
+            if (override.equals("PATCH")) {
+                return true;
+            } else {
+                String msg = String.format("Illegal X-HTTP-Method-Override header for POST request. Accepts 'PATCH' but got '%s'", override);
+                throw new IllegalArgumentException(msg);
+            }
+        }
+        return false;
+    }
 }
