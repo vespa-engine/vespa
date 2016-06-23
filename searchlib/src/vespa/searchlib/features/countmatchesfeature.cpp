@@ -43,7 +43,7 @@ CountMatchesExecutor::execute(MatchData &match)
 
 
 CountMatchesBlueprint::CountMatchesBlueprint() :
-    Blueprint("countmatches"),
+    Blueprint("countMatches"),
     _field(NULL),
     _termIdx(std::numeric_limits<uint32_t>::max())
 {
