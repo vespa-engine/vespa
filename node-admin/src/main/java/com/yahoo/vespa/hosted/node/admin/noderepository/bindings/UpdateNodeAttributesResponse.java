@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository.bindings;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Automagically handles (de)serialization based on 1:1 message fields and identifier names.
  * Deserializes JSON strings on the form:
@@ -12,6 +14,7 @@ package com.yahoo.vespa.hosted.node.admin.noderepository.bindings;
  *
  * @author bakksjo
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateNodeAttributesResponse {
     public String message;
 }
