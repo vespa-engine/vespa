@@ -75,22 +75,14 @@ FieldValue::UP positionFromZcurve(int64_t zcurve) {
     return value;
 }
 
-void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields,
-                          const IAttributeManager & attr_manager, IDocumentRetriever::ReadConsistency consistency)
+void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
 {
     for (const auto & it : possiblePositionFields) {
         if (doc.hasValue(*it.first)) {
-            AttributeGuard::UP attrGuard = attr_manager.getAttribute(it.second);
-            if (attrGuard.get() && attrGuard->valid()) {
-                const search::attribute::IAttributeVector & attr = **attrGuard;
-                if (lid < attr.getNumDocs()) {
-                    if (consistency != ReadConsistency::STRONG) {
-                        // Lock must be retaken to ensure as non-strong consitency allows lids to arrive later on.
-                        attrGuard = _attr_manager.getAttribute(field.getName());
-                    }
-                    int64_t zcurve = attr.getInt(lid);
-                    doc.setValue(*it.first, *positionFromZcurve(zcurve));
-                }
+            AttributeGuard::UP attr = attr_manager.getAttribute(it.second);
+            if (attr.get() && attr->valid()) {
+                int64_t zcurve = (*attr)->getInt(lid);
+                doc.setValue(*it.first, *positionFromZcurve(zcurve));
             }
         }
     }
@@ -99,23 +91,19 @@ void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetrieve
 class PopulateVisitor : public search::IDocumentVisitor
 {
 public:
-    PopulateVisitor(const DocumentRetriever & retriever,
-                    search::IDocumentVisitor & visitor,
-                    IDocumentRetriever::ReadConsistency consistency) :
-        _consistency(consistency),
+    PopulateVisitor(const DocumentRetriever & retriever, search::IDocumentVisitor & visitor) :
         _retriever(retriever),
         _visitor(visitor)
     { }
     void visit(uint32_t lid, document::Document::UP doc) override {
         if (doc) {
-            _retriever.populate(lid, *doc, _consistency);
+            _retriever.populate(lid, *doc);
             _visitor.visit(lid, std::move(doc));
         }
     }
 private:
-    IDocumentRetriever::ReadConsistency  _consistency;
-    const DocumentRetriever            & _retriever;
-    search::IDocumentVisitor           & _visitor;
+    const DocumentRetriever  & _retriever;
+    search::IDocumentVisitor & _visitor;
 };
 
 }  // namespace
@@ -124,34 +112,27 @@ Document::UP DocumentRetriever::getDocument(DocumentIdT lid) const
 {
     Document::UP doc = _doc_store.read(lid, getDocumentTypeRepo());
     if (doc) {
-        populate(lid, *doc, ReadConsistency::STRONG);
+        populate(lid, *doc);
     }
     return doc;
 }
 
-void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency consistency) const
+void DocumentRetriever::visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const
 {
-    PopulateVisitor populater(*this, visitor, consistency);
+    PopulateVisitor populater(*this, visitor);
     _doc_store.visit(lids, getDocumentTypeRepo(), populater);
 }
 
-void DocumentRetriever::populate(DocumentIdT lid, Document & doc, ReadConsistency consistency) const
+void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
 {
     for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
-        AttributeGuard::UP attrGuard = _attr_manager.getAttribute(field.getName());
-        if (attrGuard.get() && attrGuard->valid()) {
-            const search::attribute::IAttributeVector & attr = **attrGuard;
-            if (lid < attr.getNumDocs()) {
-                if (consistency != ReadConsistency::STRONG) {
-                    // Lock must be retaken to ensure as non-strong consitency allows lids to arrive later on.
-                    attrGuard = _attr_manager.getAttribute(field.getName());
-                }
-                DocumentFieldRetriever::populate(lid, doc, field, attr, _schema.isIndexField(field.getName()));
-            }
+        AttributeGuard::UP attr = _attr_manager.getAttribute(field.getName());
+        if (attr.get() && attr->valid()) {
+            DocumentFieldRetriever::populate(lid, doc, field, **attr, _schema.isIndexField(field.getName()));
         }
     }
-    fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager, consistency);
+    fillInPositionFields(doc, lid, _possiblePositionFields, _attr_manager);
 }
 
 const Schema &
