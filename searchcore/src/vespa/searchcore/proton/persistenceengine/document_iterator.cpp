@@ -241,11 +241,12 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
 
     LidIndexMap lidIndexMap(3*metaData.size());
     IDocumentRetriever::LidVector lidsToFetch;
+    uint32_t docIdLimit = source.getDocIdLimit();
     lidsToFetch.reserve(metaData.size());
     for (size_t i(0); i < metaData.size(); i++) {
         const search::DocumentMetaData & meta = metaData[i];
         if (checkMeta(meta)) {
-            if (matcher.match(meta)) {
+            if (matcher.match(meta) && (meta.lid < docIdLimit)) {
                 lidsToFetch.emplace_back(meta.lid);
                 lidIndexMap[meta.lid] = i;
             }

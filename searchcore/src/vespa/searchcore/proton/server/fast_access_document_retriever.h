@@ -19,10 +19,12 @@ class FastAccessDocumentRetriever : public DocumentRetriever
 private:
     FastAccessFeedView::SP       _feedView;
     IAttributeManager::SP        _attrMgr;
+    const DocIdLimit            &_docIdLimit;
 
 public:
     FastAccessDocumentRetriever(const FastAccessFeedView::SP &feedView,
-                                const IAttributeManager::SP &attrMgr)
+                                const IAttributeManager::SP &attrMgr,
+                                const DocIdLimit & docIdLimit)
         : DocumentRetriever(feedView->getPersistentParams()._docTypeName,
                             *feedView->getDocumentTypeRepo(),
                             *feedView->getSchema(),
@@ -30,9 +32,11 @@ public:
                             *attrMgr,
                             feedView->getDocumentStore()),
           _feedView(feedView),
-          _attrMgr(attrMgr)
+          _attrMgr(attrMgr),
+          _docIdLimit(docIdLimit)
     {
     }
+    uint32_t getDocIdLimit() const override { return _docIdLimit.get(); }
 };
 
 } // namespace proton

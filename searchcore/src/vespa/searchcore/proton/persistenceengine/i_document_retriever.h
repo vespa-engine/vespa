@@ -37,6 +37,7 @@ public:
     virtual search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const = 0;
     virtual document::Document::UP getDocument(search::DocumentIdT lid) const = 0;
     virtual ReadGuard getReadGuard() const = 0;
+    virtual uint32_t getDocIdLimit() const = 0;
     /**
      * Will visit all documents in the the given list. Visit order is undefined and will
      * be conducted in most efficient retrieval order.
@@ -52,6 +53,7 @@ class DocumentRetrieverBaseForTest : public IDocumentRetriever {
 public:
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
     ReadGuard getReadGuard() const override { return ReadGuard(); }
+    uint32_t getDocIdLimit() const override { return std::numeric_limits<uint32_t>::max(); }
 };
 
 } // namespace proton
