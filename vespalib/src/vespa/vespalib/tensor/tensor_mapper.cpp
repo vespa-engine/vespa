@@ -259,7 +259,7 @@ TensorMapper::mapToDense(const Tensor &tensor, const TensorType &type)
 }
 
 std::unique_ptr<Tensor>
-TensorMapper::map(const Tensor &tensor)
+TensorMapper::map(const Tensor &tensor) const
 {
     switch (_type.type()) {
     case TensorType::Type::INVALID:

@@ -41,6 +41,7 @@ public:
     virtual bool addDoc(DocId &docId) override;
     void setTensor(DocId docId, const Tensor &tensor);
     std::unique_ptr<Tensor> getTensor(DocId docId) const;
+    std::unique_ptr<Tensor> getEmptyTensor() const;
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
     virtual void onShrinkLidSpace() override;
     virtual bool onLoad() override;

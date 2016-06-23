@@ -12,9 +12,7 @@ TensorFromTensorAttributeExecutor(const search::attribute::TensorAttribute *
                                   attribute)
     : _attribute(attribute),
       _tensor(),
-      _builder(),
-      // XXX: we should use numbers instead of empty tensors
-      _emptyTensor(std::make_unique<vespalib::eval::TensorValue>(_builder.build()))
+      _emptyTensor(std::make_unique<vespalib::eval::TensorValue>(attribute->getEmptyTensor()))
 {
 }
 

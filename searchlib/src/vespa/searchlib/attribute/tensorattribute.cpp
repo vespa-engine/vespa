@@ -2,10 +2,12 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tensorattribute.h"
+#include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include "tensorattributesaver.h"
 
 using vespalib::tensor::Tensor;
+using vespalib::tensor::TensorMapper;
 
 namespace search {
 
@@ -32,6 +34,13 @@ public:
     uint32_t getNextTensorSize() { return _tensorSizeReader.readHostOrder(); }
     void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
 };
+
+Tensor::UP
+createEmptyTensor(const TensorMapper &mapper)
+{
+    vespalib::tensor::DefaultTensor::builder builder;
+    return mapper.map(*builder.build());
+}
 
 }
 
@@ -185,6 +194,11 @@ TensorAttribute::getTensor(DocId docId) const
     return _tensorStore.getTensor(ref);
 }
 
+Tensor::UP
+TensorAttribute::getEmptyTensor() const
+{
+    return createEmptyTensor(_tensorMapper);
+}
 
 void
 TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)

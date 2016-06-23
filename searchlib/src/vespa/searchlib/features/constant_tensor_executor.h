@@ -4,8 +4,9 @@
 
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/tensor_mapper.h>
 #include <memory>
 
 namespace search {
@@ -37,6 +38,13 @@ public:
         return FeatureExecutor::LP(new ConstantTensorExecutor
                                    (std::make_unique<vespalib::eval::TensorValue>
                                            (builder.build())));
+    }
+    static fef::FeatureExecutor::LP createEmpty(const vespalib::tensor::TensorType &tensorType) {
+        vespalib::tensor::DefaultTensor::builder builder;
+        vespalib::tensor::TensorMapper mapper(tensorType);
+        return FeatureExecutor::LP(new ConstantTensorExecutor
+                                   (std::make_unique<vespalib::eval::TensorValue>
+                                           (mapper.map(*builder.build()))));
     }
 };
 
