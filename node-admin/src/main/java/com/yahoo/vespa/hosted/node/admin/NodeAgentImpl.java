@@ -414,6 +414,7 @@ public class NodeAgentImpl implements NodeAgent {
                         continue;
                     case WORKING:
                         state = State.WORKING;
+                        wantedState = State.WAITING;
                         break;
                     case FROZEN:
                         state = State.FROZEN;
@@ -422,7 +423,7 @@ public class NodeAgentImpl implements NodeAgent {
                         return;
                 }
             }
-            // This is WORKING state.
+            // state is WORKING state.
             try {
                 final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                         .orElseThrow(() ->
