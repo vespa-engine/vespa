@@ -2,7 +2,7 @@
 <services version="1.0">
   <jdisc version="1.0" jetty="true">
     <!-- Please update container test when changing this file -->
-    <handler id="com.yahoo.vespa.hosted.node.admin.restapi" bundle="node-admin">
+    <handler id="com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler" bundle="node-admin">
       <binding>http://*/rest/*</binding>
     </handler>
     <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
