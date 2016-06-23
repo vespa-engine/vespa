@@ -282,7 +282,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         token.ack();
     }
 
-    virtual RetrieversSP getDocumentRetrievers() override {
+    virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
         RetrieversSP ret(new std::vector<IDocumentRetriever::SP>);
         ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(
                                 0, Timestamp(), lastDocId)));
