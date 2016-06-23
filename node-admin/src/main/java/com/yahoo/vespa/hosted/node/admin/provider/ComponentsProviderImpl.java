@@ -1,6 +1,11 @@
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
@@ -16,7 +21,7 @@ import java.util.function.Function;
  *
  * @author dybis
  */
-public class ComponentsProviderImpl implements ComponentsProvider{
+public class ComponentsProviderImpl implements ComponentsProvider {
 
     private final Docker docker;
     private static final long INITIAL_SCHEDULER_DELAY_SECONDS = 0;

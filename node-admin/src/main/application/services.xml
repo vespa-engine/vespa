@@ -5,7 +5,7 @@
     <handler id="com.yahoo.vespa.hosted.node.admin.restapi" bundle="node-admin">
       <binding>http://*/rest/*</binding>
     </handler>
-    <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.ComponentsProviderImpl" bundle="node-admin"/>
+    <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
     <component id="docker" class="com.yahoo.vespa.hosted.node.admin.docker.DockerImpl" bundle="node-admin"/>
 
     <config name='nodeadmin.docker.docker'>

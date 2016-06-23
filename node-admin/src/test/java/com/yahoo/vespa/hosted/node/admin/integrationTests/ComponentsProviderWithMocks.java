@@ -1,8 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.node.admin.ComponentsProvider;
+import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 
 /**
  * For setting up test with mocks.
