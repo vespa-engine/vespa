@@ -717,9 +717,7 @@ DocumentDB::startTransactionLogReplay()
 
 BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 {
-    BucketGuard::UP guard(std::make_unique<BucketGuard>
-                          (bucket, _maintenanceController));
-    _visibility.commitAndWait();
+    BucketGuard::UP guard(std::make_unique<BucketGuard>(bucket, _maintenanceController));
     return std::move(guard);
 }
 
