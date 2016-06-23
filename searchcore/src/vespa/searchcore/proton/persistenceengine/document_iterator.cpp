@@ -125,7 +125,8 @@ public:
     Match(const IDocumentRetriever & source, bool metaOnly, const vespalib::string & selection) :
         _dscTrue(true),
         _metaOnly(metaOnly),
-        _willAlwaysFail(false)
+        _willAlwaysFail(false),
+        _docidLimit(source.getDocIdLimit())
     {
         if (!(_metaOnly || selection.empty())) {
             LOG(spam, "ParseSelect: %s", selection.c_str());
@@ -161,6 +162,9 @@ public:
         if (_dscTrue || _metaOnly) {
             return true;
         }
+        if (meta.lid >= _docidLimit) {
+            return false;
+        }
         if (_sc) {
             _sc->_docId = meta.lid;
         }
@@ -181,9 +185,10 @@ private:
     bool                           _dscTrue;
     bool                           _metaOnly;
     bool                           _willAlwaysFail;
+    uint32_t                       _docidLimit;
     CachedSelect::SP               _cs;
     document::select::Node::UP     _select;
-    document::select::GidFilter _gidFilter;
+    document::select::GidFilter    _gidFilter;
     std::unique_ptr<SelectContext> _sc;
 };
 
@@ -241,12 +246,11 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
 
     LidIndexMap lidIndexMap(3*metaData.size());
     IDocumentRetriever::LidVector lidsToFetch;
-    uint32_t docIdLimit = source.getDocIdLimit();
     lidsToFetch.reserve(metaData.size());
     for (size_t i(0); i < metaData.size(); i++) {
         const search::DocumentMetaData & meta = metaData[i];
         if (checkMeta(meta)) {
-            if (matcher.match(meta) && (meta.lid < docIdLimit)) {
+            if (matcher.match(meta)) {
                 lidsToFetch.emplace_back(meta.lid);
                 lidIndexMap[meta.lid] = i;
             }
