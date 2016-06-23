@@ -75,7 +75,6 @@ public:
 
     virtual RetrieversSP getDocumentRetrievers() override;
     virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) override;
-    virtual void commitAndWait() override;
 
     virtual void
     handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override;

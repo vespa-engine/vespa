@@ -295,8 +295,6 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         return BucketGuard::UP(new BucketGuard(b.getBucketId(), *this));
     }
 
-    void commitAndWait() override { }
-
     virtual void
     handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override
     {
@@ -321,10 +319,10 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         ASSERT_TRUE(it != frozen.end());
         frozen.erase(it);
     }
-    bool isFrozen(const Bucket &bucket) override {
+    bool isFrozen(const Bucket &bucket) {
         return frozen.find(bucket.getBucketId().getId()) != frozen.end();
     }
-    bool wasFrozen(const Bucket &bucket) override {
+    bool wasFrozen(const Bucket &bucket) {
         return was_frozen.find(bucket.getBucketId().getId())
             != was_frozen.end();
     }

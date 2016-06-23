@@ -87,7 +87,6 @@ public:
 
     virtual RetrieversSP getDocumentRetrievers() = 0;
     virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) = 0;
-    virtual void commitAndWait() = 0;
 
     virtual void
     handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) = 0;

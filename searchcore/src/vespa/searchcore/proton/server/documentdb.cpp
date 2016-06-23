@@ -722,6 +722,7 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
     return std::move(guard);
 }
 
+
 SerialNum
 DocumentDB::getOldestFlushedSerial()
 {

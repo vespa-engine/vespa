@@ -178,11 +178,6 @@ PersistenceHandlerProxy::lockBucket(const storage::spi::Bucket &bucket)
     return _documentDB->lockBucket(bucket.getBucketId().stripUnused());
 }
 
-void
-PersistenceHandlerProxy::commitAndWait()
-{
-    _documentDB->commitAndWait();
-}
 
 void
 PersistenceHandlerProxy::handleListActiveBuckets(
