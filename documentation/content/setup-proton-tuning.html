@@ -118,6 +118,11 @@ an indexed content cluster.
         <td class="required">No</td>
         <td>Zero or one</td>
     </tr>
+    <tr>
+        <td><a href="#tuning-initialize"><code>&lt;initialize&gt;</code></a></td>
+        <td class="required">No</td>
+        <td>Zero or one</td>
+    </tr>
     </tbody>
 </table>
 
@@ -130,6 +135,7 @@ an indexed content cluster.
         &lt;index&gt;&lt;/index&gt;
         &lt;attribute&gt;&lt;/attribute&gt;
         &lt;summary&gt;&lt;/summary&gt;
+        &lt;initialize&gt;&lt;/initialize&gt;
     &lt;/searchnode&gt;
 &lt;/tuning&gt;
 </pre>
@@ -494,5 +500,44 @@ This section is used to tune various aspect with the handling of document summar
 </pre>
 </p>
 
+
+<h1 class="param" id="tuning-initialize">initialize</h1>
+<table class="param-summary">
+    <tr>
+        <td>Contained in:</td>
+        <td><a href="#tuningsearchnode"><code>&lt;searchnode&gt;</code></a></td>
+    </tr>
+    <tr>
+        <td>Required:</td>
+        <td>No</td>
+    </tr>
+</table>
+
+<p>
+This section is used to tune settings related to how the search node (proton) is initialized.
+</p>
+
+<h2>Optional Sub Elements</h2>
+<p>
+<ul>
+    <li><code>threads</code>:
+    The number of initializer threads used for loading structures from disk at proton startup.
+    The threads are shared between document databases when the value is larger than 0.
+    <ul>
+        <li>When set to larger than 1, document databases are initialized in parallel.</li>
+        <li>When set to 1, document databases are initialized in sequence.</li>
+        <li>When set to 0, 1 separate thread is used per document database and they are initialized in parallel.</li>
+    </ul>
+    Default value is the number of document databases + 1.
+    </li>
+</ul>
+</p>
+<p>
+<pre class="code">
+&lt;initialize&gt;
+    &lt;threads&gt;2&lt;/threads&gt;
+&lt;/initialize&gt;
+</pre>
+</p>
 
 
