@@ -99,12 +99,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.fail(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to failed");
         }
+        else if (path.startsWith("/nodes/v2/state/parked/")) {
+            nodeRepository.park(lastElement(path));
+            return new MessageResponse("Moved " + lastElement(path) + " to parked");
+        }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             nodeRepository.deallocate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.unfail(lastElement(path));
+            nodeRepository.reactivate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else {

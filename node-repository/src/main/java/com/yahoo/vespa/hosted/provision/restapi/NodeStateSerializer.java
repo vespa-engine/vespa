@@ -28,6 +28,7 @@ public class NodeStateSerializer {
         addMapping(Node.State.dirty, "dirty");
         addMapping(Node.State.failed, "failed");
         addMapping(Node.State.inactive, "inactive");
+        addMapping(Node.State.parked, "parked");
         addMapping(Node.State.provisioned, "provisioned");
         addMapping(Node.State.ready, "ready");
         addMapping(Node.State.reserved, "reserved");

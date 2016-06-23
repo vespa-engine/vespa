@@ -43,6 +43,11 @@
       "nodes": [
         @include(node5.json)
       ]
+    },
+    "parked": {
+      "url": "http://localhost:8080/nodes/v2/state/parked",
+      "nodes": [
+      ]
     }
   }
 }

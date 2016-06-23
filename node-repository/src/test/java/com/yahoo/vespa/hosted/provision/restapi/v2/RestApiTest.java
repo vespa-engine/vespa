@@ -101,12 +101,12 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host8.yahoo.com to active\"}");
 
-        // PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host8.yahoo.com",
+        // PUT a node in parked ...
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/host8.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host8.yahoo.com to failed\"}");
+                       "{\"message\":\"Moved host8.yahoo.com to parked\"}");
         assertResponseContains(new Request("http://localhost:8080()/nodes/v2/node/host8.yahoo.com"),
-                               "\"state\":\"failed\"");
+                               "\"state\":\"parked\"");
         // ... and delete it
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
                                    new byte[0], Request.Method.DELETE),

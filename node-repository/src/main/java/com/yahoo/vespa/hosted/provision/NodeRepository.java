@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 // 1) (new) - > provisioned -> ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved
 // 3) reserved -> dirty
-// 3) * -> failed -> dirty | active | (removed)
+// 3) * -> failed | parked -> dirty | active | (removed)
 // Nodes have an application assigned when in states reserved, active and inactive.
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
@@ -180,11 +180,16 @@ public class NodeRepository extends AbstractComponent {
         return performOn(NodeListFilter.from(nodes), node -> zkClient.writeTo(Node.State.dirty, node));
     }
 
-    /** Deallocate a node which is in the failed state. Use this to recycle failed nodes which have been repaired. */
+    /** 
+     * Deallocate a node which is in the failed or parked state. 
+     * Use this to recycle failed nodes which have been repaired or put on hold. 
+     */
     public Node deallocate(String hostname) {
         Optional<Node> nodeToDeallocate = getNode(Node.State.failed, hostname);
         if ( ! nodeToDeallocate.isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found in the failed state");
+            nodeToDeallocate = getNode(Node.State.parked, hostname);
+        if ( ! nodeToDeallocate.isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
         return deallocate(Collections.singletonList(nodeToDeallocate.get())).get(0);
     }
 
@@ -199,12 +204,22 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Moves a previously failed node back to the active state.
+     * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
      * @throws IllegalArgumentException if the node is not found
      */
-    public Node unfail(String hostname) {
+    public Node park(String hostname) {
+        return move(hostname, Node.State.parked);
+    }
+
+    /**
+     * Moves a previously failed or parked node back to the active state.
+     *
+     * @return the node in its new state
+     * @throws IllegalArgumentException if the node is not found
+     */
+    public Node reactivate(String hostname) {
         return move(hostname, Node.State.active);
     }
 
@@ -218,15 +233,18 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Removes a node. A node must be in the failed state before it can be removed.
+     * Removes a node. A node must be in the failed or parked state before it can be removed.
      *
      * @return true if the node was removed, false if it was not found
      */
     public boolean remove(String hostname) {
         Optional<Node> nodeToRemove = getNode(Node.State.failed, hostname);
-        if ( ! nodeToRemove.isPresent()) return false;
+        if ( ! nodeToRemove.isPresent())
+            nodeToRemove = getNode(Node.State.parked, hostname);
+        if ( ! nodeToRemove.isPresent()) 
+            return false;
         try (Mutex lock = lock(nodeToRemove.get())) {
-            return zkClient.removeNode(Node.State.failed, hostname);
+            return zkClient.removeNode(nodeToRemove.get().state(), hostname);
         }
     }
 

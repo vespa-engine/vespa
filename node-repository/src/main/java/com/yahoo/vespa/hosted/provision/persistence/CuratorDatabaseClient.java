@@ -228,13 +228,14 @@ public class CuratorDatabaseClient {
 
     private String toDir(Node.State state) {
         switch (state) {
+            case active: return "allocated"; // legacy name
+            case dirty: return "dirty";
+            case failed: return "failed";
+            case inactive: return "deallocated"; // legacy name
+            case parked : return "parked";
             case provisioned: return "provisioned";
             case ready: return "ready";
             case reserved: return "reserved";
-            case active: return "allocated"; // legacy name
-            case inactive: return "deallocated"; // legacy name
-            case dirty: return "dirty";
-            case failed: return "failed";
             default: throw new RuntimeException("Node state " + state + " does not map to a directory name");
         }
     }

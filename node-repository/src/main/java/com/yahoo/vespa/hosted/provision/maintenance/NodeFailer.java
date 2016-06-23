@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
@@ -147,7 +146,7 @@ public class NodeFailer extends Maintainer {
             catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().unfail(node.hostname());
+                nodeRepository().reactivate(node.hostname());
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
             }

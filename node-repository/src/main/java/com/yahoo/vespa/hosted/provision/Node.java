@@ -244,11 +244,18 @@ public final class Node {
         dirty,
 
         /** This node has failed and must be repaired or removed. The node retains any allocation data for diagnosis. */
-        failed;
+        failed,
+
+        /** 
+         * This node should not currently be used. 
+         * This state follows the same rules as failed except that it will never be automatically moved out of 
+         * this state.
+         */
+        parked;
 
         /** Returns whether this is a state where the node is assigned to an application */
         public boolean isAllocated() {
-            return this == reserved || this == active || this == inactive || this == failed;
+            return this == reserved || this == active || this == inactive || this == failed || this == parked;
         }
     }
 
