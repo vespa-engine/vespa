@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
-import com.google.common.io.Files;
 import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.io.IOUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,9 +24,12 @@ public class ConfigDefinitionDirTest {
     private static final String bundleFileName = "com.yahoo.searcher1.jar";
     private static final File bundleFile = new File("src/test/resources/defdircomponent/" + bundleFileName);
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
     public void require_that_defs_are_added() throws IOException {
-        File defDir = Files.createTempDir();
+        File defDir = temporaryFolder.newFolder();
         ConfigDefinitionDir dir = new ConfigDefinitionDir(defDir);
         Bundle bundle = new Bundle(new JarFile(bundleFile), bundleFile);
         assertThat(defDir.listFiles().length, is(0));
@@ -36,7 +40,7 @@ public class ConfigDefinitionDirTest {
 
     @Test
     public void require_that_conflicting_defs_are_not_added() throws IOException {
-        File defDir = Files.createTempDir();
+        File defDir = temporaryFolder.newFolder();
         IOUtils.writeFile(new File(defDir, "foo.def"), "alreadyexists", false);
         ConfigDefinitionDir dir = new ConfigDefinitionDir(defDir);
         Bundle bundle = new Bundle(new JarFile(bundleFile), bundleFile);
