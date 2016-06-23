@@ -105,18 +105,18 @@ public class NodeAgentImpl implements NodeAgent {
         logger.log(LogLevel.INFO, logPrefix + "Scheduling start of NodeAgent");
         synchronized (monitor) {
             if (state == State.TERMINATED) {
-                throw new IllegalStateException("Cannot re-start a stopped node agent");
+                throw new IllegalStateException("Cannot re-start a stopped (terminated) node agent");
             }
         }
         thread.start();
     }
 
     @Override
-    public void terminate() {
+    public void stop() {
         logger.log(LogLevel.INFO, logPrefix + "Scheduling stop of NodeAgent");
         synchronized (monitor) {
             if (state == State.TERMINATED) {
-                throw new IllegalStateException("Cannot stop an already stopped node agent");
+                throw new IllegalStateException("Cannot stop an already stopped (terminated) node agent");
             }
             wantedState = State.TERMINATED;
         }
@@ -400,7 +400,7 @@ public class NodeAgentImpl implements NodeAgent {
                     }
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                logger.severe("NodeAgent thread interrupted. Ignoring this: " + e.getMessage());
             }
     }
 
@@ -429,7 +429,8 @@ public class NodeAgentImpl implements NodeAgent {
                                 new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
                 final Optional<Container> existingContainer = docker.getContainer(hostname);
                 synchronizeLocalContainerState(nodeSpec, existingContainer);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                // TODO: We should probably halt the VM at this stage so the containers survive and NodeAdmin get into a fresh state.
                 logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception.", e);
             }
         }
