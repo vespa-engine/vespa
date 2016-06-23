@@ -1,10 +1,28 @@
 #!/bin/bash -e
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-FULL=false
+usage() {
+    echo "Usage: $0 [full | java | default]" >&2
+}
+
+# Build minimal set of java modules required to run cmake
+MODE=default
 
 if [ "$1" = "full" ]; then
-    FULL=true
+    # Build all java modules required by C++ testing
+    MODE=full
+elif [ "$1" = "java" ]; then
+    # Build minial set of java modules requires to run mvn install from the source root
+    MODE=java
+elif [ "$1" = "default" ]; then
+    :
+elif [ "$1" = "-h" -o "$1" = "--help" ]; then
+    usage
+    exit 0
+else
+    echo "Unknown argument: $1" >&2
+    usage
+    exit 1
 fi
 
 mvn_install() {
@@ -29,10 +47,14 @@ for module in $MODULES; do
 done
 
 mvn_install -am -pl config-class-plugin -rf configgen
-if $FULL; then
-    # Build all java modules required by C++ testing
-    mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus -rf yolean
-else
-    # Build minimal set of java modules required to run cmake
-    mvn_install -am -pl filedistributionmanager -rf yolean
-fi
+
+case "$MODE" in
+    java)
+        ;;
+    full)
+        mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus -rf yolean
+        ;;
+    default)
+        mvn_install -am -pl filedistributionmanager -rf yolean
+        ;;
+esac
