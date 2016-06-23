@@ -406,7 +406,7 @@ void
 Fast_HTTPServer::Stop(void) {
   _runningMutex.Lock();
   _stopSignalled = true;
-  if (_isRunning) {
+  if (_acceptThread) {
     _acceptThread->SetBreakFlag();
   }
   _runningMutex.Unlock();
