@@ -62,26 +62,6 @@ public class OrchestratorImplTest {
         verify(hostApi, times(1)).suspend(hostNameString);
 
         hosts.add(hostNameString);
-        orchestrator.resume(hosts);
-    }
-
-    @Test
-    public void testListResumeOk() {
-        when(hostApi.resume(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, null));
-        hosts.add(hostNameString);
-        final Optional<String> resume = orchestrator.resume(hosts);
-        assertFalse(resume.isPresent());
-        verify(hostApi, times(1)).resume(hostNameString);
-    }
-
-    @Test
-    public void testListResumeFailed() {
-        when(hostApi.resume(hostNameString)).thenReturn(new UpdateHostResponse(hostNameString, new HostStateChangeDenialReason("", "", "")));
-        hosts.add(hostNameString);
-        final Optional<String> resume = orchestrator.resume(hosts);
-        assertTrue(resume.isPresent());
-        assertThat(resume.get(), is("Could not resume host"));
-        verify(hostApi, times(1)).resume(hostNameString);
     }
 
     @Test

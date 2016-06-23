@@ -48,7 +48,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.nodeAgentFactory = nodeAgentFactory;
     }
 
-    public void setState(final List<ContainerNodeSpec> containersToRun) {
+    public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
         synchronizeLocalContainerState(containersToRun, existingContainers);
@@ -153,7 +153,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(spec -> spec.hostname)
                 .collect(Collectors.toSet());
         final Set<HostName> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
-        obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).terminate());
+        obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {
             final Optional<ContainerNodeSpec> nodeSpec = nodeSpecContainerPair.getFirst();

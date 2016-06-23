@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public interface NodeAdmin {
 
-    void setState(final List<ContainerNodeSpec> containersToRun);
+    void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun);
 
     boolean freezeAndCheckIfAllFrozen();
 

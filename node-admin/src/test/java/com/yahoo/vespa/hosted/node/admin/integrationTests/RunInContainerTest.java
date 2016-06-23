@@ -107,7 +107,7 @@ public class RunInContainerTest {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
         assertThat(doPutCall("suspend"), is(false));
-        assertThat(doGetInfoCall(), is("{ \"jsonMessage\":\"isRunningUpdates is false. NodeAdmin:  " +
+        assertThat(doGetInfoCall(), is("{\"jsonMessage\":\"isRunningUpdates is false. NodeAdmin:  " +
                 "Unfreeze called while in state false " +
                 "Freeze called while in state false\"}"));
     }

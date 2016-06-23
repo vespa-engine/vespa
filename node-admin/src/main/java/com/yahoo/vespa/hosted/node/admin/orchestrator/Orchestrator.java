@@ -26,9 +26,4 @@ public interface Orchestrator {
      * Invokes orchestrator suspend hosts. Returns failure reasons when failing.
      */
     Optional<String> suspend(String parentHostName, List<String> hostNames);
-
-    /**
-     * Invokes orchestrator resume of hosts. Returns failure reasons when failing.
-     */
-    Optional<String> resume(List<String> hostName);
 }

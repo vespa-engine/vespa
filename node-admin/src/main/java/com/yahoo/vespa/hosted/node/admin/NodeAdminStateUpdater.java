@@ -1,31 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin;
 
-import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.RESUMED;
 import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Pulls information from node repository and forwards containers to run to node admin.
@@ -78,21 +69,20 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
             isRunningUpdates = wantedState == RESUMED;
-        }
-        if (wantedState == SUSPENDED) {
-            if (! nodeAdmin.freezeAndCheckIfAllFrozen()) {
-                return Optional.of("Not all node agents are frozen.");
-            }
-        } else {
-            nodeAdmin.unfreeze();
-        }
 
-        List<String> hosts = new ArrayList<>();
-        nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
-        if (wantedState == RESUMED) {
-            return orchestrator.resume(hosts);
+            if (wantedState == SUSPENDED) {
+                if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
+                    return Optional.of("Not all node agents are frozen.");
+                }
+                List<String> hosts = new ArrayList<>();
+                nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
+                return orchestrator.suspend(baseHostName, hosts);
+            } else {
+                nodeAdmin.unfreeze();
+                // we let the NodeAgent do the resume against the orchestrator.
+                return Optional.empty();
+            }
         }
-        return orchestrator.suspend(baseHostName, hosts);
     }
 
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
@@ -113,7 +103,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 return;
             }
             try {
-                nodeAdmin.setState(containersToRun);
+                nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Throwable t) {
                 log.log(Level.WARNING, "Failed updating node admin: ", t);
                 return;

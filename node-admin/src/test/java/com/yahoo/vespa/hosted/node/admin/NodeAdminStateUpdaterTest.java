@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -45,7 +44,7 @@ public class NodeAdminStateUpdaterTest {
                 throw new RuleBaseException("This exception is expected, and should show up in the log.");
             }
             return null;
-        }).when(nodeAdmin).setState(anyList());
+        }).when(nodeAdmin).refreshContainersToRun(anyList());
 
         final List<ContainerNodeSpec> containersToRun = new ArrayList<>();
         containersToRun.add(createSample());

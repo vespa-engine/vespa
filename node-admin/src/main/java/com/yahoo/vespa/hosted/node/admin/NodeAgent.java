@@ -11,7 +11,7 @@ package com.yahoo.vespa.hosted.node.admin;
 public interface NodeAgent {
 
     enum Command {UPDATE_FROM_NODE_REPO, FREEZE, UNFREEZE}
-    enum State {WAITING, WORKING, DIRTY, FROZEN, TERMINATED}
+    enum State {WAITING, WORKING, FROZEN, TERMINATED}
 
     /**
      * Signals to the agent that it should update the node specification and container state and maintain wanted state.
@@ -40,5 +40,5 @@ public interface NodeAgent {
      * Cleans up any resources the agent owns, such as threads, connections etc. Cleanup is synchronous; when this
      * method returns, no more actions will be taken by the agent.
      */
-    void terminate();
+    void stop();
 }

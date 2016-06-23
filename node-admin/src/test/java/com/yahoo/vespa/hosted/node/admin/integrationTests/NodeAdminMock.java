@@ -27,7 +27,7 @@ public class NodeAdminMock implements NodeAdmin {
     private Object monitor = new Object();
 
     @Override
-    public void setState(List<ContainerNodeSpec> containersToRun) {
+    public void refreshContainersToRun(List<ContainerNodeSpec> containersToRun) {
         synchronized (monitor) {
             hostnames.clear();
             containersToRun.forEach(container -> hostnames.add(container.hostname));

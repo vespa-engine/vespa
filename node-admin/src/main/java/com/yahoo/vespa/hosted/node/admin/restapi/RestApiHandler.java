@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.restapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -29,6 +31,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 public class RestApiHandler extends LoggingRequestHandler{
 
     private final NodeAdminStateUpdater refresher;
+    private final static ObjectMapper objectMapper = new ObjectMapper();
 
     public RestApiHandler(Executor executor, AccessLog accessLog, ComponentsProvider componentsProvider) {
         super(executor, accessLog);
@@ -48,23 +51,27 @@ public class RestApiHandler extends LoggingRequestHandler{
     }
 
     private HttpResponse handleGet(HttpRequest request) {
-        return new SimpleResponse(200, refresher.getDebugPage());
+        String path = request.getUri().getPath();
+        if (path.endsWith("/info")) {
+            return new SimpleResponse(200, refresher.getDebugPage());
+        }
+        return new SimpleResponse(400, "unknown path" + path);
     }
 
     private HttpResponse handlePut(HttpRequest request) {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
-        if (path.endsWith("resume")) {
-            final Optional<String> resumed = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
-            if (resumed.isPresent()) {
-                return new SimpleResponse(400, resumed.get());
+        if (path.endsWith("/resume")) {
+            final Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+            if (errorMessage.isPresent()) {
+                return new SimpleResponse(400, errorMessage.get());
             }
             return new SimpleResponse(200, "ok.");
         }
-        if (path.endsWith("suspend")) {
-            Optional<String> resumed = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
-            if (resumed.isPresent()) {
-                return new SimpleResponse(423, resumed.get());
+        if (path.endsWith("/suspend")) {
+            Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
+            if (errorMessage.isPresent()) {
+                return new SimpleResponse(423, errorMessage.get());
             }
             return new SimpleResponse(200, "ok");
         }
@@ -77,8 +84,9 @@ public class RestApiHandler extends LoggingRequestHandler{
 
         public SimpleResponse(int code, String message) {
             super(code);
-            // TODO: Use some library to build json as this easily fails
-            this.jsonMessage = "{ \"jsonMessage\":\"" + message + "\"}";
+            ObjectNode objectNode = objectMapper.createObjectNode();
+            objectNode.put("jsonMessage", message);
+            this.jsonMessage = objectNode.toString();
         }
 
         @Override
