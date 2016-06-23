@@ -70,6 +70,14 @@ def generate_mac_address(base_host_name, ip_address):
     mac_address = ':'.join('%02x' % n for n in mac_address_bytes)
     return mac_address
 
+def get_net_namespace_for_pid(pid):
+    net_ns_path = net_namespace_path(pid)
+    if not os.path.isfile(net_ns_path):
+        raise RuntimeError("No such net namespace %s" % net_ns_path )
+    create_directory_ignore_exists("/var/run/netns", 0766)
+    create_symlink_ignore_exists(net_ns_path,  "/var/run/netns/%d" % pid)
+    return NetNS(str(pid))
+
 
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
@@ -90,24 +98,14 @@ if len(sys.argv) != 3:
 container_pid_arg = sys.argv[1]
 container_ip_arg = sys.argv[2]
 
-host_ns_name = "docker-host"
 try:
     container_pid = int(container_pid_arg)
 except ValueError:
     raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
-
-container_net_ns_path = net_namespace_path(container_pid)
-if not os.path.isfile(container_net_ns_path):
-    raise RuntimeError("No such net namespace %s" % container_net_ns_path )
-
 container_ip = ipaddress.ip_address(unicode(container_ip_arg))
 
-create_directory_ignore_exists("/var/run/netns", 0766)
-create_symlink_ignore_exists(net_namespace_path(1), "/var/run/netns/%s" % host_ns_name)
-create_symlink_ignore_exists(container_net_ns_path,  "/var/run/netns/%d" % container_pid)
-
-host_ns = NetNS(host_ns_name)
-container_ns = NetNS(str(container_pid))
+host_ns = get_net_namespace_for_pid(1)
+container_ns = get_net_namespace_for_pid(container_pid)
 
 # ipv4 address format: {
 #     'index': 3,
