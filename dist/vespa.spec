@@ -8,34 +8,50 @@
 Name:           vespa
 Version:        VESPA_VERSION
 Release:        1%{?dist}
-Summary:        Vespa
-
+Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
 License:        Commercial
 URL:            http://vespa.corp.yahoo.com
 Source0:        vespa-%{version}.tar.gz
 
-
-#BuildRequires: vespa-boost-devel >= 1.59
-#BuildRequires: vespa-cppunit-devel >= 1.12.1
-#BuildRequires: vespa-libtorrent-devel >= 1.0.9
-#BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.8
-#BuildRequires: cmake3 >= 3.5 
-#BuildRequires: epel-release 
-#BuildRequires: centos-release-scl
-#BuildRequires: devtoolset-4 >= 4.0
-#BuildRequires: devtoolset-4-libatomic-devel
-#BuildRequires: Judy-devel >= 1.0.5
-#BuildRequires: lz4-devel >= r131
-#BuildRequires: maven >= 3.0
-#BuildRequires: libicu-devel >= 50.1.2
-#BuildRequires: llvm-devel >= 3.4.2
-#BuildRequires: llvm-static >= 3.4.2
-#Requires:  vespa-boost
-#Requires:  vespa-cppunit
-#Requires:  vespa-libtorrent
-#Requires:  vespa-zookeeper-c-client
-#Requires:  numactl
+BuildRequires: epel-release 
+BuildRequires: centos-release-scl
+BuildRequires: devtoolset-4-gcc-c++
+BuildRequires: devtoolset-4-libatomic-devel
+BuildRequires: Judy-devel
+BuildRequires: cmake3
+BuildRequires: lz4-devel
+BuildRequires: zlib-devel
+BuildRequires: maven
+BuildRequires: libicu-devel
+BuildRequires: llvm-devel
+BuildRequires: llvm-static
+BuildRequires: java-1.8.0-openjdk-devel
+BuildRequires: openssl-devel
+BuildRequires: rpm-build
+BuildRequires: make
+BuildRequires: vespa-boost-devel >= 1.59
+BuildRequires: vespa-cppunit-devel >= 1.12.1
+BuildRequires: vespa-libtorrent-devel >= 1.0.9
+BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.8
+Requires: epel-release 
+Requires: Judy
+Requires: cmake3
+Requires: lz4
+Requires: zlib
+Requires: maven
+Requires: libicu
+Requires: llvm
+Requires: llvm-static
+Requires: java-1.8.0-openjdk
+Requires: openssl
+Requires: rpm-build
+Requires: make
+Requires: vespa-boost >= 1.59
+Requires: vespa-cppunit >= 1.12.1
+Requires: vespa-libtorrent >= 1.0.9
+Requires: vespa-zookeeper-c-client >= 3.4.8
+Requires: numactl
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
@@ -44,13 +60,12 @@ Provides: libc.so.6(GLIBC_PRIVATE)(64bit)
 
 %description
 
-This is the Vespa!
+Vespa - The open big data serving engine
 
 %prep
 %setup -q
 
 %build
-
 source /opt/rh/devtoolset-4/enable || true
 sh bootstrap.sh
 mvn install -DskipTests -Dmaven.javadoc.skip=true
@@ -65,12 +80,11 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
 make %{_smp_mflags}
 
 %install
-
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=%{buildroot}
 
+# BEGIN - Put this in post install script called by make install
 # Rewrite config def file names
-
 for path in %{buildroot}/%{_prefix}var/db/vespa/config_server/serverdb/classes/*.def; do
     dir=$(dirname $path)
     filename=$(basename $path)
@@ -129,13 +143,13 @@ ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}
 ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/zkfacade.jar
 ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
 ln -s storaged-bin %{buildroot}/%{_prefix}/sbin/distributord-bin
+# END - Put this in post install script called by make install
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 
 %clean
-
 rm -rf $RPM_BUILD_ROOT
 
 %pre
@@ -145,68 +159,17 @@ getent passwd vespa >/dev/null || \
     -c "Create owner of all Vespa data files" vespa
 exit 0
 
+%post
+
+%preun
+
+%postun
+
 
 %files
-%defattr(-,root,root,-)
+%defattr(-,vespa,vespa,-)
 %doc
-
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/configserver/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/configserver-app/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/configserver-app/config-models/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/configserver-app/components/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/filedistributor/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/node-admin-app/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/node-admin-app/components/
-%dir %attr( 755, vespa, vespa) %{_prefix}/conf/zookeeper/
-%dir %attr( 777,     -,     -) %{_prefix}/libexec/jdisc_core/
-%dir %attr( 775, vespa, vespa) %{_prefix}/libexec/vespa/modelplugins/
-%dir %attr( 755, vespa, vespa) %{_prefix}/libexec/vespa/plugins/qrs/
-%dir %attr( 755, vespa, vespa) %{_prefix}/libexec/yjava_daemon/bin/
-%dir %attr( 777, vespa, vespa) %{_prefix}/logs/jdisc_core/
-%dir %attr(1777, vespa, vespa) %{_prefix}/logs/vespa/
-%dir %attr(1777, vespa, vespa) %{_prefix}/logs/vespa/
-%dir %attr( 755, vespa, vespa) %{_prefix}/logs/vespa/configserver/
-%dir %attr( 755, vespa, vespa) %{_prefix}/logs/vespa/search/
-%dir %attr( 755, vespa, vespa) %{_prefix}/logs/vespa/qrs/
-%dir %attr( 755, vespa, vespa) %{_prefix}/share/vespa/
-%dir %attr( 755, vespa, vespa) %{_prefix}/share/vespa/schema/version/6.x/schema/
-%dir %attr(1777, vespa, vespa) %{_prefix}/tmp/vespa/
-%dir %attr( 777, vespa, vespa) %{_prefix}/var/db/jdisc/logcontrol/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/config_server/serverdb/configs/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/config_server/serverdb/configs/application/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/config_server/serverdb/applications/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/db/vespa/logcontrol/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/jdisc_container/
-%dir %attr( 777,     -,     -) %{_prefix}/var/jdisc_core/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/run/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/vespa/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/spool/master/inbox/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/bundlecache/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/cache/config/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/vespa/cmdlines/
-%dir %attr( 755, vespa, vespa) %{_prefix}/var/zookeeper/version-2/
-
-%{_prefix}/libexec/vespa/vespa-config.pl
-%{_prefix}/libexec/vespa/common-env.sh
-%{_prefix}/libexec/vespa/start-vespa-base.sh
-%{_prefix}/libexec/vespa/stop-vespa-base.sh
-%{_prefix}/libexec/vespa/start-filedistribution
-%{_prefix}/libexec/vespa/ping-configserver
-%{_prefix}/libexec/vespa/start-configserver
-%{_prefix}/libexec/vespa/start-logd
-%{_prefix}/libexec/vespa/stop-configserver
-%{_prefix}/var/db/vespa/config_server/serverdb/classes/*.def
-%{_prefix}/lib/jars/*
-%{_prefix}/lib/perl5/site_perl/Yahoo/Vespa/*.pm
-%{_prefix}/lib64/*.so
-%{_prefix}/bin/*
-%{_prefix}/sbin/*
-%{_prefix}/man/*
-%{_prefix}/include/*
-%{_prefix}/etc/*
-%{_prefix}/conf/*
-%{_prefix}/share/vespa/schema/*
+%{_prefix}/*
 /usr/lib/systemd/system/vespa.service
 /usr/lib/systemd/system/vespa-configserver.service
 
