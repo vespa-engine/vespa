@@ -18,12 +18,12 @@ public class OrchestratorUtilTest {
 
     private static final ApplicationId APPID_1 = ApplicationId.from(
             TenantName.from("mediasearch"),
-            ApplicationName.from("tumblr-search"),
+            ApplicationName.from("imagesearch"),
             InstanceName.defaultName());
 
     private static final ApplicationInstanceReference APPREF_1 = new ApplicationInstanceReference(
-            new TenantId("test-tenant"),
-            new ApplicationInstanceId("test-application:test-environment:test-region:test-instance-key"));
+            new TenantId("test-tenant-id"),
+            new ApplicationInstanceId("application:prod:utopia-1:instance"));
 
     /**
      * Here we don't care how the internal of the different application
@@ -35,14 +35,14 @@ public class OrchestratorUtilTest {
     public void applicationid_conversion_are_symmetric() throws Exception {
 
         // From appId to appRef and back
-        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(APPID_1);
+        ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(APPID_1, new DummyInstanceLookupService());
         ApplicationId appIdRoundTrip = OrchestratorUtil.toApplicationId(appRef);
 
         Assert.assertEquals(APPID_1, appIdRoundTrip);
 
         // From appRef to appId and back
         ApplicationId appId = OrchestratorUtil.toApplicationId(APPREF_1);
-        ApplicationInstanceReference appRefRoundTrip = OrchestratorUtil.toApplicationInstanceReference(appId);
+        ApplicationInstanceReference appRefRoundTrip = OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService());
 
         Assert.assertEquals(APPREF_1, appRefRoundTrip);
     }

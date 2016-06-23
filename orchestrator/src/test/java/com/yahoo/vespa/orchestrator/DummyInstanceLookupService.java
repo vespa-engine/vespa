@@ -37,7 +37,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     static {
         apps.add(new ApplicationInstance<>(
                 new TenantId("test-tenant-id"),
-                new ApplicationInstanceId("application:instance"),
+                new ApplicationInstanceId("application:prod:utopia-1:instance"),
                 TestUtil.makeServiceClusterSet(
                         new ServiceCluster<>(
                                 new ClusterId("test-cluster-id-1"),
@@ -49,7 +49,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                                 ServiceMonitorStatus.UP),
                                         new ServiceInstance<>(
                                                 new ConfigId("storage/storage/2"),
-                                                new HostName("test2.prod.utpoia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("test2.prod.utopoia-1.vespahosted.ut1.yahoo.com"),
                                                 ServiceMonitorStatus.UP))),
                         new ServiceCluster<>(
                                 new ClusterId("clustercontroller"),
@@ -65,7 +65,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
 
         apps.add(new ApplicationInstance<>(
                 new TenantId("mediasearch"),
-                new ApplicationInstanceId("imagesearch:default"),
+                new ApplicationInstanceId("imagesearch:prod:utopia-1:default"),
                 TestUtil.makeServiceClusterSet(
                         new ServiceCluster<>(
                                 new ClusterId("image"),
@@ -93,7 +93,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
 
         apps.add(new ApplicationInstance<>(
                 new TenantId("tenant-id-3"),
-                new ApplicationInstanceId("application-instance-3:default"),
+                new ApplicationInstanceId("application-instance-3:prod:utopia-1:default"),
                 TestUtil.makeServiceClusterSet(
                         new ServiceCluster<>(
                                 new ClusterId("cluster-id-3"),
