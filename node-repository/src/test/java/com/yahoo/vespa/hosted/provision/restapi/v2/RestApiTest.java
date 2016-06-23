@@ -101,12 +101,12 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host8.yahoo.com to active\"}");
 
-        // PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host8.yahoo.com",
+        // PUT a node in parked ...
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/host8.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host8.yahoo.com to failed\"}");
+                       "{\"message\":\"Moved host8.yahoo.com to parked\"}");
         assertResponseContains(new Request("http://localhost:8080()/nodes/v2/node/host8.yahoo.com"),
-                               "\"state\":\"failed\"");
+                               "\"state\":\"parked\"");
         // ... and delete it
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
@@ -170,6 +170,36 @@ public class RestApiTest {
 
     @Test
     public void testInvalidRequests() throws IOException {
+        // Attempt to fail and ready an allocated node without going through dirty
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host1.yahoo.com to failed\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host1.yahoo.com ready: Node is allocated and must be moved to dirty instead\"}");
+        // (... while dirty then ready works (the ready move will be initiated by node maintenance))
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host1.yahoo.com to dirty\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host1.yahoo.com to ready\"}");
+
+        // Attempt to park and ready an allocated node without going through dirty
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/host2.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host2.yahoo.com to parked\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com ready: Node is allocated and must be moved to dirty instead\"}");
+        // (... while dirty then ready works (the ready move will be initiated by node maintenance))
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host2.yahoo.com to dirty\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved host2.yahoo.com to ready\"}");
+
         // Attempt to DELETE a node which is not put in failed first
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
                                    new byte[0], Request.Method.DELETE),

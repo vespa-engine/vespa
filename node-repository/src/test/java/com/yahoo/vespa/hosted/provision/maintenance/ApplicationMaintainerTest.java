@@ -56,18 +56,17 @@ public class ApplicationMaintainerTest {
         // Create applications
         fixture.activate();
 
-        // Fail some nodes
+        // Fail and park some nodes
         nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname());
         nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname());
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(4).hostname());
+        nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname());
         int failedInApp1 = 1;
-        int failedInApp2 = 2;
+        int failedOrParkedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 - failedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedInApp2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+        assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed, Node.State.parked).size());
         assertEquals(3, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         assertEquals(2, nodeRepository.getNodes(Node.Type.host, Node.State.ready).size());
-
 
         // Cause maintenance deployment which will allocate replacement nodes
         fixture.runApplicationMaintainer();
@@ -75,24 +74,24 @@ public class ApplicationMaintainerTest {
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
         assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
 
-        // Unfail the previously failed nodes
-        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.unfail(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
-        int unfailedInApp1 = 1;
-        int unfailedInApp2 = 2;
+        // Reactivate the previously failed nodes
+        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.parked).get(0).hostname());
+        int reactivatedInApp1 = 1;
+        int reactivatedInApp2 = 2;
         assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
-        assertEquals(fixture.wantedNodesApp1 + unfailedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 + unfailedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals("The unfailed nodes are now active but not part of the application",
+        assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
+        assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+        assertEquals("The reactivated nodes are now active but not part of the application",
                      0, fixture.getNodes(Node.State.active).retired().size());
 
         // Cause maintenance deployment which will update the applications with the re-activated nodes
         fixture.runApplicationMaintainer();
         assertEquals("Superflous content nodes are retired",
-                     unfailedInApp2, fixture.getNodes(Node.State.active).retired().size());
+                     reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
         assertEquals("Superflous container nodes are deactivated (this makes little point for container nodes)",
-                     unfailedInApp1, fixture.getNodes(Node.State.inactive).size());
+                     reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
     }
 
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {

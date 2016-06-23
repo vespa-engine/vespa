@@ -99,12 +99,16 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.fail(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to failed");
         }
+        else if (path.startsWith("/nodes/v2/state/parked/")) {
+            nodeRepository.park(lastElement(path));
+            return new MessageResponse("Moved " + lastElement(path) + " to parked");
+        }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
             nodeRepository.deallocate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.unfail(lastElement(path));
+            nodeRepository.reactivate(lastElement(path));
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else {
@@ -221,7 +225,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if ( ! node.isPresent())
             node = nodeRepository.getNode(Node.State.failed, hostname);
         if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty or failed");
+            node = nodeRepository.getNode(Node.State.parked, hostname);
+        if ( ! node.isPresent())
+            throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty, failed or parked");
+
+        if (node.get().allocation().isPresent())
+            throw new IllegalArgumentException("Could not set " + hostname + " ready: Node is allocated and must be moved to dirty instead");
 
         nodeRepository.setReady(Collections.singletonList(node.get()));
         return "Moved " + hostname + " to ready";

@@ -1,1 +1,25 @@
-{"url":"http://localhost:8080/nodes/v2/node/parent1.yahoo.com","id":"parent1.yahoo.com","state":"ready","type":"host","hostname":"parent1.yahoo.com","openStackId":"parent1","flavor":"default","minDiskAvailableGb":400.0,"minMainMemoryAvailableGb":16.0,"description":"Flavor-name-is-default","minCpuCores":2.0,"canonicalFlavor":"default","environment":"env","rebootGeneration":0,"currentRebootGeneration":0,"failCount":0,"hardwareFailure":false,"history":[{"event":"readied","at":123}]}
+{
+  "url": "http://localhost:8080/nodes/v2/node/parent1.yahoo.com",
+  "id": "parent1.yahoo.com",
+  "state": "ready",
+  "type": "host",
+  "hostname": "parent1.yahoo.com",
+  "openStackId": "parent1",
+  "flavor": "default",
+  "minDiskAvailableGb": 400.0,
+  "minMainMemoryAvailableGb": 16.0,
+  "description": "Flavor-name-is-default",
+  "minCpuCores": 2.0,
+  "canonicalFlavor": "default",
+  "environment": "env",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "history": [
+    {
+      "event": "readied",
+      "at": 123
+    }
+  ]
+}

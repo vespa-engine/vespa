@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * The application maintainer regularly redeploys all applications.
  * This is necessary because applications may gain and lose active nodes due to nodes being moved to and from the
  * failed state. This is corrected by redeploying the applications periodically.
- * It can not (at this point) be done reliably synchronously as part of the fail/unfail call due to the need for this
+ * It can not (at this point) be done reliably synchronously as part of the fail/reactivate call due to the need for this
  * to happen at a node having the deployer.
  *
  * @author bratseth

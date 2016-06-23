@@ -212,7 +212,7 @@ public class NodeSerializer {
         switch (typeString) {
             case nodeTypeTenant : return Node.Type.tenant;
             case nodeTypeHost : return Node.Type.host;
-            // TODO: Remove this when all data is converted
+            // TODO: Remove this when 6.13 is released everywhere
             case "" : return Node.Type.tenant;
         }
         throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
