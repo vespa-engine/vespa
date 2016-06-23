@@ -48,6 +48,7 @@ public:
     void setConfig(const Config &config);
 
     const DiskMemUsageFilter &writeFilter() const { return _filter; }
+    IDiskMemUsageNotifier &notifier() { return _filter; }
 };
 
 

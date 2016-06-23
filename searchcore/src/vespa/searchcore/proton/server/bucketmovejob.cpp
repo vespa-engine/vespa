@@ -8,6 +8,7 @@ LOG_SETUP(".proton.server.bucketmovejob");
 #include "ibucketstatechangednotifier.h"
 #include "iclusterstatechangednotifier.h"
 #include "maintenancedocumentsubdb.h"
+#include "i_disk_mem_usage_notifier.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
 using document::BucketId;
@@ -143,6 +144,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               IFrozenBucketHandler &frozenBuckets,
               IClusterStateChangedNotifier &clusterStateChangedNotifier,
               IBucketStateChangedNotifier &bucketStateChangedNotifier,
+              IDiskMemUsageNotifier &diskMemUsageNotifier,
               const vespalib::string &docTypeName)
     : IMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0),
       IClusterStateChangedHandler(),
@@ -165,15 +167,18 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _clusterUp(false),
       _nodeUp(false),
       _nodeInitializing(false),
+      _resourcesOK(false),
       _runnable(false),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
-      _bucketStateChangedNotifier(bucketStateChangedNotifier)
+      _bucketStateChangedNotifier(bucketStateChangedNotifier),
+      _diskMemUsageNotifier(diskMemUsageNotifier)
 {
     refreshDerivedClusterState();
     
     _frozenBuckets.addListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.addBucketStateChangedHandler(this);
+    _diskMemUsageNotifier.addDiskMemUsageListener(this);
 }
 
 
@@ -182,6 +187,7 @@ BucketMoveJob::~BucketMoveJob()
     _frozenBuckets.removeListener(this);
     _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.removeBucketStateChangedHandler(this);
+    _diskMemUsageNotifier.removeDiskMemUsageListener(this);
 }
 
 
@@ -321,6 +327,11 @@ BucketMoveJob::run()
     return done();
 }
 
+void
+BucketMoveJob::refreshRunnable()
+{
+    _runnable = _clusterUp && _nodeUp && !_nodeInitializing && _resourcesOK;
+}
 
 void
 BucketMoveJob::refreshDerivedClusterState()
@@ -328,7 +339,7 @@ BucketMoveJob::refreshDerivedClusterState()
     _clusterUp = _calc.get() != NULL && _calc->clusterUp();
     _nodeUp = _calc.get() != NULL && _calc->nodeUp();
     _nodeInitializing = _calc.get() != NULL && _calc->nodeInitializing();
-    _runnable = _clusterUp && _nodeUp && !_nodeInitializing;
+    refreshRunnable();
 }
 
 void
@@ -359,6 +370,15 @@ BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId,
     }
 }
 
-
+void BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
+{
+    // Called by master write thread
+    bool resourcesOK = !state.aboveDiskLimit();
+    _resourcesOK = resourcesOK;
+    refreshRunnable();
+    if (_runner && _runnable) {
+        _runner->run();
+    }
+}
 
 } // namespace proton

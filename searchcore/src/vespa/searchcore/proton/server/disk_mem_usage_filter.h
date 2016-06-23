@@ -7,6 +7,8 @@
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <mutex>
 #include <atomic>
+#include "i_disk_mem_usage_notifier.h"
+#include "disk_mem_usage_state.h"
 
 namespace proton {
 
@@ -15,7 +17,8 @@ namespace proton {
  * usage. If resource limit is reached then further writes are denied
  * in order to prevent entering an unrecoverable state.
  */
-class DiskMemUsageFilter : public IResourceWriteFilter {
+class DiskMemUsageFilter : public IResourceWriteFilter,
+                           public IDiskMemUsageNotifier {
 public:
     using space_info = boost::filesystem::space_info;
     using Mutex = std::mutex;
@@ -47,10 +50,13 @@ private:
     Config _config;
     State _state;
     std::atomic<bool> _acceptWrite;
+    DiskMemUsageState _dmstate;
+    std::vector<IDiskMemUsageListener *> _listeners;
 
     void recalcState(const Guard &guard); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
+    void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
     DiskMemUsageFilter(uint64_t physicalMememory_in);
@@ -65,6 +71,8 @@ public:
     double getDiskUsedRatio() const;
     virtual bool acceptWriteOperation() const override;
     virtual State getAcceptState() const override;
+    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
 };
 
 
