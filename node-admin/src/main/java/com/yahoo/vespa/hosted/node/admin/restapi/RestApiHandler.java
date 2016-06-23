@@ -5,7 +5,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 
-import com.yahoo.vespa.hosted.node.admin.ComponentsProvider;
+import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
 
 import javax.ws.rs.core.MediaType;
