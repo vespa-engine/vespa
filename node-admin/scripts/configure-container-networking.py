@@ -163,16 +163,16 @@ ipr = IPRoute()
 
 # Create new interface for the container.
 
-# The interface to the vespa network are all named "vespa". However, the
-# container interfaces are prepared in the host network namespace, and so it
-# needs a temporary name to avoid name-clash.
-temporary_host_interface_name = "vespa-tmp-" + container_pid_arg
-assert len(temporary_host_interface_name) <= 15 # linux requirement
+# The interface to the vespa network are all (in the end) named "vespa". However,
+# the container interfaces are prepared in the host network namespace, and so they
+# need temporary names to avoid name-clash.
+temporary_interface_name_while_in_host_ns = "vespa-tmp-" + container_pid_arg
+assert len(temporary_interface_name_while_in_host_ns) <= 15 # linux requirement
 
 container_interface_name = "vespa"
 assert len(container_interface_name) <= 15 # linux requirement
 
-for interface_index in ipr.link_lookup(ifname=temporary_host_interface_name):
+for interface_index in ipr.link_lookup(ifname=temporary_interface_name_while_in_host_ns):
     ipr.link('delete', index=interface_index)
 
 if not container_ns.link_lookup(ifname=container_interface_name):
@@ -206,7 +206,7 @@ if not container_ns.link_lookup(ifname=container_interface_name):
     # interface (typically eth0 or em1). So could we link against eth0 or em1
     # (or whatever) instead here? What's the difference?
     result = host_ns.link_create(
-        ifname=temporary_host_interface_name,
+        ifname=temporary_interface_name_while_in_host_ns,
         kind='macvlan',
         link=host_device_index_for_container,
         macvlan_mode='bridge',
@@ -214,7 +214,7 @@ if not container_ns.link_lookup(ifname=container_interface_name):
     if result[0]['header']['error']:
         raise RuntimeError("Failed creating link, result = %s" % result )
 
-    interface_index = host_ns.link_lookup(ifname=temporary_host_interface_name)[0]
+    interface_index = host_ns.link_lookup(ifname=temporary_interface_name_while_in_host_ns)[0]
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
