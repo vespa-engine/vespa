@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ulimit -u 31215
 

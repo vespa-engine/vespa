@@ -1,4 +1,5 @@
 #!/bin/bash	
+set -e
 
 LD_PRELOAD=../../../src/vespamalloc/libvespamalloc.so ./vespamalloc_overwrite_test_app
 LD_PRELOAD=../../../src/vespamalloc/libvespamalloc_vespamallocd.so ./vespamalloc_overwrite_test_app testmemoryfill
