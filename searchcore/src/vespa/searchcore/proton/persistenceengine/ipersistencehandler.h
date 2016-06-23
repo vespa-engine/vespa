@@ -86,6 +86,7 @@ public:
                const storage::spi::Bucket &target2) = 0;
 
     virtual RetrieversSP getDocumentRetrievers() = 0;
+    virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) = 0;
     virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) = 0;
 
     virtual void

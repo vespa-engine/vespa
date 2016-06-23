@@ -167,9 +167,9 @@ PersistenceHandlerProxy::handleJoin(FeedToken token,
 
 
 IPersistenceHandler::RetrieversSP
-PersistenceHandlerProxy::getDocumentRetrievers()
+PersistenceHandlerProxy::getDocumentRetrievers(storage::spi::ReadConsistency consistency)
 {
-    return _documentDB->getDocumentRetrievers();
+    return _documentDB->getDocumentRetrievers(consistency);
 }
 
 BucketGuard::UP

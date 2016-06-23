@@ -40,6 +40,7 @@ LOG_SETUP(".proton.server.documentdb");
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <sstream>
 #include "documentdbconfigscout.h"
+#include "commit_and_wait_document_retriever.h"
 
 
 using vespa::config::search::AttributesConfig;
@@ -722,6 +723,22 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
     return std::move(guard);
 }
 
+std::shared_ptr<std::vector<IDocumentRetriever::SP> >
+DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
+{
+    std::shared_ptr<std::vector<IDocumentRetriever::SP> > list = _subDBs.getRetrievers();
+
+    if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
+        std::shared_ptr<std::vector<IDocumentRetriever::SP> > wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>();
+        wrappedList->reserve(list->size());
+        for (const IDocumentRetriever::SP & retriever : *list) {
+            wrappedList->emplace_back(new CommitAndWaitDocumentRetriever(retriever, _visibility));
+        }
+        return wrappedList;
+    } else {
+        return list;
+    }
+}
 
 SerialNum
 DocumentDB::getOldestFlushedSerial()

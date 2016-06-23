@@ -370,7 +370,7 @@ public:
      * reconfiguration, however.
      */
     std::shared_ptr<std::vector<IDocumentRetriever::SP> >
-    getDocumentRetrievers() { return _subDBs.getRetrievers(); }
+    getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency);
 
     MaintenanceController &getMaintenanceController() {
         return _maintenanceController;
