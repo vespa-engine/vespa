@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 . ../../binref/env.sh
-sh dotest.sh || (sh $BINREF/progctl.sh progdefs.sh stop all; false)
-sh $BINREF/progctl.sh progdefs.sh stop all
+bash -e dotest.sh || (bash -e $BINREF/progctl.sh progdefs.sh stop all; false)
+bash -e $BINREF/progctl.sh progdefs.sh stop all
