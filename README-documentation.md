@@ -5,16 +5,17 @@ This document explains how to add documentation.
 
 ## Practical information
 
-Vespa documentation is served using straightforward 
+Vespa documentation is served using straightforward
 [GitHub Project pages](https://help.github.com/categories/github-pages-basics/)
 with
 [Jekyll](https://help.github.com/categories/customizing-github-pages/).
-To edit documentation check out and work off the branch gh-pages from Vespa repo.
+To edit documentation check out and work off the branch gh-pages from the
+[documentation repository for now](https://git.corp.yahoo.com/vespa/documentation).
 This branch contains documentation instead of the code.
 
 Documentation are written in straightforward HTML.
-We use a single Jekyll template (_layouts/default-html) to add header, footer and layout.
-With Jekyll installed (follow the link above) you can use 
+We use a single Jekyll template (_layouts/default.html) to add header, footer and layout.
+With Jekyll installed (follow the link above) you can use
 
     bundle exec jekyll serve
 
@@ -22,8 +23,8 @@ to set up a local server at localhost:4000 to see the pages as they will look wh
 
 The layout is written in Bootstrap and we refer directly to the Bootstrap CSS.
 Refer to [Bootstrap documentation](http://getbootstrap.com/css/) if you need to
-add style effects to your page. Note that the enture documentation page content
-is contained in a Bootstrap layout column with cilumn with 12. Please do not add custom style sheets
+add style effects to your page. Note that the entire documentation page content
+is contained in a Bootstrap layout column with column width 12. Please do not add custom style sheets
 as it is a pain to maintain.
 
 ## Writing good documentation
@@ -32,13 +33,13 @@ Please read the following guide to writing good documentation before writing som
 
 ### Guides and references
 
-A document cannot be both comprehensive and comprehendible.
+A document cannot be both comprehensive and comprehensible.
 Because of this we split our documentation into *guides* and *reference* documents.
 
-Guides should be easy to understand by only explain the most important concepts under discussion.
+Guides should be easy to understand by only explaining the most important concepts under discussion.
 Reference documents on the other hand must be complete but should skip verbiage meant to aid understanding.
 
-Reference documents are those that are placed in reference/ subdirectories 
+Reference documents are those that are placed in reference/ subdirectories
 (with the exception of parts of content/, where this separation became messed up at some point).
 
 ### Maintainability
@@ -61,11 +62,11 @@ Make the text as short, clear, and easy to read as possible:
 * Use short sentences with simple structure.
 * Avoid superfluous words such as "very".
 * Avoid filler sentences intended to improve the flow of the text - documents are usually browsed, not read anyway.
-* Use consistent terminology even when it leads to repetition which would be bad in other kind of writing.
-* Use active form "index the documents", not passive "indexing the documents"
-* Avoid making it personal - do not use "we", "you", "our"
+* Use consistent terminology even when it leads to repetition which would be bad in other kinds of writing.
+* Use active form "index the documents", not passive "indexing the documents".
+* Avoid making it personal - do not use "we", "you", "our".
 * Do not use &amp;quot; , &amp;mdash; and the likes - makes the document harder to edit, and no need to use it.
-* Less is more - &lt;em&gt; and &lt;strong&gt; is sufficient formatting in most cases
+* Less is more - &lt;em&gt; and &lt;strong&gt; is sufficient formatting in most cases.
 
 ### Links
 

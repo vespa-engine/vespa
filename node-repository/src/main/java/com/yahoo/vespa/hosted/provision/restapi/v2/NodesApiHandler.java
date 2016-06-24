@@ -200,17 +200,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private Node.Type nodeTypeFromSlime(Inspector object) {
-        // TODO: Remove this when 6.13 is deployed everywhere.
-        if (! object.valid()) {
-            return Node.Type.tenant;
-        }
-        String typeString = object.asString();
-        switch (typeString) {
+        if (! object.valid()) return Node.Type.tenant; // default
+        switch (object.asString()) {
             case "tenant" : return Node.Type.tenant;
             case "host" : return Node.Type.host;
+            default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
-        // TODO: Change this to throw an exception when 6.13 is deployed everywhere.
-        return Node.Type.tenant;
     }
 
     // TODO: Move most of this to node repo
@@ -268,4 +263,5 @@ public class NodesApiHandler extends LoggingRequestHandler {
         }
         return false;
     }
+
 }

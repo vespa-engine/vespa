@@ -25,7 +25,6 @@ public interface NodeRepositoryApi {
      * What is called "host" in NodeRepo is called "node" in node admin in this case.
      * @param node the node to get data about.
      * @param recursive set this to true, or you will not get the data you expect.
-     * @return
      */
     @GET
     @Path("/nodes/v2/node/")
