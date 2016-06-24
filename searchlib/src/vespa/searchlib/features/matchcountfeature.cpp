@@ -2,19 +2,19 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
-#include "countmatchesfeature.h"
+#include "matchcountfeature.h"
 #include "utils.h"
 #include "valuefeature.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".features.countmatchesfeature");
+LOG_SETUP(".features.matchcountfeature");
 
 using namespace search::fef;
 
 namespace search {
 namespace features {
 
-CountMatchesExecutor::CountMatchesExecutor(uint32_t fieldId, const IQueryEnvironment &env)
+MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
       _handles()
 {
@@ -27,7 +27,7 @@ CountMatchesExecutor::CountMatchesExecutor(uint32_t fieldId, const IQueryEnviron
 }
 
 void
-CountMatchesExecutor::execute(MatchData &match)
+MatchCountExecutor::execute(MatchData &match)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
@@ -40,19 +40,19 @@ CountMatchesExecutor::execute(MatchData &match)
 }
 
 
-CountMatchesBlueprint::CountMatchesBlueprint() :
-    Blueprint("countMatches"),
+MatchCountBlueprint::MatchCountBlueprint() :
+    Blueprint("matchCount"),
     _field(NULL)
 {
 }
 
 void
-CountMatchesBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
+MatchCountBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
 }
 
 bool
-CountMatchesBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
+MatchCountBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
 {
     _field = params[0].asField();
     describeOutput("out", "Returns number of matches in the field of all terms in the query");
@@ -60,18 +60,18 @@ CountMatchesBlueprint::setup(const IIndexEnvironment &, const ParameterList & pa
 }
 
 Blueprint::UP
-CountMatchesBlueprint::createInstance() const
+MatchCountBlueprint::createInstance() const
 {
-    return Blueprint::UP(new CountMatchesBlueprint());
+    return Blueprint::UP(new MatchCountBlueprint());
 }
 
 FeatureExecutor::LP
-CountMatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
 {
     if (_field == nullptr) {
         return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
     }
-    return FeatureExecutor::LP(new CountMatchesExecutor(_field->id(), queryEnv));
+    return FeatureExecutor::LP(new MatchCountExecutor(_field->id(), queryEnv));
 }
 
 } // namespace features

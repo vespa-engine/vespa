@@ -9,32 +9,32 @@ namespace search {
 namespace features {
 
 /**
- * Implements the executor for the countMatches feature for index and
+ * Implements the executor for the matchCount feature for index and
  * attribute fields.
  */
-class CountMatchesExecutor : public fef::FeatureExecutor
+class MatchCountExecutor : public fef::FeatureExecutor
 {
 private:
     std::vector<fef::TermFieldHandle> _handles;
 
 public:
-    CountMatchesExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
+    MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
     void execute(fef::MatchData & data) override;
 };
 
 /**
- * Implements the blueprint for the countMatches executor.
+ * Implements the blueprint for the matchCount executor.
  *
- * countMatches(name)
+ * matchCount(name)
  *  - returns number of matches of the query in the particular field.
  */
-class CountMatchesBlueprint : public fef::Blueprint
+class MatchCountBlueprint : public fef::Blueprint
 {
 private:
     const fef::FieldInfo *_field;
 
 public:
-    CountMatchesBlueprint();
+    MatchCountBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env,
                            fef::IDumpFeatureVisitor & visitor) const override;
