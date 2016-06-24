@@ -169,8 +169,6 @@ exit 0
 %systemd_postun_with_restart vespa-configserver.service 
 rm -f /etc/profile.d/vespa.sh
 userdel vespa 
-groupdel vespa 
-
 
 %files
 %defattr(-,vespa,vespa,-)
