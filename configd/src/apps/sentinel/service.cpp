@@ -337,7 +337,7 @@ Service::runChild(int pipes[2])
         char buf[200];
         snprintf(buf, sizeof buf, "open /dev/null for fd 0: got %d "
                                   "(%s)", fd, strerror(errno));
-        write(pipes[1], buf, strlen(buf));
+        (void) write(pipes[1], buf, strlen(buf));
         _exit(EXIT_FAILURE);
     }
     fcntl(0, F_SETFD, 0); // Don't close on exec
@@ -347,7 +347,7 @@ Service::runChild(int pipes[2])
     char buf[200];
     snprintf(buf, sizeof buf, "exec error: %s for /bin/sh -c '%s'",
              strerror(errno), _config->command.c_str());
-    write(pipes[1], buf, strlen(buf));
+    (void) write(pipes[1], buf, strlen(buf));
     _exit(EXIT_FAILURE);
 }
 

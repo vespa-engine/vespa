@@ -50,7 +50,10 @@ CommandConnection::printf(const char *fmt, ...)
     int ret = vsnprintf(buf, sizeof buf, fmt, args);
     va_end(args);
 
-    write(_fd, buf, strlen(buf));
+    size_t len = strlen(buf);
+    if (write(_fd, buf, strlen(buf) != len)) {
+	perror("CommandConnection::printf failed");
+    }
     return ret;
 }
 

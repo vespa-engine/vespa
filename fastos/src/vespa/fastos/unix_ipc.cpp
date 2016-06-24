@@ -554,7 +554,10 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
         // Did someone want to wake us up from the poll() call?
         if (woken) {
             char dummy;
-            read(_wakeupPipe[0], &dummy, 1);
+	    ssize_t nbrfp = read(_wakeupPipe[0], &dummy, 1);
+	    if (nbrfp != 1) {
+	        perror("FastOS_UNIX_IPCHelper wakeupPipe read failed");
+	    }
         }
     }
     free(fds);
@@ -597,8 +600,11 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
 
 void FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
 {
-    char dummy = static_cast<char>(1);
-    write(_wakeupPipe[1], &dummy, 1);
+    char dummy = 'x';
+    ssize_t nbwtp = write(_wakeupPipe[1], &dummy, 1);
+    if (nbwtp != 1) {
+	perror("FastOS_UNIX_IPCHelper: write to wakeupPipe failed");
+    }
 }
 
 void FastOS_UNIX_IPCHelper::Exit ()

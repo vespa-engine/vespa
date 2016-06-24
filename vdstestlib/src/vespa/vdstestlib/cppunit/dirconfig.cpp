@@ -19,7 +19,9 @@ namespace {
     std::string configRoot = "dirconfig.tmp";
 
     int getFirstDirNumber() {
-        system(("rm -rf " + configRoot).c_str());
+	if (system(("rm -rf " + configRoot).c_str()) != 0) {
+	    throw vespalib::Exception("system(rm -rf "+configRoot+" failed");
+	}
         return 0;
     }
 }
