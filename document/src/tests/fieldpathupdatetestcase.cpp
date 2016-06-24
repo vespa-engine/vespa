@@ -1278,8 +1278,9 @@ FieldPathUpdateTestCase::testReadSerializedFile()
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
     lseek(fd,0,SEEK_SET);
-    read(fd, buf.getBuffer(), len);
-
+    if (read(fd, buf.getBuffer(), len) != len) {
+	throw vespalib::Exception("read failed");
+    }
     close(fd);
 
     DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, buf));
@@ -1303,7 +1304,9 @@ FieldPathUpdateTestCase::testGenerateSerializedFile()
 
     int fd = open("data/serialize-fieldpathupdate-cpp.dat",
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    write(fd, buf->getBuffer(), buf->getPos());
+    if (write(fd, buf->getBuffer(), buf->getPos()) != buf->getPos()) {
+    	throw vespalib::Exception("write failed");
+    }
     close(fd);
 }
 

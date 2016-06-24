@@ -556,8 +556,9 @@ void DocumentUpdateTest::testReadSerializedFile()
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
     lseek(fd,0,SEEK_SET);
-    read(fd, buf.getBuffer(), len);
-
+    if (read(fd, buf.getBuffer(), len) != len) {
+    	throw vespalib::Exception("read failed");
+    }
     close(fd);
 
     DocumentUpdate::UP updp(DocumentUpdate::create42(repo, buf));
@@ -648,7 +649,9 @@ void DocumentUpdateTest::testGenerateSerializedFile()
 
     int fd = open("data/serializeupdatecpp.dat",
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    write(fd, buf->getBuffer(), buf->getPos());
+    if (write(fd, buf->getBuffer(), buf->getPos()) != buf->getPos()) {
+	throw vespalib::Exception("read failed");
+    }
     close(fd);
 }
 
