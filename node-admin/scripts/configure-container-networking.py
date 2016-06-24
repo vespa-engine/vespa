@@ -132,8 +132,8 @@ def delete_interface_by_name(interface_name):
 
 def create_interface_in_namespace(network_namespace, ip_address_textual, interface_name, link_device_index):
     mac_address = generate_mac_address(
-        gethostname(),
-        ip_address_textual)
+        base_host_name=gethostname(),
+        ip_address=ip_address_textual)
 
     # For traceability.
     with open('/tmp/container_mac_address_' + ip_address_textual, 'w') as f:
@@ -198,7 +198,8 @@ host_ns = get_net_namespace_for_pid(1)
 container_ns = get_net_namespace_for_pid(container_pid)
 
 all_host_ipv4_ips = host_ns.get_addr(family=AF_INET)
-host_ip_best_match_for_container = ip_with_most_specific_network_for_address(container_ip, all_host_ipv4_ips)
+host_ip_best_match_for_container = ip_with_most_specific_network_for_address(address=container_ip,
+                                                                             ipv4_ips=all_host_ipv4_ips)
 host_device_index_for_container = host_ip_best_match_for_container['index']
 container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
 
@@ -227,10 +228,10 @@ if not container_ns.link_lookup(ifname=container_interface_name):
     # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
     # interface (typically eth0 or em1). So could we link against eth0 or em1
     # (or whatever) instead here? What's the difference?
-    interface_index = create_interface_in_namespace(host_ns,
-                                                    container_ip_arg,
-                                                    temporary_interface_name_while_in_host_ns,
-                                                    host_device_index_for_container)
+    interface_index = create_interface_in_namespace(network_namespace=host_ns,
+                                                    ip_address_textual=container_ip_arg,
+                                                    interface_name=temporary_interface_name_while_in_host_ns,
+                                                    link_device_index=host_device_index_for_container)
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
