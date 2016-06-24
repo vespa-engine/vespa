@@ -168,6 +168,13 @@ def move_interface(src_interface_index, dest_namespace_pid, dest_interface_name)
              net_ns_fd=str(dest_namespace_pid),
              ifname=dest_interface_name)
 
+def index_of_interface_in_namespace(interface_name, namespace):
+    interface_index_list = namespace.link_lookup(ifname=interface_name)
+    if not interface_index_list:
+        return None
+    assert len(interface_index_list) == 1
+    return interface_index_list[0]
+
 
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
@@ -218,7 +225,9 @@ assert len(container_interface_name) <= 15 # linux requirement
 # Clean up any leftovers from the past.
 delete_interface_by_name(temporary_interface_name_while_in_host_ns)
 
-if not container_ns.link_lookup(ifname=container_interface_name):
+container_interface_index = index_of_interface_in_namespace(interface_name=container_interface_name,
+                                                            namespace=container_ns)
+if not container_interface_index:
     # Must be created in the host_ns to have the same lifetime as the host.
     # Otherwise, it will be deleted when the node-admin container stops.
     # (Only temporarily there, moved to the container namespace later.)
@@ -239,15 +248,11 @@ if not container_ns.link_lookup(ifname=container_interface_name):
                    dest_namespace_pid=container_pid,
                    dest_interface_name=container_interface_name)
 
-
-# Find index of interface now in container namespace.
-
-container_interface_index_list = container_ns.link_lookup(ifname=container_interface_name)
-if not container_interface_index_list:
-    raise RuntimeError("Concurrent modification to network interfaces in container")
-
-assert len(container_interface_index_list) == 1
-container_interface_index = container_interface_index_list[0]
+    # Find index of interface now in container namespace.
+    container_interface_index = index_of_interface_in_namespace(interface_name=container_interface_name,
+                                                                namespace=container_ns)
+    if not container_interface_index:
+        raise RuntimeError("Concurrent modification to network interfaces in container")
 
 
 # Set ip address on interface in container namespace.
