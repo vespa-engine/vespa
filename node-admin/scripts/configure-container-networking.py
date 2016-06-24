@@ -210,6 +210,37 @@ def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_le
             if e.code == 17:  # File exists, i.e. address is already added
                 pass
 
+def get_default_route(net_namespace):
+    # route format: {
+    #     'family': 2,
+    #     'dst_len': 0,
+    #     'proto': 3,
+    #     'tos': 0,
+    #     'event': 'RTM_NEWROUTE',
+    #     'header': {
+    #         'pid': 43,
+    #         'length': 52,
+    #         'flags': 2,
+    #         'error': None,
+    #         'type': 24,
+    #         'sequence_number': 255
+    #     },
+    #     'flags': 0,
+    #     'attrs': [
+    #         ['RTA_TABLE', 254],
+    #         ['RTA_GATEWAY', '172.17.42.1'],
+    #         ['RTA_OIF', 18]
+    #     ],
+    #     'table': 254,
+    #     'src_len': 0,
+    #     'type': 1,
+    #     'scope': 0
+    # }
+    default_routes = net_namespace.get_default_routes(family = AF_INET)
+    if len(default_routes) != 1:
+        raise RuntimeError("Couldn't find single default route: " + str(default_routes))
+    return default_routes[0]
+
 
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
@@ -305,35 +336,7 @@ elif vm_mode:
 else:
     # Set up default route/gateway in container.
 
-    # route format: {
-    #     'family': 2,
-    #     'dst_len': 0,
-    #     'proto': 3,
-    #     'tos': 0,
-    #     'event': 'RTM_NEWROUTE',
-    #     'header': {
-    #         'pid': 43,
-    #         'length': 52,
-    #         'flags': 2,
-    #         'error': None,
-    #         'type': 24,
-    #         'sequence_number': 255
-    #     },
-    #     'flags': 0,
-    #     'attrs': [
-    #         ['RTA_TABLE', 254],
-    #         ['RTA_GATEWAY', '172.17.42.1'],
-    #         ['RTA_OIF', 18]
-    #     ],
-    #     'table': 254,
-    #     'src_len': 0,
-    #     'type': 1,
-    #     'scope': 0
-    # }
-    host_default_routes = host_ns.get_default_routes(family = AF_INET)
-    if len(host_default_routes) != 1:
-        raise RuntimeError("Couldn't find default route: " + str(host_default_routes))
-    default_route = host_default_routes[0]
+    default_route = get_default_route(net_namespace=host_ns)
 
     host_default_route_device_index = get_attribute(default_route, 'RTA_OIF')
     host_default_gateway = get_attribute(default_route, 'RTA_GATEWAY')
