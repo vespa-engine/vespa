@@ -106,14 +106,15 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     Bucket                     bucket;
     bool                       removed;
     DocumentIdT                docid;
+    DocumentIdT                docIdLimit;
 
     UnitDR()
         : repo(), document(new Document(*DataType::DOCUMENT, DocumentId())),
-          timestamp(0), bucket(), removed(false), docid(0) {}
+          timestamp(0), bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
     UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
-        : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt) {}
+        : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
     UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r)
-        : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt) {}
+        : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt), docIdLimit(std::numeric_limits<uint32_t>::max()) {}
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
@@ -132,6 +133,13 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     }
     document::Document::UP getDocument(DocumentIdT lid) const override {
         return Document::UP((lid == docid) ? document->clone() : 0);
+    }
+
+    uint32_t getDocIdLimit() const override {
+        return docIdLimit;
+    }
+    void setDocIdLimit(DocumentIdT limit) {
+        docIdLimit = limit;
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
@@ -517,6 +525,25 @@ TEST("require that default readconsistency does commit") {
 TEST("require that readconsistency::strong does commit") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::STRONG);
     TEST_DO(verifyStrongReadConsistency(itr));
+}
+
+TEST("require that docid limit is honoured") {
+    IDocumentRetriever::SP retriever = doc("doc:foo:1", Timestamp(2), bucket(5));
+    UnitDR & udr = dynamic_cast<UnitDR &>(*retriever);
+    udr.docid = 7;
+    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    itr.add(retriever);
+    IterateResult res = itr.iterate(largeNum);
+    EXPECT_TRUE(res.isCompleted());
+    EXPECT_EQUAL(1u, res.getEntries().size());
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:1")), Timestamp(2)));
+
+    udr.setDocIdLimit(7);
+    DocumentIterator limited(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    limited.add(retriever);
+    res = limited.iterate(largeNum);
+    EXPECT_TRUE(res.isCompleted());
+    EXPECT_EQUAL(0u, res.getEntries().size());
 }
 
 TEST("require that remove entries can be iterated") {
