@@ -90,8 +90,8 @@ public class NodeAgentImpl implements NodeAgent {
                     wantedState = State.WORKING;
                     break;
             }
+            monitor.notifyAll();
         }
-        monitor.notifyAll();
     }
 
     @Override
@@ -120,8 +120,8 @@ public class NodeAgentImpl implements NodeAgent {
                 throw new IllegalStateException("Cannot stop an already stopped (terminated) node agent");
             }
             wantedState = State.TERMINATED;
+            monitor.notifyAll();
         }
-        monitor.notifyAll();
         try {
             thread.join();
         } catch (InterruptedException e) {
@@ -387,8 +387,8 @@ public class NodeAgentImpl implements NodeAgent {
             } else {
                 logger.log(Level.FINE, "Not scheduling work since in freeze.");
             }
+            monitor.notifyAll();
         }
-        monitor.notifyAll();
     }
 
     private void blockUntilNotWaitingOrFrozen() {
