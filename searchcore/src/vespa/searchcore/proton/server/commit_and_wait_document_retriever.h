@@ -44,9 +44,7 @@ public:
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor,
                         ReadConsistency readConsistency) const override
     {
-        if (readConsistency == ReadConsistency::STRONG) {
-            _commit.commitAndWait();
-        }
+        _commit.commitAndWait();
         _retriever->visitDocuments(lids, visitor, readConsistency);
     }
 
