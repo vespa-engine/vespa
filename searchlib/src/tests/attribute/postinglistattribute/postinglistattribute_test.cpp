@@ -40,7 +40,7 @@ typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
 
 void
-toStr(std::stringstream &ss, SearchIterator &it)
+toStr(std::stringstream &ss, SearchIterator &it, TermFieldMatchData *md)
 {
     it.initFullRange();
     it.seek(1u);
@@ -51,16 +51,21 @@ toStr(std::stringstream &ss, SearchIterator &it)
         else
             ss << ",";
         ss << it.getDocId();
+        if (md != nullptr) {
+            it.unpack(it.getDocId());
+            ss << "[w=" << md->begin()->getElementWeight() << "]";
+        }
         it.seek(it.getDocId() + 1);
     }
 }
 
 
 bool
-assertIterator(const std::string &exp, SearchIterator &it)
+assertIterator(const std::string &exp, SearchIterator &it,
+               TermFieldMatchData *md = nullptr)
 {
     std::stringstream ss;
-    toStr(ss, it);
+    toStr(ss, it, md);
     if (!EXPECT_EQUAL(exp, ss.str()))
         return false;
     return true;
@@ -140,6 +145,13 @@ private:
     bool
     assertSearch(const std::string &exp, StringAttribute &sa);
 
+    bool
+    assertSearch(const std::string &exp, StringAttribute &v,
+                 const std::string &key);
+
+    bool
+    assertSearch(const std::string &exp, IntegerAttribute &v, int32_t key);
+
     void addDocs(const AttributePtr & ptr, uint32_t numDocs);
 
     template <typename VectorType, typename BufferType, typename Range>
@@ -175,6 +187,10 @@ private:
 
     void
     testStringFold(void);
+
+    void testDupValuesInIntArray();
+
+    void testDupValuesInStringArray();
 public:
     int Main();
 };
@@ -389,6 +405,37 @@ PostingListAttributeTest::assertSearch(const std::string &exp,
     sc->fetchPostings(true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb)))
+        return false;
+    return true;
+}
+
+
+bool
+PostingListAttributeTest::assertSearch(const std::string &exp,
+                                       StringAttribute &sa,
+                                       const std::string &key)
+{
+    TermFieldMatchData md;
+    SearchContextPtr sc = getSearch<StringAttribute, std::string>
+                          (sa, key, false);
+    sc->fetchPostings(true);
+    SearchBasePtr sb = sc->createIterator(&md, true);
+    if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
+        return false;
+    return true;
+}
+
+bool
+PostingListAttributeTest::assertSearch(const std::string &exp,
+                                       IntegerAttribute &ia,
+                                       int32_t key)
+{
+    TermFieldMatchData md;
+    SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>
+                          (ia, key, false);
+    sc->fetchPostings(true);
+    SearchBasePtr sb = sc->createIterator(&md, true);
+    if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
         return false;
     return true;
 }
@@ -1001,6 +1048,66 @@ PostingListAttributeTest::testStringFold(void)
     EXPECT_TRUE(assertSearch("", sa));
 }
 
+void
+PostingListAttributeTest::testDupValuesInIntArray()
+{
+    Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
+    cfg.setFastSearch(true);
+    AttributePtr ptr1 = AttributeFactory::createAttribute("aint32_3", cfg);
+    addDocs(ptr1, 6);
+
+    IntegerAttribute &ia(asInt(ptr1));
+
+    ia.append(1, 1, 1);
+    ia.append(1, 1, 1);
+    ia.append(2, 1, 1);
+    ia.commit();
+    EXPECT_TRUE(assertSearch("1[w=2],2[w=1]", ia, 1));
+
+    ia.clearDoc(1);
+    ia.append(1, 1, 1);
+    ia.clearDoc(2);
+    ia.append(2, 1, 1);
+    ia.append(2, 1, 1);
+    ia.commit();
+    EXPECT_TRUE(assertSearch("1[w=1],2[w=2]", ia, 1));
+}
+
+void
+PostingListAttributeTest::testDupValuesInStringArray()
+{
+    Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
+    cfg.setFastSearch(true);
+    AttributePtr ptr1 = AttributeFactory::createAttribute("astr_3", cfg);
+    addDocs(ptr1, 6);
+
+    StringAttribute &sa(asString(ptr1));
+
+    sa.append(1, "foo", 1);
+    sa.append(1, "foo", 1);
+    sa.append(2, "foo", 1);
+    sa.append(3, "bar", 1);
+    sa.append(3, "BAR", 1);
+    sa.append(4, "bar", 1);
+    sa.commit();
+    EXPECT_TRUE(assertSearch("1[w=2],2[w=1]", sa, "foo"));
+    EXPECT_TRUE(assertSearch("3[w=2],4[w=1]", sa, "bar"));
+
+    sa.clearDoc(1);
+    sa.append(1, "foo", 1);
+    sa.clearDoc(2);
+    sa.append(2, "foo", 1);
+    sa.append(2, "foo", 1);
+    sa.clearDoc(3);
+    sa.append(3, "bar", 1);
+    sa.clearDoc(4);
+    sa.append(4, "bar", 1);
+    sa.append(4, "BAR", 1);
+    sa.commit();
+    EXPECT_TRUE(assertSearch("1[w=1],2[w=2]", sa, "foo"));
+    EXPECT_TRUE(assertSearch("3[w=1],4[w=2]", sa, "bar"));
+}
+
 
 int
 PostingListAttributeTest::Main()
@@ -1012,6 +1119,8 @@ PostingListAttributeTest::Main()
     testReload();
     testMinMax();
     testStringFold();
+    testDupValuesInIntArray();
+    testDupValuesInStringArray();
 
     TEST_DONE();
 }
