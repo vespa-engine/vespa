@@ -48,6 +48,7 @@ install_fat_java_artifact(vespa-http-client)
 install_fat_java_artifact(vespaclient-container-plugin)
 install_fat_java_artifact(zkfacade)
 
+vespa_install_script(application-preprocessor/src/main/sh/vespa-preprocess-application bin)
 vespa_install_script(jdisc_core/src/main/perl/jdisc_logfmt bin)
 vespa_install_script(config-proxy/src/main/sh/config-ctl bin)
 vespa_install_script(config-model/src/main/perl/deploy bin)
