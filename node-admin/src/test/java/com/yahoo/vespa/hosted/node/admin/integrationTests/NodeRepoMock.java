@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public class NodeRepoMock implements NodeRepository {
 
-    public List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+    public static final List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
@@ -25,7 +25,9 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
-        return null;
+        return containerNodeSpecs.stream()
+                .filter(containerNodeSpec -> containerNodeSpec.hostname.equals(hostName))
+                .findFirst();
     }
 
     @Override
