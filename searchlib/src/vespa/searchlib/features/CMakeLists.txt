@@ -6,6 +6,7 @@ vespa_add_library(searchlib_features OBJECT
     attributefeature.cpp
     attributematchfeature.cpp
     closenessfeature.cpp
+    countmatchesfeature.cpp
     debug_attribute_wait.cpp
     debug_wait.cpp
     distancefeature.cpp
