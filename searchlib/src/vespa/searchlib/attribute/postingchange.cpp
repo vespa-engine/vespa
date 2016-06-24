@@ -160,11 +160,11 @@ template <typename WeightedIndex>
 class ActualChangeComputer {
 public:
     using EnumIndex = EnumStoreBase::Index;
-    using V = std::vector<multivalue::WeightedValue<EnumIndex>>;
-    using WIV = std::vector<WeightedIndex>;
+    using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<EnumIndex>>;
+    using WeightedIndexVector = std::vector<WeightedIndex>;
     void compute(const WeightedIndex * entriesNew, size_t szNew,
                  const WeightedIndex * entriesOld, size_t szOld,
-                 V & added, V & changed, V & removed);
+                 AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
 
     ActualChangeComputer(const EnumStoreComparator &compare,
                          const EnumIndexMapper &mapper)
@@ -178,14 +178,14 @@ public:
     }
 
 private:
-    WIV _oldEntries;
-    WIV _newEntries;
+    WeightedIndexVector _oldEntries;
+    WeightedIndexVector _newEntries;
     vespalib::hash_map<uint32_t, uint32_t> _cachedMapping;
     const EnumStoreComparator &_compare;
     const EnumIndexMapper &_mapper;
     const bool _hasFold;
 
-    static void copyFast(WIV &dst, const WeightedIndex *src, size_t sz)
+    static void copyFast(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
     {
         dst.insert(dst.begin(), src, src + sz);
     }
@@ -199,7 +199,7 @@ private:
     }
 
 
-    void copyMapped(WIV &dst, const WeightedIndex *src, size_t sz)
+    void copyMapped(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
     {
         const WeightedIndex *srce = src + sz;
         for (const WeightedIndex *i = src; i < srce; ++i) {
@@ -207,7 +207,7 @@ private:
         }
     }
 
-    void copyEntries(WIV &dst, const WeightedIndex *src, size_t sz)
+    void copyEntries(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
     {
         dst.reserve(sz);
         dst.clear();
@@ -256,7 +256,7 @@ public:
     const Entry &entry() const { return _entry; }
     EnumIndex value() const { return _entry.value(); }
     int32_t weight() const { return _entry.weight(); }
-    void step() {
+    void next() {
         if (_cur != _end) {
             merge();
         } else {
@@ -269,7 +269,9 @@ template <typename WeightedIndex>
 void
 ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex * entriesNew, size_t szNew,
                                              const WeightedIndex * entriesOld, size_t szOld,
-                                             V & added, V & changed, V & removed)
+                                             AlwaysWeightedIndexVector & added,
+                                             AlwaysWeightedIndexVector & changed,
+                                             AlwaysWeightedIndexVector & removed)
 {
     copyEntries(_newEntries, entriesNew, szNew);
     copyEntries(_oldEntries, entriesOld, szOld);
@@ -281,23 +283,23 @@ ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex * entriesNew, s
             if (newIt.weight() != oldIt.weight()) {
                 changed.push_back(newIt.entry());
             }
-            newIt.step();
-            oldIt.step();
+            newIt.next();
+            oldIt.next();
         } else if (newIt.value() < oldIt.value()) {
             added.push_back(newIt.entry());
-            newIt.step();
+            newIt.next();
         } else {
             removed.push_back(oldIt.entry());
-            oldIt.step();
+            oldIt.next();
         }
     }
     while (newIt.valid()) {
         added.push_back(newIt.entry());
-        newIt.step();
+        newIt.next();
     }
     while (oldIt.valid()) {
         removed.push_back(oldIt.entry());
-        oldIt.step();
+        oldIt.next();
     }
 }
 
@@ -310,7 +312,7 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
 {
     typedef ActualChangeComputer<WeightedIndex> AC;
     AC actualChange(compare, mapper);
-    typename AC::V added, changed, removed;
+    typename AC::AlwaysWeightedIndexVector added, changed, removed;
     PostingMap changePost;
     
     // generate add postings and remove postings
