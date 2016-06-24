@@ -5,9 +5,10 @@ RUN yum -y install epel-release
 RUN yum -y install centos-release-scl
 RUN yum -y install devtoolset-4-gcc-c++
 RUN yum -y install devtoolset-4-libatomic-devel
-RUN yum -y install Judy-devel
+RUN yum -y install make
 RUN yum -y install cmake3
 RUN yum -y install ccache
+RUN yum -y install Judy-devel
 RUN yum -y install lz4-devel
 RUN yum -y install zlib-devel
 RUN yum -y install maven
@@ -15,9 +16,12 @@ RUN yum -y install libicu-devel
 RUN yum -y install llvm-devel
 RUN yum -y install llvm-static
 RUN yum -y install java-1.8.0-openjdk-devel
+RUN yum -y install openssl
 RUN yum -y install openssl-devel
 RUN yum -y install rpm-build
-RUN yum -y install make
+RUN yum -y install perl
+RUN yum -y install perl-Env
+RUN yum -y install perl-JSON
 
 # Install vespa dependencies
 RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
