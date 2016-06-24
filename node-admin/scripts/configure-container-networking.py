@@ -331,8 +331,8 @@ container_ns.link('set', index=container_interface_index, state='up', name=conta
 if local_mode:
     pass
 elif vm_mode:
-     # Set the default route to the IP of the host vespa interface (e.g. osx)
-     container_ns.route("add", gateway=get_attribute(host_ip_best_match_for_container, 'IFA_ADDRESS'))
+    # Set the default route to the IP of the host vespa interface (e.g. osx)
+    container_ns.route("add", gateway=get_attribute(host_ip_best_match_for_container, 'IFA_ADDRESS'))
 else:
     # Set up default route/gateway in container.
 
