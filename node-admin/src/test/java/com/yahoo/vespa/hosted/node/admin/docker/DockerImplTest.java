@@ -91,8 +91,10 @@ public class DockerImplTest {
     }
 
     @Test
-    public void vespaVersionIsParsedWithTrailingNewline() {
+    public void vespaVersionIsParsedWithSpacesAndNewlines() {
         assertThat(DockerImpl.parseVespaVersion("5.119.53\n"), is(Optional.of("5.119.53")));
+        assertThat(DockerImpl.parseVespaVersion(" 5.119.53 \n"), is(Optional.of("5.119.53")));
+        assertThat(DockerImpl.parseVespaVersion("\n 5.119.53 \n"), is(Optional.of("5.119.53")));
     }
 
     @Test
@@ -103,7 +105,7 @@ public class DockerImplTest {
         assertThat(DockerImpl.parseVespaVersion("119"), is(Optional.of("119")));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void vespaVersionIsNotParsedFromNull() {
         assertThat(DockerImpl.parseVespaVersion(null), is(Optional.empty()));
     }

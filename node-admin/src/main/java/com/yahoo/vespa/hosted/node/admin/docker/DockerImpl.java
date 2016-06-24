@@ -272,7 +272,9 @@ public class DockerImpl implements Docker {
 
     // Returns empty if vespa version cannot be parsed.
     static Optional<String> parseVespaVersion(final String rawVespaVersion) {
-        final Matcher matcher = VESPA_VERSION_PATTERN.matcher(rawVespaVersion);
+        if (rawVespaVersion == null) return Optional.empty();
+
+        final Matcher matcher = VESPA_VERSION_PATTERN.matcher(rawVespaVersion.trim());
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
