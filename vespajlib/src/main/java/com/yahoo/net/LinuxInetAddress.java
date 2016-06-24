@@ -29,6 +29,7 @@ public class LinuxInetAddress {
      * @return a localhost address
      */
     public static InetAddress getLocalHost() {
+        System.out.println("Resolving local address");
         InetAddress fallback = InetAddress.getLoopbackAddress();
         try {
             InetAddress localAddress = InetAddress.getLocalHost();
@@ -36,22 +37,29 @@ public class LinuxInetAddress {
             List<InetAddress> nonLoopback =
                 getAllLocalFromNetwork().stream().filter(a -> ! a.isLoopbackAddress()).collect(Collectors.toList());
             if (nonLoopback.isEmpty()) {
+                System.out.println("Returning fallback 1: " + fallback);
                 return fallback;
             }
             fallback = nonLoopback.get(0);
             List<InetAddress> resolving =
                     nonLoopback.stream().filter(a -> doesResolve(a)).collect(Collectors.toList());
             if (resolving.isEmpty()) {
+                System.out.println("Returning fallback 2: " + fallback);
                 return fallback;
             }
             fallback = resolving.get(0);
             List<InetAddress> ipV4 =
                     resolving.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
             if (ipV4.isEmpty()) {
+                System.out.println("Returning fallback 3: " + fallback);
                 return fallback;
             }
+            System.out.println("Returning first ipv4, " + ipV4.get(0) + " among:");
+            for (InetAddress choice : ipV4)
+                System.out.println("    " + choice);
             return ipV4.get(0);
         } catch (UnknownHostException e) {
+            System.out.println("Returning fallback from exception " + e);
             return fallback;
         }
     }

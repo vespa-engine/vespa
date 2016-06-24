@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import com.yahoo.container.search.Fs4Config;
+import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import org.junit.After;
 import org.junit.Before;
@@ -29,22 +30,23 @@ import com.yahoo.search.Query;
 /**
  * Test networking code for talking to dispatch.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class BackendTestCase {
 
     public static class MockDispatch implements Runnable {
-        public ServerSocket socket;
+
+        public final ServerSocket socket;
         public volatile Socket connection;
         volatile int channelId;
 
         public byte[] packetData = new byte[] { 0, 0, 0, 76, 0, 0, 0, 202 - 256, 0, 0,
-                0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0x40,
-                0x39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 111, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 0x40, 0x37, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2,
-                2, 2, 2, 2, 2, 0x40, 0x35, 0, 0, 0, 0, 0, 0 };
+                                                0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0x40,
+                                                0x39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 111, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                1, 1, 1, 1, 0x40, 0x37, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2,
+                                                2, 2, 2, 2, 2, 0x40, 0x35, 0, 0, 0, 0, 0, 0 };
 
-        public MockDispatch(final ServerSocket socket) {
+        public MockDispatch(ServerSocket socket) {
             this.socket = socket;
         }
 
@@ -52,7 +54,7 @@ public class BackendTestCase {
         public void run() {
             try {
                 connection = socket.accept();
-            } catch (final IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 return;
             }
@@ -60,14 +62,14 @@ public class BackendTestCase {
         }
 
         void requestRespond() {
-            final byte[] length = new byte[4];
+            byte[] length = new byte[4];
             try {
                 connection.getInputStream().read(length);
-            } catch (final IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 return;
             }
-            final int actual = ByteBuffer.wrap(length).getInt();
+            int actual = ByteBuffer.wrap(length).getInt();
 
             int read = 0;
             int i = 0;
@@ -75,18 +77,18 @@ public class BackendTestCase {
                 try {
                     read = connection.getInputStream().read();
                     ++i;
-                } catch (final IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     return;
                 }
             }
-            final ByteBuffer reply = ByteBuffer.wrap(packetData);
+            ByteBuffer reply = ByteBuffer.wrap(packetData);
             if (channelId != -1) {
                 reply.putInt(8, channelId);
             }
             try {
                 connection.getOutputStream().write(packetData);
-            } catch (final IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -96,16 +98,10 @@ public class BackendTestCase {
     public static class MockPacketListener implements PacketListener {
 
         @Override
-        public void packetSent(final FS4Channel channel,
-                final BasicPacket packet, final ByteBuffer serializedForm) {
-
-        }
+        public void packetSent(FS4Channel channel, BasicPacket packet, ByteBuffer serializedForm) { }
 
         @Override
-        public void packetReceived(final FS4Channel channel,
-                final BasicPacket packet, final ByteBuffer serializedForm) {
-
-        }
+        public void packetReceived(FS4Channel channel, BasicPacket packet, ByteBuffer serializedForm) { }
 
     }
 
@@ -115,7 +111,7 @@ public class BackendTestCase {
         public MockDispatch dispatch;
 
         public MockServer() throws IOException {
-            final ServerSocket socket = new ServerSocket(0);
+            ServerSocket socket = new ServerSocket(0, 50, LinuxInetAddress.getLocalHost());
             host = (InetSocketAddress) socket.getLocalSocketAddress();
             dispatch = new MockDispatch(socket);
             worker = new Thread(dispatch);
@@ -131,8 +127,8 @@ public class BackendTestCase {
     FS4ResourcePool listeners;
 
     public static final byte[] PONG = new byte[] { 0, 0, 0, 28, 0, 0, 0, 210 - 256,
-            0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
-            0, 0, 1 };
+                                                   0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
+                                                   0, 0, 1 };
 
     @Before
     public void setUp() throws Exception {
@@ -148,77 +144,63 @@ public class BackendTestCase {
     @After
     public void tearDown() throws Exception {
         listeners.deconstruct();
-        if (server.dispatch.socket != null) server.dispatch.socket.close();
+        server.dispatch.socket.close();
         if (server.dispatch.connection !=null) server.dispatch.connection.close();
         if (server.worker!=null) server.worker.join();
         if (logger !=null) logger.setUseParentHandlers(initUseParent);
     }
 
     @Test
-    public final void testBackend() throws IOException, InvalidChannelException {
-        try {
-            final FS4Channel channel = backend.openChannel();
-            final Query q = new Query("/?query=a");
-            BasicPacket[] b = null;
-            final int channelId = channel.getChannelId();
-            server.dispatch.channelId = channelId;
+    public void testBackend() throws IOException, InvalidChannelException {
+        FS4Channel channel = backend.openChannel();
+        Query q = new Query("/?query=a");
+        BasicPacket[] b = null;
+        int channelId = channel.getChannelId();
+        server.dispatch.channelId = channelId;
 
-            assertTrue(backend.sendPacket(QueryPacket.create(q), channelId));
-            try {
-                b = channel.receivePackets(1000, 1);
-            } catch (final ChannelTimeoutException e) {
-                fail("Could not get packets from simulated backend.");
-            }
-            assertEquals(1, b.length);
-            assertEquals(202, b[0].getCode());
-            channel.close();
+        assertTrue(backend.sendPacket(QueryPacket.create(q), channelId));
+        try {
+            b = channel.receivePackets(1000, 1);
+        } catch (ChannelTimeoutException e) {
+            fail("Could not get packets from simulated backend.");
         }
-        catch (java.net.UnknownHostException e) {
-            // We are on vpn, or have no network
-        }
+        assertEquals(1, b.length);
+        assertEquals(202, b[0].getCode());
+        channel.close();
     }
 
     @Test
-    public final void testPinging() throws IOException, InvalidChannelException {
-        try {
-            final FS4Channel channel = backend.openPingChannel();
-            BasicPacket[] b = null;
-            server.dispatch.channelId = -1;
-            server.dispatch.packetData = PONG;
+    public void testPinging() throws IOException, InvalidChannelException {
+        FS4Channel channel = backend.openPingChannel();
+        BasicPacket[] b = null;
+        server.dispatch.channelId = -1;
+        server.dispatch.packetData = PONG;
 
-            assertTrue(channel.sendPacket(new PingPacket()));
-            try {
-                b = channel.receivePackets(1000, 1);
-            } catch (final ChannelTimeoutException e) {
-                fail("Could not get packets from simulated backend.");
-            }
-            assertEquals(1, b.length);
-            assertEquals(210, b[0].getCode());
-            channel.close();
+        assertTrue(channel.sendPacket(new PingPacket()));
+        try {
+            b = channel.receivePackets(1000, 1);
+        } catch (ChannelTimeoutException e) {
+            fail("Could not get packets from simulated backend.");
         }
-        catch (java.net.UnknownHostException e) {
-            // We are on vpn, or have no network
-        }
+        assertEquals(1, b.length);
+        assertEquals(210, b[0].getCode());
+        channel.close();
     }
 
     @Test
-    public final void requireStatistics() throws IOException, InvalidChannelException {
-        try {
-            final FS4Channel channel = backend.openPingChannel();
-            server.dispatch.channelId = -1;
-            server.dispatch.packetData = PONG;
+    public void requireStatistics() throws IOException, InvalidChannelException {
+        FS4Channel channel = backend.openPingChannel();
+        server.dispatch.channelId = -1;
+        server.dispatch.packetData = PONG;
 
-            assertTrue(channel.sendPacket(new PingPacket()));
-            try {
-                channel.receivePackets(1000, 1);
-            } catch (final ChannelTimeoutException e) {
-                fail("Could not get packets from simulated backend.");
-            }
-            final BackendStatistics stats = backend.getStatistics();
-            assertEquals(1, stats.totalConnections());
+        assertTrue(channel.sendPacket(new PingPacket()));
+        try {
+            channel.receivePackets(1000, 1);
+        } catch (ChannelTimeoutException e) {
+            fail("Could not get packets from simulated backend.");
         }
-        catch (java.net.UnknownHostException e) {
-            // We are on vpn, or have no network
-        }
+        BackendStatistics stats = backend.getStatistics();
+        assertEquals(1, stats.totalConnections());
     }
+
 }

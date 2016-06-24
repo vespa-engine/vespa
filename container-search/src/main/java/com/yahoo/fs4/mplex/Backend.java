@@ -127,8 +127,10 @@ public class Backend implements ConnectionFactory {
     private FS4Connection createConnection() throws IOException {
         SocketChannel socket = SocketChannel.open();
         try {
+            System.out.println("Connecting to " + address + ", unresolved: " + address.isUnresolved());
             connectSocket(socket);
         } catch (Exception e) {
+            System.out.println("ERROR: " + e);
             // was warning, see VESPA-1922
             if ( ! areInSocketNotConnectableState)
                 logInfo("connecting to", e);
