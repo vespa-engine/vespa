@@ -1471,7 +1471,7 @@ Test::testCountMatches()
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
 
         StringList params, in, out;
-        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1-2 parameters
+        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1 parameter
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params.add("baz")); // cannot find the field
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo"), in, out.add("out"));
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"), in, out);

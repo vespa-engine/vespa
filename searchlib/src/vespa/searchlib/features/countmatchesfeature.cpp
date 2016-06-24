@@ -55,7 +55,7 @@ bool
 CountMatchesBlueprint::setup(const IIndexEnvironment &, const ParameterList & params)
 {
     _field = params[0].asField();
-    describeOutput("out", "Returns 1 if the given field is matched by the query, 0 otherwise");
+    describeOutput("out", "Returns number of matches in the field of all terms in the query");
     return true;
 }
 

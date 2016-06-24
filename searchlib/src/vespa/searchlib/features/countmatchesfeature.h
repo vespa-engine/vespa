@@ -9,7 +9,7 @@ namespace search {
 namespace features {
 
 /**
- * Implements the executor for the matches feature for index and
+ * Implements the executor for the countMatches feature for index and
  * attribute fields.
  */
 class CountMatchesExecutor : public fef::FeatureExecutor
@@ -23,12 +23,10 @@ public:
 };
 
 /**
- * Implements the blueprint for the matches executor.
+ * Implements the blueprint for the countMatches executor.
  *
- * matches(name)
- *  - returns 1 if there is an index or attribute with this name which matched the query, 0 otherwise
- * matches(name,n)
- *  - returns 1 if there is an index or attribute with this name which matched with the query term at the given position, 0 otherwise
+ * countMatches(name)
+ *  - returns number of matches of the query in the particular field.
  */
 class CountMatchesBlueprint : public fef::Blueprint
 {
@@ -36,28 +34,20 @@ private:
     const fef::FieldInfo *_field;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     CountMatchesBlueprint();
 
-    // Inherit doc from Blueprint.
     void visitDumpFeatures(const fef::IIndexEnvironment & env,
                            fef::IDumpFeatureVisitor & visitor) const override;
 
-    // Inherit doc from Blueprint.
     fef::Blueprint::UP createInstance() const override;
 
-    // Inherit doc from Blueprint.
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().field();
     }
 
-    // Inherit doc from Blueprint.
     bool setup(const fef::IIndexEnvironment & env,
                const fef::ParameterList & params) override;
 
-    // Inherit doc from Blueprint.
     fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
 };
 

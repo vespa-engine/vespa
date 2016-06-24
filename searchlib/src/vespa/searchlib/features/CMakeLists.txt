@@ -6,6 +6,7 @@ vespa_add_library(searchlib_features OBJECT
     attributefeature.cpp
     attributematchfeature.cpp
     closenessfeature.cpp
+    countmatchesfeature.cpp
     debug_attribute_wait.cpp
     debug_wait.cpp
     distancefeature.cpp
@@ -25,7 +26,6 @@ vespa_add_library(searchlib_features OBJECT
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
     matchesfeature.cpp
-    countmatchesfeature.cpp
     matchfeature.cpp
     native_dot_product_feature.cpp
     nativeattributematchfeature.cpp
