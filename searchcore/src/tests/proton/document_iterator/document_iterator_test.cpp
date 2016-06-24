@@ -509,12 +509,6 @@ void verifyStrongReadConsistency(DocumentIterator & itr) {
     EXPECT_EQUAL(1u, committer._commitAndWaitCount);
 }
 
-void verifyWeakReadConsistency(DocumentIterator & itr) {
-    Committer committer;
-    TEST_DO(verifyReadConsistency(itr, committer));
-    EXPECT_EQUAL(0u, committer._commitAndWaitCount);
-}
-
 TEST("require that default readconsistency does commit") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
     TEST_DO(verifyStrongReadConsistency(itr));
@@ -523,11 +517,6 @@ TEST("require that default readconsistency does commit") {
 TEST("require that readconsistency::strong does commit") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::STRONG);
     TEST_DO(verifyStrongReadConsistency(itr));
-}
-
-TEST("require that readconsistency::weak does not commit") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false, storage::spi::ReadConsistency::WEAK);
-    TEST_DO(verifyWeakReadConsistency(itr));
 }
 
 TEST("require that remove entries can be iterated") {
