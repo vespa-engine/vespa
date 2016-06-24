@@ -24,8 +24,8 @@ import java.util.function.Function;
 public class ComponentsProviderImpl implements ComponentsProvider {
 
     private final Docker docker;
-    private static final long INITIAL_SCHEDULER_DELAY_SECONDS = 0;
-    private static final long INTERVAL_SCHEDULER_IN_SECONDS = 60;
+    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 0;
+    private static final long INTERVAL_SCHEDULER_IN_MILLIS = 60000;
 
     private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
     private static final String ENV_HOSTNAME = "HOSTNAME";
@@ -50,6 +50,6 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 new NodeAgentImpl(hostName, docker, nodeRepository, orchestrator);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
         return new NodeAdminStateUpdater(
-                nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_SECONDS, INTERVAL_SCHEDULER_IN_SECONDS, orchestrator, baseHostName);
+                nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, INTERVAL_SCHEDULER_IN_MILLIS, orchestrator, baseHostName);
     }
 }
