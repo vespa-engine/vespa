@@ -162,6 +162,13 @@ def create_interface_in_namespace(network_namespace, ip_address_textual, interfa
     index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
     return index_of_created_interface
 
+def index_of_interface_in_namespace(interface_name, namespace):
+    interface_index_list = namespace.link_lookup(ifname=interface_name)
+    if not interface_index_list:
+        return None
+    assert len(interface_index_list) == 1
+    return interface_index_list[0]
+
 def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest_interface_name):
     ipr.link('set',
              index=src_interface_index,
@@ -173,14 +180,6 @@ def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest
     if not new_interface_index:
         raise RuntimeError("Concurrent modification to network interfaces")
     return new_interface_index
-
-
-def index_of_interface_in_namespace(interface_name, namespace):
-    interface_index_list = namespace.link_lookup(ifname=interface_name)
-    if not interface_index_list:
-        return None
-    assert len(interface_index_list) == 1
-    return interface_index_list[0]
 
 
 flag_local_mode = "--local"
