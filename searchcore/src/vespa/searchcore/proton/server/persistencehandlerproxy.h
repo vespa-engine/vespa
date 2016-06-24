@@ -73,7 +73,7 @@ public:
                const storage::spi::Bucket &target1,
                const storage::spi::Bucket &target2) override;
 
-    virtual RetrieversSP getDocumentRetrievers() override;
+    virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) override;
     virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) override;
 
     virtual void

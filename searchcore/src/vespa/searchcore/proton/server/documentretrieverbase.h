@@ -12,8 +12,6 @@
 namespace proton
 {
 
-class IDocumentMetaStoreContext;
-
 class DocumentRetrieverBase : public IDocumentRetriever
 {
     const DocTypeName                &_docTypeName;
@@ -41,6 +39,8 @@ public:
                            search::DocumentMetaData::Vector &result) const override;
     search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override;
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override;
+    ReadGuard getReadGuard() const override { return _meta_store.getReadGuard(); }
+    uint32_t getDocIdLimit() const override { return _meta_store.getReadGuard()->get().getCommittedDocIdLimit(); }
 };
 
 }  // namespace proton
