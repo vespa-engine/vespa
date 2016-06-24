@@ -188,9 +188,9 @@ private:
     void
     testStringFold(void);
 
-    void testIntArray();
+    void testDupValuesInIntArray();
 
-    void testStringArray();
+    void testDupValuesInStringArray();
 public:
     int Main();
 };
@@ -1049,7 +1049,7 @@ PostingListAttributeTest::testStringFold(void)
 }
 
 void
-PostingListAttributeTest::testIntArray()
+PostingListAttributeTest::testDupValuesInIntArray()
 {
     Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
     cfg.setFastSearch(true);
@@ -1074,7 +1074,7 @@ PostingListAttributeTest::testIntArray()
 }
 
 void
-PostingListAttributeTest::testStringArray()
+PostingListAttributeTest::testDupValuesInStringArray()
 {
     Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
     cfg.setFastSearch(true);
@@ -1119,8 +1119,8 @@ PostingListAttributeTest::Main()
     testReload();
     testMinMax();
     testStringFold();
-    testIntArray();
-    testStringArray();
+    testDupValuesInIntArray();
+    testDupValuesInStringArray();
 
     TEST_DONE();
 }
