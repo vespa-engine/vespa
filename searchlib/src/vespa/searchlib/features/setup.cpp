@@ -6,7 +6,6 @@
 #include "attributefeature.h"
 #include "attributematchfeature.h"
 #include "closenessfeature.h"
-#include "countmatchesfeature.h"
 #include "debug_attribute_wait.h"
 #include "debug_wait.h"
 #include "distancefeature.h"
@@ -25,6 +24,7 @@
 #include "freshnessfeature.h"
 #include "item_raw_score_feature.h"
 #include "jarowinklerdistancefeature.h"
+#include "matchcountfeature.h"
 #include "matchesfeature.h"
 #include "matchfeature.h"
 #include "native_dot_product_feature.h"
@@ -64,7 +64,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new AttributeBlueprint()));
     registry.addPrototype(Blueprint::SP(new AttributeMatchBlueprint()));
     registry.addPrototype(Blueprint::SP(new ClosenessBlueprint()));
-    registry.addPrototype(Blueprint::SP(new CountMatchesBlueprint()));
+    registry.addPrototype(Blueprint::SP(new MatchCountBlueprint()));
     registry.addPrototype(Blueprint::SP(new DistanceBlueprint()));
     registry.addPrototype(Blueprint::SP(new DistanceToPathBlueprint()));
     registry.addPrototype(Blueprint::SP(new DebugAttributeWaitBlueprint()));

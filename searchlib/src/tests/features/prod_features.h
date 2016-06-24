@@ -16,7 +16,7 @@ public:
     void testAttribute();
     void testAttributeMatch();
     void testCloseness();
-    void testCountMatches();
+    void testMatchCount();
     void testDistance();
     void testDistanceToPath();
     void testDotProduct();
