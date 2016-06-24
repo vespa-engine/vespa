@@ -224,4 +224,5 @@ class NodesResponse extends HttpResponse {
         return NodeStateSerializer.fromWireName(stateString)
                 .orElseThrow(() -> new RuntimeException("Node state '" + stateString + "' is not known"));
     }
+
 }

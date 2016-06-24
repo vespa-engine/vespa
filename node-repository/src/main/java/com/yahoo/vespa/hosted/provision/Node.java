@@ -221,8 +221,6 @@ public final class Node {
                (parentHostname.isPresent() ? " [on: " + parentHostname.get() + "]" : "");
     }
 
-
-
     public enum State {
 
         /** This node has been requested (from OpenStack) but is not yet read for use */
@@ -263,4 +261,5 @@ public final class Node {
         tenant,
         host;
     }
+
 }

@@ -56,8 +56,6 @@ public class NodeSerializer {
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
-    private static final String nodeTypeTenant = "tenant";
-    private static final String nodeTypeHost = "host";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -110,15 +108,7 @@ public class NodeSerializer {
         object.setBool(hardwareFailureKey, node.status().hardwareFailure());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
-        object.setString(nodeTypeKey, nodeTypeToString(node.type()));
-    }
-
-    private String nodeTypeToString(Node.Type type) {
-        switch (type) {
-            case tenant: return nodeTypeTenant;
-            case host: return nodeTypeHost;
-        }
-        throw new IllegalArgumentException("Unknown node type '" + type.toString() + "'");
+        object.setString(nodeTypeKey, toString(node.type()));
     }
 
     private void toSlime(Configuration configuration, Cursor object) {
@@ -164,7 +154,7 @@ public class NodeSerializer {
                         state,
                         allocationFromSlime(object.field(instanceKey)),
                         historyFromSlime(object.field(historyKey)),
-                        typeFromSlime(object));
+                        typeFromSlime(object.field(nodeTypeKey)));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -207,17 +197,6 @@ public class NodeSerializer {
         return new History(events);
     }
 
-    private Node.Type typeFromSlime(Inspector object) {
-        String typeString = object.field(nodeTypeKey).asString();
-        switch (typeString) {
-            case nodeTypeTenant : return Node.Type.tenant;
-            case nodeTypeHost : return Node.Type.host;
-            // TODO: Remove this when 6.13 is released everywhere
-            case "" : return Node.Type.tenant;
-        }
-        throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
-    }
-
     private History.Event eventFromSlime(Inspector object) {
         History.Event.Type type = eventTypeFromString(object.field(historyEventTypeKey).asString());
         if (type == null) return null;
@@ -249,6 +228,8 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
+    // Enum <-> string mappings
+    
     /** Returns the event type, or null if this event type should be ignored */
     private History.Event.Type eventTypeFromString(String eventTypeString) {
         switch (eventTypeString) {
@@ -263,7 +244,6 @@ public class NodeSerializer {
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
-
     private String toString(History.Event.Type nodeEventType) {
         switch (nodeEventType) {
             case readied : return "readied";
@@ -285,13 +265,28 @@ public class NodeSerializer {
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentString + "'");
     }
-
     private String toString(History.RetiredEvent.Agent agent) {
         switch (agent) {
             case application : return "application";
             case system : return "system";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
+    }
+
+    private Node.Type typeFromSlime(Inspector object) {
+        if ( ! object.valid()) return Node.Type.tenant; // TODO: Remove this and change to pass string line when 6.13 is released everywhere
+        switch (object.asString()) {
+            case "tenant" : return Node.Type.tenant;
+            case "host" : return Node.Type.host;
+            default : throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
+        }
+    }
+    private String toString(Node.Type type) {
+        switch (type) {
+            case tenant: return "tenant";
+            case host: return "host";
+        }
+        throw new IllegalArgumentException("Unknown node type '" + type.toString() + "'");
     }
 
 }
