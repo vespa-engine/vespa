@@ -181,6 +181,35 @@ def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest
         raise RuntimeError("Concurrent modification to network interfaces")
     return new_interface_index
 
+def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_length):
+    ip_already_configured = False
+
+    for existing_ip in net_namespace.get_addr(index=interface_index, family = AF_INET):
+        existing_ip_address = get_attribute(existing_ip, 'IFA_ADDRESS')
+        existing_ip_prefixlen = existing_ip['prefixlen']
+        is_same_address = ipaddress.ip_address(unicode(existing_ip_address)) == ip_address
+        is_same_netmask = existing_ip_prefixlen == network_prefix_length
+        if is_same_address and is_same_netmask:
+            ip_already_configured = True
+        else:
+            print("Deleting old ip address. %s/%s" % (existing_ip_address, existing_ip_prefixlen))
+            result_of_remove = net_namespace.addr('remove',
+                                                  index=interface_index,
+                                                  address=existing_ip_address,
+                                                  mask=existing_ip_prefixlen)
+            print(result_of_remove)
+
+    if not ip_already_configured:
+        try:
+            net_namespace.addr('add',
+                               index=interface_index,
+                               address=str(ip_address),
+                               # broadcast='192.168.59.255',
+                               mask=network_prefix_length)
+        except NetlinkError as e:
+            if e.code == 17:  # File exists, i.e. address is already added
+                pass
+
 
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
@@ -257,29 +286,10 @@ if not container_interface_index:
 
 
 # Set ip address on interface in container namespace.
-
-ip_already_configured = False
-
-for host_ip in container_ns.get_addr(index=container_interface_index, family = AF_INET):
-    if ipaddress.ip_address(unicode(get_attribute(host_ip, 'IFA_ADDRESS'))) == container_ip and host_ip['prefixlen'] == container_network_prefix_length:
-            ip_already_configured = True
-    else:
-        print("Deleting old ip address. %s/%s" % (get_attribute(host_ip, 'IFA_ADDRESS'), host_ip['prefixlen']))
-        print(container_ns.addr('remove',
-                          index=container_interface_index,
-                          address=get_attribute(host_ip, 'IFA_ADDRESS'),
-                          mask=host_ip['prefixlen']))
-
-if not ip_already_configured:
-    try:
-        container_ns.addr('add',
-                          index=container_interface_index,
-                          address=str(container_ip),
-                          #broadcast='192.168.59.255',
-                          mask=container_network_prefix_length)
-    except NetlinkError as e:
-        if e.code == 17: # File exists, i.e. address is already added
-            pass
+set_ip_address(net_namespace=container_ns,
+               interface_index=container_interface_index,
+               ip_address=container_ip,
+               network_prefix_length=container_network_prefix_length)
 
 
 # Activate container interface.
