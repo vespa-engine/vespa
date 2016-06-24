@@ -91,6 +91,7 @@ public class NodeAgentImpl implements NodeAgent {
                     break;
             }
         }
+        monitor.notifyAll();
     }
 
     @Override
