@@ -162,11 +162,18 @@ def create_interface_in_namespace(network_namespace, ip_address_textual, interfa
     index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
     return index_of_created_interface
 
-def move_interface(src_interface_index, dest_namespace_pid, dest_interface_name):
+def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest_interface_name):
     ipr.link('set',
              index=src_interface_index,
              net_ns_fd=str(dest_namespace_pid),
              ifname=dest_interface_name)
+
+    new_interface_index = index_of_interface_in_namespace(interface_name=dest_interface_name,
+                                                          namespace=dest_namespace)
+    if not new_interface_index:
+        raise RuntimeError("Concurrent modification to network interfaces")
+    return new_interface_index
+
 
 def index_of_interface_in_namespace(interface_name, namespace):
     interface_index_list = namespace.link_lookup(ifname=interface_name)
@@ -244,15 +251,10 @@ if not container_interface_index:
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
-    move_interface(src_interface_index=temporary_interface_index,
-                   dest_namespace_pid=container_pid,
-                   dest_interface_name=container_interface_name)
-
-    # Find index of interface now in container namespace.
-    container_interface_index = index_of_interface_in_namespace(interface_name=container_interface_name,
-                                                                namespace=container_ns)
-    if not container_interface_index:
-        raise RuntimeError("Concurrent modification to network interfaces in container")
+    container_interface_index = move_interface(src_interface_index=temporary_interface_index,
+                                               dest_namespace=container_ns,
+                                               dest_namespace_pid=container_pid,
+                                               dest_interface_name=container_interface_name)
 
 
 # Set ip address on interface in container namespace.
