@@ -9,15 +9,15 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeRepositoryApi;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
 import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -117,12 +117,20 @@ public class NodeRepositoryImpl implements NodeRepository {
             final String currentVespaVersion)
             throws IOException {
         // TODO: Filter out redundant (repeated) invocations with the same values.
-        // TODO: Error handling.
-        nodeRepositoryClient.apply(nodeRepositoryApi ->
-                nodeRepositoryApi.updateNodeAttributes(
-                        hostName.s(),
-                        new UpdateNodeAttributesRequestBody(
-                                restartGeneration, dockerImage.asString(), currentVespaVersion)));
+        try {
+            nodeRepositoryClient.apply(nodeRepositoryApi ->
+                                               nodeRepositoryApi.updateNodeAttributes(
+                                                       hostName.s(),
+                                                       new UpdateNodeAttributesRequestBody(
+                                                               restartGeneration,
+                                                               dockerImage.asString(),
+                                                               currentVespaVersion)));
+        } catch (javax.ws.rs.WebApplicationException e) {
+            final Response response = e.getResponse();
+            UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
+            logger.log(LogLevel.ERROR, "Response code " + response.getStatus() + ": " + updateResponse.message);
+            throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
+        }
     }
 
     @Override

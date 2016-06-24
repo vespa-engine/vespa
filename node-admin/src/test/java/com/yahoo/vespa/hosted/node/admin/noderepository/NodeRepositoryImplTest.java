@@ -106,4 +106,21 @@ public class NodeRepositoryImplTest {
         assertThat(nodeSpec.get().hostname, is(hostname));
         assertThat(nodeSpec.get().containerName, is(new ContainerName("host4")));
     }
+
+    @Test
+    public void testUpdateNodeAttributes() throws InterruptedException, IOException {
+        waitForJdiscContainerToServe();
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
+        HostName hostname = new HostName("host4.yahoo.com");
+        nodeRepositoryApi.updateNodeAttributes(hostname, 1L, new DockerImage("image-1"), "6.2.3");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
+        waitForJdiscContainerToServe();
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
+        HostName hostname = new HostName("host4.yahoo.com");
+        nodeRepositoryApi.updateNodeAttributes(hostname, 1L, new DockerImage("image-1"), "6.2.3\n");
+    }
+
 }
