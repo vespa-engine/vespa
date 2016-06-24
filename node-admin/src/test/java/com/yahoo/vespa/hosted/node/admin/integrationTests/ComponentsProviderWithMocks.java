@@ -1,7 +1,11 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.node.admin.*;
+import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 
