@@ -340,9 +340,8 @@ else:
     host_default_route = get_default_route(net_namespace=host_ns)
 
     host_default_route_device_index = get_attribute(host_default_route, 'RTA_OIF')
-    host_default_route_gateway = get_attribute(host_default_route, 'RTA_GATEWAY')
     if host_device_index_for_container != host_default_route_device_index:
         raise RuntimeError("Container's ip address is not on the same network as the host's default route."
                            " Could not set up default route for the container.")
-    container_gateway = host_default_route_gateway
-    container_ns.route("replace", gateway=container_gateway, index=container_interface_index)
+    host_default_route_gateway = get_attribute(host_default_route, 'RTA_GATEWAY')
+    container_ns.route("replace", gateway=host_default_route_gateway, index=container_interface_index)
