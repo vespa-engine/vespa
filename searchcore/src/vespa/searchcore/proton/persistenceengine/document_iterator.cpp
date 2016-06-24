@@ -159,11 +159,11 @@ public:
     bool willAlwaysFail() const { return _willAlwaysFail; }
 
     bool match(const search::DocumentMetaData & meta) const {
-        if (_dscTrue || _metaOnly) {
-            return true;
-        }
         if (meta.lid >= _docidLimit) {
             return false;
+        }
+        if (_dscTrue || _metaOnly) {
+            return true;
         }
         if (_sc) {
             _sc->_docId = meta.lid;
