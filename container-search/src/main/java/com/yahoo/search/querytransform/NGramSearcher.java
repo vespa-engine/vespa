@@ -109,17 +109,18 @@ public class NGramSearcher extends Searcher {
      * @return the root of the query subtree produced by this, containing the split items
      */
     protected Item splitToGrams(Item term, String text, int gramSize, Query query) {
-        CompositeItem and = createGramRoot(query);
         String index = ((HasIndexItem)term).getIndexName();
+        CompositeItem gramsItem = createGramRoot(query);
+        gramsItem.setIndexName(index);
         Substring origin = ((BlockItem)term).getOrigin();
         for (Iterator<GramSplitter.Gram> i = getGramSplitter().split(text,gramSize); i.hasNext(); ) {
             GramSplitter.Gram gram = i.next();
             WordItem gramWord = new WordItem(gram.extractFrom(text), index, false, origin);
             gramWord.setWeight(term.getWeight());
             gramWord.setProtected(true);
-            and.addItem(gramWord);
+            gramsItem.addItem(gramWord);
         }
-        return and.getItemCount()==1 ? and.getItem(0) : and; // return the AndItem, or just the single gram if not multiple
+        return gramsItem.getItemCount()==1 ? gramsItem.getItem(0) : gramsItem; // return the AndItem, or just the single gram if not multiple
     }
 
     /**
