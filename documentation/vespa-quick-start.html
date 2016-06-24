@@ -20,7 +20,7 @@ This guide will give you a single&ndash;node Vespa installation.
 <pre class="brush: cli">
 TODO: Insert path to Vespa RPM repo when available
 yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-yum-config-manager --add-repo <insert path to Vespa RPM repo>
+yum-config-manager --add-repo ADD_PATH_TO_PUBLIC_VESPA_REPO_HERE
 yum install vespa
 </pre>
 </li>
@@ -28,7 +28,7 @@ yum install vespa
 <li><p><strong>Set the Vespa config server address:</strong>
 This must be a fully qualified hostname - in this case, the one node you are using:</p>
 <pre class="brush: cli">
-TODO: Set configserver address command.
+export services__addr_configserver=`hostname`
 </pre>
 </li>
 
