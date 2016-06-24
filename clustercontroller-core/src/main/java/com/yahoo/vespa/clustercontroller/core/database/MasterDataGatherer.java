@@ -84,7 +84,7 @@ public class MasterDataGatherer {
     private class DirCallback implements AsyncCallback.ChildrenCallback {
         public void processResult(int version, String path, Object context, List<String> nodes) {
             if (nodes == null) nodes = new LinkedList<String>();
-            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
+            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
             // Detect what nodes are added and what nodes have been removed. Others can be ignored.
             List<Integer> addedNodes = new LinkedList<Integer>();
             synchronized (nextMasterData) {
@@ -103,7 +103,7 @@ public class MasterDataGatherer {
                     nextMasterData.remove(index);
                 }
                 for (Integer index : addedNodes) {
-                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '" + zooKeeperRoot + index + "' to see vote");
+                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '" + zooKeeperRoot + index + "' to see vote");
                     nextMasterData.put(index, null);
                     session.getData(zooKeeperRoot + "indexes/" + index, changeWatcher, nodeListener, null);
                 }
