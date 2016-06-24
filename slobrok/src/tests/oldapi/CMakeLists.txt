@@ -4,7 +4,6 @@ vespa_add_executable(slobrok_oldapi_test_app TEST
     old.cpp
     mirror.cpp
     DEPENDS
-    slobrok
     slobrok_slobrokserver
 )
 vespa_add_test(NAME slobrok_oldapi_test_app COMMAND slobrok_oldapi_test_app)

@@ -7,7 +7,6 @@ vespa_define_module(
     vespalib
     staging_vespalib
     fnet
-    slobrok
     slobrok_slobrokserver
 
     LIBS

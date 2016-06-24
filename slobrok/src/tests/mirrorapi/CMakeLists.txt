@@ -3,7 +3,6 @@ vespa_add_executable(slobrok_mirrorapi_test_app TEST
     SOURCES
     mirrorapi.cpp
     DEPENDS
-    slobrok
     slobrok_slobrokserver
 )
 vespa_add_test(NAME slobrok_mirrorapi_test_app COMMAND slobrok_mirrorapi_test_app)
