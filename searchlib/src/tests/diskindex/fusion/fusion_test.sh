@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 IINSPECT=../../../apps/vespa-index-inspect/searchlib_vespa-index-inspect_app 
 ECHO_CMD=echo
 
