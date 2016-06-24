@@ -237,14 +237,14 @@ if not container_interface_index:
     # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
     # interface (typically eth0 or em1). So could we link against eth0 or em1
     # (or whatever) instead here? What's the difference?
-    interface_index = create_interface_in_namespace(network_namespace=host_ns,
-                                                    ip_address_textual=container_ip_arg,
-                                                    interface_name=temporary_interface_name_while_in_host_ns,
-                                                    link_device_index=host_device_index_for_container)
+    temporary_interface_index = create_interface_in_namespace(network_namespace=host_ns,
+                                                              ip_address_textual=container_ip_arg,
+                                                              interface_name=temporary_interface_name_while_in_host_ns,
+                                                              link_device_index=host_device_index_for_container)
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
-    move_interface(src_interface_index=interface_index,
+    move_interface(src_interface_index=temporary_interface_index,
                    dest_namespace_pid=container_pid,
                    dest_interface_name=container_interface_name)
 
