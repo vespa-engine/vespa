@@ -162,6 +162,13 @@ def create_interface_in_namespace(network_namespace, ip_address_textual, interfa
     index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
     return index_of_created_interface
 
+def move_interface(src_interface_index, dest_namespace_pid, dest_interface_name):
+    ipr.link('set',
+             index=src_interface_index,
+             net_ns_fd=str(dest_namespace_pid),
+             ifname=dest_interface_name)
+
+
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
 if local_mode:
@@ -227,8 +234,9 @@ if not container_ns.link_lookup(ifname=container_interface_name):
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
     # exploit that node_admin docker container shares net namespace with host:
-    ipr.link('set', index=interface_index, net_ns_fd=str(container_pid),
-             ifname=container_interface_name)
+    move_interface(src_interface_index=interface_index,
+                   dest_namespace_pid=container_pid,
+                   dest_interface_name=container_interface_name)
 
 
 # Find index of interface now in container namespace.
