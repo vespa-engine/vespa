@@ -15,6 +15,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.IndexingDocprocChain;
 import com.yahoo.vespa.model.search.SearchNode;
+import org.w3c.dom.Element;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -64,8 +66,9 @@ public class Content extends ConfigModel {
     public AdminModel adminModel() { return adminModel; }
 
     /** Called by DomContentBuilder during build */
-    public void setCluster(ContentCluster cluster, ConfigModelContext configModelContext) {
-        this.cluster = cluster;
+    public void build(Element xml, ConfigModelContext configModelContext) {
+        Admin admin = adminModel() != null ? adminModel().getAdmin() : null; // This is null in tests only
+        cluster = new ContentCluster.Builder(admin, configModelContext.getDeployLogger()).build(configModelContext.getParentProducer(), xml);
         initializeIndexingClusters(containers,
                                    configModelContext.getConfigModelRepoAdder(),
                                    (ApplicationConfigProducerRoot)configModelContext.getParentProducer());
@@ -343,5 +346,6 @@ public class Content extends ConfigModel {
         // Currently only distribute affinity for search nodes
         AbstractService.distributeCpuSocketAffinity(cluster.getSearch().getSearchNodes());
     }
+
 }
 

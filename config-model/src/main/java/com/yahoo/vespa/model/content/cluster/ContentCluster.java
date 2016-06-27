@@ -314,11 +314,17 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
         private List<HostResource> drawContentHosts(int count, StorageGroup rootGroup) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
+            if (hosts.size() < 3) // supply with containers if we don't have enough content hosts
+                hosts.addAll(drawContainerHosts(3 - hosts.size()));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
         }
 
+        private List<HostResource> drawContainerHosts(int count) {
+            return new ArrayList<>(); // TODO
+        }
+        
         /**
          * Draw <code>count</code> nodes from as many different content groups below this as possible.
          * This will only achieve maximum spread in the case where the groups are balanced and never on the same

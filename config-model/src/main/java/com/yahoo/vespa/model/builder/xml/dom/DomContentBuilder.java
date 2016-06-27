@@ -32,9 +32,7 @@ public class DomContentBuilder extends ConfigModelBuilder<Content> {
 
     @Override
     public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
-        Admin admin = content.adminModel() != null ? content.adminModel().getAdmin() : null; // This is null in tests only
-        ContentCluster cluster = new ContentCluster.Builder(admin, modelContext.getDeployLogger()).build(modelContext.getParentProducer(), xml);
-        content.setCluster(cluster, modelContext);
+        content.build(xml, modelContext);
     }
 
 }
