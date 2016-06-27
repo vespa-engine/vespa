@@ -5,13 +5,13 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include "i_disk_mem_usage_notifier.h"
 #include "i_disk_mem_usage_listener.h"
-//#include "disk_mem_usage_state.h"
 
 namespace proton
 {
 
 /**
- * Forwarder for disk/memory usage state changes.
+ * Forwarder for disk/memory usage state changes. Notification is forwarded
+ * as a task run by the supplied executor.
  */
 class DiskMemUsageForwarder : public IDiskMemUsageNotifier,
                               public IDiskMemUsageListener

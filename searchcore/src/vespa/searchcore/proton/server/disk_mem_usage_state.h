@@ -4,6 +4,10 @@
 
 namespace proton {
 
+/**
+ * Class used to describe state of disk and memory usage relative to
+ * configured limits.
+ */
 class DiskMemUsageState
 {
     bool _aboveDiskLimit;
