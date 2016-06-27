@@ -68,12 +68,15 @@ vespa_define_module(
     src/tests/attribute
     src/tests/attribute/attributefilewriter
     src/tests/attribute/attributemanager
+    src/tests/attribute/benchmark
     src/tests/attribute/bitvector
+    src/tests/attribute/changevector
     src/tests/attribute/comparator
     src/tests/attribute/document_weight_iterator
     src/tests/attribute/enumeratedsave
     src/tests/attribute/enumstore
     src/tests/attribute/extendattributes
+    src/tests/attribute/guard
     src/tests/attribute/multivaluemapping
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
