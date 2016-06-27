@@ -14,6 +14,7 @@
 #include <ostream>
 #include <sstream>
 #include <unordered_map>
+#include <cmath>
 
 LOG_SETUP(".visitor.instance");
 
@@ -39,8 +40,8 @@ Visitor::HitCounter::addHit(const document::DocumentId& hit, uint32_t size)
         const document::OrderDocIdString& order(
                 static_cast<const document::OrderDocIdString&>(hit.getScheme()));
 
-        int32_t width = (int32_t)pow(2, order.getWidthBits());
-        int32_t division = (int32_t)pow(2, order.getDivisionBits());
+        int32_t width = (int32_t)std::pow(2, order.getWidthBits());
+        int32_t division = (int32_t)std::pow(2, order.getDivisionBits());
 
         if (_ordering->getOrder() == document::OrderingSpecification::ASCENDING) {
             uint64_t upperLimit = UINT64_MAX;
