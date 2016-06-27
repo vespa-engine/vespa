@@ -13,12 +13,10 @@
 
 #include <list>
 #include <algorithm>
-
-#include <math.h>
+#include <cmath>
 
 #include "vectorizer.h"
 #include "fsa.h"
-
 
 namespace fsa {
 
@@ -35,7 +33,7 @@ double Vectorizer::TfIdf::weight(unsigned int tfnorm, unsigned int idfnorm,
   else{
     tf_n = (double)_tf/tfnorm;
     if(tfexp!=1.0 && tf_n!=0.0){
-      tf_n = exp(tfexp*log(tf_n));
+      tf_n = std::exp(tfexp * std::log(tf_n));
     }
   }
 
@@ -47,7 +45,7 @@ double Vectorizer::TfIdf::weight(unsigned int tfnorm, unsigned int idfnorm,
     if(idf_n<0.0)
       idf_n = 0.0;
     if(idfexp!=1.0 && idf_n!=0.0){
-      idf_n = exp(idfexp*log(idf_n));
+      idf_n = std::exp(idfexp * std::log(idf_n));
     }
   }
 

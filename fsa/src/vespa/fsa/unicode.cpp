@@ -6,7 +6,7 @@
 #include "unicode.h"
 
 #include <assert.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace fsa {
 
@@ -521,7 +521,7 @@ int Unicode::utf8move(unsigned const char* start, size_t length,
 
   if (offset == 0) // Enough room to make it..
   {
-    int moved = abs(p - pos);
+    int moved = std::abs(p - pos);
     pos = p;
     return moved;
   }

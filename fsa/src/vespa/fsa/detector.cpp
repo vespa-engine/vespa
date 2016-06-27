@@ -14,8 +14,7 @@
 
 #include <list>
 #include <algorithm>
-
-#include <math.h>
+#include <cmath>
 
 #include "detector.h"
 #include "fsa.h"
