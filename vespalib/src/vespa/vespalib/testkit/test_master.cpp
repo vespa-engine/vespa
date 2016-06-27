@@ -5,6 +5,15 @@
 
 namespace vespalib {
 
+namespace {
+
+const char *skip_path(const char *file) {
+    const char *last = strrchr(file, '/');
+    return (last == nullptr) ? file : (last + 1);
+}
+
+} // namespace vespalib::<unnamed>
+
 //-----------------------------------------------------------------------------
 
 TestMaster TestMaster::master;
@@ -50,7 +59,7 @@ TestMaster::checkFailed(const vespalib::LockGuard &guard,
     ++thread.failCnt;
     ++_state.failCnt;
     fprintf(stderr, "%s: ERROR: check failure #%zu: '%s' in thread '%s' (%s:%d)\n",
-            _name.c_str(), _state.failCnt, str, thread.name.c_str(), file, line);
+            _name.c_str(), _state.failCnt, str, thread.name.c_str(), skip_path(file), line);
     if (!thread.traceStack.empty()) {
         for (size_t i = thread.traceStack.size(); i-- > 0; ) {
             const TraceItem &item = thread.traceStack[i];
@@ -155,7 +164,7 @@ void
 TestMaster::init(const char *name)
 {
     vespalib::LockGuard guard(_lock);
-    _name = name;
+    _name = skip_path(name);
     fprintf(stderr, "%s: info:  running test suite '%s'\n", _name.c_str(), _name.c_str());
 }
 
@@ -270,7 +279,7 @@ TestMaster::openDebugFiles(const std::string &lhsFile,
 void
 TestMaster::pushState(const char *file, uint32_t line, const char *msg)
 {
-    threadState().traceStack.push_back(TraceItem(file, line, msg));
+    threadState().traceStack.push_back(TraceItem(skip_path(file), line, msg));
 }
 
 void
@@ -306,7 +315,7 @@ TestMaster::flush(const char *file, uint32_t line)
         vespalib::LockGuard guard(_lock);
         _state.passCnt += thread.passCnt;
         fprintf(stderr, "%s: info:  flushed %zu passed check(s) from thread '%s' (%s:%d)\n",
-                _name.c_str(), thread.passCnt, thread.name.c_str(), file, line);
+                _name.c_str(), thread.passCnt, thread.name.c_str(), skip_path(file), line);
         thread.passCnt = 0;
     }
 }
@@ -316,7 +325,7 @@ TestMaster::trace(const char *file, uint32_t line)
 {
     ThreadState &thread = threadState();
     fprintf(stderr, "%s: info:  trace: thread '%s' (%s:%d)\n",
-            _name.c_str(), thread.name.c_str(), file, line);
+            _name.c_str(), thread.name.c_str(), skip_path(file), line);
 }
 
 bool
