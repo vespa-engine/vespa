@@ -440,14 +440,14 @@ GetResult
 PersistenceEngine::get(const Bucket& b,
                        const document::FieldSet& fields,
                        const DocumentId& did,
-                       Context&) const
+                       Context& context) const
 {
     RWLockReader rguard(getRLock());
     HandlerSnapshot::UP snapshot = getHandlerSnapshot();
 
     for (PersistenceHandlerSequence & handlers = snapshot->handlers(); handlers.valid(); handlers.next()) {
         BucketGuard::UP bucket_guard = handlers.get()->lockBucket(b);
-        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers();
+        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
         for (size_t i = 0; i < retrievers->size(); ++i) {
             IDocumentRetriever &retriever = *(*retrievers)[i];
             search::DocumentMetaData meta = retriever.getDocumentMetaData(did);
@@ -478,12 +478,12 @@ PersistenceEngine::createIterator(const Bucket &bucket,
     RWLockReader rguard(getRLock());
     HandlerSnapshot::UP snapshot = getHandlerSnapshot();
 
-    IteratorEntry *entry = new IteratorEntry(context.getReadConsistency(), bucket, fields, selection,
-                                             versions, _defaultSerializedSize, _ignoreMaxBytes);
+    auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, fields, selection,
+                                                 versions, _defaultSerializedSize, _ignoreMaxBytes);
     entry->bucket_guards.reserve(snapshot->size());
     for (PersistenceHandlerSequence & handlers = snapshot->handlers(); handlers.valid(); handlers.next()) {
         entry->bucket_guards.push_back(handlers.get()->lockBucket(bucket));
-        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers();
+        IPersistenceHandler::RetrieversSP retrievers = handlers.get()->getDocumentRetrievers(context.getReadConsistency());
         for (size_t i = 0; i < retrievers->size(); ++i) {
             entry->it.add((*retrievers)[i]);
         }
@@ -493,7 +493,7 @@ PersistenceEngine::createIterator(const Bucket &bucket,
     LockGuard guard(_iterators_lock);
     static IteratorId id_counter(0);
     IteratorId id(++id_counter);
-    _iterators[id] = entry;
+    _iterators[id] = entry.release();
     return CreateIteratorResult(id);
 }
 

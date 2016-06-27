@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 . ../../binref/env.sh
 
 export PORT_0

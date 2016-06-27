@@ -6,5 +6,4 @@ vespa_add_executable(slobrok_app
     INSTALL bin
     DEPENDS
     slobrok_slobrokserver
-    slobrok
 )

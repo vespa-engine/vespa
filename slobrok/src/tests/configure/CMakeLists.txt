@@ -8,7 +8,6 @@ vespa_add_executable(slobrok_configure_test_app TEST
     SOURCES
     configure.cpp
     DEPENDS
-    slobrok
     slobrok_slobrokserver
 )
 vespa_add_test(

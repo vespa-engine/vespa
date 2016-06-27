@@ -23,4 +23,5 @@ vespa_add_library(slobrok_slobrokserver
     metrics_producer.cpp
     INSTALL lib64
     DEPENDS
+    slobrok
 )

@@ -295,7 +295,7 @@ FastAccessDocSubDB::getDocumentRetriever()
 {
     FastAccessFeedView::SP feedView = _fastUpdateFeedView.get();
     proton::IAttributeManager::SP attrMgr = extractAttributeManager(feedView);
-    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(feedView, attrMgr));
+    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(feedView, attrMgr, _docIdLimit));
 }
 
 void

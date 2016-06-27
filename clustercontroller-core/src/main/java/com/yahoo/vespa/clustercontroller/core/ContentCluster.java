@@ -191,7 +191,7 @@ public class ContentCluster {
      * @param newState state wanted to be set  @return NodeUpgradePrechecker.Response
      */
     public NodeStateChangeChecker.Result calculateEffectOfNewState(
-            Node node, int clusterState, SetUnitStateRequest.Condition condition, NodeState oldState, NodeState newState) {
+            Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition, NodeState oldState, NodeState newState) {
 
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
                 minStorageNodesUp,

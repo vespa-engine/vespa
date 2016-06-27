@@ -44,14 +44,18 @@ public:
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor,
                         ReadConsistency readConsistency) const override
     {
-        if (readConsistency == ReadConsistency::STRONG) {
-            _commit.commitAndWait();
-        }
+        _commit.commitAndWait();
         _retriever->visitDocuments(lids, visitor, readConsistency);
     }
 
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override {
         return _retriever->parseSelect(selection);
+    }
+    ReadGuard getReadGuard() const override {
+        return _retriever->getReadGuard();
+    }
+    uint32_t getDocIdLimit() const override {
+        return _retriever->getDocIdLimit();
     }
 };
 

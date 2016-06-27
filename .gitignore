@@ -32,3 +32,7 @@ CTestTestfile.cmake
 cmake_install.cmake
 Makefile
 Testing
+/.ninja_deps
+/.ninja_log
+/build.ninja
+/rules.ninja

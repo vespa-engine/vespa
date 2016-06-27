@@ -1,7 +1,15 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
+import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.docker.Docker;
+import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
+
+import java.util.function.Function;
 
 /**
  * For setting up test with mocks.
@@ -9,12 +17,17 @@ import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
-    private NodeRepoMock nodeRepositoryMock = new NodeRepoMock();
-    private NodeAdminMock nodeAdminMock = new NodeAdminMock();
+    public NodeRepoMock nodeRepositoryMock = new NodeRepoMock();
     private OrchestratorMock orchestratorMock = new OrchestratorMock();
+    private Docker dockerMock = new DockerMock();
+
+    private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
+            new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+
 
     @Override
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdminMock, 1, 5, orchestratorMock, "hostname");
+        return new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 5, orchestratorMock, "localhost");
     }
 }

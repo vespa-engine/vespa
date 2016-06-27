@@ -159,44 +159,148 @@ PostingChange<P>::apply(GrowableBitVector &bv)
 template <typename WeightedIndex>
 class ActualChangeComputer {
 public:
-    typedef std::vector<WeightedIndex> V;
+    using EnumIndex = EnumStoreBase::Index;
+    using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<EnumIndex>>;
+    using WeightedIndexVector = std::vector<WeightedIndex>;
     void compute(const WeightedIndex * entriesNew, size_t szNew,
                  const WeightedIndex * entriesOld, size_t szOld,
-                 V & added, V & changed, V & removed) const;
+                 AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
+
+    ActualChangeComputer(const EnumStoreComparator &compare,
+                         const EnumIndexMapper &mapper)
+        : _oldEntries(),
+          _newEntries(),
+          _cachedMapping(),
+          _compare(compare),
+          _mapper(mapper),
+          _hasFold(mapper.hasFold())
+    {
+    }
+
 private:
-    mutable V _oldEntries;
-    mutable V _newEntries;
+    WeightedIndexVector _oldEntries;
+    WeightedIndexVector _newEntries;
+    vespalib::hash_map<uint32_t, uint32_t> _cachedMapping;
+    const EnumStoreComparator &_compare;
+    const EnumIndexMapper &_mapper;
+    const bool _hasFold;
+
+    static void copyFast(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
+    {
+        dst.insert(dst.begin(), src, src + sz);
+    }
+
+    EnumIndex mapEnumIndex(EnumIndex unmapped) {
+        auto itr = _cachedMapping.insert(std::make_pair(unmapped.ref(), 0));
+        if (itr.second) {
+            itr.first->second = _mapper.map(unmapped, _compare).ref();
+        }
+        return EnumIndex(itr.first->second);
+    }
+
+
+    void copyMapped(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
+    {
+        const WeightedIndex *srce = src + sz;
+        for (const WeightedIndex *i = src; i < srce; ++i) {
+            dst.emplace_back(mapEnumIndex(i->value()), i->weight());
+        }
+    }
+
+    void copyEntries(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
+    {
+        dst.reserve(sz);
+        dst.clear();
+        if (_hasFold) {
+            copyMapped(dst, src, sz);
+        } else {
+            copyFast(dst, src, sz);
+        }
+        std::sort(dst.begin(), dst.end());
+    }
+};
+
+template <typename WeightedIndex>
+class MergeDupIterator {
+    using InnerIter = typename std::vector<WeightedIndex>::const_iterator;
+    using EnumIndex = EnumStoreBase::Index;
+    using Entry = multivalue::WeightedValue<EnumIndex>;
+    InnerIter _cur;
+    InnerIter _end;
+    Entry _entry;
+    bool _valid;
+    void merge() {
+        EnumIndex idx = _cur->value();
+        int32_t weight = _cur->weight();
+        ++_cur;
+        while (_cur != _end && _cur->value() == idx) {
+            // sum weights together. Overflow is not handled.
+            weight += _cur->weight();
+            ++_cur;
+        }
+        _entry = Entry(idx, weight);
+    }
+public:
+    MergeDupIterator(const std::vector<WeightedIndex> &vec)
+        : _cur(vec.begin()),
+          _end(vec.end()),
+          _entry(),
+          _valid(_cur != _end)
+    {
+        if (_valid) {
+            merge();
+        }
+    }
+
+    bool valid() const { return _valid; }
+    const Entry &entry() const { return _entry; }
+    EnumIndex value() const { return _entry.value(); }
+    int32_t weight() const { return _entry.weight(); }
+    void next() {
+        if (_cur != _end) {
+            merge();
+        } else {
+            _valid = false;
+        }
+    }
 };
 
 template <typename WeightedIndex>
 void
 ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex * entriesNew, size_t szNew,
                                              const WeightedIndex * entriesOld, size_t szOld,
-                                             V & added, V & changed, V & removed) const
+                                             AlwaysWeightedIndexVector & added,
+                                             AlwaysWeightedIndexVector & changed,
+                                             AlwaysWeightedIndexVector & removed)
 {
-    _newEntries.reserve(szNew);
-    _oldEntries.reserve(szOld);
-    _newEntries.clear();
-    _oldEntries.clear();
-    _newEntries.insert(_newEntries.begin(), entriesNew, entriesNew + szNew);
-    _oldEntries.insert(_oldEntries.begin(), entriesOld, entriesOld + szOld);
-    std::sort(_newEntries.begin(), _newEntries.end());
-    std::sort(_oldEntries.begin(), _oldEntries.end());
-    auto newIt(_newEntries.begin()), oldIt(_oldEntries.begin());
-    while (newIt != _newEntries.end() && oldIt != _oldEntries.end()) {
-        if (newIt->value() == oldIt->value()) {
-            if (newIt->weight() != oldIt->weight()) {
-                changed.push_back(*newIt);
+    copyEntries(_newEntries, entriesNew, szNew);
+    copyEntries(_oldEntries, entriesOld, szOld);
+    MergeDupIterator<WeightedIndex> oldIt(_oldEntries);
+    MergeDupIterator<WeightedIndex> newIt(_newEntries);
+
+    while (newIt.valid() && oldIt.valid()) {
+        if (newIt.value() == oldIt.value()) {
+            if (newIt.weight() != oldIt.weight()) {
+                changed.push_back(newIt.entry());
             }
-            newIt++, oldIt++;
-        } else if (newIt->value() < oldIt->value()) {
-            added.push_back(*newIt++);
+            newIt.next();
+            oldIt.next();
+        } else if (newIt.value() < oldIt.value()) {
+            added.push_back(newIt.entry());
+            newIt.next();
         } else {
-            removed.push_back(*oldIt++);
+            removed.push_back(oldIt.entry());
+            oldIt.next();
         }
     }
-    added.insert(added.end(), newIt, _newEntries.end());
-    removed.insert(removed.end(), oldIt, _oldEntries.end());
+    while (newIt.valid()) {
+        added.push_back(newIt.entry());
+        newIt.next();
+    }
+    while (oldIt.valid()) {
+        removed.push_back(oldIt.entry());
+        oldIt.next();
+    }
 }
 
 template <typename WeightedIndex, typename PostingMap>
@@ -207,8 +311,8 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
         const EnumStoreComparator & compare, const EnumIndexMapper & mapper)
 {
     typedef ActualChangeComputer<WeightedIndex> AC;
-    AC actualChange;
-    typename AC::V added, changed, removed;
+    AC actualChange(compare, mapper);
+    typename AC::AlwaysWeightedIndexVector added, changed, removed;
     PostingMap changePost;
     
     // generate add postings and remove postings
@@ -218,14 +322,14 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
         added.clear(), changed.clear(), removed.clear();
         actualChange.compute(&docIndex.second[0], docIndex.second.size(), oldIndices, valueCount,
                              added, changed, removed);
-        for (const WeightedIndex & wi : added) {
-            changePost[EnumPostingPair(mapper.map(wi.value(), compare), &compare)].add(docIndex.first, wi.weight());
+        for (const auto & wi : added) {
+            changePost[EnumPostingPair(wi.value(), &compare)].add(docIndex.first, wi.weight());
         }
-        for (const WeightedIndex & wi : removed) {
-            changePost[EnumPostingPair(mapper.map(wi.value(), compare), &compare)].remove(docIndex.first);
+        for (const auto & wi : removed) {
+            changePost[EnumPostingPair(wi.value(), &compare)].remove(docIndex.first);
         }
-        for (const WeightedIndex & wi : changed) {
-            changePost[EnumPostingPair(mapper.map(wi.value(), compare), &compare)].remove(docIndex.first).add(docIndex.first, wi.weight());
+        for (const auto & wi : changed) {
+            changePost[EnumPostingPair(wi.value(), &compare)].remove(docIndex.first).add(docIndex.first, wi.weight());
         }
     }
     return changePost;

@@ -69,6 +69,16 @@ public class FleetControllerOptions implements Cloneable {
     public double minRatioOfStorageNodesUp = 0.50;
 
     /**
+     * Minimum ratio of nodes in an "available" state (up, initializing or maintenance)
+     * that shall be present in a group for the group itself to be considered available.
+     * If the ratio of available nodes drop under this limit, the group's nodes will be
+     * implicitly taken down.
+     *
+     * A value of 0.0 implies group auto-takedown feature is effectively disabled.
+     */
+    public double minNodeRatioPerGroup = 0.0;
+
+    /**
      * Milliseconds to sleep after doing a work cycle where we did no work. Some events do not interrupt the sleeping,
      * such as slobrok changes, so shouldn't set this too high.
      */
