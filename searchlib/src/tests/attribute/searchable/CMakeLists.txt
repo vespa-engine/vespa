@@ -5,7 +5,7 @@ vespa_add_executable(searchlib_attribute_searchable_adapter_test_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_attribute_searchable_adapter_test_app COMMAND sh attribute_searchable_adapter_test.sh)
+vespa_add_test(NAME searchlib_attribute_searchable_adapter_test_app COMMAND searchlib_attribute_searchable_adapter_test_app)
 vespa_add_executable(searchlib_attribute_weighted_set_blueprint_test_app TEST
     SOURCES
     attribute_weighted_set_blueprint_test.cpp

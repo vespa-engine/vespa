@@ -4,5 +4,7 @@ vespa_add_executable(searchlib_fusion_test_app TEST
     fusion_test.cpp
     DEPENDS
     searchlib
+    AFTER
+    searchlib_vespa-index-inspect_app
 )
 vespa_add_test(NAME searchlib_fusion_test_app COMMAND sh fusion_test.sh)
