@@ -242,6 +242,8 @@ def get_default_route(net_namespace):
     return default_routes[0]
 
 
+# Parse arguments
+
 flag_local_mode = "--local"
 local_mode = flag_local_mode in sys.argv
 if local_mode:
@@ -266,6 +268,9 @@ try:
 except ValueError:
     raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
 container_ip = ipaddress.ip_address(unicode(container_ip_arg))
+
+
+# Done parsing arguments, now let's get to work.
 
 host_ns = get_net_namespace_for_pid(1)
 container_ns = get_net_namespace_for_pid(container_pid)
