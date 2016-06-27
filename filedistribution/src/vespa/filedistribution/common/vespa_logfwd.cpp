@@ -28,7 +28,7 @@ namespace {
     }
 }
 
-void filedistribution::logfwd::log(LogLevel level, const char* file, int line, const char* fmt, ...)
+void filedistribution::logfwd::log_forward(LogLevel level, const char* file, int line, const char* fmt, ...)
 {
 
     Logger::LogLevel vespaLogLevel = toVespaLogLevel(level);
