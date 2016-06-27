@@ -1876,7 +1876,7 @@ Test::testNanSorting()
     // Attempt at reproducing issue with segfault when setting NaN value. Not
     // successful yet, so no point in running test.
 #if 0
-    double myNan = sqrt(-1);
+    double myNan = std::sqrt(-1);
     EXPECT_TRUE(isnan(myNan));
     EXPECT_TRUE(myNan != myNan);
     EXPECT_FALSE(myNan < myNan);
