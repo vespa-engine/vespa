@@ -17,6 +17,7 @@ import java.util.Optional;
 public class NodeRepoMock implements NodeRepository {
 
     public static final List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+    public static StringBuilder requests = new StringBuilder();
 
     public NodeRepoMock() {
         if(OrchestratorMock.semaphore.tryAcquire()) {
@@ -38,7 +39,10 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void updateNodeAttributes(HostName hostName, long restartGeneration, DockerImage dockerImage, String containerVespaVersion) throws IOException {
-
+        requests.append("updateNodeAttributes with HostName: ").append(hostName)
+                .append(", restartGeneration: ").append(restartGeneration)
+                .append(", DockerImage: ").append(dockerImage)
+                .append(", containerVespaVersion: ").append(containerVespaVersion).append("\n");
     }
 
     @Override

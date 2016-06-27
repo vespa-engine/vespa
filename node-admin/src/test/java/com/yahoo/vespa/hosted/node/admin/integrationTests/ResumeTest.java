@@ -81,6 +81,16 @@ public class ResumeTest {
                 "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n"));
 
+
+        // Check that NodeRepo has received the PATCH update
+        while (!NodeRepoMock.requests.toString().startsWith("updateNodeAttributes with HostName: hostName, " +
+                "restartGeneration: 1, DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n")) {
+            Thread.sleep(10);
+        }
+
+        assertThat(NodeRepoMock.requests.toString(), is("updateNodeAttributes with HostName: hostName, restartGeneration: 1," +
+                " DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n"));
+
         // Force orchestrator to reject the suspend
         OrchestratorMock.forceMultipleRequestsResponse = Optional.of("Orchestrator reject suspend");
 
