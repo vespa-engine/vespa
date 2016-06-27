@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 $VALGRIND ./searchlib_attribute_test_app
 rm -rf *.dat
 rm -rf *.idx
