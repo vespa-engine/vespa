@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
@@ -236,7 +236,7 @@ public:
          double millis = timing.MilliSecs();
          double correct = i;
 
-         Progress((fabs(millis - correct)/correct) < 0.15,
+         Progress((std::fabs(millis - correct)/correct) < 0.15,
                   "Elapsed time measurement: %d",
                   static_cast<int>(millis));
       }

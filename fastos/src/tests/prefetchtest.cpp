@@ -15,8 +15,6 @@
 
 
 #include <stdlib.h>
-#include <math.h>
-
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
 
