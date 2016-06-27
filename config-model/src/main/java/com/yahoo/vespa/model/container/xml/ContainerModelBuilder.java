@@ -188,7 +188,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     protected void addStatusHandlers(ContainerCluster cluster, ConfigModelContext configModelContext) {
-        if (configModelContext.getDeployState().isHostedVespa()) {
+        if (configModelContext.getDeployState().isHosted()) {
             String name = "status.html";
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_YINST_SETTING));
             cluster.addComponent(

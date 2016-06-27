@@ -118,7 +118,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
             String tagName = servicesElement.getTagName();
             if (tagName.equals("config")) continue;  // TODO: Remove on Vespa 6
             if (tagName.equals("cluster")) continue; // TODO: Remove on Vespa 6
-            if ((tagName.equals("clients")) && deployState.isHostedVespa())
+            if ((tagName.equals("clients")) && deployState.isHosted())
                 throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
 
             String tagVersion = servicesElement.getAttribute("version");
@@ -236,7 +236,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
 
     // TODO: Doctoring on the XML is the wrong level for this. We should be able to mark a model as default instead   -Jon
     private static Element getImplicitAdmin(DeployState deployState) throws IOException, SAXException {
-        String defaultAdminElement = deployState.isHostedVespa() ? getImplicitAdminV4() : getImplicitAdminV2();
+        String defaultAdminElement = deployState.isHosted() ? getImplicitAdminV4() : getImplicitAdminV2();
         log.log(LogLevel.DEBUG, "No <admin> defined, using " + defaultAdminElement);
         return XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(defaultAdminElement))).getDocumentElement();
     }

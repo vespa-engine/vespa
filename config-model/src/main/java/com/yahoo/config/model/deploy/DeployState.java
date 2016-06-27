@@ -241,7 +241,7 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Optional<Model> getPreviousModel() { return previousModel; }
 
-    public boolean isHostedVespa() {
+    public boolean isHosted() {
         return properties.hostedVespa();
     }
 
