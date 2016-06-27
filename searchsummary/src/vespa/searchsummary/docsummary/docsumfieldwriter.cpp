@@ -4,7 +4,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-#include <math.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
