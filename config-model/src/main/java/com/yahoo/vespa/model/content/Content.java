@@ -71,13 +71,11 @@ public class Content extends ConfigModel {
 
     public void createTlds(ConfigModelRepo modelRepo) {
         IndexedSearchCluster indexedCluster = cluster.getSearch().getIndexed();
-        if (indexedCluster == null) {
-            return;
-        }
+        if (indexedCluster == null) return;
 
         SimpleConfigProducer tldParent = new SimpleConfigProducer(indexedCluster, "tlds");
         for (ConfigModel model : modelRepo.asMap().values()) {
-            if (!(model instanceof ContainerModel)) {
+            if ( ! (model instanceof ContainerModel)) {
                 continue;
             }
 
@@ -92,15 +90,13 @@ public class Content extends ConfigModel {
         indexedCluster.setupDispatchGroups();
     }
 
-    private static boolean checkParentChain(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
-        if (IndexingDocprocChain.NAME.equals(chainSpec.componentId.stringValue())) {
-            return true;
-        }
+    private static boolean containsIndexingChain(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
+        if (IndexingDocprocChain.NAME.equals(chainSpec.componentId.stringValue())) return true;
 
         ChainSpecification.Inheritance inheritance = chainSpec.inheritance;
         for (ComponentSpecification parentComponentSpec : inheritance.chainSpecifications) {
             ChainSpecification parentSpec = getChainSpec(allChains, parentComponentSpec);
-            checkParentChain(allChains, parentSpec);
+            if (containsIndexingChain(allChains, parentSpec)) return true;
         }
 
         return false;
@@ -138,17 +134,11 @@ public class Content extends ConfigModel {
 
     private static void checkThatExplicitIndexingChainInheritsCorrectly(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
         ChainSpecification.Inheritance inheritance = chainSpec.inheritance;
-        boolean found = false;
         for (ComponentSpecification componentSpec : inheritance.chainSpecifications) {
             ChainSpecification parentSpec = getChainSpec(allChains, componentSpec);
-            found = checkParentChain(allChains, parentSpec);
-            if (found) {
-                break;
-            }
+            if (containsIndexingChain(allChains, parentSpec)) return;
         }
-        if (!found) {
-            throw new IllegalArgumentException("Docproc chain '" + chainSpec.componentId + "' does not inherit from 'indexing' chain.");
-        }
+        throw new IllegalArgumentException("Docproc chain '" + chainSpec.componentId + "' does not inherit from 'indexing' chain.");
     }
 
     public static List<Content> getContent(ConfigModelRepo pc) {
