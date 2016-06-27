@@ -6,7 +6,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
-#include <math.h>
 #include <ctime>
 #include <tests/distribution/bucketvector.h>
 #include <tests/distribution/randombucket.h>

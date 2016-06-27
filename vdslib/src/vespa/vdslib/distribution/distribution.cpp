@@ -286,8 +286,8 @@ Distribution::getIdealDisk(const NodeState& nodeState, uint16_t nodeIndex,
                     continue;
                 }
                 if (diskState.getCapacity() != 1.0) {
-                    score = pow(score,
-                                1.0 / diskState.getCapacity().getValue());
+                    score = std::pow(score,
+                                     1.0 / diskState.getCapacity().getValue());
                 }
                 if (score > maxScore) {
                     maxScore = score;
@@ -412,7 +412,7 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
         if (it->second->getCapacity() != 1) {
                 // Capacity shouldn't possibly be 0.
                 // Verified in Group::setCapacity()
-            score = pow(score, 1.0 / it->second->getCapacity().getValue());
+            score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
         }
         if (score > tmpResults.back()._score) {
             tmpResults.push_back(ScoredGroup(it->second, score));
@@ -457,7 +457,7 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
         if (it->second->getCapacity() != 1) {
                 // Capacity shouldn't possibly be 0.
                 // Verified in Group::setCapacity()
-            score = pow(score, 1.0 / it->second->getCapacity().getValue());
+            score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
         }
         if (score > result._score) {
             if (!_distributorAutoOwnershipTransferOnWholeGroupDown
@@ -577,7 +577,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
             double score = random.nextDouble();
             ++randomIndex;
             if (nodeState.getCapacity() != vespalib::Double(1.0)) {
-                score = pow(score, 1.0 / nodeState.getCapacity().getValue());
+                score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }
             if (score > tmpResults.back()._score) {
                 for (std::list<ScoredNode>::iterator it = tmpResults.begin();
