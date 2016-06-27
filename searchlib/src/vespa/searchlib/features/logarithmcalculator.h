@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <math.h>
+#include <cmath>
 
 namespace search {
 namespace features {
@@ -32,8 +32,8 @@ public:
     LogarithmCalculator(feature_t m, feature_t s) :
         _m(m),
         _s(s),
-        _maxLog(log(_m + _s)),
-        _minLog(log(_s)),
+        _maxLog(std::log(_m + _s)),
+        _minLog(std::log(_s)),
         _divMult(1.0 / (_maxLog - _minLog))
     {
     }
@@ -44,7 +44,7 @@ public:
     feature_t get(feature_t x) const {
         if (x > _m) x = _m;
         if (x < 0) x = 0;
-        return (_maxLog - log(x + _s)) * _divMult;
+        return (_maxLog - std::log(x + _s)) * _divMult;
     }
 
     /**

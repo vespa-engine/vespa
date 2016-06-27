@@ -25,7 +25,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/sync.h>
-#include <math.h>
+#include <cmath>
 #include <mutex>
 #include <shared_mutex>
 #include <string>

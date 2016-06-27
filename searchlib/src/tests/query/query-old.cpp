@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <limits>
+#include <cmath>
 
 using namespace search;
 using namespace search::query;
@@ -113,7 +114,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(ia, -6);
     EXPECT_EQUAL(ib, 7);
     EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, nextafterf(minusSeven, seven));
+    EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
     EXPECT_EQUAL(db, seven);
 
     q = QueryTerm(eqnr, "<-7;7>", "index", QueryTerm::WORD);
@@ -121,8 +122,8 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(ia, -6);
     EXPECT_EQUAL(ib, 6);
     EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, nextafterf(minusSeven, seven));
-    EXPECT_EQUAL(db, nextafterf(seven, minusSeven));
+    EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
+    EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
 
     q = QueryTerm(eqnr, "<1;2>", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
@@ -135,7 +136,7 @@ TEST("testQueryLanguage") {
     EXPECT_EQUAL(ib, 6);
     EXPECT_TRUE(q.getAsDoubleTerm(da, db));
     EXPECT_EQUAL(da, minusSeven);
-    EXPECT_EQUAL(db, nextafterf(seven, minusSeven));
+    EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
 
     q = QueryTerm(eqnr, "<-7", "index", QueryTerm::WORD);
     EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));

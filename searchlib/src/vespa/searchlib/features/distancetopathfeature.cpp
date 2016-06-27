@@ -45,7 +45,7 @@ DistanceToPathExecutor::execute(search::fef::MatchData & match)
             const Vector2 &p1 = _path[seg - 1];
             const Vector2 &p2 = _path[seg];
             double len2 = (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
-            double len = sqrt(len2);
+            double len = std::sqrt(len2);
 
             // For each document location, do
             for (uint32_t loc = 0; loc < _intBuf.size(); ++loc) {
@@ -80,7 +80,7 @@ DistanceToPathExecutor::execute(search::fef::MatchData & match)
             trip += len;
         }
 
-        *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(sqrt(static_cast<feature_t>(minSqDist)));
+        *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(std::sqrt(static_cast<feature_t>(minSqDist)));
         *match.resolveFeature(outputs()[1]) = static_cast<feature_t>(pos > -1 ? (trip > 0 ? pos / trip : 0) : 1);
         *match.resolveFeature(outputs()[2]) = static_cast<feature_t>(product);
     } else {

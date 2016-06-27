@@ -7,8 +7,9 @@
 #include "floatbucketresultnode.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
-#include <math.h>
+#include <cmath>
 #include <limits>
+
 
 namespace search {
 namespace expression {
@@ -72,7 +73,7 @@ FixedWidthBucketFunctionNode::FloatBucketHandler::update(ResultNode &result, con
     double from = n;
     double to = n;
     if (width > 0.0) {
-        double tmp = floor(n/width);
+        double tmp = std::floor(n/width);
         from = tmp * width;
         to = (tmp+1) * width;
     }

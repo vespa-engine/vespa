@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include "attributevector.h"
 #include <vespa/vespalib/util/regexp.h>
+#include <cstdlib>
 
 namespace search
 {

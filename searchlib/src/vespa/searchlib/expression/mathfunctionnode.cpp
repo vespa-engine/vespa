@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/expression/mathfunctionnode.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
-#include <math.h>
+#include <cmath>
 
 namespace search {
 namespace expression {
@@ -37,27 +37,27 @@ bool MathFunctionNode::onExecute() const
     getArg(0).execute();
     double result(0.0);
     switch (_function) {
-    case EXP: result = exp(getArg(0).getResult().getFloat()); break;
-    case POW: getArg(1).execute(); result = pow(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat()); break;
-    case LOG: result = log(getArg(0).getResult().getFloat()); break;
-    case LOG1P: result = log1p(getArg(0).getResult().getFloat()); break;
-    case LOG10: result = log10(getArg(0).getResult().getFloat()); break;
-    case SIN: result = sin(getArg(0).getResult().getFloat()); break;
-    case ASIN: result = asin(getArg(0).getResult().getFloat()); break;
-    case COS: result = cos(getArg(0).getResult().getFloat()); break;
-    case ACOS: result = acos(getArg(0).getResult().getFloat()); break;
-    case TAN: result = tan(getArg(0).getResult().getFloat()); break;
-    case ATAN: result = atan(getArg(0).getResult().getFloat()); break;
-    case SQRT: result = sqrt(getArg(0).getResult().getFloat()); break;
-    case SINH: result = sinh(getArg(0).getResult().getFloat()); break;
-    case ASINH: result = asinh(getArg(0).getResult().getFloat()); break;
-    case COSH: result = cosh(getArg(0).getResult().getFloat()); break;
-    case ACOSH: result = acosh(getArg(0).getResult().getFloat()); break;
-    case TANH: result = tanh(getArg(0).getResult().getFloat()); break;
-    case ATANH: result = atanh(getArg(0).getResult().getFloat()); break;
-    case CBRT: result = cbrt(getArg(0).getResult().getFloat()); break;
-    case HYPOT: getArg(1).execute(); result = hypot(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat()); break;
-    case FLOOR: result = floor(getArg(0).getResult().getFloat()); break;
+    case EXP: result = std::exp(getArg(0).getResult().getFloat()); break;
+    case POW: getArg(1).execute(); result = std::pow(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat()); break;
+    case LOG: result = std::log(getArg(0).getResult().getFloat()); break;
+    case LOG1P: result = std::log1p(getArg(0).getResult().getFloat()); break;
+    case LOG10: result = std::log10(getArg(0).getResult().getFloat()); break;
+    case SIN: result = std::sin(getArg(0).getResult().getFloat()); break;
+    case ASIN: result = std::asin(getArg(0).getResult().getFloat()); break;
+    case COS: result = std::cos(getArg(0).getResult().getFloat()); break;
+    case ACOS: result = std::acos(getArg(0).getResult().getFloat()); break;
+    case TAN: result = std::tan(getArg(0).getResult().getFloat()); break;
+    case ATAN: result = std::atan(getArg(0).getResult().getFloat()); break;
+    case SQRT: result = std::sqrt(getArg(0).getResult().getFloat()); break;
+    case SINH: result = std::sinh(getArg(0).getResult().getFloat()); break;
+    case ASINH: result = std::asinh(getArg(0).getResult().getFloat()); break;
+    case COSH: result = std::cosh(getArg(0).getResult().getFloat()); break;
+    case ACOSH: result = std::acosh(getArg(0).getResult().getFloat()); break;
+    case TANH: result = std::tanh(getArg(0).getResult().getFloat()); break;
+    case ATANH: result = std::atanh(getArg(0).getResult().getFloat()); break;
+    case CBRT: result = std::cbrt(getArg(0).getResult().getFloat()); break;
+    case HYPOT: getArg(1).execute(); result = std::hypot(getArg(0).getResult().getFloat(), getArg(1).getResult().getFloat()); break;
+    case FLOOR: result = std::floor(getArg(0).getResult().getFloat()); break;
     }
     static_cast<FloatResultNode &>(updateResult()).set(result);
     return true;

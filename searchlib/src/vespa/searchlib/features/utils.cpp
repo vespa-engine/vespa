@@ -70,7 +70,7 @@ feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_
 
 double getRobertsonSparckJonesWeight(double docCount, double docsInCorpus)
 {
-    return log((docsInCorpus - docCount + 0.5)/(docCount + 0.5));
+    return std::log((docsInCorpus - docCount + 0.5)/(docCount + 0.5));
 }
 
 static const double N = 1000000.0;
@@ -83,7 +83,7 @@ feature_t getSignificance(double docFreq)
     if (docFreq > 1.0) {
       docFreq = 1.0;
     }
-    double d = log(docFreq)/log(1.0/N);
+    double d = std::log(docFreq)/std::log(1.0/N);
     return 0.5 + 0.5 * d;
 #if 0
     double n = docFreq * N;

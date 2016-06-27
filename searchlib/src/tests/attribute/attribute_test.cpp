@@ -16,8 +16,8 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
-
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");

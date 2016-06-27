@@ -13,6 +13,7 @@ LOG_SETUP("groupingengine_test");
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/grouping/groupingengine.h>
 #include <algorithm>
+#include <cmath>
 
 using namespace vespalib;
 using namespace search;
@@ -1875,15 +1876,15 @@ Test::testNanSorting()
     // Attempt at reproducing issue with segfault when setting NaN value. Not
     // successful yet, so no point in running test.
 #if 0
-    double nan = sqrt(-1);
-    EXPECT_TRUE(isnan(nan));
-    EXPECT_TRUE(nan != nan);
-    EXPECT_FALSE(nan < nan);
-    EXPECT_FALSE(nan > nan);
-    EXPECT_FALSE(nan < 0.2);
-    EXPECT_FALSE(nan > 0.2);
-    EXPECT_FALSE(0.2 < nan);
-    EXPECT_FALSE(0.2 > nan);
+    double myNan = sqrt(-1);
+    EXPECT_TRUE(isnan(myNan));
+    EXPECT_TRUE(myNan != myNan);
+    EXPECT_FALSE(myNan < myNan);
+    EXPECT_FALSE(myNan > myNan);
+    EXPECT_FALSE(myNan < 0.2);
+    EXPECT_FALSE(myNan > 0.2);
+    EXPECT_FALSE(0.2 < myNan);
+    EXPECT_FALSE(0.2 > myNan);
 
     FastOS_Time timer;
     timer.SetNow();
@@ -1895,7 +1896,7 @@ Test::testNanSorting()
         size_t mod = rand() % limit;
         for (size_t i = 0; i < limit; i++) {
             if ((i % mod) == 0)
-                vec.push_back(nan);
+                vec.push_back(myNan);
             else
                 vec.push_back(1.0 * rand());
         }
@@ -1908,8 +1909,8 @@ void
 Test::testThatNanIsConverted()
 {
     Group g;
-    double nan = sqrt(-1);
-    g.setRank(nan);
+    double myNan = std::sqrt(-1);
+    g.setRank(myNan);
     // Must have been changed for this to work.
     ASSERT_EQUAL(g.getRank(), g.getRank());
 }

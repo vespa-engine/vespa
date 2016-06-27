@@ -15,6 +15,7 @@
 #include <vespa/vespalib/eval/vm_forest.h>
 #include <vespa/vespalib/eval/deinline_forest.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ vespalib::string strip_name(const vespalib::string &name) {
 }
 
 size_t as_percent(double value) {
-    return size_t(round(value * 100.0));
+    return size_t(std::round(value * 100.0));
 }
 
 const char *maybe_s(size_t n) { return (n == 1) ? "" : "s"; }

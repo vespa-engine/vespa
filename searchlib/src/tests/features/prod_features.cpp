@@ -48,6 +48,7 @@ LOG_SETUP("prod_features_test");
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/string_hash.h>
+#include <cmath>
 
 using namespace search::features;
 using namespace search::fef;
@@ -801,21 +802,21 @@ Test::testDistance()
     { // Test executor.
 
         { // test 2D single location (zcurve)
-            assert2DZDistance(static_cast<feature_t>(sqrt(650.0f)), "5:-5",  10,  20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(250.0f)), "5:-5",  10, -20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(450.0f)), "5:-5", -10, -20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(850.0f)), "5:-5", -10,  20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(250.0f)), "5:-5",  15, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(650.0f)), "5:-5",  10,  20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5",  10, -20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), "5:-5", -10, -20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(850.0f)), "5:-5", -10,  20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5",  15, -20, 0x80000000); // 2^31
         }
 
         { // test 2D multi location (zcurve)
             vespalib::string positions = "5:-5,35:0,5:40,35:-40";
-            assert2DZDistance(static_cast<feature_t>(sqrt(425.0f)), positions,  10,  20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(250.0f)), positions,  10, -20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(450.0f)), positions, -10, -20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(625.0f)), positions, -10,  20);
-            assert2DZDistance(static_cast<feature_t>(sqrt(250.0f)), positions,  15, -20, 0x80000000); // 2^31
-            assert2DZDistance(static_cast<feature_t>(sqrt(425.0f)), positions,  45, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  10,  20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  10, -20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -10, -20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -10,  20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, -20, 0x80000000); // 2^31
         }
 
         { // test default distance
