@@ -59,7 +59,7 @@ readCounts(PostingListCounts &counts)
     counts._numDocs = numDocs;
     if (numDocs != 0) {
         uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
-        uint32_t kVal = (expVal < 4) ? 1 : EC::log2(expVal);
+        uint32_t kVal = (expVal < 4) ? 1 : EC::asmlog2(expVal);
         UC64BE_DECODEEXPGOLOMB_NS(o,
                                   kVal,
                                   EC);
@@ -183,7 +183,7 @@ writeCounts(const PostingListCounts &counts)
     }
     uint64_t encodeVal = counts._bitLength;
     uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
-    uint32_t kVal = (expVal < 4) ? 1 : log2(expVal);
+    uint32_t kVal = (expVal < 4) ? 1 : asmlog2(expVal);
     encodeExpGolomb(encodeVal, kVal);
     uint32_t numChunks = counts._segments.size();
     if (numDocs >= _minChunkDocs)
