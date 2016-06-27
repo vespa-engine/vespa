@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Document;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -72,7 +73,7 @@ public class ContentClusterBuilder {
 
     public ContentCluster build(MockRoot root) {
         Document doc = XML.getDocument(getXml());
-        return new ContentCluster.Builder(null, null).build(root, doc.getDocumentElement());
+        return new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, doc.getDocumentElement());
     }
 
     public String getXml() {

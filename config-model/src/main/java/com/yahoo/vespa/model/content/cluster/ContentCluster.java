@@ -28,6 +28,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.*;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
@@ -89,8 +90,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             this.admin = admin;
             this.deployLogger = deployLogger;
         }
+        
+        public ContentCluster build(Collection<ContainerModel> containers, 
+                                    AbstractConfigProducer ancestor, Element w3cContentElement) {
 
-        public ContentCluster build(AbstractConfigProducer ancestor, Element w3cContentElement) {
             ModelElement contentElement = new ModelElement(w3cContentElement);
 
             ModelElement documentsElement = contentElement.getChild("documents");
@@ -137,7 +140,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             AbstractConfigProducerRoot root = ancestor.getRoot();
             if (root == null) return c;
 
-            addClusterControllers(root, c.rootGroup, contentElement, c.clusterName, c);
+            addClusterControllers(containers, root, c.rootGroup, contentElement, c.clusterName, c);
             return c;
         }
 
@@ -253,7 +256,9 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
         }
 
-        private void addClusterControllers(AbstractConfigProducerRoot root, StorageGroup rootGroup, ModelElement contentElement, String contentClusterName, ContentCluster contentCluster) {
+        private void addClusterControllers(Collection<ContainerModel> containers, AbstractConfigProducerRoot root, 
+                                           StorageGroup rootGroup, ModelElement contentElement, 
+                                           String contentClusterName, ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
@@ -272,7 +277,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers")).orElse(NodesSpecification.nonDedicated(3));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName) :
-                                                 drawContentHosts(nodesSpecification.count(), rootGroup);
+                                                 drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
 
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"), hosts, clusterName, true);
                 contentCluster.clusterControllers = clusterControllers;
@@ -312,19 +317,45 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             return nodesSpecification.provision(admin.getHostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), Optional.empty(), deployLogger).keySet();
         }
 
-        private List<HostResource> drawContentHosts(int count, StorageGroup rootGroup) {
+        private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
-            if (hosts.size() < 3) // supply with containers if we don't have enough content hosts
-                hosts.addAll(drawContainerHosts(3 - hosts.size()));
+            if (hosts.size() < count) // supply with containers
+                hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
         }
 
-        private List<HostResource> drawContainerHosts(int count) {
-            return new ArrayList<>(); // TODO
+        /**
+         * Draws <code>count</code> container nodes to use as cluster controllers, or as many as possible
+         * if less than <code>count</code> are available.
+         * 
+         * This will draw the same nodes each time it is 
+         * invoked if cluster names and node indexes are unchanged.
+         */
+        private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters) {
+            if (containerClusters.isEmpty()) return Collections.emptyList();
+
+            List<HostResource> hosts = new ArrayList<>();
+            for (ContainerCluster cluster : clustersSortedByName(containerClusters))
+                hosts.addAll(hostResourcesSortedByIndex(cluster));
+            return hosts.subList(0, Math.min(hosts.size(), count));
         }
         
+        private List<ContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
+            return containerModels.stream()
+                    .map(ContainerModel::getCluster)
+                    .sorted(Comparator.comparing(ContainerCluster::getName))
+                    .collect(Collectors.toList());
+        }
+
+        private List<HostResource> hostResourcesSortedByIndex(ContainerCluster cluster) {
+            return cluster.getContainers().stream()
+                    .sorted(Comparator.comparing(Container::index))
+                    .map(Container::getHostResource)
+                    .collect(Collectors.toList());
+        }
+
         /**
          * Draw <code>count</code> nodes from as many different content groups below this as possible.
          * This will only achieve maximum spread in the case where the groups are balanced and never on the same

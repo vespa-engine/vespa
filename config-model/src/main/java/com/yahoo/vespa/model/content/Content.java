@@ -50,7 +50,9 @@ public class Content extends ConfigModel {
 
     // Dependencies to other models
     private final AdminModel adminModel;
-    private final Collection<ContainerModel> containers; // to find or add the docproc container
+
+    // to find or add the docproc container and supplement cluster controllers with clusters having less then 3 nodes
+    private final Collection<ContainerModel> containers;
 
     @SuppressWarnings({ "UnusedDeclaration"}) // Created by reflection in ConfigModelRepo
     public Content(ConfigModelContext modelContext, AdminModel adminModel, Collection<ContainerModel> containers) {
@@ -75,14 +77,10 @@ public class Content extends ConfigModel {
 
         SimpleConfigProducer tldParent = new SimpleConfigProducer(indexedCluster, "tlds");
         for (ConfigModel model : modelRepo.asMap().values()) {
-            if ( ! (model instanceof ContainerModel)) {
-                continue;
-            }
+            if ( ! (model instanceof ContainerModel)) continue;
 
             ContainerCluster containerCluster = ((ContainerModel) model).getCluster();
-            if (containerCluster.getSearch() == null) {
-                continue; // this is not a qrs cluster
-            }
+            if (containerCluster.getSearch() == null) continue; // this is not a qrs cluster
 
             log.log(LogLevel.DEBUG, "Adding tlds for indexed cluster " + indexedCluster.getClusterName() + ", container cluster " + containerCluster.getName());
             indexedCluster.addTldsWithSameIdsAsContainers(tldParent, containerCluster);
@@ -104,9 +102,8 @@ public class Content extends ConfigModel {
 
     private static ChainSpecification getChainSpec(ComponentRegistry<DocprocChain> allChains, ComponentSpecification componentSpec) {
         DocprocChain docprocChain = allChains.getComponent(componentSpec);
-        if (docprocChain == null) {
-            throw new IllegalArgumentException("Chain '" + componentSpec + "' not found.");
-        }
+        if (docprocChain == null) throw new IllegalArgumentException("Chain '" + componentSpec + "' not found.");
+
         return docprocChain.getChainSpecification();
     }
 
@@ -114,12 +111,9 @@ public class Content extends ConfigModel {
         DocprocChain chainAlreadyPresent = containerCluster.getDocprocChains().allChains().
                 getComponent(new ComponentId(IndexingDocprocChain.NAME));
         if (chainAlreadyPresent != null) {
-            if (chainAlreadyPresent instanceof IndexingDocprocChain) {
-                return;
-            } else {
-                throw new IllegalArgumentException("A docproc chain may not have the ID '" +
-                                                   IndexingDocprocChain.NAME + ", since this is reserved by Vespa. Please use a different ID.");
-            }
+            if (chainAlreadyPresent instanceof IndexingDocprocChain) return;
+            throw new IllegalArgumentException("A docproc chain may not have the ID '" +
+                                               IndexingDocprocChain.NAME + ", since this is reserved by Vespa. Please use a different ID.");
         }
 
         containerCluster.getDocprocChains().add(new IndexingDocprocChain());
@@ -143,33 +137,23 @@ public class Content extends ConfigModel {
 
     public static List<Content> getContent(ConfigModelRepo pc) {
         List<Content> contents = new ArrayList<>();
-
-        for (ConfigModel model : pc.asMap().values()) {
-            if (model instanceof Content) {
+        for (ConfigModel model : pc.asMap().values())
+            if (model instanceof Content)
                 contents.add((Content)model);
-            }
-        }
-
         return contents;
     }
 
     public static List<AbstractSearchCluster> getSearchClusters(ConfigModelRepo pc) {
         List<AbstractSearchCluster> clusters = new ArrayList<>();
-
-        for (ContentCluster c : getContentClusters(pc)) {
+        for (ContentCluster c : getContentClusters(pc))
             clusters.addAll(c.getSearch().getClusters().values());
-        }
-
         return clusters;
     }
 
     public static List<ContentCluster> getContentClusters(ConfigModelRepo pc) {
        List<ContentCluster> clusters = new ArrayList<>();
-
-        for (Content c : getContent(pc)) {
+        for (Content c : getContent(pc))
             clusters.add(c.getCluster());
-        }
-
         return clusters;
     }
 
@@ -207,7 +191,7 @@ public class Content extends ConfigModel {
         @Override
         public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
             Admin admin = content.adminModel != null ? content.adminModel.getAdmin() : null; // This is null in tests only
-            content.cluster = new ContentCluster.Builder(admin, modelContext.getDeployLogger()).build(modelContext.getParentProducer(), xml);
+            content.cluster = new ContentCluster.Builder(admin, modelContext.getDeployLogger()).build(content.containers, modelContext.getParentProducer(), xml);
             buildIndexingClusters(content,
                                   modelContext.getConfigModelRepoAdder(),
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
@@ -310,8 +294,9 @@ public class Content extends ConfigModel {
             for (SearchNode searchNode : cluster.getSearchNodes()) {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
-                    String containerName = String.valueOf(isElastic ? searchNode.getDistributionKey() : index++);
-                    Container docprocService = new Container(indexingCluster, containerName);
+                    String containerName = String.valueOf(isElastic ? searchNode.getDistributionKey() : index);
+                    Container docprocService = new Container(indexingCluster, containerName, index);
+                    index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);
                     docprocService.initService();

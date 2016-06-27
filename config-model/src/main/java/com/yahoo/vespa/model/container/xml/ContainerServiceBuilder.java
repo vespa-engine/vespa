@@ -20,14 +20,16 @@ import java.util.logging.Logger;
 public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Container> {
 
     private final String id;
+    private final int index;
 
-    public ContainerServiceBuilder(String id) {
+    public ContainerServiceBuilder(String id, int index) {
         this.id = id;
+        this.index = index;
     }
 
     @Override
     protected Container doBuild(AbstractConfigProducer parent, Element nodeElem) {
-        return new Container(parent, id, readServerPortOverrides(nodeElem));
+        return new Container(parent, id, readServerPortOverrides(nodeElem), index);
     }
 
     private List<Container.PortOverride> readServerPortOverrides(Element spec) {

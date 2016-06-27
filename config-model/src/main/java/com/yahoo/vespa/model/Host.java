@@ -78,10 +78,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         return multitenant;
     }
 
-    /**
-     * Returns the string representation of this Host object.
-     * @return The string representation of this Host object.
-     */
+    /** Returns the string representation of this Host object. */
     public String toString() {
         return "host '" + getHostName() + "'";
     }
