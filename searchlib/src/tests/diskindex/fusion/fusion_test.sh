@@ -1,5 +1,6 @@
 #!/bin/bash
-IINSPECT=../../../apps/vespa-index-inspect/searchlib_vespa-index-inspect_app 
+set -e
+IINSPECT=../../../apps/vespa-index-inspect/vespa-index-inspect
 ECHO_CMD=echo
 
 $VALGRIND ./searchlib_fusion_test_app
