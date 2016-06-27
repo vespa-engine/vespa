@@ -18,38 +18,6 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     private final Set<Integer> nodeIndices = asIntSet(0, 1, 2, 3);
     private final int foreignNode = 6;
 
-    private void waitForStateExcludingNodeSubset(String expectedState, Set<Integer> excludedNodes) throws Exception {
-        // Due to the implementation details of the test base, this.waitForState() will always
-        // wait until all nodes added in the test have received the latest cluster state. Since we
-        // want to entirely ignore node #6, it won't get a cluster state at all and the test will
-        // fail unless otherwise handled. We thus use a custom waiter which filters out nodes with
-        // the sneaky index (storage and distributors with same index are treated as different nodes
-        // in this context).
-        Waiter subsetWaiter = new Waiter.Impl(new DataRetriever() {
-            @Override
-            public Object getMonitor() { return timer; }
-            @Override
-            public FleetController getFleetController() { return fleetController; }
-            @Override
-            public List<DummyVdsNode> getDummyNodes() {
-                return nodes.stream()
-                        .filter(n -> !excludedNodes.contains(n.getNode().getIndex()))
-                        .collect(Collectors.toList());
-            }
-            @Override
-            public int getTimeoutMS() { return timeoutMS; }
-        });
-        subsetWaiter.waitForState(expectedState);
-    }
-
-    private static Set<Integer> asIntSet(Integer... idx) {
-        return Arrays.asList(idx).stream().collect(Collectors.toSet());
-    }
-
-    private static Set<ConfiguredNode> asConfiguredNodes(Set<Integer> indices) {
-        return indices.stream().map(idx -> new ConfiguredNode(idx, false)).collect(Collectors.toSet());
-    }
-
     private void setUpClusterWithForeignNode(Set<Integer> validIndices, final int foreignNodeIndex) throws Exception {
         final Set<ConfiguredNode> configuredNodes = asConfiguredNodes(validIndices);
         FleetControllerOptions options = optionsForConfiguredNodes(configuredNodes);
@@ -63,6 +31,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
         options.nodeStateRequestTimeoutMS = 10000 * 60 * 1000;
+        options.maxTransitionTime = transitionTimes(0);
         return options;
     }
 
@@ -108,10 +77,14 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         assertTrue(configuredNodes.remove(new ConfiguredNode(0, true)));
         fleetController.updateOptions(options, 0);
 
-        // The previously retired node should now be marked as done, as it no longer
+        // The previously retired node should now be marked as down, as it no longer
         // exists from the point of view of the content cluster. We have to use a subset
         // state waiter, as the controller will not send the new state to node 0.
         waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d", asIntSet(0));
+
+        // Ensure it remains down for subsequent cluster state versions as well.
+        nodes.get(3).disconnect();
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d .1.s:d", asIntSet(0, 1));
     }
 
 }

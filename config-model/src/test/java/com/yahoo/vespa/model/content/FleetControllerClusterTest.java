@@ -10,13 +10,6 @@ import org.w3c.dom.Document;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created with IntelliJ IDEA.
- * User: thomasg
- * Date: 5/10/12
- * Time: 2:29 PM
- * To change this template use File | Settings | File Templates.
- */
 public class FleetControllerClusterTest {
     ClusterControllerConfig parse(String xml) {
         Document doc = XML.getDocument(xml);
@@ -68,5 +61,32 @@ public class FleetControllerClusterTest {
 
         FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
         assertEquals(13, config.init_progress_time());
+    }
+
+    @Test
+    public void min_node_ratio_per_group_tuning_config_is_propagated() {
+        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        parse("<cluster id=\"storage\">\n" +
+                "  <documents/>\n" +
+                "  <tuning>\n" +
+                "    <min-node-ratio-per-group>0.75</min-node-ratio-per-group>\n" +
+                "  </tuning>\n" +
+                "</cluster>").
+                getConfig(builder);
+
+        FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
+        assertEquals(0.75, config.min_node_ratio_per_group(), 0.01);
+    }
+
+    @Test
+    public void min_node_ratio_per_group_is_implicitly_zero_when_omitted() {
+        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        parse("<cluster id=\"storage\">\n" +
+                "  <documents/>\n" +
+                "</cluster>").
+                getConfig(builder);
+
+        FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
+        assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
     }
 }

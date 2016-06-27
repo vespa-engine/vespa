@@ -22,7 +22,11 @@ public class ClusterControllerClusterConfigurerTest extends TestCase {
         group.nodes.add(node);
         distributionConfig.group.add(group);
         FleetcontrollerConfig.Builder fleetcontrollerConfig = new FleetcontrollerConfig.Builder();
-        fleetcontrollerConfig.cluster_name("storage").index(0).zookeeper_server("zoo");
+        fleetcontrollerConfig
+                .cluster_name("storage")
+                .index(0)
+                .zookeeper_server("zoo")
+                .min_node_ratio_per_group(0.123);
         SlobroksConfig.Builder slobroksConfig = new SlobroksConfig.Builder();
         SlobroksConfig.Slobrok.Builder slobrok = new SlobroksConfig.Slobrok.Builder();
         slobrok.connectionspec("foo");
@@ -47,6 +51,7 @@ public class ClusterControllerClusterConfigurerTest extends TestCase {
                 metric
         );
         assertTrue(configurer.getOptions() != null);
+        assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup, 0.01);
 
             // Oki with no zookeeper if one node
         zookeepersConfig.zookeeperserverlist("");

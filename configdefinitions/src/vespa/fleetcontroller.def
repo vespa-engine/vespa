@@ -138,3 +138,11 @@ show_local_systemstates_in_event_log bool default=true
 
 ## The ideal number of distribution bits this system should have
 ideal_distribution_bits int default=16
+
+## Minimum ratio of nodes that have to be available (i.e. not Down) in any
+## hierarchic content cluster group. If a higher ratio than this is Down at
+## any point, the remaning nodes in the group will be automatically marked
+## as down. Group nodes will automatically be taken back up as soon as node
+## availability has been restored above the given threshold.
+## Default is 0, i.e. functionality is for all intents and purposes disabled.
+min_node_ratio_per_group double default=0.0

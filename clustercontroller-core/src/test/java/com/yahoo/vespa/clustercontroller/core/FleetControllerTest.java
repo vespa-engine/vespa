@@ -10,6 +10,7 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
@@ -232,90 +233,43 @@ public abstract class FleetControllerTest implements Waiter {
         return nodes;
     }
 
-    public interface NodeModifier {
-        void modify(NodeInfo node);
+    protected static Set<Integer> asIntSet(Integer... idx) {
+        return Arrays.asList(idx).stream().collect(Collectors.toSet());
     }
 
-    NodeModifier makeDefaultTestNodeModifier() {
-        return new NodeModifier() {
+    protected static Set<ConfiguredNode> asConfiguredNodes(Set<Integer> indices) {
+        return indices.stream().map(idx -> new ConfiguredNode(idx, false)).collect(Collectors.toSet());
+    }
+
+    protected void waitForStateExcludingNodeSubset(String expectedState, Set<Integer> excludedNodes) throws Exception {
+        // Due to the implementation details of the test base, this.waitForState() will always
+        // wait until all nodes added in the test have received the latest cluster state. Since we
+        // want to entirely ignore node #6, it won't get a cluster state at all and the test will
+        // fail unless otherwise handled. We thus use a custom waiter which filters out nodes with
+        // the sneaky index (storage and distributors with same index are treated as different nodes
+        // in this context).
+        Waiter subsetWaiter = new Waiter.Impl(new DataRetriever() {
             @Override
-            public void modify(NodeInfo node) {
-                if (node.isDistributor()) {
-                    if (node.getNodeIndex() == 13) {
-                        node.setPrematureCrashCount(fleetController.getOptions().maxPrematureCrashes + 2);
-                    }
-                    return;
-                }
-                double latency = 75;
-                long count = 1000;
-                if (node.getNodeIndex() == 4) {
-                    latency = 300;
-                    count = 500;
-                } else if (node.getNodeIndex() == 7) {
-                    latency = 120;
-                    count = 800;
-                } else if (node.getNodeIndex() == 21) {
-                    latency = 2000;
-                    count = 600;
-                } else if (node.getNodeIndex() == 25) {
-                    node.setPrematureCrashCount(fleetController.getOptions().maxPrematureCrashes + 1);
-                } else if (node.getNodeIndex() == 26) {
-                    node.setPrematureCrashCount(fleetController.getOptions().maxPrematureCrashes);
-                }
-                String hostInfoString = generateHostInfo(latency, count);
-                node.setHostInfo(HostInfo.createHostInfo(hostInfoString));
-            }
-        };
-    }
-
-    NodeModifier makeStdDevTestNodeModifier() {
-        return new NodeModifier() {
-            double[] latencies = new double[] { 30, 300, 60, 270 };
-            int counter = 0;
-
+            public Object getMonitor() { return timer; }
             @Override
-            public void modify(NodeInfo node) {
-                if (node.isDistributor()) {
-                    return;
-                }
-                String hostInfo = generateHostInfo(latencies[counter++ % latencies.length], 1500);
-                node.setHostInfo(HostInfo.createHostInfo(hostInfo));
+            public FleetController getFleetController() { return fleetController; }
+            @Override
+            public List<DummyVdsNode> getDummyNodes() {
+                return nodes.stream()
+                        .filter(n -> !excludedNodes.contains(n.getNode().getIndex()))
+                        .collect(Collectors.toList());
             }
-        };
+            @Override
+            public int getTimeoutMS() { return timeoutMS; }
+        });
+        subsetWaiter.waitForState(expectedState);
     }
 
-    protected void setUpSlowDiskCluster(NodeModifier callback) throws Exception {
-        int nodeCount = 31;
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
-        // TODO: multiple groups!
-        options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, nodeCount)));
-        setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeCount);
-        waitForStableSystem(nodeCount);
-        // Set one node as not being up. It should not contribute to the overall
-        // latency or operation metrics, nor should its disks be included.
-        nodes.get(2*13).disconnectAsShutdown();
-        nodes.get(2*21+1).disconnectAsShutdown();
-        waiter.waitForState("version:\\d+ distributor:31 .13.s:d storage:31 .21.s:m");
-
-        for (NodeInfo node : fleetController.getCluster().getNodeInfo()) {
-            callback.modify(node);
-        }
-    }
-
-    protected void setUpSimpleCluster(int nodeCount) throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
-        // TODO: multiple groups!
-        options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, nodeCount)));
-        setUpFleetController(true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeCount);
-        waitForStableSystem(nodeCount);
-        waiter.waitForState("version:\\d+ distributor:" + nodeCount + " storage:" + nodeCount);
-
-        NodeModifier callback = makeDefaultTestNodeModifier();
-        for (NodeInfo node : fleetController.getCluster().getNodeInfo()) {
-            callback.modify(node);
-        }
+    protected static Map<NodeType, Integer> transitionTimes(int milliseconds) {
+        Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
+        maxTransitionTime.put(NodeType.DISTRIBUTOR, milliseconds);
+        maxTransitionTime.put(NodeType.STORAGE, milliseconds);
+        return maxTransitionTime;
     }
 
     protected void tearDownSystem() throws Exception {

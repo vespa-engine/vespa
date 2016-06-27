@@ -80,12 +80,11 @@ public class SetNodeStateRequest extends Request<SetResponse> {
 
         NodeState wantedState = nodeInfo.getUserWantedState();
         NodeState newWantedState = getRequestedNodeState(newStates, node);
-        int version = currentClusterState.getVersion();
         NodeStateChangeChecker.Result result = cluster.calculateEffectOfNewState(
-                node, version, condition, wantedState, newWantedState);
+                node, currentClusterState, condition, wantedState, newWantedState);
 
         log.log(LogLevel.DEBUG, "node=" + node +
-                " version=" + version +
+                " current-cluster-state=" + currentClusterState + // Includes version in output format
                 " condition=" + condition +
                 " wanted-state=" + wantedState +
                 " new-wanted-state=" + newWantedState +
