@@ -776,7 +776,7 @@ applyTree(BTreeType *tree,
     size_t removeSize(re - r);
     uint64_t buildCost = treeSize * 2 + additionSize;
     typedef bitcompression::EncodeContext64BE EC;
-    uint64_t modifyCost = (EC::log2(treeSize + additionSize) + 1) *
+    uint64_t modifyCost = (EC::asmlog2(treeSize + additionSize) + 1) *
                           (additionSize + removeSize);
     if (modifyCost < buildCost)
         applyModifyTree(tree, a, ae, r, re, comp);
