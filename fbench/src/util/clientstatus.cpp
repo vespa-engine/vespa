@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "clientstatus.h"
 #include <string.h>
-#include <math.h>
+#include <cmath>
+
 
 ClientStatus::ClientStatus()
     : _error(false),
@@ -123,9 +124,9 @@ ClientStatus::GetPercentile(double percent)
     if (percent > 100.0) percent = 100.0;
 
     double target = ((double)(_requestCnt - 1)) * (percent / 100.0);
-    long       t1 = (long)floor(target);
-    long       t2 = (long)ceil(target);
-    double      k = ceil(target) - target;
+    long       t1 = (long)std::floor(target);
+    long       t2 = (long)std::ceil(target);
+    double      k = std::ceil(target) - target;
     int        i1 = 0;
     int        i2 = 0;
     long      cnt = 0;
