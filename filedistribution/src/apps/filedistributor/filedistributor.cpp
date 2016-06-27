@@ -324,15 +324,19 @@ FileDistributorApplication::Main() {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return -2;
-    } catch(const ZKGenericException & e) {
+    } catch(const ZKSessionExpired & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return -3;
+    } catch(const ZKGenericException & e) {
+        std::string s = boost::diagnostic_information(e);
+        EV_STOPPING(programName, s.c_str());
+        return -99;
     } catch(const boost::unknown_exception & e) {
         std::string s = boost::diagnostic_information(e);
         LOG(warning, "Caught '%s'", s.c_str());
         EV_STOPPING(programName, s.c_str());
-        return -4;
+        return -999;
 #if 0
     } catch(const boost::exception& e) {
         std::string s = boost::diagnostic_information(e);
