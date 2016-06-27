@@ -5,6 +5,7 @@
 #include <vespa/vespalib/eval/eval_spec.h>
 #include <vespa/vespalib/eval/basic_nodes.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cmath>
 
 using namespace vespalib::eval;
 
@@ -88,7 +89,7 @@ TEST("require that large (plugin) set membership checks work") {
     auto fun = cf.get_function<1>();
     auto arr_fun = arr_cf.get_function();
     for (double value = 0.5; value <= 100.5; value += 0.5) {
-        if (round(value) == value) {
+        if (std::round(value) == value) {
             EXPECT_EQUAL(1.0, fun(value));
             EXPECT_EQUAL(1.0, arr_fun(&value));
         } else {

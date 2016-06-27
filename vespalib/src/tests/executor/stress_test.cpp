@@ -7,8 +7,7 @@ LOG_SETUP("executor_test");
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-
-#include <math.h>
+#include <cmath>
 
 using namespace vespalib;
 
@@ -87,7 +86,7 @@ Test::calibrate(double wanted_ms)
     }
     double ms = (t1.MilliSecs() - t0.MilliSecs());
     double size = (((double)n) / ms) * wanted_ms;
-    return (uint32_t) round(size);
+    return (uint32_t) std::round(size);
 }
 
 int
