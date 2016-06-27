@@ -18,6 +18,12 @@ public class NodeRepoMock implements NodeRepository {
 
     public static final List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
 
+    public NodeRepoMock() {
+        if(OrchestratorMock.semaphore.tryAcquire()) {
+            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using NodeRepoMock");
+        }
+    }
+
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
         return containerNodeSpecs;

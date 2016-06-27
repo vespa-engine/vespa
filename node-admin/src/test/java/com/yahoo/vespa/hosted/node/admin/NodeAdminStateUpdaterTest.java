@@ -6,6 +6,8 @@ import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -28,6 +30,21 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class NodeAdminStateUpdaterTest {
+
+    @Before
+    public void before() {
+        try {
+            OrchestratorMock.semaphore.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        OrchestratorMock.reset();
+    }
+
+    @After
+    public void after() {
+        OrchestratorMock.semaphore.release();
+    }
 
     @Test
     @SuppressWarnings("unchecked")

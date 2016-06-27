@@ -24,6 +24,12 @@ public class DockerMock implements Docker {
     private List<Container> containers = new ArrayList<>();
     public static StringBuilder requests = new StringBuilder();
 
+    public DockerMock() {
+        if(OrchestratorMock.semaphore.tryAcquire()) {
+            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using DockerMock");
+        }
+    }
+
     @Override
     public void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName,
                                double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb) {

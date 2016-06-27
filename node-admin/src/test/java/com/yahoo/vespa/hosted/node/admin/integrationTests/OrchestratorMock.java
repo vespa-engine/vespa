@@ -23,6 +23,12 @@ public class OrchestratorMock implements Orchestrator {
 
     public static final Semaphore semaphore = new Semaphore(1);
 
+    public OrchestratorMock() {
+        if(semaphore.tryAcquire()) {
+            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using OrchestratorMock");
+        }
+    }
+
     @Override
     public boolean suspend(HostName hostName) {
         synchronized (monitor) {
