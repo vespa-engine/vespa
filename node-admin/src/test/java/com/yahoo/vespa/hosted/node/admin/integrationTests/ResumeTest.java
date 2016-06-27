@@ -53,7 +53,7 @@ public class ResumeTest {
                 new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
 
-        nodeRepositoryMock.containerNodeSpecs.add(new ContainerNodeSpec(
+        NodeRepoMock.containerNodeSpecs.add(new ContainerNodeSpec(
                 new HostName("hostName"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
@@ -71,13 +71,13 @@ public class ResumeTest {
             Thread.sleep(10);
         }
 
-        while (!dockerMock.requests.toString().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
+        while (!DockerMock.requests.toString().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
                 "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n")) {
             Thread.sleep(10);
         }
 
-        assertThat(dockerMock.requests.toString(), is("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
+        assertThat(DockerMock.requests.toString(), is("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
                 "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n"));
 
@@ -96,7 +96,7 @@ public class ResumeTest {
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
         // Now, change data in node repo, should not propagate.
-        nodeRepositoryMock.containerNodeSpecs.clear();
+        NodeRepoMock.containerNodeSpecs.clear();
 
         // New node repo state should have not propagated to node admin
         Thread.sleep(2);
