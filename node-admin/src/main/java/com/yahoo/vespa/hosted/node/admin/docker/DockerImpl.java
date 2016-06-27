@@ -477,7 +477,9 @@ public class DockerImpl implements Docker {
             log.info("Deleting docker image " + dockerImage);
             final List<RemovedImage> removedImages = docker.removeImage(dockerImage.asString());
             for (RemovedImage removedImage : removedImages) {
-                log.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
+                if (removedImage.type() != RemovedImage.Type.DELETED) {
+                    log.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
+                }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interrupt", e);
