@@ -28,38 +28,36 @@ public class LinuxInetAddress {
      *
      * @return a localhost address
      */
+    // Note: Checking resolvability of ipV6 addresses takes a long time on some systems (over 5 seconds 
+    // for some addresses on my mac). This method is written to minimize the number of resolution checks done
+    // and to defer ip6 checks until necessary.
     public static InetAddress getLocalHost() {
-        System.out.println("Resolving local address");
         InetAddress fallback = InetAddress.getLoopbackAddress();
         try {
-            InetAddress localAddress = InetAddress.getLocalHost();
-            fallback = localAddress;
+            fallback = InetAddress.getLocalHost();
             List<InetAddress> nonLoopback =
                 getAllLocalFromNetwork().stream().filter(a -> ! a.isLoopbackAddress()).collect(Collectors.toList());
-            if (nonLoopback.isEmpty()) {
-                System.out.println("Returning fallback 1: " + fallback);
-                return fallback;
-            }
-            fallback = nonLoopback.get(0);
-            List<InetAddress> resolving =
-                    nonLoopback.stream().filter(a -> doesResolve(a)).collect(Collectors.toList());
-            if (resolving.isEmpty()) {
-                System.out.println("Returning fallback 2: " + fallback);
-                return fallback;
-            }
-            fallback = resolving.get(0);
-            List<InetAddress> ipV4 =
-                    resolving.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
-            if (ipV4.isEmpty()) {
-                System.out.println("Returning fallback 3: " + fallback);
-                return fallback;
-            }
-            System.out.println("Returning first ipv4, " + ipV4.get(0) + " among:");
-            for (InetAddress choice : ipV4)
-                System.out.println("    " + choice);
-            return ipV4.get(0);
+            if (nonLoopback.isEmpty()) return fallback;
+            
+            // Invariant: We got all addresses without exception
+
+            List<InetAddress> ipV4 = nonLoopback.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
+            for (InetAddress address : ipV4)
+                if (doesResolve(address))
+                    return address;
+
+            // Invariant: There are no resolving ip4 addresses
+            
+            List<InetAddress> ipV6 = nonLoopback.stream().filter(a -> a instanceof Inet4Address).collect(Collectors.toList());
+            for (InetAddress address : ipV6)
+                if (doesResolve(address))
+                    return address;
+
+            // Invariant: There are no resolving ip6 addresses either
+
+            if (! ipV4.isEmpty()) return ipV4.get(0);
+            return ipV6.get(0);
         } catch (UnknownHostException e) {
-            System.out.println("Returning fallback from exception " + e);
             return fallback;
         }
     }
@@ -94,10 +92,9 @@ public class LinuxInetAddress {
         }
     }
 
-    private static boolean doesResolve(InetAddress addr) {
-        String asAddr = addr.getHostAddress();
-        String asName = addr.getCanonicalHostName();
-        return ! asAddr.equals(asName);
+    private static boolean doesResolve(InetAddress address) {
+        // The latter returns a name if resolvable to one and the host address otherwise
+        return ! address.getHostAddress().equals(address.getCanonicalHostName());
     }
 
 }
