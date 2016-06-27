@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
         DummyFileHeaderContext::setCreator(argv[0]);
     }
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tls("test7", 18377, ".", fileHeaderContext, 0x10000);
+    TransLogServer tls("test7", 18378, ".", fileHeaderContext, 0x10000);
     sleep(60);
     return 0;
 }
