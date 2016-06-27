@@ -17,7 +17,7 @@ std::string
 TimeStamp::asString(double timeInSeconds)
 {
     double intpart;
-    double fractpart = modf(timeInSeconds, &intpart);
+    double fractpart = std::modf(timeInSeconds, &intpart);
     time_t timeStamp = (time_t)intpart;
     struct tm timeStruct;
     gmtime_r(&timeStamp, &timeStruct);

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
+#include <cmath>
 #include "llvm_wrapper.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
@@ -18,7 +19,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
 
-double vespalib_eval_ldexp(double a, double b) { return ldexp(a, b); }
+double vespalib_eval_ldexp(double a, double b) { return std::ldexp(a, b); }
 double vespalib_eval_min(double a, double b) { return std::min(a, b); }
 double vespalib_eval_max(double a, double b) { return std::max(a, b); }
 double vespalib_eval_isnan(double a) { return (std::isnan(a) ? 1.0 : 0.0); }

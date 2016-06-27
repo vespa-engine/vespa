@@ -7,9 +7,9 @@
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/expression/positiveinfinityresultnode.h>
-#include <math.h>
-
+#include <cmath>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".searchlib.documentexpressions");
 
 namespace search {
@@ -63,7 +63,7 @@ ResultDeserializer & ResultNode::onDeserializeResult(ResultDeserializer & is)
     return is;
 }
 
-int64_t FloatResultNode::onGetInteger(size_t index) const { (void) index; return static_cast<int64_t>(round(_value)); }
+int64_t FloatResultNode::onGetInteger(size_t index) const { (void) index; return static_cast<int64_t>(std::round(_value)); }
 double  FloatResultNode::onGetFloat(size_t index)   const { (void) index; return _value; }
 void FloatResultNode::add(const ResultNode & b)      { _value += b.getFloat(); }
 void FloatResultNode::negate()                       { _value = - _value; }
@@ -94,7 +94,7 @@ ResultNode::ConstBufferRef FloatResultNode::onGetString(size_t index, ResultNode
 
 bool FloatResultNode::isNan() const
 {
-    return isnan(_value);
+    return std::isnan(_value);
 }
 
 int FloatResultNode::onCmp(const Identifiable & b) const

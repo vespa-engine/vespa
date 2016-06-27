@@ -10,7 +10,6 @@
 #include "visitor.h"
 #include "compare.h"
 #include "branch.h"
-#include <math.h>
 
 namespace document {
 

@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include "floatbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.h>
-#include <math.h>
+#include <cmath>
 
 namespace search {
 namespace expression {
@@ -25,8 +25,8 @@ FloatBucketResultNode::onCmp(const Identifiable &b) const
     double f1(_from);
     double f2(static_cast<const FloatBucketResultNode &>(b)._from);
 
-    if (isnan(f1)) {
-        return isnan(f2) ? 0 : -1;
+    if (std::isnan(f1)) {
+        return std::isnan(f2) ? 0 : -1;
     } else {
         if (f1 < f2) {
             return -1;
@@ -35,7 +35,7 @@ FloatBucketResultNode::onCmp(const Identifiable &b) const
         } else {
             double t1(_to);
             double t2(static_cast<const FloatBucketResultNode &>(b)._to);
-            if (isnan(t2)) {
+            if (std::isnan(t2)) {
                 return 1;
             } else {
                 if (t1 < t2) {

@@ -7,7 +7,6 @@
 #include "floatbucketresultnode.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
-#include <math.h>
 #include <limits>
 
 namespace search {

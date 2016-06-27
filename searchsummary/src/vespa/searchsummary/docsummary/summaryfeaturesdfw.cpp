@@ -7,6 +7,7 @@ LOG_SETUP(".searchlib.docsummary.summaryfeaturesdfw");
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchsummary/docsummary/docsumformat.h>
 #include "summaryfeaturesdfw.h"
+#include <cmath>
 
 namespace search {
 namespace docsummary {

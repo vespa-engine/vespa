@@ -8,13 +8,13 @@ namespace logfwd {
 
 enum LogLevel { debug, error, warning, info };
 
-void log(LogLevel level, const char *file, int line, const char *fmt, ...)
+void log_forward(LogLevel level, const char *file, int line, const char *fmt, ...)
     __attribute__((format(printf,4,5)));
 
 } //namespace logfwd
 } //namespace filedistribution
 
-#define LOGFWD(level, ...) filedistribution::logfwd::log(filedistribution::logfwd::level, \
+#define LOGFWD(level, ...) filedistribution::logfwd::log_forward(filedistribution::logfwd::level, \
             __FILE__, __LINE__, __VA_ARGS__)
 
 

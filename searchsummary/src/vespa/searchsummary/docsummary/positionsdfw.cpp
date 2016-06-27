@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "positionsdfw.h"
 #include <vespa/log/log.h>
+#include <cmath>
 
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 
@@ -60,7 +61,7 @@ AbsDistanceDFW::findMinDistance(uint32_t docid,
             absdist = dist2;
         }
     }
-    return (uint64_t) sqrt((double) absdist);
+    return (uint64_t) std::sqrt((double) absdist);
 }
 
 void

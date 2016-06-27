@@ -11,7 +11,6 @@
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
-#include <math.h>
 
 namespace document {
 
@@ -143,7 +142,7 @@ using namespace document::select;
                      const select::ValueNode& valnode,
                      const select::Operator& op) {
             if (op == FunctionOperator::EQ || op == document::select::GlobOperator::GLOB) {
-                int bucketCount = (int)pow(2, 16);
+                int bucketCount = 1 << 16;
                 const IntegerValueNode* val(
                         dynamic_cast<const IntegerValueNode*>(&valnode));
 

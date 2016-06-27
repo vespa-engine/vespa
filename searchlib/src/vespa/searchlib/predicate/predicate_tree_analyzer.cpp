@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".predicate_tree_analyzer");
 
 using document::Predicate;
@@ -161,7 +162,7 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector &in) {
 
 PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector &in) : _has_not(false), _negated(false) {
     traverseTree(in);
-    _min_feature = static_cast<int>(ceilf(findMinFeature(in)) + (_has_not? 1.0 : 0.0));
+    _min_feature = static_cast<int>(std::ceil(float(findMinFeature(in)) + (_has_not? 1.0 : 0.0)));
 }
 
 }  // namespace predicate

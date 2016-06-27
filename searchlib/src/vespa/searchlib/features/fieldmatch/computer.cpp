@@ -4,7 +4,7 @@
 LOG_SETUP(".features.fieldmatch.computer");
 
 #include <iostream>
-#include <math.h>
+#include <cstdlib>
 #include <set>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -357,7 +357,7 @@ Computer::findAlternativeSegmentFrom(SegmentStart *segment) {
             }
         }
         else {
-            if ((unsigned int)abs(j - previousJ) >= _params.getProximityLimit()) {
+            if ((unsigned int)std::abs(j - previousJ) >= _params.getProximityLimit()) {
                 segmentEnd(i - 1, previousJ);
                 return true;
             }

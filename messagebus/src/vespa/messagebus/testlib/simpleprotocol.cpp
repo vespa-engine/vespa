@@ -7,6 +7,7 @@ LOG_SETUP(".simpleprotocol");
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/routingnodeiterator.h>
+#include <cstdlib>
 #include "simplemessage.h"
 #include "simpleprotocol.h"
 #include "simplereply.h"

@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <math.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/datagram.h>

@@ -20,6 +20,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <cmath>
 
 LOG_SETUP("applyattrupdates_test");
 

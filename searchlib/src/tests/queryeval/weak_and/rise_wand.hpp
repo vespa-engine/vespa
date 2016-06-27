@@ -5,7 +5,7 @@
 #include <vespa/fastos/fastos.h>
 #include "rise_wand.h"
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 using search::queryeval::wand::TermFrequencyScorer;

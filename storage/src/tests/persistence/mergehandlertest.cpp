@@ -10,6 +10,7 @@
 #include <tests/persistence/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <cmath>
 
 LOG_SETUP(".test.persistence.handler.merge");
 

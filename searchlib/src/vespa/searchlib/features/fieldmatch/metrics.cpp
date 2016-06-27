@@ -4,7 +4,9 @@
 LOG_SETUP(".features.fieldmatch.metrics");
 
 #include <algorithm>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
+#include <cstdlib>
 #include <vespa/vespalib/util/stringfmt.h>
 #include "computer.h"
 #include "metrics.h"
@@ -302,7 +304,7 @@ Metrics::onPair(uint32_t i, uint32_t j, uint32_t previousJ)
     _unweightedProximity += pairProximity;
 
     feature_t connectedness = _source->getQueryTermData(i).connectedness();
-    _proximity += pow(pairProximity, connectedness / 0.1) * std::max(0.1, connectedness);
+    _proximity += std::pow(pairProximity, connectedness / 0.1) * std::max(0.1, connectedness);
     _pairs++;
 }
 
@@ -317,11 +319,11 @@ Metrics::onInSegmentGap(uint32_t, uint32_t j, uint32_t previousJ)
 {
     _gaps++;
     if (j > previousJ) {
-        _gapLength += abs((int)j - (int)previousJ) - 1; // gap length may be 0 if the gap was in the query
+        _gapLength += std::abs((int)j - (int)previousJ) - 1; // gap length may be 0 if the gap was in the query
     }
     else {
         _outOfOrder++;
-        _gapLength += abs((int)j - (int)previousJ);
+        _gapLength += std::abs((int)j - (int)previousJ);
     }
 }
 

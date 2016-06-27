@@ -46,7 +46,7 @@ FunctionTableFactory::createExpDecay(double w, double t, size_t len) const
 {
     Table::SP table(new Table());
     for (size_t x = 0; x < len; ++x) {
-        table->add(w * exp(-(x / t)));
+        table->add(w * std::exp(-(x / t)));
     }
     return table;
 }
@@ -56,7 +56,7 @@ FunctionTableFactory::createLogGrowth(double w, double t, double s, size_t len) 
 {
     Table::SP table(new Table());
     for (size_t x = 0; x < len; ++x) {
-        table->add(w * (log(1 + (x / s))) + t);
+        table->add(w * (std::log(1 + (x / s))) + t);
     }
     return table;
 }

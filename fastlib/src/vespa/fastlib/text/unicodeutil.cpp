@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/text/unicodeutil.h>
+#include <cstdlib>
 
 #include "unicodeutil-charprops.cpp"
 #include "unicodeutil-lowercase.cpp"
@@ -333,7 +334,7 @@ int Fast_UnicodeUtil::UTF8move(unsigned const char* start, size_t length,
 
   if (offset == 0) // Enough room to make it..
   {
-    int moved = abs(p - pos);
+    int moved = std::abs(p - pos);
     pos = p;
     return moved;
   }

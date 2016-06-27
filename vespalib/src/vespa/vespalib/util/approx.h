@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <math.h>
+#include <cmath>
 
 namespace vespalib {
 
@@ -19,13 +19,13 @@ inline bool approx_equal(double a, double b)
         // This is in a way the simple case, but it's needed
         // anyway to handle numbers that are outside "float" range.
         double frac = b / a;
-        float rounded = nextafterf(frac, 1.0);
+        float rounded = std::nextafterf(frac, 1.0);
         return (rounded == 1.0);
     }
     // in reality this may allow up to 2 bits difference
     // since we round to float and also call nextafterf
     float aa = (float) a;
-    return (aa == nextafterf((float) b, aa));
+    return (aa == std::nextafterf((float) b, aa));
 }
 
 } // namespace vespalib
