@@ -1178,35 +1178,38 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
 
-
-TEST_F("require that bucket move stops when disk or memory limit is reached", ControllerFixture)
+struct ResourceLimitControllerFixture : public ControllerFixture
 {
-    // Bucket 1 shold be moved
-    f.addReady(f._ready.bucket(2));
-    // Note: This depends on f._bmj.run() moving max 1 documents
-    EXPECT_TRUE(!f._bmj.run());
-    EXPECT_EQUAL(1u, f.docsMoved().size());
-    EXPECT_EQUAL(0u, f.bucketsModified().size());
-    // Notify that we've over disk limit
-    f._diskMemUsageNotifier.notify(DiskMemUsageState(true, false));
-    EXPECT_TRUE(f._bmj.run());
-    EXPECT_EQUAL(1u, f.docsMoved().size());
-    EXPECT_EQUAL(0u, f.bucketsModified().size());
-    // Notify that we've under disk limit
-    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, false));
-    EXPECT_TRUE(!f._bmj.run());
-    EXPECT_EQUAL(2u, f.docsMoved().size());
-    EXPECT_EQUAL(0u, f.bucketsModified().size());
-    // Notify that we've over memory limit
-    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, true));
-    EXPECT_TRUE(f._bmj.run());
-    EXPECT_EQUAL(2u, f.docsMoved().size());
-    EXPECT_EQUAL(0u, f.bucketsModified().size());
-    // Notify that we've under memory limit
-    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, false));
-    EXPECT_TRUE(!f._bmj.run());
-    EXPECT_EQUAL(3u, f.docsMoved().size());
-    EXPECT_EQUAL(1u, f.bucketsModified().size());
+    void testJobStopping(DiskMemUsageState blockingUsageState) {
+        // Bucket 1 shold be moved
+        addReady(_ready.bucket(2));
+        // Note: This depends on f._bmj.run() moving max 1 documents
+        EXPECT_TRUE(!_bmj.run());
+        EXPECT_EQUAL(1u, docsMoved().size());
+        EXPECT_EQUAL(0u, bucketsModified().size());
+        // Notify that we've over limit
+        _diskMemUsageNotifier.notify(blockingUsageState);
+        EXPECT_TRUE(_bmj.run());
+        EXPECT_EQUAL(1u, docsMoved().size());
+        EXPECT_EQUAL(0u, bucketsModified().size());
+        // Notify that we've under limit
+        _diskMemUsageNotifier.notify(DiskMemUsageState());
+        EXPECT_TRUE(!_bmj.run());
+        EXPECT_EQUAL(2u, docsMoved().size());
+        EXPECT_EQUAL(0u, bucketsModified().size());
+    }
+};
+
+
+TEST_F("require that bucket move stops when disk limit is reached", ResourceLimitControllerFixture)
+{
+    f.testJobStopping(DiskMemUsageState(true, false));
+}
+
+
+TEST_F("require that bucket move stops when memory limit is reached", ResourceLimitControllerFixture)
+{
+    f.testJobStopping(DiskMemUsageState(false, true));
 }
 
 
