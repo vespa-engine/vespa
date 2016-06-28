@@ -6,9 +6,13 @@ import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
+import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.xml.dom.DomContentBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -20,11 +24,13 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -39,11 +45,12 @@ public class ModelAmendingTestCase {
 
     @Test
     public void testModelAmending() throws IOException, SAXException {
-        ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new ContainerModelAmenderBuilder(),
+        ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new AdminModelAmenderBuilder(),
+                                                                                      new ContainerModelAmenderBuilder(),
                                                                                       new ContentModelAmenderBuilder());
-        VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
-                                                  .withServices(
-                                     "<services version='1.0'>" +
+        VespaModel model = new VespaModel(new MockApplicationPackage.Builder().withServices(
+                                             "<services version='1.0'>" +
+                                             "    <admin version='3.0'/>" +
                                              "    <jdisc id='test1' version='1.0'>" +
                                              "        <search />" +
                                              "    </jdisc>" +
@@ -64,12 +71,17 @@ public class ModelAmendingTestCase {
                                              "        </documents>" +
                                              "    </content>" +
                                              "</services>")
-                                          .withSearchDefinitions(
-                                                  searchDefinition("testtype1"))
-                                                  .build(),
+                                          .withSearchDefinitions(searchDefinition("testtype1"))
+                                          .build(),
                                           amendingModelRepo);
         assertEquals(1, model.getHostSystem().getHosts().size());
 
+        // Check that admin models are amended
+        for (HostResource host : model.getAdmin().getHostSystem().getHosts()) {
+            if (host.getHost().isMultitenant()) continue; // host amendment not done
+            assertFalse(host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
+        }
+        
         // Check that explicit jdisc clusters are amended
         assertEquals(4, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
@@ -85,6 +97,65 @@ public class ModelAmendingTestCase {
                 "    field testfield type string {}" +
                 "  }" +
                 "}");
+    }
+
+    public static class AdminModelAmenderBuilder extends ConfigModelBuilder<AdminModelAmender> {
+
+        public AdminModelAmenderBuilder() {
+            super(AdminModelAmender.class);
+        }
+
+        @Override
+        public List<ConfigModelId> handlesElements() {
+            List<ConfigModelId> adminElements = new ArrayList<>();
+            adminElements.addAll(AdminModel.BuilderV2.configModelIds);
+            adminElements.addAll(AdminModel.BuilderV4.configModelIds);
+            return adminElements;
+        }
+
+        @Override
+        public void doBuild(AdminModelAmender model, Element spec, ConfigModelContext modelContext) {
+            for (AdminModel adminModel : model.adminModels)
+                amend(adminModel);
+        }
+
+        private void amend(AdminModel adminModel) {
+            for (HostResource host : adminModel.getAdmin().getHostSystem().getHosts()) {
+                if (host.getHost().isMultitenant()) continue; // host amendment not needed
+                if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
+                adminModel.getAdmin().addAndInitializeService(host, new AmendedService(host.getHost()));
+            }
+        }
+
+    }
+
+    /** To test that we can amend hosts with an additional service */
+    private static class AmendedService extends AbstractService {
+
+        public AmendedService(AbstractConfigProducer parent) {
+            super(parent, "testservice");
+        }
+
+        @Override
+        public int getPortCount() {
+            return 0;
+        }
+
+    }
+
+    public static class AdminModelAmender extends ConfigModel {
+
+        /** The container models this builder amends */
+        private final Collection<AdminModel> adminModels;
+
+        public AdminModelAmender(ConfigModelContext modelContext, Collection<AdminModel> adminModels) {
+            super(modelContext);
+            this.adminModels = adminModels;
+        }
+
+        @Override
+        public boolean isServing() { return false; }
+
     }
 
     public static class ContainerModelAmenderBuilder extends ConfigModelBuilder<ContainerModelAmender> {
