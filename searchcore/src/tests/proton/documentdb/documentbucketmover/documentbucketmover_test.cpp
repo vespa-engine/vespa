@@ -1179,7 +1179,7 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
 }
 
 
-TEST_F("require that bucket move stops when disk limit is reached", ControllerFixture)
+TEST_F("require that bucket move stops when disk or memory limit is reached", ControllerFixture)
 {
     // Bucket 1 shold be moved
     f.addReady(f._ready.bucket(2));
@@ -1197,6 +1197,16 @@ TEST_F("require that bucket move stops when disk limit is reached", ControllerFi
     EXPECT_TRUE(!f._bmj.run());
     EXPECT_EQUAL(2u, f.docsMoved().size());
     EXPECT_EQUAL(0u, f.bucketsModified().size());
+    // Notify that we've over memory limit
+    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, true));
+    EXPECT_TRUE(f._bmj.run());
+    EXPECT_EQUAL(2u, f.docsMoved().size());
+    EXPECT_EQUAL(0u, f.bucketsModified().size());
+    // Notify that we've under memory limit
+    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, false));
+    EXPECT_TRUE(!f._bmj.run());
+    EXPECT_EQUAL(3u, f.docsMoved().size());
+    EXPECT_EQUAL(1u, f.bucketsModified().size());
 }
 
 
