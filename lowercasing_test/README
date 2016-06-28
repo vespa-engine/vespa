@@ -1,5 +1,1 @@
 This module was created to test that lowercasing is consistent across Java and C++.
-
-If you want to copy the infrastructure from this module you should try
-to copy the hello-world test; it is designed to verify the integrity
-of the testing module itself.
