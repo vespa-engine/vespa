@@ -26,15 +26,12 @@ public class VespaModelTester {
     private Map<String, Collection<Host>> hosts = new HashMap<>();
 
     /** Adds some hosts of the 'default' flavor to this system */
-    public Hosts addHosts(int count) { return addHosts("", count); }
+    public Hosts addHosts(int count) { return addHosts("default", count); }
     /** Adds some hosts to this system */
     public Hosts addHosts(String flavor, int count) { 
-        String baseHostName = "foo" + ( flavor.isEmpty() ? "" : "-" + flavor );
-        if (flavor.isEmpty())
-            flavor = "default";
         Hosts hosts = new Hosts();
         for (int i = 0; i < count; i++)
-            hosts.addHost(new com.yahoo.config.model.provision.Host(baseHostName + i), Collections.emptyList());
+            hosts.addHost(new com.yahoo.config.model.provision.Host(flavor + i), Collections.emptyList());
         this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts.getHosts());
         return hosts;
     }
