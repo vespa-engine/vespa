@@ -354,6 +354,19 @@ UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
     endDoc();
 }
 
+void
+UrlFieldInverter::removeDocument(uint32_t docId)
+{
+    _all->removeDocument(docId);
+    _scheme->removeDocument(docId);
+    _host->removeDocument(docId);
+    _port->removeDocument(docId);
+    _path->removeDocument(docId);
+    _query->removeDocument(docId);
+    _fragment->removeDocument(docId);
+    _hostname->removeDocument(docId);
+}
+
 
 UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
                                    FieldInverter *all,
