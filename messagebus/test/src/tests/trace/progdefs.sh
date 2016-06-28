@@ -1,6 +1,4 @@
-#!/bin/bash
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-set -e
 prog server cpp1 "" "./messagebus_test_cpp-server-trace_app server/cpp/1/A"
 prog server cpp2 "" "./messagebus_test_cpp-server-trace_app server/cpp/2/A"
 prog server cpp3 "" "./messagebus_test_cpp-server-trace_app server/cpp/2/B"
