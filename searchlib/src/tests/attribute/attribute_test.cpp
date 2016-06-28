@@ -33,9 +33,9 @@ using search::attribute::IAttributeVector;
 namespace
 {
 
-
 vespalib::string empty;
-vespalib::string clstmp("clstmp");
+vespalib::string tmpDir("tmp");
+vespalib::string clsDir("clstmp");
 vespalib::string asuDir("asutmp");
 
 bool
@@ -109,6 +109,18 @@ preciseEstimatedSize(const AttributeVector &a)
         return false; // Using average of string lens, can be somewhat off
     }
     return true;
+}
+
+vespalib::string
+baseFileName(const vespalib::string &attrName)
+{
+    return tmpDir + "/" + attrName;
+}
+
+AttributeVector::SP
+createAttribute(const vespalib::string &attrName, const search::attribute::Config &cfg)
+{
+    return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
 
 }
@@ -479,39 +491,39 @@ void AttributeTest::testReload()
     // IntegerAttribute
     // CollectionType::SINGLE
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("sint32_1", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("sint32_2", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv3 = AttributeFactory::createAttribute("sint32_3", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("sint32_1", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("sint32_2", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("sint32_3", Config(BasicType::INT32, CollectionType::SINGLE));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("suint4_1", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("suint4_2", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv3 = AttributeFactory::createAttribute("suint4_3", Config(BasicType::UINT4, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("suint4_1", Config(BasicType::UINT4, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("suint4_2", Config(BasicType::UINT4, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("suint4_3", Config(BasicType::UINT4, CollectionType::SINGLE));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("suint2_1", Config(BasicType::UINT2, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("suint2_2", Config(BasicType::UINT2, CollectionType::SINGLE));
-        AttributePtr iv3 = AttributeFactory::createAttribute("suint2_3", Config(BasicType::UINT2, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("suint2_1", Config(BasicType::UINT2, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("suint2_2", Config(BasicType::UINT2, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("suint2_3", Config(BasicType::UINT2, CollectionType::SINGLE));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("suint1_1", Config(BasicType::UINT1, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("suint1_2", Config(BasicType::UINT1, CollectionType::SINGLE));
-        AttributePtr iv3 = AttributeFactory::createAttribute("suint1_3", Config(BasicType::UINT1, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("suint1_1", Config(BasicType::UINT1, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("suint1_2", Config(BasicType::UINT1, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("suint1_3", Config(BasicType::UINT1, CollectionType::SINGLE));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("sfsint32_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("sfsint32_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("sfsint32_3", cfg);
+        AttributePtr iv1 = createAttribute("sfsint32_1", cfg);
+        AttributePtr iv2 = createAttribute("sfsint32_2", cfg);
+        AttributePtr iv3 = createAttribute("sfsint32_3", cfg);
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
@@ -519,42 +531,42 @@ void AttributeTest::testReload()
     {
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("flag_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("flag_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("flag_3", cfg);
+        AttributePtr iv1 = createAttribute("flag_1", cfg);
+        AttributePtr iv2 = createAttribute("flag_2", cfg);
+        AttributePtr iv3 = createAttribute("flag_3", cfg);
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("aint32_1", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv2 = AttributeFactory::createAttribute("aint32_2", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv3 = AttributeFactory::createAttribute("aint32_3", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr iv1 = createAttribute("aint32_1", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr iv2 = createAttribute("aint32_2", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr iv3 = createAttribute("aint32_3", Config(BasicType::INT32, CollectionType::ARRAY));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::ARRAY);
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("afsint32_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("afsint32_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("afsint32_3", cfg);
+        AttributePtr iv1 = createAttribute("afsint32_1", cfg);
+        AttributePtr iv2 = createAttribute("afsint32_2", cfg);
+        AttributePtr iv3 = createAttribute("afsint32_3", cfg);
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     // CollectionType::WSET
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("wint32_1", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv2 = AttributeFactory::createAttribute("wint32_2", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv3 = AttributeFactory::createAttribute("wint32_3", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr iv1 = createAttribute("wint32_1", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr iv2 = createAttribute("wint32_2", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr iv3 = createAttribute("wint32_3", Config(BasicType::INT32, CollectionType::WSET));
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::WSET);
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("wfsint32_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("wfsint32_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("wfsint32_3", cfg);
+        AttributePtr iv1 = createAttribute("wfsint32_1", cfg);
+        AttributePtr iv2 = createAttribute("wfsint32_2", cfg);
+        AttributePtr iv3 = createAttribute("wfsint32_3", cfg);
         testReloadInt(iv1, iv2, iv3, 0);
         testReloadInt(iv1, iv2, iv3, 100);
     }
@@ -562,50 +574,50 @@ void AttributeTest::testReload()
 
     // StringAttribute
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("sstring_1", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("sstring_2", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv3 = AttributeFactory::createAttribute("sstring_3", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("sstring_1", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("sstring_2", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr iv3 = createAttribute("sstring_3", Config(BasicType::STRING, CollectionType::SINGLE));
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("astring_1", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv2 = AttributeFactory::createAttribute("astring_2", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv3 = AttributeFactory::createAttribute("astring_3", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr iv1 = createAttribute("astring_1", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr iv2 = createAttribute("astring_2", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr iv3 = createAttribute("astring_3", Config(BasicType::STRING, CollectionType::ARRAY));
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("wstring_1", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv2 = AttributeFactory::createAttribute("wstring_2", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv3 = AttributeFactory::createAttribute("wstring_3", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr iv1 = createAttribute("wstring_1", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr iv2 = createAttribute("wstring_2", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr iv3 = createAttribute("wstring_3", Config(BasicType::STRING, CollectionType::WSET));
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("sfsstring_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("sfsstring_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("sfsstring_3", cfg);
+        AttributePtr iv1 = createAttribute("sfsstring_1", cfg);
+        AttributePtr iv2 = createAttribute("sfsstring_2", cfg);
+        AttributePtr iv3 = createAttribute("sfsstring_3", cfg);
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("afsstring_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("afsstring_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("afsstring_3", cfg);
+        AttributePtr iv1 = createAttribute("afsstring_1", cfg);
+        AttributePtr iv2 = createAttribute("afsstring_2", cfg);
+        AttributePtr iv3 = createAttribute("afsstring_3", cfg);
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::WSET));
         cfg.setFastSearch(true);
-        AttributePtr iv1 = AttributeFactory::createAttribute("wsfsstring_1", cfg);
-        AttributePtr iv2 = AttributeFactory::createAttribute("wsfsstring_2", cfg);
-        AttributePtr iv3 = AttributeFactory::createAttribute("wsfsstring_3", cfg);
+        AttributePtr iv1 = createAttribute("wsfsstring_1", cfg);
+        AttributePtr iv2 = createAttribute("wsfsstring_2", cfg);
+        AttributePtr iv3 = createAttribute("wsfsstring_3", cfg);
         testReloadString(iv1, iv2, iv3, 0);
         testReloadString(iv1, iv2, iv3, 100);
     }
@@ -614,32 +626,32 @@ void AttributeTest::testReload()
 void AttributeTest::testHasLoadData()
 {
     { // single value
-        AttributePtr av = AttributeFactory::createAttribute("loaddata1", Config(BasicType::INT32));
+        AttributePtr av = createAttribute("loaddata1", Config(BasicType::INT32));
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs("loaddata2");
-        av = AttributeFactory::createAttribute("loaddata2", Config(BasicType::INT32));
+        av->saveAs(baseFileName("loaddata2"));
+        av = createAttribute("loaddata2", Config(BasicType::INT32));
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs("loaddata3");
+        av->saveAs(baseFileName("loaddata3"));
     }
     { // array
-        AttributePtr av = AttributeFactory::createAttribute("loaddata3", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr av = createAttribute("loaddata3", Config(BasicType::INT32, CollectionType::ARRAY));
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs("loaddata4");
-        av = AttributeFactory::createAttribute("loaddata4", Config(BasicType::INT32, CollectionType::ARRAY));
+        av->saveAs(baseFileName("loaddata4"));
+        av = createAttribute("loaddata4", Config(BasicType::INT32, CollectionType::ARRAY));
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs("loaddata5");
+        av->saveAs(baseFileName("loaddata5"));
     }
     { // wset
-        AttributePtr av = AttributeFactory::createAttribute("loaddata5", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr av = createAttribute("loaddata5", Config(BasicType::INT32, CollectionType::WSET));
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs("loaddata6");
-        av = AttributeFactory::createAttribute("loaddata6", Config(BasicType::INT32, CollectionType::WSET));
+        av->saveAs(baseFileName("loaddata6"));
+        av = createAttribute("loaddata6", Config(BasicType::INT32, CollectionType::WSET));
         EXPECT_TRUE(av->hasLoadData());
     }
 }
@@ -692,40 +704,40 @@ AttributeTest::testMemorySaver()
 {
     // CollectionType::SINGLE
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("sint32_1ms", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("sint32_2ms", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("sint32_1ms", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("sint32_2ms", Config(BasicType::INT32, CollectionType::SINGLE));
         testMemorySaverInt(iv1, iv2, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("suint4_1ms", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("suint4_2ms", Config(BasicType::UINT4, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("suint4_1ms", Config(BasicType::UINT4, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("suint4_2ms", Config(BasicType::UINT4, CollectionType::SINGLE));
         testMemorySaverInt(iv1, iv2, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("sstr_1ms", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv2 = AttributeFactory::createAttribute("sstr_2ms", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr iv1 = createAttribute("sstr_1ms", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr iv2 = createAttribute("sstr_2ms", Config(BasicType::STRING, CollectionType::SINGLE));
         testMemorySaverString(iv1, iv2, 100);
     }
     // CollectionType::ARRAY
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("aint32_1ms", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv2 = AttributeFactory::createAttribute("aint32_2ms", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr iv1 = createAttribute("aint32_1ms", Config(BasicType::INT32, CollectionType::ARRAY));
+        AttributePtr iv2 = createAttribute("aint32_2ms", Config(BasicType::INT32, CollectionType::ARRAY));
         testMemorySaverInt(iv1, iv2, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("astr_1ms", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv2 = AttributeFactory::createAttribute("astr_2ms", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr iv1 = createAttribute("astr_1ms", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr iv2 = createAttribute("astr_2ms", Config(BasicType::STRING, CollectionType::ARRAY));
         testMemorySaverString(iv1, iv2, 100);
     }
     // CollectionType::WSET
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("wint32_1ms", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv2 = AttributeFactory::createAttribute("wint32_2ms", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr iv1 = createAttribute("wint32_1ms", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr iv2 = createAttribute("wint32_2ms", Config(BasicType::INT32, CollectionType::WSET));
         testMemorySaverInt(iv1, iv2, 100);
     }
     {
-        AttributePtr iv1 = AttributeFactory::createAttribute("wstr_1ms", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv2 = AttributeFactory::createAttribute("wstr_2ms", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr iv1 = createAttribute("wstr_1ms", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr iv2 = createAttribute("wstr_2ms", Config(BasicType::STRING, CollectionType::WSET));
         testMemorySaverString(iv1, iv2, 100);
     }
 }
@@ -874,19 +886,19 @@ AttributeTest::testSingle()
         std::vector<AttributeVector::largeint_t> nibbleValues;
         fillNumeric(nibbleValues, numUniqueNibbles);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
+            AttributePtr ptr = createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-uint4", Config(BasicType::UINT4, CollectionType::SINGLE));
+            AttributePtr ptr = createAttribute("sv-uint4", Config(BasicType::UINT4, CollectionType::SINGLE));
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int8_t>(ptr, nibbleValues);
         }
         {
             Config cfg(BasicType::INT32, CollectionType::SINGLE);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-post-int32", cfg);
+            AttributePtr ptr = createAttribute("sv-post-int32", cfg);
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
@@ -895,14 +907,14 @@ AttributeTest::testSingle()
         std::vector<double> values;
         fillNumeric(values, numUniques);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-float", Config(BasicType::FLOAT, CollectionType::SINGLE));
+            AttributePtr ptr = createAttribute("sv-float", Config(BasicType::FLOAT, CollectionType::SINGLE));
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
         {
             Config cfg(BasicType::FLOAT, CollectionType::SINGLE);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-post-float", cfg);
+            AttributePtr ptr = createAttribute("sv-post-float", cfg);
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
@@ -912,14 +924,14 @@ AttributeTest::testSingle()
         std::vector<vespalib::string> values;
         fillString(values, numUniques);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
+            AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, vespalib::string, vespalib::string>(ptr, values);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("sv-fs-string", cfg);
+            AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, vespalib::string, vespalib::string>(ptr, values);
         }
@@ -1064,21 +1076,21 @@ AttributeTest::testArray()
         std::vector<AttributeVector::largeint_t> values;
         fillNumeric(values, numUniques);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
+            AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
         {
             Config cfg(BasicType::INT8, CollectionType::ARRAY);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("flags", cfg);
+            AttributePtr ptr = createAttribute("flags", cfg);
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
         {
             Config cfg(BasicType::INT32, CollectionType::ARRAY);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("a-fs-int32", cfg);
+            AttributePtr ptr = createAttribute("a-fs-int32", cfg);
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1087,14 +1099,14 @@ AttributeTest::testArray()
         std::vector<double> values;
         fillNumeric(values, numUniques);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("a-float", Config(BasicType::FLOAT, CollectionType::ARRAY));
+            AttributePtr ptr = createAttribute("a-float", Config(BasicType::FLOAT, CollectionType::ARRAY));
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
         }
         {
             Config cfg(BasicType::FLOAT, CollectionType::ARRAY);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("a-fs-float", cfg);
+            AttributePtr ptr = createAttribute("a-fs-float", cfg);
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
         }
@@ -1103,14 +1115,14 @@ AttributeTest::testArray()
         std::vector<vespalib::string> values;
         fillString(values, numUniques);
         {
-            AttributePtr ptr = AttributeFactory::createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
+            AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             addDocs(ptr, numDocs);
             testArray<StringAttribute, vespalib::string>(ptr, values);
         }
         {
             Config cfg(BasicType::STRING, CollectionType::ARRAY);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("afs-string", cfg);
+            AttributePtr ptr = createAttribute("afs-string", cfg);
             addDocs(ptr, numDocs);
             testArray<StringAttribute, vespalib::string>(ptr, values);
         }
@@ -1234,7 +1246,7 @@ AttributeTest::testWeightedSet()
         }
 
         {
-            AttributePtr ptr = AttributeFactory::createAttribute
+            AttributePtr ptr = createAttribute
                 ("wsint32", Config(BasicType::INT32, CollectionType::WSET));
             addDocs(ptr, numDocs);
             testWeightedSet<IntegerAttribute, AttributeVector::WeightedInt>(ptr, values);
@@ -1242,7 +1254,7 @@ AttributeTest::testWeightedSet()
         {
             Config cfg(BasicType::INT32, CollectionType::WSET);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("ws-fs-int32", cfg);
+            AttributePtr ptr = createAttribute("ws-fs-int32", cfg);
             addDocs(ptr, numDocs);
             testWeightedSet<IntegerAttribute, AttributeVector::WeightedInt>(ptr, values);
             IAttributeVector::EnumHandle e;
@@ -1258,14 +1270,14 @@ AttributeTest::testWeightedSet()
 
         {
             Config cfg(BasicType::FLOAT, CollectionType::WSET);
-            AttributePtr ptr = AttributeFactory::createAttribute("ws-float", cfg);
+            AttributePtr ptr = createAttribute("ws-float", cfg);
             addDocs(ptr, numDocs);
             testWeightedSet<FloatingPointAttribute, AttributeVector::WeightedFloat>(ptr, values);
         }
         {
             Config cfg(BasicType::FLOAT, CollectionType::WSET);
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("ws-fs-float", cfg);
+            AttributePtr ptr = createAttribute("ws-fs-float", cfg);
             addDocs(ptr, numDocs);
             testWeightedSet<FloatingPointAttribute, AttributeVector::WeightedFloat>(ptr, values);
             IAttributeVector::EnumHandle e;
@@ -1282,7 +1294,7 @@ AttributeTest::testWeightedSet()
         }
 
         {
-            AttributePtr ptr = AttributeFactory::createAttribute
+            AttributePtr ptr = createAttribute
                 ("wsstr", Config(BasicType::STRING, CollectionType::WSET));
             addDocs(ptr, numDocs);
             testWeightedSet<StringAttribute, AttributeVector::WeightedString>(ptr, values);
@@ -1290,7 +1302,7 @@ AttributeTest::testWeightedSet()
         {
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
-            AttributePtr ptr = AttributeFactory::createAttribute("wsfsstr", cfg);
+            AttributePtr ptr = createAttribute("wsfsstr", cfg);
             addDocs(ptr, numDocs);
             testWeightedSet<StringAttribute, AttributeVector::WeightedString>(ptr, values);
             IAttributeVector::EnumHandle e;
@@ -1440,29 +1452,29 @@ void
 AttributeTest::testArithmeticValueUpdate()
 {
     {
-        AttributePtr ptr = AttributeFactory::createAttribute("sint32", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr ptr = createAttribute("sint32", Config(BasicType::INT32, CollectionType::SINGLE));
         testArithmeticValueUpdate<IntegerAttribute, IntegerAttribute::largeint_t>(ptr);
     }
     {
-        AttributePtr ptr = AttributeFactory::createAttribute("sfloat", Config(BasicType::FLOAT, CollectionType::SINGLE));
+        AttributePtr ptr = createAttribute("sfloat", Config(BasicType::FLOAT, CollectionType::SINGLE));
         testArithmeticValueUpdate<FloatingPointAttribute, double>(ptr);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfsint32", cfg);
+        AttributePtr ptr = createAttribute("sfsint32", cfg);
         testArithmeticValueUpdate<IntegerAttribute, IntegerAttribute::largeint_t>(ptr);
     }
     {
         Config cfg(BasicType::FLOAT, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfsfloat", cfg);
+        AttributePtr ptr = createAttribute("sfsfloat", cfg);
         testArithmeticValueUpdate<FloatingPointAttribute, double>(ptr);
     }
     {
         Config cfg(BasicType::DOUBLE, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfsdouble", cfg);
+        AttributePtr ptr = createAttribute("sfsdouble", cfg);
         testArithmeticValueUpdate<FloatingPointAttribute, double>(ptr);
     }
 }
@@ -1497,17 +1509,17 @@ void
 AttributeTest::testArithmeticWithUndefinedValue()
 {
     {
-        AttributePtr ptr = AttributeFactory::createAttribute("sint32", Config(BasicType::INT32, CollectionType::SINGLE));
+        AttributePtr ptr = createAttribute("sint32", Config(BasicType::INT32, CollectionType::SINGLE));
         testArithmeticWithUndefinedValue<IntegerAttribute, int32_t, IntegerAttribute::largeint_t>
             (ptr, std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min());
     }
     {
-        AttributePtr ptr = AttributeFactory::createAttribute("sfloat", Config(BasicType::FLOAT, CollectionType::SINGLE));
+        AttributePtr ptr = createAttribute("sfloat", Config(BasicType::FLOAT, CollectionType::SINGLE));
         testArithmeticWithUndefinedValue<FloatingPointAttribute, float, double>
             (ptr, std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
     }
     {
-        AttributePtr ptr = AttributeFactory::createAttribute("sdouble", Config(BasicType::DOUBLE, CollectionType::SINGLE));
+        AttributePtr ptr = createAttribute("sdouble", Config(BasicType::DOUBLE, CollectionType::SINGLE));
         testArithmeticWithUndefinedValue<FloatingPointAttribute, double, double>
             (ptr, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
     }
@@ -1600,21 +1612,21 @@ void
 AttributeTest::testMapValueUpdate()
 {
     { // regular set
-        AttributePtr ptr = AttributeFactory::createAttribute
+        AttributePtr ptr = createAttribute
             ("wsint32", Config(BasicType::INT32, CollectionType::WSET));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
             (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
              IntFieldValue(32), false, false);
     }
     { // remove if zero
-        AttributePtr ptr = AttributeFactory::createAttribute
+        AttributePtr ptr = createAttribute
             ("wsint32", Config(BasicType::INT32, CollectionType(CollectionType::WSET, true, false)));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
             (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
              IntFieldValue(32), true, false);
     }
     { // create if non existant
-        AttributePtr ptr = AttributeFactory::createAttribute
+        AttributePtr ptr = createAttribute
             ("wsint32", Config(BasicType::INT32, CollectionType(CollectionType::WSET, false, true)));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
             (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
@@ -1626,19 +1638,19 @@ AttributeTest::testMapValueUpdate()
     Config setCreateCfg(Config(BasicType::STRING, CollectionType(CollectionType::WSET, false, true)));
 
     { // regular set
-        AttributePtr ptr = AttributeFactory::createAttribute("wsstr", setCfg);
+        AttributePtr ptr = createAttribute("wsstr", setCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
              StringFieldValue("second"), false, false);
     }
     { // remove if zero
-        AttributePtr ptr = AttributeFactory::createAttribute("wsstr", setRemoveCfg);
+        AttributePtr ptr = createAttribute("wsstr", setRemoveCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
              StringFieldValue("second"), true, false);
     }
     { // create if non existant
-        AttributePtr ptr = AttributeFactory::createAttribute("wsstr", setCreateCfg);
+        AttributePtr ptr = createAttribute("wsstr", setCreateCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
              StringFieldValue("second"), false, true);
@@ -1647,21 +1659,21 @@ AttributeTest::testMapValueUpdate()
     // fast-search - posting lists
     { // regular set
         setCfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("wsfsstr", setCfg);
+        AttributePtr ptr = createAttribute("wsfsstr", setCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
              StringFieldValue("second"), false, false);
     }
     { // remove if zero
         setRemoveCfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("wsfsstr", setRemoveCfg);
+        AttributePtr ptr = createAttribute("wsfsstr", setRemoveCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
              StringFieldValue("second"), true, false);
     }
     { // create if non existant
         setCreateCfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("wsfsstr", setCreateCfg);
+        AttributePtr ptr = createAttribute("wsfsstr", setCreateCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
             (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
             StringFieldValue("second"), false, true);
@@ -1693,7 +1705,7 @@ AttributeTest::testStatus()
 
     {
         Config cfg(BasicType::STRING, CollectionType::ARRAY);
-        AttributePtr ptr = AttributeFactory::createAttribute("as", cfg);
+        AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
         StringAttribute & sa = *(static_cast<StringAttribute *>(ptr.get()));
         for (uint32_t i = 0; i < numDocs; ++i) {
@@ -1714,7 +1726,7 @@ AttributeTest::testStatus()
 
     {
         Config cfg(BasicType::STRING, CollectionType::ARRAY);
-        AttributePtr ptr = AttributeFactory::createAttribute("as", cfg);
+        AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
         StringAttribute & sa = *(static_cast<StringAttribute *>(ptr.get()));
         const size_t numUniq(16);
@@ -1759,7 +1771,7 @@ AttributeTest::testNullProtection()
     { // string
         AttributeVector::DocId docId;
         std::vector<vespalib::string> buf(16);
-        AttributePtr attr = AttributeFactory::createAttribute("string", Config(BasicType::STRING, CollectionType::SINGLE));
+        AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::SINGLE));
         StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
         EXPECT_TRUE(v.update(docId, evil));
@@ -1771,7 +1783,7 @@ AttributeTest::testNullProtection()
     { // string array
         AttributeVector::DocId docId;
         std::vector<vespalib::string> buf(16);
-        AttributePtr attr = AttributeFactory::createAttribute("string", Config(BasicType::STRING, CollectionType::ARRAY));
+        AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::ARRAY));
         StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
         EXPECT_TRUE(v.append(0, good, 1));
@@ -1787,7 +1799,7 @@ AttributeTest::testNullProtection()
     { // string set
         AttributeVector::DocId docId;
         std::vector<StringAttribute::WeightedString> buf(16);
-        AttributePtr attr = AttributeFactory::createAttribute("string", Config(BasicType::STRING, CollectionType::WSET));
+        AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::WSET));
         StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
         EXPECT_TRUE(v.append(0, good, 10));
@@ -1903,27 +1915,27 @@ AttributeTest::testGeneration()
     { // single value attribute
         Config cfg(BasicType::INT8);
         cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
-        AttributePtr attr = AttributeFactory::createAttribute("int8", cfg);
+        AttributePtr attr = createAttribute("int8", cfg);
         testGeneration(attr, true);
     }
     { // enum attribute (with fast search)
         Config cfg(BasicType::INT8);
         cfg.setFastSearch(true);
         cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
-        AttributePtr attr = AttributeFactory::createAttribute("faint8", cfg);
+        AttributePtr attr = createAttribute("faint8", cfg);
         testGeneration(attr, false);
     }
     { // multi value attribute
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
-        AttributePtr attr = AttributeFactory::createAttribute("aint8", cfg);
+        AttributePtr attr = createAttribute("aint8", cfg);
         testGeneration(attr, false);
     }
     { // multi value enum attribute (with fast search)
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setFastSearch(true);
         cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
-        AttributePtr attr = AttributeFactory::createAttribute("faaint8", cfg);
+        AttributePtr attr = createAttribute("faaint8", cfg);
         testGeneration(attr, false);
     }
 }
@@ -1933,10 +1945,10 @@ void
 AttributeTest::testCreateSerialNum()
 {
     Config cfg(BasicType::INT32);
-    AttributePtr attr = AttributeFactory::createAttribute("int32", cfg);
+    AttributePtr attr = createAttribute("int32", cfg);
     attr->setCreateSerialNum(42u);
     EXPECT_TRUE(attr->save());
-    AttributePtr attr2 = AttributeFactory::createAttribute("int32", cfg);
+    AttributePtr attr2 = createAttribute("int32", cfg);
     EXPECT_TRUE(attr2->load());
     EXPECT_EQUAL(42u, attr2->getCreateSerialNum());
 }
@@ -1957,7 +1969,7 @@ AttributeTest::testCompactLidSpace(const Config &config,
     Config cfg = config;
     cfg.setFastSearch(fs);
     
-    vespalib::string name = clstmp + "/" + bts + "-" + cts + fas + ess;
+    vespalib::string name = clsDir + "/" + bts + "-" + cts + fas + ess;
     LOG(info, "testCompactLidSpace(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
     VectorType &v = static_cast<VectorType &>(*attr.get());
@@ -2051,8 +2063,6 @@ AttributeTest::testCompactLidSpace(const Config &config)
 void
 AttributeTest::testCompactLidSpace()
 {
-    vespalib::rmdir(clstmp, true);
-    vespalib::mkdir(clstmp);
     TEST_DO(testCompactLidSpace(Config(BasicType::UINT1,
                                        CollectionType::SINGLE)));
     TEST_DO(testCompactLidSpace(Config(BasicType::UINT2,
@@ -2101,7 +2111,6 @@ AttributeTest::testCompactLidSpace()
                                        CollectionType::ARRAY)));
     TEST_DO(testCompactLidSpace(Config(BasicType::STRING,
                                        CollectionType::WSET)));
-    vespalib::rmdir(clstmp, true);
 }
 
 template <typename AttributeType>
@@ -2156,14 +2165,28 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config)
 void
 AttributeTest::requireThatAddressSpaceUsageIsReported()
 {
-    vespalib::rmdir(asuDir, true);
-    vespalib::mkdir(asuDir);
     TEST_DO(requireThatAddressSpaceUsageIsReported<IntegerAttribute>(Config(BasicType::INT32, CollectionType::SINGLE)));
     TEST_DO(requireThatAddressSpaceUsageIsReported<IntegerAttribute>(Config(BasicType::INT32, CollectionType::ARRAY)));
     TEST_DO(requireThatAddressSpaceUsageIsReported<FloatingPointAttribute>(Config(BasicType::FLOAT, CollectionType::SINGLE)));
     TEST_DO(requireThatAddressSpaceUsageIsReported<FloatingPointAttribute>(Config(BasicType::FLOAT, CollectionType::ARRAY)));
     TEST_DO(requireThatAddressSpaceUsageIsReported<StringAttribute>(Config(BasicType::STRING, CollectionType::SINGLE)));
     TEST_DO(requireThatAddressSpaceUsageIsReported<StringAttribute>(Config(BasicType::STRING, CollectionType::ARRAY)));
+}
+
+void
+deleteDataDirs()
+{
+    vespalib::rmdir(tmpDir, true);
+    vespalib::rmdir(clsDir, true);
+    vespalib::rmdir(asuDir, true);
+}
+
+void
+createDataDirs()
+{
+    vespalib::mkdir(tmpDir, true);
+    vespalib::mkdir(clsDir, true);
+    vespalib::mkdir(asuDir, true);
 }
 
 int AttributeTest::Main()
@@ -2173,6 +2196,9 @@ int AttributeTest::Main()
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
+    deleteDataDirs();
+    createDataDirs();
+
     testBaseName();
     testReload();
     testHasLoadData();
@@ -2191,6 +2217,7 @@ int AttributeTest::Main()
     TEST_DO(testCompactLidSpace());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
 
+    deleteDataDirs();
     TEST_DONE();
 }
 
