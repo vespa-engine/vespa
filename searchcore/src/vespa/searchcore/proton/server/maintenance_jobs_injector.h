@@ -21,6 +21,7 @@ class IBucketStateChangedNotifier;
 class IBucketStateCalculator;
 class IAttributeManager;
 class AttributeUsageFilter;
+class IDiskMemUsageNotifier;
 
 /**
  * Class that injects all concrete maintenance jobs used in document db
@@ -46,6 +47,7 @@ struct MaintenanceJobsInjector
                            IBucketStateChangedNotifier &
                            bucketStateChangedNotifier,
                            const std::shared_ptr<IBucketStateCalculator> &calc,
+                           IDiskMemUsageNotifier &diskMemUsageNotifier,
                            DocumentDBJobTrackers &jobTrackers,
                            ICommitable & commit,
                            IAttributeManagerSP readyAttributeManager,

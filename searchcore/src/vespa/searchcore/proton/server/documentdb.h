@@ -38,6 +38,7 @@
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
+#include "disk_mem_usage_forwarder.h"
 
 using vespa::config::search::core::ProtonConfig;
 
@@ -126,6 +127,7 @@ private:
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
     DDBState                      _state;
+    DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
     FeedHandler                   _feedHandler;
 
@@ -469,7 +471,7 @@ public:
     void enterReprocessState();
     void enterOnlineState();
     void waitForOnlineState();
-
+    IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
 };
 
 } // namespace proton

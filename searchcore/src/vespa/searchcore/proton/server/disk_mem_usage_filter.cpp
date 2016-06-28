@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "disk_mem_usage_filter.h"
+#include "i_disk_mem_usage_listener.h"
 #include <sstream>
 
 namespace proton {
@@ -52,12 +53,14 @@ makeDiskLimitMessage(std::ostream &os,
 void
 DiskMemUsageFilter::recalcState(const Guard &guard)
 {
-    (void) guard;
+    bool diskBlocked = false;
+    bool memoryBlocked = false;
     bool hasMessage = false;
     std::ostringstream message;
     double memoryUsed = getMemoryUsedRatio(guard);
     if (memoryUsed > _config._memoryLimit) {
         hasMessage = true;
+        memoryBlocked = true;
         makeMemoryLimitMessage(message, memoryUsed,
                 _config._memoryLimit, _memoryStats, _physicalMemory);
     }
@@ -67,6 +70,7 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
             message << ", ";
         }
         hasMessage = true;
+        diskBlocked = true;
         makeDiskLimitMessage(message, diskUsed, _config._diskLimit, _diskStats);
     }
     if (hasMessage) {
@@ -76,6 +80,8 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
         _state = State();
         _acceptWrite = true;
     }
+    DiskMemUsageState dmstate(diskBlocked, memoryBlocked);
+    notifyDiskMemUsage(guard, dmstate);
 }
 
 double
@@ -102,7 +108,9 @@ DiskMemUsageFilter::DiskMemUsageFilter(uint64_t physicalMemory_in)
       _diskStats(),
       _config(),
       _state(),
-      _acceptWrite(true)
+      _acceptWrite(true),
+      _dmstate(),
+      _listeners()
 {
 }
 
@@ -178,5 +186,41 @@ DiskMemUsageFilter::getAcceptState() const
     Guard guard(_lock);
     return _state;
 }
+
+
+void
+DiskMemUsageFilter::addDiskMemUsageListener(IDiskMemUsageListener *listener)
+{
+    Guard guard(_lock);
+    _listeners.push_back(listener);
+    listener->notifyDiskMemUsage(_dmstate);
+}
+
+void
+DiskMemUsageFilter::removeDiskMemUsageListener(IDiskMemUsageListener *listener)
+{
+    Guard guard(_lock);
+    for (auto itr = _listeners.begin(); itr != _listeners.end(); ++itr) {
+        if (*itr == listener) {
+            _listeners.erase(itr);
+            break;
+        }
+    }
+}
+
+void
+DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard,
+                                       DiskMemUsageState state)
+{
+    (void) guard;
+    if (_dmstate == state) {
+        return;
+    }
+    _dmstate = state;
+    for (const auto &listener : _listeners) {
+        listener->notifyDiskMemUsage(_dmstate);
+    }
+}
+
 
 } // namespace proton

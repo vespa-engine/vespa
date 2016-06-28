@@ -13,6 +13,7 @@ LOG_SETUP("documentbucketmover_test");
 #include <vespa/searchcore/proton/server/idocumentmovehandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 
@@ -536,6 +537,7 @@ struct ControllerFixtureBase
     MySubDb                     _ready;
     MySubDb                     _notReady;
     MyFrozenBucketHandler       _fbh;
+    test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
     ControllerFixtureBase()
         : _builder(),
@@ -547,8 +549,10 @@ struct ControllerFixtureBase
           _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
           _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
           _fbh(),
+          _diskMemUsageNotifier(),
           _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
                _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
+               _diskMemUsageNotifier,
                "test")
     {
     }
@@ -1172,6 +1176,27 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
     EXPECT_EQUAL(3u, f.docsMoved().size());
     EXPECT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
+}
+
+
+TEST_F("require that bucket move stops when disk limit is reached", ControllerFixture)
+{
+    // Bucket 1 shold be moved
+    f.addReady(f._ready.bucket(2));
+    // Note: This depends on f._bmj.run() moving max 1 documents
+    EXPECT_TRUE(!f._bmj.run());
+    EXPECT_EQUAL(1u, f.docsMoved().size());
+    EXPECT_EQUAL(0u, f.bucketsModified().size());
+    // Notify that we've over disk limit
+    f._diskMemUsageNotifier.notify(DiskMemUsageState(true, false));
+    EXPECT_TRUE(f._bmj.run());
+    EXPECT_EQUAL(1u, f.docsMoved().size());
+    EXPECT_EQUAL(0u, f.bucketsModified().size());
+    // Notify that we've under disk limit
+    f._diskMemUsageNotifier.notify(DiskMemUsageState(false, false));
+    EXPECT_TRUE(!f._bmj.run());
+    EXPECT_EQUAL(2u, f.docsMoved().size());
+    EXPECT_EQUAL(0u, f.bucketsModified().size());
 }
 
 

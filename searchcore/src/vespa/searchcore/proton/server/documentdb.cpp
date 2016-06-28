@@ -121,6 +121,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _syncFeedViewEnabled(false),
       _owner(owner),
       _state(),
+      _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
       _feedHandler(_writeService,
                    tlsSpec,
@@ -1075,6 +1076,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _clusterStateHandler, // IClusterStateChangedNotifier
             _bucketHandler, // IBucketStateChangedNotifier
             _calc, // IBucketStateCalculator::SP
+            _dmUsageForwarder,
             _jobTrackers,
             _visibility,  // ICommitable
             _subDBs.getReadySubDB()->getAttributeManager(),
