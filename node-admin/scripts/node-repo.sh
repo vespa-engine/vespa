@@ -14,7 +14,7 @@ Script for manipulating the Node Repository.
 Commands
     add [-c <configserverhost>] -p <parenthostname> <hostname>...
         Provision node <hostname> in node repo with flavor "docker".
-    add-host [-c <configserverhost>] <hostname>...
+    add-host [-c <configserverhost>] <hostname>
         Provision Docker host <hostname> in node repo with type "host".
     reprovision [-c <configserverhost>] -p <parenthostname> <hostname>...
         Fail node <hostname>, then rm and add.
@@ -242,17 +242,17 @@ function AddHostCommand {
         Fail "No hostname was specified"
     fi
 
-    local hostname=$1
+    local hostname="$1"
     shift
 
     if (($# == 0))
     then
         Fail "No flavor was specified"
     fi
-    local flavor=$1
+    local flavor="$1"
     shift
 
-    echo "Provisioning Docker host $hostname with flavor $flavor"
+    echo -n "Provisioning Docker host $hostname with flavor $flavor"
 
     ProvisionDockerHost "$config_server_hostname" \
                         "$hostname" \
