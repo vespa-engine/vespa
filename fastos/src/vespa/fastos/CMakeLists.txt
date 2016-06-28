@@ -24,6 +24,7 @@ vespa_add_library(fastos
     vtag.cpp
     INSTALL lib64
     DEPENDS
+    ${CMAKE_DL_LIBS}
 )
 find_package(Threads REQUIRED)
 target_link_libraries(fastos PUBLIC ${CMAKE_THREAD_LIBS_INIT})

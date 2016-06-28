@@ -5,4 +5,5 @@ vespa_add_library(searchsummary
     $<TARGET_OBJECTS:searchsummary_docsummary>
     INSTALL lib64
     DEPENDS
+    z
 )

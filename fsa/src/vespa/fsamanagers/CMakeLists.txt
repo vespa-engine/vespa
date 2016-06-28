@@ -10,6 +10,8 @@ vespa_add_library(fsamanagers
     INSTALL lib64
     DEPENDS
 )
+find_package(Threads REQUIRED)
+target_link_libraries(fsamanagers PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 install(FILES
     conceptnethandle.h
