@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.test.ConfigModelsTester;
 import org.junit.Test;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -40,51 +41,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
  */
 public class ModelProvisioningTest {
 
-    private Hosts createHosts(int n) { return createHosts("", n); }
-    private Hosts createHosts(String hostnamePrefix, int n) {
-        Hosts hosts = new Hosts();
-        if ( ! hostnamePrefix.isEmpty())
-            hostnamePrefix = "-" + hostnamePrefix;
-        for (int i = 0; i < n; i++)
-            hosts.addHost(new com.yahoo.config.model.provision.Host(hostnamePrefix + "foo" + i), Collections.emptyList());
-        return hosts;
-    }
-
-    /** Creates a model with hosts of the 'default' flavor */
-    private VespaModel createModel(String services, Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) throws ParseException {
-        return createModel(services, Collections.singletonMap("default", hosts.getHosts()), failOnOutOfCapacity, 0, retiredHostNames);
-    }
-
-    /**
-     * Creates a model
-     *
-     * @param services the services xml string
-     * @param hosts hosts by flavor
-     * @param failOnOutOfCapacity whether we should get an exception when not enough hosts of the requested flavor
-     *        is available or if we should just silently receive a smaller allocation
-     * @return the resulting model
-     * @throws ParseException if the services xml is invalid
-     */
-    private VespaModel createModel(String services, Map<String, Collection<Host>> hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) throws ParseException {
-        final VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
-        final ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
-        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).modelHostProvisioner(new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames)).
-                properties((new DeployProperties.Builder()).hostedVespa(true).build()).build();
-        return modelCreatorWithMockPkg.create(false, deployState);
-    }
-
-    private void assertCorrectModel(VespaModel model, int numberOfHosts, int numberOfContentNodes) {
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
-        final Map<String, ContentCluster> contentClusters = model.getContentClusters();
-        ContentCluster cluster = contentClusters.get("bar");
-        assertThat(cluster.getRootGroup().getNodes().size(), is(numberOfContentNodes));
-        int i = 0;
-        for (StorageNode node : cluster.getRootGroup().getNodes()) {
-            assertThat(node.getDistributionKey(), is(i));
-            i++;
-        }
-    }
-    
     @Test
     public void testNodeCountForJdisc() {
         String services =
@@ -178,13 +134,20 @@ public class ModelProvisioningTest {
                 "     <nodes count='2'/>" +
                 "   </content>" +
                 "</services>";
+        ConfigModelsTester tester = new ConfigModelsTester();
         int numberOfHosts = 2;
-        Hosts hosts = createHosts(numberOfHosts);
+        tester.addHosts(numberOfHosts);
         int numberOfContentNodes = 2;
-        VespaModel model = createModel(xmlWithNodes, hosts, true);
-        assertCorrectModel(model, numberOfHosts, numberOfContentNodes);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+        ContentCluster cluster = contentClusters.get("bar");
+        assertThat(cluster.getRootGroup().getNodes().size(), is(numberOfContentNodes));
+        int i = 0;
+        for (StorageNode node : cluster.getRootGroup().getNodes())
+            assertEquals(i++, node.getDistributionKey());
     }
-    
+
     @Test
     public void testNodeCountForContentGroupHierarchy() throws ParseException {
         String services = 
@@ -228,8 +191,9 @@ public class ModelProvisioningTest {
                         "</services>";
         
         int numberOfHosts = 6;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
         
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -284,8 +248,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 64;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check container cluster
@@ -389,8 +354,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 18;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content cluster
@@ -444,8 +410,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -483,8 +450,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo10", "foo13", "foo16");
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "foo10", "foo13", "foo16");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -509,8 +477,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo0");
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "foo0");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
@@ -533,8 +502,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo3", "foo4");
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "foo3", "foo4");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
@@ -561,8 +531,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 13;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo0", "foo10", "foo11");
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "foo0", "foo10", "foo11");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
@@ -592,8 +563,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 2;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -620,8 +592,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 23;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -654,8 +627,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 6; // We only have 6 content nodes -> 3 groups with redundancy 2 in each
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -705,8 +679,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 4;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -747,8 +722,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1; // We only have 1 content node -> 1 groups with redundancy 1
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -787,8 +763,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -834,15 +811,15 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int totalHosts = 23;
-        Map<String, Collection<Host>> hosts = new HashMap<>();
-        hosts.put("logserver-flavor", createHosts("logserver-flavor", 1).getHosts());
-        hosts.put("slobrok-flavor", createHosts("slobrok-flavor", 2).getHosts());
-        hosts.put("container-flavor", createHosts("container-flavor", 4).getHosts());
-        hosts.put("controller-foo-flavor", createHosts("controller-foo-flavor", 2).getHosts());
-        hosts.put("content-foo-flavor", createHosts("content-foo-flavor", 5).getHosts());
-        hosts.put("controller-bar-flavor", createHosts("controller-bar-flavor", 3).getHosts());
-        hosts.put("content-bar-flavor", createHosts("content-bar-flavor", 6).getHosts());
-        VespaModel model = createModel(services, hosts, true, 0); // fails unless the right flavors+counts are requested
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts("logserver-flavor", 1);
+        tester.addHosts("slobrok-flavor", 2);
+        tester.addHosts("container-flavor", 4);
+        tester.addHosts("controller-foo-flavor", 2);
+        tester.addHosts("content-foo-flavor", 5);
+        tester.addHosts("controller-bar-flavor", 3);
+        tester.addHosts("content-bar-flavor", 6);
+        VespaModel model = tester.createModel(services, true, 0); // fails unless the right flavors+counts are requested
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(totalHosts));
     }
 
@@ -855,8 +832,9 @@ public class ModelProvisioningTest {
                         "  <nodes count='3'/>" +
                         "</jdisc>";
         int numberOfHosts = 3;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(3, model.getContainerClusters().get("jdisc").getContainers().size());
         assertNotNull(model.getAdmin().getLogserver());
@@ -882,8 +860,9 @@ public class ModelProvisioningTest {
                         "</jdisc>" +
                         "</services>";
         int numberOfHosts = 1;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
     }
@@ -897,8 +876,9 @@ public class ModelProvisioningTest {
                 "    <server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "' />" +
                 "  </http>" +
                 "</jdisc>";
-        Hosts hosts = createHosts(1);
-        VespaModel model = createModel(services, hosts, true);
+        ConfigModelsTester tester = new ConfigModelsTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));
     }
@@ -1039,9 +1019,10 @@ public class ModelProvisioningTest {
         int numberOfHosts = 8;
 
         {
-            Hosts hosts = createHosts(numberOfHosts);
+            ConfigModelsTester tester = new ConfigModelsTester();
+            tester.addHosts(numberOfHosts);
             // Nodes used will be foo0, foo1, .. and so on.
-            VespaModel model = createModel(services, hosts, true);
+            VespaModel model = tester.createModel(services, true);
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
             final Map<String, ContentCluster> contentClusters = model.getContentClusters();
@@ -1054,10 +1035,11 @@ public class ModelProvisioningTest {
         }
 
         {
-            Hosts hosts = createHosts(numberOfHosts + 1);
+            ConfigModelsTester tester = new ConfigModelsTester();
+            tester.addHosts(numberOfHosts + 1);
             // Start numbering nodes with index 1 and retire first node
             // Nodes used will be foo1, foo2, .. and so on. Containers will start with index 1, not 0 as they are in the test above
-            VespaModel model = createModel(services, Collections.singletonMap("default", hosts.getHosts()), true, 1, "foo0");
+            VespaModel model = tester.createModel(services, true, 1, "foo0");
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
             final Map<String, ContentCluster> contentClusters = model.getContentClusters();
@@ -1095,14 +1077,4 @@ public class ModelProvisioningTest {
         }
     }
 
-    private void assertIllegalModel(String services, String expectedIllegalTag) {
-        try {
-            createModel(services, createHosts(2), true);
-            fail("Expected that test failed");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is(expectedIllegalTag + " is not allowed when running Vespa in a hosted environment"));
-        } catch (ParseException e) {
-            fail("Test failed unexpectedly: " + e.getMessage());
-        }
-    }
 }

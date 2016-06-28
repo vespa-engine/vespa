@@ -120,8 +120,8 @@ public class ModelAmendingTestCase {
         }
 
         private void amend(AdminModel adminModel) {
+            System.out.println("Amending admin model. " + adminModel.getAdmin().getHostSystem().getHosts().size() + " hosts");
             for (HostResource host : adminModel.getAdmin().getHostSystem().getHosts()) {
-                if (host.getHost().isMultitenant()) continue; // host amendment not needed
                 if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
                 adminModel.getAdmin().addAndInitializeService(host, new AmendedService(host.getHost()));
             }
