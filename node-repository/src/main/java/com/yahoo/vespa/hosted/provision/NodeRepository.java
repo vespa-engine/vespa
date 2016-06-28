@@ -79,21 +79,24 @@ public class NodeRepository extends AbstractComponent {
 
     // ---------------- Query API ----------------------------------------------------------------
 
-    /** Finds and returns the node with the given hostname */
-    public Optional<Node> getNode(String hostname) {
-        for (Node.State state : Node.State.values()) {
-            Optional<Node> node = getNode(state, hostname);
-            if (node.isPresent())
-                return node;
-        }
-        return Optional.empty();
+    /** 
+     * Finds and returns the node with the hostname in any of the given states, or empty if not found 
+     * 
+     * @param hostname the full host name of the node
+     * @param inState the states the node may be in. If no states are given, it will be returned from any state
+     * @return the node, or empty if it was not found in any of the given states
+     */
+    public Optional<Node> getNode(String hostname, Node.State ... inState) {
+        return zkClient.getNode(hostname, inState);
     }
 
-    /** Finds and returns the node with the given state and hostname, or empty if not found */
-    public Optional<Node> getNode(Node.State state, String hostname) {
-        return zkClient.getNode(state, hostname);
-    }
-
+    /**
+     * Finds and returns the nodes of the given type in any of the given states.
+     *
+     * @param type the node type to return
+     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     * @return the node, or empty if it was not found in any of the given states
+     */
     public List<Node> getNodes(Node.Type type, Node.State ... inState) {
         return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
@@ -185,9 +188,7 @@ public class NodeRepository extends AbstractComponent {
      * Use this to recycle failed nodes which have been repaired or put on hold. 
      */
     public Node deallocate(String hostname) {
-        Optional<Node> nodeToDeallocate = getNode(Node.State.failed, hostname);
-        if ( ! nodeToDeallocate.isPresent())
-            nodeToDeallocate = getNode(Node.State.parked, hostname);
+        Optional<Node> nodeToDeallocate = getNode(hostname, Node.State.failed, Node.State.parked);
         if ( ! nodeToDeallocate.isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
         return deallocate(Collections.singletonList(nodeToDeallocate.get())).get(0);
@@ -238,9 +239,7 @@ public class NodeRepository extends AbstractComponent {
      * @return true if the node was removed, false if it was not found
      */
     public boolean remove(String hostname) {
-        Optional<Node> nodeToRemove = getNode(Node.State.failed, hostname);
-        if ( ! nodeToRemove.isPresent())
-            nodeToRemove = getNode(Node.State.parked, hostname);
+        Optional<Node> nodeToRemove = getNode(hostname, Node.State.failed, Node.State.parked);
         if ( ! nodeToRemove.isPresent()) 
             return false;
         try (Mutex lock = lock(nodeToRemove.get())) {

@@ -2,7 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "matchdata.h"
-#include <math.h>
 
 namespace search {
 namespace fef {

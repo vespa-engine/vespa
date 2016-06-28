@@ -26,6 +26,7 @@ LOG_SETUP("maintenancecontroller_test");
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace proton;
@@ -479,6 +480,7 @@ public:
     std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
     AttributeUsageFilter          _attributeUsageFilter;
+    test::DiskMemUsageNotifier    _diskMemUsageNotifier;
     MaintenanceController         _mc;
 
     MaintenanceControllerFixture(void);
@@ -1017,7 +1019,9 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp, _fh,
                                             lscHandlers, _fh, _mc, _docTypeName.getName(),
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
-                                            _calc, _jobTrackers, *this,
+                                            _calc,
+                                            _diskMemUsageNotifier,
+                                            _jobTrackers, *this,
                                             _readyAttributeManager,
                                             _notReadyAttributeManager,
                                             _attributeUsageFilter);

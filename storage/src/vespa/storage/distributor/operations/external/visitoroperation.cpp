@@ -9,7 +9,6 @@
 #include <vespa/document/select/parser.h>
 #include <iomanip>
 #include <sstream>
-#include <math.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/bucketownership.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>

@@ -73,11 +73,9 @@ public class ProvisionResource {
     @PUT
     @Path("/node/ready")
     public void setReady(String hostName) {
-        if ( nodeRepository.getNode(Node.State.ready, hostName).isPresent()) return; // node already 'ready'
+        if ( nodeRepository.getNode(hostName, Node.State.ready).isPresent()) return; // node already 'ready'
 
-        Optional<Node> node = nodeRepository.getNode(Node.State.provisioned, hostName);
-        if ( ! node.isPresent())
-            node = nodeRepository.getNode(Node.State.dirty, hostName);
+        Optional<Node> node = nodeRepository.getNode(hostName, Node.State.provisioned, Node.State.dirty);
         if ( ! node.isPresent())
             throw new IllegalArgumentException("Could not set " + hostName + " ready: Not registered as provisioned or dirty");
 

@@ -91,10 +91,10 @@ FRTConnectionPool::getNextHashBased()
     FRTConnection* nextFRTConnection = NULL;
 
     if (!readySources.empty()) {
-        int sel = abs(hashCode(_hostname) % (int)readySources.size());
+        int sel = std::abs(hashCode(_hostname) % (int)readySources.size());
         nextFRTConnection = readySources[sel];
     } else {
-        int sel = abs(hashCode(_hostname) % (int)suspendedSources.size());
+        int sel = std::abs(hashCode(_hostname) % (int)suspendedSources.size());
         nextFRTConnection = suspendedSources[sel];
     }
     return nextFRTConnection;

@@ -20,6 +20,7 @@
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/log/log.h>
+#include <cmath>
 
 LOG_SETUP(".proton.matching.match_thread");
 
@@ -68,7 +69,7 @@ MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
                 ranking.run(docId);
                 double score = *score_feature;
                 // convert NaN and Inf scores to -Inf
-                if (__builtin_expect(isnan(score) || isinf(score), false)) {
+                if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
                     score = -HUGE_VAL;
                 }
                 // invert test since default drop limit is -NaN (keep all hits)

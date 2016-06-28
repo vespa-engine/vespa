@@ -3,7 +3,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".ftlib");
 
-#include <math.h>
 #include <boost/tokenizer.hpp>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>

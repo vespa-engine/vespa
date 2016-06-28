@@ -72,7 +72,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             throw new IllegalArgumentException(String.format("Invalid port %d.", port));
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (deployState.isHostedVespa() && port != legalPortInHostedVespa) {
+        if (deployState.isHosted() && port != legalPortInHostedVespa) {
             deployState.getDeployLogger().log(LogLevel.WARNING,
                     String.format("Trying to set port to %d for http server with id %s. You cannot set port to anything else than %s",
                             port, spec.getAttribute("id"), legalPortInHostedVespa));

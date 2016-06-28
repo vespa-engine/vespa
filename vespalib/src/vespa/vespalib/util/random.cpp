@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "random.h"
+#include <cmath>
 
 namespace vespalib {
 
@@ -53,8 +54,8 @@ RandomGen::DRanNormalTail(double dMin, int iNegative)
 {
     double x, y;
     do {
-        x = log(nextDouble()) / dMin;
-        y = log(nextDouble());
+        x = std::log(nextDouble()) / dMin;
+        y = std::log(nextDouble());
     } while (-2 * y < x * x);
 
     return iNegative ? x - dMin : dMin - x;
@@ -63,12 +64,12 @@ RandomGen::DRanNormalTail(double dMin, int iNegative)
 void
 RandomGen::zigNorInit(int iC, double dR, double dV)
 {
-    double f(exp(-0.5 * dR * dR));
+    double f(std::exp(-0.5 * dR * dR));
     s_adZigX[0] = dV / f; /* [0] is bottom block: V / f(R) */
     s_adZigX[1] = dR;
     for (int i = 2; i < iC; ++i) {
-        s_adZigX[i] = sqrt(-2 * log(dV / s_adZigX[i - 1] + f));
-        f = exp(-0.5 * s_adZigX[i] * s_adZigX[i]);
+        s_adZigX[i] = std::sqrt(-2 * std::log(dV / s_adZigX[i - 1] + f));
+        f = std::exp(-0.5 * s_adZigX[i] * s_adZigX[i]);
     }
     s_adZigX[iC] = 0.0;
     for (int i = 0; i < iC; ++i) {
@@ -83,15 +84,15 @@ RandomGen::DRanNormalZig()
         double u = 2 * nextDouble() - 1;
         unsigned int i = nextInt32() & 0x7F;
         /* first try the rectangular boxes */
-        if (fabs(u) < s_adZigR[i])
+        if (std::fabs(u) < s_adZigR[i])
             return u * s_adZigX[i];
         /* bottom box: sample from the tail */
         if (i == 0)
             return DRanNormalTail(ZIGNOR_R, u < 0);
         /* is this a sample from the wedges? */
         double x = u * s_adZigX[i];
-        double f0 = exp(-0.5 * (s_adZigX[i] * s_adZigX[i] - x * x) );
-        double f1 = exp(-0.5 * (s_adZigX[i+1] * s_adZigX[i+1] - x * x) );
+        double f0 = std::exp(-0.5 * (s_adZigX[i] * s_adZigX[i] - x * x) );
+        double f1 = std::exp(-0.5 * (s_adZigX[i+1] * s_adZigX[i+1] - x * x) );
 
         if (f1 + nextDouble() * (f0 - f1) < 1.0) {
             return x;

@@ -8,6 +8,8 @@ import com.yahoo.config.ConfigInstance
 
 import java.lang.annotation.{Annotation => JavaAnnotation}
 import java.lang.IllegalStateException
+import com.yahoo.log.LogLevel
+
 import collection.mutable
 import annotation.tailrec
 
@@ -209,7 +211,7 @@ class ComponentGraph(val generation: Long = 0) {
       lookupGlobalComponent(key).getOrElse {
         val instance =
           try {
-            log.info("Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node))
+            log.log(LogLevel.DEBUG, "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node))
             fallbackInjector.getInstance(key).asInstanceOf[AnyRef]
           } catch {
             case e: ConfigurationException =>

@@ -81,7 +81,7 @@ EvalSpec::add_arithmetic_cases() {
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a-b)", [](double a, double b){ return (a - b); });
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a*b)", [](double a, double b){ return (a * b); });
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a/b)", [](double a, double b){ return (a / b); });
-    add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a^b)", [](double a, double b){ return pow(a,b); });
+    add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a^b)", [](double a, double b){ return std::pow(a,b); });
     add_expression({"a", "b", "c", "d"}, "(((a+1)*(b-1))/((c+1)/(d-1)))")
         .add_case({0.0, 2.0, 0.0, 2.0}, 1.0)
         .add_case({1.0, 3.0, 0.0, 2.0}, 4.0)
@@ -91,29 +91,29 @@ EvalSpec::add_arithmetic_cases() {
 
 void
 EvalSpec::add_function_call_cases() {
-    add_rule({"a", -1.0, 1.0}, "cos(a)", [](double a){ return cos(a); });
-    add_rule({"a", -1.0, 1.0}, "sin(a)", [](double a){ return sin(a); });
-    add_rule({"a", -1.0, 1.0}, "tan(a)", [](double a){ return tan(a); });
-    add_rule({"a", -1.0, 1.0}, "cosh(a)", [](double a){ return cosh(a); });
-    add_rule({"a", -1.0, 1.0}, "sinh(a)", [](double a){ return sinh(a); });
-    add_rule({"a", -1.0, 1.0}, "tanh(a)", [](double a){ return tanh(a); });
-    add_rule({"a", -1.0, 1.0}, "acos(a)", [](double a){ return acos(a); });
-    add_rule({"a", -1.0, 1.0}, "asin(a)", [](double a){ return asin(a); });
-    add_rule({"a", -1.0, 1.0}, "atan(a)", [](double a){ return atan(a); });
-    add_rule({"a", -1.0, 1.0}, "exp(a)", [](double a){ return exp(a); });
-    add_rule({"a", -1.0, 1.0}, "log10(a)", [](double a){ return log10(a); });
-    add_rule({"a", -1.0, 1.0}, "log(a)", [](double a){ return log(a); });
-    add_rule({"a", -1.0, 1.0}, "sqrt(a)", [](double a){ return sqrt(a); });
-    add_rule({"a", -1.0, 1.0}, "ceil(a)", [](double a){ return ceil(a); });
-    add_rule({"a", -1.0, 1.0}, "fabs(a)", [](double a){ return fabs(a); });
-    add_rule({"a", -1.0, 1.0}, "floor(a)", [](double a){ return floor(a); });
+    add_rule({"a", -1.0, 1.0}, "cos(a)", [](double a){ return std::cos(a); });
+    add_rule({"a", -1.0, 1.0}, "sin(a)", [](double a){ return std::sin(a); });
+    add_rule({"a", -1.0, 1.0}, "tan(a)", [](double a){ return std::tan(a); });
+    add_rule({"a", -1.0, 1.0}, "cosh(a)", [](double a){ return std::cosh(a); });
+    add_rule({"a", -1.0, 1.0}, "sinh(a)", [](double a){ return std::sinh(a); });
+    add_rule({"a", -1.0, 1.0}, "tanh(a)", [](double a){ return std::tanh(a); });
+    add_rule({"a", -1.0, 1.0}, "acos(a)", [](double a){ return std::acos(a); });
+    add_rule({"a", -1.0, 1.0}, "asin(a)", [](double a){ return std::asin(a); });
+    add_rule({"a", -1.0, 1.0}, "atan(a)", [](double a){ return std::atan(a); });
+    add_rule({"a", -1.0, 1.0}, "exp(a)", [](double a){ return std::exp(a); });
+    add_rule({"a", -1.0, 1.0}, "log10(a)", [](double a){ return std::log10(a); });
+    add_rule({"a", -1.0, 1.0}, "log(a)", [](double a){ return std::log(a); });
+    add_rule({"a", -1.0, 1.0}, "sqrt(a)", [](double a){ return std::sqrt(a); });
+    add_rule({"a", -1.0, 1.0}, "ceil(a)", [](double a){ return std::ceil(a); });
+    add_rule({"a", -1.0, 1.0}, "fabs(a)", [](double a){ return std::fabs(a); });
+    add_rule({"a", -1.0, 1.0}, "floor(a)", [](double a){ return std::floor(a); });
     add_expression({"a"}, "isNan(a)")
         .add_case({-1.0}, 0.0).add_case({-0.5}, 0.0).add_case({0.0}, 0.0).add_case({0.5}, 0.0).add_case({1.0}, 0.0)
         .add_case({my_nan}, 1.0).add_case({my_inf}, 0.0).add_case({-my_inf}, 0.0);
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "atan2(a,b)", [](double a, double b){ return atan2(a, b); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "ldexp(a,b)", [](double a, double b){ return ldexp(a, b); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "pow(a,b)", [](double a, double b){ return pow(a, b); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "fmod(a,b)", [](double a, double b){ return fmod(a, b); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "atan2(a,b)", [](double a, double b){ return std::atan2(a, b); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "ldexp(a,b)", [](double a, double b){ return std::ldexp(a, b); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "pow(a,b)", [](double a, double b){ return std::pow(a, b); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "fmod(a,b)", [](double a, double b){ return std::fmod(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "min(a,b)", [](double a, double b){ return std::min(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "max(a,b)", [](double a, double b){ return std::max(a, b); });
 }

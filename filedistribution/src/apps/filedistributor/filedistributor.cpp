@@ -319,25 +319,29 @@ FileDistributorApplication::Main() {
     } catch(const FileDoesNotExistException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
-        return -1;
+        return 1;
     } catch(const ZKNodeDoesNotExistsException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
-        return -2;
+        return 2;
     } catch(const ZKSessionExpired & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
-        return -3;
+        return 3;
     } catch(const ZKGenericException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
-        return -99;
+        return 99;
     } catch(const boost::unknown_exception & e) {
         std::string s = boost::diagnostic_information(e);
         LOG(warning, "Caught '%s'", s.c_str());
         EV_STOPPING(programName, s.c_str());
-        return -999;
+        return 255;
 #if 0
+    /*
+     These are kept hanging around for reference as to how it was when we just held our ears
+     singing "na, na, na, na..." no matter if the sun was shining or if the world imploded.
+    */
     } catch(const boost::exception& e) {
         std::string s = boost::diagnostic_information(e);
         LOG(error, "Caught '%s'", s.c_str());

@@ -49,7 +49,7 @@ private:
     int              _bitOffset;
 };
 
-// Use inline assembly for log2 calculations
+// Use inline assembly for asmlog2 calculations
 #define DO_ASMLOG
 
 /*
@@ -187,7 +187,7 @@ public:
 #define UC64BE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)	\
   do {									\
     length =								\
-      63 - ::search::bitcompression::EncodeContext64BE::log2(val);	\
+      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);	\
     unsigned int olength = length;					\
     val <<= length;							\
     if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {		\
@@ -214,7 +214,7 @@ public:
 				     EC)				\
   do {									\
     length =								\
-      63 - ::search::bitcompression::EncodeContext64BE::log2(val);	\
+      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);	\
     val <<= length;							\
     val64 = (val >> (63 - length - (k))) - (UINT64_C(1) << (k));	\
     val <<= length + 1 + (k);						\
@@ -240,7 +240,7 @@ public:
 					   k, EC, resop)		\
   do {									\
     length =								\
-      63 - ::search::bitcompression::EncodeContext64BE::log2(val);	\
+      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);	\
     val <<= length;							\
     resop (val >> (63 - length - (k))) - (UINT64_C(1) << (k));		\
     val <<= length + 1 + (k);						\
@@ -252,7 +252,7 @@ public:
 #define UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)	\
   do {									\
     length =								\
-      63 - ::search::bitcompression::EncodeContext64BE::log2(val);	\
+      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);	\
     unsigned int olength = length;					\
     val <<= length;							\
     if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {		\
@@ -278,7 +278,7 @@ public:
 				   EC)					\
   do {									\
     length =								\
-      63 - ::search::bitcompression::EncodeContext64BE::log2(val);	\
+      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);	\
     val <<= length;							\
     val <<= length + 1 + (k);						\
     length += length + 1 + (k);						\
@@ -1089,7 +1089,7 @@ public:
      * Calculate floor(log2(x))
      */
     static inline uint32_t
-    log2(uint64_t x)
+    asmlog2(uint64_t x)
     {
         uint64_t retVal;
 
@@ -1138,7 +1138,7 @@ public:
     encodeExpGolomb(uint64_t x, uint32_t k)
     {
         if (bigEndian) {
-            uint32_t log2qx2 = log2((x >> k) + 1) * 2;
+            uint32_t log2qx2 = asmlog2((x >> k) + 1) * 2;
             uint64_t expGolomb = x + (UINT64_C(1) << k);
 
             if (log2qx2 < 64 - k)
@@ -1148,7 +1148,7 @@ public:
                 writeBits(expGolomb, 64);
             }
         } else {
-            uint32_t log2q = log2((x >> k) + 1);
+            uint32_t log2q = asmlog2((x >> k) + 1);
             uint32_t log2qx2 = log2q * 2;
             uint64_t expGolomb = x + (UINT64_C(1) << k) -
                                  (UINT64_C(1) << (k + log2q));
@@ -1165,7 +1165,7 @@ public:
     static uint32_t
     encodeExpGolombSpace(uint64_t x, uint32_t k)
     {
-        return k + log2((x >> k) + 1) * 2 + 1;
+        return k + asmlog2((x >> k) + 1) * 2 + 1;
     }
 
     void
@@ -1842,7 +1842,7 @@ public:
         _writeContext = writeContext;
     }
 
-    using ParentClass::log2;
+    using ParentClass::asmlog2;
     using ParentClass::_valI;
     using ParentClass::_valE;
 
@@ -1850,7 +1850,7 @@ public:
     calcDocIdK(uint32_t numDocs, uint32_t docIdLimit)
     {
         uint32_t avgDelta = docIdLimit / (numDocs + 1);
-        uint32_t docIdK = (avgDelta < 4) ? 1 : (log2(avgDelta));
+        uint32_t docIdK = (avgDelta < 4) ? 1 : (asmlog2(avgDelta));
         return docIdK;
     }
 

@@ -10,6 +10,7 @@
 #include "iclusterstatechangedhandler.h"
 #include "ibucketfreezelistener.h"
 #include "ibucketstatechangedhandler.h"
+#include "i_disk_mem_usage_listener.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 
 namespace proton
@@ -18,6 +19,7 @@ namespace proton
 
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
+class IDiskMemUsageNotifier;
 
 /**
  * Class used to control the moving of buckets between the ready and
@@ -26,8 +28,8 @@ class IClusterStateChangedNotifier;
 class BucketMoveJob : public IMaintenanceJob,
                       public IClusterStateChangedHandler,
                       public IBucketFreezeListener,
-                      public IBucketStateChangedHandler
-                      
+                      public IBucketStateChangedHandler,
+                      public IDiskMemUsageListener
 {
 public:
     struct ScanPosition
@@ -98,9 +100,11 @@ private:
     bool                               _clusterUp;
     bool                               _nodeUp;
     bool                               _nodeInitializing;
+    bool                               _resourcesOK;
     bool                               _runnable;  // can try to perform work
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
+    IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
     ScanResult
     scanBuckets(size_t maxBucketsToScan,
@@ -120,6 +124,7 @@ private:
                 DocumentBucketMover &mover,
                 IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
 
+    void refreshRunnable();
     void refreshDerivedClusterState();
 
     /**
@@ -143,6 +148,7 @@ public:
                   IFrozenBucketHandler &frozenBuckets,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
+                  IDiskMemUsageNotifier &diskMemUsageNotifier,
                   const vespalib::string &docTypeName);
 
     virtual ~BucketMoveJob();
@@ -180,6 +186,7 @@ public:
     void notifyBucketStateChanged(const document::BucketId &bucketId,
                              storage::spi::BucketInfo::ActiveState newState) override;
 
+    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
 };
 
 } // namespace proton

@@ -532,7 +532,7 @@ public:
     using ParentClass::_valI;
     using ParentClass::_valE;
     using ParentClass::_writeContext;
-    using ParentClass::log2;
+    using ParentClass::asmlog2;
     using ParentClass::encodeExpGolomb;
     using ParentClass::_fieldsParams;
     using ParentClass::readHeader;
@@ -579,14 +579,14 @@ public:
     static uint32_t
     calcElementLenK(uint32_t avgElementLen)
     {
-        return (avgElementLen < 4) ? 1u : (log2(avgElementLen));
+        return (avgElementLen < 4) ? 1u : (asmlog2(avgElementLen));
     }
 
     static uint32_t
     calcWordPosK(uint32_t numPositions, uint32_t elementLen)
     {
         uint32_t avgDelta = elementLen / (numPositions + 1);
-        uint32_t wordPosK = (avgDelta < 4) ? 1 : (log2(avgDelta));
+        uint32_t wordPosK = (avgDelta < 4) ? 1 : (asmlog2(avgDelta));
         return wordPosK;
     }
 };

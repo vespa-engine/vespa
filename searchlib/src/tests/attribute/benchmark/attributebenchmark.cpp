@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include "attributesearcher.h"
-#include "attributeupdater.h"
+#include "../attributesearcher.h"
+#include "../attributeupdater.h"
+#include "../runnable.h"
 #include <vespa/searchlib/util/randomgenerator.h>
-#include "runnable.h"
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>

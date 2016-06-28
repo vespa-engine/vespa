@@ -8,6 +8,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -15,9 +17,10 @@ import static org.junit.Assert.assertTrue;
  * Test for storage groups.
  */
 public class StorageGroupTest {
+
     ContentCluster parse(String xml) {
         Document doc = XML.getDocument(xml);
-        return new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+        return new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
     }
 
     @Test

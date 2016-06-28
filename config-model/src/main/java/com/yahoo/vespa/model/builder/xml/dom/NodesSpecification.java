@@ -17,7 +17,6 @@ import java.util.Optional;
  *
  * @author bratseth
  */
- // TODO: Use this for all nodes tags and unify with NodesUtil
 public class NodesSpecification {
 
     private final boolean dedicated;
@@ -101,5 +100,11 @@ public class NodesSpecification {
         return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor), groups, logger);
     }
 
+    @Override
+    public String toString() {
+        return "specification of " + count + (dedicated ? " dedicated " : " ") + "nodes" +
+               (flavor.isPresent() ? " of flavor " + flavor.get() : "") +
+               (groups > 1 ? " in " + groups + " groups" : "");
+    }
 
 }

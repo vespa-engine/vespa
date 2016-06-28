@@ -8,6 +8,7 @@ LOG_SETUP(".searchvisitor.rankprocessor");
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include "querytermdata.h"
 #include "rankprocessor.h"
+#include <cmath>
 
 using search::FeatureSet;
 using search::HitList;
@@ -167,7 +168,7 @@ RankProcessor::runRankProgram(uint32_t docId)
     if (_rankScoreHandle != IllegalHandle) {
         MatchData &matchData = _rankProgram->match_data();
         _score = *(matchData.resolveFeature(_rankScoreHandle));
-        if (isnan(_score) || isinf(_score)) {
+        if (std::isnan(_score) || std::isinf(_score)) {
             _score = -HUGE_VAL;
         }
     }

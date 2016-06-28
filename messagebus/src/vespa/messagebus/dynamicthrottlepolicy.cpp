@@ -6,7 +6,6 @@ LOG_SETUP(".dynamicthrottlepolicy");
 #include <vespa/vespalib/util/atomic.h>
 #include "dynamicthrottlepolicy.h"
 #include "systemtimer.h"
-#include <math.h>
 #include <climits>
 
 namespace mbus {

@@ -9,7 +9,6 @@
 #include <vespa/storage/bucketdb/judyarray.h>
 #include <stdio.h>
 #include <iomanip>
-#include <math.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config-stor-distribution.h>
 

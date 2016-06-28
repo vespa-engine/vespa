@@ -9,8 +9,8 @@ import com.yahoo.vespa.model.container.ContainerCluster;
  */
 public class ContainerHttpGateway extends Container {
 
-    public ContainerHttpGateway(ContainerCluster parent, String name, int wantedPort) {
-        super(parent, name);
+    public ContainerHttpGateway(ContainerCluster parent, String name, int wantedPort, int index) {
+        super(parent, name, index);
 
         // TODO: when this class is removed, all ports for the gateway will map to standard container ports
         //       this is just a tjuvtriks to keep the old gateway port allocation for now.
@@ -19,4 +19,5 @@ public class ContainerHttpGateway extends Container {
 
     @Override
     public String getServiceType() { return "container-httpgateway"; }
+
 }

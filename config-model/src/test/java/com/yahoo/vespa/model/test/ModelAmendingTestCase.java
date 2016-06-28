@@ -10,7 +10,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.builder.xml.dom.DomContentBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
@@ -139,7 +138,7 @@ public class ModelAmendingTestCase {
 
         @Override
         public List<ConfigModelId> handlesElements() {
-            return DomContentBuilder.configModelIds;
+            return Content.Builder.configModelIds;
         }
 
         @Override

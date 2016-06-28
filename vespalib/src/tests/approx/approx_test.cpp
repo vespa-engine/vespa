@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/approx.h>
 #include <limits>
 #include <cfloat>
+#include <cmath>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::approx_equal;
@@ -85,7 +86,7 @@ TEST("require that numbers with slightly larger differences are not approximatel
 
 TEST("require that specific numbers with almost 2 ULP differences are approximately equal") {
     double base = 0.25111f;
-    double epsilon = nextafterf(base, 1.0) - base;
+    double epsilon = std::nextafterf(base, 1.0) - base;
     double larger = base + epsilon*1.499;
     double smaller = base - epsilon*0.499;
     EXPECT_TRUE(approx_equal(larger, smaller));

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <math.h>
+#include <cmath>
 #include <limits>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vespalib/objects/visit.h>
@@ -131,18 +131,18 @@ QueryTermSimple::getRangeInternal(int64_t & low, int64_t & high) const
         valid = getAsDoubleTerm(l, h);
         if (valid) {
             if ((l == h) && isRepresentableByInt64(l)) {
-                low = high = round(l);
+                low = high = std::round(l);
             } else {
                 if (l > double(std::numeric_limits<int64_t>::min())) {
                     if (l < double(std::numeric_limits<int64_t>::max())) {
-                        low = ceil(l);
+                        low = std::ceil(l);
                     } else {
                         low = std::numeric_limits<int64_t>::max();
                     }
                 }
                 if (h < double(std::numeric_limits<int64_t>::max())) {
                     if (h > double(std::numeric_limits<int64_t>::min())) {
-                        high = floor(h);
+                        high = std::floor(h);
                     } else {
                         high = std::numeric_limits<int64_t>::min();
                     }
@@ -296,8 +296,8 @@ struct IntDecoder {
 
 struct DoubleDecoder {
     static double fromstr(const char * v, char ** end) { return strtod(v, end); }
-    static double nearestDownwd(double n, double min) { return nextafterf(n, min); }
-    static double nearestUpward(double n, double max) { return nextafterf(n, max); }
+    static double nearestDownwd(double n, double min) { return std::nextafterf(n, min); }
+    static double nearestUpward(double n, double max) { return std::nextafterf(n, max); }
 };
 
 bool QueryTermSimple::getAsIntegerTerm(int64_t & lower, int64_t & upper) const

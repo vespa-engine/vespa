@@ -11,7 +11,6 @@ LOG_SETUP(".features.distancefeature");
 #include <vespa/vespalib/geo/zcurve.h>
 #include "distancefeature.h"
 
-
 using namespace search::fef;
 
 namespace search {
@@ -57,7 +56,7 @@ DistanceExecutor::calculate2DZDistance(uint32_t docId)
             sqabsdist = sqdist;
         }
     }
-    return static_cast<feature_t>(sqrt(static_cast<feature_t>(sqabsdist)));
+    return static_cast<feature_t>(std::sqrt(static_cast<feature_t>(sqabsdist)));
 }
 
 DistanceExecutor::DistanceExecutor(const Location & location,

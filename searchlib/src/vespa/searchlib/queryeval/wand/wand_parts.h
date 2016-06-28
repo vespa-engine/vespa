@@ -3,7 +3,7 @@
 #pragma once
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>

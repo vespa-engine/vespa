@@ -27,6 +27,7 @@ LOG_SETUP("enumeratedsave_test");
 #include <limits>
 #include <string>
 #include <iostream>
+#include <cmath>
 
 
 using search::attribute::BasicType;

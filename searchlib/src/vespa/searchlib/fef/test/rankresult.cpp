@@ -54,8 +54,7 @@ RankResult::includes(const RankResult & rhs) const
         }
         if (itr->second < findItr->second - epsilon ||
             itr->second > findItr->second + epsilon ||
-            (std::isnan(findItr->second) &&
-             !std::isnan(itr->second)))
+            (std::isnan(findItr->second) && !std::isnan(itr->second)))
         {
             LOG(info, "Feature '%s' did not have expected score.", itr->first.c_str());
             LOG(info, "Expected: %f ~ %f", itr->second, epsilon);

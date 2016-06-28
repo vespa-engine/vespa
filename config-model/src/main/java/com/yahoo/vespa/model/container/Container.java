@@ -72,7 +72,10 @@ public class Container extends AbstractService implements
     private boolean httpServerEnabled = true;
     private boolean messageBusEnabled = true;
 
+    /** Whether this node has been marked as retired (e.g, will be removed) */
     private final boolean retired;
+    /** The index of this node. Non-critical: This is persisted on hosted, just a counter otherwise. */
+    private final int index;
 
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup(this, "components");
@@ -85,21 +88,22 @@ public class Container extends AbstractService implements
     private final int numRpcServerPorts = 2;
     private static String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
-    public Container(AbstractConfigProducer parent, String name) {
-        this(parent, name, Collections.<PortOverride>emptyList());
+    public Container(AbstractConfigProducer parent, String name, int index) {
+        this(parent, name, Collections.<PortOverride>emptyList(), index);
     }
-    public Container(AbstractConfigProducer parent, String name, boolean retired) {
-        this(parent, name, retired, Collections.<PortOverride>emptyList());
+    public Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
+        this(parent, name, retired, Collections.<PortOverride>emptyList(), index);
     }
-    public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides) {
-        this(parent, name, false, portOverrides);
+    public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides, int index) {
+        this(parent, name, false, portOverrides, index);
     }
-    public Container(AbstractConfigProducer parent, String name, boolean retired, List<PortOverride> portOverrides) {
+    public Container(AbstractConfigProducer parent, String name, boolean retired, List<PortOverride> portOverrides, int index) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.portOverrides = Collections.unmodifiableList(new ArrayList<>(portOverrides));
         this.retired = retired;
+        this.index = index;
 
         if (getHttp() == null) {
             numHttpServerPorts = 2;
@@ -143,6 +147,9 @@ public class Container extends AbstractService implements
     public JettyHttpServer getDefaultHttpServer() {
         return defaultHttpServer;
     }
+    
+    /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
+    public int index() { return index; }
 
     // We cannot set bindings yet, as baseport is not initialized
     public void addBuiltinHandlers() {

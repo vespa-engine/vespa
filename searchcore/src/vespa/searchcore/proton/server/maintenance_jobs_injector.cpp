@@ -58,7 +58,8 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IClusterStateChangedNotifier &clusterStateChangedNotifier,
                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
                     const std::shared_ptr<IBucketStateCalculator> &calc,
-                    DocumentDBJobTrackers &jobTrackers)
+                    DocumentDBJobTrackers &jobTrackers,
+                    IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
     IMaintenanceJob::UP bmj;
     bmj.reset(new BucketMoveJob(calc,
@@ -69,6 +70,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 fbHandler,
                                 clusterStateChangedNotifier,
                                 bucketStateChangedNotifier,
+                                diskMemUsageNotifier,
                                 docTypeName));
     controller.registerJob(std::move(trackJob(jobTrackers.getBucketMove(),
                                               std::move(bmj))));
@@ -95,6 +97,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IBucketStateChangedNotifier &
                                     bucketStateChangedNotifier,
                                     const std::shared_ptr<IBucketStateCalculator> & calc,
+                                    IDiskMemUsageNotifier &diskMemUsageNotifier,
                                     DocumentDBJobTrackers &jobTrackers,
                                     ICommitable & commit,
                                     IAttributeManagerSP readyAttributeManager,
@@ -116,7 +119,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
                                  fbHandler, jobTrackers.getLidSpaceCompact());
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
-                        clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers);
+                        clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier);
     controller.registerJob(std::make_unique<SampleAttributeUsageJob>
                            (readyAttributeManager,
                             notReadyAttributeManager,

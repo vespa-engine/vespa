@@ -3,7 +3,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "latency_analyzer.h"
-#include <math.h>
+#include <cmath>
 
 namespace vbench {
 
@@ -24,9 +24,9 @@ double
 LatencyAnalyzer::getPercentile(double per) const
 {
     double target = std::max((((double)(_cnt - 1)) * (per / 100.0)), 0.0);
-    size_t before = (size_t)floor(target);
-    size_t  after = (size_t)ceil(target);
-    double factor = ceil(target) - target;
+    size_t before = (size_t)std::floor(target);
+    size_t  after = (size_t)std::ceil(target);
+    double factor = std::ceil(target) - target;
     return (factor * getN(before) + (1.0 - factor) * getN(after));
 }
 

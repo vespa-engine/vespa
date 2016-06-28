@@ -736,7 +736,7 @@ getMaxAbs(const std::vector<int> distribution, double avg, int start)
 {
     int max = start;
     for (uint32_t i = 0; i < distribution.size(); i++) {
-        if(fabs(distribution[i]-avg) > fabs(distribution[max]-avg))
+        if (std::fabs(distribution[i]-avg) > std::fabs(distribution[max]-avg))
             max = i;
     }
     return max;

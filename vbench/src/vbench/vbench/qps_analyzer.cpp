@@ -3,7 +3,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "qps_analyzer.h"
-#include <math.h>
 
 namespace vbench {
 

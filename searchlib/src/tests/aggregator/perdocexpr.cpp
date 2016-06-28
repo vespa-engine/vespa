@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
+#include <cmath>
 
 using namespace search;
 using namespace search::expression;
@@ -431,7 +432,7 @@ TEST("testResultNodes") {
     }
 
     {
-        FloatResultNode i1(-1), i2(0), i3(1), notanumber(nan("")),
+        FloatResultNode i1(-1), i2(0), i3(1), notanumber(std::nan("")),
             minusInf(-INFINITY), plussInf(INFINITY);
         EXPECT_EQUAL(i1.cmp(i1), 0);
         EXPECT_EQUAL(i2.cmp(i2), 0);
@@ -450,7 +451,7 @@ TEST("testResultNodes") {
     {
         FloatBucketResultNode
             i1(-1, 3), i2(188000, 188500), i3(1630000, 1630500),
-            notanumber(-nan(""), nan("")), inf(-INFINITY, INFINITY);
+            notanumber(-std::nan(""), std::nan("")), inf(-INFINITY, INFINITY);
         EXPECT_EQUAL(i1.cmp(i1), 0);
         EXPECT_EQUAL(i2.cmp(i2), 0);
         EXPECT_EQUAL(notanumber.cmp(notanumber), 0);

@@ -12,6 +12,8 @@
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/util/vstringfmt.h>
+#include <cmath>
+#include <cstdlib>
 
 LOG_SETUP(".searchlib.aggregation.group");
 
@@ -420,7 +422,7 @@ Group::postMerge(const std::vector<GroupingLevel> &levels,
 
 Group & Group::setRank(RawRank r)
 {
-    _rank = isnan(r) ? -HUGE_VAL : r;
+    _rank = std::isnan(r) ? -HUGE_VAL : r;
     return *this;
 }
 
