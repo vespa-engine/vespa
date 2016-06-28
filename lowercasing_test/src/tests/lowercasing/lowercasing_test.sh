@@ -1,5 +1,6 @@
 #!/bin/bash
+set -e
 . ../../binref/env.sh
 
 $BINREF/compilejava CasingVariants.java
-sh dotest.sh
+bash -e dotest.sh

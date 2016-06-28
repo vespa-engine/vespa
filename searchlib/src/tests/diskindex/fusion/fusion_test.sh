@@ -13,4 +13,3 @@ $IINSPECT showpostings --transpose --indexdir dump3 > transpose.out
 $ECHO_CMD dumping posting list for word z in field f0
 $IINSPECT showpostings --indexdir dump3 --field f0 z > zwordf0field.out
 $ECHO_CMD inspection done.
-

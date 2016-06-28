@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 cp -r bug-7257706 bug-7257706-truncated
 mkdir dangling-test
 cp bug-7257706/*.dat dangling-test/

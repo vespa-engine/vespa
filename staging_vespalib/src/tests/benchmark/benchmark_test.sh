@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 TIME=time
 
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ParamByReferenceVectorInt 200000 1
