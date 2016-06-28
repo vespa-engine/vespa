@@ -63,7 +63,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
 public class HttpServerTest {

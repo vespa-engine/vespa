@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 /**
  * This class provides utilities for working with slobrok-registered service names.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class ServiceNameUtil {
     // Utility class; prevents instantiation.

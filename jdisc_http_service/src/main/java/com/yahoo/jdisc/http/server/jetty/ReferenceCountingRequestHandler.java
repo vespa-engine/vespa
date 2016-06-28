@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * hence the current container) will be referenced until the end of the request handling - even with async handling in
  * non-framework threads - without requiring the application to handle this tedious work.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 class ReferenceCountingRequestHandler implements RequestHandler {
 

@@ -4,7 +4,7 @@ package com.yahoo.jdisc;
 /**
  * Utility class for working with {@link SharedResource}s and {@link ResourceReference}s.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class References {
     // Prevents instantiation.

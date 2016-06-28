@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * Provides filter bindings based on vespa config.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class FilterBindingsProvider implements Provider<FilterBindings> {
     final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();

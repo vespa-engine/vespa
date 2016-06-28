@@ -21,7 +21,7 @@ import static com.google.inject.name.Names.named;
  * It provides functionality for setting up a jdisc container with an HTTP server and handlers.
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class TestDriver {
 

@@ -7,7 +7,7 @@ import java.util.function.Function;
 /**
  * This interface allows different strategies for accessing server-side JAX-RS APIs programmatically.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public interface JaxRsStrategy<T> {
     <R> R apply(final Function<T, R> function) throws IOException;

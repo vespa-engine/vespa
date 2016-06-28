@@ -6,7 +6,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import java.util.Collection;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public interface ClusterControllerClientFactory {
     ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers, String clusterName);

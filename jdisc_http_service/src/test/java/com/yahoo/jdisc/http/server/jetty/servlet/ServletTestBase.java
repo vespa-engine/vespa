@@ -30,7 +30,7 @@ import java.io.PrintWriter;
 
 /**
  * @author tonytv
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class ServletTestBase {
     private ImmutableMap<Pair<ComponentId, String>, HttpServlet> servlets = ImmutableMap.of(

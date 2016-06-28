@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * This class is a bridge between Jetty's {@link org.eclipse.jetty.server.handler.RequestLogHandler}
  * and our own configurable access logging in different formats provided by {@link AccessLog}.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
 

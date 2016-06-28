@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Uses slobrok data (a.k.a. heartbeat) to implement {@link InstanceLookupService}.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class ServiceMonitorInstanceLookupService implements InstanceLookupService {
     private final SlobrokAndConfigIntersector slobrokAndConfigIntersector;

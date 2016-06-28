@@ -5,7 +5,7 @@ package com.yahoo.jdisc;
  * An implementation of {@link SharedResource} that does not do anything.
  * Useful base class for e.g. mocks of SharedResource sub-interfaces, where reference counting is not the focus.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class NoopSharedResource implements SharedResource {
     @Override

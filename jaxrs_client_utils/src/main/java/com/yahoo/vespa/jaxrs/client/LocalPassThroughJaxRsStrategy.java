@@ -7,7 +7,7 @@ import java.util.function.Function;
 /**
  * A {@link JaxRsStrategy} that does not use the network, only forwards calls to a local object.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class LocalPassThroughJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final T api;

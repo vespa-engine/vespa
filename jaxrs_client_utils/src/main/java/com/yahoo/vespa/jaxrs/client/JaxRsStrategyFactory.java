@@ -29,7 +29,7 @@ import java.util.Set;
  *     </li>
  * </ol>
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class JaxRsStrategyFactory {
     private final Set<HostName> hostNames;
