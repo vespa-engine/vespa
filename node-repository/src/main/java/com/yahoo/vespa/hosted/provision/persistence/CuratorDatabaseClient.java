@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 /**
  * Client which reads and writes nodes to a curator database.
  * Nodes are stored in files named <code>/provision/v1/[nodestate]/[hostname]</code>.
+ *
  * The responsibility of this class is to turn operations on the level of node states, applications and nodes
  * into operations on the level of file paths and bytes.
  *
@@ -187,23 +188,36 @@ public class CuratorDatabaseClient {
             states = Node.State.values();
         for (Node.State state : states) {
             for (String hostname : curatorDatabase.getChildren(toPath(state))) {
-                final Optional<Node> node = getNode(state, hostname);
+                Optional<Node> node = getNode(hostname, state);
                 if (node.isPresent()) nodes.add(node.get()); // node might disappear between getChildren and getNode
             }
         }
         return nodes;
     }
 
-    /** Returns all nodes allocated to the given application which are in one of the given states */
+    /** 
+     * Returns all nodes allocated to the given application which are in one of the given states 
+     * If no states are given this returns all nodes.
+     */
     public List<Node> getNodes(ApplicationId applicationId, Node.State ... states) {
         List<Node> nodes = getNodes(states);
         nodes.removeIf(node -> ! node.allocation().isPresent() || ! node.allocation().get().owner().equals(applicationId));
         return nodes;
     }
 
-    /** Returns a particular node, or empty if there is no such node in this state */
-    public Optional<Node> getNode(Node.State state, String hostname) {
-        return curatorDatabase.getData(toPath(state, hostname)).map((data) -> nodeSerializer.fromJson(state, data));
+    /** 
+     * Returns a particular node, or empty if this noe is not in any of the given states.
+     * If no states are given this returns the node if it is present in any state.
+     */
+    public Optional<Node> getNode(String hostname, Node.State ... states) {
+        if (states.length == 0)
+            states = Node.State.values();
+        for (Node.State state : states) {
+            Optional<byte[]> nodeData = curatorDatabase.getData(toPath(state, hostname));
+            if (nodeData.isPresent())
+                return nodeData.map((data) -> nodeSerializer.fromJson(state, data));
+        }
+        return Optional.empty();
     }
 
     private Path toPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
