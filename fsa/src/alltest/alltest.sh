@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -x
 ./detector_test.sh
 ./fsa_test.sh
 ./fsa_fsa_create_test_app
