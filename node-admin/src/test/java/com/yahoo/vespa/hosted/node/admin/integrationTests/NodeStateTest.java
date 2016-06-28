@@ -117,11 +117,14 @@ public class NodeStateTest {
 
 
         // Wait until docker receives deleteContainer request
-        while (!DockerMock.getRequests().endsWith("deleteContainer with ContainerName: ContainerName { name=container }\n")) {
+        String expectedDockerRequests = "stopContainer with ContainerName: ContainerName { name=container }\n" +
+                "deleteContainer with ContainerName: ContainerName { name=container }\n" +
+                "deleteApplicationStorage with ContainerName: ContainerName { name=container }\n";
+        while (!DockerMock.getRequests().endsWith(expectedDockerRequests)) {
             Thread.sleep(10);
         }
 
-        assertThat(DockerMock.getRequests(), endsWith("deleteContainer with ContainerName: ContainerName { name=container }\n"));
+        assertThat(DockerMock.getRequests(), endsWith(expectedDockerRequests));
     }
 
 
