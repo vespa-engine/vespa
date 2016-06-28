@@ -107,9 +107,9 @@ public class RunInContainerTest {
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
-        OrchestratorMock.forceMultipleRequestsResponse = Optional.of("Denied");
+        OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
-        assertThat(OrchestratorMock.requests.toString(), is("Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]\n"));
+        assertThat(OrchestratorMock.getRequests(), is("Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]\n"));
     }
 
 

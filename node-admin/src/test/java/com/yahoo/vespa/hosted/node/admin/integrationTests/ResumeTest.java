@@ -21,10 +21,12 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;
 
 /**
  * Scenario test for NodeAdminStateUpdater.
+ *
  * @author dybis
  */
 public class ResumeTest {
@@ -36,6 +38,8 @@ public class ResumeTest {
             throw new RuntimeException(e);
         }
         OrchestratorMock.reset();
+        NodeRepoMock.reset();
+        DockerMock.reset();
     }
 
     @After
@@ -53,7 +57,7 @@ public class ResumeTest {
                 new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
 
-        NodeRepoMock.containerNodeSpecs.add(new ContainerNodeSpec(
+        NodeRepoMock.addContainerNodeSpec(new ContainerNodeSpec(
                 new HostName("hostName"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
@@ -71,28 +75,28 @@ public class ResumeTest {
             Thread.sleep(10);
         }
 
-        while (!DockerMock.requests.toString().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
+        while (!DockerMock.getRequests().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
                 "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n")) {
             Thread.sleep(10);
         }
 
-        assertThat(DockerMock.requests.toString(), is("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
+        assertThat(DockerMock.getRequests(), startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
                 "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n"));
 
 
         // Check that NodeRepo has received the PATCH update
-        while (!NodeRepoMock.requests.toString().startsWith("updateNodeAttributes with HostName: hostName, " +
+        while (!NodeRepoMock.getRequests().startsWith("updateNodeAttributes with HostName: hostName, " +
                 "restartGeneration: 1, DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n")) {
             Thread.sleep(10);
         }
 
-        assertThat(NodeRepoMock.requests.toString(), is("updateNodeAttributes with HostName: hostName, restartGeneration: 1," +
+        assertThat(NodeRepoMock.getRequests(), startsWith("updateNodeAttributes with HostName: hostName, restartGeneration: 1," +
                 " DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n"));
 
         // Force orchestrator to reject the suspend
-        OrchestratorMock.forceMultipleRequestsResponse = Optional.of("Orchestrator reject suspend");
+        OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
 
         // At this point NodeAdmin should be fine with the suspend and it is up to Orchestrator
         while (!updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED)
@@ -102,11 +106,11 @@ public class ResumeTest {
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
 
         //Make orchestrator allow suspend requests
-        OrchestratorMock.forceMultipleRequestsResponse = Optional.empty();
+        OrchestratorMock.setForceGroupSuspendResponse(Optional.empty());
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
         // Now, change data in node repo, should not propagate.
-        NodeRepoMock.containerNodeSpecs.clear();
+        NodeRepoMock.clearContainerNodeSpecs();
 
         // New node repo state should have not propagated to node admin
         Thread.sleep(2);
@@ -120,12 +124,11 @@ public class ResumeTest {
             Thread.sleep(1);
         }
 
-        final String[] allRequests = OrchestratorMock.requests.toString().split("\n");
+        final String[] allRequests = OrchestratorMock.getRequests().split("\n");
         final List<String> noRepeatingRequests = new ArrayList<>();
-        noRepeatingRequests.add(allRequests[0]);
-        for (int i = 1; i < allRequests.length; i++) {
-            if (!allRequests[i].equals(allRequests[i - 1])) {
-                noRepeatingRequests.add(allRequests[i]);
+        for (String request : allRequests) {
+            if (!noRepeatingRequests.contains(request)) {
+                noRepeatingRequests.add(request);
             }
         }
 
