@@ -24,7 +24,7 @@ public class HostResource implements Comparable<HostResource> {
     private final Host host;
 
     // Map from "sentinel name" to service
-    private final Map<String,Service> services = new LinkedHashMap<>();
+    private final Map<String, Service> services = new LinkedHashMap<>();
     private final Map<Integer, Service> portDB = new LinkedHashMap<>();
 
     private int allocatedPorts = 0;

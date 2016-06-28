@@ -17,6 +17,8 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.Collections;
+
 import static org.junit.Assert.*;
 
 public class StorageClusterTest {
@@ -31,7 +33,7 @@ public class StorageClusterTest {
         );
         Document doc = XML.getDocument(xml);
         Element clusterElem = doc.getDocumentElement();
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(root, clusterElem);
+        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, clusterElem);
 
         root.freezeModelTopology();
         return cluster.getStorageNodes();
@@ -182,7 +184,7 @@ public class StorageClusterTest {
                         "</cluster>"
         );
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
 
         for (int i = 0; i < 3; ++i) {
             StorageNode node = cluster.getStorageNodes().getChildren().get("" + i);
@@ -205,7 +207,7 @@ public class StorageClusterTest {
                         "</cluster>"
         );
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
 
         StorageNode node = cluster.getStorageNodes().getChildren().get("0");
 
@@ -249,7 +251,7 @@ public class StorageClusterTest {
                         "</cluster>"
         );
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
 
         PersistenceConfig.Builder builder = new PersistenceConfig.Builder();
         cluster.getStorageNodes().getConfig(builder);
@@ -279,7 +281,7 @@ public class StorageClusterTest {
         );
 
         try {
-            new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
             assertTrue(false);
         } catch (Exception e) {
 
@@ -303,7 +305,7 @@ public class StorageClusterTest {
                 "</cluster>"
         );
         try {
-            new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
             fail("Did not get exception with duplicate group names");
         } catch (RuntimeException e) {
             assertEquals("Cluster 'storage' has multiple groups with name 'bar' in the same subgroup. " +
@@ -332,7 +334,7 @@ public class StorageClusterTest {
                 "</cluster>"
         );
         // Should not throw.
-        new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+        new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
     }
 
     @Test
@@ -351,7 +353,7 @@ public class StorageClusterTest {
                         "</cluster>"
         );
         try {
-            new ContentCluster.Builder(null, null).build(new MockRoot(), doc.getDocumentElement());
+            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
             fail("Did not get exception with missing distribution element");
         } catch (RuntimeException e) {
             assertEquals("'distribution' attribute is required with multiple subgroups", e.getMessage());

@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
 /**
  * @author baldersheim
  */
-public class DomContentBuilderTest extends DomBuilderTest {
+public class ContentBuilderTest extends DomBuilderTest {
     private ContentCluster createContent(String xml) throws Exception {
         String combined =  "" +
                 "<services>"+

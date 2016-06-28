@@ -188,7 +188,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     protected void addStatusHandlers(ContainerCluster cluster, ConfigModelContext configModelContext) {
-        if (configModelContext.getDeployState().isHostedVespa()) {
+        if (configModelContext.getDeployState().isHosted()) {
             String name = "status.html";
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_YINST_SETTING));
             cluster.addComponent(
@@ -368,14 +368,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ContainerCluster cluster) {
-        Container container =  new Container(cluster, "standalone");
+        Container container =  new Container(cluster, "standalone", cluster.getContainers().size());
         cluster.addContainers(Collections.singleton(container));
     }
 
     private void addNodesFromXml(ContainerCluster cluster, Element spec) {
         Element nodesElement = XML.getChild(spec, "nodes");
         if (nodesElement == null) { // default single node on localhost
-            Container container = new Container(cluster, "container.0");
+            Container container = new Container(cluster, "container.0", 0);
             HostResource host = allocateSingleNodeHost(cluster, log);
             container.setHostResource(host);
             if ( ! container.isInitialized() ) // TODO: Fold this into initService
@@ -434,7 +434,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Element spec, Element nodesElement, List<Container> result) {
         int nodeCount = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
-            Container container = new ContainerServiceBuilder("container." + nodeCount).build(cluster, nodeElem);
+            Container container = new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem);
             result.add(container);
             ++nodeCount;
         }
@@ -447,7 +447,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(), ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
             for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
                 String id = "container." + entry.getValue().index();
-                Container container = new Container(cluster, id, entry.getValue().retired());
+                Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
                 container.setHostResource(entry.getKey());
                 container.initService();
                 result.add(container);

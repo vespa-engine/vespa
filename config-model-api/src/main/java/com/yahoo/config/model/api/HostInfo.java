@@ -10,6 +10,7 @@ import java.util.Collection;
  * @since 5.37
  */
 public class HostInfo {
+
     private final String hostname;
     private final Collection<ServiceInfo> services;
 
@@ -45,4 +46,5 @@ public class HostInfo {
         result = 31 * result + (services != null ? services.hashCode() : 0);
         return result;
     }
+
 }

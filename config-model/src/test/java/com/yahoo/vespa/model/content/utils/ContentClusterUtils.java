@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.w3c.dom.Document;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
-        return new ContentCluster.Builder(null, null).build(root, doc.getDocumentElement());
+        return new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, doc.getDocumentElement());
     }
 
     public static ContentCluster createCluster(String clusterXml, List<String> searchDefinitions) throws Exception {

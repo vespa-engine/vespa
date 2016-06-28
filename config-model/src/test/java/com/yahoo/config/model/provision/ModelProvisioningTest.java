@@ -465,6 +465,38 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testClusterControllersCanSupplementWithAllContainerClusters() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo1'>" +
+                "     <nodes count='2'/>" +
+                "  </container>" +
+                "  <container version='1.0' id='foo2'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <controllers><nodes dedicated='false' count='5'/></controllers>" +
+                "     <nodes count='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        Hosts hosts = createHosts(numberOfHosts);
+        VespaModel model = createModel(services, hosts, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals(5, clusterControllers.getContainers().size());
+    }
+
+    @Test
     public void testClusterControllersAreNotPlacedOnRetiredNodes() throws ParseException {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -599,6 +631,33 @@ public class ModelProvisioningTest {
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(1, clusterControllers.getContainers().size());
+    }
+
+    @Test
+    public void test2ContentNodesWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='3'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        Hosts hosts = createHosts(numberOfHosts);
+        VespaModel model = createModel(services, hosts, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals(3, clusterControllers.getContainers().size());
     }
 
     @Test
