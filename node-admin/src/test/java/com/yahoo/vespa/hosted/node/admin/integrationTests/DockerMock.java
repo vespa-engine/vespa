@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -18,58 +19,80 @@ import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
+ *
  * @author valerijf
  */
 public class DockerMock implements Docker {
-    private List<Container> containers = new ArrayList<>();
-    public static StringBuilder requests = new StringBuilder();
+    private List<Container> containers;
+    private static StringBuilder requests;
+
+    private static final Object monitor = new Object();
+
+    static {
+        reset();
+    }
 
     public DockerMock() {
-        if(OrchestratorMock.semaphore.tryAcquire()) {
+        if (OrchestratorMock.semaphore.tryAcquire()) {
             throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using DockerMock");
         }
+
+        containers = new ArrayList<>();
     }
 
     @Override
     public void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName,
                                double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb) {
-        requests.append("startContainer with DockerImage: ").append(dockerImage).append(", HostName: ").append(hostName)
-                .append(", ContainerName: ").append(containerName).append(", minCpuCores: ").append(minCpuCores)
-                .append(", minDiskAvailableGb: ").append(minDiskAvailableGb).append(", minMainMemoryAvailableGb: ")
-                .append(minMainMemoryAvailableGb).append("\n");
-        containers.add(new Container(hostName, dockerImage, containerName, true));
+        synchronized (monitor) {
+            requests.append("startContainer with DockerImage: ").append(dockerImage).append(", HostName: ").append(hostName)
+                    .append(", ContainerName: ").append(containerName).append(", minCpuCores: ").append(minCpuCores)
+                    .append(", minDiskAvailableGb: ").append(minDiskAvailableGb).append(", minMainMemoryAvailableGb: ")
+                    .append(minMainMemoryAvailableGb).append("\n");
+            containers.add(new Container(hostName, dockerImage, containerName, true));
+        }
     }
 
     @Override
     public void stopContainer(ContainerName containerName) {
-        containers = containers.stream()
-                .map(container -> container.name.equals(containerName) ?
-                        new Container(container.hostname, container.image, container.name, false) : container)
-                .collect(Collectors.toList());
+        synchronized (monitor) {
+            requests.append("stopContainer with ContainerName: ").append(containerName).append("\n");
+            containers = containers.stream()
+                    .map(container -> container.name.equals(containerName) ?
+                            new Container(container.hostname, container.image, container.name, false) : container)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
     public void deleteContainer(ContainerName containerName) {
-        requests.append("deleteContainer with ContainerName: ").append(containerName);
-        containers = containers.stream()
-                .filter(container -> !container.name.equals(containerName))
-                .collect(Collectors.toList());
+        synchronized (monitor) {
+            requests.append("deleteContainer with ContainerName: ").append(containerName).append("\n");
+            containers = containers.stream()
+                    .filter(container -> !container.name.equals(containerName))
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
     public List<Container> getAllManagedContainers() {
-        return new ArrayList<>(containers);
+        synchronized (monitor) {
+            return new ArrayList<>(containers);
+        }
     }
 
     @Override
     public Optional<Container> getContainer(HostName hostname) {
-        return containers.stream().filter(container -> container.hostname.equals(hostname)).findFirst();
+        synchronized (monitor) {
+            return containers.stream().filter(container -> container.hostname.equals(hostname)).findFirst();
+        }
     }
 
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(DockerImage image) {
-        requests.append("pullImageAsync with DockerImage: ").append(image);
-        return null;
+        synchronized (monitor) {
+            requests.append("pullImageAsync with DockerImage: ").append(image);
+            return null;
+        }
     }
 
     @Override
@@ -99,7 +122,23 @@ public class DockerMock implements Docker {
 
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
+        synchronized (monitor) {
+            requests.append("executeInContainer with ContainerName: ").append(containerName)
+                    .append(", args: ").append(Arrays.toString(args)).append("\n");
+        }
         return new ProcessResult(0, "OK");
+    }
+
+    public static String getRequests() {
+        synchronized (monitor) {
+            return requests.toString();
+        }
+    }
+
+    public static void reset() {
+        synchronized (monitor) {
+            requests = new StringBuilder();
+        }
     }
 }
 
