@@ -4,5 +4,7 @@ vespa_add_executable(searchlib_fileheaderinspect_test_app TEST
     fileheaderinspect.cpp
     DEPENDS
     searchlib
+    AFTER
+    searchlib_vespa-header-inspect_app
 )
 vespa_add_test(NAME searchlib_fileheaderinspect_test_app COMMAND searchlib_fileheaderinspect_test_app)
