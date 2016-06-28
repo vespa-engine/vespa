@@ -84,6 +84,7 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
       _readConsistency(readConsistency),
       _metaOnly(fields.getType() == document::FieldSet::NONE),
       _ignoreMaxBytes(ignoreMaxBytes),
+      _fetchedData(false),
       _sources(),
       _nextItem(0),
       _list()
@@ -99,10 +100,11 @@ DocumentIterator::add(const IDocumentRetriever::SP &retriever)
 IterateResult
 DocumentIterator::iterate(size_t maxBytes)
 {
-    if (_list.empty()) {
+    if ( ! _fetchedData ) {
         for (const IDocumentRetriever::SP & source : _sources) {
             fetchCompleteSource(*source, _list);
         }
+        _fetchData = true;
     }
     if ( _ignoreMaxBytes ) {
         return IterateResult(std::move(_list), true);
