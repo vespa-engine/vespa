@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
-* @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+* @author bakksjo
 */
 class ProxyRequestHandler implements RequestHandler {
 

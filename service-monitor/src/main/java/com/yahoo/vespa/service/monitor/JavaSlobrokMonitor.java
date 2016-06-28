@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 /**
  * Thin wrapper around {@link Mirror} class, that is a bit nicer to work with.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class JavaSlobrokMonitor {
     private final Mirror mirror;

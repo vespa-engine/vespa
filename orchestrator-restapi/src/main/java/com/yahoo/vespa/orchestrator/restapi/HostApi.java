@@ -18,7 +18,7 @@ import javax.ws.rs.core.MediaType;
  * Implementing classes must not put any JAX-RS annotation on the overridden methods. Doing so will cause all
  * method annotations in this interface to be ignored by the JAX-RS container (see section 3.6 of JSR-339).
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public interface HostApi {
     /**

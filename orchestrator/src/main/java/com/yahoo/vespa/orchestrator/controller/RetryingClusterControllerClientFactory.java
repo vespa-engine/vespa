@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class RetryingClusterControllerClientFactory implements ClusterControllerClientFactory {
     // TODO: Figure this port out dynamically.

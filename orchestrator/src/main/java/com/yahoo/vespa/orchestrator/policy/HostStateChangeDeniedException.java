@@ -6,7 +6,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class HostStateChangeDeniedException extends OrchestrationException {
     private final String constraintName;

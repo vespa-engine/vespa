@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class AccessLogUtil {
     public static String getHttpMethod(final HttpRequest httpRequest) {

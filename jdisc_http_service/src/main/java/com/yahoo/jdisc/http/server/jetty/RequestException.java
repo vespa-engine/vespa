@@ -5,7 +5,7 @@ package com.yahoo.jdisc.http.server.jetty;
  * This exception may be thrown from a request handler to fail a request with a given response code and message.
  * It is given some special treatment in {@link ServletResponseController}.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 class RequestException extends RuntimeException {
 

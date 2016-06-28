@@ -22,7 +22,7 @@ import java.util.Optional;
  *
  * Does not otherwise interfere with the request processing of the delegate request handler.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  * $Id$
  */
 public class AccessLoggingRequestHandler extends AbstractRequestHandler {

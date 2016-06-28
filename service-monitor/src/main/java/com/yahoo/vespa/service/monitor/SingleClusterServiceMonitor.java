@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  *
  * It is quite noisy and not useful for anything but testing.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class SingleClusterServiceMonitor extends AbstractComponent {
     private static final Logger logger = Logger.getLogger(SingleClusterServiceMonitor.class.getName());

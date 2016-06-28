@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Various utilities for interacting with node-admin's environment.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class Environment {
     private Environment() {} // Prevents instantiation.

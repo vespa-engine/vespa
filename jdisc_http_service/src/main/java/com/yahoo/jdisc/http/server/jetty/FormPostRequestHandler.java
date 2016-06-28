@@ -34,7 +34,7 @@ import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
  * The wrapper defers invocation of the "real" request handler until it has read the request content (body),
  * parsed the form parameters and merged them into the request's parameters.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  * $Id$
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel {
