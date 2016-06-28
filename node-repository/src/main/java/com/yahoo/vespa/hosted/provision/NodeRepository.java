@@ -182,7 +182,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** 
      * Deallocate a node which is in the failed or parked state. 
-     * Use this to recycle failed nodes which have been repaired or put on hold. 
+     * Use this to recycle failed nodes which have been repaired or put on hold.
+     *
+     * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node deallocate(String hostname) {
         Optional<Node> nodeToDeallocate = getNode(Node.State.failed, hostname);
@@ -190,6 +192,10 @@ public class NodeRepository extends AbstractComponent {
             nodeToDeallocate = getNode(Node.State.parked, hostname);
         if ( ! nodeToDeallocate.isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
+        if (nodeToDeallocate.get().status().hardwareFailure()) {
+            throw new IllegalArgumentException(String.format("Could not deallocate %s: Hardware failure flag is set",
+                    hostname));
+        }
         return deallocate(Collections.singletonList(nodeToDeallocate.get())).get(0);
     }
 
