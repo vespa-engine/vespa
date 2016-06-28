@@ -94,7 +94,7 @@ public class NodeRepository extends AbstractComponent {
      * Finds and returns the nodes of the given type in any of the given states.
      *
      * @param type the node type to return
-     * @param inState the states to return nodes from. If no states are given, all nodes of the given type is returned
+     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(Node.Type type, Node.State ... inState) {
