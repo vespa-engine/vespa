@@ -6,8 +6,6 @@ import static org.junit.Assert.*;
 
 import java.io.StringReader;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,11 +19,10 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.Dispatch;
-import com.yahoo.vespa.model.test.ConfigModelsTester;
+import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.StorageNode;
@@ -134,7 +131,7 @@ public class ModelProvisioningTest {
                 "     <nodes count='2'/>" +
                 "   </content>" +
                 "</services>";
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         int numberOfHosts = 2;
         tester.addHosts(numberOfHosts);
         int numberOfContentNodes = 2;
@@ -191,7 +188,7 @@ public class ModelProvisioningTest {
                         "</services>";
         
         int numberOfHosts = 6;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -248,7 +245,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 64;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -354,7 +351,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 18;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -410,7 +407,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -450,7 +447,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "foo10", "foo13", "foo16");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -477,7 +474,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "foo0");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -502,7 +499,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "foo3", "foo4");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -531,7 +528,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 13;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "foo0", "foo10", "foo11");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -563,7 +560,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 2;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -592,7 +589,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 23;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -627,7 +624,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 6; // We only have 6 content nodes -> 3 groups with redundancy 2 in each
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -679,7 +676,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 4;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -722,7 +719,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1; // We only have 1 content node -> 1 groups with redundancy 1
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -763,7 +760,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
@@ -811,7 +808,7 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int totalHosts = 23;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts("logserver-flavor", 1);
         tester.addHosts("slobrok-flavor", 2);
         tester.addHosts("container-flavor", 4);
@@ -832,7 +829,7 @@ public class ModelProvisioningTest {
                         "  <nodes count='3'/>" +
                         "</jdisc>";
         int numberOfHosts = 3;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
@@ -860,7 +857,7 @@ public class ModelProvisioningTest {
                         "</jdisc>" +
                         "</services>";
         int numberOfHosts = 1;
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
@@ -876,7 +873,7 @@ public class ModelProvisioningTest {
                 "    <server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "' />" +
                 "  </http>" +
                 "</jdisc>";
-        ConfigModelsTester tester = new ConfigModelsTester();
+        VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
         assertThat(model.getHosts().size(), is(1));
@@ -1019,7 +1016,7 @@ public class ModelProvisioningTest {
         int numberOfHosts = 8;
 
         {
-            ConfigModelsTester tester = new ConfigModelsTester();
+            VespaModelTester tester = new VespaModelTester();
             tester.addHosts(numberOfHosts);
             // Nodes used will be foo0, foo1, .. and so on.
             VespaModel model = tester.createModel(services, true);
@@ -1035,7 +1032,7 @@ public class ModelProvisioningTest {
         }
 
         {
-            ConfigModelsTester tester = new ConfigModelsTester();
+            VespaModelTester tester = new VespaModelTester();
             tester.addHosts(numberOfHosts + 1);
             // Start numbering nodes with index 1 and retire first node
             // Nodes used will be foo1, foo2, .. and so on. Containers will start with index 1, not 0 as they are in the test above

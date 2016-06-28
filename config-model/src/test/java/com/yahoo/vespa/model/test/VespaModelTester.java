@@ -21,7 +21,7 @@ import java.util.Map;
  * 
  * @author bratseth
  */
-public class ConfigModelsTester {
+public class VespaModelTester {
 
     private Map<String, Collection<Host>> hosts = new HashMap<>();
 
