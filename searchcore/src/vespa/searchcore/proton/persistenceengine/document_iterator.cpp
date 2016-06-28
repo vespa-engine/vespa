@@ -104,7 +104,7 @@ DocumentIterator::iterate(size_t maxBytes)
         for (const IDocumentRetriever::SP & source : _sources) {
             fetchCompleteSource(*source, _list);
         }
-        _fetchData = true;
+        _fetchedData = true;
     }
     if ( _ignoreMaxBytes ) {
         return IterateResult(std::move(_list), true);
