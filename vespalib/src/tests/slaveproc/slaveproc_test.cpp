@@ -30,7 +30,7 @@ TEST("simple run, strip single-line trailing newline") {
 
 TEST("simple run, don't strip multi-line output") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("echo -e \"foo\\n\"", out));
+    EXPECT_TRUE(SlaveProc::run("perl -e 'print \"foo\\n\\n\"'", out));
     EXPECT_EQUAL(out, "foo\n\n");
 }
 
