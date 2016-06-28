@@ -147,7 +147,9 @@ public class NodeStateTest {
                 initialContainerNodeSpec.minMainMemoryAvailableGb,
                 initialContainerNodeSpec.minDiskAvailableGb);
 
-        Thread.sleep(1000);
+        while (!initialDockerRequests.equals(DockerMock.getRequests())) {
+            Thread.sleep(10);
+        }
         assertThat(initialDockerRequests, is(DockerMock.getRequests()));
 
 
