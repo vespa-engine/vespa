@@ -70,44 +70,13 @@ def generate_mac_address(base_host_name, ip_address):
     mac_address = ':'.join('%02x' % n for n in mac_address_bytes)
     return mac_address
 
-
-flag_local_mode = "--local"
-local_mode = flag_local_mode in sys.argv
-if local_mode:
-    sys.argv.remove(flag_local_mode)
-
-flag_vm_mode = "--vm"
-vm_mode = flag_vm_mode in sys.argv
-if vm_mode:
-    sys.argv.remove(flag_vm_mode)
-
-if local_mode and vm_mode:
-    raise RuntimeError("Cannot specify both --local and --vm")
-
-if len(sys.argv) != 3:
-    raise RuntimeError("Usage: %s <container-pid> <ip>" % sys.argv[0])
-
-container_pid_arg = sys.argv[1]
-container_ip_arg = sys.argv[2]
-
-host_ns_name = "docker-host"
-try:
-    container_pid = int(container_pid_arg)
-except ValueError:
-    raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
-
-container_net_ns_path = net_namespace_path(container_pid)
-if not os.path.isfile(container_net_ns_path):
-    raise RuntimeError("No such net namespace %s" % container_net_ns_path )
-
-container_ip = ipaddress.ip_address(unicode(container_ip_arg))
-
-create_directory_ignore_exists("/var/run/netns", 0766)
-create_symlink_ignore_exists(net_namespace_path(1), "/var/run/netns/%s" % host_ns_name)
-create_symlink_ignore_exists(container_net_ns_path,  "/var/run/netns/%d" % container_pid)
-
-host_ns = NetNS(host_ns_name)
-container_ns = NetNS(str(container_pid))
+def get_net_namespace_for_pid(pid):
+    net_ns_path = net_namespace_path(pid)
+    if not os.path.isfile(net_ns_path):
+        raise RuntimeError("No such net namespace %s" % net_ns_path )
+    create_directory_ignore_exists("/var/run/netns", 0766)
+    create_symlink_ignore_exists(net_ns_path,  "/var/run/netns/%d" % pid)
+    return NetNS(str(pid))
 
 # ipv4 address format: {
 #     'index': 3,
@@ -141,54 +110,35 @@ container_ns = NetNS(str(container_pid))
 #     'scope': 0,
 #     'event': 'RTM_NEWADDR'
 # }
-# Note: This only fetches ipv4 addresses
-host_ips = host_ns.get_addr(family=AF_INET)
+def ip_with_most_specific_network_for_address(address, ipv4_ips):
+    host_ips_with_network_matching_address = [host_ip for host_ip in ipv4_ips if address in network(host_ip)]
 
-host_ips_with_network_matching_container_ip = [host_ip for host_ip in host_ips if container_ip in network(host_ip)]
+    host_ip_best_match_for_address = None
+    for host_ip in host_ips_with_network_matching_address:
+        if not host_ip_best_match_for_address:
+            host_ip_best_match_for_address = host_ip
+        elif host_ip['prefixlen'] < host_ip_best_match_for_address['prefixlen']:
+            host_ip_best_match_for_address = host_ip
 
-host_ip_best_match_for_container = None
-for host_ip in host_ips_with_network_matching_container_ip:
-    if not host_ip_best_match_for_container:
-        host_ip_best_match_for_container = host_ip
-    elif host_ip['prefixlen'] < host_ip_best_match_for_container['prefixlen']:
-        host_ip_best_match_for_container = host_ip
-
-if not host_ip_best_match_for_container:
-    raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (container_ip, ', '.join([str(network(host_ip)) for host_ip in host_ips])))
-
-host_device_index_for_container = host_ip_best_match_for_container['index']
-container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
+    if not host_ip_best_match_for_address:
+        raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(host_ip)) for host_ip in ipv4_ips])))
+    return host_ip_best_match_for_address
 
 ipr = IPRoute()
 
+def delete_interface_by_name(interface_name):
+    for interface_index in ipr.link_lookup(ifname=interface_name):
+        ipr.link('delete', index=interface_index)
 
-# Create new interface for the container.
-
-# The interface to the vespa network are all named "vespa". However, the
-# container interfaces are prepared in the host network namespace, and so it
-# needs a temporary name to avoid name-clash.
-temporary_host_interface_name = "vespa-tmp-" + container_pid_arg
-assert len(temporary_host_interface_name) <= 15 # linux requirement
-
-container_interface_name = "vespa"
-assert len(container_interface_name) <= 15 # linux requirement
-
-for interface_index in ipr.link_lookup(ifname=temporary_host_interface_name):
-    ipr.link('delete', index=interface_index)
-
-if not container_ns.link_lookup(ifname=container_interface_name):
-
+def create_interface_in_namespace(network_namespace, ip_address_textual, interface_name, link_device_index):
     mac_address = generate_mac_address(
-        gethostname(),
-        container_ip_arg)
+        base_host_name=gethostname(),
+        ip_address=ip_address_textual)
 
     # For traceability.
-    with open('/tmp/container_mac_address_' + container_ip_arg, 'w') as f:
+    with open('/tmp/container_mac_address_' + ip_address_textual, 'w') as f:
         f.write(mac_address)
 
-    # Must be created in the host_ns to have the same lifetime as the host.
-    # Otherwise, it will be deleted when the node-admin container stops.
-    # (Only temporarily there, moved to the container namespace later.)
     # result = [{
     #     'header': {
     #         'pid': 240,
@@ -200,78 +150,67 @@ if not container_ns.link_lookup(ifname=container_interface_name):
     #     },
     #     'event': 'NLMSG_ERROR'
     # }]
-    #
-    # TODO: Here we're linking against the most_specific_address device. For
-    # the sake of argument, as of 2015-12-17, this device is always named
-    # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
-    # interface (typically eth0 or em1). So could we link against eth0 or em1
-    # (or whatever) instead here? What's the difference?
-    result = host_ns.link_create(
-        ifname=temporary_host_interface_name,
+    result = network_namespace.link_create(
+        ifname=interface_name,
         kind='macvlan',
-        link=host_device_index_for_container,
+        link=link_device_index,
         macvlan_mode='bridge',
         address=mac_address)
     if result[0]['header']['error']:
         raise RuntimeError("Failed creating link, result = %s" % result )
 
-    interface_index = host_ns.link_lookup(ifname=temporary_host_interface_name)[0]
+    index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
+    return index_of_created_interface
 
-    # Move interface from host namespace to container namespace, and change name from temporary name.
-    # exploit that node_admin docker container shares net namespace with host:
-    ipr.link('set', index=interface_index, net_ns_fd=str(container_pid),
-             ifname=container_interface_name)
+def index_of_interface_in_namespace(interface_name, namespace):
+    interface_index_list = namespace.link_lookup(ifname=interface_name)
+    if not interface_index_list:
+        return None
+    assert len(interface_index_list) == 1
+    return interface_index_list[0]
 
+def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest_interface_name):
+    ipr.link('set',
+             index=src_interface_index,
+             net_ns_fd=str(dest_namespace_pid),
+             ifname=dest_interface_name)
 
-# Find index of interface now in container namespace.
+    new_interface_index = index_of_interface_in_namespace(interface_name=dest_interface_name,
+                                                          namespace=dest_namespace)
+    if not new_interface_index:
+        raise RuntimeError("Concurrent modification to network interfaces")
+    return new_interface_index
 
-container_interface_index_list = container_ns.link_lookup(ifname=container_interface_name)
-if not container_interface_index_list:
-    raise RuntimeError("Concurrent modification to network interfaces in container")
+def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_length):
+    ip_already_configured = False
 
-assert len(container_interface_index_list) == 1
-container_interface_index = container_interface_index_list[0]
-
-
-# Set ip address on interface in container namespace.
-
-ip_already_configured = False
-
-for host_ip in container_ns.get_addr(index=container_interface_index, family = AF_INET):
-    if ipaddress.ip_address(unicode(get_attribute(host_ip, 'IFA_ADDRESS'))) == container_ip and host_ip['prefixlen'] == container_network_prefix_length:
+    for existing_ip in net_namespace.get_addr(index=interface_index, family = AF_INET):
+        existing_ip_address = get_attribute(existing_ip, 'IFA_ADDRESS')
+        existing_ip_prefixlen = existing_ip['prefixlen']
+        is_same_address = ipaddress.ip_address(unicode(existing_ip_address)) == ip_address
+        is_same_netmask = existing_ip_prefixlen == network_prefix_length
+        if is_same_address and is_same_netmask:
             ip_already_configured = True
-    else:
-        print("Deleting old ip address. %s/%s" % (get_attribute(host_ip, 'IFA_ADDRESS'), host_ip['prefixlen']))
-        print(container_ns.addr('remove',
-                          index=container_interface_index,
-                          address=get_attribute(host_ip, 'IFA_ADDRESS'),
-                          mask=host_ip['prefixlen']))
+        else:
+            print("Deleting old ip address. %s/%s" % (existing_ip_address, existing_ip_prefixlen))
+            result_of_remove = net_namespace.addr('remove',
+                                                  index=interface_index,
+                                                  address=existing_ip_address,
+                                                  mask=existing_ip_prefixlen)
+            print(result_of_remove)
 
-if not ip_already_configured:
-    try:
-        container_ns.addr('add',
-                          index=container_interface_index,
-                          address=str(container_ip),
-                          #broadcast='192.168.59.255',
-                          mask=container_network_prefix_length)
-    except NetlinkError as e:
-        if e.code == 17: # File exists, i.e. address is already added
-            pass
+    if not ip_already_configured:
+        try:
+            net_namespace.addr('add',
+                               index=interface_index,
+                               address=str(ip_address),
+                               # broadcast='192.168.59.255',
+                               mask=network_prefix_length)
+        except NetlinkError as e:
+            if e.code == 17:  # File exists, i.e. address is already added
+                pass
 
-
-# Activate container interface.
-
-container_ns.link('set', index=container_interface_index, state='up', name=container_interface_name)
-
-
-if local_mode:
-    pass
-elif vm_mode:
-     # Set the default route to the IP of the host vespa interface (e.g. osx)
-     container_ns.route("add", gateway=get_attribute(host_ip_best_match_for_container, 'IFA_ADDRESS'))
-else:
-    # Set up default route/gateway in container.
-
+def get_default_route(net_namespace):
     # route format: {
     #     'family': 2,
     #     'dst_len': 0,
@@ -297,15 +236,117 @@ else:
     #     'type': 1,
     #     'scope': 0
     # }
-    host_default_routes = host_ns.get_default_routes(family = AF_INET)
-    if len(host_default_routes) != 1:
-        raise RuntimeError("Couldn't find default route: " + str(host_default_routes))
-    default_route = host_default_routes[0]
+    default_routes = net_namespace.get_default_routes(family = AF_INET)
+    if len(default_routes) != 1:
+        raise RuntimeError("Couldn't find single default route: " + str(default_routes))
+    return default_routes[0]
 
-    host_default_route_device_index = get_attribute(default_route, 'RTA_OIF')
-    host_default_gateway = get_attribute(default_route, 'RTA_GATEWAY')
+
+# Parse arguments
+
+flag_local_mode = "--local"
+local_mode = flag_local_mode in sys.argv
+if local_mode:
+    sys.argv.remove(flag_local_mode)
+
+flag_vm_mode = "--vm"
+vm_mode = flag_vm_mode in sys.argv
+if vm_mode:
+    sys.argv.remove(flag_vm_mode)
+
+if local_mode and vm_mode:
+    raise RuntimeError("Cannot specify both --local and --vm")
+
+if len(sys.argv) != 3:
+    raise RuntimeError("Usage: %s <container-pid> <ip>" % sys.argv[0])
+
+container_pid_arg = sys.argv[1]
+container_ip_arg = sys.argv[2]
+
+try:
+    container_pid = int(container_pid_arg)
+except ValueError:
+    raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
+container_ip = ipaddress.ip_address(unicode(container_ip_arg))
+
+
+# Done parsing arguments, now let's get to work.
+
+host_ns = get_net_namespace_for_pid(1)
+container_ns = get_net_namespace_for_pid(container_pid)
+
+all_host_ipv4_ips = host_ns.get_addr(family=AF_INET)
+host_ip_best_match_for_container = ip_with_most_specific_network_for_address(address=container_ip,
+                                                                             ipv4_ips=all_host_ipv4_ips)
+host_device_index_for_container = host_ip_best_match_for_container['index']
+container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
+
+
+# Create new interface for the container.
+
+# The interface to the vespa network are all (in the end) named "vespa". However,
+# the container interfaces are prepared in the host network namespace, and so they
+# need temporary names to avoid name-clash.
+temporary_interface_name_while_in_host_ns = "vespa-tmp-" + container_pid_arg
+assert len(temporary_interface_name_while_in_host_ns) <= 15 # linux requirement
+
+container_interface_name = "vespa"
+assert len(container_interface_name) <= 15 # linux requirement
+
+# Clean up any leftovers from the past.
+delete_interface_by_name(temporary_interface_name_while_in_host_ns)
+
+container_interface_index = index_of_interface_in_namespace(interface_name=container_interface_name,
+                                                            namespace=container_ns)
+if not container_interface_index:
+    # Must be created in the host_ns to have the same lifetime as the host.
+    # Otherwise, it will be deleted when the node-admin container stops.
+    # (Only temporarily there, moved to the container namespace later.)
+    #
+    # TODO: Here we're linking against the device with the best matching network.
+    # For the sake of argument, as of 2015-12-17, this device is always named
+    # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
+    # interface (typically eth0 or em1). So could we link against eth0 or em1
+    # (or whatever) instead here? What's the difference?
+    temporary_interface_index = create_interface_in_namespace(network_namespace=host_ns,
+                                                              ip_address_textual=container_ip_arg,
+                                                              interface_name=temporary_interface_name_while_in_host_ns,
+                                                              link_device_index=host_device_index_for_container)
+
+    # Move interface from host namespace to container namespace, and change name from temporary name.
+    # exploit that node_admin docker container shares net namespace with host:
+    container_interface_index = move_interface(src_interface_index=temporary_interface_index,
+                                               dest_namespace=container_ns,
+                                               dest_namespace_pid=container_pid,
+                                               dest_interface_name=container_interface_name)
+
+
+# Set ip address on interface in container namespace.
+set_ip_address(net_namespace=container_ns,
+               interface_index=container_interface_index,
+               ip_address=container_ip,
+               network_prefix_length=container_network_prefix_length)
+
+
+# Activate container interface.
+
+container_ns.link('set', index=container_interface_index, state='up', name=container_interface_name)
+
+
+if local_mode:
+    pass
+elif vm_mode:
+    # Set the default route to the IP of the host vespa interface (e.g. osx)
+    # TODO: What about idempotency? This does not check for existing. Re-does work every time.
+    container_ns.route("add", gateway=get_attribute(host_ip_best_match_for_container, 'IFA_ADDRESS'))
+else:
+    # Set up default route/gateway in container.
+
+    host_default_route = get_default_route(net_namespace=host_ns)
+
+    host_default_route_device_index = get_attribute(host_default_route, 'RTA_OIF')
     if host_device_index_for_container != host_default_route_device_index:
         raise RuntimeError("Container's ip address is not on the same network as the host's default route."
                            " Could not set up default route for the container.")
-    container_gateway = host_default_gateway
-    container_ns.route("replace", gateway=container_gateway, index=container_interface_index)
+    host_default_route_gateway = get_attribute(host_default_route, 'RTA_GATEWAY')
+    container_ns.route("replace", gateway=host_default_route_gateway, index=container_interface_index)
