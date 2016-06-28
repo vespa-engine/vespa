@@ -19,9 +19,9 @@ ExecutorThreadingService::ExecutorThreadingService(uint32_t threads,
       _indexExecutor(1, stackSize, taskLimit),
       _masterService(_masterExecutor),
       _indexService(_indexExecutor),
-      _indexFieldInverter(threads),
-      _indexFieldWriter(threads),
-      _attributeFieldWriter(threads)
+      _indexFieldInverter(threads, taskLimit),
+      _indexFieldWriter(threads, taskLimit),
+      _attributeFieldWriter(threads, taskLimit)
 {
 }
 

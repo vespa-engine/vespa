@@ -23,7 +23,7 @@ class SequencedTaskExecutor : public ISequencedTaskExecutor
     std::vector<std::shared_ptr<vespalib::ThreadStackExecutorBase>> _executors;
     vespalib::hash_map<size_t, size_t> _ids;
 public:
-    SequencedTaskExecutor(uint32_t threads);
+    SequencedTaskExecutor(uint32_t threads, uint32_t tasklimit = 1000);
 
     ~SequencedTaskExecutor();
 

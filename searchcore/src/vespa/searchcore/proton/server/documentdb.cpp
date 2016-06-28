@@ -71,6 +71,7 @@ using search::makeLambdaTask;
 
 namespace proton {
 
+namespace { constexpr uint32_t indexing_thread_stack_size = 128 * 1024; }
 
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const DocumentDBConfig::SP & configSnapshot,
@@ -97,7 +98,9 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
-      _writeService(std::max(1, protonCfg.indexing.threads)),
+      _writeService(std::max(1, protonCfg.indexing.threads),
+                    indexing_thread_stack_size,
+                    protonCfg.indexing.tasklimit),
       _initializeThreads(initializeThreads),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
