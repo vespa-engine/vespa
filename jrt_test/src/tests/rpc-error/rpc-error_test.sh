@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+fail=0
 
 . ../../binref/env.sh
 
@@ -10,7 +11,10 @@ CPP_PORT=$PORT_4
 export JAVA_PORT
 export CPP_PORT
 
-$BINREF/compilejava TestErrors.java
+$BINREF/compilejava TestErrors.java || fail=1
 
-bash -e dotest.sh || (bash -e $BINREF/progctl.sh progdefs.sh stop all; false)
-bash -e $BINREF/progctl.sh progdefs.sh stop all
+bash ./dotest.sh || fail=1
+
+$BINREF/progctl.sh progdefs.sh stop all
+
+exit $fail
