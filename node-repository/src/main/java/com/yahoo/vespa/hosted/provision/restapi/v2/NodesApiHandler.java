@@ -211,16 +211,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
     // TODO: Move most of this to node repo
     public String setNodeReady(String path) {
         String hostname = lastElement(path);
-        if ( nodeRepository.getNode(Node.State.ready, hostname).isPresent())
+        if ( nodeRepository.getNode(hostname, Node.State.ready).isPresent())
             return "Nothing done; " + hostname + " is already ready";
 
-        Optional<Node> node = nodeRepository.getNode(Node.State.provisioned, hostname);
-        if ( ! node.isPresent())
-            node = nodeRepository.getNode(Node.State.dirty, hostname);
-        if ( ! node.isPresent())
-            node = nodeRepository.getNode(Node.State.failed, hostname);
-        if ( ! node.isPresent())
-            node = nodeRepository.getNode(Node.State.parked, hostname);
+        Optional<Node> node = nodeRepository.getNode(hostname, Node.State.provisioned, Node.State.dirty, Node.State.failed, Node.State.parked);
+
         if ( ! node.isPresent())
             throw new IllegalArgumentException("Could not set " + hostname + " ready: Not registered as provisioned, dirty, failed or parked");
 

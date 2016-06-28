@@ -97,7 +97,7 @@ public class NodeFailer extends Maintainer {
         for (ApplicationInstance<ServiceMonitorStatus> application : serviceMonitor.queryStatusOfAllApplicationInstances().values()) {
             for (ServiceCluster<ServiceMonitorStatus> cluster : application.serviceClusters()) {
                 for (ServiceInstance<ServiceMonitorStatus> service : cluster.serviceInstances()) {
-                    Optional<Node> node = nodeRepository().getNode(Node.State.active, service.hostName().s());
+                    Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
                     if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo
 
                     if (service.serviceStatus().equals(ServiceMonitorStatus.DOWN))
@@ -120,7 +120,7 @@ public class NodeFailer extends Maintainer {
         if (node.history().event(History.Event.Type.down).isPresent()) return node; // already down: Don't change down timestamp
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(Node.State.active, node.hostname()).get(); // re-get inside lock
+            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
             return nodeRepository().write(node.setDown(clock.instant()));
         }
     }
@@ -129,7 +129,7 @@ public class NodeFailer extends Maintainer {
         if ( ! node.history().event(History.Event.Type.down).isPresent()) return;
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
-            node = nodeRepository().getNode(Node.State.active, node.hostname()).get(); // re-get inside lock
+            node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
             nodeRepository().write(node.setUp());
         }
     }

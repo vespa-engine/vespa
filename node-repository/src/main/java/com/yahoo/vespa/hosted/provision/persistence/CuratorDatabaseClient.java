@@ -187,7 +187,7 @@ public class CuratorDatabaseClient {
             states = Node.State.values();
         for (Node.State state : states) {
             for (String hostname : curatorDatabase.getChildren(toPath(state))) {
-                final Optional<Node> node = getNode(state, hostname);
+                Optional<Node> node = getNode(hostname, state);
                 if (node.isPresent()) nodes.add(node.get()); // node might disappear between getChildren and getNode
             }
         }
@@ -202,8 +202,15 @@ public class CuratorDatabaseClient {
     }
 
     /** Returns a particular node, or empty if there is no such node in this state */
-    public Optional<Node> getNode(Node.State state, String hostname) {
-        return curatorDatabase.getData(toPath(state, hostname)).map((data) -> nodeSerializer.fromJson(state, data));
+    public Optional<Node> getNode(String hostname, Node.State ... states) {
+        if (states.length == 0)
+            states = Node.State.values();
+        for (Node.State state : states) {
+            Optional<byte[]> nodeData = curatorDatabase.getData(toPath(state, hostname));
+            if (nodeData.isPresent())
+                return nodeData.map((data) -> nodeSerializer.fromJson(state, data));
+        }
+        return Optional.empty();
     }
 
     private Path toPath(Node.State nodeState) { return root.append(toDir(nodeState)); }
