@@ -458,7 +458,7 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
+        assertEquals(5, clusterControllers.getContainers().size());
     }
 
     public void testClusterControllersAreNotPlacedOnRetiredNodes() {
@@ -619,17 +619,63 @@ public class ModelProvisioningTest {
                 "  </content>" +
                 "</services>";
 
-        int numberOfHosts = 5;
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
+        tester.addHosts(5);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
+        assertEquals(3, clusterControllers.getContainers().size());
     }
 
+    @Test
+    public void test2ContentNodesOn2ClustersWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <container version='1.0' id='container'>" +
+                "     <nodes count='3' flavor='container-node'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content1'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' flavor='content1-node'/>" +
+                "  </content>" +
+                "  <content version='1.0' id='content2'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' flavor='content2-node'/>" +
+                "  </content>" +
+                "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        // use different flavors to make the test clearer
+        tester.addHosts("container-node", 3);
+        tester.addHosts("content1-node",  2);
+        tester.addHosts("content2-node",  2);
+        VespaModel model = tester.createModel(services, true);
+
+        ContentCluster cluster1 = model.getContentClusters().get("content1");
+        ContainerCluster clusterControllers1 = cluster1.getClusterControllers();
+        assertEquals(3, clusterControllers1.getContainers().size());
+        assertEquals("content1-node0",  clusterControllers1.getContainers().get(0).getHostName());
+        assertEquals("content1-node1",  clusterControllers1.getContainers().get(1).getHostName());
+        assertEquals("container-node0", clusterControllers1.getContainers().get(2).getHostName());
+
+        ContentCluster cluster2 = model.getContentClusters().get("content2");
+        ContainerCluster clusterControllers2 = cluster2.getClusterControllers();
+        assertEquals(3, clusterControllers2.getContainers().size());
+        assertEquals("content2-node0",  clusterControllers2.getContainers().get(0).getHostName());
+        assertEquals("content2-node1",  clusterControllers2.getContainers().get(1).getHostName());
+        assertEquals("We do not pick the container used to supplement another cluster",
+                     "container-node1", clusterControllers2.getContainers().get(2).getHostName());
+    }
+
+    @Test
     public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
