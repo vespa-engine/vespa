@@ -2,13 +2,13 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.NodeAgent;
-import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
+
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeMechanisms;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
@@ -28,7 +28,7 @@ public class MultiDockerTest {
     private NodeRepoMock nodeRepositoryMock;
     private DockerMock dockerMock;
     private NodeAdmin nodeAdmin;
-    private NodeAdminStateUpdater updater;
+    private NodeAdmin.NodeAdminStateUpdater updater;
 
     @Before
     public void before() throws InterruptedException {
@@ -47,9 +47,9 @@ public class MultiDockerTest {
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
-        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
-        updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeMechanisms(dockerMock));
+        nodeAdmin = new NodeAdmin.NodeAdminImpl(dockerMock, nodeAgentFactory);
+        updater = new NodeAdmin.NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
 
     @After

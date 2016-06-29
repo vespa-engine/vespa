@@ -3,13 +3,12 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.NodeAgent;
-import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeMechanisms;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
@@ -28,7 +27,7 @@ public class DockerFailTest {
     private NodeRepoMock nodeRepositoryMock;
     private DockerMock dockerMock;
     private ContainerNodeSpec initialContainerNodeSpec;
-    private NodeAdminStateUpdater updater;
+    private NodeAdmin.NodeAdminStateUpdater updater;
 
     @Before
     public void before() throws InterruptedException {
@@ -47,8 +46,8 @@ public class DockerFailTest {
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeMechanisms(dockerMock));
+        NodeAdmin nodeAdmin = new NodeAdmin.NodeAdminImpl(dockerMock, nodeAgentFactory);
 
         HostName hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(
@@ -63,7 +62,7 @@ public class DockerFailTest {
                 Optional.of(1d));
         NodeRepoMock.addContainerNodeSpec(initialContainerNodeSpec);
 
-        updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
+        updater = new NodeAdmin.NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (nodeAdmin.getListOfHosts().size() == 0) {

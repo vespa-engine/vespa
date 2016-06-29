@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -47,7 +50,7 @@ public class NodeAdminImplTest {
         final Docker docker = mock(Docker.class);
         final Function<HostName, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
+        final NodeAdmin.NodeAdminImpl nodeAdmin = new NodeAdmin.NodeAdminImpl(docker, nodeAgentFactory);
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
@@ -76,30 +79,30 @@ public class NodeAdminImplTest {
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent1).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
         inOrder.verify(nodeAgent1, never()).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent1, never()).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
         verify(nodeAgent1).stop();
 
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent2).start();
-        inOrder.verify(nodeAgent2).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
         inOrder.verify(nodeAgent2, never()).stop();
 
         nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
         inOrder.verify(nodeAgent2, never()).start();
-        inOrder.verify(nodeAgent2, never()).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);
@@ -116,7 +119,7 @@ public class NodeAdminImplTest {
         final Set<DockerImage> currentlyUnusedImages = Collections.emptySet();
         final List<ContainerNodeSpec> pendingContainers = Collections.emptyList();
 
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
+        final Set<DockerImage> deletableImages = NodeAdmin.NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
 
         assertThat(deletableImages, is(Collections.emptySet()));
     }
@@ -127,7 +130,7 @@ public class NodeAdminImplTest {
                 .collect(Collectors.toSet());
         final List<ContainerNodeSpec> pendingContainers = Collections.emptyList();
 
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
+        final Set<DockerImage> deletableImages = NodeAdmin.NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
 
         final Set<DockerImage> expectedDeletableImages = Stream.of(IMAGE_1, IMAGE_2, IMAGE_3)
                 .collect(Collectors.toSet());
@@ -142,7 +145,7 @@ public class NodeAdminImplTest {
                 .map(NodeAdminImplTest::newNodeSpec)
                 .collect(Collectors.toList());
 
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
+        final Set<DockerImage> deletableImages = NodeAdmin.NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
 
         final Set<DockerImage> expectedDeletableImages = Stream.of(IMAGE_1, IMAGE_3)
                 .collect(Collectors.toSet());
@@ -168,7 +171,7 @@ public class NodeAdminImplTest {
                 newPair(null, 21)));
 
         assertThat(
-                NodeAdminImpl.fullOuterJoin(
+                NodeAdmin.NodeAdminImpl.fullOuterJoin(
                         strings.stream(), string -> string,
                         integers.stream(), String::valueOf)
                         .collect(Collectors.toSet()),

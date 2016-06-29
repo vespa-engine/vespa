@@ -2,13 +2,12 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.NodeAgent;
-import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeMechanisms;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
@@ -54,8 +53,8 @@ public class ResumeTest {
         DockerMock dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeMechanisms(dockerMock));
+        NodeAdmin nodeAdmin = new NodeAdmin.NodeAdminImpl(dockerMock, nodeAgentFactory);
 
         NodeRepoMock.addContainerNodeSpec(new ContainerNodeSpec(
                 new HostName("hostName"),
@@ -68,7 +67,7 @@ public class ResumeTest {
                 Optional.of(1d),
                 Optional.of(1d)));
 
-        NodeAdminStateUpdater updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
+        NodeAdmin.NodeAdminStateUpdater updater = new NodeAdmin.NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (nodeAdmin.getListOfHosts().size() == 0) {
@@ -99,15 +98,15 @@ public class ResumeTest {
         OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
 
         // At this point NodeAdmin should be fine with the suspend and it is up to Orchestrator
-        while (!updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED)
+        while (!updater.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.SUSPENDED)
                 .equals(Optional.of("Orchestrator reject suspend"))) {
             Thread.sleep(5);
         }
-        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
 
         //Make orchestrator allow suspend requests
         OrchestratorMock.setForceGroupSuspendResponse(Optional.empty());
-        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
         // Now, change data in node repo, should not propagate.
         NodeRepoMock.clearContainerNodeSpecs();
@@ -117,7 +116,7 @@ public class ResumeTest {
         assertThat(nodeAdmin.getListOfHosts().size(), is(1));
 
         // Now resume
-        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED), is(Optional.empty()));
+        assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.RESUMED), is(Optional.empty()));
 
         // Now node repo state should propagate to node admin again
         while (nodeAdmin.getListOfHosts().size() != 0) {
