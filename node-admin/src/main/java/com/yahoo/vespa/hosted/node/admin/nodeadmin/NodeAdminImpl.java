@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -58,7 +60,9 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public boolean freezeAndCheckIfAllFrozen() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.FREEZE);
+            // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
+            // worth it (it could block the rest call for some time and might have implications).
+            nodeAgent.execute(NodeAgent.Command.SET_FREEZE, false /* blocking*/);
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             if (nodeAgent.getState() != NodeAgent.State.FROZEN) {
@@ -70,7 +74,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public void unfreeze() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.UNFREEZE);
+            nodeAgent.execute(NodeAgent.Command.UNFREEZE, false);
         }
     }
 
@@ -182,6 +186,6 @@ public class NodeAdminImpl implements NodeAdmin {
             nodeAgents.put(nodeSpec.hostname, agent);
             agent.start();
         }
-        agent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        agent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
     }
 }
