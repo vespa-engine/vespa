@@ -319,8 +319,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
-            if (hosts.size() < count) // supply with containers
-                hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
+            //if (hosts.size() < count) // supply with containers TODO: Reactivate
+            //    hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;

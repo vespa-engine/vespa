@@ -493,7 +493,7 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(5, clusterControllers.getContainers().size());
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
     }
 
     @Test
@@ -657,7 +657,7 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(3, clusterControllers.getContainers().size());
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
     }
 
     @Test
