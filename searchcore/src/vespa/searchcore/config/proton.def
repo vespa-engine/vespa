@@ -56,13 +56,15 @@ flush.idleinterval double default=10.0 restart
 ## Which flushstrategy to use.
 flush.strategy enum {SIMPLE, MEMORY} default=MEMORY restart
 
-## Total number of bytes allowed before forcing flush.
+## The total maximum memory (in bytes) used by FLUSH components before running flush.
+## A FLUSH component will free memory when flushed (e.g. memory index).
 flush.memory.maxmemory long default=4294967296
 
 ## Maximum total disk bloat factor before forcing flush.
 flush.memory.diskbloatfactor double default=0.2
 
-## Max disk usage (in bytes) for all transaction logs before forcing flush.
+## Max disk usage (in bytes) for all transaction logs before running flush.
+## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
 flush.memory.maxtlssize long default=21474836480
 
 ## Number of bytes allowed per component before forcing memory prioritization.
@@ -77,6 +79,16 @@ flush.memory.maxage.time double default=86400.0
 
 ## Max diff in serial number allowed before that takes precedence.
 flush.memory.maxage.serial long default=1000000
+
+## When resource limit for memory is reached we choose this conservative mode for the flush strategy.
+## The total maximum memory (in bytes) used by FLUSH components before running flush.
+## A FLUSH component will free memory when flushed (e.g. memory index).
+flush.memory.conservative.maxmemory long default=2147483648
+
+## When resource limit for disk is reached we choose this conservative mode for the flush strategy.
+## The max disk usage (int bytes) for all transaction logs before running flush.
+## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
+flush.memory.conservative.maxtlssize long default=10737418240
 
 ## The cost of doing replay when replaying the transaction log.
 ##

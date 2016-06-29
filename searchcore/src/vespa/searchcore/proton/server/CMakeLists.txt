@@ -60,6 +60,7 @@ vespa_add_library(searchcore_server STATIC
     matchers.cpp
     matchhandlerproxy.cpp
     matchview.cpp
+    memory_flush_config_updater.cpp
     memoryflush.cpp
     minimal_document_retriever.cpp
     ooscli.cpp
