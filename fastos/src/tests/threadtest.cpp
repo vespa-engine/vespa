@@ -39,7 +39,6 @@ public:
    double *timebuf;
    double average;
    int result;
-   FastOS_Thread::Priority threadPri;
    FastOS_ThreadId _threadId;
    Job *otherjob;
    int bouncewakeupcnt;
@@ -56,7 +55,6 @@ public:
        timebuf(NULL),
        average(0.0),
        result(-1),
-       threadPri(FastOS_Thread::PRIORITY_NORMAL),
        _threadId(),
        otherjob(NULL),
        bouncewakeupcnt(0),
@@ -770,120 +768,6 @@ public:
       PrintSeparator();
    }
 
-   void PriorityTest (int sign)
-   {
-      if(sign == 1)
-         TestHeader("Priority Test (positive)");
-      else
-         TestHeader("Priority Test (negative)");
-
-      const int numThreads = 5;
-
-      FastOS_ThreadPool pool(128*1024);
-      Job jobs[numThreads];
-
-      int i;
-      FastOS_BoolCond boolcondition;
-      double *timebuf = new double[numThreads * PRI_TIME_COUNT];
-
-      boolcondition.SetBusy();
-
-      for(i=0; i<numThreads; i++)
-      {
-         jobs[i].code = PRIORITY_TEST;
-         jobs[i].boolcondition = &boolcondition;
-         jobs[i].timebuf = &timebuf[i*PRI_TIME_COUNT];
-         jobs[i].threadPri = static_cast<FastOS_Thread::Priority>((-2+i)*sign);
-         jobs[i].average = 0;
-         jobs[i].ownThread = pool.NewThread(this,
-                 static_cast<void *>(&jobs[i]));
-
-         bool rc=(jobs[i].ownThread != NULL);
-         Progress(rc, "CreatingThread %d", i+1);
-      }
-
-      // Start testing
-      Progress(true, "Start testing...");
-      boolcondition.ClearBusyBroadcast();
-
-      Progress(true, "Waiting for threads to finish using pool.Close()...");
-      pool.Close();
-      Progress(true, "Pool closed.");
-
-      double firstTime, lastTime, totalTime;
-      firstTime = lastTime = timebuf[0];
-
-      for(i=0; i<(numThreads * PRI_TIME_COUNT); i++)
-      {
-         double timevalue = timebuf[i];
-
-         if(timevalue < firstTime)
-            firstTime = timevalue;
-
-         if(timevalue > lastTime)
-            lastTime = timevalue;
-
-         int job = (i/PRI_TIME_COUNT);
-         jobs[job].average += timevalue;
-      }
-
-      totalTime = (lastTime - firstTime);
-
-      for(i=0; i<numThreads; i++)
-      {
-         const int slen=45;
-
-         char timestr[slen+1];
-         memset(timestr, ' ', slen);
-         timestr[slen] = '\0';
-
-         double *p = &timebuf[i*PRI_TIME_COUNT];
-
-         for(int j=0; j<PRI_TIME_COUNT; j++)
-         {
-            int pos = static_cast<int>
-                      (((*p++) - firstTime) * (slen-1) / totalTime);
-            timestr[pos] = '*';
-         }
-
-         Progress(true, "Pri %2d: %s", jobs[i].threadPri, timestr);
-      }
-
-      char averagestr[80];
-
-      averagestr[0] = '\0';
-
-      for(i=0; i<numThreads; i++)
-      {
-         jobs[i].average /= PRI_TIME_COUNT;
-
-         // convert average to percent
-         jobs[i].average = (jobs[i].average - firstTime) / totalTime;
-
-         sprintf(&averagestr[strlen(averagestr)], "%.3f ", jobs[i].average);
-      }
-      Progress(true, "Percentages: %s", averagestr);
-
-      bool okExecution=true;
-
-      for(i=0; i<(numThreads-1); i++)
-      {
-         double val1 = jobs[i].average * sign;
-         double val2 = jobs[i+1].average * sign;
-
-         if(val1 < val2)
-         {
-            okExecution = false;
-            break;
-         }
-      }
-
-      Progress(okExecution, "Checking order of execution");
-      delete [] timebuf;
-
-      PrintSeparator();
-   }
-
    void ThreadIdTest ()
    {
       const int numThreads = 5;
@@ -1235,8 +1119,6 @@ int ThreadTest::Main ()
    TryLockTest();
    TimedWaitTest();
    ThreadIdTest();
-   PriorityTest(1);
-   PriorityTest(-1);
    SignalTest();
    BroadcastTest();
    CreateSingleThread();
@@ -1285,27 +1167,6 @@ void ThreadTest::Run (FastOS_ThreadInterface *thread, void *arg)
 
    switch(job->code)
    {
-      case PRIORITY_TEST:
-      {
-         thread->SetPriority(job->threadPri);
-
-         job->boolcondition->WaitBusy();
-         double *p = job->timebuf;
-         for(int i=0; i<PRI_TIME_COUNT; i++)
-         {
-            for(int j=0; j<8192; j++)
-            {
-               busyCnt = busyCnt*10;
-            }
-
-            FastOS_Time now;
-            now.SetNow();
-
-            *p++ = now.MilliSecs();
-         }
-         break;
-      }
-
       case SILENTNOP:
       {
          job->result = 1;

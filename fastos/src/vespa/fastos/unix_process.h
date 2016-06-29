@@ -227,7 +227,6 @@ public:
         return true;
     }
 
-    bool SetPriority (Priority pri);
     void SetRunDir(const char *runDir);
     void SetStdoutRedirName(const char *stdoutRedirName);
     void SetStderrRedirName(const char *stderrRedirName);

@@ -62,47 +62,12 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
 
     pthread_attr_destroy(&attr);
 
-    if (rc && pthread_getschedparam(_handle, &_normal_policy,
-                                    &_normal_schedparam) == 0)
-    {
-        _schedparams_ok = true;
-    }
-    _schedparams_changed = false;
-
     return rc;
 }
 
 void FastOS_UNIX_Thread::PreEntry ()
 {
-    if (_schedparams_changed) {
-        _schedparams_changed = false;
-        SetPriority(FastOS_Thread::PRIORITY_NORMAL);
-    }
 }
-
-bool FastOS_UNIX_Thread::SetPriority (const Priority priority)
-{
-    bool rc=false;
-
-    if(_schedparams_ok)
-    {
-        struct sched_param schedparam;
-
-        schedparam = _normal_schedparam;
-        schedparam.sched_priority = (priority +
-                                     _normal_schedparam.sched_priority);
-
-        if (pthread_setschedparam(_handle, _normal_policy,
-                                  &schedparam) == 0)
-        {
-            rc = true;
-            _schedparams_changed = true;
-        }
-    }
-
-    return rc;
-}
-
 
 FastOS_UNIX_Thread::~FastOS_UNIX_Thread(void)
 {

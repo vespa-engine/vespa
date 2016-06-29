@@ -350,26 +350,6 @@ public:
     static bool Sleep(int ms);
 
     /**
-     * Thread priorities. The range is -2..2. A higher number
-     * indicates higher priority.
-     */
-    enum Priority
-    {
-        PRIORITY_LOWEST          = -2,
-        PRIORITY_BELOW_NORMAL    = -1,
-        PRIORITY_NORMAL          =  0,
-        PRIORITY_ABOVE_NORMAL    =  1,
-        PRIORITY_HIGHEST         =  2
-    };
-
-    /**
-     * Set thread priority.
-     * @param priority  New thread priority.
-     * @return   Boolean success / failure
-     */
-    virtual bool SetPriority (const Priority priority) = 0;
-
-    /**
      * Instruct a thread to exit. This could be used in conjunction with
      * @ref GetBreakFlag() in a worker thread, to have cooperative thread
      * termination. When a threadpool closes, all threads in the pool will

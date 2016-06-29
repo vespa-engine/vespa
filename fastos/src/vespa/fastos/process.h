@@ -100,18 +100,6 @@ public:
     };
 
     /**
-     * Process priorities.
-     */
-    enum Priority
-    {
-        PRIORITY_LOWEST          = -2,
-        PRIORITY_BELOW_NORMAL    = -1,
-        PRIORITY_NORMAL          =  0,
-        PRIORITY_ABOVE_NORMAL    =  1,
-        PRIORITY_HIGHEST         =  2
-    };
-
-    /**
      * Constructor. Does not start the process, use @ref Create or
      * @ref CreateWithShell to actually start the process.
      * @param  cmdLine           Command line
@@ -294,15 +282,6 @@ public:
     {
         return _cmdLine;
     }
-
-    /**
-     * Set process priority. Higher priorities than normal might
-     * require adminstrator privileges. PRIORITY_BELOW_NORMAL and
-     * PRIORITY_ABOVE_NORMAL are on some OSes mapped to
-     * PRIORITY_LOWEST and PRIORITY_HIGHEST, respectively.
-     * @return                   Boolean success / failure
-     */
-    virtual bool SetPriority (Priority priority) = 0;
 };
 
 #include <vespa/fastos/unix_process.h>

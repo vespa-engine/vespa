@@ -1979,22 +1979,3 @@ bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
     process->_app->ProcessUnlock();
     return rc;
 }
-
-bool FastOS_UNIX_Process::SetPriority (Priority priority)
-{
-    int newPriority;
-
-    switch (priority)
-    {
-    case PRIORITY_LOWEST:        newPriority = 20;    break;
-    case PRIORITY_BELOW_NORMAL:  newPriority = 10;    break;
-    case PRIORITY_NORMAL:        newPriority = 0;    break;
-    case PRIORITY_ABOVE_NORMAL:  newPriority = -10;   break;
-    case PRIORITY_HIGHEST:       newPriority = -20;   break;
-    default:
-        newPriority = 0;
-    }
-
-    return (setpriority(PRIO_PROCESS, _pid, newPriority) == 0);
-
-}
