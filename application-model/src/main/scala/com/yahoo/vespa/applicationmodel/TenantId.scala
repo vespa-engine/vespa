@@ -4,7 +4,7 @@ package com.yahoo.vespa.applicationmodel
 import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
  // TODO: Remove this and use TenantName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 case class TenantId(s: String) {

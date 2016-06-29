@@ -2,6 +2,6 @@
 package com.yahoo.vespa.applicationmodel
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 case class ServiceInstance[S](configId: ConfigId, hostName: HostName, serviceStatus: S)
