@@ -499,6 +499,26 @@ TEST("require that normal documents can be iterated") {
     TEST_DO(checkEntry(res, 2, Document(*DataType::DOCUMENT, DocumentId("doc:foo:3")), Timestamp(4)));
 }
 
+void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
+    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
+    IterateResult res = itr.iterate(largeNum);
+    EXPECT_TRUE(res.isCompleted());
+    EXPECT_EQUAL(1u, res.getEntries().size());
+    res = itr.iterate(largeNum);
+    EXPECT_TRUE(res.isCompleted());
+    EXPECT_EQUAL(0u, res.getEntries().size());
+}
+
+TEST("require that iterator stops at the end, and does not auto rewind") {
+    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
+    TEST_DO(verifyIterateIgnoringStopSignal(itr));
+}
+
+TEST("require that iterator ignoring maxbytes stops at the end, and does not auto rewind") {
+    DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, true);
+    TEST_DO(verifyIterateIgnoringStopSignal(itr));
+}
+
 void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
     IDocumentRetriever::SP retriever = doc("doc:foo:1", Timestamp(2), bucket(5));
     IDocumentRetriever::SP commitAndWaitRetriever(new CommitAndWaitDocumentRetriever(retriever, committer));

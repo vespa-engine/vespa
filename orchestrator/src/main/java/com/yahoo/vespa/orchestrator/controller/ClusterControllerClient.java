@@ -4,7 +4,7 @@ package com.yahoo.vespa.orchestrator.controller;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public interface ClusterControllerClient {
 

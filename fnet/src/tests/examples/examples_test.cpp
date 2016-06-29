@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/slaveproc.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/thread.h>
+#include <atomic>
 
 // reserved in vespa/factory/doc/port-ranges.txt
 static const int PORT0 = 18570;
@@ -18,7 +19,7 @@ static const int PORT9 = 18579;
 
 using vespalib::SlaveProc;
 
-bool runProc(SlaveProc &proc, bool &done) {
+bool runProc(SlaveProc &proc, std::atomic<bool> &done) {
     char buf[4096];
     proc.close(); // close stdin
     while (proc.running() && !done) {
@@ -43,7 +44,7 @@ bool runProc(const std::string &cmd) {
             fprintf(stderr, "retrying command in 500ms...\n");
             vespalib::Thread::sleep(500);
         }
-        bool done = false;
+        std::atomic<bool> done(false);
         SlaveProc proc(cmd.c_str());
         ok = runProc(proc, done);
     }
@@ -51,193 +52,193 @@ bool runProc(const std::string &cmd) {
 }
 
 TEST("usage") {
-    bool done = false;
+    std::atomic<bool> done(false);
     {
-        SlaveProc proc("../../examples/proxy/fnet_proxy_app");
+        SlaveProc proc("exec ../../examples/proxy/fnet_proxy_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/ping/fnet_pingserver_app");
+        SlaveProc proc("exec ../../examples/ping/fnet_pingserver_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/ping/fnet_pingclient_app");
+        SlaveProc proc("exec ../../examples/ping/fnet_pingclient_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/fnet_rpc_client_app");
+        SlaveProc proc("exec ../../examples/frt/rpc/fnet_rpc_client_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/fnet_rpc_server_app");
+        SlaveProc proc("exec ../../examples/frt/rpc/fnet_rpc_server_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/fnet_echo_client_app");
+        SlaveProc proc("exec ../../examples/frt/rpc/fnet_echo_client_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/rpc_info");
+        SlaveProc proc("exec ../../examples/frt/rpc/rpc_info");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/rpc_invoke");
+        SlaveProc proc("exec ../../examples/frt/rpc/rpc_invoke");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/fnet_rpc_callback_server_app");
+        SlaveProc proc("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/fnet_rpc_callback_client_app");
+        SlaveProc proc("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("../../examples/frt/rpc/rpc_proxy");
+        SlaveProc proc("exec ../../examples/frt/rpc/rpc_proxy");
         EXPECT_FALSE(runProc(proc, done));
     }
 }
 
 TEST("timeout") {
     std::string out;
-    EXPECT_TRUE(SlaveProc::run("../../examples/timeout/fnet_timeout_app", out));
+    EXPECT_TRUE(SlaveProc::run("exec ../../examples/timeout/fnet_timeout_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }
 
-TEST_MT_F("ping", 2, bool()) {
+TEST_MT_F("ping", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/ping/fnet_pingserver_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("ping times out", 2, bool()) {
+TEST_MT_F("ping times out", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("ping with proxy", 3, bool()) {
+TEST_MT_F("ping with proxy", 3, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/ping/fnet_pingserver_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else if (thread_id == 1) {
-        SlaveProc proc(vespalib::make_string("../../examples/proxy/fnet_proxy_app tcp/%d tcp/localhost:%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/proxy/fnet_proxy_app tcp/%d tcp/localhost:%d",
                                              PORT1, PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
                                                   PORT1).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc client server", 2, bool()) {
+TEST_MT_F("rpc client server", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_client_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_client_app tcp/localhost:%d",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc echo client", 2, bool()) {
+TEST_MT_F("rpc echo client", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/fnet_echo_client_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_echo_client_app tcp/localhost:%d",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc info", 2, bool()) {
+TEST_MT_F("rpc info", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/rpc_info tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_info tcp/localhost:%d",
                                                   PORT0).c_str()));
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/rpc_info tcp/localhost:%d verbose",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_info tcp/localhost:%d verbose",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc invoke", 2, bool()) {
+TEST_MT_F("rpc invoke", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/rpc_invoke tcp/localhost:%d frt.rpc.echo "
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_invoke tcp/localhost:%d frt.rpc.echo "
                                                   "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc callback client server", 2, bool()) {
+TEST_MT_F("rpc callback client server", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
                                                   PORT0).c_str()));
         f1 = true;
     }
 }
 
-TEST_MT_F("rpc callback client server with proxy", 3, bool()) {
+TEST_MT_F("rpc callback client server with proxy", 3, std::atomic<bool>()) {
     if (thread_id == 0) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
                                              PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else if (thread_id == 1) {
-        SlaveProc proc(vespalib::make_string("../../examples/frt/rpc/rpc_proxy tcp/%d tcp/localhost:%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_proxy tcp/%d tcp/localhost:%d",
                                              PORT1, PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
                                                   PORT1).c_str()));
         f1 = true;
     }

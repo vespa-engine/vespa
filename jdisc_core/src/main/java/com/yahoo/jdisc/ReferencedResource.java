@@ -32,7 +32,7 @@ package com.yahoo.jdisc;
  *     }
  * </pre>
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class ReferencedResource<T extends SharedResource> implements AutoCloseable {
     private final T resource;

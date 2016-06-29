@@ -429,6 +429,38 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testClusterControllersCanSupplementWithAllContainerClusters() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo1'>" +
+                "     <nodes count='2'/>" +
+                "  </container>" +
+                "  <container version='1.0' id='foo2'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <controllers><nodes dedicated='false' count='5'/></controllers>" +
+                "     <nodes count='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
+    }
+
     public void testClusterControllersAreNotPlacedOnRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -571,6 +603,33 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void test2ContentNodesWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='3'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
+    }
+
     public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

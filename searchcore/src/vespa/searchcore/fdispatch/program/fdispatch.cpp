@@ -259,15 +259,15 @@ namespace {
 bool needRestart(const FdispatchrcConfig & curr, const FdispatchrcConfig & next)
 {
     if (curr.frtport != next.frtport) {
-        LOG(error, "FRT port has changed from %d to %d.", curr.frtport, next.frtport);
+        LOG(warning, "FRT port has changed from %d to %d.", curr.frtport, next.frtport);
         return true;
     }
     if (curr.ptport != next.ptport) {
-        LOG(error, "PT port has changed from %d to %d.", curr.ptport, next.ptport);
+        LOG(warning, "PT port has changed from %d to %d.", curr.ptport, next.ptport);
         return true;
     }
     if (curr.healthport != next.healthport) {
-        LOG(error, "Health port has changed from %d to %d.", curr.healthport, next.healthport);
+        LOG(warning, "Health port has changed from %d to %d.", curr.healthport, next.healthport);
         return true;
     }
     return false;
@@ -280,7 +280,7 @@ void Fdispatch::configure(std::unique_ptr<FdispatchrcConfig> cfg)
     if (cfg && _config) {
         if ( needRestart(*_config, *cfg) ) {
             const int sleepMS = (1.0 + 30 * _rndGen.nextDouble()) * 1000;
-            LOG(error, "Will restart by abort in %d ms.", sleepMS);
+            LOG(warning, "Will restart by abort in %d ms.", sleepMS);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepMS));
             _needRestart.store(true);
         }

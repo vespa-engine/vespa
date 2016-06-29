@@ -10,6 +10,7 @@ LOG_SETUP(".searchlib.docstore.logdatastore");
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/xxhash/xxhash.h>
+#include <thread>
 
 namespace search
 {
@@ -173,7 +174,7 @@ LogDataStore::requireSpace(LockGuard guard, WriteableFileChunk & active)
               active.getName().c_str(), oldSz, _config.getMaxFileSize());
     if (oldSz > _config.getMaxFileSize()) {
         FileId fileId = allocateFileId(guard);
-        _fileChunks[fileId.getId()] = createWritableFile(fileId, active.getSerialNum());
+        setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
         std::unique_ptr<FileChunkHolder> activeHolder = holdFileChunk(active.getFileId());
         guard.unlock();
@@ -605,6 +606,14 @@ bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
            || (_config.getMinFileSizeFactor() * _config.getMaxFileSize() > compactedSize);
 }
 
+void LogDataStore::setNewFileChunk(const LockGuard & guard, FileChunk::UP file)
+{
+    assert(guard.locks(_updateLock));
+    size_t fileId = file->getFileId().getId();
+    assert( ! _fileChunks[fileId]);
+    _fileChunks[fileId] = std::move(file);
+}
+
 void LogDataStore::compactFile(FileId fileId)
 {
     FileChunk::UP & fc(_fileChunks[fileId.getId()]);
@@ -615,10 +624,9 @@ void LogDataStore::compactFile(FileId fileId)
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
         if ( ! shouldCompactToActiveFile(fc->getDiskFootprint() - fc->getDiskBloat())) {
-            destinationFileId = allocateFileId();
-            FileChunk::UP destination = createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(),
-                                                           fc->getNameId().next());
-            _fileChunks[destination->getFileId().getId()] = std::move(destination);
+            LockGuard guard(_updateLock);
+            destinationFileId = allocateFileId(guard);
+            setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
 
         compacter.reset(new BucketCompacter(*this, *_bucketizer, fc->getFileId(), destinationFileId));
@@ -637,7 +645,7 @@ void LogDataStore::compactFile(FileId fileId)
         compactTo.freeze();
     }
 
-    FastOS_Thread::Sleep(10 * 1000);
+    std::this_thread::sleep_for(std::chrono::seconds(10));;
     FileChunk::UP toDie;
     for (;;) {
         LockGuard guard(_updateLock);
@@ -650,7 +658,7 @@ void LogDataStore::compactFile(FileId fileId)
          * Wait for requireSpace() and flush() methods to leave chunk
          * alone.
          */
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::seconds(1));;
     }
     toDie->erase();
     LockGuard guard(_updateLock);
@@ -685,12 +693,6 @@ LogDataStore::memoryMeta() const
     return sz;
 }
 
-FileChunk::FileId
-LogDataStore::allocateFileId()
-{
-    LockGuard guard(_updateLock);
-    return allocateFileId(guard);
-}
 FileChunk::FileId
 LogDataStore::allocateFileId(const LockGuard & guard)
 {

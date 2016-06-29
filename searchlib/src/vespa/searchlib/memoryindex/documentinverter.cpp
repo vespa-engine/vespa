@@ -167,12 +167,20 @@ DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
 void
 DocumentInverter::removeDocument(uint32_t docId)
 {
-    uint32_t fieldId = 0;
-    for (auto &inverter : _inverters) {
+    for (uint32_t fieldId : _schemaIndexFields._textFields) {
+        FieldInverter *inverter = _inverters[fieldId].get();
         _invertThreads.execute(fieldId,
-                               [inverter(inverter.get()), docId]()
+                               [inverter, docId]()
                                { inverter->removeDocument(docId); });
-        ++fieldId;
+    }
+    uint32_t urlId = 0;
+    for (const auto & fi : _schemaIndexFields._uriFields) {
+        uint32_t fieldId = fi._all;
+        UrlFieldInverter *inverter = _urlInverters[urlId].get();
+        _invertThreads.execute(fieldId,
+                               [inverter, docId]()
+                               { inverter->removeDocument(docId); });
+        ++urlId;
     }
 }
 

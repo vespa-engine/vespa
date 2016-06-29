@@ -19,6 +19,7 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -164,7 +165,7 @@ public class ContainerClusterTest {
     }
 
     private static void addContainer(ContainerCluster cluster, String name, String hostName) {
-        Container container = new Container(cluster, name);
+        Container container = new Container(cluster, name, 0);
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService();
         cluster.addContainer(container);

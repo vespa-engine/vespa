@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * A {@link JaxRsStrategy} that will retry on failures, looping twice over all available server hosts before giving up.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private static final Logger logger = Logger.getLogger(RetryingJaxRsStrategy.class.getName());

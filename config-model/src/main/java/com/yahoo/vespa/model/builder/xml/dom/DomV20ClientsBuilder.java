@@ -444,14 +444,13 @@ public class DomV20ClientsBuilder {
         }
 
         @Override
-        protected ContainerHttpGateway doBuild(AbstractConfigProducer parent,
-                Element spec) {
+        protected ContainerHttpGateway doBuild(AbstractConfigProducer parent, Element spec) {
             // TODO: remove port handling
             int port = 19020;
             if (spec != null && spec.hasAttribute("baseport")) {
                 port = Integer.parseInt(spec.getAttribute("baseport"));
             }
-            ContainerHttpGateway httpGateway = new ContainerHttpGateway(cluster, "" + index, port);
+            ContainerHttpGateway httpGateway = new ContainerHttpGateway(cluster, "" + index, port, index);
             List<Container> containers = new ArrayList<>();
             containers.add(httpGateway);
 
@@ -463,7 +462,7 @@ public class DomV20ClientsBuilder {
     /**
      * This class parses the feederoptions xml tag and produces Vespa config output.
      *
-     * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+     * @author Gunnar Gauslaa Bergem
      */
     private class FeederOptionsParser implements Serializable {
         private static final long serialVersionUID = 1L;

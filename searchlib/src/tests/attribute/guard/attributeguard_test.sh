@@ -1,4 +1,5 @@
-#!/bin/bahs
+#!/bin/bash
+set -e
 $VALGRIND ./searchlib_attributeguard_test_app
 rm -rf *.dat
 rm -rf *.idx

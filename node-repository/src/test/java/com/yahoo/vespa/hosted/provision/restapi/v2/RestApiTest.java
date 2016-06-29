@@ -169,6 +169,25 @@ public class RestApiTest {
     }
 
     @Test
+    public void fails_to_deallocate_node_with_hardware_failure() throws IOException {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host12.yahoo.com",
+                        Utf8.toBytes("{\"hardwareFailure\": true}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host12.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host12.yahoo.com",
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved host12.yahoo.com to failed\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host12.yahoo.com",
+                new byte[0], Request.Method.PUT), 400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not deallocate host12.yahoo.com: Hardware failure flag is set\"}");
+    }
+
+    @Test
     public void testInvalidRequests() throws IOException {
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",

@@ -67,6 +67,7 @@ public:
                      FieldInverter *hostname);
 
     void invertField(uint32_t docId, const document::FieldValue::UP &field);
+    void removeDocument(uint32_t docId);
 
     void setUseAnnotations(bool useAnnotations) {
         _useAnnotations = useAnnotations;

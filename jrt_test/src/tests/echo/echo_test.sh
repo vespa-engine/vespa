@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+fail=0
 . ../../binref/env.sh
-sh dotest.sh || (sh $BINREF/progctl.sh progdefs.sh stop all; false)
-sh $BINREF/progctl.sh progdefs.sh stop all
+bash ./dotest.sh || fail=1
+$BINREF/progctl.sh progdefs.sh stop all
+exit $fail

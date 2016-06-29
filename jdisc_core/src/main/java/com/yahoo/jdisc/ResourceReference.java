@@ -14,7 +14,7 @@ package com.yahoo.jdisc;
  *     }
  * </pre>
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public interface ResourceReference extends AutoCloseable {
 

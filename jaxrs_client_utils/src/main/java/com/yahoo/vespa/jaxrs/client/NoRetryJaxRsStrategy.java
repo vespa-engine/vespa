@@ -11,7 +11,7 @@ import java.util.function.Function;
 /**
  * A {@link JaxRsStrategy} that will try API calls once against a single server, giving up immediately on failure.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class NoRetryJaxRsStrategy<T> implements JaxRsStrategy<T> {
     private final HostName hostName;

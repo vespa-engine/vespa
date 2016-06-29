@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * Utility methods for creating test setups.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class TestUtil {
     @SafeVarargs

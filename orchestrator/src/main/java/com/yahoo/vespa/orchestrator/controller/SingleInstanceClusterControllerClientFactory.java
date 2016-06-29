@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.orchestrator.VespaModelUtil.getClusterControllerIndex;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class SingleInstanceClusterControllerClientFactory implements ClusterControllerClientFactory {
     public static final int CLUSTERCONTROLLER_HARDCODED_PORT = 19050;

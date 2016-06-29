@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
 # $Id$
@@ -8,6 +8,7 @@
 #
 # All Rights Reserved
 #
+set -e
 
 if $VALGRIND ./searchsummary_extractkeywordstest_app -
 then
@@ -26,4 +27,3 @@ else
 fi
 
 echo SUCCESS: searchsummary_extractkeywordstest_app test completed
-exit 0

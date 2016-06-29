@@ -106,4 +106,5 @@ public abstract class DomContainerClusterBuilder<CLUSTER extends ContainerCluste
     protected void buildAndAddProcessingRenderers(ContainerCluster cluster, Element spec) {
         ContainerModelBuilder.addConfiguredComponents(cluster, spec, "renderer");
     }
+
 }

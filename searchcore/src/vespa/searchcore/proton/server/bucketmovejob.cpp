@@ -373,7 +373,7 @@ BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId,
 void BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit();
+    bool resourcesOK = !state.aboveDiskLimit() && !state.aboveMemoryLimit();
     _resourcesOK = resourcesOK;
     refreshRunnable();
     if (_runner && _runnable) {

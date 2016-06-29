@@ -92,11 +92,8 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     public static void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
+        removeContainerNodeSpec(containerNodeSpec.hostname);
         synchronized (monitor) {
-            containerNodeSpecs = containerNodeSpecs.stream()
-                    .filter(c -> !c.hostname.equals(containerNodeSpec.hostname))
-                    .collect(Collectors.toList());
-
             containerNodeSpecs.add(containerNodeSpec);
         }
     }
@@ -104,6 +101,20 @@ public class NodeRepoMock implements NodeRepository {
     public static void clearContainerNodeSpecs() {
         synchronized (monitor) {
             containerNodeSpecs.clear();
+        }
+    }
+
+    public static void removeContainerNodeSpec(HostName hostName) {
+        synchronized (monitor) {
+            containerNodeSpecs = containerNodeSpecs.stream()
+                    .filter(c -> !c.hostname.equals(hostName))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public static int getNumberOfContainerSpecs() {
+        synchronized (monitor) {
+            return containerNodeSpecs.size();
         }
     }
 

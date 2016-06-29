@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 LD_PRELOAD=../../../src/vespamalloc/libvespamalloc.so ./vespamalloc_doubledelete_test_app
 

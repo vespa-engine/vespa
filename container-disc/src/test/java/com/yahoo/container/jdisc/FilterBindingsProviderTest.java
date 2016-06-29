@@ -32,7 +32,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class FilterBindingsProviderTest {
     final ServerConfig.Builder configBuilder = new ServerConfig.Builder();

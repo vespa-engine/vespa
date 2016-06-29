@@ -31,7 +31,7 @@ public class ClusterControllerContainer extends Container implements BundlesConf
     private final Set<String> bundles = new TreeSet<>();
 
     public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper) {
-        super(parent, "" + index);
+        super(parent, "" + index, index);
         this.index = index;
         addHandler(
                 new Handler(new ComponentModel(new BundleInstantiationSpecification(

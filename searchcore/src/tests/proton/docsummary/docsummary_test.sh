@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 rm -rf tmp
 rm -rf tmpdb
 rm -rf summary

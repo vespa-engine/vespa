@@ -29,7 +29,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster;
  * This means that queries are sent to a single search node only. Obviously, this will not give correct
  * results - it is just a single step towards eliminating top-level dispatch as a separate process.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 @Beta
 @After("*")

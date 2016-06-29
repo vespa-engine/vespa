@@ -49,7 +49,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return (parent != null)
                 && (parent.getRoot() != null)
                 && (parent.getRoot().getDeployState() != null)
-                && parent.getRoot().getDeployState().isHostedVespa();
+                && parent.getRoot().getDeployState().isHosted();
     }
 
     /**

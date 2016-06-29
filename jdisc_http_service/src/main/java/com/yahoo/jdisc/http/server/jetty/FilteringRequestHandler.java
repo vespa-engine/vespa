@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Request handler that invokes request and response filters in addition to the bound request handler.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  * $Id$
  */
 class FilteringRequestHandler extends AbstractRequestHandler {

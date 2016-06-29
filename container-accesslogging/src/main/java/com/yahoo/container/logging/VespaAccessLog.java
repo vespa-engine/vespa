@@ -12,7 +12,7 @@ import java.util.logging.Level;
 
 /**
  * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public final class VespaAccessLog implements AccessLogInterface {
 

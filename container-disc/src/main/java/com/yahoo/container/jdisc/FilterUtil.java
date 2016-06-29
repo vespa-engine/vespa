@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Helper class to set up filter binding repositories based on config.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 class FilterUtil {
     private static final ComponentId SEARCH_SERVER_COMPONENT_ID = ComponentId.fromString("SearchServer");

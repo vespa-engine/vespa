@@ -8,11 +8,7 @@ vespa_define_module(
 
     APPS
     src/binref
-    src/java
 
     TESTS
-    src/grouping_test/hello-world
-    src/grouping_test/hello-world-lib
-    src/tests/hello-world
     src/tests/lowercasing
 )

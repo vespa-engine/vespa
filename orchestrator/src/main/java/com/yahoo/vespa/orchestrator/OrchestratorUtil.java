@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.toSet;
 /**
  * Utility methods for working with service monitor model entity objects.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class OrchestratorUtil {
     // Utility class, not to be instantiated.

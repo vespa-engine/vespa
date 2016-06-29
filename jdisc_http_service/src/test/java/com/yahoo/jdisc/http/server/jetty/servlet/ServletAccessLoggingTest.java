@@ -20,7 +20,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 public class ServletAccessLoggingTest extends ServletTestBase {
     private static final int MAX_LOG_WAIT_TIME_MILLIS = (int) TimeUnit.SECONDS.toMillis(60);
