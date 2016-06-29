@@ -16,9 +16,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Metric;
 import com.yahoo.vespa.model.admin.MetricsConsumer;
 import com.yahoo.vespa.model.admin.MonitoringSystem;
@@ -321,8 +319,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
-            if (hosts.size() < count) // supply with containers
-                hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
+            //if (hosts.size() < count) // supply with containers TODO: Reactivate
+            //    hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -341,10 +339,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             List<HostResource> hosts = new ArrayList<>();
             for (ContainerCluster cluster : clustersSortedByName(containerClusters))
                 hosts.addAll(hostResourcesSortedByIndex(cluster));
-
-            // Don't use the same container to supplement multiple content clusters
-            hosts.removeIf(host -> hasClusterController(host));
-
             return hosts.subList(0, Math.min(hosts.size(), count));
         }
         
@@ -360,13 +354,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     .sorted(Comparator.comparing(Container::index))
                     .map(Container::getHostResource)
                     .collect(Collectors.toList());
-        }
-        
-        private boolean hasClusterController(HostResource host) {
-            for (Service service : host.getServices())
-                if (service instanceof ClusterControllerContainer)
-                    return true;
-            return false;
         }
 
         /**
