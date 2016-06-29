@@ -12,11 +12,9 @@ Usage: ${0##*/} <command> [<args>...]
 Script for manipulating the Node Repository.
 
 Commands
-    add [-c <configserverhost>] -p <parenthostname> <hostname>...
-        Provision node <hostname> in node repo with flavor "docker".
-    add-host [-c <configserverhost>] <parenthostname> <parenthostname flavor> [<hostname>...]
-        Provision Docker host <parenthostname> in node repo with type "host" and flavor as given.
-        Provision Docker nodes <hostname> (0 or more) in node repo with flavor "docker".
+    add [-c <configserverhost>] [-f <parent host flavor>] -p <parenthostname> [<hostname>...]
+        Provision Docker host <parenthostname> in node repo with type "host", flavor <parent host flavor> (only if -f option supplied).
+        Provision Docker nodes <hostname...> list (0 or more) in node repo with flavor "docker" and parent host <parenthostname>.
     reprovision [-c <configserverhost>] -p <parenthostname> <hostname>...
         Fail node <hostname>, then rm and add.
     rm [-c <configserverhost>] <hostname>...
@@ -184,11 +182,12 @@ function AddCommand {
 
     OPTIND=1
     local option
-    while getopts "c:p:" option
+    while getopts "c:p:f:" option
     do
         case "$option" in
             c) config_server_hostname="$OPTARG" ;;
             p) parent_hostname="$OPTARG" ;;
+            f) parent_host_flavor="$OPTARG" ;;
             ?) exit 1 ;; # E.g. option lacks argument, in case error has been
                          # already been printed
             *) Fail "Unknown option '$option' with value '$OPTARG'"
@@ -197,67 +196,18 @@ function AddCommand {
 
     if [ -z "$parent_hostname" ]
     then
-        Fail "Parent hostname not specified (-d)"
+        Fail "Parent hostname not specified (-p)"
     fi
 
     shift $((OPTIND - 1))
 
-    if (($# == 0))
+    if [ -n "$parent_host_flavor" ]
     then
-        Fail "No node hostnames were specified"
+        echo "Provisioning Docker host $parent_hostname with flavor $parent_host_flavor"
+        ProvisionDockerHost "$config_server_hostname" \
+                            "$parent_hostname" \
+                            "$parent_host_flavor"
     fi
-
-    echo -n "Provisioning $# nodes"
-
-    local container_hostname
-    for container_hostname in "$@"
-    do
-        ProvisionDockerNode "$config_server_hostname" \
-                            "$container_hostname" \
-                            "$parent_hostname"
-        echo -n .
-    done
-
-    echo " done"
-}
-
-function AddHostCommand {
-    local config_server_hostname=config-server
-
-    OPTIND=1
-    local option
-    while getopts "c:" option
-    do
-        case "$option" in
-            c) config_server_hostname="$OPTARG" ;;
-            ?) exit 1 ;; # E.g. option lacks argument, in case error has been
-                         # already been printed
-            *) Fail "Unknown option '$option' with value '$OPTARG'"
-        esac
-    done
-
-    shift $((OPTIND - 1))
-
-    if (($# == 0))
-    then
-        Fail "No hostname was specified"
-    fi
-
-    local parent_hostname="$1"
-    shift
-
-    if (($# == 0))
-    then
-        Fail "No flavor was specified"
-    fi
-    local flavor="$1"
-    shift
-
-    echo "Provisioning Docker host $parent_hostname with flavor $flavor"
-    ProvisionDockerHost "$config_server_hostname" \
-                        "$parent_hostname" \
-                        "$flavor"
-
 
     echo -n "Provisioning $# nodes with parent host $parent_hostname"
     local container_hostname
@@ -389,7 +339,6 @@ function Main {
 
     case "$command" in
         add) AddCommand "$@" ;;
-        add-host) AddHostCommand "$@" ;;
         reprovision) ReprovisionCommand "$@" ;;
         rm) RemoveCommand "$@" ;;
         set-state) SetStateCommand "$@" ;;
