@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.test.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
@@ -45,9 +46,13 @@ public class VespaModelCreatorWithMockPkg {
     }
 
     public VespaModel create(boolean validate, DeployState deployState) {
+        return create(validate, deployState, new NullConfigModelRegistry());
+    }
+
+    public VespaModel create(boolean validate, DeployState deployState, ConfigModelRegistry configModelRegistry) {
         try {
             this.deployState = deployState;
-            VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            VespaModel model = new VespaModel(configModelRegistry, deployState);
             if (validate) {
                 try {
                     SchemaValidator validator = SchemaValidator.createTestValidatorHosts();

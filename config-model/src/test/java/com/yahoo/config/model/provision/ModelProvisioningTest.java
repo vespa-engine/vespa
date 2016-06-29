@@ -115,7 +115,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testNodeCountForContentGroup() throws Exception {
+    public void testNodeCountForContentGroup() {
         String xmlWithNodes =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
@@ -146,7 +146,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testNodeCountForContentGroupHierarchy() throws ParseException {
+    public void testNodeCountForContentGroupHierarchy() {
         String services = 
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
@@ -220,7 +220,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesAndGroupCountAttributes() throws ParseException {
+    public void testUsingNodesAndGroupCountAttributes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -333,7 +333,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testGroupsOfSize1() throws ParseException {
+    public void testGroupsOfSize1() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -388,7 +388,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testExplicitNonDedicatedClusterControllers() throws ParseException {
+    public void testExplicitNonDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -429,7 +429,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testClusterControllersAreNotPlacedOnRetiredNodes() throws ParseException {
+    public void testClusterControllersAreNotPlacedOnRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -463,7 +463,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testSlobroksClustersAreExpandedToIncludeRetiredNodes() throws ParseException {
+    public void testSlobroksClustersAreExpandedToIncludeRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -514,7 +514,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testSlobroksAreSpreadOverAllContainerClusters() throws ParseException {
+    public void testSlobroksAreSpreadOverAllContainerClusters() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -546,7 +546,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void test2ContentNodesProduces1ClusterController() throws ParseException {
+    public void test2ContentNodesProduces1ClusterController() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -571,7 +571,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testExplicitDedicatedClusterControllers() throws ParseException {
+    public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -606,7 +606,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesAndGroupCountAttributesAndGettingTooFewNodes() throws ParseException {
+    public void testUsingNodesAndGroupCountAttributesAndGettingTooFewNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
@@ -657,7 +657,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesCountAttributesAndGettingTooFewNodes() throws ParseException {
+    public void testUsingNodesCountAttributesAndGettingTooFewNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
@@ -741,7 +741,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesCountAttributesAndGettingJustOneNode() throws ParseException {
+    public void testUsingNodesCountAttributesAndGettingJustOneNode() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -780,7 +780,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testRequestingSpecificFlavors() throws ParseException {
+    public void testRequestingSpecificFlavors() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -821,7 +821,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testJDiscOnly() throws Exception {
+    public void testJDiscOnly() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<jdisc version='1.0'>" +
@@ -839,7 +839,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingHostaliasWithProvisioner() throws Exception {
+    public void testUsingHostaliasWithProvisioner() {
         String services =
                         "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
@@ -865,7 +865,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testThatStandaloneSyntaxWorksOnHostedVespa() throws ParseException {
+    public void testThatStandaloneSyntaxWorksOnHostedVespa() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<jdisc id='foo' version='1.0'>" +
@@ -882,7 +882,7 @@ public class ModelProvisioningTest {
 
     /** Recreate the combination used in some factory tests */
     @Test
-    public void testMultitenantButNotHosted() throws Exception {
+    public void testMultitenantButNotHosted() {
         String services =
         "<?xml version='1.0' encoding='UTF-8' ?>" +
         "<services version='1.0'>" +
@@ -924,7 +924,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testMultitenantButNotHostedSharedContentNode() throws Exception {
+    public void testMultitenantButNotHostedSharedContentNode() {
         String services =
         "<?xml version='1.0' encoding='UTF-8' ?>" +
         "<services version='1.0'>" +
@@ -974,9 +974,9 @@ public class ModelProvisioningTest {
         assertEquals(1, controller.getContainers().size());
     }
 
-    private VespaModel createNonProvisionedMultitenantModel(String services) throws ParseException {
-        final VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
-        final ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
+    private VespaModel createNonProvisionedMultitenantModel(String services) {
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
+        ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
                 properties((new DeployProperties.Builder()).multitenant(true).build()).
                 build();
@@ -984,7 +984,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testThatTldConfigIdsAreDeterministic() throws ParseException {
+    public void testThatTldConfigIdsAreDeterministic() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -1022,7 +1022,7 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(services, true);
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
-            final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+            Map<String, ContentCluster> contentClusters = model.getContentClusters();
             assertEquals(2, contentClusters.size());
 
             checkThatTldAndContainerRunningOnSameHostHaveSameId(
@@ -1039,7 +1039,7 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(services, true, 1, "default0");
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
-            final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+            Map<String, ContentCluster> contentClusters = model.getContentClusters();
             assertEquals(2, contentClusters.size());
 
             checkThatTldAndContainerRunningOnSameHostHaveSameId(
@@ -1053,14 +1053,14 @@ public class ModelProvisioningTest {
                                                                      Collection<ContentCluster> contentClusters,
                                                                      int startIndexForContainerIds) {
         for (ContentCluster contentCluster : contentClusters) {
-            final String contentClusterName = contentCluster.getName();
+            String contentClusterName = contentCluster.getName();
             int i = 0;
             for (ContainerCluster containerCluster : containerClusters) {
-                final String containerClusterName = containerCluster.getName();
+                String containerClusterName = containerCluster.getName();
                 for (int j = 0; j < 2; j++) {
-                    final Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
-                    final Container container = containerCluster.getContainers().get(j);
-                    final int containerConfigIdIndex = j + startIndexForContainerIds;
+                    Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
+                    Container container = containerCluster.getContainers().get(j);
+                    int containerConfigIdIndex = j + startIndexForContainerIds;
 
                     assertEquals(container.getHostName(), tld.getHostname());
                     assertEquals(contentClusterName + "/search/cluster." + contentClusterName + "/tlds/" +

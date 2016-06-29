@@ -10,7 +10,6 @@ import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
@@ -48,55 +47,51 @@ public class ModelAmendingTestCase {
         ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new AdminModelAmenderBuilder(),
                                                                                       new ContainerModelAmenderBuilder(),
                                                                                       new ContentModelAmenderBuilder());
-        VespaModel model = new VespaModel(new MockApplicationPackage.Builder().withServices(
+        String services =
                                              "<services version='1.0'>" +
                                              "    <admin version='3.0'/>" +
                                              "    <jdisc id='test1' version='1.0'>" +
-                                             "        <search />" +
+                                             "        <search/>" +
+                                             "        <nodes count='2'/>" +
                                              "    </jdisc>" +
                                              "    <jdisc id='test2' version='1.0'>" +
-                                             "        <http><server id='server1' port='19107'/></http>" +
+                                             "        <http><server id='server1' port='19110'/></http>" +
                                              "        <document-api/>" +
+                                             "        <nodes count='2'/>" +
                                              "    </jdisc>" +
                                              "    <content id='test3' version='1.0'>" +
                                              "        <redundancy>1</redundancy>" +
                                              "        <documents>" +
-                                             "            <document mode='index' type='testtype1'/>" +
+                                             "            <document mode='index' type='type1'/>" +
                                              "        </documents>" +
+                                             "        <nodes count='2'/>" +
                                              "    </content>" +
                                              "    <content id='test4' version='1.0'>" +
                                              "        <redundancy>1</redundancy>" +
                                              "        <documents>" +
-                                             "            <document mode='index' type='testtype1'/>" +
+                                             "            <document mode='index' type='type1'/>" +
                                              "        </documents>" +
+                                             "        <nodes count='3'/>" +
                                              "    </content>" +
-                                             "</services>")
-                                          .withSearchDefinitions(searchDefinition("testtype1"))
-                                          .build(),
-                                          amendingModelRepo);
-        assertEquals(1, model.getHostSystem().getHosts().size());
+                                             "</services>";
+        VespaModelTester tester = new VespaModelTester(amendingModelRepo);
+        tester.addHosts(10);
+        VespaModel model = tester.createModel(services);
 
         // Check that admin models are amended
         for (HostResource host : model.getAdmin().getHostSystem().getHosts()) {
-            if (host.getHost().isMultitenant()) continue; // host amendment not done
-            assertFalse(host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
+            System.out.println(host + " amended: " + !host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
+            //assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
         }
         
         // Check that explicit jdisc clusters are amended
+        for (ContainerCluster cluster : model.getContainerClusters().values())
+            System.out.println(cluster);
         assertEquals(4, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("test2").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("cluster.test3.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("cluster.test4.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
-    }
-
-    private List<String> searchDefinition(String name) {
-        return Collections.singletonList(
-                "search " + name + " {" +
-                "  document " + name + " {" +
-                "    field testfield type string {}" +
-                "  }" +
-                "}");
     }
 
     public static class AdminModelAmenderBuilder extends ConfigModelBuilder<AdminModelAmender> {
