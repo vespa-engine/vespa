@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 
 import javax.ws.rs.core.MediaType;
@@ -29,7 +29,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
  */
 public class RestApiHandler extends LoggingRequestHandler{
 
-    private final NodeAdminStateUpdater refresher;
+    private final NodeAdmin.NodeAdminStateUpdater refresher;
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     public RestApiHandler(Executor executor, AccessLog accessLog, ComponentsProvider componentsProvider) {
@@ -61,14 +61,14 @@ public class RestApiHandler extends LoggingRequestHandler{
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.endsWith("/resume")) {
-            final Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+            final Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.RESUMED);
             if (errorMessage.isPresent()) {
                 return new SimpleResponse(409, errorMessage.get());
             }
             return new SimpleResponse(200, "ok");
         }
         if (path.endsWith("/suspend")) {
-            Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
+            Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.SUSPENDED);
             if (errorMessage.isPresent()) {
                 return new SimpleResponse(409, errorMessage.get());
             }

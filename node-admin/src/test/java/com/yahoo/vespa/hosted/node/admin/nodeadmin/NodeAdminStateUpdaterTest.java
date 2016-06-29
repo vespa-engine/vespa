@@ -1,9 +1,11 @@
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
@@ -68,17 +70,17 @@ public class NodeAdminStateUpdaterTest {
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
         OrchestratorMock orchestratorMock = new OrchestratorMock();
-        NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
+        NodeAdmin.NodeAdminStateUpdater refresher = new NodeAdmin.NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
         latch.await();
         int numberOfElements = accumulatedArgumentList.size();
-        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
+        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.SUSPENDED),
                 is(Optional.of("Not all node agents are frozen.")));
         assertTrue(numberOfElements > 4);
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
         Thread.sleep(2);
         assertThat(accumulatedArgumentList.size(), is(numberOfElements));
-        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
+        assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdmin.NodeAdminStateUpdater.State.RESUMED),
                 is(Optional.empty()));
         while (accumulatedArgumentList.size() == numberOfElements) {
             Thread.sleep(1);
