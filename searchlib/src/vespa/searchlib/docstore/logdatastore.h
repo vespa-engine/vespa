@@ -214,7 +214,7 @@ private:
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
     FileId allocateFileId(const LockGuard & guard);
-    FileId allocateFileId();
+    void setNewFileChunk(const LockGuard & guard, FileChunk::UP fileChunk);
     vespalib::string ls(const NameIdSet & partList);
 
     WriteableFileChunk & getActive(const LockGuard & guard) {
