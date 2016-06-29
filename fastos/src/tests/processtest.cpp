@@ -69,13 +69,10 @@ private:
    ThreadRunJob(const ThreadRunJob&);
    ThreadRunJob& operator=(const ThreadRunJob&);
 
-   FastOS_Process::Priority _processPriority;
    const char *_processCmdLine;
    int _timeSpent;
 public:
-   ThreadRunJob (FastOS_Process::Priority processPriority,
-                 const char *commandLine) :
-      _processPriority(processPriority),
+   ThreadRunJob (const char *commandLine) :
       _processCmdLine(commandLine),
       _timeSpent(0)
    {
@@ -94,7 +91,6 @@ public:
 
       if(xproc.Create())
       {
-         xproc.SetPriority(_processPriority);
          xproc.Wait(&returnCode);
       }
 
@@ -423,27 +419,6 @@ public:
       PrintSeparator();
    }
 
-   void PriorityTest ()
-   {
-      TestHeader("Process Priority Test");
-
-      ThreadRunJob job1(FastOS_Process::PRIORITY_LOWEST, _argv[2]);
-      ThreadRunJob job2(FastOS_Process::PRIORITY_HIGHEST, _argv[2]);
-      FastOS_ThreadPool pool(128*1024);
-      Progress(true, "Starting usecpu-processes with low and high priority...");
-      pool.NewThread(&job1);
-      pool.NewThread(&job2);
-      Progress(true, "Waiting for proccesses to finish...");
-      pool.Close();
-      int timeJob1 = job1.GetTimeSpent();
-      int timeJob2 = job2.GetTimeSpent();
-
-      Progress(timeJob1 > timeJob2, "Job1 (low priority) %d ms", timeJob1);
-      Progress(timeJob1 > timeJob2, "Job2 (high priority) %d ms", timeJob2);
-
-      PrintSeparator();
-   }
-
    void NoInheritTest ()
    {
       TestHeader("No Inherit Test");
@@ -480,7 +455,6 @@ public:
       printf("grep for the string '%s' to detect failures.\n\n", failString);
 
       NoInheritTest();
-      PriorityTest();
       PollWaitTest();
       IPCTest();
       ProcessTests(false, true, false);

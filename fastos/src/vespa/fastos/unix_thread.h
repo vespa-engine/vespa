@@ -19,11 +19,7 @@ private:
 
 protected:
     pthread_t _handle;
-    struct sched_param _normal_schedparam;
-    int _normal_policy;
     bool _handleValid;
-    bool _schedparams_ok;
-    bool _schedparams_changed;
 
     bool Initialize (int stackSize, int stackGuardSize);
     void PreEntry ();
@@ -35,11 +31,7 @@ public:
     FastOS_UNIX_Thread(FastOS_ThreadPool *pool)
         : FastOS_ThreadInterface(pool),
           _handle(),
-          _normal_schedparam(),
-          _normal_policy(0),
-          _handleValid(false),
-          _schedparams_ok(false),
-          _schedparams_changed(false)
+          _handleValid(false)
     {}
 
     virtual ~FastOS_UNIX_Thread(void);
@@ -56,7 +48,6 @@ public:
         return rc;
     }
 
-    bool SetPriority (const Priority priority);
     FastOS_ThreadId GetThreadId ();
     static bool CompareThreadIds (FastOS_ThreadId a,
                                   FastOS_ThreadId b);
