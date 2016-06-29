@@ -6,9 +6,12 @@ import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
+import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -19,11 +22,12 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -38,52 +42,110 @@ public class ModelAmendingTestCase {
 
     @Test
     public void testModelAmending() throws IOException, SAXException {
-        ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new ContainerModelAmenderBuilder(),
+        ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new AdminModelAmenderBuilder(),
+                                                                                      new ContainerModelAmenderBuilder(),
                                                                                       new ContentModelAmenderBuilder());
-        VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
-                                                  .withServices(
-                                     "<services version='1.0'>" +
+        String services =
+                                             "<services version='1.0'>" +
+                                             "    <admin version='4.0'/>" +
                                              "    <jdisc id='test1' version='1.0'>" +
-                                             "        <search />" +
+                                             "        <search/>" +
+                                             "        <nodes count='2'/>" +
                                              "    </jdisc>" +
                                              "    <jdisc id='test2' version='1.0'>" +
-                                             "        <http><server id='server1' port='19107'/></http>" +
+                                             "        <http><server id='server1' port='19110'/></http>" +
                                              "        <document-api/>" +
+                                             "        <nodes count='2'/>" +
                                              "    </jdisc>" +
                                              "    <content id='test3' version='1.0'>" +
                                              "        <redundancy>1</redundancy>" +
                                              "        <documents>" +
-                                             "            <document mode='index' type='testtype1'/>" +
+                                             "            <document mode='index' type='type1'/>" +
                                              "        </documents>" +
+                                             "        <nodes count='2'/>" +
                                              "    </content>" +
                                              "    <content id='test4' version='1.0'>" +
                                              "        <redundancy>1</redundancy>" +
                                              "        <documents>" +
-                                             "            <document mode='index' type='testtype1'/>" +
+                                             "            <document mode='index' type='type1'/>" +
                                              "        </documents>" +
+                                             "        <nodes count='3'/>" +
                                              "    </content>" +
-                                             "</services>")
-                                          .withSearchDefinitions(
-                                                  searchDefinition("testtype1"))
-                                                  .build(),
-                                          amendingModelRepo);
-        assertEquals(1, model.getHostSystem().getHosts().size());
+                                             "</services>";
+        VespaModelTester tester = new VespaModelTester(amendingModelRepo);
+        tester.addHosts(10);
+        VespaModel model = tester.createModel(services);
 
-        // Check that explicit jdisc clusters are amended
-        assertEquals(4, model.getContainerClusters().size());
+        // Check that all hosts are amended
+        for (HostResource host : model.getAdmin().getHostSystem().getHosts()) {
+            assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
+        }
+        
+        // Check that jdisc clusters are amended
+        assertEquals(2, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("test2").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
-        assertNotNull(model.getContainerClusters().get("cluster.test3.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
-        assertNotNull(model.getContainerClusters().get("cluster.test4.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
     }
 
-    private List<String> searchDefinition(String name) {
-        return Collections.singletonList(
-                "search " + name + " {" +
-                "  document " + name + " {" +
-                "    field testfield type string {}" +
-                "  }" +
-                "}");
+    public static class AdminModelAmenderBuilder extends ConfigModelBuilder<AdminModelAmender> {
+
+        public AdminModelAmenderBuilder() {
+            super(AdminModelAmender.class);
+        }
+
+        @Override
+        public List<ConfigModelId> handlesElements() {
+            List<ConfigModelId> adminElements = new ArrayList<>();
+            adminElements.addAll(AdminModel.BuilderV2.configModelIds);
+            adminElements.addAll(AdminModel.BuilderV4.configModelIds);
+            return adminElements;
+        }
+
+        @Override
+        public void doBuild(AdminModelAmender model, Element spec, ConfigModelContext modelContext) {
+            for (AdminModel adminModel : model.adminModels)
+                amend(adminModel);
+        }
+
+        private void amend(AdminModel adminModel) {
+            System.out.println("Amending admin model. " + adminModel.getAdmin().getHostSystem().getHosts().size() + " hosts");
+            for (HostResource host : adminModel.getAdmin().getHostSystem().getHosts()) {
+                if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
+                adminModel.getAdmin().addAndInitializeService(host, new AmendedService(host.getHost()));
+            }
+        }
+
+    }
+
+    /** To test that we can amend hosts with an additional service */
+    private static class AmendedService extends AbstractService {
+
+        public AmendedService(AbstractConfigProducer parent) {
+            super(parent, "testservice");
+        }
+
+        @Override
+        public int getPortCount() {
+            return 0;
+        }
+
+    }
+
+    public static class AdminModelAmender extends ConfigModel {
+
+        /** The admin models this builder amends */
+        private final Collection<AdminModel> adminModels;
+
+        /** Depend on all models adding hosts to the system as this this should amend services on all hosts */
+        public AdminModelAmender(ConfigModelContext modelContext, Collection<AdminModel> adminModels, 
+                                 Collection<ContainerModel> containerModels, Collection<Content> contentModels) {
+            super(modelContext);
+            this.adminModels = adminModels;
+        }
+
+        @Override
+        public boolean isServing() { return false; }
+
     }
 
     public static class ContainerModelAmenderBuilder extends ConfigModelBuilder<ContainerModelAmender> {

@@ -135,6 +135,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostResource;
     }
 
+    /** Returns the hosts owned by the application having this system - i.e all hosts except shared ones */
     public List<HostResource> getHosts() {
         return mapping.keySet().stream()
                 .filter(host -> !host.getHost().isMultitenant())

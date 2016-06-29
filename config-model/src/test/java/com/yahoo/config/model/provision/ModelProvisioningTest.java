@@ -6,8 +6,6 @@ import static org.junit.Assert.*;
 
 import java.io.StringReader;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,10 +19,10 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.StorageNode;
@@ -40,51 +38,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
  */
 public class ModelProvisioningTest {
 
-    private Hosts createHosts(int n) { return createHosts("", n); }
-    private Hosts createHosts(String hostnamePrefix, int n) {
-        Hosts hosts = new Hosts();
-        if ( ! hostnamePrefix.isEmpty())
-            hostnamePrefix = "-" + hostnamePrefix;
-        for (int i = 0; i < n; i++)
-            hosts.addHost(new com.yahoo.config.model.provision.Host(hostnamePrefix + "foo" + i), Collections.emptyList());
-        return hosts;
-    }
-
-    /** Creates a model with hosts of the 'default' flavor */
-    private VespaModel createModel(String services, Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) throws ParseException {
-        return createModel(services, Collections.singletonMap("default", hosts.getHosts()), failOnOutOfCapacity, 0, retiredHostNames);
-    }
-
-    /**
-     * Creates a model
-     *
-     * @param services the services xml string
-     * @param hosts hosts by flavor
-     * @param failOnOutOfCapacity whether we should get an exception when not enough hosts of the requested flavor
-     *        is available or if we should just silently receive a smaller allocation
-     * @return the resulting model
-     * @throws ParseException if the services xml is invalid
-     */
-    private VespaModel createModel(String services, Map<String, Collection<Host>> hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) throws ParseException {
-        final VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
-        final ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
-        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).modelHostProvisioner(new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames)).
-                properties((new DeployProperties.Builder()).hostedVespa(true).build()).build();
-        return modelCreatorWithMockPkg.create(false, deployState);
-    }
-
-    private void assertCorrectModel(VespaModel model, int numberOfHosts, int numberOfContentNodes) {
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
-        final Map<String, ContentCluster> contentClusters = model.getContentClusters();
-        ContentCluster cluster = contentClusters.get("bar");
-        assertThat(cluster.getRootGroup().getNodes().size(), is(numberOfContentNodes));
-        int i = 0;
-        for (StorageNode node : cluster.getRootGroup().getNodes()) {
-            assertThat(node.getDistributionKey(), is(i));
-            i++;
-        }
-    }
-    
     @Test
     public void testNodeCountForJdisc() {
         String services =
@@ -162,7 +115,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testNodeCountForContentGroup() throws Exception {
+    public void testNodeCountForContentGroup() {
         String xmlWithNodes =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
@@ -178,15 +131,22 @@ public class ModelProvisioningTest {
                 "     <nodes count='2'/>" +
                 "   </content>" +
                 "</services>";
+        VespaModelTester tester = new VespaModelTester();
         int numberOfHosts = 2;
-        Hosts hosts = createHosts(numberOfHosts);
+        tester.addHosts(numberOfHosts);
         int numberOfContentNodes = 2;
-        VespaModel model = createModel(xmlWithNodes, hosts, true);
-        assertCorrectModel(model, numberOfHosts, numberOfContentNodes);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+        ContentCluster cluster = contentClusters.get("bar");
+        assertThat(cluster.getRootGroup().getNodes().size(), is(numberOfContentNodes));
+        int i = 0;
+        for (StorageNode node : cluster.getRootGroup().getNodes())
+            assertEquals(i++, node.getDistributionKey());
     }
-    
+
     @Test
-    public void testNodeCountForContentGroupHierarchy() throws ParseException {
+    public void testNodeCountForContentGroupHierarchy() {
         String services = 
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
@@ -228,8 +188,9 @@ public class ModelProvisioningTest {
                         "</services>";
         
         int numberOfHosts = 6;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
         
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -259,7 +220,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesAndGroupCountAttributes() throws ParseException {
+    public void testUsingNodesAndGroupCountAttributes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -284,8 +245,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 64;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check container cluster
@@ -307,16 +269,16 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("foo10", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("foo13", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("foo16", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default10", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default13", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default16", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(9, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().size(), is(3));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getDistributionKey(), is(0));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getConfigId(), is("bar/storage/0"));
-        assertEquals("foo10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
+        assertEquals("default10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getDistributionKey(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getConfigId(), is("bar/storage/1"));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(2).getDistributionKey(), is(2));
@@ -325,13 +287,13 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().size(), is(3));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getDistributionKey(), is(3));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getConfigId(), is("bar/storage/3"));
-        assertEquals("foo13", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
+        assertEquals("default13", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(1).getDistributionKey(), is(4));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(1).getConfigId(), is("bar/storage/4"));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(2).getDistributionKey(), is(5));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(2).getConfigId(), is("bar/storage/5"));
         // ...
-        assertEquals("foo16", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
+        assertEquals("default16", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
         // ...
         assertThat(cluster.getRootGroup().getSubgroups().get(8).getIndex(), is("8"));
         assertThat(cluster.getRootGroup().getSubgroups().get(8).getNodes().size(), is(3));
@@ -346,23 +308,23 @@ public class ModelProvisioningTest {
         clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("baz-controllers", clusterControllers.getName());
-        assertEquals("foo37", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("foo38", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("foo39", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default37", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default38", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default39", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(27, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getDistributionKey(), is(0));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getConfigId(), is("baz/storage/0"));
-        assertEquals("foo37", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
+        assertEquals("default37", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getIndex(), is("1"));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getDistributionKey(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getConfigId(), is("baz/storage/1"));
-        assertEquals("foo38", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
+        assertEquals("default38", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
         // ...
-        assertEquals("foo39", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
+        assertEquals("default39", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
         // ...
         assertThat(cluster.getRootGroup().getSubgroups().get(26).getIndex(), is("26"));
         assertThat(cluster.getRootGroup().getSubgroups().get(26).getNodes().size(), is(1));
@@ -371,7 +333,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testGroupsOfSize1() throws ParseException {
+    public void testGroupsOfSize1() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -389,8 +351,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 18;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content cluster
@@ -398,9 +361,9 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("foo10", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("foo11", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("foo12", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default10", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default11", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default12", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(8, cluster.getRootGroup().getSubgroups().size());
         assertEquals(8, cluster.distributionBits());
@@ -409,23 +372,23 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getDistributionKey(), is(0));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getConfigId(), is("bar/storage/0"));
-        assertEquals("foo10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
+        assertEquals("default10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
         // second group
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getIndex(), is("1"));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getDistributionKey(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getConfigId(), is("bar/storage/1"));
-        assertEquals("foo11", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
+        assertEquals("default11", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
         // ... last group
         assertThat(cluster.getRootGroup().getSubgroups().get(7).getIndex(), is("7"));
         assertThat(cluster.getRootGroup().getSubgroups().get(7).getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getSubgroups().get(7).getNodes().get(0).getDistributionKey(), is(7));
         assertThat(cluster.getRootGroup().getSubgroups().get(7).getNodes().get(0).getConfigId(), is("bar/storage/7"));
-        assertEquals("foo17", cluster.getRootGroup().getSubgroups().get(7).getNodes().get(0).getHostName());
+        assertEquals("default17", cluster.getRootGroup().getSubgroups().get(7).getNodes().get(0).getHostName());
     }
 
     @Test
-    public void testExplicitNonDedicatedClusterControllers() throws ParseException {
+    public void testExplicitNonDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -444,8 +407,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -454,14 +418,14 @@ public class ModelProvisioningTest {
         assertEquals( 8, cluster.distributionBits());
         assertEquals("We get the closest odd numer", 5, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("foo10", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("foo11", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("foo13", clusterControllers.getContainers().get(2).getHostName());
-        assertEquals("foo14", clusterControllers.getContainers().get(3).getHostName()); // Should be 16 for perfect distribution ...
-        assertEquals("foo10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
-        assertEquals("foo11", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getHostName());
-        assertEquals("foo13", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
-        assertEquals("foo16", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
+        assertEquals("default10", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default11", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default13", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default14", clusterControllers.getContainers().get(3).getHostName()); // Should be 16 for perfect distribution ...
+        assertEquals("default10", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(0).getHostName());
+        assertEquals("default11", cluster.getRootGroup().getSubgroups().get(0).getNodes().get(1).getHostName());
+        assertEquals("default13", cluster.getRootGroup().getSubgroups().get(1).getNodes().get(0).getHostName());
+        assertEquals("default16", cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getHostName());
     }
 
     @Test
@@ -487,8 +451,9 @@ public class ModelProvisioningTest {
                 "</services>";
 
         int numberOfHosts = 5;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -496,8 +461,7 @@ public class ModelProvisioningTest {
         assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
     }
 
-    @Test
-    public void testClusterControllersAreNotPlacedOnRetiredNodes() throws ParseException {
+    public void testClusterControllersAreNotPlacedOnRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -515,8 +479,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 19;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo10", "foo13", "foo16");
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "default10", "default13", "default16");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -524,13 +489,13 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("Skipping retired foo10", "foo11", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("Skipping retired foo13", "foo14", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("Skipping retired foo16", "foo17", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("Skipping retired default10", "default11", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("Skipping retired default13", "default14", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("Skipping retired default16", "default17", clusterControllers.getContainers().get(2).getHostName());
     }
 
     @Test
-    public void testSlobroksClustersAreExpandedToIncludeRetiredNodes() throws ParseException {
+    public void testSlobroksClustersAreExpandedToIncludeRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -541,16 +506,17 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo0");
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "default0");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 1+3, model.getAdmin().getSlobroks().size());
-        assertEquals("foo1", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("foo2", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("foo3", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("Included in addition because it is retired", "foo0", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("default1", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("default2", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("default3", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("Included in addition because it is retired", "default0", model.getAdmin().getSlobroks().get(3).getHostName());
     }
 
     @Test
@@ -565,21 +531,22 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 10;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo3", "foo4");
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "default3", "default4");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
-        assertEquals("foo0", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("foo1", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("foo2", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("Included in addition because it is retired", "foo3", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "foo4", model.getAdmin().getSlobroks().get(4).getHostName());
+        assertEquals("default0", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("default1", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("default2", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("Included in addition because it is retired", "default3", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("Included in addition because it is retired", "default4", model.getAdmin().getSlobroks().get(4).getHostName());
     }
 
     @Test
-    public void testSlobroksAreSpreadOverAllContainerClusters() throws ParseException {
+    public void testSlobroksAreSpreadOverAllContainerClusters() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -593,24 +560,25 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 13;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true, "foo0", "foo10", "foo11");
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true, "default0", "default10", "default11");
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
-        // ... from cluster foo
+        // ... from cluster default
         assertEquals("Includes retired node", 3+3, model.getAdmin().getSlobroks().size());
-        assertEquals("foo1", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("foo2", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("Included in addition because it is retired", "foo0", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("default1", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("default2", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("Included in addition because it is retired", "default0", model.getAdmin().getSlobroks().get(2).getHostName());
         // ... from cluster bar
-        assertEquals("foo12", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "foo10", model.getAdmin().getSlobroks().get(4).getHostName());
-        assertEquals("Included in addition because it is retired", "foo11", model.getAdmin().getSlobroks().get(5).getHostName());
+        assertEquals("default12", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("Included in addition because it is retired", "default10", model.getAdmin().getSlobroks().get(4).getHostName());
+        assertEquals("Included in addition because it is retired", "default11", model.getAdmin().getSlobroks().get(5).getHostName());
     }
 
     @Test
-    public void test2ContentNodesProduces1ClusterController() throws ParseException {
+    public void test2ContentNodesProduces1ClusterController() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -624,8 +592,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 2;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -651,8 +620,9 @@ public class ModelProvisioningTest {
                 "</services>";
 
         int numberOfHosts = 5;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -660,8 +630,7 @@ public class ModelProvisioningTest {
         assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
     }
 
-    @Test
-    public void testExplicitDedicatedClusterControllers() throws ParseException {
+    public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -679,8 +648,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 23;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
@@ -688,14 +658,14 @@ public class ModelProvisioningTest {
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(4, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("foo19", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("foo20", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("foo21", clusterControllers.getContainers().get(2).getHostName());
-        assertEquals("foo22", clusterControllers.getContainers().get(3).getHostName());
+        assertEquals("default19", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default20", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("default21", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("default22", clusterControllers.getContainers().get(3).getHostName());
     }
 
     @Test
-    public void testUsingNodesAndGroupCountAttributesAndGettingTooFewNodes() throws ParseException {
+    public void testUsingNodesAndGroupCountAttributesAndGettingTooFewNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
@@ -713,8 +683,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 6; // We only have 6 content nodes -> 3 groups with redundancy 2 in each
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -745,7 +716,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesCountAttributesAndGettingTooFewNodes() throws ParseException {
+    public void testUsingNodesCountAttributesAndGettingTooFewNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
@@ -764,8 +735,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 4;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -806,15 +778,16 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1; // We only have 1 content node -> 1 groups with redundancy 1
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
         assertEquals(1, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("foo0", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("default0", clusterControllers.getContainers().get(0).getHostName());
         assertEquals(1, cluster.redundancy().effectiveInitialRedundancy()); // Reduced from 3*3
         assertEquals(1, cluster.redundancy().effectiveFinalRedundancy()); // Reduced from 3*4
         assertEquals(1, cluster.redundancy().effectiveReadyCopies()); // Reduced from 3*3
@@ -827,7 +800,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesCountAttributesAndGettingJustOneNode() throws ParseException {
+    public void testUsingNodesCountAttributesAndGettingJustOneNode() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -846,8 +819,9 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int numberOfHosts = 1;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, false);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -865,7 +839,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testRequestingSpecificFlavors() throws ParseException {
+    public void testRequestingSpecificFlavors() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -893,20 +867,20 @@ public class ModelProvisioningTest {
                         "</services>";
 
         int totalHosts = 23;
-        Map<String, Collection<Host>> hosts = new HashMap<>();
-        hosts.put("logserver-flavor", createHosts("logserver-flavor", 1).getHosts());
-        hosts.put("slobrok-flavor", createHosts("slobrok-flavor", 2).getHosts());
-        hosts.put("container-flavor", createHosts("container-flavor", 4).getHosts());
-        hosts.put("controller-foo-flavor", createHosts("controller-foo-flavor", 2).getHosts());
-        hosts.put("content-foo-flavor", createHosts("content-foo-flavor", 5).getHosts());
-        hosts.put("controller-bar-flavor", createHosts("controller-bar-flavor", 3).getHosts());
-        hosts.put("content-bar-flavor", createHosts("content-bar-flavor", 6).getHosts());
-        VespaModel model = createModel(services, hosts, true, 0); // fails unless the right flavors+counts are requested
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts("logserver-flavor", 1);
+        tester.addHosts("slobrok-flavor", 2);
+        tester.addHosts("container-flavor", 4);
+        tester.addHosts("controller-foo-flavor", 2);
+        tester.addHosts("content-foo-flavor", 5);
+        tester.addHosts("controller-bar-flavor", 3);
+        tester.addHosts("content-bar-flavor", 6);
+        VespaModel model = tester.createModel(services, true, 0); // fails unless the right flavors+counts are requested
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(totalHosts));
     }
 
     @Test
-    public void testJDiscOnly() throws Exception {
+    public void testJDiscOnly() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<jdisc version='1.0'>" +
@@ -914,8 +888,9 @@ public class ModelProvisioningTest {
                         "  <nodes count='3'/>" +
                         "</jdisc>";
         int numberOfHosts = 3;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(3, model.getContainerClusters().get("jdisc").getContainers().size());
         assertNotNull(model.getAdmin().getLogserver());
@@ -923,7 +898,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingHostaliasWithProvisioner() throws Exception {
+    public void testUsingHostaliasWithProvisioner() {
         String services =
                         "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
@@ -941,14 +916,15 @@ public class ModelProvisioningTest {
                         "</jdisc>" +
                         "</services>";
         int numberOfHosts = 1;
-        Hosts hosts = createHosts(numberOfHosts);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
     }
 
     @Test
-    public void testThatStandaloneSyntaxWorksOnHostedVespa() throws ParseException {
+    public void testThatStandaloneSyntaxWorksOnHostedVespa() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<jdisc id='foo' version='1.0'>" +
@@ -956,15 +932,16 @@ public class ModelProvisioningTest {
                 "    <server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "' />" +
                 "  </http>" +
                 "</jdisc>";
-        Hosts hosts = createHosts(1);
-        VespaModel model = createModel(services, hosts, true);
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(1);
+        VespaModel model = tester.createModel(services, true);
         assertThat(model.getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));
     }
 
     /** Recreate the combination used in some factory tests */
     @Test
-    public void testMultitenantButNotHosted() throws Exception {
+    public void testMultitenantButNotHosted() {
         String services =
         "<?xml version='1.0' encoding='UTF-8' ?>" +
         "<services version='1.0'>" +
@@ -1006,7 +983,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testMultitenantButNotHostedSharedContentNode() throws Exception {
+    public void testMultitenantButNotHostedSharedContentNode() {
         String services =
         "<?xml version='1.0' encoding='UTF-8' ?>" +
         "<services version='1.0'>" +
@@ -1056,9 +1033,9 @@ public class ModelProvisioningTest {
         assertEquals(1, controller.getContainers().size());
     }
 
-    private VespaModel createNonProvisionedMultitenantModel(String services) throws ParseException {
-        final VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
-        final ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
+    private VespaModel createNonProvisionedMultitenantModel(String services) {
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
+        ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
                 properties((new DeployProperties.Builder()).multitenant(true).build()).
                 build();
@@ -1066,7 +1043,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testThatTldConfigIdsAreDeterministic() throws ParseException {
+    public void testThatTldConfigIdsAreDeterministic() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -1098,12 +1075,13 @@ public class ModelProvisioningTest {
         int numberOfHosts = 8;
 
         {
-            Hosts hosts = createHosts(numberOfHosts);
-            // Nodes used will be foo0, foo1, .. and so on.
-            VespaModel model = createModel(services, hosts, true);
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(numberOfHosts);
+            // Nodes used will be default0, default1, .. and so on.
+            VespaModel model = tester.createModel(services, true);
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
-            final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+            Map<String, ContentCluster> contentClusters = model.getContentClusters();
             assertEquals(2, contentClusters.size());
 
             checkThatTldAndContainerRunningOnSameHostHaveSameId(
@@ -1113,13 +1091,14 @@ public class ModelProvisioningTest {
         }
 
         {
-            Hosts hosts = createHosts(numberOfHosts + 1);
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(numberOfHosts + 1);
             // Start numbering nodes with index 1 and retire first node
-            // Nodes used will be foo1, foo2, .. and so on. Containers will start with index 1, not 0 as they are in the test above
-            VespaModel model = createModel(services, Collections.singletonMap("default", hosts.getHosts()), true, 1, "foo0");
+            // Nodes used will be default1, default2, .. and so on. Containers will start with index 1, not 0 as they are in the test above
+            VespaModel model = tester.createModel(services, true, 1, "default0");
             assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
-            final Map<String, ContentCluster> contentClusters = model.getContentClusters();
+            Map<String, ContentCluster> contentClusters = model.getContentClusters();
             assertEquals(2, contentClusters.size());
 
             checkThatTldAndContainerRunningOnSameHostHaveSameId(
@@ -1133,14 +1112,14 @@ public class ModelProvisioningTest {
                                                                      Collection<ContentCluster> contentClusters,
                                                                      int startIndexForContainerIds) {
         for (ContentCluster contentCluster : contentClusters) {
-            final String contentClusterName = contentCluster.getName();
+            String contentClusterName = contentCluster.getName();
             int i = 0;
             for (ContainerCluster containerCluster : containerClusters) {
-                final String containerClusterName = containerCluster.getName();
+                String containerClusterName = containerCluster.getName();
                 for (int j = 0; j < 2; j++) {
-                    final Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
-                    final Container container = containerCluster.getContainers().get(j);
-                    final int containerConfigIdIndex = j + startIndexForContainerIds;
+                    Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
+                    Container container = containerCluster.getContainers().get(j);
+                    int containerConfigIdIndex = j + startIndexForContainerIds;
 
                     assertEquals(container.getHostName(), tld.getHostname());
                     assertEquals(contentClusterName + "/search/cluster." + contentClusterName + "/tlds/" +
@@ -1154,14 +1133,4 @@ public class ModelProvisioningTest {
         }
     }
 
-    private void assertIllegalModel(String services, String expectedIllegalTag) {
-        try {
-            createModel(services, createHosts(2), true);
-            fail("Expected that test failed");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is(expectedIllegalTag + " is not allowed when running Vespa in a hosted environment"));
-        } catch (ParseException e) {
-            fail("Test failed unexpectedly: " + e.getMessage());
-        }
-    }
 }
