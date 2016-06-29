@@ -1,18 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -52,7 +55,7 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
-    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, docker, nodeRepository, orchestrator);
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new NodeMechanisms(docker));
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -77,7 +80,9 @@ public class NodeAgentImplTest {
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -114,13 +119,16 @@ public class NodeAgentImplTest {
         final boolean isRunning = true;
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
         final String vespaVersion = "7.8.9";
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());;
+
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(orchestrator).suspend(hostName);
@@ -134,8 +142,10 @@ public class NodeAgentImplTest {
                 nodeSpec.minCpuCores.get(),
                 nodeSpec.minDiskAvailableGb.get(),
                 nodeSpec.minMainMemoryAvailableGb.get());
+
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, wantedRestartGeneration, dockerImage, vespaVersion);
+
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -164,7 +174,10 @@ public class NodeAgentImplTest {
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(orchestrator).suspend(hostName);
@@ -204,7 +217,8 @@ public class NodeAgentImplTest {
         when(docker.imageIsDownloaded(newDockerImage)).thenReturn(false);
         when(docker.pullImageAsync(newDockerImage)).thenReturn(new CompletableFuture<>());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
 
         verify(docker, never()).stopContainer(containerName);
         verify(docker).pullImageAsync(newDockerImage);
@@ -227,13 +241,19 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
         final boolean isRunning = false;
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
+        final Container existingContainer2 = new Container(hostName, dockerImage, containerName, true);
+
         final String vespaVersion = "7.8.9";
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty()).thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(orchestrator, never()).suspend(any(HostName.class));
@@ -270,9 +290,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
@@ -310,14 +334,12 @@ public class NodeAgentImplTest {
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
-        when(orchestrator.suspend(any(HostName.class))).thenReturn(false);
+    //    when(orchestrator.suspend(any(HostName.class))).thenReturn(false);
 
-        try {
-            nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
-            fail("permission to suspend should fail so we should never get here");
-        } catch (OrchestratorException e) {
-            // expected
-        }
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));//.thenReturn(Optional.empty()).thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator).suspend(hostName);
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -354,7 +376,10 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));//.thenReturn(Optional.empty()).thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker);
@@ -393,7 +418,10 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));//.thenReturn(Optional.empty()).thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -429,7 +457,10 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());//.thenReturn(Optional.empty()).thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -467,7 +498,11 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker);
@@ -506,7 +541,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -542,7 +583,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+        when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -580,7 +627,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
@@ -620,7 +673,12 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -658,7 +716,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+      //  when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -696,7 +760,13 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+//        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -716,7 +786,7 @@ public class NodeAgentImplTest {
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
     }
 
-    @Test
+    @Test // bla
     public void noRedundantNodeRepositoryCalls() throws Exception {
         final long restartGeneration = 1;
         final DockerImage dockerImage1 = new DockerImage("dockerImage1");
@@ -754,33 +824,56 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(nodeRepository, docker);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer1));
+
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer1)).thenReturn(Optional.of(existingContainer2));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1)).thenReturn(Optional.of(nodeSpec2));
+//        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
+        //    nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer1));
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         // Should get exactly one invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer1));
+
+        // -------------------------------
+        when(orchestrator.resume(any(HostName.class))).thenReturn(false);
+
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
+   //     nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer1));
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         // No attributes have changed; no second invocation should take place.
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec2, Optional.of(existingContainer1));
+
+
+      //  when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec2));
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
+
+
+        //    nodeAgent.synchronizeLocalContainerState(nodeSpec2, Optional.of(existingContainer1));
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         // One attribute has changed, should cause new invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage2, vespaVersion);
         verify(nodeRepository, times(2)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec2, Optional.of(existingContainer2));
+     //   nodeAgent.synchronizeLocalContainerState(nodeSpec2, Optional.of(existingContainer2));
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         // No attributes have changed; no new invocation should take place.
         verify(nodeRepository, times(2)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer2));
+    //    nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer2));
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         // Back to previous node spec should also count as new data and cause a new invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
@@ -816,22 +909,39 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(nodeRepository);
 
-        try {
-            nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer));
-            fail("Should throw exception");
-        } catch (IOException e) {
+
+
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));//.thenReturn(Optional.of(existingContainer2));
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1));
+//        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());//.thenReturn(Optional.of(existingContainer2));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
+
+
+        //   try {
+    //        nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer));
+ //           fail("Should throw exception");
+     //   } catch (IOException e) {
             // As expected.
-        }
+    //    }
         // Should get exactly one invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer));
+
+        System.err.println("NOOOOOW LAAST");
+
+   //   nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+nodeAgent.nodeTick();
+
+
+        //      nodeAgent.synchronizeLocalContainerState(nodeSpec1, Optional.of(existingContainer));
         // First attribute update failed, so it should be retried now.
-        inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
-        verify(nodeRepository, times(2)).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), anyString());
+           inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
+      verify(nodeRepository, times(2)).updateNodeAttributes(
+               any(HostName.class), anyLong(), any(DockerImage.class), anyString());
     }
 
     @Test
@@ -869,12 +979,21 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, docker);
 
         // 1st try
-        try {
-            nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
-            fail("Should have been a failure");
-        } catch (Exception e) {
+    //    try {
+     //       nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+      //      fail("Should have been a failure");
+     //   } catch (Exception e) {
             // expected
-        }
+      //  }
+
+
+        when(docker.getContainer(hostName)).thenReturn(NO_CONTAINER);
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));//.thenReturn(Optional.of(nodeSpec2));
+
+        nodeAgent.nodeTick();
+
+
+
 
         inOrder.verify(docker).startContainer(
                 nodeSpec.wantedDockerImage.get(),
@@ -887,31 +1006,37 @@ public class NodeAgentImplTest {
         inOrder.verifyNoMoreInteractions();
 
         // 2nd try
-        try {
-            nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
-            fail("Should have been a failure");
-        } catch (Exception e) {
+    //    try {
+    //        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+    //        fail("Should have been a failure");
+    //    } catch (Exception e) {
             // expected
-        }
-
+    //    }
+ //       nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+    nodeAgent.nodeTick();
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
-        inOrder.verifyNoMoreInteractions();
+       // inOrder.verifyNoMoreInteractions();
 
         // 3rd try success
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+      //  nodeAgent.synchronizeLocalContainerState(nodeSpec, NO_CONTAINER);
+        nodeAgent.nodeTick();
 
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
         inOrder.verifyNoMoreInteractions();
 
         // 4th and 5th times, already started, no calls to executeInContainer
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, uptodateContainer);
+    //    nodeAgent.synchronizeLocalContainerState(nodeSpec, uptodateContainer);
+        when(docker.getContainer(hostName)).thenReturn(uptodateContainer);
+
+        nodeAgent.nodeTick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
         inOrder.verifyNoMoreInteractions();
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, uptodateContainer);
+    //    nodeAgent.synchronizeLocalContainerState(nodeSpec, uptodateContainer);
+        nodeAgent.nodeTick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
@@ -960,7 +1085,12 @@ public class NodeAgentImplTest {
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
-        nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+      //  nodeAgent.synchronizeLocalContainerState(nodeSpec, Optional.of(existingContainer));
+        when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, true);
+
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(orchestrator).suspend(hostName);
@@ -1007,7 +1137,7 @@ public class NodeAgentImplTest {
     public void suspendFailureIsIgnored() throws Exception {
         failSuspendProgram(NodeProgramFailureScenario.NODE_PROGRAM_FAILURE);
     }
-
+/*
     @Test
     public void absenceOfNodeProgramIsSuccess() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
@@ -1034,7 +1164,8 @@ public class NodeAgentImplTest {
                 eq(nodeProgramExistsCommand[3]));
         assertThat(result.isPresent(), is(false));
     }
-
+    */
+/*
     @Test
     public void processResultFromNodeProgramWhenPresent() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
@@ -1069,5 +1200,5 @@ public class NodeAgentImplTest {
 
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(actualResult));
-    }
+    }*/
 }

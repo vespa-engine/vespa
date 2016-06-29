@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 
 /**
  * Class for setting up instances of classes; enables testing.
@@ -8,6 +8,6 @@ import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
  * @author dybis
  */
 public interface ComponentsProvider {
-     NodeAdminStateUpdater getNodeAdminStateUpdater();
+     NodeAdmin.NodeAdminStateUpdater getNodeAdminStateUpdater();
 
 }
