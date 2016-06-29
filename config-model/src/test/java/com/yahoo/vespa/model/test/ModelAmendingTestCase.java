@@ -25,7 +25,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -49,7 +48,7 @@ public class ModelAmendingTestCase {
                                                                                       new ContentModelAmenderBuilder());
         String services =
                                              "<services version='1.0'>" +
-                                             "    <admin version='3.0'/>" +
+                                             "    <admin version='4.0'/>" +
                                              "    <jdisc id='test1' version='1.0'>" +
                                              "        <search/>" +
                                              "        <nodes count='2'/>" +
@@ -78,20 +77,15 @@ public class ModelAmendingTestCase {
         tester.addHosts(10);
         VespaModel model = tester.createModel(services);
 
-        // Check that admin models are amended
+        // Check that all hosts are amended
         for (HostResource host : model.getAdmin().getHostSystem().getHosts()) {
-            System.out.println(host + " amended: " + !host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
-            //assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
+            assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
         }
         
-        // Check that explicit jdisc clusters are amended
-        for (ContainerCluster cluster : model.getContainerClusters().values())
-            System.out.println(cluster);
-        assertEquals(4, model.getContainerClusters().size());
+        // Check that jdisc clusters are amended
+        assertEquals(2, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("test2").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
-        assertNotNull(model.getContainerClusters().get("cluster.test3.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
-        assertNotNull(model.getContainerClusters().get("cluster.test4.indexing").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
     }
 
     public static class AdminModelAmenderBuilder extends ConfigModelBuilder<AdminModelAmender> {
@@ -143,7 +137,9 @@ public class ModelAmendingTestCase {
         /** The container models this builder amends */
         private final Collection<AdminModel> adminModels;
 
-        public AdminModelAmender(ConfigModelContext modelContext, Collection<AdminModel> adminModels) {
+        /** Depend on all models adding hosts to the system as this this should amend services on all hosts */
+        public AdminModelAmender(ConfigModelContext modelContext, Collection<AdminModel> adminModels, 
+                                 Collection<ContainerModel> containerModels, Collection<Content> contentModels) {
             super(modelContext);
             this.adminModels = adminModels;
         }
