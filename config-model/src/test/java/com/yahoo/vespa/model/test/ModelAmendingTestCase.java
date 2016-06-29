@@ -134,7 +134,7 @@ public class ModelAmendingTestCase {
 
     public static class AdminModelAmender extends ConfigModel {
 
-        /** The container models this builder amends */
+        /** The admin models this builder amends */
         private final Collection<AdminModel> adminModels;
 
         /** Depend on all models adding hosts to the system as this this should amend services on all hosts */
