@@ -22,4 +22,6 @@ public interface NodeAdmin {
     Set<HostName> getListOfHosts();
 
     String debugInfo();
+
+    void shutdown();
 }

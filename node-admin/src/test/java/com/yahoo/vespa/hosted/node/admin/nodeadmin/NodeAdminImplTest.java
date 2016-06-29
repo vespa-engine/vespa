@@ -50,7 +50,7 @@ public class NodeAdminImplTest {
         final Docker docker = mock(Docker.class);
         final Function<HostName, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, 100);
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
@@ -78,14 +78,14 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
-        inOrder.verify(nodeAgent1).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
+        inOrder.verify(nodeAgent1).start(100);
+//        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent1, never()).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
+        inOrder.verify(nodeAgent1, never()).start(1);
+     //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
         inOrder.verify(nodeAgent1, never()).stop();
         nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
@@ -93,13 +93,13 @@ public class NodeAdminImplTest {
 
         nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
-        inOrder.verify(nodeAgent2).start();
+        inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
 
         nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent2, never()).start();
-        inOrder.verify(nodeAgent2).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
+        inOrder.verify(nodeAgent2, never()).start(1);
+    //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);

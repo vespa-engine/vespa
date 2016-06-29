@@ -41,13 +41,16 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
+    private final int nodeAgentScanIntervalMillis;
+
     /**
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
-    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory) {
+    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory, int nodeAgentScanIntervalMillis) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
+        this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -62,7 +65,7 @@ public class NodeAdminImpl implements NodeAdmin {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
             // worth it (it could block the rest call for some time and might have implications).
-            nodeAgent.execute(NodeAgent.Command.SET_FREEZE, false /* blocking*/);
+            nodeAgent.execute(NodeAgent.Command.SET_FREEZE);
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             if (nodeAgent.getState() != NodeAgent.State.FROZEN) {
@@ -74,7 +77,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public void unfreeze() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.UNFREEZE, false);
+            nodeAgent.execute(NodeAgent.Command.UNFREEZE);
         }
     }
 
@@ -90,6 +93,13 @@ public class NodeAdminImpl implements NodeAdmin {
             debug.append(" state ").append(node.getValue().getState());
         }
         return debug.toString();
+    }
+
+    @Override
+    public void shutdown() {
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            nodeAgent.stop();
+        }
     }
 
     private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
@@ -178,14 +188,11 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     private void updateAgent(final ContainerNodeSpec nodeSpec) throws IOException {
-        final NodeAgent agent;
         if (nodeAgents.containsKey(nodeSpec.hostname)) {
-            agent = nodeAgents.get(nodeSpec.hostname);
-        } else {
-            agent = nodeAgentFactory.apply(nodeSpec.hostname);
-            nodeAgents.put(nodeSpec.hostname, agent);
-            agent.start();
+            return;
         }
-        agent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO, false);
+        final NodeAgent agent = nodeAgentFactory.apply(nodeSpec.hostname);
+        nodeAgents.put(nodeSpec.hostname, agent);
+        agent.start(nodeAgentScanIntervalMillis);
     }
 }

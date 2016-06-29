@@ -122,5 +122,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        nodeAdmin.shutdown();
     }
 }

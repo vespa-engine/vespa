@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeDocker;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,7 +56,7 @@ public class NodeStateTest {
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeDocker(dockerMock));
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
 
         hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(

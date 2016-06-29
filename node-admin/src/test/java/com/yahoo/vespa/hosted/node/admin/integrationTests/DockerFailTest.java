@@ -49,7 +49,7 @@ public class DockerFailTest {
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeDocker(dockerMock));
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
 
         HostName hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(
@@ -99,8 +99,12 @@ public class DockerFailTest {
                 "ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n";
+
+
         while (!DockerMock.getRequests().equals(goal)) {
-            Thread.sleep(10);
+            Thread.sleep(1000);
+            assertThat(DockerMock.getRequests(), is(goal));
+
         }
 
         assertThat(DockerMock.getRequests(), is(goal));

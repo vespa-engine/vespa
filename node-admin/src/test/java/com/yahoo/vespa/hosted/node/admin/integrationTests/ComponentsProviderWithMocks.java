@@ -25,7 +25,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
 
     private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
             new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeDocker(dockerMock));
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
 
 
     @Override

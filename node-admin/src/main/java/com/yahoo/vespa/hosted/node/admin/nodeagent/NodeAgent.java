@@ -14,17 +14,10 @@ public interface NodeAgent {
     enum State {WAITING, WORKING, FROZEN, TERMINATED}
 
     /**
-     * Signals to the agent that it should update the node specification and container state and maintain wanted state.
-     *
-     * It is an error to call this method on an instance after stop() has been called.
-     */
-
-    /**
      * Make the node agent execute a command soon.
      * @param command task to be done
-     * @param blocking will wait for the node agent to execute the command.
      */
-    void execute(Command command, boolean blocking);
+    void execute(Command command);
 
     /**
      * Returns the state of the agent.
@@ -34,9 +27,9 @@ public interface NodeAgent {
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
      * striving to make the current state equal to the wanted state. The current and wanted state update as part of
-     * {@link #execute(Command, boolean)}.
+     * {@link #execute(Command)}.
      */
-    void start();
+    void start(int intervalMillis);
 
     /**
      * Signals to the agent that the node is at the end of its lifecycle and no longer needs a managing agent.

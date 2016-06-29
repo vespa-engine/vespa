@@ -16,10 +16,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.CONTAINER_ABSENT;
-import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_NODE;
-import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_NODE_HOWEVER_RESUME_SCRIPT_NOT_RUN;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * @author dybis
@@ -47,11 +47,11 @@ public class NodeAgentImpl implements NodeAgent {
 
 
     public enum ContainerState {
-        CONTAINER_ABSENT,
-        RUNNING_NODE_HOWEVER_RESUME_SCRIPT_NOT_RUN,
-        RUNNING_NODE
+        ABSENT,
+        RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
+        RUNNING
     }
-    ContainerState containerState = CONTAINER_ABSENT;
+    ContainerState containerState = ABSENT;
 
     // The attributes of the last successful noderepo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
@@ -69,9 +69,10 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void execute(Command command, boolean blocking) {
+    public void execute(Command command) {
         switch (command) {
             case UPDATE_FROM_NODE_REPO:
+                nodeTick();
                 break;
             case SET_FREEZE:
                 frozen.set(true);
@@ -81,11 +82,6 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             default:
                 throw new RuntimeException("Unknown command " + command.name());
-        }
-        if (blocking) {
-            nodeTick();
-        } else {
-            nodeTickInNewThread();
         }
     }
 
@@ -97,11 +93,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void start() {
+    public void start(int intervalMillis) {
         if (scheduler.isTerminated()) {
             throw new RuntimeException("Can not restart a node agent.");
         }
-        scheduler.scheduleWithFixedDelay(this::nodeTick, 1, 60, SECONDS);
+        scheduler.scheduleWithFixedDelay(this::nodeTick, intervalMillis, intervalMillis, MILLISECONDS);
     }
 
     @Override
@@ -130,12 +126,12 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     public void startNodeInContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (containerState != RUNNING_NODE_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
+        if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
         logger.log(Level.INFO, logPrefix + "Starting optional node program resume command");
         nodeDocker.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
-        containerState = RUNNING_NODE;
+        containerState = RUNNING;
     }
 
     public void publishThatNodeIsRunningIfRequired(final ContainerNodeSpec nodeSpec) throws IOException {
@@ -162,11 +158,11 @@ public class NodeAgentImpl implements NodeAgent {
 
     public void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (nodeDocker.startContainerIfNeeded(nodeSpec)) {
-            containerState = RUNNING_NODE_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+            containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
         } else {
             // In case container was already running on startup, we found the container, but should call
-            if (containerState == CONTAINER_ABSENT) {
-                containerState = RUNNING_NODE_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+            if (containerState == ABSENT) {
+                containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
             }
         }
     }
@@ -177,7 +173,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
         if (nodeDocker.removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
-            containerState = CONTAINER_ABSENT;
+            containerState = ABSENT;
         }
     }
 

@@ -51,7 +51,7 @@ public class MultiDockerTest {
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeDocker(dockerMock));
-        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
 

@@ -54,6 +54,7 @@ public class RunInContainerTest {
 
     @After
     public void after() {
+        container.close();
         OrchestratorMock.semaphore.release();
     }
 

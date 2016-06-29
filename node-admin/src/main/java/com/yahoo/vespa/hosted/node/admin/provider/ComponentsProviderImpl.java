@@ -30,6 +30,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
     private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
     private static final String ENV_HOSTNAME = "HOSTNAME";
+    private static final int nodeAgentScanIntervalMillis = 60000;
     public ComponentsProviderImpl(final Docker docker) {
         this.docker = docker;
     }
@@ -49,7 +50,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepository, orchestrator, new NodeDocker(docker));
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
+        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, nodeAgentScanIntervalMillis);
         return new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, INTERVAL_SCHEDULER_IN_MILLIS, orchestrator, baseHostName);
     }
