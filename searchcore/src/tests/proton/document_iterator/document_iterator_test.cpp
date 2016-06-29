@@ -509,12 +509,12 @@ void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
     EXPECT_EQUAL(0u, res.getEntries().size());
 }
 
-TEST("require that iterator stops, even when misused") {
+TEST("require that iterator stops at the end, and does not auto rewind") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
     TEST_DO(verifyIterateIgnoringStopSignal(itr));
 }
 
-TEST("require that iterator ignoring maxbytes stops, even when misused") {
+TEST("require that iterator ignoring maxbytes stops at the end, and does not auto rewind") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, true);
     TEST_DO(verifyIterateIgnoringStopSignal(itr));
 }
