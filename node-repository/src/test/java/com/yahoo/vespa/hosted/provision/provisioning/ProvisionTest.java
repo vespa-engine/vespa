@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -425,12 +426,39 @@ public class ProvisionTest {
         }
     }
 
+    @Test
+    public void highest_node_indexes_are_retired_first() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application1 = tester.makeApplicationId();
+
+        tester.makeReadyNodes(10, "default");
+
+        // deploy
+        SystemState state1 = prepare(application1, 2, 2, 3, 3, "default", tester);
+        tester.activate(application1, state1.allHosts);
+
+        // decrease cluster sizes
+        SystemState state2 = prepare(application1, 1, 1, 1, 1, "default", tester);
+        tester.activate(application1, state2.allHosts);
+
+        // group0
+        assertFalse(state2.hostByMembership("test", 0, 0).membership().get().retired());
+        assertTrue( state2.hostByMembership("test", 0, 1).membership().get().retired());
+        assertTrue( state2.hostByMembership("test", 0, 2).membership().get().retired());
+
+        // group1
+        assertFalse(state2.hostByMembership("test", 1, 0).membership().get().retired());
+        assertTrue( state2.hostByMembership("test", 1, 1).membership().get().retired());
+        assertTrue( state2.hostByMembership("test", 1, 2).membership().get().retired());
+    }
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int group0Size, int group1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
         ClusterSpec containerCluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
-        ClusterSpec contentGroup0 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("g0")));
-        ClusterSpec contentGroup1 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("g1")));
+        ClusterSpec contentGroup0 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("0")));
+        ClusterSpec contentGroup1 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("1")));
 
         Set<HostSpec> container0 = new HashSet<>(tester.prepare(application, containerCluster0, container0Size, 1, flavor));
         Set<HostSpec> container1 = new HashSet<>(tester.prepare(application, containerCluster1, container1Size, 1, flavor));
@@ -483,6 +511,24 @@ public class ProvisionTest {
             this.container2 = container2;
             this.group1 = group1;
             this.group2 = group2;
+        }
+        
+        /** Returns a host by cluster name and index, or null if there is no host with the given values in this */
+        public HostSpec hostByMembership(String clusterId, int group, int index) {
+            for (HostSpec host : allHosts) {
+                if ( ! host.membership().isPresent()) continue;
+                ClusterMembership membership = host.membership().get();
+                if (membership.cluster().id().value().equals(clusterId) &&
+                    groupMatches(membership.cluster().group(), group) &&
+                    membership.index() == index)
+                    return host;
+            }
+            return null;
+        }
+        
+        private boolean groupMatches(Optional<ClusterSpec.Group> clusterGroup, int group) {
+            if ( ! clusterGroup.isPresent()) return group==0;
+            return Integer.parseInt(clusterGroup.get().value()) == group;
         }
 
         public Set<String> hostNames() {

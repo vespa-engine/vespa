@@ -45,7 +45,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void optimize_sorts_by_more_vms() {
-        List<Node> readyList = new ArrayList<Node>();
+        List<Node> readyList = new ArrayList<>();
         readyList.addAll(tester.makeReadyNodes(2, flavor));
         readyList.addAll(tester.makeReadyVirtualNodes(2, flavor, "parentHost1"));
         readyList.addAll(tester.makeReadyNodes(2, flavor));
@@ -54,7 +54,7 @@ public class VirtualNodeProvisioningTest {
         readyList.addAll(tester.makeReadyVirtualNodes(1, flavor, "parentHost4"));
         readyList.addAll(tester.makeReadyNodes(3, flavor));
         assertEquals(15, readyList.size());
-        List<Node> optimized = GroupPreparer.optimize(readyList);
+        List<Node> optimized = GroupPreparer.stripeOverHosts(readyList);
         assertEquals(15, optimized.size());
         assertEquals("parentHost2", optimized.get(0).parentHostname().get());
         assertEquals("parentHost4", optimized.get(3).parentHostname().get());
