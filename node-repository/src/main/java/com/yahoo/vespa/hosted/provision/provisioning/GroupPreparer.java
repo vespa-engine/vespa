@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -62,7 +63,7 @@ class GroupPreparer {
             nodeList.offer(nodeRepository.getNodes(application, Node.State.active), !canChangeGroup);
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
-            // Use active nodes that will otherwise be retired
+            // Use active nodes from other groups that will otherwise be retired
             List<Node> accepted = nodeList.offer(surplusActiveNodes, canChangeGroup);
             surplusActiveNodes.removeAll(accepted);
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
@@ -76,10 +77,10 @@ class GroupPreparer {
             nodeList.update(nodeRepository.reserve(accepted));
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
-            // Use new, ready nodes. Need to lock ready pool to ensure that nodes are not grabbed by others.
+            // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
                 List<Node> readyNodes = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready);
-                accepted = nodeList.offer(optimize(readyNodes), !canChangeGroup);
+                accepted = nodeList.offer(stripeOverHosts(readyNodes), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
@@ -99,33 +100,32 @@ class GroupPreparer {
         }
     }
 
-    // optimize based on parent hosts
-    static List<Node> optimize(List<Node> input) {
-        int cnt = input.size();
-        List<Node> output = new ArrayList<Node>(cnt);
+    /** Return the input nodes in an order striped over their parent hosts */
+    static List<Node> stripeOverHosts(List<Node> input) {
+        List<Node> output = new ArrayList<>(input.size());
 
-        // first deal with VMs.
-        long vms = input.stream()
+        // first deal with nodes having a parent host
+        long nodesHavingParent = input.stream()
             .filter(n -> n.parentHostname().isPresent())
             .collect(Collectors.counting());
-        if (vms > 0) {
-            // Make a map where each parenthost maps to a list of VMs:
+        if (nodesHavingParent > 0) {
+            // Make a map where each parent host maps to its list of child nodes
             Map<String, List<Node>> byParentHosts = input.stream()
                 .filter(n -> n.parentHostname().isPresent())
                 .collect(Collectors.groupingBy(n -> n.parentHostname().get()));
 
-            // sort keys, those parent hosts with the most (remaining) ready VMs first
+            // sort keys, those parent hosts with the most (remaining) ready nodes first
             List<String> sortedParentHosts = byParentHosts
                 .keySet().stream()
                 .sorted((k1, k2) -> byParentHosts.get(k2).size() - byParentHosts.get(k1).size())
                 .collect(Collectors.toList());
-            while (vms > 0) {
-                // take one VM from each parent host, round-robin.
+            while (nodesHavingParent > 0) {
+                // take one node from each parent host, round-robin.
                 for (String k : sortedParentHosts) {
                     List<Node> leftFromHost = byParentHosts.get(k);
                     if (! leftFromHost.isEmpty()) {
                         output.add(leftFromHost.remove(0));
-                        --vms;
+                        --nodesHavingParent;
                     }
                 }
             }
@@ -225,7 +225,7 @@ class GroupPreparer {
         private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<Node> accepted, Node offered) {
             for (Node acceptedNode : accepted) {
                 if (acceptedNode.parentHostname().isPresent() && offered.parentHostname().isPresent() &&
-                        acceptedNode.parentHostname().get().equals(offered.parentHostname().get())) {
+                    acceptedNode.parentHostname().get().equals(offered.parentHostname().get())) {
                     return true;
                 }
             }
@@ -312,6 +312,7 @@ class GroupPreparer {
          * Prefer to retire nodes of the wrong flavor.
          * Make as few changes to the retired set as possible.
          *
+         * @param surplusNodes this will add nodes not any longer needed by this group to this list
          * @return the final list of nodes
          */
         public List<Node> finalNodes(List<Node> surplusNodes) {
@@ -319,17 +320,17 @@ class GroupPreparer {
             long surplus = nodes.size() - requestedNodes - currentRetired;
 
             List<Node> changedNodes = new ArrayList<>();
-            if (surplus > 0) { // retire until surplus is 0
-                for (Node node : nodes) {
+            if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution
+                for (Node node : byDecreasingIndex(nodes)) {
                     if ( ! node.allocation().get().membership().retired() && node.state().equals(Node.State.active)) {
                         changedNodes.add(node.retireByApplication(clock.instant()));
-                        surplusNodes.add(node); // will be used in another group or retired
+                        surplusNodes.add(node); // offer this node to other groups
                         if (--surplus == 0) break;
                     }
                 }
             }
             else if (surplus < 0) { // unretire until surplus is 0
-                for (Node node : nodes) {
+                for (Node node : byIncreasingIndex(nodes)) {
                     if ( node.allocation().get().membership().retired() && hasCompatibleFlavor(node)) {
                         changedNodes.add(node.unretire());
                         if (++surplus == 0) break;
@@ -338,6 +339,18 @@ class GroupPreparer {
             }
             update(changedNodes);
             return new ArrayList<>(nodes);
+        }
+
+        private List<Node> byDecreasingIndex(Set<Node> nodes) {
+            return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
+        }
+
+        private List<Node> byIncreasingIndex(Set<Node> nodes) {
+            return nodes.stream().sorted(nodeIndexComparator()).collect(Collectors.toList());
+        }
+        
+        private Comparator<Node> nodeIndexComparator() {
+            return Comparator.comparing((Node n) -> n.allocation().get().membership().index());
         }
 
     }
