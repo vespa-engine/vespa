@@ -25,6 +25,7 @@ private:
     const ReadConsistency                 _readConsistency;
     const bool                            _metaOnly;
     const bool                            _ignoreMaxBytes;
+    bool                                  _fetchedData;
     std::vector<IDocumentRetriever::SP>   _sources;
     size_t                                _nextItem;
     storage::spi::IterateResult::List     _list;
