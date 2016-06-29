@@ -20,11 +20,11 @@ constexpr uint32_t stackSize = 128 * 1024;
 }
 
 
-SequencedTaskExecutor::SequencedTaskExecutor(uint32_t threads, uint32_t tasklimit)
+SequencedTaskExecutor::SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit)
     : _executors()
 {
     for (uint32_t id = 0; id < threads; ++id) {
-        auto executor = std::make_unique<BlockingThreadStackExecutor>(1, stackSize, tasklimit);
+        auto executor = std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit);
         _executors.push_back(std::move(executor));
     }
 }
