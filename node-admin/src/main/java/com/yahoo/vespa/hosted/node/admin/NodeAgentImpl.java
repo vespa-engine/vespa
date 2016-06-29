@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
@@ -13,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.util.ContainerCommands;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.Arrays;
@@ -28,9 +28,6 @@ import java.util.logging.Logger;
  */
 public class NodeAgentImpl implements NodeAgent {
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
-    static final String NODE_PROGRAM = Defaults.getDefaults().vespaHome() + "bin/vespa-nodectl";
-    private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
-    private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
 
     private final String logPrefix;
     private final HostName hostname;
@@ -196,12 +193,12 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 if (!nodeStarted) {
-                    logger.log(Level.INFO, logPrefix + "Starting optional node program " + RESUME_NODE_COMMAND);
-                    Optional<ProcessResult> result = executeOptionalProgram(docker, nodeSpec.containerName, RESUME_NODE_COMMAND);
+                    logger.log(Level.INFO, logPrefix + "Starting optional node program " + Arrays.toString(ContainerCommands.RESUME_NODE_COMMAND));
+                    Optional<ProcessResult> result = executeOptionalProgram(docker, nodeSpec.containerName, ContainerCommands.RESUME_NODE_COMMAND);
 
                     if (result.isPresent() && !result.get().isSuccess()) {
                         throw new RuntimeException("Container " + nodeSpec.containerName.asString()
-                                + ": Command " + Arrays.toString(RESUME_NODE_COMMAND) + " failed: " + result.get());
+                                + ": Command " + Arrays.toString(ContainerCommands.RESUME_NODE_COMMAND) + " failed: " + result.get());
                     }
 
                     nodeStarted = true;
@@ -314,17 +311,17 @@ public class NodeAgentImpl implements NodeAgent {
 
         try {
             // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            result = executeOptionalProgram(docker, containerName, SUSPEND_NODE_COMMAND);
+            result = executeOptionalProgram(docker, containerName, ContainerCommands.SUSPEND_NODE_COMMAND);
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
             logger.log(LogLevel.WARNING, logPrefix + "Failed trying to suspend node with "
-                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
+                    + Arrays.toString(ContainerCommands.SUSPEND_NODE_COMMAND), e);
             return;
         }
 
         if (result.isPresent() && !result.get().isSuccess()) {
-            logger.log(LogLevel.WARNING, logPrefix + "The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
+            logger.log(LogLevel.WARNING, logPrefix + "The suspend program " + Arrays.toString(ContainerCommands.SUSPEND_NODE_COMMAND)
                     + " failed: " + result.get().getOutput());
         }
     }
