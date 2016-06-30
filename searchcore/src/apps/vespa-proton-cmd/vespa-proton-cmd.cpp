@@ -8,6 +8,7 @@ LOG_SETUP("vespa-proton-cmd");
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/config/common/configsystem.h>
 
 
 namespace pandora {
@@ -217,6 +218,12 @@ public:
     {
         if (_argc < 3) {
             return usage();
+        }
+
+        config::ConfigSystem configSystem;
+        if (!configSystem.isUp()) {
+            fprintf(stderr, "Config system is not up. Verify that vespa is started.");
+            return 3;
         }
 
         initRPC();
