@@ -3,227 +3,51 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
+#include "jobs.h"
+#include "base_thread.hpp"
 
-#define PRI_TIME_COUNT 4096
-
-enum JobCode
-{
-   PRINT_MESSAGE_AND_WAIT3SEC,
-   INCREASE_NUMBER,
-   PRIORITY_TEST,
-   WAIT_FOR_BREAK_FLAG,
-   WAIT_FOR_THREAD_TO_FINISH,
-   WAIT_FOR_CONDITION,
-   BOUNCE_CONDITIONS,
-   TEST_ID,
-   WAIT2SEC_AND_SIGNALCOND,
-   HOLD_MUTEX_FOR2SEC,
-   WAIT_2_SEC,
-   SILENTNOP,
-   NOP
-};
-
-class Job
-{
-private:
-   Job(const Job &);
-   Job &operator=(const Job&);
-
-public:
-   JobCode code;
-   char *message;
-   FastOS_Mutex *mutex;
-   FastOS_Cond *condition;
-   FastOS_BoolCond *boolcondition;
-   FastOS_ThreadInterface *otherThread, *ownThread;
-   double *timebuf;
-   double average;
-   int result;
-   FastOS_ThreadId _threadId;
-   Job *otherjob;
-   int bouncewakeupcnt;
-   bool bouncewakeup;
-
-   Job()
-     : code(NOP),
-       message(NULL),
-       mutex(NULL),
-       condition(NULL),
-       boolcondition(NULL),
-       otherThread(NULL),
-       ownThread(NULL),
-       timebuf(NULL),
-       average(0.0),
-       result(-1),
-       _threadId(),
-       otherjob(NULL),
-       bouncewakeupcnt(0),
-       bouncewakeup(false)
-   {
-   }
-
-   ~Job()
-   {
-      if(message != NULL)
-         free(message);
-   }
-};
-
-static volatile int64_t number;
-#define INCREASE_NUMBER_AMOUNT 10000
 
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
 
 
-class ThreadTest : public BaseTest, public FastOS_Runnable
+class ThreadTest : public BaseForThreadTest
 {
-private:
-   FastOS_Mutex printMutex;
+   int Main ();
 
-public:
-   ThreadTest(void)
-     : printMutex()
+   void WaitForXThreadsToHaveWait (Job *jobs,
+                                   int jobCount,
+                                   FastOS_Cond *condition,
+                                   int numWait)
    {
-   }
-   virtual ~ThreadTest() {};
+      Progress(true, "Waiting for %d threads to be in wait state", numWait);
 
-   void PrintProgress (char *string)
-   {
-      printMutex.Lock();
-      BaseTest::PrintProgress(string);
-      printMutex.Unlock();
-   }
-
-   void Run (FastOS_ThreadInterface *thread, void *arg);
-
-   void WaitForThreadsToFinish (Job *jobs, int count)
-   {
-      int i;
-
-      Progress(true, "Waiting for threads to finish...");
+      int oldNumber=-10000;
       for(;;)
       {
-         bool threadsFinished=true;
+         int waitingThreads=0;
 
-         for(i=0; i<count; i++)
+         condition->Lock();
+
+         for(int i=0; i<jobCount; i++)
          {
-            if(jobs[i].result == -1)
-            {
-               threadsFinished = false;
-               break;
-            }
+            if(jobs[i].result == 1)
+               waitingThreads++;
          }
 
-         FastOS_Thread::Sleep(500);
+         condition->Unlock();
 
-         if(threadsFinished)
+         if(waitingThreads != oldNumber)
+            Progress(true, "%d threads are waiting", waitingThreads);
+
+         oldNumber = waitingThreads;
+
+         if(waitingThreads == numWait)
             break;
+
+         FastOS_Thread::Sleep(100);
       }
-
-      Progress(true, "Threads finished");
    }
-
-   void MutexTest (bool usingMutex)
-   {
-      if(usingMutex)
-         TestHeader("Mutex Test");
-      else
-         TestHeader("Not Using Mutex Test");
-
-
-      FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, MAX_THREADS);
-
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
-      {
-         int i;
-         Job jobs[MUTEX_TEST_THREADS];
-         FastOS_Mutex *myMutex=NULL;
-
-         if(usingMutex)
-            myMutex = new FastOS_Mutex();
-
-         for(i=0; i<MUTEX_TEST_THREADS; i++)
-         {
-            jobs[i].code = INCREASE_NUMBER;
-            jobs[i].mutex = myMutex;
-         }
-
-         number = 0;
-
-         for(i=0; i<MUTEX_TEST_THREADS; i++)
-         {
-            bool rc = (NULL != pool->NewThread(this,
-                               static_cast<void *>(&jobs[i])));
-            Progress(rc, "Creating Thread with%s mutex", (usingMutex ? "" : "out"));
-         };
-
-         WaitForThreadsToFinish(jobs, MUTEX_TEST_THREADS);
-
-
-         for(i=0; i<MUTEX_TEST_THREADS; i++)
-         {
-            Progress(true, "Thread returned with resultcode %d", jobs[i].result);
-         }
-
-         bool wasOk=true;
-         int concurrentHits=0;
-
-         for(i=0; i<MUTEX_TEST_THREADS; i++)
-         {
-            int result = jobs[i].result;
-
-            if(usingMutex)
-            {
-               if((result % INCREASE_NUMBER_AMOUNT) != 0)
-               {
-                  wasOk = false;
-                  Progress(false, "Mutex locking did not work (%d).", result);
-                  break;
-               }
-            }
-            else
-            {
-               if((result != 0) &&
-                  (result != INCREASE_NUMBER_AMOUNT*MUTEX_TEST_THREADS) &&
-                  (result % INCREASE_NUMBER_AMOUNT) == 0)
-               {
-                  if((++concurrentHits) == 2)
-                  {
-                     wasOk = false;
-                     Progress(false, "Very unlikely that threads are running "
-                              "concurrently (%d)", jobs[i].result);
-                     break;
-                  }
-               }
-            }
-         }
-
-         if(wasOk)
-         {
-            if(usingMutex)
-            {
-               Progress(true, "Using the mutex, the returned numbers were alligned.");
-            }
-            else
-            {
-               Progress(true, "Returned numbers were not alligned. "
-                        "This was the expected result.");
-            }
-         }
-
-         if(myMutex != NULL)
-            delete(myMutex);
-
-         Progress(true, "Closing threadpool...");
-         pool->Close();
-
-         Progress(true, "Deleting threadpool...");
-         delete(pool);
-      }
-      PrintSeparator();
-   }
-
 
    void TooManyThreadsTest ()
    {
@@ -332,29 +156,6 @@ public:
          Progress(true, "Deleting threadpool...");
          delete(pool);
       }
-      PrintSeparator();
-   }
-
-   void CreateSingleThread ()
-   {
-      TestHeader("Create Single Thread Test");
-
-      FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024);
-
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
-      {
-         bool rc = (NULL != pool->NewThread(this, NULL));
-         Progress(rc, "Creating Thread");
-
-         Progress(true, "Sleeping 3 seconds");
-         FastOS_Thread::Sleep(3000);
-      }
-
-      Progress(true, "Closing threadpool...");
-      pool->Close();
-
-      Progress(true, "Deleting threadpool...");
-      delete(pool);
       PrintSeparator();
    }
 
@@ -522,118 +323,6 @@ public:
       PrintSeparator();
    }
 
-   void SingleThreadJoinWaitMultipleTest(int variant)
-   {
-      bool rc=false;
-
-      char testName[300];
-
-      sprintf(testName, "Single Thread Join Wait Multiple Test %d", variant);
-      TestHeader(testName);
-
-      FastOS_ThreadPool pool(128*1024);
-
-      const int testThreads=5;
-      int lastThreadNum = testThreads-1;
-      int i;
-
-      Job jobs[testThreads];
-
-      FastOS_Mutex jobMutex;
-
-      // The mutex is used to pause the first threads until we have created
-      // the last one.
-      jobMutex.Lock();
-
-      for(i=0; i<lastThreadNum; i++)
-      {
-         jobs[i].code = WAIT_FOR_THREAD_TO_FINISH;
-         jobs[i].mutex = &jobMutex;
-         jobs[i].ownThread = pool.NewThread(this,
-                 static_cast<void *>(&jobs[i]));
-
-         rc = (jobs[i].ownThread != NULL);
-         Progress(rc, "Creating Thread %d", i+1);
-
-         if(!rc)
-            break;
-      }
-
-      if(rc)
-      {
-         jobs[lastThreadNum].code = (((variant & 2) != 0) ? NOP : PRINT_MESSAGE_AND_WAIT3SEC);
-         jobs[lastThreadNum].message = strdup("This is the thread that others wait for.");
-
-         FastOS_ThreadInterface *lastThread;
-
-         lastThread = pool.NewThread(this,
-                                     static_cast<void *>
-                                     (&jobs[lastThreadNum]));
-
-         rc = (lastThread != NULL);
-         Progress(rc, "Creating last thread");
-
-         if(rc)
-         {
-            for(i=0; i<lastThreadNum; i++)
-            {
-               jobs[i].otherThread = lastThread;
-            }
-         }
-      }
-
-      jobMutex.Unlock();
-
-      if((variant & 1) != 0)
-      {
-         for(i=0; i<lastThreadNum; i++)
-         {
-            Progress(true, "Waiting for thread %d to finish using Join()", i+1);
-            jobs[i].ownThread->Join();
-            Progress(true, "Thread %d finished.", i+1);
-         }
-      }
-
-      Progress(true, "Closing pool.");
-      pool.Close();
-      Progress(true, "Pool closed.");
-      PrintSeparator();
-   }
-
-   void WaitForXThreadsToHaveWait (Job *jobs,
-                                   int jobCount,
-                                   FastOS_Cond *condition,
-                                   int numWait)
-   {
-      Progress(true, "Waiting for %d threads to be in wait state", numWait);
-
-      int oldNumber=-10000;
-      for(;;)
-      {
-         int waitingThreads=0;
-
-         condition->Lock();
-
-         for(int i=0; i<jobCount; i++)
-         {
-            if(jobs[i].result == 1)
-               waitingThreads++;
-         }
-
-         condition->Unlock();
-
-         if(waitingThreads != oldNumber)
-            Progress(true, "%d threads are waiting", waitingThreads);
-
-         oldNumber = waitingThreads;
-
-         if(waitingThreads == numWait)
-            break;
-
-         FastOS_Thread::Sleep(100);
-      }
-   }
-
    void SharedSignalAndBroadcastTest (Job *jobs, int numThreads,
                                       FastOS_Cond *condition,
                                       FastOS_ThreadPool *pool)
@@ -656,70 +345,6 @@ public:
       // as this test only tests for result code
       // Wait another second to be sure.
       FastOS_Thread::Sleep(1000);
-   }
-
-   void BounceTest(void)
-   {
-      TestHeader("Bounce Test");
-
-     FastOS_ThreadPool pool(128 * 1024);
-     FastOS_Cond cond1;
-     FastOS_Cond cond2;
-     Job job1;
-     Job job2;
-     FastOS_Time checkTime;
-     int cnt1;
-     int cnt2;
-     int cntsum;
-     int lastcntsum;
-
-     job1.code = BOUNCE_CONDITIONS;
-     job2.code = BOUNCE_CONDITIONS;
-     job1.otherjob = &job2;
-     job2.otherjob = &job1;
-     job1.condition = &cond1;
-     job2.condition = &cond2;
-
-     job1.ownThread = pool.NewThread(this, static_cast<void *>(&job1));
-     job2.ownThread = pool.NewThread(this, static_cast<void *>(&job2));
-
-     lastcntsum = -1;
-     for (int iter = 0; iter < 8; iter++) {
-       checkTime.SetNow();
-
-       int left = static_cast<int>(checkTime.MilliSecsToNow());
-       while (left < 1000) {
-         FastOS_Thread::Sleep(1000 - left);
-         left = static_cast<int>(checkTime.MilliSecsToNow());
-       }
-
-       cond1.Lock();
-       cnt1 = job1.bouncewakeupcnt;
-       cond1.Unlock();
-       cond2.Lock();
-       cnt2 = job2.bouncewakeupcnt;
-       cond2.Unlock();
-       cntsum = cnt1 + cnt2;
-       Progress(lastcntsum != cntsum, "%d bounces", cntsum);
-       lastcntsum = cntsum;
-     }
-
-     job1.ownThread->SetBreakFlag();
-     cond1.Lock();
-     job1.bouncewakeup = true;
-     cond1.Signal();
-     cond1.Unlock();
-
-     job2.ownThread->SetBreakFlag();
-     cond2.Lock();
-     job2.bouncewakeup = true;
-     cond2.Signal();
-     cond2.Unlock();
-
-     pool.Close();
-     Progress(true, "Pool closed.");
-     PrintSeparator();
-
    }
 
    void SignalTest ()
@@ -857,171 +482,6 @@ public:
       PrintSeparator();
    }
 
-   void TryLockTest ()
-   {
-      TestHeader("Mutex TryLock Test");
-
-      FastOS_ThreadPool pool(128*1024);
-      Job job;
-      FastOS_Mutex mtx;
-
-      job.code = HOLD_MUTEX_FOR2SEC;
-      job.result = -1;
-      job.mutex = &mtx;
-      job.ownThread = pool.NewThread(this,
-                                     static_cast<void *>(&job));
-
-      Progress(job.ownThread !=NULL, "Creating thread");
-
-      if(job.ownThread != NULL)
-      {
-         bool lockrc;
-
-         FastOS_Thread::Sleep(1000);
-
-         for(int i=0; i<5; i++)
-         {
-            lockrc = mtx.TryLock();
-            Progress(!lockrc, "We should not get the mutex lock just yet (%s)",
-                     lockrc ? "got it" : "didn't get it");
-            if(lockrc) {
-                mtx.Unlock();
-               break;
-            }
-         }
-
-         FastOS_Thread::Sleep(2000);
-
-         lockrc = mtx.TryLock();
-         Progress(lockrc, "We should get the mutex lock now (%s)",
-                  lockrc ? "got it" : "didn't get it");
-
-         if(lockrc)
-            mtx.Unlock();
-
-         Progress(true, "Attempting to do normal lock...");
-         mtx.Lock();
-         Progress(true, "Got lock. Attempt to do normal unlock...");
-         mtx.Unlock();
-         Progress(true, "Unlock OK.");
-      }
-
-      Progress(true, "Waiting for threads to finish using pool.Close()...");
-      pool.Close();
-      Progress(true, "Pool closed.");
-
-      PrintSeparator();
-   }
-
-   void ThreadStatsTest ()
-   {
-      int inactiveThreads;
-      int activeThreads;
-      int startedThreads;
-
-      TestHeader("Thread Statistics Test");
-
-      FastOS_ThreadPool pool(128*1024);
-      Job job[2];
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 0, "Initial inactive threads = %d",
-               inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 0, "Initial active threads = %d",
-               activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 0, "Initial started threads = %d",
-               startedThreads);
-
-      job[0].code = WAIT_FOR_BREAK_FLAG;
-      job[0].ownThread = pool.NewThread(this,
-                                        static_cast<void *>(&job[0]));
-
-      FastOS_Thread::Sleep(1000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 1, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 1, "Started threads = %d", startedThreads);
-
-      job[1].code = WAIT_FOR_BREAK_FLAG;
-      job[1].ownThread = pool.NewThread(this,
-                                        static_cast<void *>(&job[1]));
-
-      FastOS_Thread::Sleep(1000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 2, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 2, "Started threads = %d", startedThreads);
-
-      Progress(true, "Setting breakflag on threads...");
-      job[0].ownThread->SetBreakFlag();
-      job[1].ownThread->SetBreakFlag();
-
-      FastOS_Thread::Sleep(3000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 0, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 2, "Started threads = %d", startedThreads);
-
-
-      Progress(true, "Repeating process in the same pool...");
-
-      job[0].code = WAIT_FOR_BREAK_FLAG;
-      job[0].ownThread = pool.NewThread(this, static_cast<void *>(&job[0]));
-
-      FastOS_Thread::Sleep(1000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 1, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 1, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 3, "Started threads = %d", startedThreads);
-
-      job[1].code = WAIT_FOR_BREAK_FLAG;
-      job[1].ownThread = pool.NewThread(this, static_cast<void *>(&job[1]));
-
-      FastOS_Thread::Sleep(1000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 2, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 4, "Started threads = %d", startedThreads);
-
-      Progress(true, "Setting breakflag on threads...");
-      job[0].ownThread->SetBreakFlag();
-      job[1].ownThread->SetBreakFlag();
-
-      FastOS_Thread::Sleep(3000);
-
-      inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
-      activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 0, "Active threads = %d", activeThreads);
-      startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 4, "Started threads = %d", startedThreads);
-
-
-      pool.Close();
-      Progress(true, "Pool closed.");
-
-      PrintSeparator();
-   }
-
-   int Main ();
-
    void LeakTest ()
    {
       TestHeader("Leak Test");
@@ -1111,212 +571,29 @@ public:
 int ThreadTest::Main ()
 {
    printf("grep for the string '%s' to detect failures.\n\n", failString);
+   time_t before = time(0);
 
    //   HowManyThreadsTest();
    SynchronizationStressTest();
    LeakTest();
-   ThreadStatsTest();
-   TryLockTest();
    TimedWaitTest();
    ThreadIdTest();
    SignalTest();
    BroadcastTest();
-   CreateSingleThread();
    CreateSingleThreadAndJoin();
    TooManyThreadsTest();
-   MutexTest(false);
-   MutexTest(true);
    ClosePoolTest();
    BreakFlagTest();
-   SingleThreadJoinWaitMultipleTest(0);
-   SingleThreadJoinWaitMultipleTest(1);
-   SingleThreadJoinWaitMultipleTest(2);
-   SingleThreadJoinWaitMultipleTest(3);
-   SingleThreadJoinWaitMultipleTest(2);
-   SingleThreadJoinWaitMultipleTest(1);
-   SingleThreadJoinWaitMultipleTest(0);
-   BreakFlagTest();
-   ClosePoolTest();
-   MutexTest(true);
-   MutexTest(false);
-   TooManyThreadsTest();
    CreateSingleThreadAndJoin();
-   CreateSingleThread();
    BroadcastTest();
    SignalTest();
    ThreadCreatePerformance(false, 500, 100);
    ClosePoolStability();
-   BounceTest();
+   { time_t now = time(0); printf("[%ld seconds]\n", now-before); before = now; }
 
    printf("END OF TEST (%s)\n", _argv[0]);
 
    return 0;
-}
-
-volatile int busyCnt;
-
-void ThreadTest::Run (FastOS_ThreadInterface *thread, void *arg)
-{
-   if(arg == NULL)
-      return;
-
-   Job *job = static_cast<Job *>(arg);
-   char someStack[15*1024];
-
-   memset(someStack, 0, 15*1024);
-
-   switch(job->code)
-   {
-      case SILENTNOP:
-      {
-         job->result = 1;
-         break;
-      }
-
-      case NOP:
-      {
-         Progress(true, "Doing NOP");
-         job->result = 1;
-         break;
-      }
-
-      case PRINT_MESSAGE_AND_WAIT3SEC:
-      {
-         Progress(true, "Thread printing message: [%s]", job->message);
-         job->result = strlen(job->message);
-
-         FastOS_Thread::Sleep(3000);
-         break;
-      }
-
-      case INCREASE_NUMBER:
-      {
-         int result;
-
-         if(job->mutex != NULL)
-            job->mutex->Lock();
-
-         result = static_cast<int>(number);
-
-         int sleepOn = (INCREASE_NUMBER_AMOUNT/2) * 321/10000;
-         for(int i=0; i<(INCREASE_NUMBER_AMOUNT/2); i++)
-         {
-            number = number + 2;
-
-            if(i == sleepOn)
-               FastOS_Thread::Sleep(1000);
-         }
-
-         if(job->mutex != NULL)
-            job->mutex->Unlock();
-
-         job->result = result;  // This marks the end of the thread
-
-         break;
-      }
-
-      case WAIT_FOR_BREAK_FLAG:
-      {
-         for(;;)
-         {
-            FastOS_Thread::Sleep(1000);
-
-            if(thread->GetBreakFlag())
-            {
-               Progress(true, "Thread %p got breakflag", thread);
-               break;
-            }
-         }
-         break;
-      }
-
-      case WAIT_FOR_THREAD_TO_FINISH:
-      {
-         if(job->mutex)
-            job->mutex->Lock();
-
-         if(job->otherThread != NULL)
-            job->otherThread->Join();
-
-         if(job->mutex)
-            job->mutex->Unlock();
-         break;
-      }
-
-      case WAIT_FOR_CONDITION:
-      {
-         job->condition->Lock();
-
-         job->result = 1;
-
-         job->condition->Wait();
-         job->condition->Unlock();
-
-         job->result = 0;
-
-         break;
-      }
-
-      case BOUNCE_CONDITIONS:
-      {
-        while (!thread->GetBreakFlag()) {
-          job->otherjob->condition->Lock();
-          job->otherjob->bouncewakeupcnt++;
-          job->otherjob->bouncewakeup = true;
-          job->otherjob->condition->Signal();
-          job->otherjob->condition->Unlock();
-
-          job->condition->Lock();
-          while (!job->bouncewakeup)
-            job->condition->TimedWait(1);
-          job->bouncewakeup = false;
-          job->condition->Unlock();
-        }
-        break;
-      }
-
-      case TEST_ID:
-      {
-         job->mutex->Lock();          // Initially the parent threads owns the lock
-         job->mutex->Unlock();        // It is unlocked when we should start
-
-         FastOS_ThreadId currentId = FastOS_Thread::GetCurrentThreadId();
-
-         if(currentId == job->_threadId)
-            job->result = 1;
-         else
-            job->result = -1;
-         break;
-      }
-
-      case WAIT2SEC_AND_SIGNALCOND:
-      {
-         FastOS_Thread::Sleep(2000);
-         job->condition->Signal();
-         job->result = 1;
-         break;
-      }
-
-      case HOLD_MUTEX_FOR2SEC:
-      {
-         job->mutex->Lock();
-         FastOS_Thread::Sleep(2000);
-         job->mutex->Unlock();
-         job->result = 1;
-         break;
-      }
-
-      case WAIT_2_SEC:
-      {
-         FastOS_Thread::Sleep(2000);
-         job->result = 1;
-         break;
-      }
-
-      default:
-         Progress(false, "Unknown jobcode");
-         break;
-   }
 }
 
 int main (int argc, char **argv)

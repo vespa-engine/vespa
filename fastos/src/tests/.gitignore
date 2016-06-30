@@ -18,12 +18,4 @@
 /typetest
 /typetest.log
 /usecputest
-fastos_backtracetest_app
-fastos_filetest_app
-fastos_prefetchtest_app
-fastos_processtest_app
-fastos_sockettest_app
-fastos_threadtest_app
-fastos_timetest_app
-fastos_typetest_app
-fastos_usecputest_app
+*test_app
