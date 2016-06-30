@@ -26,6 +26,7 @@ public:
     ssize_t read(char *buf, size_t len);
     ssize_t write(const char *buf, size_t len);
     static Socket::UP connect(const vespalib::string &host, int port);
+    static Socket::UP connect(const vespalib::string &path);
 };
 
 } // namespace vespalib

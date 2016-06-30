@@ -34,4 +34,11 @@ ServerSocket::listen(int port)
     return std::make_unique<ServerSocket>(std::move(handle));
 }
 
+ServerSocket::UP
+ServerSocket::listen(const vespalib::string &path)
+{
+    SocketHandle handle = SocketAddress::from_path(path).listen();
+    return std::make_unique<ServerSocket>(std::move(handle));
+}
+
 } // namespace vespalib

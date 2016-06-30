@@ -15,7 +15,7 @@ vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     vespalib::string result;
     while (result.size() < wanted_bytes) {
         size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
-        size_t read_result = socket.read(tmp, read_size);
+        ssize_t read_result = socket.read(tmp, read_size);
         if (read_result <= 0) {
             return result;
         }
@@ -28,11 +28,13 @@ void verify_socket_io(bool is_server, Socket &socket) {
     vespalib::string server_message = "hello, this is the server speaking";
     vespalib::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
-        socket.write(server_message.data(), server_message.size());
+        ssize_t written = socket.write(server_message.data(), server_message.size());
+        EXPECT_EQUAL(written, server_message.size());
         vespalib::string read = read_bytes(socket, client_message.size());
         EXPECT_EQUAL(client_message, read);
     } else {
-        socket.write(client_message.data(), client_message.size());
+        ssize_t written = socket.write(client_message.data(), client_message.size());
+        EXPECT_EQUAL(written, client_message.size());
         vespalib::string read = read_bytes(socket, server_message.size());
         EXPECT_EQUAL(server_message, read);
     }
@@ -42,7 +44,12 @@ Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
     if (is_server) {
         return server_socket.accept();
     } else {
-        return Socket::connect("localhost", server_socket.address().port());
+        SocketAddress server_address = server_socket.address();
+        if (server_address.is_ipc()) {
+            return Socket::connect(server_address.path());
+        } else {
+            return Socket::connect("localhost", server_address.port());
+        }
     }
 }
 
@@ -62,6 +69,14 @@ TEST("yahoo.com address") {
     for (const auto &addr: list) {
         fprintf(stderr, "  %s\n", addr.spec().c_str());
     }
+}
+
+TEST("ipc address") {
+    auto addr = SocketAddress::from_path("my_socket");
+    EXPECT_TRUE(addr.is_ipc());
+    EXPECT_EQUAL(vespalib::string("my_socket"), addr.path());
+    fprintf(stderr, "from_path(my_socket)\n");
+    fprintf(stderr, "  %s\n", addr.spec().c_str());    
 }
 
 struct ServerWrapper {
@@ -86,6 +101,27 @@ TEST_MT_F("require that server accept can be interrupted", 2, ServerWrapper) {
         fprintf(stderr, "--- closing server socket\n");
         f1.server->shutdown();
     }
+}
+
+struct IpcServerWrapper {
+    vespalib::string server_path;
+    ServerSocket::UP server;
+    IpcServerWrapper(const vespalib::string &server_path_in)
+        : server_path(server_path_in), server()
+    {
+        unlink(server_path.c_str());
+        server = ServerSocket::listen(server_path);
+    }
+    ~IpcServerWrapper() {
+        server.reset();
+        unlink(server_path.c_str());
+    }
+};
+
+TEST_MT_F("require that basic unix domain socket io works", 2, IpcServerWrapper("my_socket")) {
+    bool is_server = (thread_id == 0);
+    Socket::UP socket = connect_sockets(is_server, *f1.server);
+    TEST_DO(verify_socket_io(is_server, *socket));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

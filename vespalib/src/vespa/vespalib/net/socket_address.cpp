@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -23,6 +24,23 @@ SocketAddress::ip_address() const
         char buf[INET6_ADDRSTRLEN];
         const sockaddr_in6 *addr = reinterpret_cast<const sockaddr_in6 *>(&_addr);
         result = inet_ntop(AF_INET6, &addr->sin6_addr, buf, sizeof(buf));
+    }
+    return result;
+}
+
+vespalib::string
+SocketAddress::path() const
+{
+    vespalib::string result = "";
+    if (is_ipc()) {
+        const sockaddr_un *addr = reinterpret_cast<const sockaddr_un *>(&_addr);
+        const char *path_limit = (reinterpret_cast<const char *>(addr) + _size);
+        const char *pos = &addr->sun_path[0];
+        const char *end = pos;
+        while ((end < path_limit) && (*end != 0)) {
+            ++end;
+        }
+        result.assign(pos, end - pos);
     }
     return result;
 }
@@ -55,7 +73,13 @@ SocketAddress::spec() const
     if (is_ipv4()) {
         return make_string("tcp/%s:%d", ip_address().c_str(), port());
     }
-    return make_string("tcp/[%s]:%d", ip_address().c_str(), port());
+    if (is_ipv6()) {
+        return make_string("tcp/[%s]:%d", ip_address().c_str(), port());
+    }
+    if (is_ipc()) {
+        return make_string("ipc/file:%s", path().c_str());
+    }
+    return "invalid";
 }
 
 SocketHandle
@@ -80,7 +104,7 @@ SocketAddress::listen(int backlog) const
                 int disable = 0;
                 setsockopt(handle.get(), IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
             }
-            if (port() != 0) {
+            if (port() > 0) {
                 int enable = 1;
                 setsockopt(handle.get(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
             }
@@ -152,6 +176,20 @@ SocketAddress::select_remote(int port, const char *node)
 {
     auto prefer_ipv4 = [](const auto &a, const auto &b) { return (!a.is_ipv4() && b.is_ipv4()); };
     return select(prefer_ipv4, port, node);
+}
+
+SocketAddress
+SocketAddress::from_path(const vespalib::string &path)
+{
+    SocketAddress result;
+    sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
+    assert(sizeof(sockaddr_un) <= sizeof(result._addr));
+    if (path.size() < sizeof(addr_un.sun_path)) {
+        addr_un.sun_family = AF_UNIX;
+        strcpy(&addr_un.sun_path[0], path.c_str());        
+        result._size = sizeof(sockaddr_un);
+    }
+    return result;
 }
 
 } // namespace vespalib

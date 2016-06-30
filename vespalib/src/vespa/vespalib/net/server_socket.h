@@ -24,6 +24,7 @@ public:
     void shutdown();
     Socket::UP accept();
     static ServerSocket::UP listen(int port);
+    static ServerSocket::UP listen(const vespalib::string &path);
 };
 
 } // namespace vespalib

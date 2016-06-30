@@ -55,4 +55,11 @@ Socket::connect(const vespalib::string &host, int port)
     return std::make_unique<Socket>(std::move(handle));
 }
 
+Socket::UP
+Socket::connect(const vespalib::string &path)
+{
+    SocketHandle handle = SocketAddress::from_path(path).connect();
+    return std::make_unique<Socket>(std::move(handle));
+}
+
 } // namespace vespalib
