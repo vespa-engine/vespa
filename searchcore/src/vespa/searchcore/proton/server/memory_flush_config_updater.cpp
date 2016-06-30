@@ -26,7 +26,7 @@ MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &,
     if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
                                   _currConfig.conservative.lowwatermarkfactor))
     {
-        newConfig.maxGlobalTlsSize = _currConfig.conservative.maxtlssize;
+        newConfig.maxGlobalTlsSize = _currConfig.maxtlssize * _currConfig.conservative.disklimitfactor;
         _useConservativeDiskMode = true;
     } else {
         _useConservativeDiskMode = false;
@@ -40,7 +40,8 @@ MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &,
     if (shouldUseConservativeMode(_currState.memoryState(), _useConservativeMemoryMode,
                                   _currConfig.conservative.lowwatermarkfactor))
     {
-        newConfig.maxGlobalMemory = _currConfig.conservative.maxmemory;
+        newConfig.maxGlobalMemory = _currConfig.maxmemory * _currConfig.conservative.memorylimitfactor;
+        newConfig.maxMemoryGain = _currConfig.each.maxmemory * _currConfig.conservative.memorylimitfactor;
         _useConservativeMemoryMode = true;
     } else {
         _useConservativeMemoryMode = false;

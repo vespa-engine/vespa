@@ -67,7 +67,8 @@ flush.memory.diskbloatfactor double default=0.2
 ## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
 flush.memory.maxtlssize long default=21474836480
 
-## Number of bytes allowed per component before forcing memory prioritization.
+## The maximum memory (in bytes) used by a single FLUSH component before running flush.
+## A FLUSH component will free memory when flushed (e.g. memory index).
 flush.memory.each.maxmemory long default=1073741824
 
 ## Maximum disk bloat factor per component before forcing flush.
@@ -80,15 +81,13 @@ flush.memory.maxage.time double default=86400.0
 ## Max diff in serial number allowed before that takes precedence.
 flush.memory.maxage.serial long default=1000000
 
-## When resource limit for memory is reached we choose this conservative mode for the flush strategy.
-## The total maximum memory (in bytes) used by FLUSH components before running flush.
-## A FLUSH component will free memory when flushed (e.g. memory index).
-flush.memory.conservative.maxmemory long default=2147483648
+## When resource limit for memory is reached we choose a conservative mode for the flush strategy.
+## In this case this factor is multiplied with 'maxmemory' and 'each.maxmemory' to calculate conservative values to use instead.
+flush.memory.conservative.memorylimitfactor double default=0.5
 
-## When resource limit for disk is reached we choose this conservative mode for the flush strategy.
-## The max disk usage (int bytes) for all transaction logs before running flush.
-## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
-flush.memory.conservative.maxtlssize long default=10737418240
+## When resource limit for disk is reached we choose a conservative mode for the flush strategy.
+## In this case this factor is multiplied with 'maxtlssize' to calculate a conservative value to use instead.
+flush.memory.conservative.disklimitfactor double default=0.5
 
 ## The factor used to multiply with the resource limits for disk / memory to find the low
 ## watermark indicating when to go back from conservative to normal mode for the flush strategy.
