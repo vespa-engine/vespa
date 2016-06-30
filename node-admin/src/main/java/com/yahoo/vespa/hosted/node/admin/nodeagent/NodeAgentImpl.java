@@ -8,11 +8,11 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +28,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class NodeAgentImpl implements NodeAgent {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private AtomicBoolean frozen = new AtomicBoolean(false);
+    private AtomicBoolean isFrozen = new AtomicBoolean(false);
+    private AtomicBoolean wantFrozen = new AtomicBoolean(false);
+
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
@@ -39,11 +41,11 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
-    private final NodeDocker nodeDocker;
+    private final DockerOperations dockerOperations;
 
     private final Object monitor = new Object();
-    @GuardedBy("monitor")
-    private State state = State.WAITING;
+
+    private AtomicReference<String> debugString = new AtomicReference<>("not started");
 
 
     public enum ContainerState {
@@ -60,36 +62,32 @@ public class NodeAgentImpl implements NodeAgent {
             final HostName hostName,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
-            final NodeDocker nodeDocker) {
+            final DockerOperations dockerOperations) {
         this.logPrefix = "NodeAgent(" + hostName + "): ";
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
-        this.nodeDocker = nodeDocker;
+        this.dockerOperations = dockerOperations;
     }
 
     @Override
-    public void execute(Command command) {
-        switch (command) {
-            case UPDATE_FROM_NODE_REPO:
-                nodeTick();
-                break;
-            case SET_FREEZE:
-                frozen.set(true);
-                break;
-            case UNFREEZE:
-                frozen.set(false);
-                break;
-            default:
-                throw new RuntimeException("Unknown command " + command.name());
-        }
+    public void freeze() {
+        wantFrozen.set(true);
     }
 
     @Override
-    public State getState() {
-        synchronized (monitor) {
-            return state;
-        }
+    public void unfreeze() {
+        wantFrozen.set(false);
+    }
+
+    @Override
+    public boolean isFrozen() {
+        return isFrozen.get();
+    }
+
+    @Override
+    public String debugInfo() {
+        return debugString.get();
     }
 
     @Override
@@ -97,7 +95,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (scheduler.isTerminated()) {
             throw new RuntimeException("Can not restart a node agent.");
         }
-        scheduler.scheduleWithFixedDelay(this::nodeTick, intervalMillis, intervalMillis, MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(this::tick, intervalMillis, intervalMillis, MILLISECONDS);
     }
 
     @Override
@@ -106,36 +104,19 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
         scheduler.shutdown();
-        synchronized (monitor) {
-            state = State.TERMINATED;
-        }
     }
 
-    private boolean isFrozen() {
-        synchronized (monitor) {
-            if (state == State.TERMINATED) {
-                return true;
-            }
-            if (frozen.get()) {
-                state = State.FROZEN;
-                return true;
-            }
-            state = State.WORKING;
-        }
-        return false;
-    }
-
-    public void runLocalResumeScriptfNeeded(final ContainerNodeSpec nodeSpec) {
+    private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
         logger.log(Level.INFO, logPrefix + "Starting optional node program resume command");
-        nodeDocker.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
+        dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
         containerState = RUNNING;
     }
 
-    public void publishThatNodeIsRunningIfRequired(final ContainerNodeSpec nodeSpec) throws IOException {
-        final String containerVespaVersion = nodeDocker.getVespaVersionOrNull(nodeSpec.containerName);
+    private void publishStateToNodeRepoIfChanged(final ContainerNodeSpec nodeSpec) throws IOException {
+        final String containerVespaVersion = dockerOperations.getVespaVersionOrNull(nodeSpec.containerName);
 
         final NodeAttributes currentAttributes = new NodeAttributes(
                 nodeSpec.wantedRestartGeneration.get(),
@@ -155,8 +136,8 @@ public class NodeAgentImpl implements NodeAgent {
         logger.log(Level.INFO, logPrefix + "Call resume against Orchestrator");
     }
 
-    public void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (nodeDocker.startContainerIfNeeded(nodeSpec)) {
+    private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
+        if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
         } else {
             // In case container was already running on startup, we found the container, but should call
@@ -167,45 +148,49 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void nodeTickInNewThread() {
-        new Thread(this::nodeTick).start();
+        new Thread(this::tick).start();
     }
 
     private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
-        if (nodeDocker.removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
+        if (dockerOperations.removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
             containerState = ABSENT;
         }
     }
 
     private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
-        if (nodeDocker.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
+        if (dockerOperations.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
             if (imageBeingDownloaded == nodeSpec.wantedDockerImage.get()) {
                 // Downloading already scheduled, but not done.
                 return;
             }
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a tick when download is finished.
-            nodeDocker.scheduleDownloadOfImage(nodeSpec, this::nodeTickInNewThread);
+            dockerOperations.scheduleDownloadOfImage(nodeSpec, this::nodeTickInNewThread);
         } else {
             imageBeingDownloaded = null;
         }
     }
 
-
-    private void nodeTick() {
-        if (isFrozen()) {
-            return;
-        }
+    @Override
+    public void tick() {
+        StringBuilder debugStringBuilder = new StringBuilder(hostname.toString());
         synchronized (monitor) {
+            isFrozen.set(wantFrozen.get());
+            if (isFrozen.get()) {
+                debugStringBuilder.append("  frozen");
+                debugString.set(debugStringBuilder.toString());
+                return;
+            }
             try {
                 final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                         .orElseThrow(() ->
                                 new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
-
+                debugStringBuilder.append("Loaded node spec: ").append(nodeSpec.toString());
                 switch (nodeSpec.nodeState) {
                     case PROVISIONED:
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
                         logger.log(LogLevel.INFO, logPrefix + "State is provisioned, will delete application storage and mark node as ready");
-                        nodeDocker.deleteContainerStorage(nodeSpec.containerName);
+                        dockerOperations.deleteContainerStorage(nodeSpec.containerName);
                         nodeRepository.markAsReady(nodeSpec.hostname);
                         break;
                     case READY:
@@ -217,12 +202,14 @@ public class NodeAgentImpl implements NodeAgent {
                     case ACTIVE:
                         scheduleDownLoadIfNeeded(nodeSpec);
                         if (imageBeingDownloaded != null) {
+                            debugStringBuilder.append("Waiting for image to download " + imageBeingDownloaded.asString());
+                            debugString.set(debugStringBuilder.toString());
                             return;
                         }
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
 
                         startContainerIfNeeded(nodeSpec);
-                        runLocalResumeScriptfNeeded(nodeSpec);
+                        runLocalResumeScriptIfNeeded(nodeSpec);
                         // Because it's more important to stop a bad release from rolling out in prod,
                         // we put the resume call last. So if we fail after updating the node repo attributes
                         // but before resume, the app may go through the tenant pipeline but will halt in prod.
@@ -233,7 +220,7 @@ public class NodeAgentImpl implements NodeAgent {
                         //    has been successfully rolled out.
                         //  - Slobrok and internal orchestrator state is used to determine whether
                         //    to allow upgrade (suspend).
-                        publishThatNodeIsRunningIfRequired(nodeSpec);
+                        publishStateToNodeRepoIfChanged(nodeSpec);
                         orchestrator.resume(nodeSpec.hostname);
                         break;
                     case INACTIVE:
@@ -242,7 +229,7 @@ public class NodeAgentImpl implements NodeAgent {
                     case DIRTY:
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
                         logger.log(LogLevel.INFO, logPrefix + "State is dirty, will delete application storage and mark node as ready");
-                        nodeDocker.deleteContainerStorage(nodeSpec.containerName);
+                        dockerOperations.deleteContainerStorage(nodeSpec.containerName);
                         nodeRepository.markAsReady(nodeSpec.hostname);
                         break;
                     case FAILED:
@@ -253,10 +240,13 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             } catch (Exception e) {
                 logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception, ignoring.", e);
+                debugStringBuilder.append(e.getMessage());
             } catch (Throwable t) {
                 logger.log(LogLevel.ERROR, logPrefix + "Unhandled throwable, taking down system.", t);
                 System.exit(234);
             }
+            debugString.set(debugStringBuilder.toString());
+
         }
     }
 }

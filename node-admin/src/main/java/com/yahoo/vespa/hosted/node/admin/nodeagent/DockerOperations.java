@@ -25,16 +25,16 @@ import java.util.logging.Logger;
  * Class that wraps the Docker class and have some tools related to running programs in docker.
  * @author dybis
  */
-public class NodeDocker {
+public class DockerOperations {
     static final String NODE_PROGRAM = Defaults.getDefaults().vespaHome() + "bin/vespa-nodectl";
 
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
 
-    private static final Logger logger = Logger.getLogger(NodeDocker.class.getName());
+    private static final Logger logger = Logger.getLogger(DockerOperations.class.getName());
     private final Docker docker;
 
-    public NodeDocker(Docker docker) {
+    public DockerOperations(Docker docker) {
         this.docker = docker;
     }
 

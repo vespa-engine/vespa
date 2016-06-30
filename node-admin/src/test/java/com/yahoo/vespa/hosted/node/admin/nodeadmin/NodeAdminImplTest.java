@@ -73,33 +73,33 @@ public class NodeAdminImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent1).start(100);
-//        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+//        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
         inOrder.verify(nodeAgent1, never()).start(1);
-     //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+     //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
         inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), Collections.emptyList());
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
         inOrder.verify(nodeAgent2, never()).start(1);
-    //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+    //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);

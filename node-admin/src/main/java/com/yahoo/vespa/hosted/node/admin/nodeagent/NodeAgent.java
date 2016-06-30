@@ -9,25 +9,35 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
  * @author bakksjo
  */
 public interface NodeAgent {
-
-    enum Command {UPDATE_FROM_NODE_REPO, SET_FREEZE, UNFREEZE}
-    enum State {WAITING, WORKING, FROZEN, TERMINATED}
+    /**
+     * Freeze will eventually cause the NodeAgent to not pick up changes. Check isFrozen to see state.
+     */
+    void freeze();
 
     /**
-     * Make the node agent execute a command soon.
-     * @param command task to be done
+     * start picking up changes again.
      */
-    void execute(Command command);
+    void unfreeze();
 
     /**
-     * Returns the state of the agent.
+     * Force the NodeAgent to check node repository. Intended for testing.
      */
-    State getState();
+    void tick();
+
+
+    /**
+     * Returns true if NodeAgent is frozen.
+     */
+    boolean isFrozen();
+
+    /**
+     * Human readable string for the state of the NodeAgent.
+     */
+    String debugInfo();
 
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
-     * striving to make the current state equal to the wanted state. The current and wanted state update as part of
-     * {@link #execute(Command)}.
+     * striving to make the current state equal to the wanted state.
      */
     void start(int intervalMillis);
 

@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeDocker;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -25,12 +25,14 @@ import java.util.function.Function;
 public class ComponentsProviderImpl implements ComponentsProvider {
 
     private final Docker docker;
-    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 0;
-    private static final long INTERVAL_SCHEDULER_IN_MILLIS = 60000;
+    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
 
     private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
     private static final String ENV_HOSTNAME = "HOSTNAME";
-    private static final int nodeAgentScanIntervalMillis = 60000;
+    private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 60000;
+    // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
+    // whitch happens rarely. Changes of apps running etc it detected by the NodeAgent.
+    private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
     public ComponentsProviderImpl(final Docker docker) {
         this.docker = docker;
     }
@@ -49,9 +51,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new NodeDocker(docker));
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, nodeAgentScanIntervalMillis);
+                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
+        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, NODE_AGENT_SCAN_INTERVAL_MILLIS);
         return new NodeAdminStateUpdater(
-                nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, INTERVAL_SCHEDULER_IN_MILLIS, orchestrator, baseHostName);
+                nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
     }
 }

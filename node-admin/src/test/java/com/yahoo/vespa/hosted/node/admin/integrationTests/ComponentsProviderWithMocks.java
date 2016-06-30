@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeDocker;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 
 import java.util.function.Function;
@@ -24,7 +24,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private Docker dockerMock = new DockerMock();
 
     private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-            new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new NodeDocker(dockerMock));
+            new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
 
 

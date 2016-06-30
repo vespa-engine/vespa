@@ -52,7 +52,7 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
-    private final NodeAgent nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new NodeDocker(docker));
+    private final NodeAgent nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -79,7 +79,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -126,7 +126,7 @@ public class NodeAgentImplTest {
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(orchestrator).suspend(hostName);
@@ -175,7 +175,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(orchestrator).suspend(hostName);
@@ -216,8 +216,7 @@ public class NodeAgentImplTest {
         when(docker.pullImageAsync(newDockerImage)).thenReturn(new CompletableFuture<>());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
-
+        nodeAgent.tick();
 
         verify(docker, never()).stopContainer(containerName);
         verify(docker).pullImageAsync(newDockerImage);
@@ -252,7 +251,7 @@ public class NodeAgentImplTest {
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(orchestrator, never()).suspend(any(HostName.class));
@@ -295,7 +294,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.empty());
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
@@ -337,7 +336,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator).suspend(hostName);
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -377,7 +376,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker);
@@ -419,7 +418,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -458,7 +457,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -499,7 +498,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker);
@@ -543,7 +542,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -585,7 +584,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -628,7 +627,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
@@ -673,7 +672,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -715,8 +714,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
-
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -759,7 +757,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -821,7 +819,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         // Should get exactly one invocation.
@@ -829,7 +827,7 @@ public class NodeAgentImplTest {
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         // No attributes have changed; no second invocation should take place.
@@ -839,7 +837,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer1));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec2));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         // One attribute has changed, should cause new invocation.
@@ -850,7 +848,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer2));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec2));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         // No attributes have changed; no new invocation should take place.
@@ -859,7 +857,7 @@ public class NodeAgentImplTest {
 
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer2));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1));
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         // Back to previous node spec should also count as new data and cause a new invocation.
@@ -900,14 +898,14 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         // Should get exactly one invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
         verify(nodeRepository, times(1)).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         // First attribute update failed, so it should be retried now.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
@@ -953,7 +951,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(NO_CONTAINER);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker).startContainer(
                 nodeSpec.wantedDockerImage.get(),
@@ -966,12 +964,12 @@ public class NodeAgentImplTest {
         inOrder.verifyNoMoreInteractions();
 
         // 2nd try
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verifyNoMoreInteractions();
 
         // 3rd try success
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
@@ -980,13 +978,13 @@ public class NodeAgentImplTest {
         // 4th and 5th times, already started, no calls to executeInContainer
         when(docker.getContainer(hostName)).thenReturn(uptodateContainer);
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
         inOrder.verifyNoMoreInteractions();
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
         inOrder.verify(docker, never()).executeInContainer(any(), anyVararg());
         inOrder.verify(orchestrator).resume(hostName);
@@ -1039,7 +1037,7 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        nodeAgent.tick();
 
 
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);

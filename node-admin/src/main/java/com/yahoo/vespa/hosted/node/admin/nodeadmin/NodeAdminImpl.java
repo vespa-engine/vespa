@@ -56,7 +56,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
-        synchronizeLocalContainerState(containersToRun, existingContainers);
+        synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
 
         garbageCollectDockerImages(containersToRun);
     }
@@ -65,10 +65,10 @@ public class NodeAdminImpl implements NodeAdmin {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
             // worth it (it could block the rest call for some time and might have implications).
-            nodeAgent.execute(NodeAgent.Command.SET_FREEZE);
+            nodeAgent.freeze();
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (nodeAgent.getState() != NodeAgent.State.FROZEN) {
+            if (! nodeAgent.isFrozen()) {
                 return false;
             }
         }
@@ -77,7 +77,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public void unfreeze() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.UNFREEZE);
+            nodeAgent.unfreeze();
         }
     }
 
@@ -90,7 +90,7 @@ public class NodeAdminImpl implements NodeAdmin {
         StringBuilder debug = new StringBuilder();
         for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
             debug.append("Node ").append(node.getKey().toString());
-            debug.append(" state ").append(node.getValue().getState());
+            debug.append(" state ").append(node.getValue().debugInfo());
         }
         return debug.toString();
     }
@@ -156,7 +156,12 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(key -> new Pair<>(Optional.ofNullable(tMap.get(key)), Optional.ofNullable(uMap.get(key))));
     }
 
-    void synchronizeLocalContainerState(
+    // TODO This method should rather take a lost of Hostname instead of Container. However, it triggers
+    // a refactoring of the logic. Which is hard due to the style of programming.
+    // The method streams the list of containers twice.
+    // It is not a full synchronization as it will only add new NodeAgent. Old ones are removed in
+    // garbageCollectDockerImages. We should refactor the code as some point.
+    void synchronizeNodeSpecsToNodeAgents(
             final List<ContainerNodeSpec> containersToRun,
             final List<Container> existingContainers) {
         final Stream<Pair<Optional<ContainerNodeSpec>, Optional<Container>>> nodeSpecContainerPairs = fullOuterJoin(

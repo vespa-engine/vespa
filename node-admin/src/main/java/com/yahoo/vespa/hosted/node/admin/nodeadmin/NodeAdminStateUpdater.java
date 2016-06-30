@@ -65,6 +65,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public enum State { RESUMED, SUSPENDED}
 
     /**
+     * This method is used when upgrading the NodeAdmin host. It is exposed through REST-API.
      * @return empty on success and failure message on failure.
      */
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {

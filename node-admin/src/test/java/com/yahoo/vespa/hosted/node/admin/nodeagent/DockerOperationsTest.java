@@ -16,9 +16,9 @@ import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-public class NodeDockerTest {
+public class DockerOperationsTest {
     private final Docker docker = mock(Docker.class);
-    private final NodeDocker nodeDocker = new NodeDocker(docker);
+    private final DockerOperations dockerOperations = new DockerOperations(docker);
 
     @Test
     public void absenceOfNodeProgramIsSuccess() throws Exception {
@@ -27,13 +27,13 @@ public class NodeDockerTest {
 
         when(docker.executeInContainer(any(), anyVararg())).thenReturn(new ProcessResult(3, "output"));
 
-        Optional<ProcessResult> result = nodeDocker.executeOptionalProgram(
+        Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(
                 containerName,
                 programPath,
                 "arg1",
                 "arg2");
 
-        String[] nodeProgramExistsCommand = nodeDocker.programExistsCommand(programPath);
+        String[] nodeProgramExistsCommand = dockerOperations.programExistsCommand(programPath);
         assertThat(nodeProgramExistsCommand.length, is(4));
 
         verify(docker, times(1)).executeInContainer(
@@ -57,11 +57,11 @@ public class NodeDockerTest {
                 .thenReturn(new ProcessResult(0, "")) // node program exists
                 .thenReturn(actualResult); // output from node program
 
-        Optional<ProcessResult> result = nodeDocker.executeOptionalProgram(
+        Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(
                 containerName,
                 command);
 
-        String[] nodeProgramExistsCommand = nodeDocker.programExistsCommand(programPath);
+        String[] nodeProgramExistsCommand = dockerOperations.programExistsCommand(programPath);
         assertThat(nodeProgramExistsCommand.length, is(4));
 
         final InOrder inOrder = inOrder(docker);
