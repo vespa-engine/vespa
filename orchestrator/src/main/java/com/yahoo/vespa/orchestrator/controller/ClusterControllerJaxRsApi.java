@@ -22,7 +22,7 @@ public interface ClusterControllerJaxRsApi {
             ClusterControllerStateRequest request);
 
     @POST
-    @Path("/cluster/v2/{clusterName}/storage")
+    @Path("/cluster/v2/{clusterName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     ClusterControllerStateResponse setClusterState(
