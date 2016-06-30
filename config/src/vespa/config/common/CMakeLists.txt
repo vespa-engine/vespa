@@ -10,7 +10,7 @@ vespa_add_library(config_common OBJECT
     configholder.cpp
     configcontext.cpp
     configkey.cpp
-    configsytem.cpp
+    configsystem.cpp
     configvalue.cpp
     trace.cpp
     payload_converter.cpp

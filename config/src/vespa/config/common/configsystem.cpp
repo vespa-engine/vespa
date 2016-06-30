@@ -2,15 +2,22 @@
 
 #include <vespa/fastos/fastos.h>
 #include "configsystem.h"
-#include <vespalib/stllike/string.h>
 #include <vespa/defaults.h>
 
 namespace config {
 
 namespace {
 
-vespalib::string CONFIG_PROXY_PID_FILE= vespa::Defaults::vespaHome() + vespalib::string("var/run/configproxy.pid");
+vespalib::string getConfigProxyFileName() {
+    vespalib::string root(vespa::Defaults::vespaHome());
+    return root + "var/run/configproxy.pid";
+}
 
+}
+
+ConfigSystem::ConfigSystem() :
+    _configProxyPidFile(getConfigProxyFileName())
+{
 }
 
 bool ConfigSystem::isUp() const {
@@ -20,7 +27,7 @@ bool ConfigSystem::isUp() const {
 bool ConfigSystem::isConfigProxyRunning() const {
     struct stat fs;
 
-    int retval = stat(CONFIG_PROXY_PID_FILE, &fs);
+    int retval = stat(_configProxyPidFile.c_str(), &fs);
     if (retval == 0) {
         if (S_ISREG(fs.st_mode)) {
             return true;
