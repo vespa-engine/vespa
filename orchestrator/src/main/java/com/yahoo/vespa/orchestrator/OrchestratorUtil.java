@@ -134,7 +134,16 @@ public class OrchestratorUtil {
 
         String appNameStr = appRef.toString();
         String[] appNameParts = appNameStr.split(":");
-        // TODO model ApplicationInstanceReference properly and validate this there
+
+        // Env, region and instance seems to be optional due to the hardcoded config server app
+        // Assume here that first two are tenant and application name.
+        if (appNameParts.length > 1 && appNameParts.length < 5) {
+            return ApplicationId.from(TenantName.from(appNameParts[0]),
+                    ApplicationName.from(appNameParts[1]),
+                    InstanceName.defaultName());
+        }
+
+        // Other normal application should have 5 parts.
         if (appNameParts.length != 5)  {
             throw new IllegalArgumentException("Application reference not valid (not 5 parts): " + appRef);
         }
