@@ -251,6 +251,7 @@ public:
      int i;
      const int bufSize = 1000;
 
+     FastOS_File::MakeDirectory("generated");
      FastOS_File file("generated/memorymaptest");
 
      bool rc = file.OpenReadWrite();
@@ -295,6 +296,7 @@ public:
         }
         delete [] buffer;
      }
+     FastOS_File::EmptyAndRemoveDirectory("generated");
      PrintSeparator();
    }
 
@@ -305,6 +307,7 @@ public:
       int i;
       const int bufSize = 40000;
 
+      FastOS_File::MakeDirectory("generated");
       FastOS_File file("generated/diotest");
 
       bool rc = file.OpenWriteOnly();
@@ -391,19 +394,23 @@ public:
                      Progress(rc, "SetPosition(1)");
                      if(rc)
                      {
-                        const int attemptReadBytes = 173;
-                        ssize_t readB = file.Read(buffer, attemptReadBytes);
-                        Progress(readB == attemptReadBytes,
-                                 "Read %d bytes successfully",
-                                 readB);
-                        for(i = 0; i < attemptReadBytes; i++)
-                        {
-                            rc = (buffer[i] == 'A' + ((i+ 1) % 17));
-                            if(!rc)
-                            {
-                                Progress(false, "Read error at offset %d", i);
-                                break;
-                            }
+                        try {
+                           const int attemptReadBytes = 173;
+                           ssize_t readB = file.Read(buffer, attemptReadBytes);
+                           Progress(readB == attemptReadBytes,
+                                    "Read %d bytes successfully",
+                                    readB);
+                           for(i = 0; i < attemptReadBytes; i++)
+                           {
+                               rc = (buffer[i] == 'A' + ((i+ 1) % 17));
+                               if(!rc)
+                               {
+                                   Progress(false, "Read error at offset %d", i);
+                                   break;
+                               }
+                           }
+                        } catch(const DirectIOException &e) {
+                           Progress(true, "Got exception as expected");
                         }
                      }
                      if (rc) {
@@ -411,21 +418,25 @@ public:
                          Progress(rc, "SetPosition(1)");
                          if(rc)
                          {
-                             const int attemptReadBytes = 4096;
-                             ssize_t readB = file.Read(buffer,
-                                     attemptReadBytes);
-                             Progress(readB == attemptReadBytes,
-                                 "Read %d bytes successfully",
-                                      readB);
-                             for(i = 0; i < attemptReadBytes; i++)
-                             {
-                                 rc = (buffer[i] == 'A' + ((i+ 1) % 17));
-                                 if(!rc)
-                                 {
-                                     Progress(false,
-                                             "Read error at offset %d", i);
-                                     break;
-                                 }
+                             try {
+				 const int attemptReadBytes = 4096;
+				 ssize_t readB = file.Read(buffer,
+					 attemptReadBytes);
+				 Progress(readB == attemptReadBytes,
+				     "Read %d bytes successfully",
+					  readB);
+				 for(i = 0; i < attemptReadBytes; i++)
+				 {
+				     rc = (buffer[i] == 'A' + ((i+ 1) % 17));
+				     if(!rc)
+				     {
+					 Progress(false,
+						 "Read error at offset %d", i);
+					 break;
+				     }
+				 }
+                             } catch(const DirectIOException &e) {
+                                 Progress(true, "Got exception as expected");
                              }
                          }
                      }
@@ -457,6 +468,7 @@ public:
          delete [] buffer;
       }
 
+      FastOS_File::EmptyAndRemoveDirectory("generated");
       PrintSeparator();
    }
 
@@ -483,7 +495,7 @@ public:
          else
          {
             char dummyData2[28];
-            printf("%s: Write failed with read-only access.\n", okString);
+            Progress(true, "Write failed with read-only access.");
 
             bool rc = myFile->SetPosition(1);
             Progress(rc, "Setting position to 1");
@@ -508,7 +520,7 @@ public:
          }
       }
       else
-         printf("%s: Unable to open file 'hello.txt'.\n", failString);
+         printf("%s: Unable to open file '%s'.\n", failString, roFilename);
 
       delete(myFile);
       PrintSeparator();
@@ -517,6 +529,7 @@ public:
    void WriteOnlyTest ()
    {
       TestHeader("Write-Only Test");
+      FastOS_File::MakeDirectory("generated");
 
       FastOS_File *myFile = new FastOS_File(woFilename);
 
@@ -584,7 +597,7 @@ public:
       }
       else
       {
-         printf("%s: Unable to open file 'hello.txt'.\n", failString);
+         printf("%s: Unable to open file '%s'.\n", failString, woFilename);
       }
 
 
@@ -594,12 +607,14 @@ public:
 
 
       delete(myFile);
+      FastOS_File::EmptyAndRemoveDirectory("generated");
       PrintSeparator();
    }
 
    void ReadWriteTest ()
    {
       TestHeader("Read/Write Test");
+      FastOS_File::MakeDirectory("generated");
 
       FastOS_File *myFile = new FastOS_File(rwFilename);
 
@@ -701,12 +716,13 @@ public:
          printf("%s: Close file.\n", closeResult ? okString : failString);
       }
       else
-         printf("%s: Unable to open file 'hello.txt'.\n", failString);
+         printf("%s: Unable to open file '%s'.\n", failString, rwFilename);
 
       bool deleteResult = myFile->Delete();
       printf("%s: Delete file '%s'.\n", deleteResult ? okString : failString, rwFilename);
 
       delete(myFile);
+      FastOS_File::EmptyAndRemoveDirectory("generated");
       PrintSeparator();
    }
 
@@ -734,7 +750,7 @@ public:
    {
       TestHeader("ReadBuf Test");
 
-      FastOS_File file("hello.txt");
+      FastOS_File file(roFilename);
 
       char buffer[20];
 
@@ -765,8 +781,8 @@ public:
    {
       TestHeader("DiskFreeSpace Test");
 
-      int64_t freeSpace = FastOS_File::GetFreeDiskSpace("hello.txt");
-      ProgressI64(freeSpace != -1, "DiskFreeSpace using file (hello.txt): %"
+      int64_t freeSpace = FastOS_File::GetFreeDiskSpace(roFilename);
+      ProgressI64(freeSpace != -1, "DiskFreeSpace using file ('hello.txt'): %"
                   PRId64 " MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
       freeSpace = FastOS_File::GetFreeDiskSpace(".");
       ProgressI64(freeSpace != -1, "DiskFreeSpace using dir (.): %"
@@ -869,7 +885,7 @@ public:
 
    int Main ()
    {
-      printf("This test should be run in the 'test/workarea' directory.\n\n");
+      printf("This test should be run in the 'tests' directory.\n\n");
       printf("grep for the string '%s' to detect failures.\n\n", failString);
 
       DirectoryTest();
