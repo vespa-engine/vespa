@@ -121,6 +121,7 @@ vespa_define_module(
     src/tests/proton/server/data_directory_upgrader
     src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/health_adapter
+    src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
     src/tests/proton/server/visibility_handler
     src/tests/proton/statusreport

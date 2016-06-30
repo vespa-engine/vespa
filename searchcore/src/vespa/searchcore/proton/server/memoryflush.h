@@ -68,9 +68,9 @@ private:
         const flushengine::TlsStatsMap &_tlsStatsMap;
     };
 
-    Config getConfig() const;
-
 public:
+    using SP = std::shared_ptr<MemoryFlush>;
+
     MemoryFlush();
 
     MemoryFlush(const Config &config,
@@ -83,6 +83,7 @@ public:
                     tlsStatsMap) const override;
 
     void setConfig(const Config &config);
+    Config getConfig() const;
 };
 
 } // namespace proton

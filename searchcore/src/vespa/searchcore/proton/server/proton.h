@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
+#include <vespa/searchcore/proton/server/memory_flush_config_updater.h>
 #include <vespa/searchcore/proton/server/protonconfigurer.h>
 #include <vespa/searchcore/proton/server/rpc_hooks.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
@@ -106,7 +107,7 @@ private:
     MatchEngine::UP                 _matchEngine;
     SummaryEngine::UP               _summaryEngine;
     DocsumBySlime::UP               _docsumBySlime;
-    IFlushStrategy::SP              _strategy;
+    MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;
     FlushEngine::UP                 _flushEngine;
     RPCHooks::UP                    _rpcHooks;
     HealthAdapter                   _healthAdapter;

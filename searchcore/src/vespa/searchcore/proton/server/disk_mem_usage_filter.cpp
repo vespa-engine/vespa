@@ -53,14 +53,11 @@ makeDiskLimitMessage(std::ostream &os,
 void
 DiskMemUsageFilter::recalcState(const Guard &guard)
 {
-    bool diskBlocked = false;
-    bool memoryBlocked = false;
     bool hasMessage = false;
     std::ostringstream message;
     double memoryUsed = getMemoryUsedRatio(guard);
     if (memoryUsed > _config._memoryLimit) {
         hasMessage = true;
-        memoryBlocked = true;
         makeMemoryLimitMessage(message, memoryUsed,
                 _config._memoryLimit, _memoryStats, _physicalMemory);
     }
@@ -70,7 +67,6 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
             message << ", ";
         }
         hasMessage = true;
-        diskBlocked = true;
         makeDiskLimitMessage(message, diskUsed, _config._diskLimit, _diskStats);
     }
     if (hasMessage) {
@@ -80,7 +76,8 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
         _state = State();
         _acceptWrite = true;
     }
-    DiskMemUsageState dmstate(diskBlocked, memoryBlocked);
+    DiskMemUsageState dmstate(ResourceUsageState(_config._diskLimit, diskUsed),
+                              ResourceUsageState(_config._memoryLimit, memoryUsed));
     notifyDiskMemUsage(guard, dmstate);
 }
 
