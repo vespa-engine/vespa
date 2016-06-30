@@ -7,6 +7,7 @@
 #include <string.h>
 #include <string>
 #include <unistd.h>
+#include <atomic>
 
 namespace {
 
@@ -14,10 +15,10 @@ const char *defaultHome = "/opt/vespa/";
 char computedHome[PATH_MAX];
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
+std::atomic<bool> initialized(false);
 
 void findDefaults() {
-    static int hasRun = 0;
-    if (hasRun) return;
+    if (initialized) return;
     const char *env = getenv("VESPA_HOME");
     if (env != NULL) {
         DIR *dp = NULL;
@@ -63,7 +64,7 @@ void findDefaults() {
             fprintf(stderr, "warning\tbad VESPA_PORT_BASE '%s' (ignored)\n", env);
         }
     }
-    hasRun = 1;
+    initialized = true;
 }
 
 }
@@ -118,6 +119,7 @@ Defaults::bootstrap(const char *argv0)
             putenv(&setting[0]);
         }
     }
+    initialized = false;
 }
 
 const char *
