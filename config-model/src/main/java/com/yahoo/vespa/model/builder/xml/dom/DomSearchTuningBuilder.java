@@ -103,29 +103,37 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         Tuning.SearchNode.FlushStrategy fs = sn.strategy;
         for (Element e : XML.getChildren(spec)) {
             if (equals("total", e)) {
-                for (Element e2 : XML.getChildren(e)) {
-                    if (equals("maxmemorygain", e2)) {
-                        fs.totalMaxMemoryGain = asLong(e2);
-                    } else if (equals("diskbloatfactor", e2)) {
-                        fs.totalDiskBloatFactor = asDouble(e2);
+                for (Element subElem : XML.getChildren(e)) {
+                    if (equals("maxmemorygain", subElem)) {
+                        fs.totalMaxMemoryGain = asLong(subElem);
+                    } else if (equals("diskbloatfactor", subElem)) {
+                        fs.totalDiskBloatFactor = asDouble(subElem);
                     }
                 }
             } else if (equals("component", e)) {
-                for (Element e2 : XML.getChildren(e)) {
-                    if (equals("maxmemorygain", e2)) {
-                        fs.componentMaxMemoryGain = asLong(e2);
-                    } else if (equals("diskbloatfactor", e2)) {
-                        fs.componentDiskBloatFactor = asDouble(e2);
-                    } else if (equals("maxage", e2)) {
-                        fs.componentMaxage = asDouble(e2);
+                for (Element subElem : XML.getChildren(e)) {
+                    if (equals("maxmemorygain", subElem)) {
+                        fs.componentMaxMemoryGain = asLong(subElem);
+                    } else if (equals("diskbloatfactor", subElem)) {
+                        fs.componentDiskBloatFactor = asDouble(subElem);
+                    } else if (equals("maxage", subElem)) {
+                        fs.componentMaxage = asDouble(subElem);
                     }
                 }
             } else if (equals("transactionlog", e)) {
-                for (Element e2 : XML.getChildren(e)) {
-                    if (equals("maxentries", e2)) {
-                        fs.transactionLogMaxEntries = asLong(e2);
-                    } else if (equals("maxsize", e2)) {
-                        fs.transactionLogMaxSize = asLong(e2);
+                for (Element subElem : XML.getChildren(e)) {
+                    if (equals("maxentries", subElem)) {
+                        fs.transactionLogMaxEntries = asLong(subElem);
+                    } else if (equals("maxsize", subElem)) {
+                        fs.transactionLogMaxSize = asLong(subElem);
+                    }
+                }
+            } else if (equals("conservative", e)) {
+                for (Element subElem : XML.getChildren(e)) {
+                    if (equals("memory-limit-factor", subElem)) {
+                        fs.conservativeMemoryLimitFactor = asDouble(subElem);
+                    } else if (equals("disk-limit-factor", subElem)) {
+                        fs.conservativeDiskLimitFactor = asDouble(subElem);
                     }
                 }
             }

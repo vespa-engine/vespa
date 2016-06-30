@@ -180,6 +180,10 @@ Tuning = element tuning {
             element transactionlog {
                element maxentries { xsd:nonNegativeInteger }? &
                element maxsize { xsd:nonNegativeInteger }?
+            }? &
+            element conservative {
+               element memory-limit-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }? &
+               element disk-limit-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
             }?
          }?
       }? &

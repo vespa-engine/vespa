@@ -99,6 +99,8 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             public Double componentMaxage = null;
             public Long transactionLogMaxEntries = null;
             public Long transactionLogMaxSize = null;
+            public Double conservativeMemoryLimitFactor = null;
+            public Double conservativeDiskLimitFactor = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
@@ -118,6 +120,15 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                 if (componentMaxage != null) maxageBuilder.time(componentMaxage);
                 if (transactionLogMaxEntries != null) maxageBuilder.serial(transactionLogMaxEntries);
                 memoryBuilder.maxage(maxageBuilder);
+
+                ProtonConfig.Flush.Memory.Conservative.Builder conservativeBuilder = new ProtonConfig.Flush.Memory.Conservative.Builder();
+                if (conservativeMemoryLimitFactor != null) {
+                    conservativeBuilder.memorylimitfactor(conservativeMemoryLimitFactor);
+                }
+                if (conservativeDiskLimitFactor != null) {
+                    conservativeBuilder.disklimitfactor(conservativeDiskLimitFactor);
+                }
+                memoryBuilder.conservative(conservativeBuilder);
 
                 builder.
                     flush(new ProtonConfig.Flush.Builder().
