@@ -3,7 +3,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
-#include "jobs.h"
+#include "job.h"
 #include "base_thread.hpp"
 
 class Thread_JoinWait_Test : public BaseForThreadTest
