@@ -112,7 +112,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
     // Rendering threads should never block.
     // Burst traffic may add work faster than we can complete it, so use an unbounded queue.
-    private static final ThreadPoolExecutor renderingExecutor = createExecutor();
+    // The executor SHOULD be reused across all instances having the same prototype
+    private final ThreadPoolExecutor renderingExecutor = createExecutor();
     private static ThreadPoolExecutor createExecutor() {
         int threadCount = Runtime.getRuntime().availableProcessors();
         ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
@@ -222,6 +223,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     Executor getExecutor() {
         return beforeHandoverMode ? MoreExecutors.sameThreadExecutor() : renderingExecutor;
     }
+    /** For inspection only; use getExecutor() for execution */
+    Executor getRenderingExecutor() { return renderingExecutor; }    
 
     /** The outermost execution which was run to create the response to render. */
     public Execution getExecution() { return execution; }
