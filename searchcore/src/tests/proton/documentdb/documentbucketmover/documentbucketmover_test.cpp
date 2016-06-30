@@ -1203,13 +1203,13 @@ struct ResourceLimitControllerFixture : public ControllerFixture
 
 TEST_F("require that bucket move stops when disk limit is reached", ResourceLimitControllerFixture)
 {
-    f.testJobStopping(DiskMemUsageState(true, false));
+    f.testJobStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
 }
 
 
 TEST_F("require that bucket move stops when memory limit is reached", ResourceLimitControllerFixture)
 {
-    f.testJobStopping(DiskMemUsageState(false, true));
+    f.testJobStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
 }
 
 

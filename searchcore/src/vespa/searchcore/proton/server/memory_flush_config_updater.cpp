@@ -7,24 +7,63 @@ LOG_SETUP(".proton.server.memory_flush_config_updater");
 
 namespace proton {
 
+namespace {
+
+bool
+shouldUseConservativeMode(const ResourceUsageState &resourceState,
+                          bool currentlyUseConservativeMode,
+                          double lowWatermarkFactor) {
+    return resourceState.aboveLimit() ||
+           (currentlyUseConservativeMode && resourceState.aboveLimit(lowWatermarkFactor));
+}
+
+}
+
 void
-MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &)
+MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &,
+                                                          MemoryFlush::Config &newConfig)
+{
+    if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
+                                  _currConfig.conservative.lowwatermarkfactor))
+    {
+        newConfig.maxGlobalTlsSize = _currConfig.conservative.maxtlssize;
+        _useConservativeDiskMode = true;
+    } else {
+        _useConservativeDiskMode = false;
+    }
+}
+
+void
+MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &,
+                                                            MemoryFlush::Config &newConfig)
+{
+    if (shouldUseConservativeMode(_currState.memoryState(), _useConservativeMemoryMode,
+                                  _currConfig.conservative.lowwatermarkfactor))
+    {
+        newConfig.maxGlobalMemory = _currConfig.conservative.maxmemory;
+        _useConservativeMemoryMode = true;
+    } else {
+        _useConservativeMemoryMode = false;
+    }
+}
+
+void
+MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard)
 {
     MemoryFlush::Config newConfig = convertConfig(_currConfig);
-    if (_currState.aboveDiskLimit()) {
-        newConfig.maxGlobalTlsSize = _currConfig.conservative.maxtlssize;
-    }
-    if (_currState.aboveMemoryLimit()) {
-        newConfig.maxGlobalMemory = _currConfig.conservative.maxmemory;
-    }
+    considerUseConservativeDiskMode(guard, newConfig);
+    considerUseConservativeMemoryMode(guard, newConfig);
     _flushStrategy->setConfig(newConfig);
 }
 
 MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
                                                    const ProtonConfig::Flush::Memory &config)
-    : _flushStrategy(flushStrategy),
+    : _mutex(),
+      _flushStrategy(flushStrategy),
       _currConfig(config),
-      _currState()
+      _currState(),
+      _useConservativeDiskMode(false),
+      _useConservativeMemoryMode(false)
 {
 }
 

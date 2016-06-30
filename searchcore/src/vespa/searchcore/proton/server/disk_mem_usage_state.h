@@ -2,40 +2,41 @@
 
 #pragma once
 
+#include "resource_usage_state.h"
+
 namespace proton {
 
 /**
- * Class used to describe state of disk and memory usage relative to
- * configured limits.
+ * Class used to describe state of disk and memory usage relative to configured limits.
  */
 class DiskMemUsageState
 {
-    bool _aboveDiskLimit;
-    bool _aboveMemoryLimit;
+    ResourceUsageState _diskState;
+    ResourceUsageState _memoryState;
 
 public:
     DiskMemUsageState()
-        : _aboveDiskLimit(false),
-          _aboveMemoryLimit(false)
+        : _diskState(),
+          _memoryState()
     {
     }
-
-    DiskMemUsageState(bool aboveDiskLimit_in, bool aboveMemoryLimit_in)
-        : _aboveDiskLimit(aboveDiskLimit_in),
-          _aboveMemoryLimit(aboveMemoryLimit_in)
+    DiskMemUsageState(const ResourceUsageState &diskState_,
+                      const ResourceUsageState &memoryState_)
+        : _diskState(diskState_),
+          _memoryState(memoryState_)
     {
     }
-
     bool operator==(const DiskMemUsageState &rhs) const {
-        return ((_aboveDiskLimit == rhs._aboveDiskLimit) &&
-                (_aboveMemoryLimit == rhs._aboveMemoryLimit));
+        return ((_diskState == rhs._diskState) &&
+                (_memoryState == rhs._memoryState));
     }
     bool operator!=(const DiskMemUsageState &rhs) const {
-        return ((_aboveDiskLimit != rhs._aboveDiskLimit) ||
-                (_aboveMemoryLimit != rhs._aboveMemoryLimit));
+        return ! ((*this) == rhs);
     }
-    bool aboveDiskLimit() const { return _aboveDiskLimit; }
-    bool aboveMemoryLimit() const { return _aboveMemoryLimit; }
+    const ResourceUsageState &diskState() const { return _diskState; }
+    const ResourceUsageState &memoryState() const { return _memoryState; }
+    bool aboveDiskLimit() const { return diskState().aboveLimit(); }
+    bool aboveMemoryLimit() const { return memoryState().aboveLimit(); }
 };
 
 } // namespace proton

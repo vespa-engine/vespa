@@ -90,6 +90,10 @@ flush.memory.conservative.maxmemory long default=2147483648
 ## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
 flush.memory.conservative.maxtlssize long default=10737418240
 
+## The factor used to multiply with the resource limits for disk / memory to find the low
+## watermark indicating when to go back from conservative to normal mode for the flush strategy.
+flush.memory.conservative.lowwatermarkfactor double default=0.9
+
 ## The cost of doing replay when replaying the transaction log.
 ##
 ## The number of bytes to replay * replaycost gives an estimate of the

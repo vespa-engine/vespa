@@ -20,12 +20,19 @@ private:
     using LockGuard = std::lock_guard<Mutex>;
     using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
+    Mutex _mutex;
     MemoryFlush::SP _flushStrategy;
     ProtonConfig::Flush::Memory _currConfig;
     DiskMemUsageState _currState;
-    Mutex _mutex;
+    bool _useConservativeDiskMode;
+    bool _useConservativeMemoryMode;
 
-    void updateFlushStrategy(const LockGuard &);
+
+    void considerUseConservativeDiskMode(const LockGuard &guard,
+                                         MemoryFlush::Config &newConfig);
+    void considerUseConservativeMemoryMode(const LockGuard &guard,
+                                           MemoryFlush::Config &newConfig);
+    void updateFlushStrategy(const LockGuard &guard);
 
 public:
     using UP = std::unique_ptr<MemoryFlushConfigUpdater>;
