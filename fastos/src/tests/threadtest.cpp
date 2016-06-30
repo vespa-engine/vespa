@@ -4,7 +4,7 @@
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
 #include "job.h"
-#include "base_thread.hpp"
+#include "thread_test_base.hpp"
 
 
 #define MUTEX_TEST_THREADS 6
