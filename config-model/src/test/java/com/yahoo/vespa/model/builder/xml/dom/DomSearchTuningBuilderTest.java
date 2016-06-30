@@ -107,6 +107,10 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<maxentries>200</maxentries>",
                 "<maxsize>1024</maxsize>",
                 "</transactionlog>",
+                "<conservative>",
+                "<memory-limit-factor>0.6</memory-limit-factor>",
+                "<disk-limit-factor>0.7</disk-limit-factor>",
+                "</conservative>",
                 "</native>","</flushstrategy>"));
         assertEquals(900, t.searchNode.strategy.totalMaxMemoryGain.longValue());
         assertEquals(8.7, t.searchNode.strategy.totalDiskBloatFactor.doubleValue(), DELTA);
@@ -115,6 +119,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(300, t.searchNode.strategy.componentMaxage.doubleValue(), DELTA);
         assertEquals(200, t.searchNode.strategy.transactionLogMaxEntries.longValue());
         assertEquals(1024, t.searchNode.strategy.transactionLogMaxSize.longValue());
+        assertEquals(0.6, t.searchNode.strategy.conservativeMemoryLimitFactor.doubleValue(), DELTA);
+        assertEquals(0.7, t.searchNode.strategy.conservativeDiskLimitFactor.doubleValue(), DELTA);
         String cfg = getProtonCfg(t);
         assertThat(cfg, containsString("flush.memory.maxmemory 900"));
         assertThat(cfg, containsString("flush.memory.diskbloatfactor 8.7"));
@@ -123,6 +129,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("flush.memory.maxage.time 300"));
         assertThat(cfg, containsString("flush.memory.maxage.serial 200"));
         assertThat(cfg, containsString("flush.memory.maxtlssize 1024"));
+        assertThat(cfg, containsString("flush.memory.conservative.memorylimitfactor 0.6"));
+        assertThat(cfg, containsString("flush.memory.conservative.disklimitfactor 0.7"));
     }
 
     @Test
