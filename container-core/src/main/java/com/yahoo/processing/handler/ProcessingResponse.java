@@ -38,7 +38,6 @@ public class ProcessingResponse extends AsyncHttpResponse {
 
     private final com.yahoo.processing.Request processingRequest;
     private final com.yahoo.processing.Response processingResponse;
-    private final Executor renderingExecutor;
     private final Execution execution;
     private final Renderer renderer;
 
@@ -46,24 +45,21 @@ public class ProcessingResponse extends AsyncHttpResponse {
     private boolean explicitStatusSet = false;
 
     @SuppressWarnings("unchecked")
-    public ProcessingResponse(
-            int status,
-            final com.yahoo.processing.Request processingRequest,
-            final com.yahoo.processing.Response processingResponse,
-            final Renderer renderer,
-            final Executor renderingExecutor, final Execution execution) {
+    public ProcessingResponse(int status, com.yahoo.processing.Request processingRequest,
+                              com.yahoo.processing.Response processingResponse,
+                              Renderer renderer,
+                              Executor renderingExecutor, Execution execution) {
         super(status);
         this.processingRequest = processingRequest;
         this.processingResponse = processingResponse;
-        this.renderingExecutor = renderingExecutor;
         this.execution = execution;
         this.renderer = renderer;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void render(final OutputStream stream, final ContentChannel channel,
-                       final CompletionHandler completionHandler) throws IOException {
+    public void render(OutputStream stream, ContentChannel channel, 
+                       CompletionHandler completionHandler) throws IOException {
         if (renderer instanceof AsynchronousRenderer) {
             AsynchronousRenderer asyncRenderer = (AsynchronousRenderer)renderer;
             asyncRenderer.setNetworkWiring(channel, completionHandler);
