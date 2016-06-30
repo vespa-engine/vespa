@@ -36,6 +36,26 @@ public class AsynchronousSectionedRendererTest {
     private static final Charset CHARSET = Utf8.getCharset();
 
     @Test
+    public void testRenderersOfTheSamePrototypeUseTheSameExecutor() {
+        TestRenderer rendererPrototype = new TestRenderer();
+        TestRenderer rendererCopy1 = (TestRenderer)rendererPrototype.clone();
+        rendererCopy1.init();
+        assertTrue(rendererPrototype.getRenderingExecutor() == rendererCopy1.getRenderingExecutor());
+    }
+
+    @Test
+    public void testRenderersOfDifferentPrototypesUseDifferentExecutors() {
+        TestRenderer rendererPrototype1 = new TestRenderer();
+        TestRenderer rendererCopy1 = (TestRenderer)rendererPrototype1.clone();
+        rendererCopy1.init();
+
+        TestRenderer rendererPrototype2 = new TestRenderer();
+        TestRenderer rendererCopy2 = (TestRenderer)rendererPrototype2.clone();
+        rendererCopy2.init();
+        assertTrue(rendererPrototype1.getRenderingExecutor() != rendererCopy2.getRenderingExecutor());
+    }
+
+    @Test
     public void testAsyncSectionedRenderer() throws IOException, InterruptedException {
         StringDataList dataList = createDataListWithStrangeStrings();
 
