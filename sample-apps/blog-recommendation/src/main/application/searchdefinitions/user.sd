@@ -1,0 +1,26 @@
+search user {
+    document user {
+
+        field user_id type string {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field has_read_items type array<string> {
+            indexing: summary | attribute
+        }
+
+        # see http://vespa.corp.yahoo.com/6/documentation/reference/search-definitions.html#tensor-type-spec
+        field user_item_cf type tensor {
+            indexing: summary | attribute
+            attribute: tensor(user_item_cf[10])
+        }
+
+        field has_user_item_cf type byte {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+    }
+
+}
