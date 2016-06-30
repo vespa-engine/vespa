@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 
 /**
  * Class for setting up instances of classes; enables testing.

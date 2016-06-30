@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -47,7 +50,7 @@ public class NodeAdminImplTest {
         final Docker docker = mock(Docker.class);
         final Function<HostName, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory);
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, 100);
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
@@ -70,36 +73,33 @@ public class NodeAdminImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
-        inOrder.verify(nodeAgent1).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1).start(100);
+//        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent1, never()).start();
-        inOrder.verify(nodeAgent1).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent1, never()).start(1);
+     //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
-
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent1, never()).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(asList(nodeSpec), asList(existingContainer));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
         inOrder.verify(nodeAgentFactory).apply(hostName);
-        inOrder.verify(nodeAgent2).start();
-        inOrder.verify(nodeAgent2).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
 
-        nodeAdmin.synchronizeLocalContainerState(Collections.emptyList(), Collections.emptyList());
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
-        inOrder.verify(nodeAgent2, never()).start();
-        inOrder.verify(nodeAgent2, never()).execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        inOrder.verify(nodeAgent2, never()).start(1);
+    //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent2).stop();
 
         verifyNoMoreInteractions(nodeAgent1);

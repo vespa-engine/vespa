@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
@@ -14,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.RESUMED;
-import static com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater.State.SUSPENDED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -31,7 +32,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final NodeAdmin nodeAdmin;
     private boolean isRunningUpdates = true;
     private final Object monitor = new Object();
-    final Orchestrator orchestrator;
+    private final Orchestrator orchestrator;
     private final String baseHostName;
 
     public NodeAdminStateUpdater(
@@ -64,6 +65,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public enum State { RESUMED, SUSPENDED}
 
     /**
+     * This method is used when upgrading the NodeAdmin host. It is exposed through REST-API.
      * @return empty on success and failure message on failure.
      */
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
@@ -121,5 +123,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        nodeAdmin.shutdown();
     }
 }

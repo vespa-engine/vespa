@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -39,29 +41,34 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
+    private final int nodeAgentScanIntervalMillis;
+
     /**
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
-    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory) {
+    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory, int nodeAgentScanIntervalMillis) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
+        this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
-        synchronizeLocalContainerState(containersToRun, existingContainers);
+        synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
 
         garbageCollectDockerImages(containersToRun);
     }
 
     public boolean freezeAndCheckIfAllFrozen() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.FREEZE);
+            // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
+            // worth it (it could block the rest call for some time and might have implications).
+            nodeAgent.freeze();
         }
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (nodeAgent.getState() != NodeAgent.State.FROZEN) {
+            if (! nodeAgent.isFrozen()) {
                 return false;
             }
         }
@@ -70,7 +77,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public void unfreeze() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            nodeAgent.execute(NodeAgent.Command.UNFREEZE);
+            nodeAgent.unfreeze();
         }
     }
 
@@ -83,9 +90,16 @@ public class NodeAdminImpl implements NodeAdmin {
         StringBuilder debug = new StringBuilder();
         for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
             debug.append("Node ").append(node.getKey().toString());
-            debug.append(" state ").append(node.getValue().getState());
+            debug.append(" state ").append(node.getValue().debugInfo());
         }
         return debug.toString();
+    }
+
+    @Override
+    public void shutdown() {
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            nodeAgent.stop();
+        }
     }
 
     private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
@@ -142,7 +156,12 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(key -> new Pair<>(Optional.ofNullable(tMap.get(key)), Optional.ofNullable(uMap.get(key))));
     }
 
-    void synchronizeLocalContainerState(
+    // TODO This method should rather take a lost of Hostname instead of Container. However, it triggers
+    // a refactoring of the logic. Which is hard due to the style of programming.
+    // The method streams the list of containers twice.
+    // It is not a full synchronization as it will only add new NodeAgent. Old ones are removed in
+    // garbageCollectDockerImages. We should refactor the code as some point.
+    void synchronizeNodeSpecsToNodeAgents(
             final List<ContainerNodeSpec> containersToRun,
             final List<Container> existingContainers) {
         final Stream<Pair<Optional<ContainerNodeSpec>, Optional<Container>>> nodeSpecContainerPairs = fullOuterJoin(
@@ -166,22 +185,19 @@ public class NodeAdminImpl implements NodeAdmin {
             }
 
             try {
-                updateAgent(nodeSpec.get());
+                ensureNodeAgentForNodeIsStarted(nodeSpec.get());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to bring container to desired state", e);
             }
         });
     }
 
-    private void updateAgent(final ContainerNodeSpec nodeSpec) throws IOException {
-        final NodeAgent agent;
+    private void ensureNodeAgentForNodeIsStarted(final ContainerNodeSpec nodeSpec) throws IOException {
         if (nodeAgents.containsKey(nodeSpec.hostname)) {
-            agent = nodeAgents.get(nodeSpec.hostname);
-        } else {
-            agent = nodeAgentFactory.apply(nodeSpec.hostname);
-            nodeAgents.put(nodeSpec.hostname, agent);
-            agent.start();
+            return;
         }
-        agent.execute(NodeAgent.Command.UPDATE_FROM_NODE_REPO);
+        final NodeAgent agent = nodeAgentFactory.apply(nodeSpec.hostname);
+        nodeAgents.put(nodeSpec.hostname, agent);
+        agent.start(nodeAgentScanIntervalMillis);
     }
 }

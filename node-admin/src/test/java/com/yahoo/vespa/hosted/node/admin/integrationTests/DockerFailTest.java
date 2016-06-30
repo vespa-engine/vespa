@@ -1,15 +1,16 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
-
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.NodeAdmin;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.NodeAgent;
-import com.yahoo.vespa.hosted.node.admin.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
@@ -47,8 +48,8 @@ public class DockerFailTest {
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, dockerMock, nodeRepositoryMock, orchestratorMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
 
         HostName hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(
@@ -98,8 +99,12 @@ public class DockerFailTest {
                 "ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n";
+
+
         while (!DockerMock.getRequests().equals(goal)) {
-            Thread.sleep(10);
+            Thread.sleep(1000);
+            assertThat(DockerMock.getRequests(), is(goal));
+
         }
 
         assertThat(DockerMock.getRequests(), is(goal));

@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin;
+package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 /**
  * Responsible for management of a single node over its lifecycle.
@@ -9,31 +9,37 @@ package com.yahoo.vespa.hosted.node.admin;
  * @author bakksjo
  */
 public interface NodeAgent {
-
-    enum Command {UPDATE_FROM_NODE_REPO, FREEZE, UNFREEZE}
-    enum State {WAITING, WORKING, FROZEN, TERMINATED}
+    /**
+     * Freeze will eventually cause the NodeAgent to not pick up changes. Check isFrozen to see state.
+     */
+    void freeze();
 
     /**
-     * Signals to the agent that it should update the node specification and container state and maintain wanted state.
-     *
-     * This method is to be assumed asynchronous by the caller; i.e. any actions the agent will take may execute after
-     * this method call returns.
-     *
-     * It is an error to call this method on an instance after stop() has been called.
+     * start picking up changes again.
      */
-    void execute(Command wantedState);
+    void unfreeze();
 
     /**
-     * Returns the state of the agent.
+     * Force the NodeAgent to check node repository. Intended for testing.
      */
-    State getState();
+    void tick();
+
+
+    /**
+     * Returns true if NodeAgent is frozen.
+     */
+    boolean isFrozen();
+
+    /**
+     * Human readable string for the state of the NodeAgent.
+     */
+    String debugInfo();
 
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
-     * striving to make the current state equal to the wanted state. The current and wanted state update as part of
-     * {@link #execute(Command)}.
+     * striving to make the current state equal to the wanted state.
      */
-    void start();
+    void start(int intervalMillis);
 
     /**
      * Signals to the agent that the node is at the end of its lifecycle and no longer needs a managing agent.
