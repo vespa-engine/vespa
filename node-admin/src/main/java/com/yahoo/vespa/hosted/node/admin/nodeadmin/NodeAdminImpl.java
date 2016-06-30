@@ -180,14 +180,14 @@ public class NodeAdminImpl implements NodeAdmin {
             }
 
             try {
-                updateAgent(nodeSpec.get());
+                ensureNodeAgentForNodeIsStarted(nodeSpec.get());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to bring container to desired state", e);
             }
         });
     }
 
-    private void updateAgent(final ContainerNodeSpec nodeSpec) throws IOException {
+    private void ensureNodeAgentForNodeIsStarted(final ContainerNodeSpec nodeSpec) throws IOException {
         if (nodeAgents.containsKey(nodeSpec.hostname)) {
             return;
         }

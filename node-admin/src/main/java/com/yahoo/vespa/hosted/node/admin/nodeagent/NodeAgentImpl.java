@@ -125,7 +125,7 @@ public class NodeAgentImpl implements NodeAgent {
         return false;
     }
 
-    public void startNodeInContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
+    public void runLocalResumeScriptfNeeded(final ContainerNodeSpec nodeSpec) {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
@@ -153,7 +153,6 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         logger.log(Level.INFO, logPrefix + "Call resume against Orchestrator");
-        orchestrator.resume(nodeSpec.hostname);
     }
 
     public void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
@@ -177,19 +176,17 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private boolean scheduleDownLoadIfNeededIsImageReady(ContainerNodeSpec nodeSpec) {
+    private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
         if (nodeDocker.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
             if (imageBeingDownloaded == nodeSpec.wantedDockerImage.get()) {
                 // Downloading already scheduled, but not done.
-                return false;
+                return;
             }
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a tick when download is finished.
             nodeDocker.scheduleDownloadOfImage(nodeSpec, this::nodeTickInNewThread);
-            return false;
         } else {
             imageBeingDownloaded = null;
-            return true;
         }
     }
 
@@ -218,13 +215,14 @@ public class NodeAgentImpl implements NodeAgent {
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
                         break;
                     case ACTIVE:
-                        if (! scheduleDownLoadIfNeededIsImageReady(nodeSpec)) {
+                        scheduleDownLoadIfNeeded(nodeSpec);
+                        if (imageBeingDownloaded != null) {
                             return;
                         }
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
 
                         startContainerIfNeeded(nodeSpec);
-                        startNodeInContainerIfNeeded(nodeSpec);
+                        runLocalResumeScriptfNeeded(nodeSpec);
                         // Because it's more important to stop a bad release from rolling out in prod,
                         // we put the resume call last. So if we fail after updating the node repo attributes
                         // but before resume, the app may go through the tenant pipeline but will halt in prod.
@@ -236,6 +234,7 @@ public class NodeAgentImpl implements NodeAgent {
                         //  - Slobrok and internal orchestrator state is used to determine whether
                         //    to allow upgrade (suspend).
                         publishThatNodeIsRunningIfRequired(nodeSpec);
+                        orchestrator.resume(nodeSpec.hostname);
                         break;
                     case INACTIVE:
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
@@ -249,6 +248,8 @@ public class NodeAgentImpl implements NodeAgent {
                     case FAILED:
                         removeContainerIfNeededUpdateContainerState(nodeSpec);
                         break;
+                    default:
+                        throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
                 }
             } catch (Exception e) {
                 logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception, ignoring.", e);
