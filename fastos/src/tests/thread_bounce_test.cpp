@@ -6,7 +6,7 @@
 #include "job.h"
 #include "thread_test_base.hpp"
 
-class Thread_Bounce_Test : public BaseForThreadTest
+class Thread_Bounce_Test : public ThreadTestBase
 {
    int Main ();
 

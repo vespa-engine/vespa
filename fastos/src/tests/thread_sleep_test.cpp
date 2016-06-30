@@ -6,7 +6,7 @@
 #include "job.h"
 #include "thread_test_base.hpp"
 
-class Thread_Sleep_Test : public BaseForThreadTest
+class Thread_Sleep_Test : public ThreadTestBase
 {
    int Main ();
 

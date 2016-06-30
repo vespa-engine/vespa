@@ -9,7 +9,7 @@
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
 
-class Thread_Mutex_Test : public BaseForThreadTest
+class Thread_Mutex_Test : public ThreadTestBase
 {
    int Main ();
 

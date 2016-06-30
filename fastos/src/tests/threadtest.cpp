@@ -11,7 +11,7 @@
 #define MAX_THREADS 7
 
 
-class ThreadTest : public BaseForThreadTest
+class ThreadTest : public ThreadTestBase
 {
    int Main ();
 

@@ -5,17 +5,17 @@
 static volatile int64_t number;
 #define INCREASE_NUMBER_AMOUNT 10000
 
-class BaseForThreadTest : public BaseTest, public FastOS_Runnable
+class ThreadTestBase : public BaseTest, public FastOS_Runnable
 {
 private:
    FastOS_Mutex printMutex;
 
 public:
-   BaseForThreadTest(void)
+   ThreadTestBase(void)
      : printMutex()
    {
    }
-   virtual ~BaseForThreadTest() {};
+   virtual ~ThreadTestBase() {};
 
    void PrintProgress (char *string)
    {
@@ -55,7 +55,7 @@ public:
 };
 
 
-void BaseForThreadTest::Run (FastOS_ThreadInterface *thread, void *arg)
+void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 {
    if(arg == NULL)
       return;
