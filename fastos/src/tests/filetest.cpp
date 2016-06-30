@@ -33,7 +33,7 @@ bool createFile(const char* fileName,
     }
     return success;
 }
-}
+} // namespace <unnamed>
 
 
 class FileTest : public BaseTest
@@ -424,9 +424,7 @@ public:
                             }
                         }
                         delete [] buffer2;
-                    }
-                    else
-                    {
+                    } else {
                         memset(buffer, 0, bufSize);
 
                         ssize_t readBytes = file.Read(buffer, bufSize);
@@ -460,10 +458,7 @@ public:
         if (myFile->OpenReadOnly()) {
             int64_t filesize;
             filesize = myFile->GetSize();
-
-            printf("%s: File size: %ld\n",
-                   (filesize == 27) ? okString : failString,
-                   static_cast<long>(filesize));
+            Progress((filesize == 27), "File size: %d\n", static_cast<int>(filesize));
 
             char dummyData[6] = "Dummy";
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
@@ -494,10 +489,9 @@ public:
                     Progress(filePosition == 27, "File position should now be 27. Was: %d", int(filePosition));
                 }
             }
+        } else {
+            Progress(false, "Unable to open file '%s'.\n", roFilename);
         }
-        else
-            printf("%s: Unable to open file '%s'.\n", failString, roFilename);
-
         delete(myFile);
         PrintSeparator();
     }
@@ -513,17 +507,15 @@ public:
             int64_t filesize;
             filesize = myFile->GetSize();
 
-            printf("%s: File size: %ld\n",
-                   (filesize == 0) ? okString : failString,
-                   static_cast<long>(filesize));
+            Progress((filesize == 0), "File size: %d\n", static_cast<int>(filesize));
 
             char dummyData[6] = "Dummy";
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
 
             if (!writeResult) {
-                printf("%s: Should be able to write to file opened for write-only access.\n", failString);
+                Progress(false, "Should be able to write to file opened for write-only access.\n");
             } else {
-                printf("%s: Write 6 bytes ok.\n", okString);
+                Progress(true, "Write 6 bytes ok.\n");
 
                 int64_t filePosition = myFile->GetPosition();
                 if (filePosition == 6) {
@@ -542,33 +534,27 @@ public:
                                 printf("%s: Trying to read a write-only file should fail and it did.\n", okString);
                                 printf("%s: Return code was: %d.\n", okString, readBytes);
                             } else {
-                                printf("%s: Read on a file with write-only access should fail, but it didn't.\n", failString);
+                                Progress(false, "Read on a file with write-only access should fail, but it didn't.\n");
                             }
                         } else {
-                            printf("%s: Fileposition should be 6, but was %ld.\n",
-                                   failString,
-                                   static_cast<long>(filePosition));
+                            Progress(false, "Fileposition should be 6, but was %d.\n", static_cast<int>(filePosition));
                         }
                     } else {
-                        printf("%s: SetPosition(0) failed\n", failString);
+                        Progress(false, "SetPosition(0) failed\n");
                     }
                 } else {
-                    printf("%s: Fileposition should be 6, but was %ld.\n",
-                           failString,
-                           static_cast<long>(filePosition));
+                    Progress(false, "Fileposition should be 6, but was %d.\n", static_cast<int>(filePosition));
                 }
             }
             bool closeResult = myFile->Close();
-            printf("%s: Close file.\n", closeResult ? okString : failString);
+            Progress(closeResult, "Close file.\n");
         } else {
-            printf("%s: Unable to open file '%s'.\n", failString, woFilename);
+            Progress(false, "Unable to open file '%s'.\n", woFilename);
         }
 
 
         bool deleteResult = myFile->Delete();
-
-        printf("%s: Delete file '%s'.\n", deleteResult ? okString : failString, woFilename);
-
+        Progress(deleteResult, "Delete file '%s'.\n", woFilename);
 
         delete(myFile);
         FastOS_File::EmptyAndRemoveDirectory("generated");
@@ -583,10 +569,10 @@ public:
         FastOS_File *myFile = new FastOS_File(rwFilename);
 
         if (myFile->OpenExisting()) {
-            printf("%s: OpenExisting() should not work when '%s' does not exist.\n", failString, rwFilename);
+            Progress(false, "OpenExisting() should not work when '%s' does not exist.\n", rwFilename);
             myFile->Close();
         } else {
-            printf("%s: OpenExisting() should fail when '%s' does not exist, and it did.\n", okString, rwFilename);
+            Progress(true, "OpenExisting() should fail when '%s' does not exist, and it did.\n", rwFilename);
         }
 
         if (myFile->OpenReadWrite()) {
@@ -594,18 +580,16 @@ public:
 
             filesize = myFile->GetSize();
 
-            printf("%s: File size: %ld\n",
-                   (filesize == 0) ? okString : failString,
-                   static_cast<long>(filesize));
+            Progress((filesize == 0), "File size: %d\n", static_cast<int>(filesize));
 
             char dummyData[6] = "Dummy";
 
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
 
             if (!writeResult) {
-                printf("%s: Should be able to write to file opened for read/write access.\n", failString);
+                Progress(false, "Should be able to write to file opened for read/write access.\n");
             } else {
-                printf("%s: Write 6 bytes ok.\n", okString);
+                Progress(true, "Write 6 bytes ok.\n");
 
                 int64_t filePosition = myFile->GetPosition();
 
@@ -626,9 +610,7 @@ public:
                                 printf("%s: Reading 6 bytes worked.\n", okString);
 
                                 int cmpResult = memcmp(dummyData, dummyData2, 6);
-
-                                printf("%s: Comparing the written and read result.\n",
-                                       (cmpResult == 0) ? okString : failString);
+                                Progress((cmpResult == 0), "Comparing the written and read result.\n");
 
                                 bool rc = myFile->SetPosition(1);
                                 Progress(rc, "Setting position to 1");
@@ -647,33 +629,27 @@ public:
                                     filePosition = myFile->GetPosition();
                                     Progress(filePosition == 6, "File position should now be 6. Was: %d", int(filePosition));
                                 }
+                            } else {
+                                Progress(false, "Reading 6 bytes failed.\n");
                             }
-                            else
-                                printf("%s: Reading 6 bytes failed.\n", failString);
+                        } else {
+                            Progress(false, "Fileposition should be 6, but was %d.\n", static_cast<int>(filePosition));
                         }
-                        else
-                            printf("%s: Fileposition should be 6, but was %ld.\n",
-                                   failString,
-                                   static_cast<long>(filePosition));
+                    } else {
+                        Progress(false, "SetPosition(0) failed\n");
                     }
-                    else
-                        printf("%s: SetPosition(0) failed\n", failString);
+                } else {
+                    Progress(false, "Fileposition should be 6, but was %d.\n", static_cast<int>(filePosition));
                 }
-                else
-                    printf("%s: Fileposition should be 6, but was %ld.\n",
-                           failString,
-                           static_cast<long>(filePosition));
             }
 
             bool closeResult = myFile->Close();
-
-            printf("%s: Close file.\n", closeResult ? okString : failString);
+            Progress(closeResult, "Close file.\n");
+        } else {
+            Progress(false, "Unable to open file '%s'.\n", rwFilename);
         }
-        else
-            printf("%s: Unable to open file '%s'.\n", failString, rwFilename);
-
         bool deleteResult = myFile->Delete();
-        printf("%s: Delete file '%s'.\n", deleteResult ? okString : failString, rwFilename);
+        Progress(deleteResult, "Delete file '%s'.\n", rwFilename);
 
         delete(myFile);
         FastOS_File::EmptyAndRemoveDirectory("generated");
