@@ -12,8 +12,9 @@ Usage: ${0##*/} <command> [<args>...]
 Script for manipulating the Node Repository.
 
 Commands
-    add [-c <configserverhost>] -p <parenthostname> <hostname>...
-        Provision node <hostname> in node repo with flavor "docker".
+    add [-c <configserverhost>] [-f <parent host flavor>] -p <parenthostname> [<hostname>...]
+        Provision Docker host <parenthostname> in node repo with type "host", flavor <parent host flavor> (only if -f option supplied).
+        Provision Docker nodes <hostname...> list (0 or more) in node repo with flavor "docker" and parent host <parenthostname>.
     reprovision [-c <configserverhost>] -p <parenthostname> <hostname>...
         Fail node <hostname>, then rm and add.
     rm [-c <configserverhost>] <hostname>...
@@ -124,16 +125,44 @@ function ProvisionDockerNode {
     local container_hostname="$2"
     local parent_hostname="$3"
 
-    local url="http://$config_server_hostname:19071/nodes/v2/node"
-
     local json="[
                   {
                     \"hostname\":\"$container_hostname\",
                     \"parentHostname\":\"$parent_hostname\",
                     \"openStackId\":\"fake-$container_hostname\",
-                    \"flavor\":\"docker\"
+                    \"flavor\":\"docker\",
+                    \"type\":\"tenant\"
                   }
                 ]"
+
+    ProvisionNode $config_server_hostname "$json"
+}
+
+
+# Docker host, the docker nodes points to this host in parentHostname in their node config
+function ProvisionDockerHost {
+    local config_server_hostname="$1"
+    local docker_host_hostname="$2"
+    local flavor="$3"
+
+    local json="[
+                  {
+                    \"hostname\":\"$docker_host_hostname\",
+                    \"openStackId\":\"$docker_host_hostname\",
+                    \"flavor\":\"$flavor\",
+                    \"type\":\"host\"
+                  }
+                ]"
+
+    ProvisionNode $config_server_hostname "$json"
+}
+
+# Docker node in node repo (both docker hosts and docker nodes)
+function ProvisionNode {
+    local config_server_hostname="$1"
+    local json="$2"
+
+    local url="http://$config_server_hostname:19071/nodes/v2/node"
 
     CurlOrFail -H "Content-Type: application/json" -X POST -d "$json" "$url"
 }
@@ -153,11 +182,12 @@ function AddCommand {
 
     OPTIND=1
     local option
-    while getopts "c:p:" option
+    while getopts "c:p:f:" option
     do
         case "$option" in
             c) config_server_hostname="$OPTARG" ;;
             p) parent_hostname="$OPTARG" ;;
+            f) parent_host_flavor="$OPTARG" ;;
             ?) exit 1 ;; # E.g. option lacks argument, in case error has been
                          # already been printed
             *) Fail "Unknown option '$option' with value '$OPTARG'"
@@ -166,18 +196,20 @@ function AddCommand {
 
     if [ -z "$parent_hostname" ]
     then
-        Fail "Parent hostname not specified (-d)"
+        Fail "Parent hostname not specified (-p)"
     fi
 
     shift $((OPTIND - 1))
 
-    if (($# == 0))
+    if [ -n "$parent_host_flavor" ]
     then
-        Fail "No node hostnames were specified"
+        echo "Provisioning Docker host $parent_hostname with flavor $parent_host_flavor"
+        ProvisionDockerHost "$config_server_hostname" \
+                            "$parent_hostname" \
+                            "$parent_host_flavor"
     fi
 
-    echo -n "Provisioning $# nodes"
-
+    echo -n "Provisioning $# nodes with parent host $parent_hostname"
     local container_hostname
     for container_hostname in "$@"
     do
