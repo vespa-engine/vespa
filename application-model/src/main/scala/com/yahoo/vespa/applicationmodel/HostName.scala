@@ -4,7 +4,7 @@ package com.yahoo.vespa.applicationmodel
 import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 case class HostName(s: String) {
   // Jackson's StdKeySerializer uses toString() (and ignores annotations) for objects used as Map keys.

@@ -4,7 +4,7 @@ package com.yahoo.vespa.applicationmodel
 import com.fasterxml.jackson.annotation.JsonValue
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 case class ServiceClusterKey(clusterId: ClusterId, serviceType: ServiceType) {
   // Jackson's StdKeySerializer uses toString() (and ignores annotations) for objects used as Map keys.

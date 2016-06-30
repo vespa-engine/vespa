@@ -4,7 +4,7 @@ package com.yahoo.vespa.applicationmodel
 /**
  * Represents a collection of service instances that together make up a service with a single cluster id.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 case class ServiceCluster[S](
   clusterId: ClusterId,

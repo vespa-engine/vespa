@@ -4,7 +4,7 @@ package com.yahoo.vespa.applicationmodel
 /**
  * TODO: What is this
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 case class ApplicationInstance[S](
   tenantId: TenantId,

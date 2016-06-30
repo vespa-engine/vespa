@@ -8,7 +8,7 @@ import com.yahoo.vespa.service.monitor.SlobrokMonitor._
 import scala.collection.convert.wrapAsJava._
 
 /**
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 class SlobrokMonitor {
   private val supervisor: Supervisor = new Supervisor(new Transport())

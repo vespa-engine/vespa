@@ -7,7 +7,7 @@ import com.yahoo.vespa.service.monitor.SlobrokAndConfigIntersector
 /**
  * Quick hack to just see some results.
  *
- * @author <a href="mailto:bakksjo@yahoo-inc.com">Oyvind Bakksjo</a>
+ * @author bakksjo
  */
 object PrintServiceStates {
   def main(args: Array[String]): Unit = {
