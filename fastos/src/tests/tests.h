@@ -52,111 +52,71 @@ public:
    bool Progress (bool result, const char *str, int d1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, d1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, d1);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, int d1, int d2)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, d1, d2);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, d1, d2);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, s1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, s1);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const FastOS_ThreadInterface *s1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, s1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, s1);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const FastOS_Socket *s1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, s1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, s1);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1, const char *s2)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, s1, s2);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, s1, s2);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, const char *s1, int d1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, s1, d1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, s1, d1);
+      return Progress(result, string);
    }
 
    bool Progress (bool result, const char *str, int d1, const char *s1)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, d1, s1);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, d1, s1);
+      return Progress(result, string);
    }
 
    bool ProgressI64 (bool result, const char *str, int64_t val)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, val);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, val);
+      return Progress(result, string);
    }
 
    bool ProgressFloat (bool result, const char *str, float val)
    {
       char string[MAX_STR_LEN];
-      sprintf(string, "%s: ", result ? okString : failString);
-      sprintf(&string[strlen(string)], str, val);
-      sprintf(&string[strlen(string)], "\n");
-      PrintProgress(string);
-      if (! result) { _allOkFlag = false; }
-      return result;
+      sprintf(string, str, val);
+      return Progress(result, string);
    }
 
    void Ok (const char *string)
