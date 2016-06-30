@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/config/config.h>
+#include <chrono>
 
 namespace slobrok {
 
@@ -23,6 +24,7 @@ private:
     config::ConfigHandle<cloud::config::SlobroksConfig>::UP _handle;
     Configurable &_target;
 public:
+    Configurator(Configurable &target, const config::ConfigUri & uri, std::chrono::milliseconds timeout);
     Configurator(Configurable &target, const config::ConfigUri & uri);
     bool poll();
     typedef std::unique_ptr<Configurator> UP;
@@ -32,11 +34,13 @@ public:
 
 class ConfiguratorFactory {
 private:
-    config::ConfigUri _uri;
+    config::ConfigUri    _uri;
+    std::chrono::milliseconds _timeout;
 public:
     ConfiguratorFactory(const config::ConfigUri & uri);
     // Convenience. Might belong somewhere else
     ConfiguratorFactory(const std::vector<std::string> & spec);
+    ConfiguratorFactory & setTimeout(std::chrono::milliseconds timeout) { _timeout = timeout; return *this; }
 
     Configurator::UP create(Configurable &target) const;
 };

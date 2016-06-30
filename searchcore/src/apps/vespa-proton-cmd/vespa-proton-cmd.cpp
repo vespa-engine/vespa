@@ -1,14 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-proton-cmd");
 #include <vespa/fnet/frt/frt.h>
 #include <algorithm>
 #include <string>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <math.h>
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-proton-cmd");
 
+using slobrok::api::MirrorAPI;
 
 namespace pandora {
 namespace rtc_cmd {
@@ -27,15 +29,13 @@ public:
     App() : _supervisor(NULL),
             _target(NULL),
             _req(NULL) {}
-    virtual ~App()
-    {
+    virtual ~App() {
         assert(_supervisor == NULL);
         assert(_target == NULL);
         assert(_req == NULL);
     }
 
-    int usage()
-    {
+    int usage() {
         fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", _argv[0]);
         fprintf(stderr, "die\n");
         fprintf(stderr, "getConfigTime\n");
@@ -52,15 +52,13 @@ public:
         return 1;
     }
 
-    void initRPC()
-    {
+    void initRPC() {
         _supervisor = new FRT_Supervisor();
         _req = _supervisor->AllocRPCRequest();
         _supervisor->Start();
     }
 
-    void invokeRPC(bool print, double timeout=5.0)
-    {
+    void invokeRPC(bool print, double timeout=5.0) {
         if (_req == NULL)
             return;
 
@@ -69,8 +67,7 @@ public:
             _req->Print(0);
     }
 
-    void finiRPC()
-    {
+    void finiRPC() {
         if (_req != NULL) {
             _req->SubRef();
             _req = NULL;
@@ -86,11 +83,9 @@ public:
         }
     }
 
-    void
-    monitorLoop(void);
+    void monitorLoop(void);
 
-    void
-    scanSpecs(slobrok::api::MirrorAPI::SpecList &specs,
+    void scanSpecs(MirrorAPI::SpecList &specs,
               const std::string &me,
               std::string &service,
               std::string &spec,
@@ -109,7 +104,7 @@ public:
         }
     }
 
-    std::string findRTC() {
+    std::string findRTC(std::chrono::milliseconds timeout) {
         std::string me = "tcp/";
         me += vespalib::HostName::get().c_str();
         me += ":";
@@ -120,68 +115,59 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
-            for (int timeout = 1; timeout < 20; timeout++) {
-                if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
-                }
+            sbcfg.setTimeout(timeout);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now() + timeout;
+            MirrorAPI sbmirror(*_supervisor, sbcfg);
+            while (!sbmirror.ready() && std::chrono::steady_clock::now() < end) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             if (!sbmirror.ready()) {
-                fprintf(stderr,
-                        "ERROR: no data from service location broker\n");
-                exit(1);
+                throw std::runtime_error("ERROR: no data from service location broker");
             }
-            slobrok::api::MirrorAPI::SpecList specs =
-                sbmirror.lookup(rtcPattern);
-            slobrok::api::MirrorAPI::SpecList specs2 =
-                sbmirror.lookup(rtcPattern2);
-            slobrok::api::MirrorAPI::SpecList specs3 =
-                sbmirror.lookup(rtcPattern3);
+            MirrorAPI::SpecList specs = sbmirror.lookup(rtcPattern);
+            MirrorAPI::SpecList specs2 = sbmirror.lookup(rtcPattern2);
+            MirrorAPI::SpecList specs3 = sbmirror.lookup(rtcPattern3);
 
             int found = 0;
             std::string service;
             std::string spec;
 
-            printf("looking for RTCs matching '%s' (length %d)\n",
-                   me.c_str(), (int)me.length());
+            printf("looking for RTCs matching '%s' (length %d)\n", me.c_str(), (int)me.length());
             scanSpecs(specs, me, service, spec, found);
             scanSpecs(specs2, me, service, spec, found);
             scanSpecs(specs3, me, service, spec, found);
             if (found > 1) {
-                fprintf(stderr, "found more than one local RTC, you must use --id=<name>\n");
-                exit(1);
+                throw std::runtime_error("found more than one local RTC, you must use --id=<name>");
             }
             if (found < 1) {
-                fprintf(stderr, "found no local RTC, you must use --id=<name> (list follows):\n");
+                std::string msg = "found no local RTC, you must use --id=<name> (list follows):\n";
                 for (size_t j = 0; j < specs.size(); ++j) {
-                    printf("RTC name %s with connection spec %s\n",
-                           specs[j].first.c_str(), specs[j].second.c_str());
+                    msg += vespalib::make_string("RTC name %s with connection spec %s\n", specs[j].first.c_str(), specs[j].second.c_str());
                 }
-                exit(1);
+                throw std::runtime_error(msg);
             }
             return spec;
         } catch (config::InvalidConfigException& e) {
-            fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
-            exit(1);
+            throw std::runtime_error("ERROR: failed to get service location broker configuration");
         }
         return "";
     }
 
-    std::string findRTC(std::string id) {
+    std::string findRTC(std::string id, std::chrono::milliseconds timeout) {
         std::string rtcPattern = "search/cluster.*/c*/r*/realtimecontroller";
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
-            for (int timeout = 1; timeout < 20; timeout++) {
-                if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
-                }
+            sbcfg.setTimeout(timeout);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now() + timeout;
+            MirrorAPI sbmirror(*_supervisor, sbcfg);
+            while (!sbmirror.ready() && std::chrono::steady_clock::now() < end) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             if (!sbmirror.ready()) {
                 throw std::runtime_error("ERROR: no data from service location broker");
             }
-            slobrok::api::MirrorAPI::SpecList specs = sbmirror.lookup(id);
+            MirrorAPI::SpecList specs = sbmirror.lookup(id);
 
             int found = 0;
             std::string spec;
@@ -189,8 +175,7 @@ public:
             for (size_t j = 0; j < specs.size(); ++j) {
                 std::string name = specs[j].first;
                 spec = specs[j].second;
-                printf("found RTC '%s' with connection spec %s\n",
-                       name.c_str(), spec.c_str());
+                printf("found RTC '%s' with connection spec %s\n", name.c_str(), spec.c_str());
                 ++found;
             }
             if (found > 1) {
@@ -212,6 +197,7 @@ public:
         return "";
     }
 
+    typedef std::chrono::duration<double, std::ratio<1>> Timeout;
 
     int Main()
     {
@@ -219,16 +205,29 @@ public:
             return usage();
         }
 
-        initRPC();
-
         int port = 0;
         std::string spec = _argv[1];
+        Timeout timeout(60.0);
 
+        const char * timeoutStr = getenv("VESPA_CLIENT_TIMEOUT");
+        if (timeoutStr != nullptr) {
+            char * e = nullptr;
+            double tmpTimeout = strtod(timeoutStr, &e);
+            if (((e == nullptr) || (e[0] = 0)) && (tmpTimeout >= 1.0)) {
+                timeout = Timeout(tmpTimeout);
+            } else {
+                fprintf(stderr, "VESPA_CLIENT_TIMEOUT=%s is illegal value.", timeoutStr);
+                return 4;
+            }
+        }
+
+        initRPC();
         try {
+            std::chrono::milliseconds timeoutMS = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
             if (spec == "--local") {
-                spec = findRTC();
+                spec = findRTC(timeoutMS);
             } else if (spec.compare(0, 5, "--id=") == 0) {
-                spec = findRTC(spec.substr(5));
+                spec = findRTC(spec.substr(5), timeoutMS);
             } else {
                 port = atoi(_argv[1]);
             }
@@ -253,172 +252,179 @@ public:
             _target = _supervisor->GetTarget(spec.c_str());
         }
 
-        bool invoked = false;
-
-        if (strcmp(_argv[2], "enableSearching") == 0) {
-            _req->SetMethodName("proton.enableSearching");
-        } else if (strcmp(_argv[2], "disableSearching") == 0) {
-            _req->SetMethodName("proton.disableSearching");
-        } else if (strcmp(_argv[2], "getState") == 0 &&
-                   _argc >= 3) {
-            _req->SetMethodName("pandora.rtc.getState");
-
-            FRT_Values &params = *_req->GetParams();
-
-            params.AddInt32(_argc > 3 ? atoi(_argv[3]) : 0);
-            params.AddInt32(_argc > 4 ? atoi(_argv[4]) : 0);
-            invokeRPC(false);
-            invoked = true;
-
-            FRT_Values &rvals = *_req->GetReturn();
-
-            if (!_req->IsError()) {
-                FRT_Value &names = rvals.GetValue(0);
-                FRT_Value &values = rvals.GetValue(1);
-                FRT_Value &gencnt = rvals.GetValue(2);
-
-                for (unsigned int i = 0;
-                     i < names._string_array._len &&
-                                      i < values._string_array._len;
-                     i++)
-                {
-                    printf("\"%s\", \"%s\"\n",
-                           names._string_array._pt[i]._str,
-                           values._string_array._pt[i]._str);
-                }
-                printf("gencnt=%u\n",
-                       static_cast<unsigned int>(gencnt._intval32));
-            }
-        } else if (strcmp(_argv[2], "getProtonStatus") == 0 &&
-                   _argc >= 3) {
-
-            _req->SetMethodName("proton.getStatus");
-            FRT_Values &params = *_req->GetParams();
-            params.AddString(_argc > 3 ? _argv[3] : "");
-            invokeRPC(false);
-            invoked = true;
-            FRT_Values &rvals = *_req->GetReturn();
-            if (!_req->IsError()) {
-                FRT_Value &components = rvals.GetValue(0);
-                FRT_Value &states = rvals.GetValue(1);
-                FRT_Value &internalStates = rvals.GetValue(2);
-                FRT_Value &messages = rvals.GetValue(3);
-                for (unsigned int i = 0; i < components._string_array._len &&
-                                         i < states._string_array._len &&
-                                         i < internalStates.
-                                               _string_array._len &&
-                                         i < messages._string_array._len;
-                                       i++) {
-                    printf("\"%s\",\"%s\",\"%s\",\"%s\"\n",
-                           components._string_array._pt[i]._str,
-                           states._string_array._pt[i]._str,
-                           internalStates._string_array._pt[i]._str,
-                           messages._string_array._pt[i]._str);
-                }
-
-            }
-        } else if (strcmp(_argv[2], "triggerFlush") == 0) {
-            _req->SetMethodName("proton.triggerFlush");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: flush trigger enabled\n");
-            }
-        } else if (strcmp(_argv[2], "prepareRestart") == 0) {
-            _req->SetMethodName("proton.prepareRestart");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: prepareRestart enabled\n");
-            }
-        } else if (strcmp(_argv[2], "listDocTypes") == 0) {
-            _req->SetMethodName("proton.listDocTypes");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "S") == 0) {
-                    uint32_t dtLen = ret[0]._string_array._len;
-                    const FRT_StringValue *dt = ret[0]._string_array._pt;
-                    for (uint32_t i = 0; i < dtLen; ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s", dt[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "listSchema") == 0 && _argc == 4) {
-            _req->SetMethodName("proton.listSchema");
-            FRT_Values &arg = *_req->GetParams();
-            arg.AddString(_argv[3]);
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "SSSS") == 0) {
-                    uint32_t fnLen = ret[0]._string_array._len;
-                    const FRT_StringValue *fn = ret[0]._string_array._pt;
-                    uint32_t fdtLen = ret[1]._string_array._len;
-                    const FRT_StringValue *fdt = ret[1]._string_array._pt;
-                    uint32_t fctLen = ret[2]._string_array._len;
-                    const FRT_StringValue *fct = ret[2]._string_array._pt;
-                    uint32_t flLen = ret[3]._string_array._len;
-                    const FRT_StringValue *fl = ret[3]._string_array._pt;
-                    for (uint32_t i = 0;
-                         i < fnLen && i < fdtLen && i < fctLen && i < flLen;
-                         ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s/%s/%s/%s",
-                               fn[i]._str,
-                               fdt[i]._str,
-                               fct[i]._str,
-                               fl[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "getConfigTime") == 0) {
-            _req->SetMethodName("proton.getConfigTime");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "l") == 0) {
-                    uint64_t configTime = ret[0]._intval64;
-                    printf("%" PRId64 "\n", configTime);
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "wipeHistory") == 0) {
-            _req->SetMethodName("proton.wipeHistory");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: history wiped\n");
-            }
-        } else if (strcmp(_argv[2], "die") == 0) {
-            _req->SetMethodName("pandora.rtc.die");
-
-        } else if (strcmp(_argv[2], "monitor") == 0) {
-            invoked = true;
-            monitorLoop();
-        } else {
-            finiRPC();
-            return usage();
+        std::vector<const char *> args;
+        for (int i(3); i < _argc; i++) {
+            args.push_back(_argv[i]);
         }
-        if (!invoked)
-            invokeRPC(true);
+        runCommand(_argv[2], args, _req, timeout);
         finiRPC();
         return 0;
     }
+    void runCommand(const char * cmd, const std::vector<const char *> & params, FRT_RPCRequest *req, Timeout timeout);
 };
+
+void
+App::runCommand(const char *cmd, const std::vector<const char *> & args, FRT_RPCRequest *req, Timeout timeout) {
+    bool invoked = false;
+
+    if (strcmp(cmd, "enableSearching") == 0) {
+        req->SetMethodName("proton.enableSearching");
+    } else if (strcmp(cmd, "disableSearching") == 0) {
+        req->SetMethodName("proton.disableSearching");
+    } else if (strcmp(cmd, "getState") == 0) {
+        req->SetMethodName("pandora.rtc.getState");
+        FRT_Values &params = *req->GetParams();
+        params.AddInt32(args.size() > 0 ? atoi(args[1]) : 0);
+        params.AddInt32(args.size() > 1 ? atoi(args[1]) : 0);
+        invokeRPC(false, timeout.count());
+        invoked = true;
+
+        FRT_Values &rvals = *req->GetReturn();
+
+        if (!req->IsError()) {
+            FRT_Value &names = rvals.GetValue(0);
+            FRT_Value &values = rvals.GetValue(1);
+            FRT_Value &gencnt = rvals.GetValue(2);
+
+            for (unsigned int i = 0;
+                 i < names._string_array._len && i < values._string_array._len;
+                 i++)
+            {
+                printf("\"%s\", \"%s\"\n",
+                       names._string_array._pt[i]._str,
+                       values._string_array._pt[i]._str);
+            }
+            printf("gencnt=%u\n", static_cast<unsigned int>(gencnt._intval32));
+        }
+    } else if (strcmp(cmd, "getProtonStatus") == 0) {
+        req->SetMethodName("proton.getStatus");
+        FRT_Values &params = *req->GetParams();
+        params.AddString(args.size() > 0 ? args[0] : "");
+        invokeRPC(false, timeout.count());
+        invoked = true;
+        FRT_Values &rvals = *req->GetReturn();
+        if (!req->IsError()) {
+            FRT_Value &components = rvals.GetValue(0);
+            FRT_Value &states = rvals.GetValue(1);
+            FRT_Value &internalStates = rvals.GetValue(2);
+            FRT_Value &messages = rvals.GetValue(3);
+            for (unsigned int i = 0; i < components._string_array._len &&
+                                     i < states._string_array._len &&
+                                     i < internalStates.
+                                         _string_array._len &&
+                                     i < messages._string_array._len;
+                 i++)
+            {
+                printf("\"%s\",\"%s\",\"%s\",\"%s\"\n",
+                       components._string_array._pt[i]._str,
+                       states._string_array._pt[i]._str,
+                       internalStates._string_array._pt[i]._str,
+                       messages._string_array._pt[i]._str);
+            }
+
+        }
+    } else if (strcmp(cmd, "triggerFlush") == 0) {
+        req->SetMethodName("proton.triggerFlush");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: flush trigger enabled\n");
+        }
+    } else if (strcmp(cmd, "prepareRestart") == 0) {
+        req->SetMethodName("proton.prepareRestart");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: prepareRestart enabled\n");
+        }
+    } else if (strcmp(cmd, "listDocTypes") == 0) {
+        req->SetMethodName("proton.listDocTypes");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "S") == 0) {
+                uint32_t dtLen = ret[0]._string_array._len;
+                const FRT_StringValue *dt = ret[0]._string_array._pt;
+                for (uint32_t i = 0; i < dtLen; ++i) {
+                    if (i > 0) {
+                        printf(" ");
+                    }
+                    printf("%s", dt[i]._str);
+                }
+                printf("\n");
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "listSchema") == 0 && args.size() == 1) {
+        req->SetMethodName("proton.listSchema");
+        FRT_Values &arg = *req->GetParams();
+        arg.AddString(args[0]);
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "SSSS") == 0) {
+                uint32_t fnLen = ret[0]._string_array._len;
+                const FRT_StringValue *fn = ret[0]._string_array._pt;
+                uint32_t fdtLen = ret[1]._string_array._len;
+                const FRT_StringValue *fdt = ret[1]._string_array._pt;
+                uint32_t fctLen = ret[2]._string_array._len;
+                const FRT_StringValue *fct = ret[2]._string_array._pt;
+                uint32_t flLen = ret[3]._string_array._len;
+                const FRT_StringValue *fl = ret[3]._string_array._pt;
+                for (uint32_t i = 0;
+                     i < fnLen && i < fdtLen && i < fctLen && i < flLen;
+                     ++i)
+                {
+                    if (i > 0) {
+                        printf(" ");
+                    }
+                    printf("%s/%s/%s/%s",
+                           fn[i]._str,
+                           fdt[i]._str,
+                           fct[i]._str,
+                           fl[i]._str);
+                }
+                printf("\n");
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "getConfigTime") == 0) {
+        req->SetMethodName("proton.getConfigTime");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            FRT_Values &ret = *req->GetReturn();
+            if (strcmp(ret.GetTypeString(), "l") == 0) {
+                uint64_t configTime = ret[0]._intval64;
+                printf("%" PRId64 "\n", configTime);
+            } else {
+                fprintf(stderr, "Unexpected return value\n");
+            }
+        }
+    } else if (strcmp(cmd, "wipeHistory") == 0) {
+        req->SetMethodName("proton.wipeHistory");
+        invokeRPC(false, 86400.0);
+        invoked = true;
+        if (! req->IsError()) {
+            printf("OK: history wiped\n");
+        }
+    } else if (strcmp(cmd, "die") == 0) {
+        req->SetMethodName("pandora.rtc.die");
+
+    } else if (strcmp(cmd, "monitor") == 0) {
+        invoked = true;
+        monitorLoop();
+    } else {
+        usage();
+    }
+    if (!invoked) {
+        invokeRPC(true, timeout.count());
+    }
+}
 
 
 void
@@ -442,9 +448,8 @@ App::monitorLoop(void)
         struct timeval tnow;
         gettimeofday(&tnow, NULL);
 
-        for (unsigned int i = 0;
-             i < names._string_array._len &&
-                              i < values._string_array._len;
+        for (uint32_t i = 0;
+             i < names._string_array._len && i < values._string_array._len;
              i++)
         {
             time_t now;

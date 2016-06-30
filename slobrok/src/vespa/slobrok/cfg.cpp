@@ -43,6 +43,13 @@ Configurator::Configurator(Configurable& target, const config::ConfigUri & uri)
 {
 }
 
+Configurator::Configurator(Configurable &target, const config::ConfigUri & uri, std::chrono::milliseconds timeout)
+    : _subscriber(uri.getContext()),
+      _handle(_subscriber.subscribe<cloud::config::SlobroksConfig>(uri.getConfigId(), timeout.count())),
+      _target(target)
+{
+}
+
 ConfiguratorFactory::ConfiguratorFactory(const config::ConfigUri& uri)
     : _uri(uri)
 {
@@ -63,8 +70,11 @@ ConfiguratorFactory::ConfiguratorFactory(const std::vector<std::string> & spec)
 Configurator::UP
 ConfiguratorFactory::create(Configurable& target) const
 {
-    Configurator::UP r(new Configurator(target, _uri));
-    return r;
+    if (_timeout != std::chrono::milliseconds()) {
+        return std::make_unique<Configurator>(target, _uri, _timeout);
+    } else {
+        return std::make_unique<Configurator>(target, _uri);
+    }
 }
 
 } // namespace slobrok
