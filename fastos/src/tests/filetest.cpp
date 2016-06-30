@@ -458,7 +458,7 @@ public:
         if (myFile->OpenReadOnly()) {
             int64_t filesize;
             filesize = myFile->GetSize();
-            Progress((filesize == 27), "File size: %d", static_cast<int>(filesize));
+            ProgressI64((filesize == 27), "File size: %ld", filesize);
 
             char dummyData[6] = "Dummy";
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
@@ -507,7 +507,7 @@ public:
             int64_t filesize;
             filesize = myFile->GetSize();
 
-            Progress((filesize == 0), "File size: %d", static_cast<int>(filesize));
+            ProgressI64((filesize == 0), "File size: %ld", filesize);
 
             char dummyData[6] = "Dummy";
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
@@ -537,13 +537,13 @@ public:
                                 Progress(false, "Read on a file with write-only access should fail, but it didn't.");
                             }
                         } else {
-                            Progress(false, "Fileposition should be 6, but was %d.", static_cast<int>(filePosition));
+                            ProgressI64(false, "Fileposition should be 6, but was %ld.", filePosition);
                         }
                     } else {
                         Progress(false, "SetPosition(0) failed");
                     }
                 } else {
-                    Progress(false, "Fileposition should be 6, but was %d.", static_cast<int>(filePosition));
+                    ProgressI64(false, "Fileposition should be 6, but was %ld.", filePosition);
                 }
             }
             bool closeResult = myFile->Close();
@@ -580,7 +580,7 @@ public:
 
             filesize = myFile->GetSize();
 
-            Progress((filesize == 0), "File size: %d", static_cast<int>(filesize));
+            ProgressI64((filesize == 0), "File size: %ld", filesize);
 
             char dummyData[6] = "Dummy";
 
@@ -633,13 +633,13 @@ public:
                                 Progress(false, "Reading 6 bytes failed.");
                             }
                         } else {
-                            Progress(false, "Fileposition should be 6, but was %d.", static_cast<int>(filePosition));
+                            ProgressI64(false, "Fileposition should be 6, but was %ld.", filePosition);
                         }
                     } else {
                         Progress(false, "SetPosition(0) failed");
                     }
                 } else {
-                    Progress(false, "Fileposition should be 6, but was %d.", static_cast<int>(filePosition));
+                    ProgressI64(false, "Fileposition should be 6, but was %ld.", filePosition);
                 }
             }
 
@@ -710,11 +710,9 @@ public:
         TestHeader("DiskFreeSpace Test");
 
         int64_t freeSpace = FastOS_File::GetFreeDiskSpace(roFilename);
-        ProgressI64(freeSpace != -1, "DiskFreeSpace using file ('hello.txt'): %"
-                    PRId64 " MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
+        ProgressI64(freeSpace != -1, "DiskFreeSpace using file ('hello.txt'): %ld MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
         freeSpace = FastOS_File::GetFreeDiskSpace(".");
-        ProgressI64(freeSpace != -1, "DiskFreeSpace using dir (.): %"
-                    PRId64 " MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
+        ProgressI64(freeSpace != -1, "DiskFreeSpace using dir (.): %ld MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
         PrintSeparator();
     }
 
