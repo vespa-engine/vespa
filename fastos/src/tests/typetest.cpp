@@ -78,7 +78,7 @@ public:
       PrintSeparator();
       printf("END OF TEST (%s)\n", _argv[0]);
 
-      return 0;
+      return allWasOk() ? 0 : 1;
    }
 };
 

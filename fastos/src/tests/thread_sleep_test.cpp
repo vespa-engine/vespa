@@ -43,8 +43,7 @@ int Thread_Sleep_Test::Main ()
    { time_t now = time(0); printf("[%ld seconds]\n", now-before); before = now; }
 
    printf("END OF TEST (%s)\n", _argv[0]);
-
-   return 0;
+   return allWasOk() ? 0 : 1;
 }
 
 int main (int argc, char **argv)

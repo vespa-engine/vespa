@@ -107,7 +107,7 @@ public:
     int Main ()
     {
         TestBackTrace();
-        return 0;
+        return allWasOk() ? 0 : 1;
     }
 };
 
