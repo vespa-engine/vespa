@@ -9,7 +9,7 @@
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
 
-class ThreadTest : public BaseForThreadTest
+class Thread_Mutex_Test : public BaseForThreadTest
 {
    int Main ();
 
@@ -171,7 +171,7 @@ class ThreadTest : public BaseForThreadTest
 
 };
 
-int ThreadTest::Main ()
+int Thread_Mutex_Test::Main ()
 {
    printf("grep for the string '%s' to detect failures.\n\n", failString);
    time_t before = time(0);
@@ -190,7 +190,7 @@ int ThreadTest::Main ()
 
 int main (int argc, char **argv)
 {
-   ThreadTest app;
+   Thread_Mutex_Test app;
    setvbuf(stdout, NULL, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

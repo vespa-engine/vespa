@@ -6,7 +6,7 @@
 #include "jobs.h"
 #include "base_thread.hpp"
 
-class ThreadTest : public BaseForThreadTest
+class Thread_Stats_Test : public BaseForThreadTest
 {
    void ThreadStatsTest ()
    {
@@ -118,7 +118,7 @@ class ThreadTest : public BaseForThreadTest
    int Main ();
 };
 
-int ThreadTest::Main ()
+int Thread_Stats_Test::Main ()
 {
    printf("grep for the string '%s' to detect failures.\n\n", failString);
    time_t before = time(0);
@@ -133,7 +133,7 @@ int ThreadTest::Main ()
 
 int main (int argc, char **argv)
 {
-   ThreadTest app;
+   Thread_Stats_Test app;
    setvbuf(stdout, NULL, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }
