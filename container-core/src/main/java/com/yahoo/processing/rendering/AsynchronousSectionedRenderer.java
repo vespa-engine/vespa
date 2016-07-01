@@ -93,8 +93,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
     private static final Logger logger = Logger.getLogger(AsynchronousSectionedRenderer.class.getName());
 
-    // NOTE: Renderers are *prototype objects* - a new instance is created for each rendering by invoking 
-    // clone(), init() and then render().
+    // NOTE: Renderers are *prototype objects* - a new instance is created for each rendering by invoking clone
+    // calling init() and then render().
     // Hence any field which is not reinitialized in init() or render() will be *reused* in all rendering operations
     // across all threads!
 
@@ -110,8 +110,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     // This MUST be created in the init() method - see comment above
     private Object singleThreaded;
 
-    // Rendering threads should never block so use one thread per core.
-    // We should complete any work we have already started so use an unbounded queue.
+    // Rendering threads should never block.
+    // Burst traffic may add work faster than we can complete it, so use an unbounded queue.
     // The executor SHOULD be reused across all instances having the same prototype
     private final ThreadPoolExecutor renderingExecutor = createExecutor();
     private static ThreadPoolExecutor createExecutor() {

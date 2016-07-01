@@ -22,7 +22,6 @@ import java.io.IOException;
 */
 @Beta
 public final class Processing extends ProcessingBase<Request, Response, Processor> {
-
     private final ProcessingHandler handler;
 
     Processing(ProcessingHandler handler) {
