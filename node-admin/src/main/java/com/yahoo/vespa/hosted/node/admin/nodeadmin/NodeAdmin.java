@@ -21,9 +21,10 @@ public interface NodeAdmin {
 
     /**
      * Causes the NodeAgents to freeze, meaning they will not pick up any changes from NodeRepository.
+     * @param maxTimeMillis max time to wait for node agents to become frozen
      * @return if NodeAgent is frozen.
      */
-    boolean freezeAndCheckIfAllFrozen();
+    boolean freezeAndCheckIfAllFrozen(long maxTimeMillis);
 
     /**
      * Causes the NodeAgent to unfreeze and start picking up changes from NodeRepository.
