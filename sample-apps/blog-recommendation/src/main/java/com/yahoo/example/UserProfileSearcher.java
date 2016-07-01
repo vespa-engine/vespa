@@ -11,7 +11,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.tensor.MapTensorBuilder;
-import com.yahoo.tensor.Tensor;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -19,27 +18,19 @@ import java.util.Map;
 public class UserProfileSearcher extends Searcher {
 
     public Result search(Query query, Execution execution) {
-
         Object userIdProperty = query.properties().get("user_id");
         if (userIdProperty != null) {
-
-            // Retrieve user profile...
-            Tensor userProfile = retrieveUserProfile(userIdProperty.toString(), execution);
-
-            // ... and add user profile to query properties so BlogTensorSearcher can pick it up
-            query.properties().set(new CompoundName("user_item_cf"), userProfile);
-
-            if (query.isTraceable(9)) {
-                String tensorRepresentation = userProfile != null ? userProfile.toString() : "";
-                query.trace("Setting user profile to :" + tensorRepresentation, 9);
+            Hit userProfile = retrieveUserProfile(userIdProperty.toString(), execution);
+            if (userProfile != null) {
+                addUserProfileTensorToQuery(query, userProfile);
+                addReadItemsToQuery(query, userProfile);
             }
         }
-
         return execution.search(query);
     }
 
 
-    private Tensor retrieveUserProfile(String userId, Execution execution) {
+    private Hit retrieveUserProfile(String userId, Execution execution) {
         Query query = new Query();
         query.getModel().setRestrict("user");
         query.getModel().getQueryTree().setRoot(new WordItem(userId, "user_id"));
@@ -48,42 +39,38 @@ public class UserProfileSearcher extends Searcher {
         SearchChain vespaChain = execution.searchChainRegistry().getComponent("vespa");
         Result result = new Execution(vespaChain, execution.context()).search(query);
 
-        // This is needed to get the actual summary data
-        execution.fill(result);
+        execution.fill(result); // this is needed to get the actual summary data
 
-        Hit hit = getFirstHit(result);
-        if (hit != null) {
-            Object userItemCf = hit.getField("user_item_cf");
-            if (userItemCf instanceof Inspectable) {
-                return convertTensor((Inspectable) userItemCf);
-            }
-        }
-        return null;
-    }
-
-    private Hit getFirstHit(Result result) {
         Iterator<Hit> hiterator = result.hits().deepIterator();
         return hiterator.hasNext() ? hiterator.next() : null;
     }
 
-    private Tensor convertTensor(Inspectable field) {
-        MapTensorBuilder tensorBuilder = new MapTensorBuilder();
-
-        Inspector cells = field.inspect().field("cells");
-        for (Inspector cell : cells.entries()) {
-            MapTensorBuilder.CellBuilder cellBuilder = tensorBuilder.cell();
-
-            Inspector address = cell.field("address");
-            for (Map.Entry<String, Inspector> entry : address.fields()) {
-                String dim = entry.getKey();
-                String label = entry.getValue().asString();
-                cellBuilder.label(dim, label);
-            }
-
-            Inspector value = cell.field("value");
-            cellBuilder.value(value.asDouble());
+    private void addReadItemsToQuery(Query query, Hit userProfile) {
+        Object readItems = userProfile.getField("has_read_items");
+        if (readItems != null && readItems instanceof Inspectable) {
+            query.properties().set(new CompoundName("has_read_items"), readItems);
         }
-        return tensorBuilder.build();
     }
 
+    private void addUserProfileTensorToQuery(Query query, Hit userProfile) {
+        Object userItemCf = userProfile.getField("user_item_cf");
+        if (userItemCf != null && userItemCf instanceof Inspectable) {
+            MapTensorBuilder tensorBuilder = new MapTensorBuilder();
+            Inspector cells = ((Inspectable)userItemCf).inspect().field("cells");
+            for (Inspector cell : cells.entries()) {
+                MapTensorBuilder.CellBuilder cellBuilder = tensorBuilder.cell();
+
+                Inspector address = cell.field("address");
+                for (Map.Entry<String, Inspector> entry : address.fields()) {
+                    String dim = entry.getKey();
+                    String label = entry.getValue().asString();
+                    cellBuilder.label(dim, label);
+                }
+
+                Inspector value = cell.field("value");
+                cellBuilder.value(value.asDouble());
+            }
+            query.properties().set(new CompoundName("user_item_cf"), tensorBuilder.build());
+        }
+    }
 }
