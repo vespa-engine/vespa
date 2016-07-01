@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+
+  <jdisc id='default' version='1.0'>
+    <search/>
+    <document-api/>
+    <nodes count='1'/>
+  </jdisc>
+
+  <content id='blog_post' version='1.0'>
+    <redundancy>1</redundancy>
+    <documents>
+      <document mode='index' type='blog_post'/>
+    </documents>
+    <nodes count='1'/>
+    <engine>
+      <proton>
+        <searchable-copies>1</searchable-copies>
+      </proton>
+    </engine>
+  </content>
+
+</services>

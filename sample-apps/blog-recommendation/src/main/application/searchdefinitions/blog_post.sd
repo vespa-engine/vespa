@@ -1,0 +1,66 @@
+search blog_post {
+    document blog_post {
+        field date_gmt type string {
+            indexing: summary
+        }
+        field language type string {
+            indexing: summary
+        }
+
+        field author type string {
+            indexing: summary
+        }
+
+        field url type string {
+            indexing: summary
+        }
+
+        field title type string {
+            indexing: summary | index
+        }
+
+	    field blog type string {
+	        indexing: summary
+	    }
+
+	    field post_id type string {
+	        indexing: summary
+	    }
+
+        field tags type array<string> {
+            indexing: summary
+        }
+
+        field blogname type string {
+            indexing: summary
+        }
+
+        field content type string {
+            indexing: summary | index
+        }
+
+        field categories type array<string> {
+            indexing: summary | index
+        }
+
+        field user_item_cf type tensor {
+            indexing: summary | attribute
+            attribute: tensor(user_item_cf[10])
+        }
+
+        field has_user_item_cf type byte {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+    }
+
+    rank-profile tensor {
+        first-phase {
+            expression {
+                sum(query(user_item_cf) * attribute(user_item_cf))
+            }
+        }
+    }
+
+}
