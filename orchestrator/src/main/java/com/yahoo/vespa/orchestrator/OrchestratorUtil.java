@@ -137,7 +137,7 @@ public class OrchestratorUtil {
 
         // Env, region and instance seems to be optional due to the hardcoded config server app
         // Assume here that first two are tenant and application name.
-        if (appNameParts.length > 1 && appNameParts.length < 5) {
+        if (appNameParts.length == 2) {
             return ApplicationId.from(TenantName.from(appNameParts[0]),
                     ApplicationName.from(appNameParts[1]),
                     InstanceName.defaultName());
