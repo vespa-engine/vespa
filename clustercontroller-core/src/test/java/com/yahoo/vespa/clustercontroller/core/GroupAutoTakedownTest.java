@@ -330,7 +330,6 @@ public class GroupAutoTakedownTest {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
-        final Node node = new Node(NodeType.STORAGE, 4);
         final NodeState newState = new NodeState(NodeType.STORAGE, State.UP);
         newState.setDiskCount(7);
         newState.setDiskState(5, new DiskState(State.DOWN));
