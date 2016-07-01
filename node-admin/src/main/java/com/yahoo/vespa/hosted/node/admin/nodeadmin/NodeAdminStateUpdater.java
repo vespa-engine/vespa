@@ -73,7 +73,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             isRunningUpdates = wantedState == RESUMED;
 
             if (wantedState == SUSPENDED) {
-                if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
+                if (!nodeAdmin.freezeAndCheckIfAllFrozen(TimeUnit.SECONDS.toMillis(70))) {
                     return Optional.of("Not all node agents are frozen.");
                 }
                 List<String> hosts = new ArrayList<>();

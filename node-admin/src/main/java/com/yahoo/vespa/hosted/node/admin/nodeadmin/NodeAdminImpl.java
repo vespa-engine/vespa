@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,18 +62,26 @@ public class NodeAdminImpl implements NodeAdmin {
         garbageCollectDockerImages(containersToRun);
     }
 
-    public boolean freezeAndCheckIfAllFrozen() {
+    public boolean freezeAndCheckIfAllFrozen(long maxTimeMillis) {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
-            // worth it (it could block the rest call for some time and might have implications).
             nodeAgent.freeze();
         }
-        for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (! nodeAgent.isFrozen()) {
+        Instant startTime = Instant.now();
+        do {
+            boolean allFrozen = true;
+            for (NodeAgent nodeAgent : nodeAgents.values()) {
+                allFrozen &= nodeAgent.isFrozen();
+            }
+            if (allFrozen) {
+                return true;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
                 return false;
             }
-        }
-        return true;
+        } while (startTime.plusMillis(maxTimeMillis).isAfter(Instant.now()));
+        return false;
     }
 
     public void unfreeze() {
