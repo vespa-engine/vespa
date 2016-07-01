@@ -117,6 +117,12 @@ public:
         return _index->createBlueprint(requestContext, fields, term, attrCtx);
     }
     virtual search::SearchableStats getSearchableStats() const { return _index->getSearchableStats(); }
+    virtual search::SerialNum getSerialNum() const override {
+        return _index->getSerialNum();
+    }
+    virtual void accept(IndexSearchableVisitor &visitor) const override {
+        _index->accept(visitor);
+    }
 
     /**
      * Implements IDiskIndex
@@ -293,7 +299,8 @@ IDiskIndex::SP
 IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
                                   uint32_t indexId,
                                   uint32_t docIdLimit,
-                                  SerialNum serialNum)
+                                  SerialNum serialNum,
+                                  FixedSourceSelector::SaveInfo &saveInfo)
 {
     // Called by a flush worker thread
     const string flushDir = getFlushDir(indexId);
@@ -302,6 +309,11 @@ IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
     if (wtSchema.get() != NULL) {
         updateDiskIndexSchema(flushDir, *wtSchema, noSerialNumHigh);
     }
+    IndexWriteUtilities::writeSourceSelector(saveInfo, indexId, getAttrTune(),
+                                             _ctx.getFileHeaderContext(),
+                                             serialNum);
+    IndexWriteUtilities::writeSerialNum(serialNum, flushDir,
+                                        _ctx.getFileHeaderContext());
     return loadDiskIndex(flushDir);
 }
 
@@ -521,14 +533,8 @@ IndexMaintainer::flushMemoryIndex(FlushArgs &args,
     IMemoryIndex &memoryIndex = *args.old_index;
     Schema::SP wtSchema = memoryIndex.getWipeTimeSchema();
     IDiskIndex::SP diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id,
-                                                docIdLimit, args.flush_serial_num);
-    IndexWriteUtilities::writeSourceSelector(saveInfo, args.old_absolute_id,
-                                             getAttrTune(), _ctx.getFileHeaderContext(),
-                                             args.flush_serial_num);
-    IndexWriteUtilities::writeSerialNum(args.flush_serial_num,
-                                        getFlushDir(args.old_absolute_id),
-                                        _ctx.getFileHeaderContext());
-
+                                                docIdLimit, args.flush_serial_num,
+                                                saveInfo);
     // Post processing after memory index has been written to disk and
     // opened as disk index.
     args._changeGens = changeGens;
@@ -799,7 +805,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _last_fusion_id(),
       _next_id(),
       _current_index_id(),
-      _current_index(operations.createMemoryIndex(_schema)),
+      _current_index(),
       _current_serial_num(0),
       _flush_serial_num(0),
       _lastFlushTime(),
@@ -848,6 +854,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         _selector.reset(getSourceSelector().cloneAndSubtract(ost.str(), id_diff).release());
         assert(_last_fusion_id == _selector->getBaseId());
     }
+    _current_index = operations.createMemoryIndex(_schema, _current_serial_num);
     _current_index_id = getNewAbsoluteId() - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
     ISearchableIndexCollection::UP sourceList(loadDiskIndexes(spec, ISearchableIndexCollection::UP(new IndexCollection(_selector))));
@@ -874,7 +881,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         _current_serial_num = std::max(_current_serial_num, serialNum);
     }
 
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema()));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), _current_serial_num));
     FlushArgs args;
     args.stats = stats;
     scheduleCommit();
@@ -1132,7 +1139,8 @@ IndexMaintainer::commit()
     // only triggered via scheduleCommit()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_index->commit(std::shared_ptr<search::IDestructorCallback>());
+    _current_index->commit(std::shared_ptr<search::IDestructorCallback>(),
+                           _current_serial_num);
     // caller calls _ctx.getThreadingService().sync()
 }
 
@@ -1142,7 +1150,7 @@ IndexMaintainer::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     _current_serial_num = serialNum;
-    _current_index->commit(onWriteDone);
+    _current_index->commit(onWriteDone, serialNum);
 }
 
 void
@@ -1169,7 +1177,7 @@ void
 IndexMaintainer::setSchema(const Schema & schema, const Schema & fusionSchema)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
 
     args._newSchema = schema;

@@ -42,12 +42,14 @@ IndexManager::MaintainerOperations::MaintainerOperations(const FileHeaderContext
 }
 
 IMemoryIndex::SP
-IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema)
+IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema,
+                                                      SerialNum serialNum)
 {
     return IMemoryIndex::SP(new MemoryIndexWrapper(schema,
                                                    _fileHeaderContext,
                                                    _tuneFileIndexing,
-                                                   _threadingService));
+                                                   _threadingService,
+                                                   serialNum));
 }
 
 IDiskIndex::SP

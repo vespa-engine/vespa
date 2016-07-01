@@ -19,7 +19,7 @@ struct IIndexMaintainerOperations {
     /**
      * Creates a new memory index using the given schema.
      */
-    virtual IMemoryIndex::SP createMemoryIndex(const search::index::Schema &schema) = 0;
+    virtual IMemoryIndex::SP createMemoryIndex(const search::index::Schema &schema, search::SerialNum serialNum) = 0;
 
     /**
      * Loads a disk index from the given directory.

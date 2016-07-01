@@ -36,7 +36,8 @@ public:
                              threadingService);
 
         virtual searchcorespi::index::IMemoryIndex::SP
-            createMemoryIndex(const search::index::Schema &schema);
+        createMemoryIndex(const search::index::Schema &schema,
+                          SerialNum serialNum) override;
         virtual searchcorespi::index::IDiskIndex::SP
             loadDiskIndex(const vespalib::string &indexDir);
         virtual searchcorespi::index::IDiskIndex::SP

@@ -10,6 +10,7 @@ namespace proton {
 class DiskIndexWrapper : public searchcorespi::index::IDiskIndex {
 private:
     search::diskindex::DiskIndex _index;
+    search::SerialNum _serialNum;
 
 public:
     DiskIndexWrapper(const vespalib::string &indexDir,
@@ -43,6 +44,10 @@ public:
         return search::SearchableStats()
             .sizeOnDisk(_index.getSize());
     }
+
+    virtual search::SerialNum getSerialNum() const override;
+
+    virtual void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
 
     /**
      * Implements proton::IDiskIndex

@@ -185,7 +185,8 @@ class IndexMaintainer : public IIndexManager,
     flushMemoryIndex(IMemoryIndex &memoryIndex,
                      uint32_t indexId,
                      uint32_t docIdLimit,
-                     SerialNum serialNum);
+                     SerialNum serialNum,
+                     search::FixedSourceSelector::SaveInfo &saveInfo);
 
     ISearchableIndexCollection::UP loadDiskIndexes(const FusionSpec &spec, ISearchableIndexCollection::UP sourceList);
     void replaceSource(uint32_t sourceId, const IndexSearchable::SP &source);

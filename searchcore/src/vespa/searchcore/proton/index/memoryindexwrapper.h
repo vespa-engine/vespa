@@ -7,6 +7,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <atomic>
 
 namespace proton {
 
@@ -17,6 +18,7 @@ namespace proton {
 class MemoryIndexWrapper : public searchcorespi::index::IMemoryIndex {
 private:
     search::memoryindex::MemoryIndex _index;
+    std::atomic<search::SerialNum> _serialNum;
     const search::common::FileHeaderContext &_fileHeaderContext;
     const search::TuneFileIndexing _tuneFileIndexing;
 
@@ -25,7 +27,8 @@ public:
                        const search::common::FileHeaderContext &fileHeaderContext,
                        const search::TuneFileIndexing &tuneFileIndexing,
                        searchcorespi::index::IThreadingService &
-                       threadingService);
+                       threadingService,
+                       search::SerialNum serialNum);
 
     /**
      * Implements searchcorespi::IndexSearchable
@@ -53,6 +56,10 @@ public:
             .sizeOnDisk(0);
     }
 
+    virtual search::SerialNum getSerialNum() const override;
+
+    virtual void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
+
     /**
      * Implements proton::IMemoryIndex
      */
@@ -74,8 +81,10 @@ public:
     uint64_t getStaticMemoryFootprint() const override {
         return _index.getStaticMemoryFootprint();
     }
-    virtual void commit(OnWriteDoneType onWriteDone) override {
+    virtual void commit(OnWriteDoneType onWriteDone,
+                        search::SerialNum serialNum) override {
         _index.commit(onWriteDone);
+        _serialNum.store(serialNum, std::memory_order_relaxed);
     }
     virtual void wipeHistory(const search::index::Schema &schema)  override{
         _index.wipeHistory(schema);

@@ -7,6 +7,7 @@ LOG_SETUP(".proton.index.memoryindexwrapper");
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 
 using search::TuneFileIndexing;
 using search::common::FileHeaderContext;
@@ -22,9 +23,11 @@ MemoryIndexWrapper::MemoryIndexWrapper(const search::index::Schema &schema,
                                        const search::common::FileHeaderContext &fileHeaderContext,
                                        const TuneFileIndexing &tuneFileIndexing,
                                        searchcorespi::index::IThreadingService &
-                                        threadingService)
+                                       threadingService,
+                                       search::SerialNum serialNum)
     : _index(schema, threadingService.indexFieldInverter(),
              threadingService.indexFieldWriter()),
+      _serialNum(serialNum),
       _fileHeaderContext(fileHeaderContext),
       _tuneFileIndexing(tuneFileIndexing)
 {
@@ -44,6 +47,18 @@ MemoryIndexWrapper::flushToDisk(const vespalib::string &flushDir,
     indexBuilder.open(docIdLimit, numWords, _tuneFileIndexing, fileHeaderContext);
     _index.dump(indexBuilder);
     indexBuilder.close();
+}
+
+search::SerialNum
+MemoryIndexWrapper::getSerialNum() const
+{
+    return _serialNum.load(std::memory_order_relaxed);
+}
+
+void
+MemoryIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
+{
+    visitor.visit(*this);
 }
 
 } // namespace proton
