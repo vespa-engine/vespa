@@ -384,16 +384,8 @@ public:
                                 try {
                                     const int attemptReadBytes = 173;
                                     ssize_t readB = file.Read(buffer, attemptReadBytes);
-                                    Progress(readB == attemptReadBytes,
-                                             "Read %d bytes successfully",
-                                             readB);
-                                    for (i = 0; i < attemptReadBytes; i++) {
-                                        rc = (buffer[i] == 'A' + ((i+ 1) % 17));
-                                        if (!rc) {
-                                            Progress(false, "Read error at offset %d", i);
-                                            break;
-                                        }
-                                    }
+                                    Progress(false, "Expected to get an exception for unaligned read");
+                                    ProgressI64(readB == attemptReadBytes, "Got %ld bytes from attempted 173", readB);
                                 } catch(const DirectIOException &e) {
                                     Progress(true, "Got exception as expected");
                                 }
@@ -404,19 +396,9 @@ public:
                                 if (rc) {
                                     try {
                                         const int attemptReadBytes = 4096;
-                                        ssize_t readB = file.Read(buffer,
-                                                attemptReadBytes);
-                                        Progress(readB == attemptReadBytes,
-                                                 "Read %d bytes successfully",
-                                                 readB);
-                                        for (i = 0; i < attemptReadBytes; i++) {
-                                            rc = (buffer[i] == 'A' + ((i+ 1) % 17));
-                                            if (!rc) {
-                                                Progress(false,
-                                                        "Read error at offset %d", i);
-                                                break;
-                                            }
-                                        }
+                                        ssize_t readB = file.Read(buffer, attemptReadBytes);
+                                        Progress(false, "Expected to get an exception for unaligned read");
+                                        ProgressI64(readB == attemptReadBytes, "Got %ld bytes from attempted 4096", readB);
                                     } catch(const DirectIOException &e) {
                                         Progress(true, "Got exception as expected");
                                     }
@@ -464,7 +446,7 @@ public:
             bool writeResult = myFile->CheckedWrite(dummyData, 6);
 
             if (writeResult) {
-                Progress(false, "FAILED: Should not be able to write a file opened for read-only access.");
+                Progress(false, "Should not be able to write a file opened for read-only access.");
             } else {
                 char dummyData2[28];
                 Progress(true, "Write failed with read-only access.");
