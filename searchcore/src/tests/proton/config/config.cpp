@@ -261,7 +261,7 @@ TEST_FFF("require_that_protonconfigurer_reconfigures_dbowners",
     f1.removeDocType("typea");
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(60000));
-    ASSERT_FALSE(dbA.waitUntilConfigured(60000));
+    ASSERT_FALSE(dbA.waitUntilConfigured(1000));
     f3.close();
 }
 
