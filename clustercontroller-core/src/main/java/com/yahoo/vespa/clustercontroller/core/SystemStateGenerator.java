@@ -128,6 +128,7 @@ public class SystemStateGenerator {
         nextStateViewChanged = true;
     }
 
+    // TODO deprecate
     /** Sets the nodes of this and attempts to keep the node state in sync */
     public void setNodes(ClusterInfo newClusterInfo) {
         this.nodes = new HashSet<>(newClusterInfo.getConfiguredNodes().values());
@@ -522,6 +523,8 @@ public class SystemStateGenerator {
         nextStateViewChanged = true;
     }
 
+
+    // TODO deprecated once we have a baseline state function
     private void setNodeState(NodeInfo node, NodeState newState) {
         NodeState oldState = nextClusterStateView.getClusterState().getNodeState(node.getNode());
 
@@ -552,6 +555,9 @@ public class SystemStateGenerator {
         nextStateViewChanged = true;
     }
 
+
+    // TODO nodeListener is only used via decideNodeStateGivenReportedState -> handlePrematureCrash
+    // TODO this will recursively invoke proposeNewNodeState, which will presumably (i.e. hopefully) be a no-op...
     public void handleNewReportedNodeState(NodeInfo node, NodeState reportedState, NodeStateOrHostInfoChangeHandler nodeListener) {
         ClusterState nextState = nextClusterStateView.getClusterState();
         NodeState currentState = nextState.getNodeState(node.getNode());
@@ -559,9 +565,12 @@ public class SystemStateGenerator {
                 "Got nodestate reply from " + node + ": "
                 + node.getReportedState().getTextualDifference(reportedState) + " (Current state is " + currentState.toString(true) + ")");
         long currentTime = timer.getCurrentTimeInMillis();
+
         if (reportedState.getState().equals(State.DOWN)) {
             node.setTimeOfFirstFailingConnectionAttempt(currentTime);
         }
+
+        // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
             if (reportedState.getState().equals(State.DOWN)) {
                 eventLog.addNodeOnlyEvent(new NodeEvent(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
@@ -569,6 +578,7 @@ public class SystemStateGenerator {
                 eventLog.addNodeOnlyEvent(new NodeEvent(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.DEBUG);
             }
         }
+
         if (reportedState.equals(node.getReportedState()) &&  ! reportedState.getState().equals(State.INITIALIZING))
             return;
 
@@ -576,18 +586,29 @@ public class SystemStateGenerator {
         if (alteredState != null) {
             ClusterState clusterState = currentClusterStateView.getClusterState();
 
+
             if (alteredState.above(node.getWantedState())) {
                 log.log(LogLevel.DEBUG, "Cannot set node in state " + alteredState.getState() + " when wanted state is " + node.getWantedState());
                 alteredState.setState(node.getWantedState().getState());
             }
+
+
+            // TODO handle in baseline
             if (reportedState.getStartTimestamp() > node.getStartTimestamp()) {
                 alteredState.setStartTimestamp(reportedState.getStartTimestamp());
             } else {
                 alteredState.setStartTimestamp(0);
             }
+
+
             if (!alteredState.similarTo(currentState)) {
                 setNodeState(node, alteredState);
             } else if (!alteredState.equals(currentState)) {
+
+
+                // TODO figure out what to do with init progress vs. new states.
+                // TODO .. simply don't include init progress in generated states? are they used anywhere? it's already in reported state
+                // TODO why is this an else-if branch? can't multiple of these happen at the same time?!
                 if (currentState.getState().equals(State.INITIALIZING) && alteredState.getState().equals(State.INITIALIZING) &&
                     Math.abs(currentState.getInitProgress() - alteredState.getInitProgress()) > 0.000000001)
                 {
@@ -601,6 +622,9 @@ public class SystemStateGenerator {
                         currentNodeState.setInitProgress(alteredState.getInitProgress());
                         clusterState.setNodeState(node.getNode(), currentNodeState);
                     }
+
+
+                    // TODO handle in baseline
                 } else if (alteredState.getMinUsedBits() != currentState.getMinUsedBits()) {
                     log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count have changed from "
                                             + currentState.getMinUsedBits() + " to " + alteredState.getMinUsedBits());
@@ -625,7 +649,12 @@ public class SystemStateGenerator {
                     log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
                             + currentState.getTextualDifference(alteredState));
                 }
+
+
             } else if (alteredState.getDescription().contains("Listing buckets")) {
+
+
+                // TODO figure out why this is handled specially and the desired semantics of this
                 currentState.setDescription(alteredState.getDescription());
                 nextState.setNodeState(node.getNode(), currentState);
                 NodeState currentNodeState = clusterState.getNodeState(node.getNode());
@@ -641,6 +670,8 @@ public class SystemStateGenerator {
         eventLog.add(new NodeEvent(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
+
+    // TODO move to node state change handler
     public void handleMissingNode(NodeInfo node, NodeStateOrHostInfoChangeHandler nodeListener) {
         removeHostName(node);
 
@@ -651,6 +682,7 @@ public class SystemStateGenerator {
         } else {
             eventLog.add(new NodeEvent(node, "Node is no longer in slobrok. No pending state request to node.", NodeEvent.Type.REPORTED, timeNow), isMaster);
         }
+
         if (node.getReportedState().getState().equals(State.STOPPING)) {
             log.log(LogLevel.DEBUG, "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
             NodeState ns = node.getReportedState().clone();
@@ -662,6 +694,8 @@ public class SystemStateGenerator {
         }
     }
 
+
+    // TODO handle to baseline
     /**
      * Propose a new state for a node. This may happen due to an administrator action, orchestration, or
      * a configuration change.
@@ -721,6 +755,7 @@ public class SystemStateGenerator {
         hostnames.remove(node.getNodeIndex());
     }
 
+
     public boolean watchTimers(ContentCluster cluster, NodeStateOrHostInfoChangeHandler nodeListener) {
         boolean triggeredAnyTimers = false;
         long currentTime = timer.getCurrentTimeInMillis();
@@ -728,6 +763,8 @@ public class SystemStateGenerator {
             NodeState currentStateInSystem = nextClusterStateView.getClusterState().getNodeState(node.getNode());
             NodeState lastReportedState = node.getReportedState();
 
+
+            // TODO move to own node event listener class
             // If we haven't had slobrok contact in a given amount of time and node is still not considered down,
             // mark it down.
             if (node.isRpcAddressOutdated()
@@ -747,6 +784,9 @@ public class SystemStateGenerator {
                 triggeredAnyTimers = true;
             }
 
+
+
+            // TODO handle in baseline (temporal state transition)
             // If node is still unavailable after transition time, mark it down
             if (currentStateInSystem.getState().equals(State.MAINTENANCE)
                 && ( ! nextStateViewChanged || ! this.nextClusterStateView.getClusterState().getNodeState(node.getNode()).getState().equals(State.DOWN))
@@ -764,6 +804,8 @@ public class SystemStateGenerator {
                 triggeredAnyTimers = true;
             }
 
+
+            // TODO should we handle in baseline? handlePrematureCrash sets wanted state, so might not be needed
             // If node hasn't increased its initializing progress within initprogresstime, mark it down.
             if (!currentStateInSystem.getState().equals(State.DOWN)
                 && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
@@ -781,6 +823,9 @@ public class SystemStateGenerator {
                 handlePrematureCrash(node, nodeListener);
                 triggeredAnyTimers = true;
             }
+
+
+
             if (node.getUpStableStateTime() + stableStateTimePeriod <= currentTime
                 && lastReportedState.getState().equals(State.UP)
                 && node.getPrematureCrashCount() <= maxPrematureCrashes
@@ -799,6 +844,8 @@ public class SystemStateGenerator {
                 triggeredAnyTimers = true;
             }
         }
+
+        // TODO must ensure state generator is called if this returns true
         return triggeredAnyTimers;
     }
 
@@ -807,6 +854,9 @@ public class SystemStateGenerator {
                                                        || state.getDescription().contains("controlled shutdown")));
     }
 
+
+    // TODO refactor this into a function that only alters NodeInfo
+    // FIXME urrrgh this function mixes and matches internal state mutations and pure return values
     /**
      * Decide the state assigned to a new node given the state it reported
      *
@@ -822,8 +872,11 @@ public class SystemStateGenerator {
 
         log.log(LogLevel.DEBUG, "Finding new cluster state entry for " + node + " switching state " + currentState.getTextualDifference(reportedState));
 
+
         // Set nodes in maintenance if 1) down, or 2) initializing but set retired, to avoid migrating data
         // to the retired node while it is initializing
+        // FIXME case 2 now handled in baseline
+        // FIXME x 2; why is maxTransitionTime used here...?
         if (currentState.getState().oneOf("ur") && reportedState.getState().oneOf("dis")
             && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING)))
         {
@@ -844,6 +897,10 @@ public class SystemStateGenerator {
             }
         }
 
+
+
+        // TODO move this to new reported state handling
+        // FIXME need to offload tracking of last reported state somewhere else (or take in last generated state?)
         // If we got increasing initialization progress, reset initialize timer
         if (reportedState.getState().equals(State.INITIALIZING) &&
             (!currentState.getState().equals(State.INITIALIZING) ||
@@ -853,6 +910,10 @@ public class SystemStateGenerator {
             log.log(LogLevel.DEBUG, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
         }
 
+
+
+        // TODO do we need this when we have startup timestamps? at least it's unit tested.
+        // TODO this seems fairly contrived...
         // If we get reverse initialize progress, mark node unstable, such that we don't mark it initializing again before it is up.
         if (currentState.getState().equals(State.INITIALIZING) &&
             (reportedState.getState().equals(State.INITIALIZING) && reportedState.getInitProgress() < currentState.getInitProgress()))
@@ -865,6 +926,7 @@ public class SystemStateGenerator {
                     "Got reverse intialize progress. Assuming node have prematurely crashed"));
         }
 
+
         // If we go down while initializing, mark node unstable, such that we don't mark it initializing again before it is up.
         if (currentState.getState().equals(State.INITIALIZING) && reportedState.getState().oneOf("ds") && !isControlledShutdown(reportedState))
         {
@@ -874,6 +936,9 @@ public class SystemStateGenerator {
             return (handlePrematureCrash(node, nodeListener) ? null : new NodeState(node.getNode().getType(), State.DOWN).setDescription(reportedState.getDescription()));
         }
 
+
+        // TODO what is really the point looking at init progress in this branch...?
+        // TODO baseline state generation should make this a no-op if we don't bother to publish init progress in generated state
         // Ignore further unavailable states when node is set in maintenance
         if (currentState.getState().equals(State.MAINTENANCE) && reportedState.getState().oneOf("dis"))
         {
@@ -884,6 +949,10 @@ public class SystemStateGenerator {
             }
         }
 
+
+
+        // FIXME comment is outdated; distributors are never in init state!
+        // TODO handle premature crash count in baseline
         // Hide initializing state if node has been unstable. (Not for distributors as these own buckets while initializing)
         if ((currentState.getState().equals(State.DOWN) || currentState.getState().equals(State.UP)) &&
             reportedState.getState().equals(State.INITIALIZING) && node.getPrematureCrashCount() > 0 &&
@@ -892,6 +961,10 @@ public class SystemStateGenerator {
             log.log(LogLevel.DEBUG, "Not setting " + node + " initializing again as it crashed prematurely earlier.");
             return new NodeState(node.getNode().getType(), State.DOWN).setDescription("Not setting node back up as it failed prematurely at last attempt");
         }
+
+
+
+        // TODO handle implicit down on list buckets in baseline
         // Hide initializing state in cluster state if initialize progress is so low that we haven't listed buckets yet
         if (!node.isDistributor() && reportedState.getState().equals(State.INITIALIZING) &&
             reportedState.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001)
@@ -902,6 +975,9 @@ public class SystemStateGenerator {
         return reportedState.clone();
     }
 
+
+
+    // TODO move somewhere appropriate
     public boolean handlePrematureCrash(NodeInfo node, NodeStateOrHostInfoChangeHandler changeListener) {
         node.setPrematureCrashCount(node.getPrematureCrashCount() + 1);
         if (disableUnstableNodes && node.getPrematureCrashCount() > maxPrematureCrashes) {
@@ -922,6 +998,8 @@ public class SystemStateGenerator {
         currentClusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, hostInfo);
     }
 
+
+    // TODO move this out of here. get to da choppa!!!
     public class SystemStateHistoryEntry {
 
         private final ClusterState state;
