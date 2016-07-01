@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
@@ -338,14 +339,15 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters) {
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
-            List<HostResource> hosts = new ArrayList<>();
+            List<HostResource> allHosts = new ArrayList<>();
             for (ContainerCluster cluster : clustersSortedByName(containerClusters))
-                hosts.addAll(hostResourcesSortedByIndex(cluster));
+                allHosts.addAll(hostResourcesSortedByIndex(cluster));
 
             // Don't use the same container to supplement multiple content clusters
-            hosts.removeIf(host -> hasClusterController(host));
+            List<HostResource> hostsWithoutClusterController =
+                    allHosts.stream().filter(h -> ! hostHasClusterController(h.getHostName(), allHosts)).collect(Collectors.toList());
 
-            return hosts.subList(0, Math.min(hosts.size(), count));
+            return hostsWithoutClusterController.subList(0, Math.min(hostsWithoutClusterController.size(), count));
         }
         
         private List<ContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
@@ -361,7 +363,17 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     .map(Container::getHostResource)
                     .collect(Collectors.toList());
         }
-        
+
+        /** Returns whether any host having the given hostname has a cluster controller */
+        private boolean hostHasClusterController(String hostname, List<HostResource> allHosts) {
+            for (HostResource host : allHosts) {
+                if ( ! host.getHostName().equals(hostname)) continue;
+                if (! hasClusterController(host)) continue;
+                return true;
+            }
+            return false;
+        }
+
         private boolean hasClusterController(HostResource host) {
             for (Service service : host.getServices())
                 if (service instanceof ClusterControllerContainer)
