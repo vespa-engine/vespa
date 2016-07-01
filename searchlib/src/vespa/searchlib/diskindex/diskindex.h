@@ -78,6 +78,9 @@ private:
     std::vector<std::unique_ptr<index::DictionaryFileRandRead>> _dicts;
     TuneFileSearch			   _tuneFileSearch;
     Cache                                  _cache;
+    uint64_t                               _size;
+
+    void calculateSize();
 
     bool
     loadSchema(void);
@@ -159,8 +162,7 @@ public:
      * Get the size on disk of this index.
      * @return the size of the index.
      */
-    uint64_t
-    getSize() const;
+    uint64_t getSize() const { return _size; }
 
     const index::Schema &
     getSchema(void) const

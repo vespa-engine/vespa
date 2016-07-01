@@ -61,6 +61,8 @@ public:
                     const Node &term,
                     const IAttributeContext &attrCtx);
     virtual search::SearchableStats getSearchableStats() const;
+    virtual search::SerialNum getSerialNum() const override;
+    virtual void accept(IndexSearchableVisitor &visitor) const override;
 
     static ISearchableIndexCollection::UP replaceAndRenumber(
             const ISourceSelector::SP & selector,

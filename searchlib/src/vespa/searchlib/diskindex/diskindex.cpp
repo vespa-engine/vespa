@@ -47,8 +47,10 @@ DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
       _bitVectorDicts(),
       _dicts(),
       _tuneFileSearch(),
-      _cache(*this, cacheSize)
+      _cache(*this, cacheSize),
+      _size(0)
 {
+    calculateSize();
 }
 
 bool
@@ -322,11 +324,11 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
 }
 
 
-uint64_t
-DiskIndex::getSize() const
+void
+DiskIndex::calculateSize()
 {
     search::DirectoryTraverse dirt(_indexDir.c_str());
-    return dirt.GetTreeSize();
+    _size = dirt.GetTreeSize();
 }
 
 
