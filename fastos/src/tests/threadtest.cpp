@@ -3,15 +3,15 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tests.h"
-#include "jobs.h"
-#include "base_thread.hpp"
+#include "job.h"
+#include "thread_test_base.hpp"
 
 
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
 
 
-class ThreadTest : public BaseForThreadTest
+class ThreadTest : public ThreadTestBase
 {
    int Main ();
 
@@ -592,8 +592,7 @@ int ThreadTest::Main ()
    { time_t now = time(0); printf("[%ld seconds]\n", now-before); before = now; }
 
    printf("END OF TEST (%s)\n", _argv[0]);
-
-   return 0;
+   return allWasOk() ? 0 : 1;
 }
 
 int main (int argc, char **argv)
