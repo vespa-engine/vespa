@@ -54,7 +54,7 @@ public class MasterDataGatherer {
                     log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": A change occured in the list of registered fleetcontrollers. Requesting new information");
                     session.getChildren(zooKeeperRoot + "indexes", this, childListener, null);
                     break;
-                case NodeDataChanged: // A fleetcontroller have changed what node it is voting for
+                case NodeDataChanged: // A fleetcontroller has changed what node it is voting for
                     log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Altered data in node " + watchedEvent.getPath() + ". Requesting new vote");
                     int index = getIndex(watchedEvent.getPath());
                     synchronized (nextMasterData) {
@@ -77,40 +77,25 @@ public class MasterDataGatherer {
     }
 
     /**
-     * The dir callback class is responsible for handling dir change events. (Nodes coming up or going down)
-     * It gets a list of all the nodes, and need to find which ones are removed and which ones are added,
-     * and update the next state to remove those no longer existing and request data for those that are new.
+     * The dir callback class is responsible for handling dir change events (nodes coming up or going down).
+     * It will explicitly request the contents of, and set a watch on, all nodes that are present. Nodes
+     * for controllers that have disappeared from ZooKeeper are implicitly removed from nextMasterData.
      */
     private class DirCallback implements AsyncCallback.ChildrenCallback {
         public void processResult(int version, String path, Object context, List<String> nodes) {
             if (nodes == null) nodes = new LinkedList<String>();
             log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
-            // Detect what nodes are added and what nodes have been removed. Others can be ignored.
-            List<Integer> addedNodes = new LinkedList<Integer>();
             synchronized (nextMasterData) {
-                Set<Integer> removedNodes = new TreeSet<Integer>(nextMasterData.keySet());
+                nextMasterData.clear();
                 for (String node : nodes) {
                     int index = Integer.parseInt(node);
-                    if (removedNodes.contains(index)) {
-                        log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Node " + index + " no longer exists");
-                        removedNodes.remove(index);
-                    } else {
-                        log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Node " + index + " is new");
-                        addedNodes.add(index);
-                    }
-                }
-                for (Integer index : removedNodes) {
-                    nextMasterData.remove(index);
-                }
-                for (Integer index : addedNodes) {
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '" + zooKeeperRoot + index + "' to see vote");
                     nextMasterData.put(index, null);
+                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
+                            + zooKeeperRoot + index + "' to see vote");
                     session.getData(zooKeeperRoot + "indexes/" + index, changeWatcher, nodeListener, null);
+                    // Invocation of cycleCompleted() for fully accumulated election state will happen
+                    // as soon as all getData calls have been processed.
                 }
-            }
-                // If we didn't add any information, we should have all the information we need and we can report back to the fleetcontroller
-            if (addedNodes.isEmpty()) {
-                cycleCompleted();
             }
         }
     }
