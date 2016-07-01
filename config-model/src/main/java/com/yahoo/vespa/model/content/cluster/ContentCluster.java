@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
@@ -16,7 +17,9 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Metric;
 import com.yahoo.vespa.model.admin.MetricsConsumer;
 import com.yahoo.vespa.model.admin.MonitoringSystem;
@@ -319,8 +322,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
-            //if (hosts.size() < count) // supply with containers TODO: Reactivate
-            //    hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
+            if (hosts.size() < count) // supply with containers
+                hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -336,10 +339,15 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters) {
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
-            List<HostResource> hosts = new ArrayList<>();
+            List<HostResource> allHosts = new ArrayList<>();
             for (ContainerCluster cluster : clustersSortedByName(containerClusters))
-                hosts.addAll(hostResourcesSortedByIndex(cluster));
-            return hosts.subList(0, Math.min(hosts.size(), count));
+                allHosts.addAll(hostResourcesSortedByIndex(cluster));
+
+            // Don't use the same container to supplement multiple content clusters
+            List<HostResource> hostsWithoutClusterController =
+                    allHosts.stream().filter(h -> ! hostHasClusterController(h.getHostName(), allHosts)).collect(Collectors.toList());
+
+            return hostsWithoutClusterController.subList(0, Math.min(hostsWithoutClusterController.size(), count));
         }
         
         private List<ContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
@@ -354,6 +362,23 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     .sorted(Comparator.comparing(Container::index))
                     .map(Container::getHostResource)
                     .collect(Collectors.toList());
+        }
+
+        /** Returns whether any host having the given hostname has a cluster controller */
+        private boolean hostHasClusterController(String hostname, List<HostResource> allHosts) {
+            for (HostResource host : allHosts) {
+                if ( ! host.getHostName().equals(hostname)) continue;
+                if (! hasClusterController(host)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        private boolean hasClusterController(HostResource host) {
+            for (Service service : host.getServices())
+                if (service instanceof ClusterControllerContainer)
+                    return true;
+            return false;
         }
 
         /**
