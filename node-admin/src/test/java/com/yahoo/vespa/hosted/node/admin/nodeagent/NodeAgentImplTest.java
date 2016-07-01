@@ -11,6 +11,8 @@ import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -52,7 +54,7 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
-    private final NodeAgent nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -336,7 +338,11 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
+        try {
+            nodeAgent.tick();
+            fail("Expected to throw an exception");
+        } catch (Exception e) {
+        }
 
         verify(orchestrator).suspend(hostName);
         verify(docker, never()).stopContainer(any(ContainerName.class));
@@ -898,8 +904,11 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec1));
 
-        nodeAgent.tick();
-
+        try {
+            nodeAgent.tick();
+            fail("Expected to throw an exception");
+        } catch (Exception e) {
+        }
         // Should get exactly one invocation.
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage1, vespaVersion);
         verify(nodeRepository, times(1)).updateNodeAttributes(
@@ -951,8 +960,11 @@ public class NodeAgentImplTest {
         when(docker.getContainer(hostName)).thenReturn(NO_CONTAINER);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
-        nodeAgent.tick();
-
+        try {
+            nodeAgent.tick();
+            fail("Expected to throw an exception");
+        } catch (Exception e) {
+        }
         inOrder.verify(docker).startContainer(
                 nodeSpec.wantedDockerImage.get(),
                 nodeSpec.hostname,
@@ -964,7 +976,12 @@ public class NodeAgentImplTest {
         inOrder.verifyNoMoreInteractions();
 
         // 2nd try
-        nodeAgent.tick();
+        try {
+            nodeAgent.tick();
+            fail("Expected to throw an exception");
+        } catch (Exception e) {
+        }
+
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verifyNoMoreInteractions();
 
