@@ -94,11 +94,11 @@ FastAccessFeedView::FastAccessFeedView(const StoreOnlyFeedView::Context &storeOn
 void
 FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 {
-    getAttributeWriter()->compactLidSpace(op.getLidLimit(), op.getSerialNum());
-    Parent::handleCompactLidSpace(op);
     // Drain pending PutDoneContext and ForceCommitContext objects
     _writeService.sync();
     _docIdLimit.set(op.getLidLimit());
+    getAttributeWriter()->compactLidSpace(op.getLidLimit(), op.getSerialNum());
+    Parent::handleCompactLidSpace(op);
 }
 
 void
