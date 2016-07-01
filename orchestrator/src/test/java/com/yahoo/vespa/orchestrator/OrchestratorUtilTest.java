@@ -25,6 +25,10 @@ public class OrchestratorUtilTest {
             new TenantId("test-tenant-id"),
             new ApplicationInstanceId("application:prod:utopia-1:instance"));
 
+    private static final ApplicationInstanceReference APPREF_2 = new ApplicationInstanceReference(
+            new TenantId("hosted-vespa"),
+            new ApplicationInstanceId("zone-config-servers"));
+
     /**
      * Here we don't care how the internal of the different application
      * id/reference look like as long as we get back to exactly where we
@@ -45,5 +49,14 @@ public class OrchestratorUtilTest {
         ApplicationInstanceReference appRefRoundTrip = OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService());
 
         Assert.assertEquals(APPREF_1, appRefRoundTrip);
+    }
+
+    @Test
+    public void applicationid_from_zone_confg_server_appref_is_working() throws Exception {
+        ApplicationId appId = OrchestratorUtil.toApplicationId(APPREF_2);
+        Assert.assertEquals(ApplicationId.from(
+                TenantName.from("hosted-vespa"),
+                ApplicationName.from("zone-config-servers"),
+                InstanceName.defaultName()),appId);
     }
 }
