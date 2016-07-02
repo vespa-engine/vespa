@@ -1,7 +1,17 @@
 #!/bin/bash
 set -e
 
-ulimit -u 31215
+echo "Trying to find limit for processes:"
+if ulimit -u; then
+    echo "Fixing limit to 31215"
+    ulimit -u 31215
+elif [ "$RETRYEXEC" ]; then
+    echo "Already tried to re-exec script, giving up."
+    exit 1
+else
+    echo "Command 'ulimit -u' failed, trying to re-exec script with bash instead."
+    exec /usr/bin/env RETRYEXEC=true bash $0
+fi
 
 VESPA_MALLOC_SO=../../../src/vespamalloc/libvespamalloc.so
 VESPA_MALLOC_SO_D=../../../src/vespamalloc/libvespamalloc_vespamallocd.so
