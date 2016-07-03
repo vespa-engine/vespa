@@ -174,7 +174,9 @@ TestBase::writeFile(const string &filename, const mbus::Blob& blob) const
     if (file == -1) {
         return false;
     }
-    write(file, blob.data(), blob.size());
+    if (write(file, blob.data(), blob.size()) != blob.size()) {
+	throw vespalib::Exception("write failed");
+    }
     close(file);
     return true;
 }
@@ -187,7 +189,9 @@ TestBase::readFile(const string &filename) const
     mbus::Blob blob(len);
     if (file != -1) {
         lseek(file, 0, SEEK_SET);
-        read(file, blob.data(), len);
+        if (read(file, blob.data(), len) != len) {
+	    throw vespalib::Exception("read failed");
+	}
         close(file);
     }
 

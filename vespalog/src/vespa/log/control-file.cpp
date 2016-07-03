@@ -58,10 +58,15 @@ ControlFile::ensureHeader()
     int len = read(fd, &buf, wantsLen);
     if (len != wantsLen || memcmp(fileHeader, buf, wantsLen) != 0) {
         if (len) {
-            ftruncate(fd, 0);
+	    if (ftruncate(fd, 0) != 0) {
+		perror("log::ControlFile ftruncate failed");
+	    }
         }
         lseek(fd, 0, SEEK_SET);
-        write(fd, fileHeader, strlen(fileHeader));
+        ssize_t nbw = write(fd, fileHeader, wantsLen);
+	if (nbw != wantsLen) {
+	    perror("log::ControlFile write(A) failed");
+	}
 
         char spaces[_maxPrefix + 1];
         memset(spaces, ' ', sizeof spaces);
@@ -69,7 +74,12 @@ ControlFile::ensureHeader()
 
         char buf2[sizeof(spaces) + 100];
         snprintf(buf2, sizeof buf2, "Prefix: \n%s\n", spaces);
-        write(fd, buf2, strlen(buf2));
+	wantsLen = strlen(buf2);
+        nbw = write(fd, buf2, wantsLen);
+	if (nbw != wantsLen) {
+	    perror("log::ControlFile write(B) failed");
+	}
+
     }
 }
 
