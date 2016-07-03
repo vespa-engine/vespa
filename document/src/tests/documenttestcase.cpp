@@ -597,7 +597,7 @@ void DocumentTest::testReadSerializedFile()
     size_t len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
     lseek(fd,0,SEEK_SET);
-    if (read(fd, buf.getBuffer(), len) != len) {
+    if (read(fd, buf.getBuffer(), len) != (ssize_t)len) {
 	throw vespalib::Exception("read failed");
     }
     close(fd);
@@ -909,7 +909,7 @@ void DocumentTest::testGenerateSerializedFile()
 #define SERIALIZED_DIR "../../test/document/"
     int fd = open(SERIALIZED_DIR "/serializecpp.dat",
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != buf->getPos()) {
+    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	throw vespalib::Exception("write failed");
     }
     close(fd);
@@ -918,7 +918,7 @@ void DocumentTest::testGenerateSerializedFile()
     doc.serializeHeader(hBuf);
     fd = open(SERIALIZED_DIR "/serializecppsplit_header.dat",
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, hBuf.getBuffer(), hBuf.getPos()) != hBuf.getPos()) {
+    if (write(fd, hBuf.getBuffer(), hBuf.getPos()) != (ssize_t)hBuf.getPos()) {
 	throw vespalib::Exception("write failed");
     }
     close(fd);
@@ -927,7 +927,7 @@ void DocumentTest::testGenerateSerializedFile()
     doc.serializeBody(bBuf);
     fd = open(SERIALIZED_DIR "/serializecppsplit_body.dat",
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, bBuf.getBuffer(), bBuf.getPos()) != bBuf.getPos()) {
+    if (write(fd, bBuf.getBuffer(), bBuf.getPos()) != (ssize_t)bBuf.getPos()) {
 	throw vespalib::Exception("write failed");
     }
     close(fd);
@@ -943,7 +943,7 @@ void DocumentTest::testGenerateSerializedFile()
 
     fd = open(SERIALIZED_DIR "/serializecpp-lz4-level9.dat",
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, lz4buf.getBufferAtPos(), lz4buf.getRemaining()) != lz4buf.getRemaining()) {
+    if (write(fd, lz4buf.getBufferAtPos(), lz4buf.getRemaining()) != (ssize_t)lz4buf.getRemaining()) {
 	throw vespalib::Exception("write failed");
     }
     close(fd);
