@@ -11,10 +11,10 @@ set(EXCLUDE_TESTS_FROM_ALL FALSE CACHE BOOL "If TRUE, do not build tests as part
 set(VALGRIND_UNIT_TESTS FALSE CACHE BOOL "If TRUE, run unit tests via valgrind")
 
 # Warnings
-set(WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
+set(WARN_OPTS "-Wuninitialized -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
 
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 ${WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -DWITH_SHIPPED_GEOIP -march=westmere -mtune=intel")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 ${WARN_OPTS} -fPIC -DBOOST_DISABLE_ASSERTS -DTORRENT_DISABLE_GEO_IP -march=native -mtune=intel")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${VTAG_DEFINES}")
 

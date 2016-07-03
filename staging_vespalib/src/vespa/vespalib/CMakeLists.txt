@@ -11,4 +11,5 @@ vespa_add_library(staging_vespalib
     $<TARGET_OBJECTS:staging_vespalib_vespalib_hwaccelrated>
     INSTALL lib64
     DEPENDS
+    gcc_s gcc
 )
