@@ -174,7 +174,7 @@ TestBase::writeFile(const string &filename, const mbus::Blob& blob) const
     if (file == -1) {
         return false;
     }
-    if (write(file, blob.data(), blob.size()) != blob.size()) {
+    if (write(file, blob.data(), blob.size()) != (ssize_t)blob.size()) {
 	throw vespalib::Exception("write failed");
     }
     close(file);

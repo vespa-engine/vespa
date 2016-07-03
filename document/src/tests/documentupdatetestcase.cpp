@@ -649,7 +649,7 @@ void DocumentUpdateTest::testGenerateSerializedFile()
 
     int fd = open("data/serializeupdatecpp.dat",
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, buf->getBuffer(), buf->getPos()) != buf->getPos()) {
+    if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	throw vespalib::Exception("read failed");
     }
     close(fd);
