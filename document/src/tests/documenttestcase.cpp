@@ -906,7 +906,7 @@ void DocumentTest::testGenerateSerializedFile()
 
     std::unique_ptr<ByteBuffer> buf = doc.serialize();
 
-#define SERIALIZED_DIR "../../test/document/"
+#define SERIALIZED_DIR "../test/document/"
     int fd = open(SERIALIZED_DIR "/serializecpp.dat",
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
