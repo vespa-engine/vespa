@@ -174,6 +174,8 @@ public:
     vespalib::string asString() const;
     virtual vespalib::string getClassName() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual bool isEquiv() const { return false; }
+    virtual bool isIntermediate() const { return false; }
 };
 
 namespace blueprint {
@@ -256,6 +258,7 @@ public:
 
     virtual void fetchPostings(bool strict);
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
+    bool isIntermediate() const override { return true; }
 };
 
 

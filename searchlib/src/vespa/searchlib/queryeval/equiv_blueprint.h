@@ -24,12 +24,11 @@ public:
     // used by create visitor
     EquivBlueprint& addTerm(Blueprint::UP term, double exactness);
 
-    virtual SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const;
+    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    virtual void fetchPostings(bool strict);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void fetchPostings(bool strict) override;
+    bool isEquiv() const override { return true; }
 };
 
 } // namespace queryeval
