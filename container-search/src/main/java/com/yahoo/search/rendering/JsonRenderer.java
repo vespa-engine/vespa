@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 
 import org.json.JSONArray;
@@ -269,6 +270,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     public JsonRenderer() {
+        this(null);
+    }
+
+    /** 
+     * Creates a json renderer using a custom executor.
+     * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
+     */
+    public JsonRenderer(Executor executor) {
+        super(executor);
         generatorFactory = new JsonFactory();
         generatorFactory.setCodec(createJsonCodec());
     }
