@@ -71,9 +71,6 @@ LineSplitter::fill()
         }
     } else if (readLen == 0) {
         _eof = true;
-        if (_buffer[_writePos] != '\n') {
-            _buffer[_writePos++] = '\n'; // Fake a final separator
-        }
     } else {
         _writePos += readLen;
     }
@@ -90,6 +87,9 @@ LineSplitter::getLine()
 	if (bufLen > 0) {
             char *start = &_buffer[_readPos];
             char *end = static_cast<char *>(memchr(start, '\n', bufLen));
+            if (_eof && !end) {
+                end = &_buffer[_writePos-1]; // pretend last byte sent was \n
+            }
             if (end) {
                 *end = '\0';
                 if (end - start > 0 && end[-1] == '\r') {

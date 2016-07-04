@@ -23,7 +23,7 @@ private:
 public:
     explicit LineSplitter(int fd);
     char *getLine();
-    bool eof() const { return _eof; }
+    bool eof() const { return _eof && _readPos >= _writePos; }
 
     ~LineSplitter();
 };
