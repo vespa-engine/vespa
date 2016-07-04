@@ -240,7 +240,7 @@ public class HostResource implements Comparable<HostResource> {
     public boolean equals(Object other) {
         if (other == this) return true;
         if ( ! (other instanceof HostResource)) return false;
-        return ((HostResource)other).getHost().equals(this.getHost());
+        return ((HostResource)other).host.equals(this.host);
     }
 
     @Override
