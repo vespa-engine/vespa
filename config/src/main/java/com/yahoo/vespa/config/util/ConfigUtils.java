@@ -5,13 +5,13 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
+import com.yahoo.net.HostName;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.*;
 
 import java.io.*;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -424,7 +424,7 @@ public class ConfigUtils {
     }
 
     public static String getCanonicalHostName() {
-        return com.yahoo.net.LinuxInetAddress.getLocalHost().getCanonicalHostName();
+        return HostName.getLocalhost();
     }
 
     /**

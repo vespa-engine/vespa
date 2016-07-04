@@ -13,6 +13,7 @@ import com.yahoo.search.Result;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Executor;
 
 /**
  * Holds all configured and built-in renderers.
@@ -31,15 +32,32 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         this(Collections.emptyList());
     }
 
+    /** 
+     * Creates a registry containing the built-in renderers only, using a custom executor.
+     * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry:
+     * Use MoreExecutors.directExecutor().
+     */
+    public RendererRegistry(Executor executor) {
+        this(Collections.emptyList(), executor);
+    }
+
     /** Creates a registry of the given renderers plus the built-in ones */
     public RendererRegistry(Collection<Renderer> renderers) {
+        this(renderers, null);
+    }
+
+    /** 
+     * Creates a registry of the given renderers plus the built-in ones, using a custom executor.
+     * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
+     */
+    public RendererRegistry(Collection<Renderer> renderers, Executor executor) {
         // add json renderer
-        Renderer jsonRenderer = new JsonRenderer();
+        Renderer jsonRenderer = new JsonRenderer(executor);
         jsonRenderer.initId(RendererRegistry.jsonRendererId);
         register(jsonRenderer.getId(), jsonRenderer);
 
         // Add xml renderer
-        Renderer xmlRenderer = new DefaultRenderer();
+        Renderer xmlRenderer = new DefaultRenderer(executor);
         xmlRenderer.initId(xmlRendererId);
         register(xmlRenderer.getId(), xmlRenderer);
 

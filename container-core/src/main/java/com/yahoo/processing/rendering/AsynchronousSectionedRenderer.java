@@ -113,7 +113,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     // Rendering threads should never block so use one thread per core.
     // We should complete any work we have already started so use an unbounded queue.
     // The executor SHOULD be reused across all instances having the same prototype
-    private final ThreadPoolExecutor renderingExecutor = createExecutor();
+    private final Executor renderingExecutor;
+
     private static ThreadPoolExecutor createExecutor() {
         int threadCount = Runtime.getRuntime().availableProcessors();
         ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
@@ -138,7 +139,18 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * before use.
      */
     public AsynchronousSectionedRenderer() {
+        this(null);
+    }
+
+    /**
+     * Create an renderer using the specified executor instead of the default one which should be used for production.
+     * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
+     * 
+     * @param executor the executor to use or null to use the default executor suitable for production
+     */
+    public AsynchronousSectionedRenderer(Executor executor) {
         isInitialized = false;
+        renderingExecutor = executor==null ? createExecutor() : executor;
     }
 
     /**
@@ -172,9 +184,14 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     @Override
     public void deconstruct() {
         super.deconstruct();
-        renderingExecutor.shutdown();
+        if (renderingExecutor instanceof ThreadPoolExecutor)
+            shutdown((ThreadPoolExecutor) renderingExecutor);
+    }
+    
+    private void shutdown(ThreadPoolExecutor executor) {
+        executor.shutdown();
         try {
-            if (renderingExecutor.awaitTermination(30, TimeUnit.SECONDS))
+            if (executor.awaitTermination(30, TimeUnit.SECONDS))
                 throw new RuntimeException("Rendering thread pool did not shutdown in 30 seconds");
         }
         catch (InterruptedException e) {

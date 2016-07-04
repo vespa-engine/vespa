@@ -6,6 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Request;
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
@@ -150,10 +151,9 @@ class GetConfigProcessor implements Runnable {
 
     /**
      * Done in a static block to prevent people invoking this directly.
-     * Do not call  java.net.Inet4AddressImpl.getLocalHostName() on each request, as this causes CPU bottlenecks.
      */
     static {
-        localHostName = LinuxInetAddress.getLocalHost().getHostName();
+        localHostName = HostName.getLocalhost();
     }
 
     static boolean logDebug(Trace trace) {

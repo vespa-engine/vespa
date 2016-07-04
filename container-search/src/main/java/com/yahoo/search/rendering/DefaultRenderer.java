@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.net.URI;
@@ -29,6 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 // TODO: Rename to XmlRenderer and make this a deprecated empty subclass.
 
@@ -72,6 +74,18 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     private boolean utf8Output = false;
 
     private XMLWriter writer;
+
+    public DefaultRenderer() {
+        this(null);
+    }
+
+    /**
+     * Creates a json renderer using a custom executor.
+     * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
+     */
+    public DefaultRenderer(Executor executor) {
+        super(executor);
+    }
 
     @Override
     public void init() {

@@ -2,6 +2,7 @@
 package com.yahoo.messagebus.network;
 
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.net.LinuxInetAddress;
 
 import java.net.Inet6Address;
@@ -30,12 +31,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        InetAddress addr = LinuxInetAddress.getLocalHost();
-        if (addr instanceof Inet6Address) {
-            log.log(LogLevel.WARNING, "Local host resolved to IPv6 address '" + addr.getHostAddress() +
-                                      "', this might be problematic.");
-        }
-        hostname = addr.getCanonicalHostName();
+        hostname = HostName.getLocalhost();
         servicePrefix = configId;
     }
 

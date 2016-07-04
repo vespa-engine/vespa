@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.templates.test;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.io.IOUtils;
 import com.yahoo.language.Linguistics;
@@ -67,7 +68,7 @@ public class TilingTestCase extends junit.framework.TestCase {
     }
 
     private Result callSearchAndSetRenderer(Chain<Searcher> chain, Query query) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
         Result result = new Execution(chain, context).search(query);
         result.getTemplating().setRenderer(new SearchRendererAdaptor(new TiledTemplateSet()));
         return result;

@@ -16,6 +16,7 @@ import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.net.HostName;
 import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -278,8 +279,7 @@ public class FeedHandler extends LoggingRequestHandler {
     }
 
     private static String resolveLocalHostname() {
-        InetAddress inetAddress = LinuxInetAddress.getLocalHost();
-        String hostname = inetAddress.getCanonicalHostName();
+        String hostname = HostName.getLocalhost();
         if (hostname.equals("localhost")) {
             return "";
         }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
@@ -59,7 +60,7 @@ public class ValidatePredicateSearcherTestCase {
         Map<String, SearchDefinition> searchDefinitionMap = new HashMap<>();
         searchDefinitionMap.put("document", searchDefinition);
         IndexFacts indexFacts = new IndexFacts(new IndexModel(masterClusters, searchDefinitionMap, searchDefinition));
-        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
         return new Execution(searcher, context).search(query);
     }
 
