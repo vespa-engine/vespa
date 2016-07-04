@@ -5,7 +5,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
@@ -19,7 +18,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Metric;
 import com.yahoo.vespa.model.admin.MetricsConsumer;
 import com.yahoo.vespa.model.admin.MonitoringSystem;
@@ -323,7 +321,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
             if (hosts.size() < count) // supply with containers
-                hosts.addAll(drawContainerHosts(count - hosts.size(), containers));
+                hosts.addAll(drawContainerHosts(count - hosts.size(), containers, hosts));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -336,16 +334,21 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
          * This will draw the same nodes each time it is 
          * invoked if cluster names and node indexes are unchanged.
          */
-        private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters) {
+        private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters, 
+                                                      List<HostResource> usedHosts) {
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
             List<HostResource> allHosts = new ArrayList<>();
             for (ContainerCluster cluster : clustersSortedByName(containerClusters))
                 allHosts.addAll(hostResourcesSortedByIndex(cluster));
-
-            // Don't use the same container to supplement multiple content clusters
-            List<HostResource> hostsWithoutClusterController =
-                    allHosts.stream().filter(h -> ! hostHasClusterController(h.getHostName(), allHosts)).collect(Collectors.toList());
+            
+            // Don't use hosts already selected to be assigned a cluster controllers as part of building this,
+            // and don't use hosts which already have one. One physical host may have many roles but can only
+            // have one cluster controller
+            List<HostResource> hostsWithoutClusterController = allHosts.stream()
+                    .filter(h -> ! hostIsIn(h.getHostName(), usedHosts))
+                    .filter(h -> ! hostHasClusterController(h.getHostName(), allHosts))
+                    .collect(Collectors.toList());
 
             return hostsWithoutClusterController.subList(0, Math.min(hostsWithoutClusterController.size(), count));
         }
@@ -365,12 +368,21 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         }
 
         /** Returns whether any host having the given hostname has a cluster controller */
-        private boolean hostHasClusterController(String hostname, List<HostResource> allHosts) {
-            for (HostResource host : allHosts) {
+        private boolean hostHasClusterController(String hostname, List<HostResource> hosts) {
+            for (HostResource host : hosts) {
                 if ( ! host.getHostName().equals(hostname)) continue;
-                if (! hasClusterController(host)) continue;
-                return true;
+
+                if (hasClusterController(host))
+                    return true;
             }
+            return false;
+        }
+
+        /** Returns whether this host name is in the given list of hosts */
+        private boolean hostIsIn(String hostname, List<HostResource> hosts) {
+            for (HostResource host : hosts)
+                if (host.getHostName().equals(hostname)) 
+                    return true;
             return false;
         }
 
