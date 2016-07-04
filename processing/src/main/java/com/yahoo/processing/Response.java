@@ -59,7 +59,7 @@ public class Response extends ListenableFreezableClass {
         if (freezeListener != null) {
             if (freezeListener instanceof ResponseReceiver)
                 ((ResponseReceiver)freezeListener).setResponse(this);
-            data.addFreezeListener(freezeListener, MoreExecutors.sameThreadExecutor());
+            data.addFreezeListener(freezeListener, MoreExecutors.directExecutor());
         }
     }
 

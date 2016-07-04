@@ -179,7 +179,7 @@ public class ResponseDispatchTestCase {
         ReadableContentChannel responseContent = new ReadableContentChannel();
         ResponseDispatch.newInstance(6, ByteBuffer.allocate(9))
                         .dispatch(new MyResponseHandler(responseContent))
-                        .addListener(listener, MoreExecutors.sameThreadExecutor());
+                        .addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         assertNotNull(responseContent.read());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));

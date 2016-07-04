@@ -73,7 +73,7 @@ public class FutureResponseTestCase {
     public void requireThatResponseCanBeListenedTo() throws InterruptedException {
         FutureResponse response = new FutureResponse();
         RunnableLatch listener = new RunnableLatch();
-        response.addListener(listener, MoreExecutors.sameThreadExecutor());
+        response.addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         response.handleResponse(new Response(Response.Status.OK));
         assertTrue(listener.await(600, TimeUnit.SECONDS));

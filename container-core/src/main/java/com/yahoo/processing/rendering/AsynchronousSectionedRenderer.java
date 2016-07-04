@@ -238,7 +238,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * inadvertently work ends up in async data producing threads in some cases.
      */
     Executor getExecutor() {
-        return beforeHandoverMode ? MoreExecutors.sameThreadExecutor() : renderingExecutor;
+        return beforeHandoverMode ? MoreExecutors.directExecutor() : renderingExecutor;
     }
     /** For inspection only; use getExecutor() for execution */
     Executor getRenderingExecutor() { return renderingExecutor; }    

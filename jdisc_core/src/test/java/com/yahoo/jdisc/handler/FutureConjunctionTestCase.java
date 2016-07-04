@@ -118,7 +118,7 @@ public class FutureConjunctionTestCase {
     public void requireThatConjunctionCanBeListenedTo() throws InterruptedException {
         FutureConjunction conjunction = new FutureConjunction();
         RunnableLatch listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.sameThreadExecutor());
+        conjunction.addListener(listener, MoreExecutors.directExecutor());
         assertTrue(listener.await(600, TimeUnit.SECONDS));
 
         conjunction = new FutureConjunction();
@@ -127,7 +127,7 @@ public class FutureConjunctionTestCase {
         FutureBoolean bar = new FutureBoolean();
         conjunction.addOperand(bar);
         listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.sameThreadExecutor());
+        conjunction.addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         foo.set(true);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
@@ -140,7 +140,7 @@ public class FutureConjunctionTestCase {
         bar = new FutureBoolean();
         conjunction.addOperand(bar);
         listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.sameThreadExecutor());
+        conjunction.addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         bar.set(true);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
