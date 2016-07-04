@@ -321,7 +321,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
             List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
             if (hosts.size() < count) // supply with containers
-                hosts.addAll(drawContainerHosts(count - hosts.size(), containers, hosts));
+                hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -335,7 +335,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
          * invoked if cluster names and node indexes are unchanged.
          */
         private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters, 
-                                                      List<HostResource> usedHosts) {
+                                                      Set<HostResource> usedHosts) {
             if (containerClusters.isEmpty()) return Collections.emptyList();
 
             List<HostResource> allHosts = new ArrayList<>();
@@ -345,12 +345,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             // Don't use hosts already selected to be assigned a cluster controllers as part of building this,
             // and don't use hosts which already have one. One physical host may have many roles but can only
             // have one cluster controller
-            List<HostResource> hostsWithoutClusterController = allHosts.stream()
-                    .filter(h -> ! hostIsIn(h.getHostName(), usedHosts))
+            List<HostResource> uniqueHostsWithoutClusterController = allHosts.stream()
+                    .filter(h -> ! usedHosts.contains(h))
                     .filter(h -> ! hostHasClusterController(h.getHostName(), allHosts))
+                    .distinct()
                     .collect(Collectors.toList());
 
-            return hostsWithoutClusterController.subList(0, Math.min(hostsWithoutClusterController.size(), count));
+            return uniqueHostsWithoutClusterController.subList(0, Math.min(uniqueHostsWithoutClusterController.size(), count));
         }
         
         private List<ContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
@@ -375,14 +376,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 if (hasClusterController(host))
                     return true;
             }
-            return false;
-        }
-
-        /** Returns whether this host name is in the given list of hosts */
-        private boolean hostIsIn(String hostname, List<HostResource> hosts) {
-            for (HostResource host : hosts)
-                if (host.getHostName().equals(hostname)) 
-                    return true;
             return false;
         }
 
