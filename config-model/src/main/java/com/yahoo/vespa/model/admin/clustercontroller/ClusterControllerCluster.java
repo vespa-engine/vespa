@@ -43,7 +43,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCl
 
     @Override
     public void getConfig(ZookeepersConfig.Builder builder) {
-        final Collection<String> controllerHosts = new ArrayList<>();
+        Collection<String> controllerHosts = new ArrayList<>();
         for (Container container : containerCluster.getContainers()) {
             controllerHosts.add(container.getHostName() + ":" + ZK_CLIENT_PORT);
         }
@@ -73,5 +73,6 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCl
             }
         }
     }
+
 }
 

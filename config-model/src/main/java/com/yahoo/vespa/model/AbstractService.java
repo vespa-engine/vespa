@@ -114,7 +114,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         }
         if (hostResource == null) {
             throw new RuntimeException("No host found for service '" + getServiceName() + "'. " +
-                    "The hostalias is probably missing from hosts.xml.");
+                                       "The hostalias is probably missing from hosts.xml.");
         }
         id = getIndex(hostResource);
         ports = hostResource.allocateService(this, getInstanceWantedPort(userPort));
