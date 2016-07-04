@@ -23,6 +23,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
+import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -66,7 +68,6 @@ public class DockerImpl implements Docker {
 
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-    static final String[] COMMAND_GET_VESPA_VERSION = new String[]{"vespa-nodectl", "vespa-version"};
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
@@ -259,10 +260,10 @@ public class DockerImpl implements Docker {
 
     @Override
     public String getVespaVersion(final ContainerName containerName) {
-        ProcessResult result = executeInContainer(containerName, COMMAND_GET_VESPA_VERSION);
+        ProcessResult result = executeInContainer(containerName, DockerOperations.GET_VESPA_VERSION_COMMAND);
         if (!result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() + ": Command "
-                    + Arrays.toString(COMMAND_GET_VESPA_VERSION) + " failed: " + result);
+                    + Arrays.toString(DockerOperations.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
         }
         return parseVespaVersion(result.getOutput())
                 .orElseThrow(() -> new RuntimeException(
