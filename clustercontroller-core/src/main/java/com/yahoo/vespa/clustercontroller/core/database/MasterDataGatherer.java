@@ -90,7 +90,7 @@ public class MasterDataGatherer {
                 for (String node : nodes) {
                     int index = Integer.parseInt(node);
                     nextMasterData.put(index, null);
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
+                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
                             + zooKeeperRoot + index + "' to see vote");
                     session.getData(zooKeeperRoot + "indexes/" + index, changeWatcher, nodeListener, null);
                     // Invocation of cycleCompleted() for fully accumulated election state will happen
@@ -105,7 +105,7 @@ public class MasterDataGatherer {
 
         public void processResult(int code, String path, Object context, byte[] rawdata, Stat stat) {
             String data = rawdata == null ? null : new String(rawdata, utf8);
-            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got change in vote data from path " + path +
+            log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Got vote data from path " + path +
                     " with code " + code + " and data " + data);
 
             int index = getIndex(path);
