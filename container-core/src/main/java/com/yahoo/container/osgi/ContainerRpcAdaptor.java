@@ -12,7 +12,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.net.HostName;
 import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.Osgi;
@@ -45,7 +44,7 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
         this.supervisor = new Supervisor(new Transport());
-        this.hostname = HostName.getLocalhost();
+        this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
 
         bindCommands(supervisor);
     }
