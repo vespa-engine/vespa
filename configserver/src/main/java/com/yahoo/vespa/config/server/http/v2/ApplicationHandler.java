@@ -98,7 +98,7 @@ public class ApplicationHandler extends HttpHandler {
         }
         Application application = getApplication(tenant, applicationId);
 
-        // TODO: Remove this once the config convegence logic is moved to client and is live for all clusters.
+        // TODO: Remove this once the config convergence logic is moved to client and is live for all clusters.
         if (isConvergeRequest(request)) {
             try {
                 convergeChecker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), durationFromRequestTimeout(request)));
@@ -192,12 +192,12 @@ public class ApplicationHandler extends HttpHandler {
 
     private static boolean isConvergeRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("converge");
+                request.getUri().getPath().endsWith("/converge");
     }
 
     private static boolean isServiceConvergeListRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 7 &&
-                request.getUri().getPath().endsWith("serviceconverge");
+                request.getUri().getPath().endsWith("/serviceconverge");
     }
 
     private static boolean isServiceConvergeRequest(HttpRequest request) {
