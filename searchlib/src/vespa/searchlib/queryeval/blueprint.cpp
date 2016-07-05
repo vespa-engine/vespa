@@ -68,14 +68,6 @@ Blueprint::min(const std::vector<HitEstimate> &data)
     return est;
 }
 
-void
-Blueprint::notifyChange()
-{
-    if (_parent != 0) {
-        _parent->notifyChange();
-    }
-}
-
 Blueprint::Blueprint()
     : _parent(0),
       _sourceId(0xffffffff),
@@ -176,20 +168,10 @@ namespace blueprint {
 //-----------------------------------------------------------------------------
 
 void
-StateCache::notifyChange()
+StateCache::updateState() const
 {
-    Blueprint::notifyChange();
-    _stale = true;
-}
-
-const Blueprint::State &
-StateCache::getState() const
-{
-    if (_stale) {
-        calculateState().swap(_state);
-        _stale = false;
-    }
-    return _state;
+    calculateState().swap(_state);
+    _stale = false;
 }
 
 } // namespace blueprint
