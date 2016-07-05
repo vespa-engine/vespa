@@ -431,6 +431,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _feedHandler.storeOperation(op);
         sync(op.getSerialNum());
     }
+    bool hasVisibilityDelayChanged = false;
     {
         bool elidedConfigSave = equalConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
@@ -439,9 +440,10 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _writeService.sync();
         fastos::TimeStamp visibilityDelay =
             configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
+        hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
         _visibility.setVisibilityDelay(visibilityDelay);
     }
-    if (params.shouldSubDbsChange()) {
+    if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
         _subDBs.applyConfig(*configSnapshot, *_activeConfigSnapshot, serialNum, params);
         if (serialNum < _feedHandler.getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
