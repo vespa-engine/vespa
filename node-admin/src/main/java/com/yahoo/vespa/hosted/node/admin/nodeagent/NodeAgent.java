@@ -33,7 +33,7 @@ public interface NodeAgent {
     boolean isFrozen();
 
     /**
-     * Human readable string for the state of the NodeAgent.
+     * Returns a map containing all relevant NodeAgent variables and their current values.
      */
     Map debugInfo();
 
