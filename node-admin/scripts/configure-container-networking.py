@@ -18,7 +18,6 @@ import sys
 from pyroute2 import IPRoute
 from pyroute2 import NetNS
 from pyroute2.netlink import NetlinkError
-from socket import AF_INET
 from socket import gethostname
 
 
@@ -44,9 +43,9 @@ def get_attribute(struct_with_attrs, name):
     except Exception as e:
         raise RuntimeError("Couldn't find attribute %s for value: %s" % (name, struct_with_attrs), e)
 
-def network(ipv4_address):
-    ip = ipaddress.ip_network(unicode(get_attribute(ipv4_address, 'IFA_ADDRESS')))
-    prefix = int(ipv4_address['prefixlen'])
+def network(ip_address):
+    ip = ipaddress.ip_network(unicode(get_attribute(ip_address, 'IFA_ADDRESS')))
+    prefix = int(ip_address['prefixlen'])
     return ip.supernet(new_prefix = prefix)
 
 def net_namespace_path(pid):
@@ -78,7 +77,7 @@ def get_net_namespace_for_pid(pid):
     create_symlink_ignore_exists(net_ns_path,  "/var/run/netns/%d" % pid)
     return NetNS(str(pid))
 
-# ipv4 address format: {
+# ip address format: {
 #     'index': 3,
 #     'family': 2,
 #     'header': {
@@ -110,19 +109,17 @@ def get_net_namespace_for_pid(pid):
 #     'scope': 0,
 #     'event': 'RTM_NEWADDR'
 # }
-def ip_with_most_specific_network_for_address(address, ipv4_ips):
-    host_ips_with_network_matching_address = [host_ip for host_ip in ipv4_ips if address in network(host_ip)]
-
-    host_ip_best_match_for_address = None
-    for host_ip in host_ips_with_network_matching_address:
-        if not host_ip_best_match_for_address:
-            host_ip_best_match_for_address = host_ip
-        elif host_ip['prefixlen'] < host_ip_best_match_for_address['prefixlen']:
-            host_ip_best_match_for_address = host_ip
-
-    if not host_ip_best_match_for_address:
-        raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(host_ip)) for host_ip in ipv4_ips])))
-    return host_ip_best_match_for_address
+def ip_with_most_specific_network_for_address(address, ips):
+    ips_with_network_matching_address = [ip for ip in ips if address in network(ip)]
+    ip_best_match_for_address = None
+    for ip in ips_with_network_matching_address:
+        if not ip_best_match_for_address:
+            ip_best_match_for_address = ip
+        elif ip['prefixlen'] < ip_best_match_for_address['prefixlen']:
+            ip_best_match_for_address = ip
+    if not ip_best_match_for_address:
+        raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(ip)) for ip in ips])))
+    return ip_best_match_for_address
 
 ipr = IPRoute()
 
@@ -183,8 +180,7 @@ def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest
 
 def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_length):
     ip_already_configured = False
-
-    for existing_ip in net_namespace.get_addr(index=interface_index, family = AF_INET):
+    for existing_ip in net_namespace.get_addr(index=interface_index):
         existing_ip_address = get_attribute(existing_ip, 'IFA_ADDRESS')
         existing_ip_prefixlen = existing_ip['prefixlen']
         is_same_address = ipaddress.ip_address(unicode(existing_ip_address)) == ip_address
@@ -236,7 +232,7 @@ def get_default_route(net_namespace):
     #     'type': 1,
     #     'scope': 0
     # }
-    default_routes = net_namespace.get_default_routes(family = AF_INET)
+    default_routes = net_namespace.get_default_routes()
     if len(default_routes) != 1:
         raise RuntimeError("Couldn't find single default route: " + str(default_routes))
     return default_routes[0]
@@ -275,9 +271,9 @@ container_ip = ipaddress.ip_address(unicode(container_ip_arg))
 host_ns = get_net_namespace_for_pid(1)
 container_ns = get_net_namespace_for_pid(container_pid)
 
-all_host_ipv4_ips = host_ns.get_addr(family=AF_INET)
+all_host_ips = host_ns.get_addr()
 host_ip_best_match_for_container = ip_with_most_specific_network_for_address(address=container_ip,
-                                                                             ipv4_ips=all_host_ipv4_ips)
+                                                                             ips=all_host_ips)
 host_device_index_for_container = host_ip_best_match_for_container['index']
 container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
 
@@ -314,7 +310,7 @@ if not container_interface_index:
                                                               link_device_index=host_device_index_for_container)
 
     # Move interface from host namespace to container namespace, and change name from temporary name.
-    # exploit that node_admin docker container shares net namespace with host:
+    # Exploit that node_admin docker container shares net namespace with host:
     container_interface_index = move_interface(src_interface_index=temporary_interface_index,
                                                dest_namespace=container_ns,
                                                dest_namespace_pid=container_pid,

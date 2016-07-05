@@ -50,7 +50,7 @@ function MakeBridge {
         fi
         sudo ip link set "$DUMMY_NETWORK_INTERFACE" up
         sudo ip link add dev "$name" link "$DUMMY_NETWORK_INTERFACE" type macvlan mode bridge
-        sudo ip addr add dev "$name" "$ip/$prefix_bitlength" broadcast +
+        sudo ip addr add dev "$name" "$ip/$prefix_bitlength"
         sudo ip link set dev "$name" up
         echo done
     fi
