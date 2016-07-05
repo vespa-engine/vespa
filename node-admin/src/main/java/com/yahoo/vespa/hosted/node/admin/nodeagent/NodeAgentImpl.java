@@ -9,6 +9,8 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -27,8 +29,8 @@ public class NodeAgentImpl implements NodeAgent {
     private AtomicBoolean isFrozen = new AtomicBoolean(false);
     private AtomicBoolean wantFrozen = new AtomicBoolean(false);
     private AtomicBoolean terminated = new AtomicBoolean(false);
-    private AtomicBoolean workToDoNow = new AtomicBoolean(true);
 
+    private boolean workToDoNow = true;
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
@@ -183,25 +185,28 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void signalWorkToBeDone() {
-        workToDoNow.set(true);
         synchronized (monitor) {
+            workToDoNow = true;
             monitor.notifyAll();
         }
     }
 
     private void loop() {
         while (! terminated.get()) {
-            if (! workToDoNow.get()) {
-                try {
-                    synchronized (monitor) {
-                        monitor.wait(delaysBetweenEachTickMillis);
+            synchronized (monitor) {
+                long waittimeLeft = delaysBetweenEachTickMillis;
+                while (waittimeLeft > 1 && !workToDoNow) {
+                    Instant start = Instant.now();
+                    try {
+                        monitor.wait(waittimeLeft);
+                    } catch (InterruptedException e) {
+                        logger.severe("Interrupted, but ignoring this: " + hostname);
+                        continue;
                     }
-                } catch (InterruptedException e) {
-                    logger.severe("Interrupted, but ignoring this: " + hostname);
-                    continue;
+                    waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
                 }
+                workToDoNow = false;
             }
-            workToDoNow.set(false);
             isFrozen.set(wantFrozen.get());
             if (isFrozen.get()) {
                 debugString.set(hostname + " frozen");
