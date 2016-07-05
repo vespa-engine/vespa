@@ -114,6 +114,8 @@ public class RunInContainerTest {
         OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
         assertThat(OrchestratorMock.getRequests(), is("Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]\n"));
+
+        assertThat(doGetInfoCall(), is("{\"isRunningUpdates\":false,\"baseHostName\":\"localhost\",\"NodeAdmin\":{\"NodeAgents\":[]}}"));
     }
 
 
