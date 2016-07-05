@@ -20,9 +20,9 @@ public interface NodeAgent {
     void unfreeze();
 
     /**
-     * Force the NodeAgent to check node repository. Intended for testing.
+     * Make NodeAgent check for work to be done.
      */
-    void tick();
+    void signalWorkToBeDone();
 
 
     /**
