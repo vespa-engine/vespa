@@ -53,7 +53,13 @@ public class RestApiHandler extends LoggingRequestHandler{
     private HttpResponse handleGet(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.endsWith("/info")) {
-            return new SimpleResponse(200, refresher.getDebugPage());
+            HttpResponse response = new HttpResponse(200) {
+                @Override
+                public void render(OutputStream outputStream) throws IOException {
+                    objectMapper.writeValue(outputStream, refresher.getDebugPage());
+                }
+            };
+            return response;
         }
         return new SimpleResponse(400, "unknown path" + path);
     }
