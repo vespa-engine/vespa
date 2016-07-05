@@ -7,3 +7,4 @@ vespa_add_library(staging_vespalib_vespalib_hwaccelrated OBJECT
     avx.cpp
     DEPENDS
 )
+set_source_files_properties(avx.cpp PROPERTIES COMPILE_FLAGS -march=sandybridge)
