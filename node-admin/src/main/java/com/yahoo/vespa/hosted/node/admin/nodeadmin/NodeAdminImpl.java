@@ -88,9 +88,9 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public Map debugInfo() {
-        Map debug = new LinkedHashMap();
-        List<Map> nodeAgentDebugs = new ArrayList<>();
+    public Map<String, Object> debugInfo() {
+        Map<String, Object> debug = new LinkedHashMap<>();
+        List<Map<String, Object>> nodeAgentDebugs = new ArrayList<>();
 
         for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
             nodeAgentDebugs.add(node.getValue().debugInfo());

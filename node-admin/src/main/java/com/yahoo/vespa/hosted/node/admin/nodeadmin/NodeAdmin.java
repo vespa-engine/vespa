@@ -40,7 +40,7 @@ public interface NodeAdmin {
      * Returns a map containing all relevant NodeAdmin variables and their current values.
      * Do not try to parse output or use in tests.
      */
-    Map debugInfo();
+    Map<String, Object> debugInfo();
 
     /**
      * Stop the NodeAgent. Will not delete the storage or stop the container.

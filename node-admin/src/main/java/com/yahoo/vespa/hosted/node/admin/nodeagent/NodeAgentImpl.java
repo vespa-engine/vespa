@@ -111,8 +111,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public Map debugInfo() {
-        Map debug = new LinkedHashMap();
+    public Map<String, Object> debugInfo() {
+        Map<String, Object> debug = new LinkedHashMap<>();
         debug.put("Hostname", hostname);
         debug.put("isFrozen", isFrozen());
         debug.put("wantFrozen", wantFrozen.get());

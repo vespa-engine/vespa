@@ -54,8 +54,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.baseHostName = baseHostName;
     }
 
-    public Map getDebugPage() {
-        Map debug = new LinkedHashMap();
+    public Map<String, Object> getDebugPage() {
+        Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
             debug.put("isRunningUpdates", isRunningUpdates);
             debug.put("baseHostName", baseHostName);

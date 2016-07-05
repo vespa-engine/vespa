@@ -35,7 +35,7 @@ public interface NodeAgent {
     /**
      * Returns a map containing all relevant NodeAgent variables and their current values.
      */
-    Map debugInfo();
+    Map<String, Object> debugInfo();
 
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
