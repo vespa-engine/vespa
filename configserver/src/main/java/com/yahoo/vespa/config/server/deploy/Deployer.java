@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -102,9 +103,10 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
         LocalSession session = localSessionRepo.getSession(sessionId);
         if (session == null) return false;
 
-        // NestedTransaction transaction = new NestedTransaction(); TODO
+        NestedTransaction transaction = new NestedTransaction();
         localSessionRepo.removeSession(session.getSessionId());
-        session.delete();
+        session.delete(transaction);
+        transaction.commit();
         RotationsCache rotationsCache = new RotationsCache(owner.get().getCurator(), owner.get().getPath());
         rotationsCache.deleteRotationFromZooKeeper(applicationId);
         applicationRepo.deleteApplication(applicationId);

@@ -21,9 +21,6 @@ public final class NestedTransaction implements AutoCloseable {
     /** Nested transactions with ordering constraints, in the order they are added */
     private final List<ConstrainedTransaction> transactions = new ArrayList<>(2);
 
-    /** Transaction ordering pairs */
-    //private final List<OrderingConstraint> transactionOrders = new ArrayList<>(2);
-
     /** A list of (non-transactional) operations to execute after this transaction has committed successfully */
     private final List<Runnable> onCommitted = new ArrayList<>(2);
 

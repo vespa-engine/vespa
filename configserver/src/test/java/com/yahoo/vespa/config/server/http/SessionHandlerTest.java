@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -144,15 +145,19 @@ public class SessionHandlerTest {
 
         @Override
         public void delete() {  }
+
+        @Override
+        public void delete(NestedTransaction transaction) {  }
+
     }
 
-    public static enum Cmd {
+    public enum Cmd {
         PREPARED("prepared"),
         ACTIVE("active"),
         CONTENT("content");
         private final String name;
 
-        private Cmd(String s) {
+        Cmd(String s) {
             this.name = s;
         }
 

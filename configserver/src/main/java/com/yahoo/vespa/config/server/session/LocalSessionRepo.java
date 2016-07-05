@@ -108,7 +108,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     private void deleteSession(LocalSession candidate) {
-        removeSession(candidate.getSessionId());
+        removeSessionOrThrow(candidate.getSessionId());
         candidate.delete();
     }
 

@@ -6,6 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -15,8 +17,10 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationRepo;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -114,13 +118,19 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return getSessionId() > sessionId;
     }
 
-    /**
-     * Deletes this session from ZooKeeper and filesystem, as well as making sure the supermodel generation counter is incremented.
-     */
+    /** Delete this session */
+    // TODO: Use transactional delete instead
     public void delete() {
         superModelGenerationCounter.increment();
         IOUtils.recursiveDeleteDir(serverDB);
         zooKeeperClient.delete();
+    }
+
+    /** Add transactions to delete this session to the given nested transaction */
+    public void delete(NestedTransaction transaction) {
+        transaction.add(superModelGenerationCounter.incrementTransaction(), CuratorTransaction.class);
+        transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
+        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())));
     }
 
     @Override
@@ -167,4 +177,56 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
             return Tenants.logPre(getApplicationId());
         }
     }
+
+    private static class FileTransaction extends AbstractTransaction<FileOperation> {
+        
+        public static FileTransaction from(FileOperation operation) {
+            FileTransaction transaction = new FileTransaction();
+            transaction.add(operation);
+            return transaction;
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void commit() {
+            for (FileOperation operation : operations())
+                operation.commit();
+        }
+
+    }
+    
+    /** Factory for file operations */
+    private static class FileOperations {
+        
+        /** Creates an operation whcih recursively deletes the given path */
+        public static DeleteOperation delete(String pathToDelete) {
+            return new DeleteOperation(pathToDelete);
+        }
+        
+    }
+    
+    private interface FileOperation extends Transaction.Operation {
+
+        void commit();
+        
+    }
+    
+    private static class DeleteOperation implements FileOperation {
+
+        private final String pathToDelete;
+        
+        public DeleteOperation(String pathToDelete) {
+            this.pathToDelete = pathToDelete;
+        }
+        
+        @Override
+        public void commit() {
+            // TODO: Consider checking path existence first and throwing exception if it exists but the call returns false
+            IOUtils.recursiveDeleteDir(new File(pathToDelete));
+        }
+
+    }
+
 }

@@ -12,14 +12,16 @@ import org.apache.curator.framework.api.transaction.CuratorTransaction;
 class CuratorDeleteOperation implements CuratorOperation {
 
     private final String path;
+    private final boolean throwIfNotExist;
 
-    CuratorDeleteOperation(String path) {
+    CuratorDeleteOperation(String path, boolean throwIfNotExist) {
         this.path = path;
+        this.throwIfNotExist = throwIfNotExist;
     }
 
     @Override
     public void check(Curator curator) {
-        if ( ! curator.exists(Path.fromString(path)) )
+        if ( throwIfNotExist && ! curator.exists(Path.fromString(path)) )
             throw new IllegalStateException("Cannot perform " + this + ": Path does not exist");
     }
 

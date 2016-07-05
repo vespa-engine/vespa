@@ -127,6 +127,11 @@ public class SessionZooKeeperClient {
         }
     }
 
+    /** Returns a transaction deleting this path on commit */
+    public CuratorTransaction deleteTransaction() {
+        return CuratorTransaction.from(CuratorOperations.delete(rootPath.getAbsolute()), curator);
+    }
+
     public ApplicationPackage loadApplicationPackage() {
         return new ZKApplicationPackage(configCurator, rootPath);
     }

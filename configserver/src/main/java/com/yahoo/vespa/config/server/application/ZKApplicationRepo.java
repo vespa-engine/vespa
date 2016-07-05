@@ -84,7 +84,7 @@ public class ZKApplicationRepo implements ApplicationRepo, PathChildrenCacheList
             if (curator.framework().checkExists().forPath(newPath) == null) {
                 transaction.add(CuratorOperations.create(newPath, Utf8.toAsciiBytes(sessionId)));
             }
-            transaction.add(CuratorOperations.delete(oldPath));
+            transaction.add(CuratorOperations.deleteOrThrow(oldPath));
             transaction.commit();
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Error rewriting application id from " + origNode + " to " + appId.serializedForm());

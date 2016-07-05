@@ -22,8 +22,19 @@ public class CuratorOperations {
         return new CuratorCreateOperation(path, Optional.empty());
     }
 
+    /** 
+     * Deletes this path recursively.
+     * Throws an IllegalStateException in check() if the path does not exist.
+     */
+    public static CuratorOperation deleteOrThrow(String path) {
+        return new CuratorDeleteOperation(path, true);
+    }
+
+    /**
+     * Deletes this path recursively. Does nothing if the path does not exist.
+     */
     public static CuratorOperation delete(String path) {
-        return new CuratorDeleteOperation(path);
+        return new CuratorDeleteOperation(path, false);
     }
 
 }

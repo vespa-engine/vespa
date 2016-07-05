@@ -16,6 +16,7 @@ import java.util.HashMap;
  * @author lulf
  * @since 5.1
  */
+// TODO: This is a ZK cache. We should probably remove it, or make that explicit
 public class SessionRepo<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
@@ -28,12 +29,20 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         sessions.put(sessionId, session);
     }
 
-    public synchronized void removeSession(long id) {
+    public synchronized void removeSessionOrThrow(long id) {
         if ( ! sessions.containsKey(id)) {
             throw new IllegalArgumentException("No such session exists '" + id + "'");
         }
         sessions.remove(id);
     }
+
+    /** 
+     * Removes a session
+     * 
+     * @param id the id of the session to remove
+     * @return the removed session, or null if none was found
+     */
+    public synchronized SESSIONTYPE removeSession(long id) { return sessions.remove(id); }
 
     /**
      * Gets a Session

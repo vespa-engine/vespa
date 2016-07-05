@@ -4,13 +4,15 @@ package com.yahoo.transaction;
 import java.util.List;
 
 /**
- * An interface for building a transaction and committing it. Implementations are required to atomically apply changes
+ * A transaction against a single system, which may include several operations against the system, 
+ * to be committed as one.
+ * Implementations are required to atomically apply changes
  * in the commit step or throw an exception if it fails.
  *
  * @author lulf
  * @author bratseth
  */
-public interface Transaction extends AutoCloseable {
+public interface Transaction<OPERATION extends Transaction.Operation> extends AutoCloseable {
 
     /**
      * Adds an operation to this transaction. Return self for chaining.
@@ -18,7 +20,7 @@ public interface Transaction extends AutoCloseable {
      * @param operation {@link Operation} to append
      * @return self, for chaining
      */
-    Transaction add(Operation operation);
+    Transaction add(OPERATION operation);
 
     /**
      * Adds multiple operations to this transaction. Return self for chaining.
@@ -26,13 +28,13 @@ public interface Transaction extends AutoCloseable {
      * @param operation {@link Operation} to append
      * @return self, for chaining
      */
-    Transaction add(List<Operation> operation);
+    Transaction add(List<OPERATION> operation);
 
     /**
      * Returns the operations of this.
      * Ownership of the returned list is transferred to the caller. The ist may be ready only.
      */
-    List<Operation> operations();
+    List<OPERATION> operations();
 
     /**
      * Checks whether or not the transaction is able to commit in its current state and do any transient preparatory
@@ -65,8 +67,9 @@ public interface Transaction extends AutoCloseable {
 
     /**
      * Operations that a transaction supports should implement this interface.
+     * It does not define any methods because the interface to use is a contract between the
+     * specific transaction and operation type used.
      */
-    public interface Operation {
-    }
+    interface Operation { }
 
 }

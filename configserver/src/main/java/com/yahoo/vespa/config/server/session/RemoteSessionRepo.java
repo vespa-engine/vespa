@@ -125,7 +125,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             if (!sessions.contains(session.getSessionId())) {
                 SessionStateWatcher watcher = sessionStateWatchers.remove(session.getSessionId());
                 watcher.close();
-                removeSession(session.getSessionId());
+                removeSessionOrThrow(session.getSessionId());
                 metrics.incRemovedSessions();
             }
         }
