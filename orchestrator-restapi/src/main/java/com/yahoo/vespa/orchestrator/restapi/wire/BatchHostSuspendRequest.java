@@ -7,34 +7,33 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.annotation.concurrent.Immutable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Immutable
 public class BatchHostSuspendRequest {
     public static final String PARENT_HOSTNAME_FIELD = "parentHostname";
     public static final String HOSTNAMES_FIELD = "hostnames";
 
-    public final Optional<String> parentHostname;
-    public final Optional<List<String>> hostnames;
+    public final String parentHostname;
+    public final List<String> hostnames;
 
     @JsonCreator
     public BatchHostSuspendRequest(
             @JsonProperty(PARENT_HOSTNAME_FIELD) String parentHostname,
             @JsonProperty(HOSTNAMES_FIELD) List<String> hostnames) {
-        this.parentHostname = Optional.ofNullable(parentHostname);
-        this.hostnames = Optional.ofNullable(hostnames).map(Collections::unmodifiableList);
+        this.parentHostname = parentHostname;
+        this.hostnames = Collections.unmodifiableList(hostnames);
     }
 
     /**
      * @return The hostname of the parent of the hostnames, if applicable, which can be used for debugging.
      */
     @JsonProperty(PARENT_HOSTNAME_FIELD)
-    public Optional<String> getParentHostname() {
+    public String getParentHostname() {
         return parentHostname;
     }
 
     @JsonProperty(HOSTNAMES_FIELD)
-    public Optional<List<String>> getHostnames() {
+    public List<String> getHostnames() {
         return hostnames;
     }
 
