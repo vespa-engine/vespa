@@ -436,7 +436,7 @@ areAnyParentsEquiv(const Blueprint * node)
 {
     return (node == NULL)
            ? false
-           : (dynamic_cast<const EquivBlueprint *>(node) != NULL)
+           : node->isEquiv()
              ? true
              : areAnyParentsEquiv(node->getParent());
 }
@@ -445,7 +445,7 @@ bool
 canBlueprintSkipUnpack(const Blueprint & bp, const fef::MatchData & md)
 {
     return (bp.getState().numFields() != 0)
-           || (( dynamic_cast<const IntermediateBlueprint *>(&bp) != nullptr)
+           || (bp.isIntermediate()
                && static_cast<const IntermediateBlueprint &>(bp).calculateUnpackInfo(md).empty());
 }
 
