@@ -193,19 +193,19 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void loop() {
         while (! terminated.get()) {
-            try {
-                synchronized (monitor) {
-                    long waittimeLeft = delaysBetweenEachTickMillis;
-                    while (waittimeLeft > 1 && !workToDoNow) {
-                        Instant start = Instant.now();
+            synchronized (monitor) {
+                long waittimeLeft = delaysBetweenEachTickMillis;
+                while (waittimeLeft > 1 && !workToDoNow) {
+                    Instant start = Instant.now();
+                    try {
                         monitor.wait(waittimeLeft);
-                        waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
+                    } catch (InterruptedException e) {
+                        logger.severe("Interrupted, but ignoring this: " + hostname);
+                        continue;
                     }
-                    workToDoNow = false;
+                    waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
                 }
-            } catch (InterruptedException e) {
-                logger.severe("Interrupted, but ignoring this: " + hostname);
-                continue;
+                workToDoNow = false;
             }
             isFrozen.set(wantFrozen.get());
             if (isFrozen.get()) {
