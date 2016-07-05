@@ -130,6 +130,13 @@ private:
 
     Blueprint &operator=(const Blueprint &); // disable
 
+protected:
+    virtual void notifyChange() {
+        if (_parent != 0) {
+            _parent->notifyChange();
+        }
+    }
+
 public:
     class IPredicate {
     public:
@@ -150,8 +157,6 @@ public:
 
     virtual void setDocIdLimit(uint32_t limit) { _docid_limit = limit; }
     uint32_t get_docid_limit() const { return _docid_limit; }
-
-    virtual void notifyChange();
 
     static Blueprint::UP optimize(Blueprint::UP bp);
     virtual void optimize(Blueprint* &self) = 0;
@@ -187,16 +192,25 @@ class StateCache : public Blueprint
 private:
     mutable bool  _stale;
     mutable State _state;
+    void updateState() const;
 
 protected:
-    virtual void notifyChange();
+    void notifyChange() override final {
+        Blueprint::notifyChange();
+        _stale = true;
+    }
     virtual State calculateState() const = 0;
 
 public:
     StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
     StateCache(const StateCache &x)
         : Blueprint(x), _stale(true), _state(FieldSpecBaseList()) {}
-    const State &getState() const override final;
+    const State &getState() const override final {
+        if (_stale) {
+            updateState();
+        }
+        return _state;
+    }
 };
 
 } // namespace blueprint
@@ -234,7 +248,7 @@ public:
 
     void setDocIdLimit(uint32_t limit) override final;
 
-    virtual void optimize(Blueprint* &self) override final;
+    void optimize(Blueprint* &self) override final;
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }
@@ -243,7 +257,7 @@ public:
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
-    virtual SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const;
+    SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual HitEstimate
     combine(const std::vector<HitEstimate> &data) const = 0;
@@ -254,9 +268,8 @@ public:
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const = 0;
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-
-    virtual void fetchPostings(bool strict);
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void fetchPostings(bool strict) override;
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
     bool isIntermediate() const override { return true; }
 };
@@ -268,12 +281,9 @@ private:
     State _state;
 
 protected:
-    virtual void optimize(Blueprint* &self) override final;
-
+    void optimize(Blueprint* &self) override final;
     void setEstimate(HitEstimate est);
-
     void set_allow_termwise_eval(bool value);
-
     void set_tree_size(uint32_t value);
 
     LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval) : _state(fields) {
@@ -282,12 +292,9 @@ protected:
 
 public:
     const State &getState() const override final { return _state; }
-
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
-
-    virtual void fetchPostings(bool strict);
-
-    virtual SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const;
+    void fetchPostings(bool strict) override;
+    SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
                                             bool strict) const = 0;
