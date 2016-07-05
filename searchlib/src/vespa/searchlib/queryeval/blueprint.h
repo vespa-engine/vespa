@@ -132,7 +132,7 @@ private:
 
 protected:
     virtual void notifyChange() {
-        if (_parent != 0) {
+        if (_parent != nullptr) {
             _parent->notifyChange();
         }
     }
