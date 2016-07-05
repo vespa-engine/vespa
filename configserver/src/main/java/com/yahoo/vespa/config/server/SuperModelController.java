@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -40,7 +41,14 @@ public class SuperModelController implements RequestHandler {
     private final ConfigResponseFactory responseFactory;
     private volatile boolean enabled = false;
 
-
+    /**
+     * Creates a supermodel controller
+     * 
+     * @param generationCounter this will be the SuperModelGenerationCounter in production
+     * @param configDefinitionRepo
+     * @param configserverConfig
+     */
+    @Inject
     public SuperModelController(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, ConfigserverConfig configserverConfig) {
         this.generationCounter = generationCounter;
         this.configDefinitionRepo = configDefinitionRepo;

@@ -47,7 +47,7 @@ public class SuperModelGenerationCounter implements GenerationCounter {
         return new IncrementTransaction(counter);
     }
     
-    /** An increment transaction which supports rollback */
+    /** An increment transaction */
     public static class IncrementTransaction extends AbstractTransaction<IncrementTransaction.Operation> {
 
         /** Creates a counting curator transaction containing a single increment operation */
@@ -84,12 +84,7 @@ public class SuperModelGenerationCounter implements GenerationCounter {
             }
 
             public void rollback() {
-                try {
-                    counter.previous();
-                }
-                catch (IllegalStateException e) {
-                    log.severe("Could not roll back " + this);
-                }
+                // ok; we're just losing a generation number
             }
 
             public String toString() { return "increment " + counterPath + " operation"; }
