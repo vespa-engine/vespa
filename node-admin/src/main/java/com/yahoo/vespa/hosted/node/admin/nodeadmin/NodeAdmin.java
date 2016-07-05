@@ -37,6 +37,11 @@ public interface NodeAdmin {
     Set<HostName> getListOfHosts();
 
     /**
+     * Returns list of hosts with active nodes.
+     */
+    Set<HostName> getHostNamesOfActiveNodes();
+
+    /**
      * Returns a map containing all relevant NodeAdmin variables and their current values.
      * Do not try to parse output or use in tests.
      */

@@ -61,9 +61,10 @@ public class NodeAgentImpl implements NodeAgent {
         RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
         RUNNING
     }
-    ContainerState containerState = ABSENT;
 
-    // The attributes of the last successful noderepo attribute update for this node. Used to avoid redundant calls.
+    private ContainerState containerState = ABSENT;
+
+    // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
 
@@ -153,6 +154,16 @@ public class NodeAgentImpl implements NodeAgent {
         } catch (InterruptedException e1) {
             logger.severe("Interrupted; Could not stop host thread " + hostname);
         }
+    }
+
+    @Override
+    public HostName getHostName() {
+        return hostname;
+    }
+
+    @Override
+    public ContainerState getContainerState() {
+        return containerState;
     }
 
     private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {

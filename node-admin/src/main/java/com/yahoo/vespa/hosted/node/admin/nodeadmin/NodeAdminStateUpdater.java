@@ -79,7 +79,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                     return Optional.of("Not all node agents are frozen.");
                 }
                 List<String> hosts = new ArrayList<>();
-                nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
+                nodeAdmin.getHostNamesOfActiveNodes().forEach(host -> hosts.add(host.toString()));
                 return orchestrator.suspend(baseHostName, hosts);
             } else {
                 nodeAdmin.unfreeze();

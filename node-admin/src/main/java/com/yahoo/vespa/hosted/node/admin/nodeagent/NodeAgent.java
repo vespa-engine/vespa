@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.applicationmodel.HostName;
+
 import java.util.Map;
 
 /**
@@ -49,4 +51,15 @@ public interface NodeAgent {
      * method returns, no more actions will be taken by the agent.
      */
     void stop();
+
+    /**
+     * Returns host name that this NodeAgent handles.
+     */
+    HostName getHostName();
+
+    /**
+     * Returns current state of Docker container for this node agent.
+     */
+    NodeAgentImpl.ContainerState getContainerState();
+
 }
