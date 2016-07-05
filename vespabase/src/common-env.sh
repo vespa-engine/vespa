@@ -237,12 +237,20 @@ getJavaOptionsIPV46() {
     fi
 }
 
+log_message () {
+    msg_log_level="info"
+    case $1 in
+        error|warning|info|event|config|debug|spam) msg_log_level=$1; shift;;
+    esac
+    printf "%s\t%s\t%s\n" $$ $msg_log_level "$*"
+}
+
 log_debug_message () {
-    if [ -n "$YINST_RUNNING" ]; then
-        echo "debug	$*" 1>&2
+    if [ "$YINST_RUNNING" ]; then
+        log_message "debug" "$*"
     fi
 }
 
 log_warning_message () {
-        echo "warning	$*" 1>&2
+    log_message "warning" "$*" 1>&2
 }

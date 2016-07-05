@@ -84,7 +84,7 @@ configure_memory() {
 }
 
 configure_numactl() {
-    echo "debug	starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
+    log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
     if numactl --interleave all true &> /dev/null; then
         # We are allowed to use numactl
         numnodes=$(numactl --hardware |
@@ -94,17 +94,17 @@ configure_numactl() {
            [ "$numnodes" -gt 1 ]
         then
             node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
-            echo "debug	with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
+            log_message debug "with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
             numactlcmd="numactl --cpunodebind=$node --membind=$node"
         else
-            echo "debug	with memory interleaving on all nodes"
+            log_message debug "with memory interleaving on all nodes"
             numactlcmd="numactl --interleave all"
         fi
     else
-            echo "debug	without numactl (no permission or not available)"
+            log_message debug "without numactl (no permission or not available)"
             numactlcmd=""
     fi
-    echo "debug	numactlcmd: $numactlcmd"
+    log_message debug "numactlcmd: $numactlcmd"
 }
 
 configure_gcopts() {
@@ -123,7 +123,7 @@ configure_env_vars() {
                     export ${setting%%=*}
                     ;;
                 *)
-                    echo "warning	ignoring invalid qrs_env setting '$setting' from '$qrs_env'"
+                    log_message warning "ignoring invalid qrs_env setting '$setting' from '$qrs_env'"
                     ;;
             esac
         done
@@ -140,8 +140,103 @@ configure_preload () {
     export JAVAVM_LD_PRELOAD=
     unset LD_PRELOAD
     envcmd="/usr/bin/env"
+    # trim whitespace:
+    PRELOAD=${PRELOAD# }
+    PRELOAD=${PRELOAD% }
     if [ "$PRELOAD" ]; then
         envcmd="/usr/bin/env JAVAVM_LD_PRELOAD=$PRELOAD LD_PRELOAD=$PRELOAD"
+        log_message config "setting up extra preload: $envcmd"
+    fi
+}
+
+# import VARIABLENAME with default VALUE
+import_cfg_var () {
+   varname=$1
+   ret_val=$2
+   prefixed_varname="vespa_container__${varname}"
+
+   if varhasvalue $varname ; then
+       : already set
+   elif varhasvalue $prefixed_varname ; then
+       eval "$varname=\${$prefixed_varname}"
+   else
+       eval "$varname=\${ret_val}"
+   fi
+}
+
+exec_jsvc () {
+    if [ "$jsvc_classpath_pre" ]; then
+        CP="${jsvc_classpath_pre}:${CP}"
+    fi
+    for jf in $jsvc_extra_classpath_libjars ; do
+        CP="${CP}:${VESPA_HOME}lib/jars/$jf.jar"
+    done
+    for jf in $jsvc_extra_classpath_files ; do
+        CP="${CP}:jf"
+    done
+
+    PRELOAD="$PRELOAD $jsvc_extra_preload"
+    configure_preload
+    exec $numactlcmd $envcmd $jsvc_binary_name \
+        -Dconfig.id="${VESPA_CONFIG_ID}" \
+        ${jsvc_opts} \
+        ${memory_options} \
+        ${jvm_gcopts} \
+        -XX:MaxJavaStackTraceDepth=-1 \
+        -XX:+HeapDumpOnOutOfMemoryError \
+        -XX:HeapDumpPath="${VESPA_HOME}var/crash" \
+        -XX:OnOutOfMemoryError='kill -9 %p' \
+        -Djava.library.path="${VESPA_HOME}lib64" \
+        -Djava.awt.headless=true \
+        -Djavax.net.ssl.keyStoreType=JKS \
+        -Dsun.rmi.dgc.client.gcInterval=3600000 \
+        -Dsun.net.client.defaultConnectTimeout=5000 -Dsun.net.client.defaultReadTimeout=60000 \
+        -Djdisc.config.file="$cfpfile" \
+        -Djdisc.export.packages=${jdisc_export_packages} \
+        -Djdisc.cache.path="$bundlecachedir" \
+        -Djdisc.debug.resources=false \
+        -Djdisc.bundle.path="${VESPA_HOME}lib/jars" \
+        -Djdisc.logger.enabled=true \
+        -Djdisc.logger.level=ALL \
+        -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
+        -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
+        -Dvespa.log.control.dir="${VESPA_LOG_CONTROL_DIR}" \
+        -Dzookeeperlogfile="${ZOOKEEPER_LOG_FILE}" \
+        -Dfile.encoding=UTF-8 \
+        -cp "$CP" \
+        "$@" \
+        com.yahoo.jdisc.core.BootstrapDaemon file:${VESPA_HOME}lib/jars/container-disc-jar-with-dependencies.jar
+}
+
+maybe_use_jsvc () {
+    import_cfg_var use_jsvc "no"
+
+    # if configured, run JSVC aka commons.daemon
+    if [ "$use_jsvc" != "no" ]; then
+        import_cfg_var jsvc_binary_name "jsvc"
+        import_cfg_var jsvc_extra_preload
+
+        import_cfg_var jsvc_use_pidfile "false"
+
+        import_cfg_var jsvc_classpath_pre
+        import_cfg_var jsvc_extra_classpath_libjars
+        import_cfg_var jsvc_extra_classpath_files
+        import_cfg_var jsvc_ipv6opts
+        import_cfg_var jsvc_extra_opts
+        import_cfg_var jsvc_normal_opts
+        import_cfg_var jsvc_java_home_opt
+        if [ "$jsvc_use_pidfile" = "true" ]; then
+            import_cfg_var jsvc_pidfile_opt "-pidfile ${VESPA_HOME}var/run/jsvc.${VESPA_SERVICE_NAME}.pid"
+        else
+            import_cfg_var jsvc_pidfile_opt ""
+        fi
+        import_cfg_var jsvc_user_opt
+        import_cfg_var jsvc_agent_opt
+        import_cfg_var jsvc_ynet_opt
+        import_cfg_var jsvc_unknown_opts
+
+        jsvc_opts="$jsvc_ipv6opts $jsvc_extra_opts $jsvc_normal_opts $jsvc_java_home_opt $jsvc_pidfile_opt $jsvc_user_opt $jsvc_agent_opt $jsvc_ynet_opt $jsvc_unknown_opts"
+        exec_jsvc
     fi
 }
 
@@ -152,6 +247,7 @@ configure_env_vars
 configure_classpath
 configure_numactl
 configure_preload
+maybe_use_jsvc
 
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
