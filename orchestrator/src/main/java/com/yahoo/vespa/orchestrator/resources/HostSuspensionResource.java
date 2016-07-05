@@ -48,7 +48,7 @@ public class HostSuspensionResource implements HostSuspensionApi {
         }
 
         HostName parentHostname = new HostName(parentHostnameString);
-        List<HostName> hostNames = request.getHostnames().stream().map(HostName::new).collect(Collectors.toList());
+        List<HostName> hostNames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
 
         try {
             orchestrator.suspendAll(parentHostname, hostNames);
