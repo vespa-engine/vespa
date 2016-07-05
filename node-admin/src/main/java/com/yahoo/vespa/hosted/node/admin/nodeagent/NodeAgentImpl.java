@@ -119,7 +119,7 @@ public class NodeAgentImpl implements NodeAgent {
         debug.put("isFrozen", isFrozen());
         debug.put("wantFrozen", wantFrozen.get());
         debug.put("terminated", terminated.get());
-        debug.put("workToDoNow", workToDoNow.get());
+        debug.put("workToDoNow", workToDoNow);
         synchronized (monitor) {
             debug.put("History", new LinkedList<>(debugMessages));
         }
@@ -226,7 +226,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void signalWorkToBeDone() {
-        if (!workToDoNow.get()) {
+        if (!workToDoNow) {
             addDebugMessage("Signaling work to be done");
         }
 
