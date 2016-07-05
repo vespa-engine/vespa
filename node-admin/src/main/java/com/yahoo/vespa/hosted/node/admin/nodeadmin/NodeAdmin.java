@@ -5,6 +5,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,9 +37,10 @@ public interface NodeAdmin {
     Set<HostName> getListOfHosts();
 
     /**
-     * Return the state as a human readable string. Do not try to parse output or use in tests.
+     * Returns a map containing all relevant NodeAdmin variables and their current values.
+     * Do not try to parse output or use in tests.
      */
-    String debugInfo();
+    Map<String, Object> debugInfo();
 
     /**
      * Stop the NodeAgent. Will not delete the storage or stop the container.

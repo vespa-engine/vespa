@@ -7,7 +7,9 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,14 +54,14 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.baseHostName = baseHostName;
     }
 
-    public String getDebugPage() {
-        StringBuilder info = new StringBuilder();
+    public Map<String, Object> getDebugPage() {
+        Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
-            info.append("isRunningUpdates is " + isRunningUpdates+ ". ");
-            info.append("NodeAdmin: ");
-            info.append(nodeAdmin.debugInfo());
+            debug.put("isRunningUpdates", isRunningUpdates);
+            debug.put("baseHostName", baseHostName);
+            debug.put("NodeAdmin", nodeAdmin.debugInfo());
         }
-        return info.toString();
+        return debug;
     }
 
     public enum State { RESUMED, SUSPENDED}

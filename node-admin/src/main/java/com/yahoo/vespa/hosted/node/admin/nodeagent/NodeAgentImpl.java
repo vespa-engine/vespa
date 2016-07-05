@@ -9,10 +9,14 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +49,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final Object monitor = new Object();
 
-    private AtomicReference<String> debugString = new AtomicReference<>("not started");
+    private final LinkedList<String> debugMessages = new LinkedList<>();
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private long delaysBetweenEachTickMillis;
 
@@ -60,6 +65,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // The attributes of the last successful noderepo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
+    private ContainerNodeSpec lastNodeSpec = null;
 
     public NodeAgentImpl(
             final HostName hostName,
@@ -75,12 +81,18 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void freeze() {
+        if (!wantFrozen.get()) {
+            addDebugMessage("Freezing");
+        }
         wantFrozen.set(true);
         signalWorkToBeDone();
     }
 
     @Override
     public void unfreeze() {
+        if (wantFrozen.get()) {
+            addDebugMessage("Unfreezing");
+        }
         wantFrozen.set(false);
         signalWorkToBeDone();
     }
@@ -90,13 +102,33 @@ public class NodeAgentImpl implements NodeAgent {
         return isFrozen.get();
     }
 
+    private void addDebugMessage(String message) {
+        synchronized (monitor) {
+            while (debugMessages.size() > 100) {
+                debugMessages.pop();
+            }
+
+            debugMessages.add("[" + sdf.format(new Date()) + "] " + message);
+        }
+    }
+
     @Override
-    public String debugInfo() {
-        return debugString.get();
+    public Map<String, Object> debugInfo() {
+        Map<String, Object> debug = new LinkedHashMap<>();
+        debug.put("Hostname", hostname);
+        debug.put("isFrozen", isFrozen());
+        debug.put("wantFrozen", wantFrozen.get());
+        debug.put("terminated", terminated.get());
+        debug.put("workToDoNow", workToDoNow);
+        synchronized (monitor) {
+            debug.put("History", new LinkedList<>(debugMessages));
+        }
+        return debug;
     }
 
     @Override
     public void start(int intervalMillis) {
+        addDebugMessage("Starting with interval " + intervalMillis + "ms");
         delaysBetweenEachTickMillis = intervalMillis;
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
@@ -108,6 +140,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stop() {
+        addDebugMessage("Stopping");
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
@@ -126,6 +159,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
+        addDebugMessage("Starting optional node program resume command");
         logger.log(Level.INFO, logPrefix + "Starting optional node program resume command");
         dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
         containerState = RUNNING;
@@ -141,6 +175,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.log(Level.INFO, logPrefix + "Publishing new set of attributes to node repo: "
                     + lastAttributesSet + " -> " + currentAttributes);
+            addDebugMessage("Publishing new set of attributes to node repo: {" +
+                    lastAttributesSet + "} -> {" + currentAttributes + "}");
             nodeRepository.updateNodeAttributes(
                     nodeSpec.hostname,
                     currentAttributes.restartGeneration,
@@ -154,10 +190,14 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
+            addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
+                            RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
         } else {
             // In case container was already running on startup, we found the container, but should call
             if (containerState == ABSENT) {
+                addDebugMessage("startContainerIfNeeded: was already running, containerState set to " +
+                        RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
                 containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
             }
         }
@@ -165,6 +205,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
         if (dockerOperations.removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
+            addDebugMessage("removeContainerIfNeededUpdateContainerState: containerState " + containerState + " -> ABSENT");
             containerState = ABSENT;
         }
     }
@@ -185,6 +226,10 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void signalWorkToBeDone() {
+        if (!workToDoNow) {
+            addDebugMessage("Signaling work to be done");
+        }
+
         synchronized (monitor) {
             workToDoNow = true;
             monitor.notifyAll();
@@ -209,13 +254,13 @@ public class NodeAgentImpl implements NodeAgent {
             }
             isFrozen.set(wantFrozen.get());
             if (isFrozen.get()) {
-                debugString.set(hostname + " frozen");
+                addDebugMessage("loop: isFrozen");
             } else {
                 try {
                     tick();
                 } catch (Exception e) {
                     logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception, ignoring.", e);
-                    debugString.set(hostname + " " + e.getMessage());
+                    addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
                     logger.log(LogLevel.ERROR, logPrefix + "Unhandled throwable, taking down system.", t);
                     System.exit(234);
@@ -226,11 +271,15 @@ public class NodeAgentImpl implements NodeAgent {
 
     // For testing
     public void tick() throws Exception {
-        StringBuilder debugStringBuilder = new StringBuilder(hostname.toString());
         final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                 .orElseThrow(() ->
                         new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
-        debugStringBuilder.append("Loaded node spec: ").append(nodeSpec.toString());
+
+        if (!nodeSpec.equals(lastNodeSpec)) {
+            addDebugMessage("Loading new node spec: " + nodeSpec.toString());
+            lastNodeSpec = nodeSpec;
+        }
+
         switch (nodeSpec.nodeState) {
             case PROVISIONED:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
@@ -247,8 +296,7 @@ public class NodeAgentImpl implements NodeAgent {
             case ACTIVE:
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
-                    debugStringBuilder.append("Waiting for image to download " + imageBeingDownloaded.asString());
-                    debugString.set(debugStringBuilder.toString());
+                    addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
@@ -283,6 +331,5 @@ public class NodeAgentImpl implements NodeAgent {
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
         }
-        debugString.set(debugStringBuilder.toString());
     }
 }

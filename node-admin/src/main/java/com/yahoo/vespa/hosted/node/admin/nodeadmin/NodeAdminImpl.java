@@ -11,9 +11,11 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,13 +88,15 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public String debugInfo() {
-        StringBuilder debug = new StringBuilder();
+    public Map<String, Object> debugInfo() {
+        Map<String, Object> debug = new LinkedHashMap<>();
+        List<Map<String, Object>> nodeAgentDebugs = new ArrayList<>();
+
         for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
-            debug.append("Node ").append(node.getKey().toString());
-            debug.append(" state ").append(node.getValue().debugInfo());
+            nodeAgentDebugs.add(node.getValue().debugInfo());
         }
-        return debug.toString();
+        debug.put("NodeAgents", nodeAgentDebugs);
+        return debug;
     }
 
     @Override
