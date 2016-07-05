@@ -34,7 +34,9 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.29
  */
+// TODO: Move business logic out of the HTTP layer and delegate to a Deployer
 public class SessionPrepareHandler extends SessionHandler {
+
     private static final Logger log = Logger.getLogger(SessionPrepareHandler.class.getName());
 
     private final Tenants tenants;

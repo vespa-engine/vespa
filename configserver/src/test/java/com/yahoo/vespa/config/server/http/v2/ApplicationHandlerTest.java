@@ -90,7 +90,9 @@ public class ApplicationHandlerTest {
                 HostProvisionerProvider.withProvisioner(provisioner),
                 Zone.defaultZone(),
                 convergeChecker,
-                logServerLogGrabber);
+                logServerLogGrabber,
+                null,
+                null);
     }
 
     @Test

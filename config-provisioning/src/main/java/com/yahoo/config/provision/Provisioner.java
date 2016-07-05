@@ -33,14 +33,14 @@ public interface Provisioner {
      * @param application The {@link ApplicationId} that was activated.
      * @param hosts a set of {@link HostSpec}.
      */
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
+    void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
 
     /**
      * Notifies provisioner that an application has been removed.
      *
      * @param application The {@link ApplicationId} that was removed.
-     */
-    public void removed(ApplicationId application);
+     */    
+    void removed(ApplicationId application);
 
     /**
      * Requests a restart of the services of the given application
@@ -48,6 +48,6 @@ public interface Provisioner {
      * @param application the application to restart
      * @param filter a filter which matches the application nodes to restart
      */
-    public void restart(ApplicationId application, HostFilter filter);
+    void restart(ApplicationId application, HostFilter filter);
 
 }

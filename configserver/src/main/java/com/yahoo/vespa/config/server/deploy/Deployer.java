@@ -5,10 +5,14 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.log.LogLevel;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ActivateLock;
+import com.yahoo.vespa.config.server.RotationsCache;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationRepo;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -18,6 +22,7 @@ import com.yahoo.vespa.curator.Curator;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * The API for deploying applications.
@@ -27,6 +32,8 @@ import java.util.Optional;
  */
 public class Deployer implements com.yahoo.config.provision.Deployer {
 
+    private static final Logger log = Logger.getLogger(Deployer.class.getName());
+    
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
     private final ConfigserverConfig configserverConfig;
@@ -75,6 +82,36 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
                                    hostProvisioner,
                                    lock,
                                    timeout, clock);
+    }
+
+    /** 
+     * Removes a previously deployed application
+     * 
+     * @return true if the application was found and removed, false if it was not present
+     */
+    public boolean remove(ApplicationId applicationId) {
+        Optional<Tenant> owner = Optional.ofNullable(tenants.tenantsCopy().get(applicationId.tenant()));
+        if ( ! owner.isPresent()) return false;
+
+        ApplicationRepo applicationRepo = owner.get().getApplicationRepo();
+        if ( ! applicationRepo.listApplications().contains(applicationId)) return false;
+        
+        // TODO: Push lookup logic down
+        long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
+        LocalSessionRepo localSessionRepo = owner.get().getLocalSessionRepo();
+        LocalSession session = localSessionRepo.getSession(sessionId);
+        if (session == null) return false;
+
+        // NestedTransaction transaction = new NestedTransaction(); TODO
+        localSessionRepo.removeSession(session.getSessionId());
+        session.delete();
+        RotationsCache rotationsCache = new RotationsCache(owner.get().getCurator(), owner.get().getPath());
+        rotationsCache.deleteRotationFromZooKeeper(applicationId);
+        applicationRepo.deleteApplication(applicationId);
+        if (hostProvisioner.isPresent())
+            hostProvisioner.get().removed(applicationId);
+        log.log(LogLevel.INFO, "Deleted " + applicationId);
+        return true;
     }
 
 }

@@ -51,7 +51,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         testTenantBuilder.tenants().get(tenant2).getLocalSessionRepo().addSession(new MockSession(3l, FilesApplicationPackage.fromFile(new File("src/test/apps/content2"))));
         testTenantBuilder.tenants().get(tenant1).getApplicationRepo().createPutApplicationTransaction(idTenant1, 2l).commit();
         testTenantBuilder.tenants().get(tenant2).getApplicationRepo().createPutApplicationTransaction(idTenant2, 3l).commit();
-        handler = new ApplicationHandler(command -> command.run(), AccessLog.voidAccessLog(), testTenantBuilder.createTenants(), HostProvisionerProvider.empty(), Zone.defaultZone(), null, null);
+        handler = new ApplicationHandler(command -> command.run(), AccessLog.voidAccessLog(), testTenantBuilder.createTenants(), HostProvisionerProvider.empty(), Zone.defaultZone(), null, null, null, null);
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }

@@ -132,8 +132,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } finally {
             activateLock.release();
         }
-        final ApplicationMetaData metaData = session.getMetaData();
-        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + " activated successfully. Config generation " + metaData.getGeneration());
+        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
+                               " activated successfully. Config generation " + session.getMetaData().getGeneration());
     }
 
     /**
