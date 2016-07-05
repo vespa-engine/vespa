@@ -34,20 +34,20 @@ public class HostSuspensionResource implements HostSuspensionApi {
 
     @Override
     public BatchOperationResult suspendAll(BatchHostSuspendRequest request) throws WebApplicationException {
-        final String ph = request.getParentHostname();
-        if (ph == null || ph.isEmpty()) {
+        final String parentHostnameString = request.getParentHostname();
+        if (parentHostnameString == null || parentHostnameString.isEmpty()) {
             String message = "parentHostname missing or empty in request: " + request;
             log.log(LogLevel.DEBUG, message);
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
         }
-        final List<String> h = request.getHostnames();
-        if (h == null || h.isEmpty()) {
+        final List<String> hostnamesAsStrings = request.getHostnames();
+        if (hostnamesAsStrings == null || hostnamesAsStrings.isEmpty()) {
             String message = "hostnames missing in request: " + request;
             log.log(LogLevel.DEBUG, message);
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
         }
 
-        HostName parentHostname = new HostName(ph);
+        HostName parentHostname = new HostName(parentHostnameString);
         List<HostName> hostNames = request.getHostnames().stream().map(HostName::new).collect(Collectors.toList());
 
         try {
