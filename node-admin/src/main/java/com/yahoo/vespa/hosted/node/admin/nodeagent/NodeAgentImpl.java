@@ -100,17 +100,15 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
         loopThread = new Thread(this::loop);
-        loopThread.setName("Loop thread for " + hostname.toString());
+        loopThread.setName("loop-" + hostname.toString());
         loopThread.start();
     }
 
     @Override
     public void stop() {
-        if (terminated.get()) {
+        if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-
-        terminated.set(true);
         signalWorkToBeDone();
         try {
             loopThread.join(10000);
@@ -199,8 +197,8 @@ public class NodeAgentImpl implements NodeAgent {
                         monitor.wait(delaysBetweenEachTickMillis);
                     }
                 } catch (InterruptedException e) {
-                    logger.severe("Interrupted, stopping thread now: " + hostname);
-                    return;
+                    logger.severe("Interrupted, but ignoring this: " + hostname);
+                    continue;
                 }
             }
             workToDoNow.set(false);
