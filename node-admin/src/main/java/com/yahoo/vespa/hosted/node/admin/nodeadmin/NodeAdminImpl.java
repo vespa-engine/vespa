@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -85,6 +86,16 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public Set<HostName> getListOfHosts() {
         return nodeAgents.keySet();
+    }
+
+    public Set<HostName> getHostNamesOfActiveNodes() {
+        Set<HostName> activeHostnames = new HashSet<>();
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            if (nodeAgent.getContainerState() != NodeAgentImpl.ContainerState.ABSENT) {
+                activeHostnames.add(nodeAgent.getHostName());
+            }
+        }
+        return activeHostnames;
     }
 
     @Override
