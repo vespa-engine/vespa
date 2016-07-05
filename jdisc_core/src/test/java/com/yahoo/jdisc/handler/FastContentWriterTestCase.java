@@ -188,7 +188,7 @@ public class FastContentWriterTestCase {
         ReadableContentChannel buf = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(buf);
         RunnableLatch listener = new RunnableLatch();
-        out.addListener(listener, MoreExecutors.sameThreadExecutor());
+        out.addListener(listener, MoreExecutors.directExecutor());
 
         out.write(new byte[] { 6, 9 });
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));

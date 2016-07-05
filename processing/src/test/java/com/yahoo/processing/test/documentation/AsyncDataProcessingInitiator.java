@@ -23,7 +23,7 @@ public class AsyncDataProcessingInitiator extends Processor {
         Response response=execution.process(request);
         response.data().complete().addListener(new RunnableExecution(request,
                 new ExecutionWithResponse(asyncChain, response, execution)),
-                MoreExecutors.sameThreadExecutor());
+                MoreExecutors.directExecutor());
         return response;
     }
 

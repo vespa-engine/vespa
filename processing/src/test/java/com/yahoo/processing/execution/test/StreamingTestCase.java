@@ -55,7 +55,7 @@ public class StreamingTestCase {
         assertEquals("New data is not consumed", 1, response.data().asList().size());
 
         // start listening on incoming data - this is what a renderer will do
-        incomingData.addNewDataListener(new MockNewDataListener(incomingData), MoreExecutors.sameThreadExecutor());
+        incomingData.addNewDataListener(new MockNewDataListener(incomingData), MoreExecutors.directExecutor());
         assertEquals("We got a data add event for the data which was already added", 2, streamProcessor.invocationCount);
         assertEquals("New data is consumed", 2, response.data().asList().size());
 

@@ -218,7 +218,7 @@ public class RequestDispatchTestCase {
             protected Request newRequest() {
                 return new Request(driver, URI.create("http://localhost/"));
             }
-        }.dispatch().addListener(listener, MoreExecutors.sameThreadExecutor());
+        }.dispatch().addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         ContentChannel responseContent = ResponseDispatch.newInstance(Response.Status.OK)
                                                          .connect(requestHandler.responseHandler);

@@ -91,14 +91,14 @@ public class FutureCompletionTestCase {
     public void requireThatCompletionCanBeListenedTo() throws InterruptedException {
         FutureCompletion completion = new FutureCompletion();
         RunnableLatch listener = new RunnableLatch();
-        completion.addListener(listener, MoreExecutors.sameThreadExecutor());
+        completion.addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         completion.completed();
         assertTrue(listener.await(600, TimeUnit.SECONDS));
 
         completion = new FutureCompletion();
         listener = new RunnableLatch();
-        completion.addListener(listener, MoreExecutors.sameThreadExecutor());
+        completion.addListener(listener, MoreExecutors.directExecutor());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         completion.failed(new Throwable());
         assertTrue(listener.await(600, TimeUnit.SECONDS));

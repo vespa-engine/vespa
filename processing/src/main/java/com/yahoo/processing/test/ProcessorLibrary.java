@@ -383,7 +383,7 @@ public class ProcessorLibrary {
             // TODO: Consider for to best provide helpers for this
             response.data().complete().addListener(new RunnableExecution(request,
                     new ExecutionWithResponse(asyncChain, response, execution)),
-                    MoreExecutors.sameThreadExecutor());
+                    MoreExecutors.directExecutor());
             return response;
         }
 
