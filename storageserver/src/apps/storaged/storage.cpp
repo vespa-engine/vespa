@@ -129,9 +129,9 @@ namespace {
             if (sigtramp == 0) _exit(EXIT_FAILURE);
             // note: this is not totally safe, sigtramp is not protected by a lock
             sigtramp->handleSignal(sig);
-        } else {
+        } else if (_G_signalCount > 2) {
             fprintf(stderr, "Received another shutdown signal %u while "
-                    "shutdown in progress (count=%u)",
+                    "shutdown in progress (count=%u)\n",
                     sig, _G_signalCount);
         }
     }
