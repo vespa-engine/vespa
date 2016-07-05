@@ -83,6 +83,30 @@ configure_memory() {
     fi
 }
 
+configure_numactl() {
+    echo "debug	starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
+    if numactl --interleave all true &> /dev/null; then
+        # We are allowed to use numactl
+        numnodes=$(numactl --hardware |
+                   grep available |
+                   awk '$3 == "nodes" { print $2 }')
+        if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
+           [ "$numnodes" -gt 1 ]
+        then
+            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
+            echo "debug	with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
+            numactlcmd="numactl --cpunodebind=$node --membind=$node"
+        else
+            echo "debug	with memory interleaving on all nodes"
+            numactlcmd="numactl --interleave all"
+        fi
+    else
+            echo "debug	without numactl (no permission or not available)"
+            numactlcmd=""
+    fi
+    echo "debug	numactlcmd: $numactlcmd"
+}
+
 configure_gcopts() {
     consider_fallback jvm_gcopts "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1"
     if [ "$jvm_verbosegc" = "true" ]; then
@@ -115,9 +139,9 @@ configure_classpath () {
 configure_preload () {
     export JAVAVM_LD_PRELOAD=
     unset LD_PRELOAD
+    envcmd="/usr/bin/env"
     if [ "$PRELOAD" ]; then
-        export JAVAVM_LD_PRELOAD="$PRELOAD"
-        export LD_PRELOAD="$PRELOAD"
+        envcmd="/usr/bin/env JAVAVM_LD_PRELOAD=$PRELOAD LD_PRELOAD=$PRELOAD"
     fi
 }
 
@@ -126,10 +150,10 @@ configure_memory
 configure_gcopts
 configure_env_vars
 configure_classpath
-# note: should be last thing here:
+configure_numactl
 configure_preload
 
-exec java \
+exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
         ${memory_options} \
         ${jvm_gcopts} \
@@ -147,7 +171,7 @@ exec java \
         -Djdisc.cache.path="$bundlecachedir" \
         -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="${VESPA_HOME}lib/jars" \
-        -Djdisc.logger.enabled=true \
+        -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=ALL \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
         -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
