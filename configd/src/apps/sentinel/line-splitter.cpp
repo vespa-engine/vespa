@@ -88,7 +88,11 @@ LineSplitter::getLine()
             char *start = &_buffer[_readPos];
             char *end = static_cast<char *>(memchr(start, '\n', bufLen));
             if (_eof && !end) {
-                end = &_buffer[_writePos-1]; // pretend last byte sent was \n
+                if (_writePos < _size) {
+                    end = &_buffer[_writePos]; // pretend last byte sent was followed by \n
+                } else {
+                    end = &_buffer[_writePos-1]; // pretend last byte sent was \n
+                }
             }
             if (end) {
                 *end = '\0';
