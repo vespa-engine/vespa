@@ -21,17 +21,23 @@ int main(int argc, char **argv) {
             printf("%s\n", v.c_str());
         }
     } else if (strcmp(argv[1], "configservers_rpc") == 0) {
+        size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigServerRpcAddrs()) {
-            printf("%s\n", v.c_str());
+            if (count++ > 0) printf(",");
+            printf("%s", v.c_str());
         }
+        printf("\n");
     } else if (strcmp(argv[1], "configservers_http") == 0) {
         for (std::string v : vespa::Defaults::vespaConfigServerRestUrls()) {
             printf("%s\n", v.c_str());
         }
     } else if (strcmp(argv[1], "configsources") == 0) {
+        size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
-            printf("%s\n", v.c_str());
+            if (count++ > 0) printf(",");
+            printf("%s", v.c_str());
         }
+        printf("\n");
     } else if (strcmp(argv[1], "configproxy_rpc") == 0) {
         std::string v = vespa::Defaults::vespaConfigProxyRpcAddr();
         printf("%s\n", v.c_str());
