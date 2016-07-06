@@ -11,7 +11,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.*;
 
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.curator.Curator;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,7 +85,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
 
     @Test
     public void testBadApplicationRepoOnActivate() throws Exception {
-        ApplicationRepo applicationRepo = new FailingApplicationRepo();
+        TenantApplications applicationRepo = new FailingTenantApplications();
         curator.framework().create().forPath("/mytenant");
         Tenant tenant = TenantBuilder.create(new TestComponentRegistry(curator), TenantName.from("mytenant"), Path.fromString("mytenant"))
                 .withApplicationRepo(applicationRepo)
@@ -132,7 +132,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         } while (System.currentTimeMillis() < endTime && !ok);
     }
 
-    private class FailingApplicationRepo implements ApplicationRepo {
+    private class FailingTenantApplications implements TenantApplications {
 
         @Override
         public List<ApplicationId> listApplications() {

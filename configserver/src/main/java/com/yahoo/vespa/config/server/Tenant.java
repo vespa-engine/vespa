@@ -6,7 +6,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
@@ -35,7 +35,7 @@ public class Tenant implements TenantHandlerProvider {
     private final Path path;
     private final SessionFactory sessionFactory;
     private final LocalSessionRepo localSessionRepo;
-    private final ApplicationRepo applicationRepo;
+    private final TenantApplications applicationRepo;
     private final ActivateLock activateLock;
     private final RequestHandler requestHandler;
     private final ReloadHandler reloadHandler;
@@ -49,7 +49,7 @@ public class Tenant implements TenantHandlerProvider {
            RemoteSessionRepo remoteSessionRepo,
            RequestHandler requestHandler,
            ReloadHandler reloadHandler,
-           ApplicationRepo applicationRepo,
+           TenantApplications applicationRepo,
            Curator curator,
            TenantFileSystemDirs tenantFileSystemDirs) {
         this.name = name;
@@ -121,7 +121,7 @@ public class Tenant implements TenantHandlerProvider {
         return getName().value();
     }
 
-    public ApplicationRepo getApplicationRepo() {
+    public TenantApplications getApplicationRepo() {
         return applicationRepo;
     }
 

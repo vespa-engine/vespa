@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.server.Rotations;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -94,7 +94,7 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
         Optional<Tenant> owner = Optional.ofNullable(tenants.tenantsCopy().get(applicationId.tenant()));
         if ( ! owner.isPresent()) return false;
 
-        ApplicationRepo applicationRepo = owner.get().getApplicationRepo();
+        TenantApplications applicationRepo = owner.get().getApplicationRepo();
         if ( ! applicationRepo.listApplications().contains(applicationId)) return false;
         
         // TODO: Push lookup logic down

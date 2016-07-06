@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  * @since 5.1
  */
 class ZKApplicationFile extends ApplicationFile {
+
     private static final Logger log = Logger.getLogger("ZKApplicationFile");
     private final ZKLiveApp zkApp;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -172,4 +173,5 @@ class ZKApplicationFile extends ApplicationFile {
         if (other == this) return 0;
         return this.getPath().getName().compareTo((other).getPath().getName());
     }
+
 }

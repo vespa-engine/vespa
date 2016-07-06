@@ -14,7 +14,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionCreate;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -66,7 +66,7 @@ public class SessionCreateHandler extends SessionHandler {
     }
 
     private static LocalSession getExistingSession(Tenant tenant, HttpRequest request) {
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         ApplicationId applicationId = getFromProperty(request);
         return SessionHandler.getSessionFromRequest(localSessionRepo, applicationRepo.getSessionIdForApplication(applicationId));

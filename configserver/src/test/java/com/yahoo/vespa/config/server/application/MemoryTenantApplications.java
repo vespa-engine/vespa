@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * In memory {@link ApplicationRepo} to be used when testing.
+ * In memory {@link TenantApplications} to be used when testing.
  *
  * @author lulf
  * @since 5.1
  */
-public class MemoryApplicationRepo implements ApplicationRepo {
+public class MemoryTenantApplications implements TenantApplications {
 
     private final Map<ApplicationId, Long> applications = new LinkedHashMap<>();
     private boolean isOpen = true;

@@ -8,12 +8,12 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import java.util.List;
 
 /**
- * Manages the list of active applications in a config server.
+ * The applications of a tenant
  *
  * @author lulf
  * @since 5.1
  */
-public interface ApplicationRepo {
+public interface TenantApplications {
 
     /**
      * List the active applications in this config server.

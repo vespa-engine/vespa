@@ -19,7 +19,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
@@ -234,7 +234,7 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
-        return new SessionContext(app, new SessionZooKeeperClient(curator, appPath), app.getAppDir(), new MemoryApplicationRepo(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
+        return new SessionContext(app, new SessionZooKeeperClient(curator, appPath), app.getAppDir(), new MemoryTenantApplications(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

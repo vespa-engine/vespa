@@ -9,7 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -48,7 +48,7 @@ public abstract class SessionCreateHandlerTestBase extends SessionHandlerTest {
 
     public File testApp = new File("src/test/apps/app");
     public LocalSessionRepo localSessionRepo;
-    public ApplicationRepo applicationRepo;
+    public TenantApplications applicationRepo;
 
     static {
         postHeaders.put(SessionCreate.contentTypeHeader, SessionCreate.APPLICATION_X_GZIP);

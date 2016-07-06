@@ -14,7 +14,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationSet;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActionsFormatter;
@@ -101,7 +101,7 @@ public class SessionPrepareHandler extends SessionHandler {
 
     private static Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         try {
             long currentActiveSessionId = applicationRepo.getSessionIdForApplication(appId);
             final RemoteSession currentActiveSession = tenant.getRemoteSessionRepo().getSession(currentActiveSessionId);

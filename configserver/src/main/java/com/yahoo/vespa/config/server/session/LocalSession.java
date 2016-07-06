@@ -14,13 +14,11 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.io.File;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -34,7 +32,7 @@ import java.util.Optional;
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;
-    private final ApplicationRepo applicationRepo;
+    private final TenantApplications applicationRepo;
     private final SessionZooKeeperClient zooKeeperClient;
     private final SessionPreparer sessionPreparer;
     private final SessionContext sessionContext;

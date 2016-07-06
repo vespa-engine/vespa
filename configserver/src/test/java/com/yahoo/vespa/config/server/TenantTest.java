@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.v2.TestTenantBuilder;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class TenantTest extends TestWithCurator {
 
     @Test
     public void close() {
-        MemoryApplicationRepo repo = (MemoryApplicationRepo) t1.getApplicationRepo();
+        MemoryTenantApplications repo = (MemoryTenantApplications) t1.getApplicationRepo();
         assertTrue(repo.isOpen());
         t1.close();
         assertFalse(repo.isOpen());

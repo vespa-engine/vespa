@@ -18,7 +18,7 @@ import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.deploy.Deployer;
 import com.yahoo.vespa.config.server.http.ContentHandler;
@@ -165,7 +165,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private Application getApplication(Tenant tenant, ApplicationId applicationId) {
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         RemoteSessionRepo remoteSessionRepo = tenant.getRemoteSessionRepo();
         long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
         RemoteSession session = remoteSessionRepo.getSession(sessionId, 0);
@@ -173,7 +173,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
     }
 

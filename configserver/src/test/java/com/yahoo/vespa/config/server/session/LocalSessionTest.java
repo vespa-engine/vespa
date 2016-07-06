@@ -8,7 +8,7 @@ import com.yahoo.path.Path;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.*;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.curator.Curator;
@@ -162,7 +162,7 @@ public class LocalSessionTest {
         zkClient.feedZKFileRegistries(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.path(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryApplicationRepo(), new HostRegistry<>(), superModelGenerationCounter));
+        return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));
     }
 
     private void doPrepare(LocalSession session) {

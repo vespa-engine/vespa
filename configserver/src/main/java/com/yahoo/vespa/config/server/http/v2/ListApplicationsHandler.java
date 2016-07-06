@@ -12,7 +12,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 
@@ -52,7 +52,7 @@ public class ListApplicationsHandler extends HttpHandler {
 
     private List<ApplicationId> listApplicationIds(TenantName tenantName) {
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
     }
 

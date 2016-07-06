@@ -5,8 +5,8 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
-import com.yahoo.vespa.config.server.application.ZKApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
@@ -34,7 +34,7 @@ public class TenantBuilder {
     private LocalSessionRepo localSessionRepo;
     private SessionFactory sessionFactory;
     private LocalSessionLoader localSessionLoader;
-    private ApplicationRepo applicationRepo;
+    private TenantApplications applicationRepo;
     private SessionCounter sessionCounter;
     private ReloadHandler reloadHandler;
     private RequestHandler requestHandler;
@@ -68,7 +68,7 @@ public class TenantBuilder {
         return this;
     }
 
-    public TenantBuilder withApplicationRepo(ApplicationRepo applicationRepo) {
+    public TenantBuilder withApplicationRepo(TenantApplications applicationRepo) {
         this.applicationRepo = applicationRepo;
         return this;
     }
@@ -130,7 +130,7 @@ public class TenantBuilder {
 
     private void createApplicationRepo() {
         if (applicationRepo == null) {
-            applicationRepo = ZKApplicationRepo.create(componentRegistry.getCurator(), tenantPath.append(Tenant.APPLICATIONS), reloadHandler, tenant);
+            applicationRepo = ZKTenantApplications.create(componentRegistry.getCurator(), tenantPath.append(Tenant.APPLICATIONS), reloadHandler, tenant);
         }
     }
 
@@ -195,7 +195,7 @@ public class TenantBuilder {
         return localSessionRepo;
     }
 
-    public ApplicationRepo getApplicationRepo() {
+    public TenantApplications getApplicationRepo() {
         return applicationRepo;
     }
 }

@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.*;
@@ -34,7 +34,7 @@ public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {
 
     @Before
     public void setupRepo() throws Exception {
-        applicationRepo = new MemoryApplicationRepo();
+        applicationRepo = new MemoryTenantApplications();
         localSessionRepo = new LocalSessionRepo(applicationRepo);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         createdMessage = " for tenant '" + tenant + "' created.\"";

@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 
 import java.io.File;
@@ -32,10 +32,10 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     };
 
     private final long sessionLifetime; // in seconds
-    private final ApplicationRepo applicationRepo;
+    private final TenantApplications applicationRepo;
     private final Clock clock;
 
-    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader, ApplicationRepo applicationRepo, Clock clock, long sessionLifeTime) {
+    public LocalSessionRepo(TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader, TenantApplications applicationRepo, Clock clock, long sessionLifeTime) {
         this(applicationRepo, clock, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.path(), loader);
     }
@@ -68,13 +68,13 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     }
 
     // Constructor only for testing
-    public LocalSessionRepo(ApplicationRepo applicationRepo, Clock clock, long sessionLifetime) {
+    public LocalSessionRepo(TenantApplications applicationRepo, Clock clock, long sessionLifetime) {
         this.applicationRepo = applicationRepo;
         this.sessionLifetime = sessionLifetime;
         this.clock = clock;
     }
 
-    public LocalSessionRepo(ApplicationRepo applicationRepo) {
+    public LocalSessionRepo(TenantApplications applicationRepo) {
         this(applicationRepo, Clock.systemUTC(), TimeUnit.DAYS.toMillis(1));
     }
 

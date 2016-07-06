@@ -34,7 +34,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.SessionActiveHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase.MockSessionFactory;
@@ -47,7 +47,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     public void setup() throws Exception {
         tenant = TenantName.from("activatetest");
         remoteSessionRepo = new RemoteSessionRepo();
-        applicationRepo = new MemoryApplicationRepo();
+        applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(applicationRepo);

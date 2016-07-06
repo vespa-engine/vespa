@@ -21,14 +21,14 @@ import static org.junit.Assert.*;
  * @author lulf
  * @since 5.1
  */
-public class ApplicationRepoTest extends TestWithCurator {
+public class TenantApplicationsTest extends TestWithCurator {
 
     @Test
     public void require_that_applications_are_read_from_zookeeper() throws Exception {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:dev:baz:bim", Utf8.toAsciiBytes(3));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bar:test:bim:quux", Utf8.toAsciiBytes(4));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bario:staging:bala:bong", Utf8.toAsciiBytes(5));
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.listApplications();
         assertThat(applications.size(), is(3));
         assertThat(applications.get(0).application().value(), is("bario"));
@@ -43,7 +43,7 @@ public class ApplicationRepoTest extends TestWithCurator {
     public void require_that_legacy_application_ids_are_rewritten() throws Exception {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:default:baz:bim", Utf8.toAsciiBytes(3));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bar:test:bim:quux", Utf8.toAsciiBytes(4));
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.listApplications();
         assertThat(applications.size(), is(2));
         assertThat(applications.get(0).application().value(), is("bar"));
@@ -61,7 +61,7 @@ public class ApplicationRepoTest extends TestWithCurator {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:default:baz:bim", Utf8.toAsciiBytes(3));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:prod:baz:bim", Utf8.toAsciiBytes(3));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bar:test:bim:quux", Utf8.toAsciiBytes(4));
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.listApplications();
         assertThat(applications.size(), is(2));
         assertThat(repo.getSessionIdForApplication(applications.get(0)), is(4l));
@@ -72,7 +72,7 @@ public class ApplicationRepoTest extends TestWithCurator {
     public void require_that_invalid_entries_are_skipped() throws Exception {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:dev:baz:bim");
         curatorFramework.create().creatingParentsIfNeeded().forPath("/invalid");
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.listApplications();
         assertThat(applications.size(), is(1));
         assertThat(applications.get(0).application().value(), is("foo"));
@@ -81,7 +81,7 @@ public class ApplicationRepoTest extends TestWithCurator {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_requesting_session_for_unknown_application_throws_exception() throws Exception {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:dev:baz:bim");
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         repo.getSessionIdForApplication(new ApplicationId.Builder()
                                         .tenant("exist")
                                         .applicationName("tenant").instanceName("here").build());
@@ -90,7 +90,7 @@ public class ApplicationRepoTest extends TestWithCurator {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_requesting_session_for_empty_application_throws_exception() throws Exception {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/foo:dev:baz:bim");
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         repo.getSessionIdForApplication(new ApplicationId.Builder()
                                         .tenant("tenant")
                                         .applicationName("foo").instanceName("bim").build());
@@ -98,7 +98,7 @@ public class ApplicationRepoTest extends TestWithCurator {
 
     @Test
     public void require_that_application_ids_can_be_written() throws Exception {
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         repo.createPutApplicationTransaction(createAppplicationId("myapp"), 3l).commit();
         String path = "/mytenant:myapp:myinst";
         assertTrue(curatorFramework.checkExists().forPath(path) != null);
@@ -110,7 +110,7 @@ public class ApplicationRepoTest extends TestWithCurator {
 
     @Test
     public void require_that_application_ids_can_be_deleted() throws Exception {
-        ApplicationRepo repo = createZKAppRepo();
+        TenantApplications repo = createZKAppRepo();
         ApplicationId id1 = createAppplicationId("myapp");
         ApplicationId id2 = createAppplicationId("myapp2");
         repo.createPutApplicationTransaction(id1, 1).commit();
@@ -124,9 +124,9 @@ public class ApplicationRepoTest extends TestWithCurator {
 
     @Test
     public void require_that_repos_behave_similarly() throws Exception {
-        ApplicationRepo zkRepo = createZKAppRepo();
-        ApplicationRepo memRepo = new MemoryApplicationRepo();
-        for (ApplicationRepo repo : Arrays.asList(zkRepo, memRepo)) {
+        TenantApplications zkRepo = createZKAppRepo();
+        TenantApplications memRepo = new MemoryTenantApplications();
+        for (TenantApplications repo : Arrays.asList(zkRepo, memRepo)) {
             ApplicationId id1 = createAppplicationId("myapp");
             ApplicationId id2 = createAppplicationId("myapp2");
             repo.createPutApplicationTransaction(id1, 4).commit();
@@ -158,7 +158,7 @@ public class ApplicationRepoTest extends TestWithCurator {
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bar:dev:bim:quux", Utf8.toAsciiBytes(4));
         curatorFramework.create().creatingParentsIfNeeded().forPath("/bario:staging:bala:bong", Utf8.toAsciiBytes(5));
         MockReloadHandler reloadHandler = new MockReloadHandler();
-        ApplicationRepo repo = createZKAppRepo(reloadHandler);
+        TenantApplications repo = createZKAppRepo(reloadHandler);
         assertNull(reloadHandler.lastRemoved);
         repo.deleteApplication(new ApplicationId.Builder()
                                .tenant("mytenant")
@@ -172,12 +172,12 @@ public class ApplicationRepoTest extends TestWithCurator {
         assertThat(reloadHandler.lastRemoved.serializedForm(), is("mytenant:bar:quux"));
     }
 
-    private ApplicationRepo createZKAppRepo() {
+    private TenantApplications createZKAppRepo() {
         return createZKAppRepo(new MockReloadHandler());
     }
 
-    private ApplicationRepo createZKAppRepo(MockReloadHandler reloadHandler) {
-        return ZKApplicationRepo.create(curator, Path.createRoot(), reloadHandler, TenantName.from("mytenant"));
+    private TenantApplications createZKAppRepo(MockReloadHandler reloadHandler) {
+        return ZKTenantApplications.create(curator, Path.createRoot(), reloadHandler, TenantName.from("mytenant"));
     }
 
     private static ApplicationId createAppplicationId(String name) {

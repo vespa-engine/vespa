@@ -20,7 +20,7 @@ import com.yahoo.config.provision.*;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.session.*;
@@ -51,7 +51,7 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     protected RemoteSessionRepo remoteSessionRepo;
     protected LocalSessionRepo localRepo;
     protected PathProvider pathProvider;
-    protected ApplicationRepo applicationRepo;
+    protected TenantApplications applicationRepo;
     protected String activatedMessage = " activated.";
     protected String tenantMessage = "";
 
