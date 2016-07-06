@@ -16,6 +16,25 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "portbase") == 0) {
         printf("%d\n", vespa::Defaults::vespaPortBase());
         return 0;
+    } else if (strcmp(argv[1], "configservers") == 0) {
+        for (std::string v : vespa::Defaults::vespaConfigServerHosts()) {
+            printf("%s\n", v.c_str());
+        }
+    } else if (strcmp(argv[1], "configservers_rpc") == 0) {
+        for (std::string v : vespa::Defaults::vespaConfigServerRpcAddrs()) {
+            printf("%s\n", v.c_str());
+        }
+    } else if (strcmp(argv[1], "configservers_http") == 0) {
+        for (std::string v : vespa::Defaults::vespaConfigServerRestUrls()) {
+            printf("%s\n", v.c_str());
+        }
+    } else if (strcmp(argv[1], "configsources") == 0) {
+        for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
+            printf("%s\n", v.c_str());
+        }
+    } else if (strcmp(argv[1], "configproxy_rpc") == 0) {
+        std::string v = vespa::Defaults::vespaConfigProxyRpcAddr();
+        printf("%s\n", v.c_str());
     } else {
         fprintf(stderr, "Unknown variable '%s'\n", argv[1]);
         return 1;

@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace vespa {
 
 /**
@@ -37,6 +40,36 @@ public:
      * @return the vespa base number for ports
      **/
     static int vespaPortBase();
+
+    /**
+     * Find the hostnames of configservers that are configured
+     * @return a list of hostnames
+     **/
+    static std::vector<std::string> vespaConfigServerHosts();
+
+    /**
+     * Find the RPC addresses to configservers that are configured
+     * @return a list of RPC specs in the format tcp/{hostname}:{portnumber}
+     **/
+    static std::vector<std::string> vespaConfigServerRpcAddrs();
+
+    /**
+     * Find the URLs to the REST api on configservers
+     * @return a list of URLS in the format http://{hostname}:{portnumber}/
+     **/
+    static std::vector<std::string> vespaConfigServerRestUrls();
+
+    /**
+     * Find the RPC address to the local config proxy
+     * @return one RPC spec in the format tcp/{hostname}:{portnumber}
+     **/
+    static std::string vespaConfigProxyRpcAddr();
+
+    /**
+     * Get the RPC addresses to all known config sources
+     * @return same as vespaConfigProxyRpcAddr + vespaConfigServerRpcAddrs
+     **/
+    static std::vector<std::string> vespaConfigSourcesRpcAddrs();
 };
 
 } // namespace vespa
