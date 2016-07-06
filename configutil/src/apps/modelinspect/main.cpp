@@ -63,21 +63,12 @@ Application::parseOpts()
 vespalib::string
 Application::getSources(void)
 {
-    vespalib::string cmd = vespa::Defaults::vespaHome();
-    cmd.append("libexec/vespa/vespa-config.pl -configsources");
-    FILE* fp = popen(cmd.c_str(), "r");
-    if (fp == 0) {
-        std::cerr << "Failed to run " << cmd << " ("
-                  << errno << "): " << strerror(errno) << "\n";
-        return "";
+    vespalib::string specs;
+    for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
+        if (! specs.empty()) specs += ",";
+        specs += v;
     }
-    vespalib::asciistream specs;
-    char data[500];
-    while (fgets(data, 500, fp) != 0) {
-        specs << &data[0] << "\n";
-    }
-    pclose(fp);
-    return specs.str();
+    return specs;
 }
 
 void
