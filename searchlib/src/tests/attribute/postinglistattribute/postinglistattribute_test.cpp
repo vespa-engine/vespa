@@ -411,7 +411,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp,
     if (!EXPECT_TRUE(assertIterator(exp, *sb)))
         return false;
     return true;
-}fcheckSearch
+}
 
 
 bool
