@@ -5,7 +5,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.ConfigResponseFactoryFactory;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactoryFactory;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.HostValidator;
 import com.yahoo.vespa.config.server.ReloadHandler;

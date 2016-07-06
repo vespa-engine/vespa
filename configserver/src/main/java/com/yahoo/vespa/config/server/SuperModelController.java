@@ -16,6 +16,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.model.SuperModel;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactoryFactory;
 
 import java.io.IOException;
 import java.util.Collections;

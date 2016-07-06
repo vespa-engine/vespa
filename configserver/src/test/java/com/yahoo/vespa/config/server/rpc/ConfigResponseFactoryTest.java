@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.codegen.DefParser;
@@ -8,6 +8,8 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.server.rpc.LZ4ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import org.junit.Before;
 import org.junit.Test;
 

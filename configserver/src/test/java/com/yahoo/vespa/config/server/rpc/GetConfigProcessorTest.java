@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.provision.TenantName;
@@ -16,6 +16,8 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.server.rpc.GetConfigProcessor;
+import com.yahoo.vespa.config.server.rpc.MockRpc;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.Test;
 import static org.junit.Assert.assertFalse;

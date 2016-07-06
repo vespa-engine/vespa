@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
@@ -8,7 +8,13 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.GenerationCounter;
+import com.yahoo.vespa.config.server.HostRegistries;
+import com.yahoo.vespa.config.server.MemoryGenerationCounter;
+import com.yahoo.vespa.config.server.PortRangeAllocator;
+import com.yahoo.vespa.config.server.SuperModelController;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -65,7 +71,7 @@ public class TestWithRpc {
     protected void createAndStartRpcServer(boolean hostedVespa) {
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
                 new SuperModelController(generationCounter,
-                        new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder())),
+                                         new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder())),
                 Metrics.createTestMetrics(), new HostRegistries());
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);

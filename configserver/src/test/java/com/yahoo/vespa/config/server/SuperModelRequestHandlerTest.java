@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.model.SuperModel;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.model.VespaModel;
 
 import org.junit.Before;

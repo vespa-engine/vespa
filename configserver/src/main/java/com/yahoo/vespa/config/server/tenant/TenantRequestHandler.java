@@ -9,7 +9,7 @@ import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.ApplicationMapper;
 import com.yahoo.vespa.config.server.ApplicationSet;
-import com.yahoo.vespa.config.server.ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.HostRegistries;
 import com.yahoo.vespa.config.server.HostRegistry;
 import com.yahoo.vespa.config.server.HostValidator;

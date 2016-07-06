@@ -2,10 +2,9 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.MockRequestHandler;
+import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 
 /**
  * @author lulf

@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.LZ4ConfigResponseFactory;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 
 /**
  * Logic to select the appropriate response factory based on config.
@@ -11,6 +14,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
  * @since 5.20
  */
 public class ConfigResponseFactoryFactory {
+
     public static ConfigResponseFactory createFactory(ConfigserverConfig configserverConfig) {
         switch (configserverConfig.payloadCompressionType()) {
             case LZ4:
@@ -21,4 +25,5 @@ public class ConfigResponseFactoryFactory {
                 throw new IllegalArgumentException("Unknown payload compression type " + configserverConfig.payloadCompressionType());
         }
     }
+
 }

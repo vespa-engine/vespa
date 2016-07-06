@@ -17,7 +17,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.Rotations;
+import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.application.Application;

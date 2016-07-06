@@ -26,7 +26,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.config.server.MockRequestHandler;
+import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
