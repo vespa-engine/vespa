@@ -127,7 +127,7 @@ public class SessionZooKeeperClient {
         }
     }
 
-    /** Returns a transaction deleting this path on commit */
+    /** Returns a transaction deleting this session on commit */
     public CuratorTransaction deleteTransaction() {
         return CuratorTransaction.from(CuratorOperations.delete(rootPath.getAbsolute()), curator);
     }

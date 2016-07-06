@@ -100,7 +100,7 @@ public class CuratorDatabaseClient {
         Path path = toPath(state, hostName);
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.deleteOrThrow(path.getAbsolute()));
+        curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         transaction.commit();
         log.log(LogLevel.INFO, "Removed: " + state + " node " + hostName);
         return true;
@@ -147,7 +147,7 @@ public class CuratorDatabaseClient {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     newNodeHistory(node, toState),
                                     node.type());
-            curatorTransaction.add(CuratorOperations.deleteOrThrow(toPath(node).getAbsolute()))
+            curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
         }

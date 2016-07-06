@@ -71,7 +71,7 @@ public class Rotations {
         Path rotationsPath = path.append(applicationId.serializedForm());
         if ( ! curator.exists(rotationsPath)) return CuratorTransaction.empty(curator);
 
-        return CuratorTransaction.from(CuratorOperations.deleteOrThrow(rotationsPath.getAbsolute()), curator);
+        return CuratorTransaction.from(CuratorOperations.delete(rotationsPath.getAbsolute()), curator);
     }
 
 }
