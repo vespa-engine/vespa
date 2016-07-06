@@ -34,7 +34,6 @@ class CuratorDeleteOperation implements CuratorOperation {
 
     @Override
     public CuratorTransaction and(CuratorTransaction transaction) throws Exception {
-        System.out.println("path: " + path + ", exists: " + pathExists);
         if ( ! throwIfNotExist && ! pathExists) return transaction; // this is a noop
         return transaction.delete().forPath(path).and();
     }

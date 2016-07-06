@@ -139,7 +139,7 @@ public class ZKApplicationRepo implements ApplicationRepo, PathChildrenCacheList
     @Override
     public CuratorTransaction deleteApplication(ApplicationId applicationId) {
         Path path = root.append(applicationId.serializedForm());
-        return CuratorTransaction.from(CuratorOperations.delete(path.getAbsolute()), curator);
+        return CuratorTransaction.from(CuratorOperations.deleteOrThrow(path.getAbsolute()), curator);
     }
 
     @Override

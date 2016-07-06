@@ -116,13 +116,8 @@ public class ApplicationRepoTest extends TestWithCurator {
         repo.createPutApplicationTransaction(id1, 1).commit();
         repo.createPutApplicationTransaction(id2, 1).commit();
         assertThat(repo.listApplications().size(), is(2));
-        System.out.println("------ Test deleting " + id1);
         repo.deleteApplication(id1).commit();
         assertThat(repo.listApplications().size(), is(1));
-        System.out.println("------ Test deleting " + id2);
-        repo.deleteApplication(id2).commit();
-        assertThat(repo.listApplications().size(), is(0));
-        System.out.println("------ Test deleting " + id2);
         repo.deleteApplication(id2).commit();
         assertThat(repo.listApplications().size(), is(0));
     }
@@ -153,8 +148,6 @@ public class ApplicationRepoTest extends TestWithCurator {
             assertThat(repo.getSessionIdForApplication(id2), is(5l));
             repo.deleteApplication(id1).commit();
             assertThat(repo.listApplications().size(), is(1));
-            repo.deleteApplication(id2).commit();
-            assertThat(repo.listApplications().size(), is(0));
             repo.deleteApplication(id2).commit();
         }
     }
