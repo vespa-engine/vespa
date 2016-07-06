@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.http;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.http.BadRequestException;
-import com.yahoo.vespa.config.server.http.InternalServerException;
-import com.yahoo.vespa.config.server.http.SessionCreate;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;

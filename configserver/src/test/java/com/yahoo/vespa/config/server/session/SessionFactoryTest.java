@@ -7,6 +7,8 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.SessionCreate;
 
 import com.yahoo.vespa.config.server.tenant.TestWithTenant;

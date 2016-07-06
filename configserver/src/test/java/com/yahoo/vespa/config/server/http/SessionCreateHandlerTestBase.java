@@ -7,7 +7,6 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.config.server.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.session.LocalSession;
