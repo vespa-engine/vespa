@@ -15,7 +15,7 @@ import com.yahoo.vespa.config.server.ApplicationSet;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.RotationsCache;
+import com.yahoo.vespa.config.server.Rotations;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
@@ -113,8 +113,8 @@ public class SessionPreparer {
         final Optional<ApplicationSet> currentActiveApplicationSet;
         final Path tenantPath;
         final ApplicationId applicationId;
-        final RotationsCache rotationsCache;
-        final Set<Rotation> rotations;
+        final Rotations rotations;
+        final Set<Rotation> rotationsSet;
         final ModelContext.Properties properties;
 
         private ApplicationPackage applicationPackage;
@@ -132,14 +132,14 @@ public class SessionPreparer {
             this.tenantPath = tenantPath;
 
             this.applicationId = params.getApplicationId();
-            this.rotationsCache = new RotationsCache(curator, tenantPath);
-            this.rotations = getRotations(params.rotations());
+            this.rotations = new Rotations(curator, tenantPath);
+            this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              rotations);
+                                                              rotationsSet);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configserverConfig,
@@ -192,7 +192,7 @@ public class SessionPreparer {
         }
 
         void writeRotZK() {
-            rotationsCache.writeRotationsToZooKeeper(applicationId, rotations);
+            rotations.writeRotationsToZooKeeper(applicationId, rotationsSet);
             checkTimeout("write rotations to zookeeper");
         }
 
@@ -215,7 +215,7 @@ public class SessionPreparer {
 
         private Set<Rotation> getRotations(Set<Rotation> rotations) {
             if (rotations == null || rotations.isEmpty()) {
-                rotations = rotationsCache.readRotationsFromZooKeeper(applicationId);
+                rotations = this.rotations.readRotationsFromZooKeeper(applicationId);
             }
             return rotations;
         }

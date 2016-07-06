@@ -8,6 +8,8 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.path.Path;
 
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -18,12 +20,13 @@ import java.util.stream.Collectors;
  *
  * @author hmusum
  */
-public class RotationsCache {
+// TODO: This should be owned by the correct Tenant object
+public class Rotations {
 
     private final Path path;
     private final Curator curator;
 
-    public RotationsCache(Curator curator, Path tenantPath) {
+    public Rotations(Curator curator, Path tenantPath) {
         this.curator = curator;
         this.path = tenantPath.append("rotationsCache/");
     }
@@ -63,7 +66,10 @@ public class RotationsCache {
         }
     }
 
-    public void deleteRotationFromZooKeeper(ApplicationId applicationId) {
-        curator.delete(path.append(applicationId.serializedForm()));
+    /** Returns a transaction which deletes these rotations */
+    public CuratorTransaction delete(ApplicationId applicationId) {
+        return CuratorTransaction.from(CuratorOperations.delete(path.append(applicationId.serializedForm()).getAbsolute()), 
+                                       curator);
     }
+
 }

@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
@@ -43,6 +45,12 @@ public class SessionRepo<SESSIONTYPE extends Session> {
      * @return the removed session, or null if none was found
      */
     public synchronized SESSIONTYPE removeSession(long id) { return sessions.remove(id); }
+    
+    public SessionRepoTransaction removeSessionTransaction(long id) {
+        SessionRepoTransaction transaction = new SessionRepoTransaction();
+        transaction.addRemoveOperation(id);
+        return transaction;
+    }
 
     /**
      * Gets a Session
@@ -84,4 +92,58 @@ public class SessionRepo<SESSIONTYPE extends Session> {
     public synchronized Collection<SESSIONTYPE> listSessions() {
         return new ArrayList<>(sessions.values());
     }
+    
+    public class SessionRepoTransaction extends AbstractTransaction<SessionRepoTransaction.Operation> {
+
+        public void addRemoveOperation(long sessionIdToRemove) {
+            add(new RemoveOperation(sessionIdToRemove));
+        }
+        
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void commit() {
+            for (Operation operation : operations())
+                operation.commit();
+        }
+        
+        @Override
+        public void rollbackOrLog() {
+            for (Operation operation : operations())
+                operation.rollback();
+        }
+        
+        public abstract class Operation implements Transaction.Operation {
+            
+            abstract void commit();
+            
+            abstract void rollback();
+            
+        }
+        
+        public class RemoveOperation extends Operation {
+            
+            private final long sessionIdToRemove;
+            private SESSIONTYPE removed = null;
+            
+            public RemoveOperation(long sessionIdToRemove) {
+                this.sessionIdToRemove = sessionIdToRemove;
+            }
+
+            @Override
+            public void commit() {
+                removed = removeSession(sessionIdToRemove);
+            }
+
+            @Override
+            public void rollback() {
+                if (removed != null)
+                    addSession(removed);
+            }
+
+        }
+
+    }
+    
 }

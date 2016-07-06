@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface ApplicationRepo {
      *
      * @return a list of {@link com.yahoo.config.provision.ApplicationId}s that are active.
      */
-    public List<ApplicationId> listApplications();
+    List<ApplicationId> listApplications();
 
     /**
      * Register active application and adds it to the repo. If it already exists it is overwritten.
@@ -39,11 +40,11 @@ public interface ApplicationRepo {
     long getSessionIdForApplication(ApplicationId applicationId);
 
     /**
-     * Deletes an application from the repo if it exists.
+     * Returns a transaction which deletes this application
      *
      * @param applicationId an {@link ApplicationId} to delete.
      */
-    void deleteApplication(ApplicationId applicationId);
+    Transaction deleteApplication(ApplicationId applicationId);
 
     /**
      * Closes the application repo. Once a repo has been closed, it should not be used again.

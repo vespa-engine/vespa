@@ -168,6 +168,7 @@ public class MockCurator extends Curator {
         Node parent = root.getNode(Paths.get(path.getParentPath().toString()), false);
         if (parent == null) throw new KeeperException.NoNodeException(path.toString());
         Node node = parent.children().get(path.getName());
+        if (node == null) throw new KeeperException.NoNodeException(path.getName() + " under " + parent);
         if ( ! node.children().isEmpty() && ! deleteChildren)
             throw new KeeperException.NotEmptyException(path.toString());
         parent.remove(path.getName());

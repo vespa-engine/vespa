@@ -17,6 +17,7 @@ import java.util.Map;
  * @since 5.1
  */
 public class MemoryApplicationRepo implements ApplicationRepo {
+
     private final Map<ApplicationId, Long> applications = new LinkedHashMap<>();
     private boolean isOpen = true;
 
@@ -43,8 +44,10 @@ public class MemoryApplicationRepo implements ApplicationRepo {
     }
 
     @Override
-    public void deleteApplication(ApplicationId id) {
-        applications.remove(id);
+    public Transaction deleteApplication(ApplicationId id) {
+        return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> {
+            applications.remove(id);
+        });
     }
 
     @Override

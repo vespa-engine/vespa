@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 /**
  * A convenience base transaction class for multi-operation transactions
- * which maintains the list of operations to commit and provides a default
+ * which maintains the ordered list of operations to commit and provides a default
  * implementation of rollbackOrLog which logs a SEVERE message.
  * 
  * @author bratseth

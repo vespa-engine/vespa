@@ -134,11 +134,9 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile, userApplicationDir, applicationName, sessionId, currentlyActiveSession);
             applicationPackage.writeMetaData();
-            logger.log(LogLevel.SPAM, "Application package is written to disk");
             return createSessionFromApplication(applicationPackage, sessionId, sessionZooKeeperClient, timeoutBudget);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error creating session: " + e.getMessage(), e);
+            throw new RuntimeException("Error creating session " + sessionIdPath, e);
         }
     }
 

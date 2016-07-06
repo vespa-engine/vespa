@@ -3,10 +3,7 @@ package com.yahoo.vespa.curator.transaction;
 
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.curator.Curator;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
-
-import java.util.Optional;
 
 /**
  * The ZooKeeper operations that we support doing transactional.
@@ -17,7 +14,7 @@ import java.util.Optional;
 public interface CuratorOperation extends Transaction.Operation {
 
     /**
-     * Implementations must support adding this operation to a curator transaction.
+     * Returns the transaction resulting from combining this operation with the input transaction
      *
      * @param transaction {@link CuratorTransaction} to append this operation to.
      * @return the transaction, for chaining.
@@ -26,10 +23,23 @@ public interface CuratorOperation extends Transaction.Operation {
     CuratorTransaction and(CuratorTransaction transaction) throws Exception;
 
     /**
-     * Check if this operation can be performed without making any changes.
+     * Check if this operation can be performed by calling check(curator, new TransactionChanges()).
      *
      * @throws IllegalStateException if it cannot
      */
-    void check(Curator curator);
+    default void check(Curator curator) {
+        check(curator, new TransactionChanges());        
+    }
+
+    /**
+     * Check if this operation can be performed.
+     *
+     * @param curator the curator instance to check against
+     * @param changes changes which will be done prior to this operation as part of the same transaction.
+     *        Operations should use both this and the curator instance to check if they can be performed.
+     *        In addition, they are required to add the change(s) they will perform to the set of changes.
+     * @throws IllegalStateException if it cannot be performed
+     */
+    void check(Curator curator, TransactionChanges changes);
 
 }

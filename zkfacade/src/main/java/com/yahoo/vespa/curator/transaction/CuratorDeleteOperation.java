@@ -13,6 +13,9 @@ class CuratorDeleteOperation implements CuratorOperation {
 
     private final String path;
     private final boolean throwIfNotExist;
+    
+    /** False iff we positively know this path does not exist */
+    private boolean pathExists = true;
 
     CuratorDeleteOperation(String path, boolean throwIfNotExist) {
         this.path = path;
@@ -20,13 +23,19 @@ class CuratorDeleteOperation implements CuratorOperation {
     }
 
     @Override
-    public void check(Curator curator) {
-        if ( throwIfNotExist && ! curator.exists(Path.fromString(path)) )
+    public void check(Curator curator, TransactionChanges changes) {
+        // TODO: Check children
+        pathExists = curator.exists(Path.fromString(path)) || changes.creates(path);
+        if ( throwIfNotExist && ! pathExists)
             throw new IllegalStateException("Cannot perform " + this + ": Path does not exist");
+        if ( ! pathExists)
+            changes.addDeletes(path);
     }
 
     @Override
     public CuratorTransaction and(CuratorTransaction transaction) throws Exception {
+        System.out.println("path: " + path + ", exists: " + pathExists);
+        if ( ! throwIfNotExist && ! pathExists) return transaction; // this is a noop
         return transaction.delete().forPath(path).and();
     }
 

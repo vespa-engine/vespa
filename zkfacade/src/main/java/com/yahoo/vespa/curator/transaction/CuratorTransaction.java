@@ -13,6 +13,7 @@ import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
 
     private final Curator curator;
+    private boolean prepared = false;
 
     public CuratorTransaction(Curator curator) {
         this.curator = curator;
@@ -27,13 +28,18 @@ public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
 
     @Override
     public void prepare() {
+        TransactionChanges changes = new TransactionChanges();
         for (CuratorOperation operation : operations())
-            operation.check(curator);
+            operation.check(curator, changes);
+        prepared = true;
     }
 
+    /** Commits this transaction. If it is not already prepared this will prepare it first */
     @Override
     public void commit() {
         try {
+            if ( ! prepared)
+                prepare();
             org.apache.curator.framework.api.transaction.CuratorTransaction transaction = curator.framework().inTransaction();
             for (CuratorOperation operation : operations()) {
                 transaction = operation.and(transaction);

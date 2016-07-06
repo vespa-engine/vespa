@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ActivateLock;
-import com.yahoo.vespa.config.server.RotationsCache;
+import com.yahoo.vespa.config.server.Rotations;
 import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -104,12 +103,15 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
         if (session == null) return false;
 
         NestedTransaction transaction = new NestedTransaction();
-        localSessionRepo.removeSession(session.getSessionId());
-        session.delete(transaction);
+        transaction.add(localSessionRepo.removeSessionTransaction(session.getSessionId()));
+        session.delete(transaction); // TODO: Not tested
+
+        transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not tested
+
+        transaction.add(applicationRepo.deleteApplication(applicationId));
+
         transaction.commit();
-        RotationsCache rotationsCache = new RotationsCache(owner.get().getCurator(), owner.get().getPath());
-        rotationsCache.deleteRotationFromZooKeeper(applicationId);
-        applicationRepo.deleteApplication(applicationId);
+
         if (hostProvisioner.isPresent())
             hostProvisioner.get().removed(applicationId);
         log.log(LogLevel.INFO, "Deleted " + applicationId);

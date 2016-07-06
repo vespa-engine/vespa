@@ -128,9 +128,9 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     /** Add transactions to delete this session to the given nested transaction */
     public void delete(NestedTransaction transaction) {
-        transaction.add(superModelGenerationCounter.incrementTransaction(), CuratorTransaction.class);
         transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
-        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())));
+        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())), SuperModelGenerationCounter.IncrementTransaction.class);
+        transaction.add(superModelGenerationCounter.incrementTransaction());
     }
 
     @Override

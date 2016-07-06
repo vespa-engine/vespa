@@ -8,6 +8,7 @@ import java.util.List;
  * to be committed as one.
  * Implementations are required to atomically apply changes
  * in the commit step or throw an exception if it fails.
+ * Operations are performed in the order they are added.
  *
  * @author lulf
  * @author bratseth

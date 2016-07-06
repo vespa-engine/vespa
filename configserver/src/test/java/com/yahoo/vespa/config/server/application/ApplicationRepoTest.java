@@ -116,11 +116,14 @@ public class ApplicationRepoTest extends TestWithCurator {
         repo.createPutApplicationTransaction(id1, 1).commit();
         repo.createPutApplicationTransaction(id2, 1).commit();
         assertThat(repo.listApplications().size(), is(2));
-        repo.deleteApplication(id1);
+        System.out.println("------ Test deleting " + id1);
+        repo.deleteApplication(id1).commit();
         assertThat(repo.listApplications().size(), is(1));
-        repo.deleteApplication(id2);
+        System.out.println("------ Test deleting " + id2);
+        repo.deleteApplication(id2).commit();
         assertThat(repo.listApplications().size(), is(0));
-        repo.deleteApplication(id2);
+        System.out.println("------ Test deleting " + id2);
+        repo.deleteApplication(id2).commit();
         assertThat(repo.listApplications().size(), is(0));
     }
 
@@ -148,11 +151,11 @@ public class ApplicationRepoTest extends TestWithCurator {
             assertThat(lst.get(1).application(), is(id2.application()));
             assertThat(repo.getSessionIdForApplication(id1), is(6l));
             assertThat(repo.getSessionIdForApplication(id2), is(5l));
-            repo.deleteApplication(id1);
+            repo.deleteApplication(id1).commit();
             assertThat(repo.listApplications().size(), is(1));
-            repo.deleteApplication(id2);
+            repo.deleteApplication(id2).commit();
             assertThat(repo.listApplications().size(), is(0));
-            repo.deleteApplication(id2);
+            repo.deleteApplication(id2).commit();
         }
     }
 
@@ -166,7 +169,8 @@ public class ApplicationRepoTest extends TestWithCurator {
         assertNull(reloadHandler.lastRemoved);
         repo.deleteApplication(new ApplicationId.Builder()
                                .tenant("mytenant")
-                               .applicationName("bar").instanceName("quux").build());
+                               .applicationName("bar").instanceName("quux").build())
+                .commit();
         long endTime = System.currentTimeMillis() + 60_000;
         while (System.currentTimeMillis() < endTime && reloadHandler.lastRemoved == null) {
             Thread.sleep(100);

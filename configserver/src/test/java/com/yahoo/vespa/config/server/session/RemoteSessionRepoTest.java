@@ -133,6 +133,7 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     }
 
     private class FailingApplicationRepo implements ApplicationRepo {
+
         @Override
         public List<ApplicationId> listApplications() {
             return Collections.singletonList(ApplicationId.defaultId());
@@ -149,8 +150,8 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         }
 
         @Override
-        public void deleteApplication(ApplicationId applicationId) {
-
+        public Transaction deleteApplication(ApplicationId applicationId) {
+            return null;
         }
 
         @Override

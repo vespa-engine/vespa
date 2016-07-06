@@ -197,7 +197,7 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     private Set<Rotation> readRotationsFromZK(ApplicationId applicationId) {
-        return new RotationsCache(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
+        return new Rotations(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
     }
 
     @Test
@@ -219,7 +219,7 @@ public class SessionPreparerTest extends TestWithCurator {
 
         final String rotations = "foo.msbe.global.vespa.yahooapis.com";
         final ApplicationId applicationId = applicationId("test");
-        new RotationsCache(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
+        new Rotations(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
         final PrepareParams params = new PrepareParams().applicationId(applicationId);
         final File app = new File("src/test/resources/deploy/app");
         preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath);
