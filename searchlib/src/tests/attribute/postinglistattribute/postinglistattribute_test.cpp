@@ -132,7 +132,7 @@ private:
 
     template <typename V, typename T>
     SearchContextPtr
-    getSearch(const V & vec, const T & term, bool prefix);
+    getSearch(const V & vec, const T & term, bool prefix, const AttributeVector::SearchContext::Params & params=AttributeVector::SearchContext::Params());
 
     template <typename V>
     SearchContextPtr
@@ -158,13 +158,14 @@ private:
     void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
 
     template <typename BufferType>
-    void checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
+    void checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
                          uint32_t numDocs, const std::vector<BufferType> & values);
     void testPostingList();
     void testPostingList(bool enableBitVector);
+    void testPostingList(bool enableBitVector, uint32_t numDocs, uint32_t numUniqueValues);
 
     template <typename AttributeType, typename ValueType>
     void checkPostingList(AttributeType & vec, ValueType value, DocSet expected);
@@ -353,7 +354,7 @@ PostingListAttributeTest::buildTermQuery(std::vector<char> &buffer,
 
 template <typename V, typename T>
 SearchContextPtr
-PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix)
+PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, const AttributeVector::SearchContext::Params & params)
 {
     std::vector<char> query;
     vespalib::asciistream ss;
@@ -361,8 +362,7 @@ PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix)
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
     return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
-                  AttributeVector::SearchContext::Params());
+        getSearch(vespalib::stringref(&query[0], query.size()), params);
 }
 
 
@@ -411,7 +411,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp,
     if (!EXPECT_TRUE(assertIterator(exp, *sb)))
         return false;
     return true;
-}
+}fcheckSearch
 
 
 bool
@@ -504,16 +504,17 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
             numHits++;
         }
         EXPECT_EQUAL(doc, docEnd);
-        checkSearch(vec, values[i], numHits, docBegin, docEnd);
+        checkSearch(false, vec, values[i], numHits, docBegin, docEnd);
+        checkSearch(true, vec, values[i], numHits, docBegin, docEnd);
     }
 }
 
 
 template <typename BufferType>
 void
-PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
+PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
 {
-    SearchContextPtr sc = getSearch(vec, term, false);
+    SearchContextPtr sc = getSearch(vec, term, false, AttributeVector::SearchContext::Params().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
     sc->fetchPostings(true);
     size_t approx = sc->approximateHits();
@@ -613,12 +614,17 @@ PostingListAttributeTest::testPostingList()
 void
 PostingListAttributeTest::testPostingList(bool enableBitVector)
 {
-    uint32_t numDocs = 1000;
-    uint32_t numValues = 50;
+    testPostingList(enableBitVector, 1000, 50);
+    testPostingList(enableBitVector, 1000, 10); // This should force bitvector
+}
+
+void
+PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs, uint32_t numUniqueValues)
+{
 
     { // IntegerAttribute
         std::vector<largeint_t> values;
-        for (uint32_t i = 0; i < numValues; ++i) {
+        for (uint32_t i = 0; i < numUniqueValues; ++i) {
             values.push_back(i);
         }
         {
@@ -649,7 +655,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector)
 
     { // FloatingPointAttribute
         std::vector<double> values;
-        for (uint32_t i = 0; i < numValues; ++i) {
+        for (uint32_t i = 0; i < numUniqueValues; ++i) {
             values.push_back(i);
         }
         {
@@ -681,9 +687,9 @@ PostingListAttributeTest::testPostingList(bool enableBitVector)
     { // StringAttribute
         std::vector<vespalib::string> values;
         std::vector<const char *> charValues;
-        values.reserve(numValues);
-        charValues.reserve(numValues);
-        for (uint32_t i = 0; i < numValues; ++i) {
+        values.reserve(numUniqueValues);
+        charValues.reserve(numUniqueValues);
+        for (uint32_t i = 0; i < numUniqueValues; ++i) {
             vespalib::asciistream ss;
             ss << "string" << i;
             values.push_back(ss.str());
