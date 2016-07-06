@@ -19,6 +19,11 @@ public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
         this.curator = curator;
     }
     
+    /** Returns an empty curator transaction */
+    public static CuratorTransaction empty(Curator curator) {
+        return new CuratorTransaction(curator);
+    }
+    
     /** Returns a curator transaction having a single operation */
     public static CuratorTransaction from(CuratorOperation operation, Curator curator) {
         CuratorTransaction transaction = new CuratorTransaction(curator);

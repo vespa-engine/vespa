@@ -66,10 +66,12 @@ public class Rotations {
         }
     }
 
-    /** Returns a transaction which deletes these rotations */
+    /** Returns a transaction which deletes these rotations if they exist */
     public CuratorTransaction delete(ApplicationId applicationId) {
-        return CuratorTransaction.from(CuratorOperations.delete(path.append(applicationId.serializedForm()).getAbsolute()), 
-                                       curator);
+        Path rotationsPath = path.append(applicationId.serializedForm());
+        if ( ! curator.exists(rotationsPath)) return CuratorTransaction.empty(curator);
+
+        return CuratorTransaction.from(CuratorOperations.deleteOrThrow(rotationsPath.getAbsolute()), curator);
     }
 
 }
