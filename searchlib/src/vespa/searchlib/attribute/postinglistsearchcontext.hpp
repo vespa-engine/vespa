@@ -275,11 +275,8 @@ PostingListSearchContextT<DataT>::singleHits(void) const
 {
     if (_gbv) {
         const GrowableBitVector *bv = _gbv;
-        uint32_t extraGuards = bv->capacity() - bv->size();
         // Some inaccuracy is expected, data changes underfeet
-        int32_t res = bv->countTrueBits() - extraGuards;
-        if (res < 1)
-            res = 1;
+        int32_t res = bv->countTrueBits();
         return res;
     }
     if (!_pidx.valid())
