@@ -157,6 +157,9 @@ private:
     template <typename VectorType, typename BufferType, typename Range>
     void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
 
+    template <typename BufferType, typename RangeGenerator>
+    void checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd);
+
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
                          uint32_t numDocs, const std::vector<BufferType> & values);
@@ -479,13 +482,12 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
                                            const RangeGenerator & range)
 {
     const typename VectorType::EnumStore & enumStore = vec.getEnumStore();
-    const typename VectorType::Dictionary & dict =
-        enumStore.getPostingDictionary();
+    const typename VectorType::Dictionary & dict = enumStore.getPostingDictionary();
     const typename VectorType::PostingList & postingList = vec.getPostingList();
 
     for (size_t i = 0; i < values.size(); ++i) {
-        uint32_t docBegin = range.getBegin(i);
-        uint32_t docEnd = range.getEnd(i);
+        const uint32_t docBegin = range.getBegin(i);
+        const uint32_t docEnd = range.getEnd(i);
 
         typename VectorType::DictionaryIterator itr =
             dict.find(typename VectorType::EnumIndex(),
@@ -500,7 +502,33 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
             EXPECT_EQUAL(doc++, postings.getKey());
         }
         EXPECT_EQUAL(doc, docEnd);
+        checkSearch(vec, values[i], docBegin, docEnd);
     }
+}
+
+
+template <typename BufferType, typename RangeGenerator>
+void
+PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd)
+{
+    SearchContextPtr sc = getSearch(vec, term, false);
+    EXPECT_FALSE( ! sc );
+    size_t approx = sc->approximateHits();
+    EXPECT_EQUAL(7u, approx);
+    TermFieldMatchData tfmd;
+    auto it = sc->createFilterIterator(&tfmd, true);
+    it->initFullRange();
+    EXPECT_EQUAL(7u, it->getDocId());
+    EXPECT_EQUAL(docBegin, it->getDocId());
+    size_t hits(0);
+    uint32_t lastDocId = it->getDocId();
+    while (! it->isAtEnd()) {
+        lastDocId = it->getDocId();
+        it->seek(lastDocId+1);
+        hits++;
+    }
+    EXPECT_GREATER_EQUAL(approx, hits);
+    EXPECT_EQUAL(docEnd, lastDocId);
 }
 
 template <typename VectorType, typename BufferType>
