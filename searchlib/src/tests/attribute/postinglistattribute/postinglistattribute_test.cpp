@@ -615,7 +615,7 @@ void
 PostingListAttributeTest::testPostingList(bool enableBitVector)
 {
     testPostingList(enableBitVector, 1000, 50);
-    testPostingList(enableBitVector, 1000, 10); // This should force bitvector
+    testPostingList(enableBitVector, 2000, 10); // This should force bitvector
 }
 
 void
