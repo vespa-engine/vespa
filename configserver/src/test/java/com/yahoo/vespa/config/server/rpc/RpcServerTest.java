@@ -13,7 +13,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.*;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;

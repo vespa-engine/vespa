@@ -10,7 +10,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.server.ReloadHandler;

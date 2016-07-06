@@ -11,7 +11,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.*;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;

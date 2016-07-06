@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.application;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +8,10 @@ import java.util.Optional;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
+import com.yahoo.vespa.config.server.ModelStub;
+import com.yahoo.vespa.config.server.VersionDoesNotExistException;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;
 import org.junit.Test;

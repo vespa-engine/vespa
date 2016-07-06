@@ -7,8 +7,8 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.ApplicationMapper;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationMapper;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.HostRegistries;
 import com.yahoo.vespa.config.server.HostRegistry;
@@ -84,7 +84,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     /**
      * Activates the config of the given app. Notifies listeners
-     * @param applicationSet the {@link com.yahoo.vespa.config.server.ApplicationSet} to be reloaded
+     * @param applicationSet the {@link ApplicationSet} to be reloaded
      */
     public void reloadConfig(ApplicationSet applicationSet) {
         setLiveApp(applicationSet);

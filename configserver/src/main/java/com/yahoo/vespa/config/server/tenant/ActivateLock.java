@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorLock;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @since 5.1
  */
 public class ActivateLock {
+
     private static final String ACTIVATE_LOCK_NAME = "activateLock";
     private final CuratorLock curatorLock;
 
@@ -36,4 +38,5 @@ public class ActivateLock {
             curatorLock.unlock();
         }
     }
+
 }

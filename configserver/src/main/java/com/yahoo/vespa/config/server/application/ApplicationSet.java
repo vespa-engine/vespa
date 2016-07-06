@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.application;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
-import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.VersionDoesNotExistException;
 
 import java.util.*;
 import java.util.stream.Collectors;

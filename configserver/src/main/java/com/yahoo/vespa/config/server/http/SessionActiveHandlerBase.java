@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.vespa.config.server.ActivateLock;
+import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.Deployment;

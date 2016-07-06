@@ -23,6 +23,7 @@ import java.util.zip.GZIPInputStream;
  * @since 5.1
  */
 public class CompressedApplicationInputStream implements AutoCloseable {
+
     private static final Logger log = Logger.getLogger(CompressedApplicationInputStream.class.getPackage().getName());
     private final ArchiveInputStream ais;
 
