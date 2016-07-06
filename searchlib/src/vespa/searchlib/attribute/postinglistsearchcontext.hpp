@@ -274,20 +274,16 @@ unsigned int
 PostingListSearchContextT<DataT>::singleHits(void) const
 {
     if (_gbv) {
-        const GrowableBitVector *bv = _gbv;
-        uint32_t extraGuards = bv->capacity() - bv->size();
         // Some inaccuracy is expected, data changes underfeet
-        int32_t res = bv->countTrueBits() - extraGuards;
-        if (res < 1)
-            res = 1;
-        return res;
+        return _gbv->countTrueBits();
     }
-    if (!_pidx.valid())
+    if (!_pidx.valid()) {
         return 0u;
-    if (!_frozenRoot.valid())
+    }
+    if (!_frozenRoot.valid()) {
         return _postingList.getClusterSize(_pidx);
-    typename PostingList::BTreeType::FrozenView
-        frozenView(_frozenRoot, _postingList.getAllocator());
+    }
+    typename PostingList::BTreeType::FrozenView frozenView(_frozenRoot, _postingList.getAllocator());
     return frozenView.size();
 }
 
