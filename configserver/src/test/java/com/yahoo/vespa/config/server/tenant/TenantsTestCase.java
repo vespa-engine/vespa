@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -7,6 +7,10 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
+import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.ServerCache;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestWithCurator;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.deploy.MockDeployer;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -45,8 +49,8 @@ public class TenantsTestCase extends TestWithCurator {
     @Before
     public void setupSessions() throws Exception {
         globalComponentRegistry = new TestComponentRegistry(curator);
-        listener = globalComponentRegistry.reloadListener;
-        tenantListener = globalComponentRegistry.tenantListener;
+        listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
+        tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         tenantListener.tenantsLoaded = false;
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics());
         assertTrue(tenantListener.tenantsLoaded);

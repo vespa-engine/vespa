@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 import java.util.*;
 import java.util.concurrent.*;

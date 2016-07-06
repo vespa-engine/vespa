@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.server.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;

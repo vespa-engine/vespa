@@ -10,6 +10,7 @@ import java.util.concurrent.Executor;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.http.SessionResponse;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import org.junit.After;
 import org.junit.Before;
 

@@ -11,6 +11,9 @@ import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantBuilder;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.util.*;

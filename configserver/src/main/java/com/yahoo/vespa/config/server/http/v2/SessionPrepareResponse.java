@@ -3,11 +3,11 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActionsSlimeConverter;
 import com.yahoo.vespa.config.server.http.SessionResponse;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 /**
  * Creates a response for SessionPrepareHandler.

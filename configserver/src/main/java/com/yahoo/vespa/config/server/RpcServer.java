@@ -25,6 +25,9 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
+import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
+import com.yahoo.vespa.config.server.tenant.TenantListener;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 

@@ -8,8 +8,8 @@ import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.application.UriPattern.Match;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
 /**

@@ -9,14 +9,14 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * Handler to create, get and delete a tenant.

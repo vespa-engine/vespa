@@ -5,6 +5,8 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.tenant.TenantRequestHandler;
+import com.yahoo.vespa.config.server.tenant.TestWithTenant;
 import com.yahoo.vespa.config.server.version.VersionState;
 import org.junit.Rule;
 import org.junit.Test;

@@ -5,8 +5,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 import java.net.URI;
 

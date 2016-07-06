@@ -1,11 +1,13 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ActivateLock;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;

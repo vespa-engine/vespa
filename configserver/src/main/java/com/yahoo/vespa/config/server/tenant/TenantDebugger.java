@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Curator;
@@ -16,6 +16,7 @@ import java.util.logging.Logger;
  * @author lulf
  */
 public class TenantDebugger implements TreeCacheListener {
+
     private final TreeCache cache;
     private static final Logger log = Logger.getLogger(TenantDebugger.class.getName());
 
@@ -35,4 +36,5 @@ public class TenantDebugger implements TreeCacheListener {
                 break;
         }
     }
+
 }

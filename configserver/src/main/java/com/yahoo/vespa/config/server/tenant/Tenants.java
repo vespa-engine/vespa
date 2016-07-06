@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.google.inject.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
@@ -356,4 +357,5 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     public static Path getTenantPath(TenantName tenantName) {
         return tenantsPath.append(tenantName.value());
     }
+
 }

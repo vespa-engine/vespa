@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import org.junit.Before;
 import org.junit.Test;
 

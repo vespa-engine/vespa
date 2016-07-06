@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.TestWithTenant;
 import org.junit.Test;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;

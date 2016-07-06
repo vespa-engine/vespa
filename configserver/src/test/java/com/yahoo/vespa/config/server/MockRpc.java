@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 
 import java.util.Optional;
 import java.util.concurrent.CompletionService;

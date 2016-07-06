@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.server.http.HttpHandler;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * Handler to list tenants in the configserver

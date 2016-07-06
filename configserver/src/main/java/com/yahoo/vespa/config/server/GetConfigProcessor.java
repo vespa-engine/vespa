@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.*;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;

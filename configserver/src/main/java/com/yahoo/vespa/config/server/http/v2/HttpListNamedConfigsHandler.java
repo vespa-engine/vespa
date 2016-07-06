@@ -12,7 +12,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpHandler;

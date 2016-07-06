@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
@@ -17,6 +17,15 @@ import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
+import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.HostRegistries;
+import com.yahoo.vespa.config.server.PathProvider;
+import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ServerCache;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.TestWithCurator;
+import com.yahoo.vespa.config.server.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -27,6 +36,7 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
+import com.yahoo.vespa.config.server.tenant.TenantRequestHandler;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 

@@ -9,7 +9,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.config.provision.ApplicationId;
 
 import java.util.Optional;

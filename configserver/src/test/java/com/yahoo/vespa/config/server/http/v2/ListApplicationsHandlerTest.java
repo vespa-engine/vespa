@@ -7,9 +7,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
-import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import org.junit.Test;
 import org.junit.Before;
 

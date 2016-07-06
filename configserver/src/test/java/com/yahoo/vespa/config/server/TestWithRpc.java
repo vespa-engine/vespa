@@ -9,6 +9,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.After;
 import org.junit.Before;
 

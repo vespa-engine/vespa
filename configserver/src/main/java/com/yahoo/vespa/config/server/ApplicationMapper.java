@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 /**
  * Used during config request handling to route to the right config model
  * based on application id and version.
+ * 
  * @author Vegard Sjonfjell
  */
 public final class ApplicationMapper {

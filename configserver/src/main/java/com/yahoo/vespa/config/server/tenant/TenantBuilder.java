@@ -1,10 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.ConfigResponseFactoryFactory;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.HostValidator;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.ZKTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -99,15 +104,15 @@ public class TenantBuilder {
         createSessionFactory();
         createLocalSessionRepo();
         return new Tenant(tenant,
-                tenantPath,
-                sessionFactory,
-                localSessionRepo,
-                remoteSessionRepo,
-                requestHandler,
-                reloadHandler,
-                applicationRepo,
-                componentRegistry.getCurator(),
-                tenantFileSystemDirs);
+                          tenantPath,
+                          sessionFactory,
+                          localSessionRepo,
+                          remoteSessionRepo,
+                          requestHandler,
+                          reloadHandler,
+                          applicationRepo,
+                          componentRegistry.getCurator(),
+                          tenantFileSystemDirs);
     }
 
 	private void createLocalSessionRepo() {
@@ -143,10 +148,10 @@ public class TenantBuilder {
     private void createTenantRequestHandler() {
         if (requestHandler == null || reloadHandler == null) {
             TenantRequestHandler impl = new TenantRequestHandler(componentRegistry.getMetrics(),
-                    tenant,
-                    Collections.singletonList(componentRegistry.getReloadListener()),
-                    ConfigResponseFactoryFactory.createFactory(componentRegistry.getConfigserverConfig()),
-                    componentRegistry.getHostRegistries());
+                                                                 tenant,
+                                                                 Collections.singletonList(componentRegistry.getReloadListener()),
+                                                                 ConfigResponseFactoryFactory.createFactory(componentRegistry.getConfigserverConfig()),
+                                                                 componentRegistry.getHostRegistries());
             if (hostValidator == null) {
                 this.hostValidator = impl;
             }

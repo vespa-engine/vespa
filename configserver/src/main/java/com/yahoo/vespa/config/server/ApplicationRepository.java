@@ -13,6 +13,8 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
 import java.time.Clock;
@@ -25,6 +27,8 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
+// TODO: Move logic for dealing with applications here from the HTTP layer and make this the persistent component
+//       owning the rest of the state
 public class ApplicationRepository implements com.yahoo.config.provision.Deployer {
 
     private static final Logger log = Logger.getLogger(ApplicationRepository.class.getName());

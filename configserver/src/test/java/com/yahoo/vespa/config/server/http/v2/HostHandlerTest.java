@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import org.junit.Before;
 import org.junit.Test;
 
