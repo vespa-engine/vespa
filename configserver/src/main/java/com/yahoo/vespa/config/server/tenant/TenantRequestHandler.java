@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.VersionDoesNotExistException;
+import com.yahoo.vespa.config.server.application.VersionDoesNotExistException;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;

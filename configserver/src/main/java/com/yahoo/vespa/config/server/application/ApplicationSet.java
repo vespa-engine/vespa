@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
-import com.yahoo.vespa.config.server.VersionDoesNotExistException;
 
 import java.util.*;
 import java.util.stream.Collectors;

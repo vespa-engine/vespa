@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.yahoo.vespa.config.server.VersionDoesNotExistException;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
 /**
