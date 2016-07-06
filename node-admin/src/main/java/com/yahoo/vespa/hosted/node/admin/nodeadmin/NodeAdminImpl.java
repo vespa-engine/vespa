@@ -160,11 +160,9 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(key -> new Pair<>(Optional.ofNullable(tMap.get(key)), Optional.ofNullable(uMap.get(key))));
     }
 
-    // TODO This method should rather take a lost of Hostname instead of Container. However, it triggers
+    // TODO This method should rather take a list of Hostname instead of Container. However, it triggers
     // a refactoring of the logic. Which is hard due to the style of programming.
     // The method streams the list of containers twice.
-    // It is not a full synchronization as it will only add new NodeAgent. Old ones are removed in
-    // garbageCollectDockerImages. We should refactor the code as some point.
     void synchronizeNodeSpecsToNodeAgents(
             final List<ContainerNodeSpec> containersToRun,
             final List<Container> existingContainers) {
