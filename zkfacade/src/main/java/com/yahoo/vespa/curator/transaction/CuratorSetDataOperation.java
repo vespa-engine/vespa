@@ -23,7 +23,7 @@ class CuratorSetDataOperation implements CuratorOperation {
 
     @Override
     public void check(Curator curator, TransactionChanges changes) {
-        if ( ! curator.exists(Path.fromString(path)) && ! changes.creates(path) )
+        if ( ! curator.exists(Path.fromString(path)) && ! changes.create(path) )
             throw new IllegalStateException("Cannot perform " + this + ": Path does not exist");
     }
 

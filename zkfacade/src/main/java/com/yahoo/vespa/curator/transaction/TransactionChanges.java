@@ -17,7 +17,7 @@ public class TransactionChanges {
     private final Set<String> deletedPaths = new HashSet<>();
     
     /** Returns whether the changes include creating this absolute path */
-    public boolean creates(String path) {
+    public boolean create(String path) {
         return createdPaths.contains(path);
     }
 
@@ -32,18 +32,18 @@ public class TransactionChanges {
     }
 
     /** Adds creation of an absolute path to the set of changes made by this */
-    public void addCreates(String path) {
+    public void addCreate(String path) {
         deletedPaths.remove(path);
         createdPaths.add(path);
     }
 
     /** Returns whether the changes include deleting this absolute path */
-    public boolean deletes(String path) {
+    public boolean delete(String path) {
         return deletedPaths.contains(path);
     }
 
     /** Adds deletion of an absolute path to the set of changes made by this */
-    public void addDeletes(String path) {
+    public void addDelete(String path) {
         createdPaths.remove(path);
         deletedPaths.add(path);
     }

@@ -19,11 +19,11 @@ class CuratorDeleteOperation implements CuratorOperation {
 
     @Override
     public void check(Curator curator, TransactionChanges changes) {
-        if (  ! curator.exists(Path.fromString(path)) && ! changes.creates(path))
+        if (  ! curator.exists(Path.fromString(path)) && ! changes.create(path))
             throw new IllegalStateException("Cannot perform " + this + ": Path does not exist");
         if (curator.getChildren(Path.fromString(path)).size() > 0 || changes.createsChildrenOf(path))
             throw new IllegalStateException("Cannot perform " + this + ": Path is not empty");
-        changes.addDeletes(path);
+        changes.addDelete(path);
     }
 
     @Override

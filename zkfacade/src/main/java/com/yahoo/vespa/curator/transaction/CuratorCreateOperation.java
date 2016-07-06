@@ -28,10 +28,9 @@ class CuratorCreateOperation implements CuratorOperation {
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return; // root; ok
         String parent = path.substring(0, lastSlash);
-        if ( ! parent.isEmpty() && ! curator.exists(Path.fromString(parent)) && ! changes.creates(parent)) {
+        if ( ! parent.isEmpty() && ! curator.exists(Path.fromString(parent)) && ! changes.create(parent))
             throw new IllegalStateException("Cannot perform " + this + ": Parent '" + parent + "' does not exist");
-        }
-        changes.addCreates(path);
+        changes.addCreate(path);
     }
 
     @Override
