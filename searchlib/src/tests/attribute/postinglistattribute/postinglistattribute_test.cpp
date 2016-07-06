@@ -158,7 +158,7 @@ private:
     void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
 
     template <typename BufferType>
-    void checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd);
+    void checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
@@ -498,27 +498,39 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         postings = postingList.begin(itr.getData());
 
         uint32_t doc = docBegin;
+        uint32_t numHits(0);
         for (; postings.valid(); ++postings) {
             EXPECT_EQUAL(doc++, postings.getKey());
+            numHits++;
         }
         EXPECT_EQUAL(doc, docEnd);
-        checkSearch(vec, values[i], docBegin, docEnd);
+        checkSearch(vec, values[i], numHits, docBegin, docEnd);
     }
 }
 
 
 template <typename BufferType>
 void
-PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd)
+PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
 {
     SearchContextPtr sc = getSearch(vec, term, false);
     EXPECT_FALSE( ! sc );
+    sc->fetchPostings(true);
     size_t approx = sc->approximateHits();
-    EXPECT_EQUAL(7u, approx);
+    EXPECT_EQUAL(numHits, approx);
+    //if (numHits != approx) {
+    //    std::cerr << "Term = " << term << std::endl;
+    //}
+    if (docBegin == 0) {
+        // Approximation does not know about the special 0
+        // But the iterator does....
+        numHits--;
+        docBegin++;
+    }
     TermFieldMatchData tfmd;
-    auto it = sc->createFilterIterator(&tfmd, true);
+    auto it = sc->createIterator(&tfmd, true);
     it->initFullRange();
-    EXPECT_EQUAL(7u, it->getDocId());
+    EXPECT_TRUE(it->seekFirst(docBegin));
     EXPECT_EQUAL(docBegin, it->getDocId());
     size_t hits(0);
     uint32_t lastDocId = it->getDocId();
@@ -527,8 +539,9 @@ PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferT
         it->seek(lastDocId+1);
         hits++;
     }
+    EXPECT_EQUAL(numHits, hits);
     EXPECT_GREATER_EQUAL(approx, hits);
-    EXPECT_EQUAL(docEnd, lastDocId);
+    EXPECT_EQUAL(docEnd, lastDocId+1);
 }
 
 template <typename VectorType, typename BufferType>
@@ -670,9 +683,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector)
         std::vector<const char *> charValues;
         values.reserve(numValues);
         charValues.reserve(numValues);
-        values.push_back("");
-        charValues.push_back(values.back().c_str());
-        for (uint32_t i = 1; i < numValues; ++i) {
+        for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::asciistream ss;
             ss << "string" << i;
             values.push_back(ss.str());
