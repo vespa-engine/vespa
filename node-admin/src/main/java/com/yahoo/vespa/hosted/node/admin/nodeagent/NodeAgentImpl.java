@@ -63,7 +63,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
     ContainerState containerState = ABSENT;
 
-    // The attributes of the last successful noderepo attribute update for this node. Used to avoid redundant calls.
+    // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
 
@@ -122,6 +122,7 @@ public class NodeAgentImpl implements NodeAgent {
         debug.put("workToDoNow", workToDoNow);
         synchronized (monitor) {
             debug.put("History", new LinkedList<>(debugMessages));
+            debug.put("Node repo state", lastNodeSpec.nodeState.name());
         }
         return debug;
     }
@@ -269,7 +270,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    // For testing
+    // Public for testing
     public void tick() throws Exception {
         final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                 .orElseThrow(() ->
@@ -277,7 +278,9 @@ public class NodeAgentImpl implements NodeAgent {
 
         if (!nodeSpec.equals(lastNodeSpec)) {
             addDebugMessage("Loading new node spec: " + nodeSpec.toString());
-            lastNodeSpec = nodeSpec;
+            synchronized (monitor) {
+                lastNodeSpec = nodeSpec;
+            }
         }
 
         switch (nodeSpec.nodeState) {
@@ -330,6 +333,12 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
+        }
+    }
+
+    public ContainerNodeSpec getContainerNodeSpec() {
+        synchronized (monitor) {
+            return lastNodeSpec;
         }
     }
 }
