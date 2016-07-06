@@ -11,7 +11,9 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
  * Rotations for an application. Persisted in ZooKeeper.
  *
  * @author hmusum
+ * @author bratseth
  */
 // TODO: This should be owned by the correct Tenant object
 public class Rotations {
@@ -31,47 +34,37 @@ public class Rotations {
         this.path = tenantPath.append("rotationsCache/");
     }
 
-    public Set<Rotation> readRotationsFromZooKeeper(ApplicationId applicationId) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Path fullPath = path.append(applicationId.serializedForm());
-        Set<Rotation> ret = new LinkedHashSet<>();
+    public Set<Rotation> readRotationsFromZooKeeper(ApplicationId application) {
         try {
-            if (curator != null && curator.exists(fullPath)) {
-                byte[] data = curator.framework().getData().forPath(fullPath.getAbsolute());
-                if (data.length > 0) {
-                    Set<String> rotationIds = objectMapper.readValue(data, new TypeReference<Set<String>>() {
-                    });
-                    ret.addAll(rotationIds.stream().map(Rotation::new).collect(Collectors.toSet()));
-                }
-            }
+            Optional<byte[]> data = curator.getData(rotationsOf(application));
+            if ( ! data.isPresent() || data.get().length == 0) return Collections.emptySet();
+            Set<String> rotationIds = new ObjectMapper().readValue(data.get(), new TypeReference<Set<String>>() {});
+            return rotationIds.stream().map(Rotation::new).collect(Collectors.toSet());
         } catch (Exception e) {
-            throw new RuntimeException("Error reading rotations from ZooKeeper (" + fullPath + ")", e);
+            throw new RuntimeException("Error reading rotations of " + application, e);
         }
-        return ret;
     }
 
-    public void writeRotationsToZooKeeper(ApplicationId applicationId, Set<Rotation> rotations) {
-        if (rotations.size() > 0) {
-            final ObjectMapper objectMapper = new ObjectMapper();
-            final Path cachePath = path.append(applicationId.serializedForm());
-            final String absolutePath = cachePath.getAbsolute();
-            try {
-                curator.create(cachePath);
-                final Set<String> rotationIds = rotations.stream().map(Rotation::getId).collect(Collectors.toSet());
-                final byte[] data = objectMapper.writeValueAsBytes(rotationIds);
-                curator.framework().setData().forPath(absolutePath, data);
-            } catch (Exception e) {
-                throw new RuntimeException("Error writing rotations to ZooKeeper (" + absolutePath + ")", e);
-            }
+    public void writeRotationsToZooKeeper(ApplicationId application, Set<Rotation> rotations) {
+        if (rotations.isEmpty()) return;
+        try {
+            Set<String> rotationIds = rotations.stream().map(Rotation::getId).collect(Collectors.toSet());
+            byte[] data = new ObjectMapper().writeValueAsBytes(rotationIds);
+            curator.set(rotationsOf(application), data);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not write rotations of " + application, e);
         }
     }
 
     /** Returns a transaction which deletes these rotations if they exist */
-    public CuratorTransaction delete(ApplicationId applicationId) {
-        Path rotationsPath = path.append(applicationId.serializedForm());
-        if ( ! curator.exists(rotationsPath)) return CuratorTransaction.empty(curator);
-
-        return CuratorTransaction.from(CuratorOperations.delete(rotationsPath.getAbsolute()), curator);
+    public CuratorTransaction delete(ApplicationId application) {
+        if ( ! curator.exists(rotationsOf(application))) return CuratorTransaction.empty(curator);
+        return CuratorTransaction.from(CuratorOperations.delete(rotationsOf(application).getAbsolute()), curator);
+    }
+    
+    /** Returns the path storing the rotations data for an application */
+    private Path rotationsOf(ApplicationId application) {
+        return path.append(application.serializedForm());
     }
 
 }
