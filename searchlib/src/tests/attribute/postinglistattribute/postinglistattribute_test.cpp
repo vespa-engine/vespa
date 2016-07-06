@@ -157,7 +157,7 @@ private:
     template <typename VectorType, typename BufferType, typename Range>
     void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
 
-    template <typename BufferType, typename RangeGenerator>
+    template <typename BufferType>
     void checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
@@ -507,7 +507,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
 }
 
 
-template <typename BufferType, typename RangeGenerator>
+template <typename BufferType>
 void
 PostingListAttributeTest::checkSearch(const AttributeVector & vec, const BufferType & term, uint32_t docBegin, uint32_t docEnd)
 {
