@@ -276,9 +276,9 @@ public class NodeAgentImpl implements NodeAgent {
                 .orElseThrow(() ->
                         new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
 
-        if (!nodeSpec.equals(lastNodeSpec)) {
-            addDebugMessage("Loading new node spec: " + nodeSpec.toString());
-            synchronized (monitor) {
+        synchronized (monitor) {
+            if (!nodeSpec.equals(lastNodeSpec)) {
+                addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
             }
         }
