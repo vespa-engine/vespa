@@ -129,18 +129,19 @@ class ClusterFixture {
         generator.setMinNodesUp(0, 0, 0.0, 0.0);
     }
 
-    void disableTransientMaintenanceModeOnDown() {
+    static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
         Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
-        maxTransitionTime.put(NodeType.STORAGE, 0);
-        generator.setMaxTransitionTime(maxTransitionTime);
+        maxTransitionTime.put(NodeType.DISTRIBUTOR, distributorTransitionTime);
+        maxTransitionTime.put(NodeType.STORAGE, storageTransitionTime);
+        return maxTransitionTime;
+    }
+
+    void disableTransientMaintenanceModeOnDown() {
+        generator.setMaxTransitionTime(buildTransitionTimeMap(0, 0));
     }
 
     void enableTransientMaintenanceModeOnDown(final int transitionTime) {
-        Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, transitionTime);
-        maxTransitionTime.put(NodeType.STORAGE, transitionTime);
-        generator.setMaxTransitionTime(maxTransitionTime);
+        generator.setMaxTransitionTime(buildTransitionTimeMap(transitionTime, transitionTime));
     }
 
     String generatedClusterState() {

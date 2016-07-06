@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.DiskState;
+import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
@@ -21,6 +22,8 @@ public class ClusterStateGeneratorTest {
     private static ClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
         final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
         params.cluster = fixture.cluster;
+        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(0, 0);
+        params.currentTimeInMillis = 0;
         return ClusterStateGenerator.generatedStateFrom(params);
     }
 
@@ -214,7 +217,86 @@ public class ClusterStateGeneratorTest {
 
     @Test
     public void reported_down_node_within_transition_time_has_maintenance_generated_state() {
-        fail("TODO");
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+        params.cluster = fixture.cluster;
+        // FIXME why do we even have transition times for distributors when they inherently
+        // cannot go into maintenance mode..? Must only be for up -> down edge.
+        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
+        params.currentTimeInMillis = 10_000;
+
+        fixture.reportStorageNodeState(1, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        // Node 1 transitioned to reported Down at time 9000ms after epoch. This means that according to the
+        // above transition time config, it should remain in generated maintenance mode until time 11000ms,
+        // at which point it should finally transition to generated state Down.
+        nodeInfo.setTransitionTime(9000);
+        {
+            final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+            assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
+        }
+
+        nodeInfo.setTransitionTime(10999);
+        {
+            final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+            assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
+        }
     }
 
+    @Test
+    public void reported_node_down_after_transition_time_has_down_generated_state() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+        params.cluster = fixture.cluster;
+        // FIXME why do we even have transition times for distributors when they inherently
+        // cannot go into maintenance mode..? Must only be for up -> down edge.
+        // FIXME de-dupe
+        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
+        params.currentTimeInMillis = 11_000;
+
+        fixture.reportStorageNodeState(1, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        nodeInfo.setTransitionTime(9000);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:d"));
+    }
+
+    @Test
+    public void distributor_nodes_are_not_implicitly_transitioned_to_maintenance_mode() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+        params.cluster = fixture.cluster;
+        // FIXME de-dupe
+        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
+        params.currentTimeInMillis = 10_000;
+
+        fixture.reportDistributorNodeState(2, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.DISTRIBUTOR, 2));
+        nodeInfo.setTransitionTime(9000);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 .2.s:d storage:5"));
+    }
+
+    @Test
+    public void transient_maintenance_mode_does_not_override_wanted_down_state() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+        params.cluster = fixture.cluster;
+        // FIXME de-dupe
+        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
+        params.currentTimeInMillis = 10_000;
+
+        fixture.proposeStorageNodeWantedState(2, State.DOWN);
+        fixture.reportStorageNodeState(2, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 2));
+        nodeInfo.setTransitionTime(9000);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        // Should _not_ be in maintenance mode, since we explicitly want it to stay down.
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:d"));
+    }
+
+    // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions?
 }
