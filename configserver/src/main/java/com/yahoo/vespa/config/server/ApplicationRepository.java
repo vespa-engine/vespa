@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.deploy;
+package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
@@ -7,12 +7,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.ActivateLock;
-import com.yahoo.vespa.config.server.Rotations;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.Tenants;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -25,14 +21,13 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * The API for deploying applications.
- * A class which needs to deploy applications can have an instance of this injected.
+ * The API for managing applications.
  *
  * @author bratseth
  */
-public class Deployer implements com.yahoo.config.provision.Deployer {
+public class ApplicationRepository implements com.yahoo.config.provision.Deployer {
 
-    private static final Logger log = Logger.getLogger(Deployer.class.getName());
+    private static final Logger log = Logger.getLogger(ApplicationRepository.class.getName());
     
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
@@ -41,8 +36,8 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
 
-    public Deployer(Tenants tenants, HostProvisionerProvider hostProvisionerProvider,
-                    ConfigserverConfig configserverConfig, Curator curator) {
+    public ApplicationRepository(Tenants tenants, HostProvisionerProvider hostProvisionerProvider,
+                                 ConfigserverConfig configserverConfig, Curator curator) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.configserverConfig = configserverConfig;

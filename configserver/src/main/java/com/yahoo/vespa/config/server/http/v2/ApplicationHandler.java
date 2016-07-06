@@ -20,7 +20,7 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
-import com.yahoo.vespa.config.server.deploy.Deployer;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -57,7 +57,7 @@ public class ApplicationHandler extends HttpHandler {
     private final ApplicationConvergenceChecker convergeChecker;
     private final Zone zone;
     private final LogServerLogGrabber logServerLogGrabber;
-    private final Deployer deployer;
+    private final ApplicationRepository applicationRepository;
 
     public ApplicationHandler(Executor executor, AccessLog accessLog, Tenants tenants,
                               HostProvisionerProvider hostProvisionerProvider, Zone zone,
@@ -70,13 +70,13 @@ public class ApplicationHandler extends HttpHandler {
         this.zone = zone;
         this.convergeChecker = convergeChecker;
         this.logServerLogGrabber = logServerLogGrabber;
-        this.deployer = new Deployer(tenants, hostProvisionerProvider, configserverConfig, curator);
+        this.applicationRepository = new ApplicationRepository(tenants, hostProvisionerProvider, configserverConfig, curator);
     }
 
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        boolean removed = deployer.remove(applicationId);
+        boolean removed = applicationRepository.remove(applicationId);
         if ( ! removed)
             return HttpErrorResponse.notFoundError("Unable to delete " + applicationId + ": Not found");
         return new DeleteApplicationResponse(Response.Status.OK, applicationId);

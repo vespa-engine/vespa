@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestWithTenant;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -40,10 +41,10 @@ public class RedeployTest extends TestWithTenant {
     public void testRedeploy() throws InterruptedException, IOException {
         ApplicationId id = deployApp();
 
-        Deployer deployer = new Deployer(tenants, HostProvisionerProvider.empty(),
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
+        ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.empty(),
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
 
-        Optional<com.yahoo.config.provision.Deployment> deployment = deployer.deployFromLocalActive(id, Duration.ofSeconds(60));
+        Optional<com.yahoo.config.provision.Deployment> deployment = applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
         assertTrue(deployment.isPresent());
         long activeSessionIdBefore = tenant.getLocalSessionRepo().getActiveSession(id).getSessionId();
         assertEquals(id, tenant.getLocalSessionRepo().getSession(activeSessionIdBefore).getApplicationId());
@@ -61,10 +62,10 @@ public class RedeployTest extends TestWithTenant {
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
 
-        Deployer deployer = new Deployer(tenants, HostProvisionerProvider.empty(),
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
+        ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.empty(),
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
 
-        assertFalse(deployer.deployFromLocalActive(id, Duration.ofSeconds(60)).isPresent());
+        assertFalse(applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60)).isPresent());
     }
 
     /**

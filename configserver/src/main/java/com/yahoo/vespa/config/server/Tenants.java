@@ -193,6 +193,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      *
      * @return tenant list
      */
+    // TODO: Replace by something idiomatic
     public synchronized Map<TenantName, Tenant> tenantsCopy() {
         return new LinkedHashMap<>(tenants);
     }

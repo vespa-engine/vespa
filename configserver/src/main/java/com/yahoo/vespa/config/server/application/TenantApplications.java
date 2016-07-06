@@ -16,7 +16,7 @@ import java.util.List;
 public interface TenantApplications {
 
     /**
-     * List the active applications in this config server.
+     * List the active applications of a tenant in this config server.
      *
      * @return a list of {@link com.yahoo.config.provision.ApplicationId}s that are active.
      */
