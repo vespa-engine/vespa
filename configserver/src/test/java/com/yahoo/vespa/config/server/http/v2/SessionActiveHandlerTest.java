@@ -188,7 +188,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             removed = true;
             lastApplicationId = application;
         }

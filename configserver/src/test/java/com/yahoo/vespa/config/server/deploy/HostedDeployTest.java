@@ -90,7 +90,7 @@ public class HostedDeployTest extends TestWithTenant {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             // noop
         }
 

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -75,7 +76,9 @@ public class ProvisionTest {
         assertEquals(5, tester.getNodes(application1, Node.State.inactive).size());
 
         // delete app
-        tester.provisioner().removed(application1);
+        NestedTransaction removeTransaction = new NestedTransaction();
+        tester.provisioner().remove(removeTransaction, application1);
+        removeTransaction.commit();
         assertEquals(tester.toHostNames(state1.allHosts), tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
 
@@ -168,7 +171,9 @@ public class ProvisionTest {
         SystemState state7 = prepare(application1, 8, 2, 2, 2, "default", tester);
 
         // delete app
-        tester.provisioner().removed(application1);
+        NestedTransaction removeTransaction = new NestedTransaction();
+        tester.provisioner().remove(removeTransaction, application1);
+        removeTransaction.commit();
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertEquals(0, tester.getNodes(application1, Node.State.reserved).size());
     }
@@ -370,7 +375,9 @@ public class ProvisionTest {
         SystemState state = prepare(application, 2, 2, 3, 3, "default", tester);
 
         // Simulate expiry
-        tester.nodeRepository().deactivate(application);
+        NestedTransaction deactivateTransaction = new NestedTransaction();
+        tester.nodeRepository().deactivate(application, deactivateTransaction);
+        deactivateTransaction.commit();
 
         try {
             tester.activate(application, state.allHosts);

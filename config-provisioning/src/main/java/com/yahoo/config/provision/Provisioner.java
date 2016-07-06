@@ -39,8 +39,25 @@ public interface Provisioner {
      * Notifies provisioner that an application has been removed.
      *
      * @param application The {@link ApplicationId} that was removed.
-     */    
-    void removed(ApplicationId application);
+     * @deprecated use remove(transaction, application) instead
+     */
+    @Deprecated
+    default void removed(ApplicationId application) {
+        throw new IllegalStateException("Unexpected use of deprecated method");
+    }
+
+    /**
+     * Transactionally remove this application.
+     * This default implementation delegates to removed(application), i.e performs the removal non-transactional.
+     * 
+     * @param application
+     */
+    // TODO: Remove the default implementation in this when
+    //       no applications are on a version before 5.17
+    @SuppressWarnings("deprecation")
+    default void remove(NestedTransaction transaction, ApplicationId application) {
+        removed(application);
+    }
 
     /**
      * Requests a restart of the services of the given application

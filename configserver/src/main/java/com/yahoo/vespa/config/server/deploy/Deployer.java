@@ -88,6 +88,7 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
      * Removes a previously deployed application
      * 
      * @return true if the application was found and removed, false if it was not present
+     * @throws RuntimeException if the remove transaction fails. This method is exception safe.
      */
     public boolean remove(ApplicationId applicationId) {
         Optional<Tenant> owner = Optional.ofNullable(tenants.tenantsCopy().get(applicationId.tenant()));
@@ -110,11 +111,11 @@ public class Deployer implements com.yahoo.config.provision.Deployer {
 
         transaction.add(applicationRepo.deleteApplication(applicationId));
 
+        if (hostProvisioner.isPresent())
+            hostProvisioner.get().remove(transaction, applicationId);
+        transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
         transaction.commit();
 
-        if (hostProvisioner.isPresent())
-            hostProvisioner.get().removed(applicationId);
-        log.log(LogLevel.INFO, "Deleted " + applicationId);
         return true;
     }
 
