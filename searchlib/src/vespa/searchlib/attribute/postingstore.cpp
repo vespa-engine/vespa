@@ -445,12 +445,8 @@ PostingStore<DataT>::internalFrozenSize(uint32_t typeId, const RefType & iRef) c
             const BTreeType *tree = getTreeEntry(iRef2);
             return tree->frozenSize(_allocator);
         } else {
-            const BitVector *bv = bve->_bv.get();
             // Some inaccuracy is expected, data changes underfeet
-            int32_t res = bv->countTrueBits();
-            if (res < 1)
-                res = 1;
-            return res;
+            return bve->_bv->countTrueBits();
         }
     } else {
         const BTreeType *tree = getTreeEntry(iRef);
