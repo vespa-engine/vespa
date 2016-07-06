@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -32,10 +31,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final NodeAdmin nodeAdmin;
-    private boolean isRunningUpdates = true;
+    private boolean frozen = false;
     private final Object monitor = new Object();
     private final Orchestrator orchestrator;
-    private final String baseHostName;
+    private final String dockerHostHostName;
 
     public NodeAdminStateUpdater(
             final NodeRepository nodeRepository,
@@ -43,7 +42,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             long initialSchedulerDelayMillis,
             long intervalSchedulerInMillis,
             Orchestrator orchestrator,
-            String baseHostName) {
+            String dockerHostHostName) {
         scheduler.scheduleWithFixedDelay(
                 ()-> fetchContainersToRunFromNodeRepository(nodeRepository),
                 initialSchedulerDelayMillis,
@@ -51,14 +50,14 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 MILLISECONDS);
         this.nodeAdmin = nodeAdmin;
         this.orchestrator = orchestrator;
-        this.baseHostName = baseHostName;
+        this.dockerHostHostName = dockerHostHostName;
     }
 
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
-            debug.put("isRunningUpdates", isRunningUpdates);
-            debug.put("baseHostName", baseHostName);
+            debug.put("frozen", frozen);
+            debug.put("dockerHostHostName", dockerHostHostName);
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
         }
         return debug;
@@ -72,15 +71,15 @@ public class NodeAdminStateUpdater extends AbstractComponent {
      */
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
-            isRunningUpdates = wantedState == RESUMED;
+            frozen = wantedState == SUSPENDED;
 
-            if (wantedState == SUSPENDED) {
+            if (frozen) {
                 if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
                     return Optional.of("Not all node agents are frozen.");
                 }
                 List<String> hosts = new ArrayList<>();
                 nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
-                return orchestrator.suspend(baseHostName, hosts);
+                return orchestrator.suspend(dockerHostHostName, hosts);
             } else {
                 nodeAdmin.unfreeze();
                 // we let the NodeAgent do the resume against the orchestrator.
@@ -91,8 +90,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
         synchronized (monitor) {
-            if (! isRunningUpdates) {
-                log.log(Level.FINE, "Is frozen, skipping");
+            if (frozen) {
+                log.log(Level.FINE, "Frozen, skipping fetching info from node repository");
                 return;
             }
             final List<ContainerNodeSpec> containersToRun;
@@ -103,7 +102,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 return;
             }
             if (containersToRun == null) {
-                log.log(Level.WARNING, "Got null from NodeRepo.");
+                log.log(Level.WARNING, "Got null from node repository");
                 return;
             }
             try {
