@@ -752,7 +752,7 @@ private:
     Status                 _status;
     int                    _highestValueCount;
     uint32_t               _enumMax;
-    uint32_t		   _committedDocIdLimit; // docid limit for search
+    uint32_t               _committedDocIdLimit; // docid limit for search
     uint32_t               _uncommittedDocIdLimit; // based on queued changes
     uint64_t               _createSerialNum;
     uint64_t               _compactLidSpaceGeneration; 
