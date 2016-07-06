@@ -21,9 +21,9 @@ LOG_SETUP(".proton.matching.matcher");
 #include <vespa/vespalib/util/exceptions.h>
 
 using search::fef::Properties;
-using search::fef::Property;
 using namespace search;
 using namespace search::engine;
+using namespace search::grouping;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
@@ -45,7 +45,7 @@ struct StupidMetaStore : IDocumentMetaStore {
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }
-    search::LidUsageStats getLidUsageStats() const override { return search::LidUsageStats(); }
+    LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
     Blueprint::UP createBlackListBlueprint() const override {
         return Blueprint::UP();
     }
@@ -72,8 +72,7 @@ Matcher::getFeatureSet(const DocsumRequest & req,
                        SessionManager & sessionMgr,
                        bool summaryFeatures)
 {
-    search::grouping::SessionId
-        sessionId(&req.sessionId[0], req.sessionId.size());
+    SessionId sessionId(&req.sessionId[0], req.sessionId.size());
     if (!sessionId.empty()) {
         const Properties &cache_props = req.propertiesMap.cacheProperties();
         bool searchSessionCached = cache_props.lookup("query").found();
@@ -103,8 +102,8 @@ Matcher::getFeatureSet(const DocsumRequest & req,
     return findFeatureSet(req, mtf, summaryFeatures);
 }
 
-Matcher::Matcher(const search::index::Schema &schema,
-                 const search::fef::Properties &props,
+Matcher::Matcher(const index::Schema &schema,
+                 const Properties &props,
                  const vespalib::Clock & clock,
                  QueryLimiter & queryLimiter,
                  uint32_t distributionKey)
@@ -118,9 +117,9 @@ Matcher::Matcher(const search::index::Schema &schema,
       _queryLimiter(queryLimiter),
       _distributionKey(distributionKey)
 {
-    search::features::setup_search_features(_blueprintFactory);
-    search::fef::test::setup_fef_test_plugin(_blueprintFactory);
-    _rankSetup.reset(new search::fef::RankSetup(_blueprintFactory, _indexEnv));
+    features::setup_search_features(_blueprintFactory);
+    fef::test::setup_fef_test_plugin(_blueprintFactory);
+    _rankSetup.reset(new fef::RankSetup(_blueprintFactory, _indexEnv));
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
         throw vespalib::IllegalArgumentException(
@@ -137,12 +136,12 @@ Matcher::getStats()
     return stats;
 }
 
-search::engine::SearchReply::UP
-Matcher::handleGroupingSession(proton::matching::SessionManager &sessionMgr,
-                               search::grouping::GroupingContext & groupingContext,
-                               search::grouping::GroupingSession::UP groupingSession)
+SearchReply::UP
+Matcher::handleGroupingSession(SessionManager &sessionMgr,
+                               GroupingContext & groupingContext,
+                               GroupingSession::UP groupingSession)
 {
-    search::engine::SearchReply::UP reply(new search::engine::SearchReply());
+    SearchReply::UP reply = std::make_unique<SearchReply>();
     groupingSession->continueExecution(groupingContext);
     groupingContext.getResult().swap(reply->groupResult);
     if (!groupingSession->finished()) {
@@ -167,25 +166,30 @@ private:
     const uint32_t          _maxThreads;
 };
 
-search::engine::SearchReply::UP
-Matcher::match(const search::engine::SearchRequest &request,
+namespace {
+
+size_t estimateNumThreads(size_t hits, size_t minHits) {
+    return static_cast<size_t>(std::ceil(double(hits)/double(minHits)));
+}
+
+}
+SearchReply::UP
+Matcher::match(const SearchRequest &request,
                vespalib::ThreadBundle &threadBundle,
                ISearchContext &searchContext,
                IAttributeContext &attrContext,
-               proton::matching::SessionManager &sessionMgr,
-               const search::IDocumentMetaStore &metaStore,
+               SessionManager &sessionMgr,
+               const IDocumentMetaStore &metaStore,
                SearchSession::OwnershipBundle &&owned_objects)
 {
     fastos::StopWatch total_matching_time;
     total_matching_time.start();
     MatchingStats my_stats;
-    search::engine::SearchReply::UP reply(new search::engine::SearchReply());
+    SearchReply::UP reply = std::make_unique<SearchReply>();
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
-        search::grouping::GroupingContext
-            groupingContext(_clock, request.getTimeOfDoom(),
-                            &request.groupSpec[0], request.groupSpec.size());
-        search::grouping::SessionId sessionId(&request.sessionId[0], request.sessionId.size());
+        GroupingContext groupingContext(_clock, request.getTimeOfDoom(), &request.groupSpec[0], request.groupSpec.size());
+        SessionId sessionId(&request.sessionId[0], request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;
         if (!sessionId.empty()) {
@@ -193,11 +197,9 @@ Matcher::match(const search::engine::SearchRequest &request,
             shouldCacheGroupingSession = cache_props.lookup("grouping").found();
             shouldCacheSearchSession = cache_props.lookup("query").found();
             if (shouldCacheGroupingSession) {
-                search::grouping::GroupingSession::UP
-                    session(sessionMgr.pickGrouping(sessionId));
+                GroupingSession::UP session(sessionMgr.pickGrouping(sessionId));
                 if (session.get()) {
-                    return handleGroupingSession(
-                            sessionMgr, groupingContext, std::move(session));
+                    return handleGroupingSession(sessionMgr, groupingContext, std::move(session));
                 }
             }
         }
@@ -224,16 +226,20 @@ Matcher::match(const search::engine::SearchRequest &request,
         ResultProcessor
             rp(attrContext, metaStore, sessionMgr, groupingContext,
                sessionId, request.sortSpec, params.offset, params.hits);
+
+        size_t numThreadsPerSearch = _rankSetup->getNumThreadsPerSearch();
+        if ((numThreadsPerSearch > 1) && (_rankSetup->getMinHitsPerThread() > 0)) {
+            numThreadsPerSearch = (mtf->estimate().empty)
+                ? 1
+                : std::min(numThreadsPerSearch, estimateNumThreads(mtf->estimate().estHits, _rankSetup->getMinHitsPerThread()));
+        }
+        LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
-        LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, _rankSetup->getNumThreadsPerSearch());
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp, _distributionKey, _rankSetup->getNumSearchPartitions());
         my_stats = master.getStats();
         size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()), mtf->match_limiter().getDocIdSpaceEstimate());
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
-            SearchSession::SP session(
-                    new SearchSession(sessionId, request.getTimeOfDoom(),
-                                      std::move(mtf),
-                                      std::move(owned_objects)));
+            SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(), std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();
             sessionMgr.insert(std::move(session));
         }
@@ -242,6 +248,8 @@ Matcher::match(const search::engine::SearchRequest &request,
         reply->coverage.setActive(metaStore.getNumActiveLids());
         reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                             (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
+        LOG(debug, "numThreadsPerSearch = %d. Configured = %d, estimated hits=%d, totalHits=%ld",
+                   numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
     }
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec()

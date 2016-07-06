@@ -34,6 +34,7 @@ private:
     vespalib::string         _degradationAttribute;
     double                   _termwise_limit;
     uint32_t                 _numThreads;
+    uint32_t                 _minHitsPerThread;
     uint32_t                 _numSearchPartitions;
     uint32_t                 _heapSize;
     uint32_t                 _arraySize;
@@ -146,6 +147,8 @@ public:
      * @return the number of threads
      **/
     uint32_t getNumThreadsPerSearch() const { return _numThreads; }
+    uint32_t getMinHitsPerThread() const { return _minHitsPerThread; }
+    void setMinHitsPerThread(uint32_t minHitsPerThread) { _minHitsPerThread = minHitsPerThread; }
 
     void setNumSearchPartitions(uint32_t numSearchPartitions) { _numSearchPartitions = numSearchPartitions; }
 

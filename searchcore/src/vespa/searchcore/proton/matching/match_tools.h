@@ -89,6 +89,7 @@ public:
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
+    search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
 };
 
 } // namespace matching

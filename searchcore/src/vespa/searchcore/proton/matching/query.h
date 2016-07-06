@@ -3,13 +3,12 @@
 #pragma once
 
 #include <vespa/searchlib/fef/location.h>
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
-
-namespace search { namespace fef { class ITermData; }}
-namespace search { namespace fef { class MatchDataLayout; }}
-namespace search { namespace fef { class IIndexEnvironment; }}
 
 namespace proton {
 namespace matching {
@@ -20,10 +19,11 @@ class ISearchContext;
 class Query
 {
 private:
-    search::query::Node::UP          _query_tree;
-    search::queryeval::Blueprint::UP _blueprint;
-    search::fef::Location            _location;
-    search::queryeval::Blueprint::UP _blackListBlueprint;
+    using Blueprint=search::queryeval::Blueprint;
+    search::query::Node::UP _query_tree;
+    Blueprint::UP           _blueprint;
+    search::fef::Location   _location;
+    Blueprint::UP           _blackListBlueprint;
 
 public:
     /**
@@ -60,7 +60,7 @@ public:
      *
      * @param blackListBlueprint the blueprint used for black listing.
      **/
-    void setBlackListBlueprint(search::queryeval::Blueprint::UP blackListBlueprint);
+    void setBlackListBlueprint(Blueprint::UP blackListBlueprint);
 
     /**
      * Reserve room for terms in the query in the given match data
@@ -91,8 +91,13 @@ public:
      * @return iterator tree
      * @param md match data used for feature unpacking
      **/
-    search::queryeval::SearchIterator::UP
-    createSearch(search::fef::MatchData &md) const;
+    search::queryeval::SearchIterator::UP createSearch(search::fef::MatchData &md) const;
+
+    /**
+     * Return an upper bound of how many hits this query will produce.
+     * @return estimate of hits produced.
+     */
+    Blueprint::HitEstimate estimate() const;
 };
 
 } // namespace matching

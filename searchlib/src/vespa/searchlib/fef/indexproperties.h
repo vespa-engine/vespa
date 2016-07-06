@@ -105,6 +105,14 @@ namespace matching {
     /**
      * Property for the number of threads used per search.
      **/
+    struct MinHitsPerThread {
+        static const vespalib::string NAME;
+        static const uint32_t DEFAULT_VALUE;
+        static uint32_t lookup(const Properties &props);
+    };
+    /**
+     * Property for the number of threads used per search.
+     **/
     struct NumSearchPartitions {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
