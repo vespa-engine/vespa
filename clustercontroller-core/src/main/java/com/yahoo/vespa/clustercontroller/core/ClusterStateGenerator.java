@@ -2,9 +2,11 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+
+import java.util.Map;
 
 /**
  * Pure functional cluster state generator which deterministically constructs a full
@@ -17,6 +19,8 @@ import com.yahoo.vdslib.state.State;
 public class ClusterStateGenerator {
     static class Params {
         public ContentCluster cluster;
+        public Map<NodeType, Integer> transitionTimes;
+        public long currentTimeInMillis;
 
         static Params fromOptions(FleetControllerOptions opts) {
             return new Params();
@@ -31,7 +35,7 @@ public class ClusterStateGenerator {
         }
     }
 
-    private static NodeState baselineNodeState(final NodeInfo nodeInfo) {
+    private static NodeState baselineNodeState(final NodeInfo nodeInfo, final Params params) {
         final NodeState reported = nodeInfo.getReportedState();
         final NodeState wanted = nodeInfo.getWantedState();
 
@@ -49,8 +53,28 @@ public class ClusterStateGenerator {
         if (reported.getState() == State.INITIALIZING && wanted.getState() == State.RETIRED) {
             baseline.setState(State.MAINTENANCE);
         }
-        // XXX description etc etc
+
+        if (withinTemporalMaintenancePeriod(nodeInfo, baseline, params)
+                && wanted.getState() == State.UP)
+        {
+            baseline.setState(State.MAINTENANCE);
+        }
+
         return baseline;
+    }
+
+    private static boolean withinTemporalMaintenancePeriod(final NodeInfo nodeInfo,
+                                                           final NodeState baseline,
+                                                           final Params params)
+    {
+        if (nodeInfo.getNode().getType() != NodeType.STORAGE) {
+            return false;
+        }
+        final Integer transitionTime = params.transitionTimes.get(nodeInfo.getNode().getType());
+        if (transitionTime == 0 || baseline.getState() != State.DOWN) {
+            return false;
+        }
+        return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
     }
 
     public static ClusterState generatedStateFrom(final Params params) {
@@ -60,7 +84,7 @@ public class ClusterStateGenerator {
         int availableNodes = 0;
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
             // FIXME temporary only
-            final NodeState nodeState = baselineNodeState(nodeInfo);
+            final NodeState nodeState = baselineNodeState(nodeInfo, params);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
             if (nodeInfo.getReportedState().getState() != State.DOWN) { // FIXME
                 ++availableNodes;
@@ -85,7 +109,8 @@ public class ClusterStateGenerator {
      *  - DONE - reported disk state not overridden by wanted state
      *  - DONE - implicit wanted state retired through config is applied
      *  - DONE - retired node in init is set to maintenance to inhibit load+merges
-     *  - WIP - max transition time (reported down -> implicit generated maintenance -> generated down)
+     *  - DONE - max transition time (reported down -> implicit generated maintenance -> generated down)
+     *  - DONE - no maintenance transition for distributor nodes
      *  - max init progress time (reported init -> generated down)
      *  - max premature crashes (reported up/down cycle -> generated down)
      *  - node startup timestamp inclusion if not all distributors have observed timestamps

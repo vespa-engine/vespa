@@ -880,7 +880,7 @@ public class SystemStateGenerator {
         if (currentState.getState().oneOf("ur") && reportedState.getState().oneOf("dis")
             && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING)))
         {
-            long currentTime = timer.getCurrentTimeInMillis();
+            long currentTime = timer.getCurrentTimeInMillis(); // FIXME pointless dupe of timeNow
             node.setTransitionTime(currentTime);
             if (node.getUpStableStateTime() + stableStateTimePeriod > currentTime && !isControlledShutdown(reportedState)) {
                 log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + currentTime);
