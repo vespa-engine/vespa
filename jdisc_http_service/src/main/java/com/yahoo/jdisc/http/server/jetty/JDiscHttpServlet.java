@@ -124,9 +124,11 @@ class JDiscHttpServlet extends WebSocketServlet {
         }
     }
 
+    static HttpConnection getConnection(HttpServletRequest request) {
+        return (HttpConnection)request.getAttribute("org.eclipse.jetty.server.HttpConnection");
+    }
     static JDiscServerConnector getConnector(HttpServletRequest request) {
-        HttpConnection connection = (HttpConnection)request.getAttribute("org.eclipse.jetty.server.HttpConnection");
-        return (JDiscServerConnector)connection.getConnector();
+        return (JDiscServerConnector)getConnection(request).getConnector();
     }
 
     private void dispatchHttpRequest(final HttpServletRequest request,
