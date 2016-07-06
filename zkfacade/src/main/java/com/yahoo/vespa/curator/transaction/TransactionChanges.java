@@ -20,7 +20,17 @@ public class TransactionChanges {
     public boolean creates(String path) {
         return createdPaths.contains(path);
     }
-    
+
+    /** Returns whether the changes include creating any (proper) children of the given path */
+    public boolean createsChildrenOf(String parentPath) {
+        if ( ! parentPath.endsWith("/")) 
+            parentPath = parentPath + "/";
+        for (String createdPath : createdPaths)
+            if (createdPath.startsWith(parentPath))
+                return true;
+        return false;
+    }
+
     /** Adds creation of an absolute path to the set of changes made by this */
     public void addCreates(String path) {
         deletedPaths.remove(path);
