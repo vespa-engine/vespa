@@ -9,6 +9,7 @@ import com.yahoo.config.model.application.provider.*;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.curator.Curator;

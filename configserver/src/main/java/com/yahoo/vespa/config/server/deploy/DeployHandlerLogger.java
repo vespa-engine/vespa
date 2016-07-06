@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
@@ -18,6 +18,7 @@ import java.util.logging.Logger;
  * @since 5.1
  */
 public class DeployHandlerLogger implements DeployLogger {
+
     private static final Logger log = Logger.getLogger(DeployHandlerLogger.class.getName());
 
     private final Cursor logroot;
@@ -46,4 +47,5 @@ public class DeployHandlerLogger implements DeployLogger {
         // Also tee to a normal log, Vespa log for example, but use level fine 
         log.log(LogLevel.FINE, fullMsg);
     }
+
 }

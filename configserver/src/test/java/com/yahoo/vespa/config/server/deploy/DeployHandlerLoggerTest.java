@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server;
+package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
@@ -8,6 +8,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;

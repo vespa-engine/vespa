@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.DeployHandlerLogger;
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepo;
