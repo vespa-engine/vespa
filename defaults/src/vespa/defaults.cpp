@@ -195,6 +195,12 @@ Defaults::vespaConfigServerHosts()
     return ret;
 }
 
+int
+Defaults::vespaConfigServerRpcPort()
+{
+    return defaultPortConfigServerRpc;
+}
+
 std::vector<std::string>
 Defaults::vespaConfigServerRpcAddrs()
 {

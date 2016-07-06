@@ -48,6 +48,13 @@ public:
     static std::vector<std::string> vespaConfigServerHosts();
 
     /**
+     * Find the RPC port for talking to configservers
+     *
+     * @return the RPC port number
+     **/
+    static int vespaConfigServerRpcPort();
+
+    /**
      * Find the RPC addresses to configservers that are configured
      * @return a list of RPC specs in the format tcp/{hostname}:{portnumber}
      **/
