@@ -161,6 +161,7 @@ private:
     void testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
                          uint32_t numDocs, const std::vector<BufferType> & values);
     void testPostingList();
+    void testPostingList(bool enableBitVector);
 
     template <typename AttributeType, typename ValueType>
     void checkPostingList(AttributeType & vec, ValueType value, DocSet expected);
@@ -564,6 +565,13 @@ PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const Attri
 void
 PostingListAttributeTest::testPostingList()
 {
+    testPostingList(false);
+    testPostingList(true);
+}
+
+void
+PostingListAttributeTest::testPostingList(bool enableBitVector)
+{
     uint32_t numDocs = 1000;
     uint32_t numValues = 50;
 
@@ -575,6 +583,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("sint32_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("sint32_2", cfg);
             testPostingList<Int32PostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -582,6 +591,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("aint32_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("aint32_2", cfg);
             testPostingList<Int32ArrayPostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -589,6 +599,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::INT32, CollectionType::WSET));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("wsint32_2", cfg);
             testPostingList<Int32WsetPostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -603,6 +614,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("sfloat_2", cfg);
             testPostingList<FloatPostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -610,6 +622,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::ARRAY));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("afloat_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("afloat_2", cfg);
             testPostingList<FloatArrayPostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -617,6 +630,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::WSET));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("wsfloat_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("wsfloat_2", cfg);
             testPostingList<FloatWsetPostingListAttribute>(ptr1, ptr2, numDocs, values);
@@ -639,6 +653,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("sstr_2", cfg);
             testPostingList<StringPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
@@ -646,6 +661,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("astr_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("astr_2", cfg);
             testPostingList<StringArrayPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
@@ -653,6 +669,7 @@ PostingListAttributeTest::testPostingList()
         {
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
+            cfg.setEnableBitVectors(enableBitVector);
             AttributePtr ptr1 = AttributeFactory::createAttribute("wsstr_1", cfg);
             AttributePtr ptr2 = AttributeFactory::createAttribute("wsstr_2", cfg);
             testPostingList<StringWsetPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
