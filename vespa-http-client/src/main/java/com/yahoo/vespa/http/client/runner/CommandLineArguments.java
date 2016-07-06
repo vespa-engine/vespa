@@ -44,11 +44,6 @@ public class CommandLineArguments {
             return null;
         }
 
-        if (cmdArgs.fileArg == null) {
-            System.err.println("In the current version you need to specify filename, stream not supported." +
-                    " Set --file to specify file.");
-            return null;
-        }
         if (cmdArgs.hostArg == null) {
             System.err.println("'--host' not set.");
             return null;
