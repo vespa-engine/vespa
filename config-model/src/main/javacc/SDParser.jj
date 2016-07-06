@@ -326,6 +326,7 @@ TOKEN :
 | < RANKPROPERTIES: "rank-properties" >
 | < RERANKCOUNT: "rerank-count" >
 | < NUMTHREADSPERSEARCH: "num-threads-per-search" >
+| < MINHITSPERTHREAD: "min-hits-per-thread" >
 | < NUMSEARCHPARTITIONS: "num-search-partitions" >
 | < TERMWISELIMIT: "termwise-limit" >
 | < KEEPRANKCOUNT: "keep-rank-count" >
@@ -1798,6 +1799,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | macro(profile)
       | ignoreRankFeatures(profile)
       | numThreadsPerSearch(profile)
+      | minHitsPerThread(profile)
       | numSearchPartitions(profile)
       | termwiseLimit(profile)
       | rankFeatures(profile)
@@ -2039,6 +2041,19 @@ void numThreadsPerSearch(RankProfile profile) :
 }
 {
     (<NUMTHREADSPERSEARCH> <COLON> num = integer()) { profile.setNumThreadsPerSearch(num); }
+}
+
+/**
+ * This rule consumes a min-hits-per-thread statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void minHitsPerThread(RankProfile profile) :
+{
+    int num;
+}
+{
+    (<MINHITSPERTHREAD> <COLON> num = integer()) { profile.setMinHitsPerThread(num); }
 }
 
 /**

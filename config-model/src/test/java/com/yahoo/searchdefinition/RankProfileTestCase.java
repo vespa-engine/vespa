@@ -69,6 +69,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
                         "    rank-profile parent {\n" +
                         "        termwise-limit:0.78\n" +
                         "        num-threads-per-search:8\n" +
+                        "        min-hits-per-thread:70\n" +
                         "        num-search-partitions:1200\n" +
                         "    }\n" +
                         "\n" +
@@ -78,6 +79,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         RankProfile rankProfile = rankProfileRegistry.getRankProfile(search, "parent");
         assertEquals(0.78, rankProfile.getTermwiseLimit(), 0.000001);
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
+        assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
         AttributeFields attributeFields = new AttributeFields(search);
         RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, attributeFields);
@@ -85,6 +87,8 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         assertEquals("0.78", rawRankProfile.configProperties().get("vespa.matching.termwise_limit"));
         assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.numthreadspersearch"));
         assertEquals("8", rawRankProfile.configProperties().get("vespa.matching.numthreadspersearch"));
+        assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.minhitsperthread"));
+        assertEquals("70", rawRankProfile.configProperties().get("vespa.matching.minhitsperthread"));
         assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.numsearchpartitions"));
         assertEquals("1200", rawRankProfile.configProperties().get("vespa.matching.numsearchpartitions"));
     }
