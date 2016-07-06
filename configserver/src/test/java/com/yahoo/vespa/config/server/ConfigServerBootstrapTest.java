@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRequestHandler;

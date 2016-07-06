@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.vespa.config.server.HostValidator;
+import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.TenantApplications;

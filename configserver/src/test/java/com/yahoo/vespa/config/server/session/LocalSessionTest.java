@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;

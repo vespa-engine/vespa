@@ -7,6 +7,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.http.v2.SessionActiveHandlerTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;

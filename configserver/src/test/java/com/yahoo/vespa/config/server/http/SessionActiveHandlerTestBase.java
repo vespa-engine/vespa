@@ -37,7 +37,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.vespa.config.server.HostRegistry;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 

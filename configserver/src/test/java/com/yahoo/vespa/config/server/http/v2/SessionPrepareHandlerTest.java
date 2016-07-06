@@ -18,7 +18,7 @@ import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.HostRegistry;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;

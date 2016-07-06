@@ -18,7 +18,7 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
