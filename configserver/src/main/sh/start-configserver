@@ -151,5 +151,6 @@ run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-Djdisc.logger.tag=jdisc/configserver \
 	-Dfile.encoding=UTF-8 \
 	-Dzookeeperlogfile=${VESPA_HOME}logs/vespa/zookeeper.configserver.log \
+	-DThreadedRequestHandler.timeout=910 \
 	-cp "$CP" \
 	com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar
