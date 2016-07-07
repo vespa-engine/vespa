@@ -169,14 +169,14 @@ sub retrieveModelConfigDefault { # ()
     }
 
     if (!defined $CONFIG_SERVER_HOST) {
-        my $temp = `${VESPA_HOME}/bin/print-vespa-default configservers`;
+        my $temp = `${VESPA_HOME}/bin/vespa-print-default configservers`;
         my @configServerHosts = split(' ', $temp);
         $CONFIG_SERVER_HOST = $configServerHosts[0];
     }
     $cmd .= " -s $CONFIG_SERVER_HOST";
 
     if (!defined $CONFIG_SERVER_PORT) {
-        my $temp = `${VESPA_HOME}/bin/print-vespa-default configserver_rpc_port`;
+        my $temp = `${VESPA_HOME}/bin/vespa-print-default configserver_rpc_port`;
         chomp($temp);
         $CONFIG_SERVER_PORT = $temp;
     }
