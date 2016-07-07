@@ -3,6 +3,7 @@
 
 #include "isequencedtaskexecutor.h"
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
 namespace vespalib
 {
@@ -20,12 +21,14 @@ namespace search
  */
 class SequencedTaskExecutor : public ISequencedTaskExecutor
 {
-    std::vector<std::shared_ptr<vespalib::ThreadStackExecutorBase>> _executors;
+    std::vector<std::shared_ptr<vespalib::BlockingThreadStackExecutor>> _executors;
     vespalib::hash_map<size_t, size_t> _ids;
 public:
     SequencedTaskExecutor(uint32_t threads, uint32_t taskLimit = 1000);
 
     ~SequencedTaskExecutor();
+
+    void setTaskLimit(uint32_t taskLimit);
 
     virtual void executeTask(uint64_t id,
                              vespalib::Executor::Task::UP task) override;

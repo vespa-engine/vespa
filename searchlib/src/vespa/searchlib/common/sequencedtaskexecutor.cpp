@@ -34,6 +34,13 @@ SequencedTaskExecutor::~SequencedTaskExecutor()
     sync();
 }
 
+void
+SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit)
+{
+    for (const auto &executor : _executors) {
+        executor->setTaskLimit(taskLimit);
+    }
+}
 
 void
 SequencedTaskExecutor::executeTask(uint64_t id,
