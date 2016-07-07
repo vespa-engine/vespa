@@ -40,7 +40,7 @@ private:
     const IAttributeWriter::SP _attributeWriter;
     DocIdLimit                 &_docIdLimit;
 
-    virtual UpdateScope getUpdateScope(const document::DocumentUpdate &upd);
+    virtual UpdateScope getUpdateScope(const document::DocumentUpdate &upd) override;
 
     virtual void putAttributes(SerialNum serialNum,
                                search::DocumentIdT lid,
@@ -52,24 +52,22 @@ private:
                                   search::DocumentIdT lid,
                                   const document::DocumentUpdate &upd,
                                   bool immediateCommit,
-                                  OnOperationDoneType onWriteDone);
+                                  OnOperationDoneType onWriteDone) override;
 
     virtual void removeAttributes(SerialNum serialNum,
                                   search::DocumentIdT lid,
                                   bool immediateCommit,
-                                  OnRemoveDoneType onWriteDone);
+                                  OnRemoveDoneType onWriteDone) override;
 
     virtual void removeAttributes(SerialNum serialNum,
                                   const LidVector &lidsToRemove,
                                   bool immediateCommit,
-                                  OnWriteDoneType onWriteDone);
+                                  OnWriteDoneType onWriteDone) override;
 
-    virtual void heartBeatAttributes(SerialNum serialNum);
+    virtual void heartBeatAttributes(SerialNum serialNum) override;
 
 protected:
-    virtual void
-    forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
-        override;
+    virtual void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
     FastAccessFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx,
@@ -84,10 +82,9 @@ public:
         return _docIdLimit;
     }
 
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op);
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 
-    virtual void
-    sync() override;
+    virtual void sync() override;
 
     bool fastPartialUpdateAttribute(const vespalib::string &fieldName) {
         search::AttributeVector *attribute =
