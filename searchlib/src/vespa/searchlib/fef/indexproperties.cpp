@@ -161,6 +161,17 @@ NumSearchPartitions::lookup(const Properties &props)
 {
     return lookupUint32(props, NAME, DEFAULT_VALUE);
 }
+
+const vespalib::string MinHitsPerThread::NAME("vespa.matching.minhitsperthread");
+const uint32_t MinHitsPerThread::DEFAULT_VALUE(0);
+
+uint32_t
+MinHitsPerThread::lookup(const Properties &props)
+{
+    return lookupUint32(props, NAME, DEFAULT_VALUE);
+}
+
+
 } // namespace matching
 
 namespace matchphase {

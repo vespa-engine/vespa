@@ -267,6 +267,15 @@ TEST("test stuff") {
             p.add("vespa.matching.numthreadspersearch", "50");
             EXPECT_EQUAL(matching::NumThreadsPerSearch::lookup(p), 50u);
         }
+
+        { // vespa.matching.minhitsperthread
+            EXPECT_EQUAL(matching::MinHitsPerThread::NAME, vespalib::string("vespa.matching.minhitsperthread"));
+            EXPECT_EQUAL(matching::MinHitsPerThread::DEFAULT_VALUE, 0);
+            Properties p;
+            EXPECT_EQUAL(matching::MinHitsPerThread::lookup(p), 0);
+            p.add("vespa.matching.minhitsperthread", "50");
+            EXPECT_EQUAL(matching::MinHitsPerThread::lookup(p), 50u);
+        }
         {
             EXPECT_EQUAL(matching::NumSearchPartitions::NAME, vespalib::string("vespa.matching.numsearchpartitions"));
             EXPECT_EQUAL(matching::NumSearchPartitions::DEFAULT_VALUE, 1u);
