@@ -209,10 +209,10 @@ exec_jsvc () {
 }
 
 maybe_use_jsvc () {
-    import_cfg_var use_jsvc "no"
+    import_cfg_var use_jsvc "false"
 
     # if configured, run JSVC aka commons.daemon
-    if [ "$use_jsvc" != "no" ]; then
+    if [ "$use_jsvc" = "true" ]; then
         import_cfg_var jsvc_binary_name "jsvc"
         import_cfg_var jsvc_extra_preload
 
