@@ -221,7 +221,7 @@ no_transparent_hugepages () {
 }
 
 use_configserver_if_needed () {
-    nvcs=$(perl $VESPA_HOME/libexec/vespa/vespa-config.pl -allconfigsources)
+    nvcs=$($VESPA_HOME/bin/vespa-print-default configsources)
     x="$VESPA_CONFIG_SOURCES"
     if [ "$x" ]; then
 	export VESPA_CONFIG_SOURCES="$x,$nvcs"
