@@ -63,6 +63,31 @@ FeatureSet::SP findFeatureSet(const DocsumRequest &req,
     return MatchMaster::getFeatureSet(mtf, docs, summaryFeatures);
 }
 
+size_t numThreads(size_t hits, size_t minHits) {
+    return static_cast<size_t>(std::ceil(double(hits) / double(minHits)));
+}
+
+class LimitedThreadBundleWrapper final : public vespalib::ThreadBundle
+{
+public:
+    LimitedThreadBundleWrapper(vespalib::ThreadBundle &threadBundle, uint32_t maxThreads) :
+        _threadBundle(threadBundle),
+        _maxThreads(std::min(maxThreads, static_cast<uint32_t>(threadBundle.size())))
+    { }
+private:
+    size_t size() const override { return _maxThreads; }
+    void run(const std::vector<vespalib::Runnable*> &targets) override {
+        _threadBundle.run(targets);
+    }
+    vespalib::ThreadBundle &_threadBundle;
+    const uint32_t          _maxThreads;
+};
+
+bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
+    return (!groupingContext.needRanking() && (request.maxhits == 0))
+           || (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
+}
+
 }  // namespace proton::matching::<unnamed>
 
 FeatureSet::SP
@@ -122,8 +147,7 @@ Matcher::Matcher(const index::Schema &schema,
     _rankSetup.reset(new fef::RankSetup(_blueprintFactory, _indexEnv));
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
-        throw vespalib::IllegalArgumentException(
-                "failed to compile rank setup", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("failed to compile rank setup", VESPA_STRLOC);
     }
 }
 
@@ -150,21 +174,13 @@ Matcher::handleGroupingSession(SessionManager &sessionMgr,
     return reply;
 }
 
-class LimitedThreadBundleWrapper : public vespalib::ThreadBundle
-{
-public:
-    LimitedThreadBundleWrapper(vespalib::ThreadBundle &threadBundle, uint32_t maxThreads) :
-        _threadBundle(threadBundle),
-        _maxThreads(std::min(maxThreads, static_cast<uint32_t>(threadBundle.size())))
-    { }
-private:
-    size_t size() const override { return _maxThreads; }
-    void run(const std::vector<vespalib::Runnable*> &targets) override {
-        _threadBundle.run(targets);
+size_t Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits) const {
+    size_t threads = _rankSetup->getNumThreadsPerSearch();
+    if ((threads > 1) && (_rankSetup->getMinHitsPerThread() > 0)) {
+        threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, _rankSetup->getMinHitsPerThread()));
     }
-    vespalib::ThreadBundle &_threadBundle;
-    const uint32_t          _maxThreads;
-};
+    return threads;
+}
 
 SearchReply::UP
 Matcher::match(const SearchRequest &request,
@@ -207,18 +223,12 @@ Matcher::match(const SearchRequest &request,
             reply->errorMessage = "query execution failed (invalid query)";
             return reply;
         }
-        bool willNotNeedRanking = (!groupingContext.needRanking() && (request.maxhits == 0)) ||
-                                  (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
-        MatchParams params(searchContext.getDocIdLimit(),
-                           _rankSetup->getHeapSize(),
-                           _rankSetup->getArraySize(),
-                           _rankSetup->getRankScoreDropLimit(),
-                           request.offset, request.maxhits,
-                           !_rankSetup->getSecondPhaseRank().empty(),
-                           !willNotNeedRanking);
-        ResultProcessor
-            rp(attrContext, metaStore, sessionMgr, groupingContext,
-               sessionId, request.sortSpec, params.offset, params.hits);
+
+        MatchParams params(searchContext.getDocIdLimit(), _rankSetup->getHeapSize(), _rankSetup->getArraySize(),
+                           _rankSetup->getRankScoreDropLimit(), request.offset, request.maxhits,
+                           !_rankSetup->getSecondPhaseRank().empty(), !willNotNeedRanking(request, groupingContext));
+
+        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, request.sortSpec, params.offset, params.hits);
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate());
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
