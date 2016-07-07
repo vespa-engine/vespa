@@ -2,17 +2,18 @@
 
 #pragma once
 
-#include "documentretriever.h"
+#include "fast_access_document_retriever.h"
 #include "searchable_feed_view.h"
 #include "searchview.h"
 
 namespace proton {
 
-struct SearchableDocumentRetriever : DocumentRetriever {
-    SearchableFeedView::SP feedView;
-
+class SearchableDocumentRetriever : public FastAccessDocumentRetriever {
+public:
     // Assumes the FeedView also ensures that the MatchView stays alive.
-    SearchableDocumentRetriever(const SearchableFeedView::SP &fw, const SearchView::SP &sv);
+    SearchableDocumentRetriever(const SearchableFeedView::SP &fw, const SearchView::SP &sv) :
+        FastAccessDocumentRetriever(fw, sv->getAttributeManager())
+    { }
 };
 
 } // namespace proton
