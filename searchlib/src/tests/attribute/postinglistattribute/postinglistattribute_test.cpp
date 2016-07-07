@@ -22,7 +22,6 @@ using std::shared_ptr;
 bool
 FastOS_UNIX_File::Sync(void)
 {
-    // LOG(info, "Skip sync");
     return true;
 }
 
@@ -46,10 +45,11 @@ toStr(std::stringstream &ss, SearchIterator &it, TermFieldMatchData *md)
     it.seek(1u);
     bool first = true;
     while ( !it.isAtEnd()) {
-        if (first)
+        if (first) {
             first = false;
-        else
+        } else {
             ss << ",";
+        }
         ss << it.getDocId();
         if (md != nullptr) {
             it.unpack(it.getDocId());
@@ -112,46 +112,27 @@ private:
     typedef WeightedSetStringPostingAttribute StringWsetPostingListAttribute;
 
     template <typename VectorType>
-    void
-    populate(VectorType &v);
+    void populate(VectorType &v);
 
     template <typename VectorType>
-    VectorType &
-    as(AttributePtr &v);
+    VectorType & as(AttributePtr &v);
 
-    IntegerAttribute &
-    asInt(AttributePtr &v);
-
-    StringAttribute &
-    asString(AttributePtr &v);
-
-    void
-    buildTermQuery(std::vector<char> & buffer,
-                   const vespalib::string & index,
-                   const vespalib::string & term, bool prefix);
+    IntegerAttribute & asInt(AttributePtr &v);
+    StringAttribute & asString(AttributePtr &v);
+    void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const vespalib::string & term, bool prefix);
 
     template <typename V, typename T>
-    SearchContextPtr
-    getSearch(const V & vec, const T & term, bool prefix, const AttributeVector::SearchContext::Params & params=AttributeVector::SearchContext::Params());
+    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, const AttributeVector::SearchContext::Params & params=AttributeVector::SearchContext::Params());
 
     template <typename V>
-    SearchContextPtr
-    getSearch(const V & vec);
+    SearchContextPtr getSearch(const V & vec);
 
     template <typename V>
-    SearchContextPtr
-    getSearch2(const V & vec);
+    SearchContextPtr getSearch2(const V & vec);
 
-    bool
-    assertSearch(const std::string &exp, StringAttribute &sa);
-
-    bool
-    assertSearch(const std::string &exp, StringAttribute &v,
-                 const std::string &key);
-
-    bool
-    assertSearch(const std::string &exp, IntegerAttribute &v, int32_t key);
-
+    bool assertSearch(const std::string &exp, StringAttribute &sa);
+    bool assertSearch(const std::string &exp, StringAttribute &v, const std::string &key);
+    bool assertSearch(const std::string &exp, IntegerAttribute &v, int32_t key);
     void addDocs(const AttributePtr & ptr, uint32_t numDocs);
 
     template <typename VectorType, typename BufferType, typename Range>
@@ -180,21 +161,14 @@ private:
     void testReload();
 
     template <typename VectorType>
-    void
-    testMinMax(AttributePtr &ptr1, uint32_t trimmed);
+    void testMinMax(AttributePtr &ptr1, uint32_t trimmed);
 
     template <typename VectorType>
-    void
-    testMinMax(AttributePtr &ptr1, AttributePtr &ptr2);
+    void testMinMax(AttributePtr &ptr1, AttributePtr &ptr2);
 
-    void
-    testMinMax(void);
-
-    void
-    testStringFold(void);
-
+    void testMinMax(void);
+    void testStringFold(void);
     void testDupValuesInIntArray();
-
     void testDupValuesInStringArray();
 public:
     int Main();
@@ -361,8 +335,7 @@ PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, co
     ss << term;
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
-    return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()), params);
+    return (static_cast<const AttributeVector &>(vec)).getSearch(vespalib::stringref(&query[0], query.size()), params);
 }
 
 
@@ -378,8 +351,7 @@ template <>
 SearchContextPtr
 PostingListAttributeTest::getSearch<StringAttribute>(const StringAttribute &v)
 {
-    return getSearch<StringAttribute, const vespalib::string &>
-        (v, "foo", false);
+    return getSearch<StringAttribute, const vespalib::string &>(v, "foo", false);
 }
 
 
@@ -395,14 +367,12 @@ template <>
 SearchContextPtr
 PostingListAttributeTest::getSearch2<StringAttribute>(const StringAttribute &v)
 {
-    return getSearch<StringAttribute, const vespalib::string &>
-        (v, "bar", false);
+    return getSearch<StringAttribute, const vespalib::string &>(v, "bar", false);
 }
 
 
 bool
-PostingListAttributeTest::assertSearch(const std::string &exp,
-                                       StringAttribute &sa)
+PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &sa)
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<StringAttribute>(sa);
@@ -415,13 +385,10 @@ PostingListAttributeTest::assertSearch(const std::string &exp,
 
 
 bool
-PostingListAttributeTest::assertSearch(const std::string &exp,
-                                       StringAttribute &sa,
-                                       const std::string &key)
+PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &sa, const std::string &key)
 {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<StringAttribute, std::string>
-                          (sa, key, false);
+    SearchContextPtr sc = getSearch<StringAttribute, std::string>(sa, key, false);
     sc->fetchPostings(true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
@@ -430,13 +397,10 @@ PostingListAttributeTest::assertSearch(const std::string &exp,
 }
 
 bool
-PostingListAttributeTest::assertSearch(const std::string &exp,
-                                       IntegerAttribute &ia,
-                                       int32_t key)
+PostingListAttributeTest::assertSearch(const std::string &exp, IntegerAttribute &ia, int32_t key)
 {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>
-                          (ia, key, false);
+    SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
     sc->fetchPostings(true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
@@ -519,9 +483,6 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
     sc->fetchPostings(true);
     size_t approx = sc->approximateHits();
     EXPECT_EQUAL(numHits, approx);
-    //if (numHits != approx) {
-    //    std::cerr << "Term = " << term << std::endl;
-    //}
     if (docBegin == 0) {
         // Approximation does not know about the special 0
         // But the iterator does....
@@ -727,8 +688,7 @@ void
 PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value, DocSet expected)
 {
     const typename AttributeType::EnumStore & enumStore = vec.getEnumStore();
-    const typename AttributeType::Dictionary & dict =
-        enumStore.getPostingDictionary();
+    const typename AttributeType::Dictionary & dict = enumStore.getPostingDictionary();
     const typename AttributeType::PostingList & postingList = vec.getPostingList();
     typename AttributeType::DictionaryIterator itr =
         dict.find(typename AttributeType::EnumIndex(),
@@ -750,8 +710,7 @@ template <typename AttributeType, typename ValueType>
 void
 PostingListAttributeTest::checkNonExistantPostingList(AttributeType & vec, ValueType value)
 {
-    const typename AttributeType::Dictionary & dict =
-        vec.getEnumStore().getPostingDictionary();
+    const typename AttributeType::Dictionary & dict = vec.getEnumStore().getPostingDictionary();
     typename AttributeType::DictionaryIterator itr =
         dict.find(typename AttributeType::EnumIndex(),
                   typename AttributeType::ComparatorType(vec.getEnumStore(), value));
