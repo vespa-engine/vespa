@@ -168,19 +168,17 @@ sub retrieveModelConfigDefault { # ()
         $cmd .= " -w $CONFIG_REQUEST_TIMEOUT";
     }
 
-    my $temp = `${VESPA_HOME}/libexec/vespa/vespa-config.pl -configsources`;
-    my @configSources = split(",", $temp);
-    my $firstConfigSource = $configSources[0];
     if (!defined $CONFIG_SERVER_HOST) {
-        my @temp = split('/', $firstConfigSource);
-        my @configHost = split(':', $temp[1]);
-        $CONFIG_SERVER_HOST = $configHost[0];
+        my $temp = `${VESPA_HOME}/bin/print-vespa-default configservers`;
+        my @configServerHosts = split(' ', $temp);
+        $CONFIG_SERVER_HOST = $configServerHosts[0];
     }
     $cmd .= " -s $CONFIG_SERVER_HOST";
 
     if (!defined $CONFIG_SERVER_PORT) {
-        my @configPort = split(':', $firstConfigSource);
-        $CONFIG_SERVER_PORT = $configPort[1];
+        my $temp = `${VESPA_HOME}/bin/print-vespa-default configserver_rpc_port`;
+        chomp($temp);
+        $CONFIG_SERVER_PORT = $temp;
     }
     $cmd .= " -p $CONFIG_SERVER_PORT";
 
