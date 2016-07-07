@@ -16,6 +16,7 @@ import static org.junit.Assert.*;
  * @since 5.1.14
  */
 public class HandlerTest {
+
     public static void assertHttpStatusCodeErrorCodeAndMessage(HttpResponse response, int statusCode, HttpErrorResponse.errorCodes errorCode, String message) throws IOException {
         assertNotNull(response);
         String renderedString = SessionHandlerTest.getRenderedString(response);
@@ -32,4 +33,5 @@ public class HandlerTest {
     public static void assertHttpStatusCodeAndMessage(HttpResponse response, int statusCode, String message) throws IOException {
         assertHttpStatusCodeErrorCodeAndMessage(response, statusCode, null, message);
     }
+
 }

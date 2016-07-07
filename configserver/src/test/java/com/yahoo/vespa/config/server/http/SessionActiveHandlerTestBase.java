@@ -159,9 +159,7 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     private LocalSessionRepo addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) {
         writeApplicationId(zkc, deployData.getApplicationName());
         TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenant);
-        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp,
-                deployData
-        );
+        ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenant, sessionId, new SessionTest.MockSessionPreparer(), new SessionContext(app, zkc, new File(tenantFileSystemDirs.path(), String.valueOf(sessionId)), applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator))));
         return localRepo;
     }
@@ -173,7 +171,8 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     protected abstract RemoteSession activateAndAssertOK(long sessionId, long previousSessionId) throws Exception;
     
     protected ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath).invoke();
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath);
+        activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         String message = getRenderedString(actResponse);
         assertThat(message, actResponse.getStatus(), is(OK));
@@ -188,7 +187,8 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     protected abstract void activateAndAssertError(long sessionId, long previousSessionId, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception;
 
     protected ActivateRequest activateAndAssertErrorPut(long sessionId, long previousSessionId, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "").invoke();
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "");
+        activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
         assertThat(actResponse.getStatus(), is(BAD_REQUEST));
@@ -206,6 +206,7 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     }
 
     protected class ActivateRequest {
+
         private long sessionId;
         private RemoteSession session;
         private SessionHandler handler;
@@ -251,7 +252,8 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
         }
 
         public ActivateRequest invoke(boolean createLocalSession) throws Exception {
-            SessionZooKeeperClient zkClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(sessionId)), Optional.of(ProvisionInfo.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
+            SessionZooKeeperClient zkClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(sessionId)), 
+                                                                      Optional.of(ProvisionInfo.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient);
             if (createLocalSession) {
                 LocalSessionRepo repo = addLocalSession(sessionId, deployData, zkClient);

@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 public class Tenant implements TenantHandlerProvider {
 
     private static final Logger log = Logger.getLogger(Tenant.class.getName());
-    static final String SESSIONS = "sessions";
-    static final String APPLICATIONS = "applications";
+    public static final String SESSIONS = "sessions";
+    public static final String APPLICATIONS = "applications";
 
     private final TenantName name;
     private final RemoteSessionRepo remoteSessionRepo;

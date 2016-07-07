@@ -54,8 +54,8 @@ public class TenantsTestCase extends TestWithCurator {
         tenantListener.tenantsLoaded = false;
         tenants = new Tenants(globalComponentRegistry, Metrics.createTestMetrics());
         assertTrue(tenantListener.tenantsLoaded);
-        tenants.createTenant(tenant1);
-        tenants.createTenant(tenant2);
+        tenants.writeTenantPath(tenant1);
+        tenants.writeTenantPath(tenant2);
     }
 
     @After
@@ -81,7 +81,7 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testTenantListenersNotified() throws Exception {
-        tenants.createTenant(tenant3);
+        tenants.writeTenantPath(tenant3);
         assertThat("tenant3 not the last created tenant. Tenants: " + tenants.tenantsCopy().keySet() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
         tenants.deleteTenant(tenant2);
         assertFalse(tenants.tenantsCopy().containsKey(tenant2));
@@ -93,7 +93,7 @@ public class TenantsTestCase extends TestWithCurator {
         Map<TenantName, Tenant> tenantsCopy = tenants.tenantsCopy();
         assertEquals(tenantsCopy.get(tenant1).getName(), tenant1);
         assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
-        tenants.createTenant(tenant3);
+        tenants.writeTenantPath(tenant3);
         tenantsCopy = tenants.tenantsCopy();
         assertEquals(tenantsCopy.get(tenant1).getName(), tenant1);
         assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
@@ -102,7 +102,7 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testPutAdd() throws Exception {
-        tenants.createTenant(tenant3);
+        tenants.writeTenantPath(tenant3);
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant3)));
     }
     

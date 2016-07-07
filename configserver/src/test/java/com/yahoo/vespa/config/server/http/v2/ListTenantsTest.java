@@ -20,9 +20,9 @@ public class ListTenantsTest extends TenantTest {
 
     @Test
     public void testListTenants() throws Exception {
-        tenants.createTenant(a);
-        tenants.createTenant(b);
-        tenants.createTenant(c);
+        tenants.writeTenantPath(a);
+        tenants.writeTenantPath(b);
+        tenants.writeTenantPath(c);
 
         ListTenantsHandler listTenantsHandler = new ListTenantsHandler(testExecutor(), null, tenants);
         

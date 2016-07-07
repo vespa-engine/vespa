@@ -59,7 +59,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     }
 
     @Test
-    public void require_correct_response_on_success() throws Exception {
+    public void testActivation() throws Exception {
         activateAndAssertOK(1, 0);
     }
 
@@ -76,7 +76,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     public void testActivationOfUnpreparedSession() throws Exception {
         // Needed so we can test that previous active session is still active after a failed activation
         RemoteSession firstSession = activateAndAssertOK(90l, 0l);
-        long sessionId = 91l;
+        long sessionId = 91L;
         ActivateRequest activateRequest = new ActivateRequest(sessionId, 0l, Session.Status.NEW, "").invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
@@ -84,6 +84,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         assertThat(getRenderedString(actResponse), is("{\"error-code\":\"BAD_REQUEST\",\"message\":\"tenant:"+tenant+" app:default:default Session " + sessionId + " is not prepared\"}"));
         assertThat(session.getStatus(), is(not(Session.Status.ACTIVATE)));
         assertThat(firstSession.getStatus(), is(Session.Status.ACTIVATE));
+        
     }
 
     @Test

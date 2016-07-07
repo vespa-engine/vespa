@@ -95,11 +95,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<Tenant> owner = Optional.ofNullable(tenants.tenantsCopy().get(applicationId.tenant()));
         if ( ! owner.isPresent()) return false;
 
-        TenantApplications applicationRepo = owner.get().getApplicationRepo();
-        if ( ! applicationRepo.listApplications().contains(applicationId)) return false;
+        TenantApplications tenantApplications = owner.get().getApplicationRepo();
+        if ( ! tenantApplications.listApplications().contains(applicationId)) return false;
         
         // TODO: Push lookup logic down
-        long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
+        long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
         LocalSessionRepo localSessionRepo = owner.get().getLocalSessionRepo();
         LocalSession session = localSessionRepo.getSession(sessionId);
         if (session == null) return false;
@@ -110,7 +110,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not tested
 
-        transaction.add(applicationRepo.deleteApplication(applicationId));
+        transaction.add(tenantApplications.deleteApplication(applicationId));
 
         if (hostProvisioner.isPresent())
             hostProvisioner.get().remove(transaction, applicationId);

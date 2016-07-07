@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * implemented support for it).
  *
  * This instance is called from two different threads, the http handler threads and the zookeeper watcher threads.
- * To create or delete a tenant, the handler calls {@link Tenants#createTenant} and {@link Tenants#deleteTenant} methods.
+ * To create or delete a tenant, the handler calls {@link Tenants#writeTenantPath} and {@link Tenants#deleteTenant} methods.
  * This will delete shared state from zookeeper, and return, so it does not mean a tenant is immediately deleted.
  *
  * Once a tenant is deleted from zookeeper, the zookeeper watcher thread will get notified on all configservers, and
@@ -124,13 +124,18 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
 
     // Pre-condition: tenants path needs to exist in zk
     private LinkedHashMap<TenantName, Tenant> addTenants(Collection<Tenant> newTenants) {
-        final LinkedHashMap<TenantName, Tenant> sessionTenants = new LinkedHashMap<>();
+        LinkedHashMap<TenantName, Tenant> sessionTenants = new LinkedHashMap<>();
         for (Tenant t : newTenants) {
             sessionTenants.put(t.getName(), t);
         }
         log.log(LogLevel.DEBUG, "Tenants at startup: " + sessionTenants);
         metricUpdater.setTenants(tenants.size());
         return sessionTenants;
+    }
+    
+    public synchronized void addTenant(Tenant tenant) {
+        tenants.put(tenant.getName(), tenant);
+        metricUpdater.setTenants(tenants.size());
     }
 
     /**
@@ -165,8 +170,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         }
     }
 
-    private void checkForAddedTenants(Set<TenantName> newTenants)
-            throws Exception {
+    private void checkForAddedTenants(Set<TenantName> newTenants) throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(globalComponentRegistry.getConfigserverConfig().numParallelTenantLoaders());
         Map<TenantName, Tenant> addedTenants = new ConcurrentHashMap<>();
         for (TenantName tenantName : newTenants) {
@@ -228,7 +232,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     public synchronized void createSystemTenants() {
         for (final TenantName tenantName : SYSTEM_TENANT_NAMES) {
             try {
-                createTenant(tenantName);
+                writeTenantPath(tenantName);
             } catch (RuntimeException e) {
                 // Do nothing if we get NodeExistsException
                 if (e.getCause().getClass() != KeeperException.NodeExistsException.class) {
@@ -239,12 +243,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     /**
-     * Writes the given tenant into ZooKeeper, for watchers to react on
+     * Writes the path of the given tenant into ZooKeeper, for watchers to react on
      *
      * @param name name of the tenant
      * @return this Tenants
      */
-    public synchronized Tenants createTenant(TenantName name) {
+    public synchronized Tenants writeTenantPath(TenantName name) {
         Path tenantPath = getTenantPath(name);
         curator.createAtomically(tenantPath, tenantPath.append(Tenant.SESSIONS), tenantPath.append(Tenant.APPLICATIONS));
         return this;

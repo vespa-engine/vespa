@@ -47,7 +47,7 @@ import java.util.concurrent.Executor;
  * @author hmusum
  * @since 5.4
  */
-// TODO: Remove business logic out of the http layer
+// TODO: Move business logic out of the http layer
 public class ApplicationHandler extends HttpHandler {
 
     private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";

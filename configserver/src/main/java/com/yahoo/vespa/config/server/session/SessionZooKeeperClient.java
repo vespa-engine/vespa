@@ -102,12 +102,9 @@ public class SessionZooKeeperClient {
         return rootPath.append(barrierName);
     }
 
+    /** Returns the number of node members needed in a barrier */
     private int getNumberOfMembers() {
-        /*
-         * The number of members required in a barrier is the majority of servers.
-         */
-        int numServers = curator.serverCount();
-        return (numServers / 2) + 1;
+        return (curator.serverCount() / 2) + 1; // majority
     }
 
     private Curator.CompletionWaiter createCompletionWaiter(String waiterNode) {
