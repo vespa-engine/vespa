@@ -209,7 +209,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             throw new IllegalArgumentException("Cannot remove application");
         }
 

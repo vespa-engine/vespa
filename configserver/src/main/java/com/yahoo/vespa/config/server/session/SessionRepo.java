@@ -93,7 +93,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         return new ArrayList<>(sessions.values());
     }
     
-    public class SessionRepoTransaction extends AbstractTransaction<SessionRepoTransaction.Operation> {
+    public class SessionRepoTransaction extends AbstractTransaction {
 
         public void addRemoveOperation(long sessionIdToRemove) {
             add(new RemoveOperation(sessionIdToRemove));
@@ -103,18 +103,20 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         public void prepare() { }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void commit() {
             for (Operation operation : operations())
-                operation.commit();
+                ((SessionOperation)operation).commit();
         }
         
         @Override
+        @SuppressWarnings("unchecked")
         public void rollbackOrLog() {
             for (Operation operation : operations())
-                operation.rollback();
+                ((SessionOperation)operation).rollback();
         }
         
-        public abstract class Operation implements Transaction.Operation {
+        public abstract class SessionOperation implements Transaction.Operation {
             
             abstract void commit();
             
@@ -122,7 +124,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
             
         }
         
-        public class RemoveOperation extends Operation {
+        public class RemoveOperation extends SessionOperation {
             
             private final long sessionIdToRemove;
             private SESSIONTYPE removed = null;

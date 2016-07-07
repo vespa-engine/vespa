@@ -10,7 +10,7 @@ import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
  *
  * @author lulf
  */
-public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
+public class CuratorTransaction extends AbstractTransaction {
 
     private final Curator curator;
     private boolean prepared = false;
@@ -34,8 +34,8 @@ public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
     @Override
     public void prepare() {
         TransactionChanges changes = new TransactionChanges();
-        for (CuratorOperation operation : operations())
-            operation.check(curator, changes);
+        for (Operation operation : operations())
+            ((CuratorOperation)operation).check(curator, changes);
         prepared = true;
     }
 
@@ -46,8 +46,8 @@ public class CuratorTransaction extends AbstractTransaction<CuratorOperation> {
             if ( ! prepared)
                 prepare();
             org.apache.curator.framework.api.transaction.CuratorTransaction transaction = curator.framework().inTransaction();
-            for (CuratorOperation operation : operations()) {
-                transaction = operation.and(transaction);
+            for (Operation operation : operations()) {
+                transaction = ((CuratorOperation)operation).and(transaction);
             }
             ((CuratorTransactionFinal) transaction).commit();
         } catch (Exception e) {

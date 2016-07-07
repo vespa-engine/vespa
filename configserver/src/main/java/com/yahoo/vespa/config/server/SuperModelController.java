@@ -48,8 +48,6 @@ public class SuperModelController implements RequestHandler {
      * Creates a supermodel controller
      * 
      * @param generationCounter this will be the SuperModelGenerationCounter in production
-     * @param configDefinitionRepo
-     * @param configserverConfig
      */
     @Inject
     public SuperModelController(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, ConfigserverConfig configserverConfig) {

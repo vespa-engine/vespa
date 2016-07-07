@@ -9,7 +9,7 @@ import com.yahoo.vespa.curator.recipes.CuratorCounter;
  * A curator transaction of curator counting operations which increments during prepare
  * such that the counter is also increased if there is a commit error.
  */
-class EagerCountingCuratorTransaction extends AbstractTransaction<EagerCountingCuratorTransaction.CountingCuratorOperation> {
+class EagerCountingCuratorTransaction extends AbstractTransaction {
 
     /** Creates a counting curator transaction containing a single increment operation */
     public EagerCountingCuratorTransaction(CuratorCounter counter) {
@@ -18,8 +18,8 @@ class EagerCountingCuratorTransaction extends AbstractTransaction<EagerCountingC
     
     @Override
     public void prepare() {
-        for (CountingCuratorOperation operation : operations())
-            operation.next();
+        for (Operation operation : operations())
+            ((CountingCuratorOperation)operation).next();
     }
 
     @Override

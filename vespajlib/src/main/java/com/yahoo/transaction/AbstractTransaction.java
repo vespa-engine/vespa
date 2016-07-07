@@ -12,27 +12,27 @@ import java.util.logging.Logger;
  * 
  * @author bratseth
  */
-public abstract class AbstractTransaction<OPERATION extends Transaction.Operation> implements Transaction<OPERATION> {
+public abstract class AbstractTransaction implements Transaction {
 
     private static final Logger log = Logger.getLogger(AbstractTransaction.class.getName());
-    private final List<OPERATION> operations = new ArrayList<>();
+    private final List<Operation> operations = new ArrayList<>();
 
     protected AbstractTransaction() { }
 
     @Override
-    public Transaction add(OPERATION operation) {
+    public Transaction add(Operation operation) {
         this.operations.add(operation);
         return this;
     }
 
     @Override
-    public Transaction add(List<OPERATION> operations) {
+    public Transaction add(List<Operation> operations) {
         this.operations.addAll(operations);
         return this;
     }
 
     @Override
-    public List<OPERATION> operations() { return operations; }
+    public List<Operation> operations() { return operations; }
 
     /** Default implementations which logs a severe message. Operations should implement toString to use this. */
     @Override

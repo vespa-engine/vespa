@@ -13,7 +13,7 @@ import java.util.List;
  * @author lulf
  * @author bratseth
  */
-public interface Transaction<OPERATION extends Transaction.Operation> extends AutoCloseable {
+public interface Transaction extends AutoCloseable {
 
     /**
      * Adds an operation to this transaction. Return self for chaining.
@@ -21,7 +21,7 @@ public interface Transaction<OPERATION extends Transaction.Operation> extends Au
      * @param operation {@link Operation} to append
      * @return self, for chaining
      */
-    Transaction add(OPERATION operation);
+    Transaction add(Operation operation);
 
     /**
      * Adds multiple operations to this transaction. Return self for chaining.
@@ -29,13 +29,13 @@ public interface Transaction<OPERATION extends Transaction.Operation> extends Au
      * @param operation {@link Operation} to append
      * @return self, for chaining
      */
-    Transaction add(List<OPERATION> operation);
+    Transaction add(List<Operation> operation);
 
     /**
      * Returns the operations of this.
      * Ownership of the returned list is transferred to the caller. The ist may be ready only.
      */
-    List<OPERATION> operations();
+    List<Operation> operations();
 
     /**
      * Checks whether or not the transaction is able to commit in its current state and do any transient preparatory

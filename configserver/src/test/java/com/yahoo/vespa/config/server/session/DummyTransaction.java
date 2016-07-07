@@ -10,7 +10,7 @@ import java.util.List;
  * Dummy transaction implementation that only does stuff in memory and does not adhere to contract.
  * @author lulf
  */
-public class DummyTransaction implements Transaction<Transaction.Operation> {
+public class DummyTransaction implements Transaction {
 
     private final List<Operation> operations = new ArrayList<>();
 

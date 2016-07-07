@@ -25,7 +25,9 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
- * The applications of a tenant, backed by ZooKeeper
+ * The applications of a tenant, backed by ZooKeeper.
+ * Each application is stored as a single file, named the same as the application id and containing the id
+ * of the session storing the content of the application.
  *
  * @author lulf
  * @since 5.1
@@ -50,6 +52,14 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
         this.directoryCache = curator.createDirectoryCache(tenantRoot.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
+    }
+
+    public static TenantApplications create(Curator curator, Path root, ReloadHandler reloadHandler, TenantName tenant) {
+        try {
+            return new ZKTenantApplications(curator, root, reloadHandler, tenant);
+        } catch (Exception e) {
+            throw new RuntimeException(Tenants.logPre(tenant) + "Error creating application repo", e);
+        }
     }
 
     private void rewriteApplicationIds() {
@@ -89,14 +99,6 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
             transaction.commit();
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Error rewriting application id from " + origNode + " to " + appId.serializedForm());
-        }
-    }
-
-    public static TenantApplications create(Curator curator, Path root, ReloadHandler reloadHandler, TenantName tenant) {
-        try {
-            return new ZKTenantApplications(curator, root, reloadHandler, tenant);
-        } catch (Exception e) {
-            throw new RuntimeException(Tenants.logPre(tenant)+"Error creating application repo", e);
         }
     }
 
@@ -164,10 +166,11 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     private void applicationRemoved(ApplicationId applicationId) {
         reloadHandler.removeApplication(applicationId);
-        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId)+"Application removed: " + applicationId);
+        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application removed: " + applicationId);
     }
 
     private void applicationAdded(ApplicationId applicationId) {
-        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId)+"Application " + applicationId + " was added to repo");
+        log.log(LogLevel.DEBUG, Tenants.logPre(applicationId) + "Application added: " + applicationId);
     }    
+
 }

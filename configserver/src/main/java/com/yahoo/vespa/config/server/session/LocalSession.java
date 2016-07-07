@@ -178,7 +178,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         }
     }
 
-    private static class FileTransaction extends AbstractTransaction<FileOperation> {
+    private static class FileTransaction extends AbstractTransaction {
         
         public static FileTransaction from(FileOperation operation) {
             FileTransaction transaction = new FileTransaction();
@@ -191,8 +191,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
         @Override
         public void commit() {
-            for (FileOperation operation : operations())
-                operation.commit();
+            for (Operation operation : operations())
+                ((FileOperation)operation).commit();
         }
 
     }
@@ -200,7 +200,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     /** Factory for file operations */
     private static class FileOperations {
         
-        /** Creates an operation whcih recursively deletes the given path */
+        /** Creates an operation which recursively deletes the given path */
         public static DeleteOperation delete(String pathToDelete) {
             return new DeleteOperation(pathToDelete);
         }

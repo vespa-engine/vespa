@@ -48,11 +48,11 @@ public class SuperModelGenerationCounter implements GenerationCounter {
     }
     
     /** An increment transaction */
-    public static class IncrementTransaction extends AbstractTransaction<IncrementTransaction.Operation> {
+    public static class IncrementTransaction extends AbstractTransaction {
 
         /** Creates a counting curator transaction containing a single increment operation */
         public IncrementTransaction(CuratorCounter counter) {
-            add(new Operation(counter));
+            add(new IncrementOperation(counter));
         }
 
         @Override
@@ -61,21 +61,21 @@ public class SuperModelGenerationCounter implements GenerationCounter {
         @Override
         public void commit() {
             for (Operation operation : operations())
-                operation.commit();
+                ((IncrementOperation)operation).commit();
         }
 
         @Override
         public void rollbackOrLog() {
             for (Operation operation : operations())
-                operation.rollback();
+                ((IncrementOperation)operation).rollback();
         }
 
-        public static class Operation implements Transaction.Operation {
+        public static class IncrementOperation implements Transaction.Operation {
 
-            private static final Logger log = Logger.getLogger(Operation.class.getName());
+            private static final Logger log = Logger.getLogger(IncrementOperation.class.getName());
             private final CuratorCounter counter;
 
-            public Operation(CuratorCounter counter) {
+            public IncrementOperation(CuratorCounter counter) {
                 this.counter = counter;
             }
 
