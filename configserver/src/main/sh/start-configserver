@@ -116,8 +116,6 @@ unset LD_PRELOAD
 # will be picked up by standalone-container:
 export standalone_jdisc_container__app_location=${appdir}
 export standalone_jdisc_container__deployment_profile=configserver
-# used by vespa/models etc:
-export VESPA_WEB_SERVICE_PORT=4080
 
 # class path
 CP="${VESPA_HOME}lib/jars/jdisc_core-jar-with-dependencies.jar"

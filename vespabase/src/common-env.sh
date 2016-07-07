@@ -75,8 +75,6 @@ get_var() {
 }
 
 populate_environment () {
-    export VESPA_WEB_SERVICE_PORT=4080
-
     # these are the variables we want while running vespa:
     # VESPA_HOME - where is Vespa installed
     # VESPA_CONFIGSERVERS - the host (or list of host) where a configserver runs
@@ -87,6 +85,7 @@ populate_environment () {
     # VESPA_CONFIGSERVER_RPC_PORT -  the RPC port for configservers
     # VESPA_CONFIGSERVER_HTTP_PORT - the webservice (REST api) port for configservers
     # VESPA_CONFIG_PROTOCOL_VERSION - the RPC protocol version to use
+    # VESPA_WEB_SERVICE_PORT - where the main REST apis will normally run
 
     # debugging
     # VESPA_VALGRIND_OPT - for memory leak tracking, the options to use for valgrind
