@@ -42,6 +42,8 @@ public:
 
     void shutdown();
 
+    void setTaskLimit(uint32_t taskLimit);
+
     // Expose the underlying executors for stats fetching and testing.
     vespalib::ThreadStackExecutorBase &getMasterExecutor() {
         return _masterExecutor;
