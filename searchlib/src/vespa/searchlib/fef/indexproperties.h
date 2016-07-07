@@ -111,7 +111,8 @@ namespace matching {
         static uint32_t lookup(const Properties &props);
     };
     /**
-     * Property for the number of threads used per search.
+     * Property for the number of partitions inside the docid space.
+     * A partition is a unit of work for the search threads.
      **/
     struct NumSearchPartitions {
         static const vespalib::string NAME;
