@@ -103,7 +103,7 @@ namespace matching {
         static uint32_t lookup(const Properties &props);
     };
     /**
-     * Property for the number of threads used per search.
+     * Property for the minimum number of hits per thread.
      **/
     struct MinHitsPerThread {
         static const vespalib::string NAME;
