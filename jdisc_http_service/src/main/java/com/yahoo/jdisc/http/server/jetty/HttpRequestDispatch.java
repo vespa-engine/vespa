@@ -62,7 +62,7 @@ class HttpRequestDispatch {
         this.servletRequest = servletRequest;
         if (jDiscContext.serverConfig.maxKeepAliveRequests() > 0) {
             HttpConnection connection = JDiscHttpServlet.getConnection(servletRequest);
-            if (connection.getMessagesIn() <= jDiscContext.serverConfig.maxKeepAliveRequests()) {
+            if (connection.getMessagesIn() >= jDiscContext.serverConfig.maxKeepAliveRequests()) {
                 connection.getGenerator().setPersistent(false);
             }
         }
