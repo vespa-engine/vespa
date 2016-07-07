@@ -12,6 +12,7 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
+import org.eclipse.jetty.server.HttpConnection;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletInputStream;
@@ -59,7 +60,7 @@ class HttpRequestDispatch {
         this.metricReporter = new MetricReporter(jDiscContext.metric, metricContext,
                 ((org.eclipse.jetty.server.Request) servletRequest).getTimeStamp());
         this.servletRequest = servletRequest;
-
+        honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
                 servletResponse,
                 jDiscContext.janitor,
@@ -92,6 +93,15 @@ class HttpRequestDispatch {
                     .whenComplete(completeRequestCallback);
         } catch (Throwable throwable) {
             log.log(Level.WARNING, "Failed registering finished listeners.", throwable);
+        }
+    }
+
+    private void honourMaxKeepAliveRequests() {
+        if (jDiscContext.serverConfig.maxKeepAliveRequests() > 0) {
+            HttpConnection connection = JDiscHttpServlet.getConnection(servletRequest);
+            if (connection.getMessagesIn() >= jDiscContext.serverConfig.maxKeepAliveRequests()) {
+                connection.getGenerator().setPersistent(false);
+            }
         }
     }
 
