@@ -20,3 +20,10 @@ vespa_add_executable(vespalib_stress_test_app
     vespalib
 )
 vespa_add_test(NAME vespalib_stress_test_app COMMAND vespalib_stress_test_app BENCHMARK)
+vespa_add_executable(vespalib_blockingthreadstackexecutor_test_app TEST
+    SOURCES
+    blockingthreadstackexecutor_test.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(NAME vespalib_blockingthreadstackexecutor_test_app COMMAND vespalib_blockingthreadstackexecutor_test_app)
