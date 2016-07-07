@@ -68,6 +68,6 @@ FederationSearcher =
             ComponentDefinition
         }? &
         element source-set {
-          attribute inherits {"default"}
+          attribute inherits { string "default" }
         }?
     }

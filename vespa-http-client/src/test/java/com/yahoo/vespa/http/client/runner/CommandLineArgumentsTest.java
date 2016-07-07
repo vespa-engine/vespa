@@ -32,16 +32,13 @@ public class CommandLineArgumentsTest {
 
     private void addMinimum() {
         add("host", "hostValue");
-        add("file", "fileValue");
     }
+
     private ArrayList<String> args = new ArrayList<>();
 
     @Test
     public void testRequiredFlags() {
         assertThat(CommandLineArguments.build(asArray()), is(nullValue()));
-        add("host", "hostValue");
-        assertThat(CommandLineArguments.build(asArray()), is(nullValue()));
-        args.clear();
         add("file", "fileValue");
         assertThat(CommandLineArguments.build(asArray()), is(nullValue()));
         args.clear();

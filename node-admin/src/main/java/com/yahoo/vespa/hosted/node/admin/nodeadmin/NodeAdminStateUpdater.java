@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -35,6 +38,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final Object monitor = new Object();
     private final Orchestrator orchestrator;
     private final String dockerHostHostName;
+    private final NodeRepository nodeRepository;
 
     public NodeAdminStateUpdater(
             final NodeRepository nodeRepository,
@@ -51,6 +55,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.nodeAdmin = nodeAdmin;
         this.orchestrator = orchestrator;
         this.dockerHostHostName = dockerHostHostName;
+        this.nodeRepository = nodeRepository;
     }
 
     public Map<String, Object> getDebugPage() {
@@ -77,9 +82,18 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
                     return Optional.of("Not all node agents are frozen.");
                 }
-                List<String> hosts = new ArrayList<>();
-                nodeAdmin.getListOfHosts().forEach(host -> hosts.add(host.toString()));
-                return orchestrator.suspend(dockerHostHostName, hosts);
+                // Fetch active nodes from node repo before suspending nodes.
+                // It is only possible to suspend active nodes,
+                // the orchestrator will fail if trying to suspend nodes in other states.
+                // Even though state is frozen we need to interact with node repo, but
+                // the data from node repo should not be used for anything else
+                List<String> nodesInActiveState;
+                try {
+                    nodesInActiveState = getNodesInActiveState();
+                } catch (IOException e) {
+                    return Optional.of("Failed to get nodes from node repo:" + e.getMessage());
+                }
+                return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
             } else {
                 nodeAdmin.unfreeze();
                 // we let the NodeAgent do the resume against the orchestrator.
@@ -125,5 +139,14 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             throw new RuntimeException(e);
         }
         nodeAdmin.shutdown();
+    }
+
+    private List<String> getNodesInActiveState() throws IOException {
+        return nodeRepository.getContainersToRun()
+                             .stream()
+                             .filter(nodespec -> nodespec.nodeState == NodeState.ACTIVE)
+                             .map(nodespec -> nodespec.hostname)
+                             .map(HostName::toString)
+                             .collect(Collectors.toList());
     }
 }

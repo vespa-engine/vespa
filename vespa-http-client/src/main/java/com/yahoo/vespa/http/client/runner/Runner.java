@@ -7,14 +7,10 @@ import com.yahoo.vespa.http.client.SimpleLoggerResultCallback;
 import com.yahoo.vespa.http.client.core.JsonReader;
 import com.yahoo.vespa.http.client.core.XmlFeedReader;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -33,8 +29,7 @@ public class Runner {
      * @return send time in ms, not including validating
      */
     public static long send(
-            FeedClient feedClient, InputStream inputStream, boolean isJson,
-            AtomicInteger numSent, boolean verbose, boolean addRootElementToXml) {
+            FeedClient feedClient, InputStream inputStream, boolean isJson, AtomicInteger numSent, boolean verbose) {
 
         if (verbose) {
             System.err.println("Now sending data.");
@@ -44,8 +39,7 @@ public class Runner {
             JsonReader.read(inputStream, feedClient, numSent);
         } else {
             try {
-                XmlFeedReader.read(
-                        addRootElementToXml ? addVespafeedTag(inputStream) : inputStream, feedClient, numSent);
+                XmlFeedReader.read(inputStream, feedClient, numSent);
             } catch (Exception e) {
                 System.err.println("Stopped reading feed, got problems with XML: " + e.getMessage());
             }
@@ -63,38 +57,31 @@ public class Runner {
         return sendTotalTime;
     }
 
-    // public for testing.
-    public static InputStream addVespafeedTag(InputStream inputStream) {
-        return new SequenceInputStream(Collections.enumeration(Arrays.asList(
-                new InputStream[]{
-                        new ByteArrayInputStream("<vespafeed>".getBytes()),
-                        inputStream,
-                        new ByteArrayInputStream("</vespafeed>".getBytes()),
-                }))
-        );
-    }
 
-    public static void main(String[] args) throws FileNotFoundException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         final CommandLineArguments commandLineArgs = CommandLineArguments.build(args);
         if (commandLineArgs == null) {
             return;
         }
-        // TODO: Rather implement this by peeking the stream if possible.
-        final boolean useJson = commandLineArgs.getFile().endsWith(".json");
 
-        final AtomicInteger numSent = new AtomicInteger(0);
-        InputStream inputStream = new FileInputStream(commandLineArgs.getFile());
+        FormatInputStream formatInputStream = new FormatInputStream(
+                System.in,
+                Optional.ofNullable(commandLineArgs.getFile()),
+                commandLineArgs.getAddRootElementToXml());
+
 
         int intervalOfLogging = commandLineArgs.getVerbose()
                 ? commandLineArgs.getWhenVerboseEnabledPrintMessageForEveryXDocuments()
                 : Integer.MAX_VALUE;
+        final AtomicInteger numSent = new AtomicInteger(0);
         final SimpleLoggerResultCallback callback = new SimpleLoggerResultCallback(numSent, intervalOfLogging);
 
-        final FeedClient feedClient = FeedClientFactory.create(commandLineArgs.createSessionParams(useJson), callback);
+        final FeedClient feedClient = FeedClientFactory.create(
+                commandLineArgs.createSessionParams(formatInputStream.getFormat()== FormatInputStream.Format.JSON), callback);
 
         long sendTotalTimeMs = send(
-                feedClient, inputStream, useJson, numSent, commandLineArgs.getVerbose(),
-                commandLineArgs.getAddRootElementToXml());
+                feedClient, formatInputStream.getInputStream(),
+                formatInputStream.getFormat() == FormatInputStream.Format.JSON, numSent, commandLineArgs.getVerbose());
 
         if (commandLineArgs.getVerbose()) {
             System.err.println(feedClient.getStatsAsJson());
@@ -102,7 +89,7 @@ public class Runner {
             double transferTimeSec = ((double) sendTotalTimeMs) / 1000.0;
             System.err.println("Sent " + fileSizeMb + " MB in " + transferTimeSec + " seconds.");
             System.err.println("Speed: " + ((fileSizeMb / transferTimeSec) * 8.0) + " Mbits/sec, + HTTP overhead " +
-                    "(not taking  compression into account)");
+                    "(not taking compression into account)");
             if (transferTimeSec > 0) {
                 System.err.printf("Docs/sec %.3f%n\n", numSent.get() / transferTimeSec);
             }

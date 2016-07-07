@@ -119,8 +119,8 @@ Disk = element disk {
 GarbageCollect = element garbagecollect {
     attribute start { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
     attribute stop { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
-    attribute full { "monday" | "tuesday" | "wednesday" | "thursday" |
-                     "friday" | "saturday" | "sunday" }
+    attribute full { string "monday" | string "tuesday" | string "wednesday" |
+                     string "thursday" | string "friday" | string "saturday" | string "sunday" }
 }
 
 DeadLockDetector = element deadlockdetector {
@@ -151,7 +151,7 @@ FleetControllerStats.attlist =
 
 # v3.0 definitions
 Storage30 = element storage {
-   attribute version { "3.0" } &
+   attribute version { string "3.0" } &
    GenericConfig* &
    element cluster {
       # name defaults to 'storage'

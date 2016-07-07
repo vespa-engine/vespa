@@ -7,7 +7,7 @@ Redundancy = element redundancy {
 }
 
 DistributionType = element distribution {
-    attribute type { "strict" | "loose" | "legacy" }
+    attribute type { string "strict" | string "loose" | string "legacy" }
 }
 
 BucketSplitting = element bucket-splitting {
@@ -37,16 +37,17 @@ VisitorTuning = element visitors {
 Maintenance = element maintenance {
     attribute start { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
     attribute stop { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
-    attribute high { "monday" | "tuesday" | "wednesday" | "thursday" |
-                     "friday" | "saturday" | "sunday" }
+    attribute high { string "monday" | string "tuesday" | string "wednesday" |
+                     string "thursday" | string "friday" | string "saturday" |
+                     string "sunday" }
 }
 
 PersistenceThread = element thread {
   ## The lowest priority this thread should handle.
-  attribute lowest-priority { "HIGHEST" | "VERY_HIGH" | "HIGH_1" |
-        "HIGH_2" | "HIGH_3" | "NORMAL_1" | "NORMAL_2" | "NORMAL_3" |
-        "NORMAL_4" | "NORMAL_5" | "NORMAL_6" | "LOW_1" |
-        "LOW_2" | "LOW_3" | "VERY_LOW" }? &
+  attribute lowest-priority { string "HIGHEST" | string "VERY_HIGH" | string "HIGH_1" |
+        string "HIGH_2" | string "HIGH_3" | string "NORMAL_1" | string "NORMAL_2" |
+        string "NORMAL_3" | string "NORMAL_4" | string "NORMAL_5" | string "NORMAL_6" |
+        string "LOW_1" | string "LOW_2" | string "LOW_3" | string "VERY_LOW" }? &
   ## The number of threads of this type to create
   attribute count { xsd:integer }?
 }
@@ -75,10 +76,10 @@ ClusterControllerTuning = element cluster-controller {
 
 DispatchTuning = element dispatch {
     element max-hits-per-partition { xsd:nonNegativeInteger }? &
-    element dispatch-policy { "round-robin" | "random" }? &
+    element dispatch-policy { string "round-robin" | string "random" }? &
     element min-group-coverage { xsd:double }? &
     element min-active-docs-coverage { xsd:double }? &
-    element use-local-node { "true" | "false" }?
+    element use-local-node { string "true" | string "false" }?
 }
 
 ClusterTuning = element tuning {
@@ -185,7 +186,7 @@ Documents = element documents {
         GenericConfig* &
         attribute type { xsd:string } &
         attribute selection { xsd:string }? &
-        attribute mode { "index" | "streaming" | "store-only" }
+        attribute mode { string "index" | string "streaming" | string "store-only" }
     }+
 }
 
