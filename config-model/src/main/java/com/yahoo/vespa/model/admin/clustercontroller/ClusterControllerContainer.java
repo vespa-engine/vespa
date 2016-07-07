@@ -6,8 +6,10 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -23,7 +25,12 @@ import java.util.TreeSet;
  * Extends the container producer to allow us to override ports.
  */
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
-public class ClusterControllerContainer extends Container implements BundlesConfig.Producer, ZookeeperServerConfig.Producer {
+public class ClusterControllerContainer extends Container implements
+        BundlesConfig.Producer,
+        ZookeeperServerConfig.Producer,
+        QrStartConfig.Producer,
+        ThreadpoolConfig.Producer
+{
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZKFACADE_BUNDLE = new ComponentSpecification("zkfacade");
     private final int index;
@@ -102,6 +109,15 @@ public class ClusterControllerContainer extends Container implements BundlesConf
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index);
+    }
+
+    @Override
+    public void getConfig(QrStartConfig.Builder builder) {
+        builder.jvm(new QrStartConfig.Jvm.Builder().heapsize(512));
+    }
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.maxthreads(10);
     }
 
     int getIndex() {

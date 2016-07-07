@@ -10,10 +10,12 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -130,6 +132,25 @@ public class ContainerClusterTest {
         container.setJvmArgs(null);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
     }
+
+    @Test
+    public void testClusterControllerResourceUsage() {
+        boolean isHosted = false;
+        ContainerCluster cluster = createContainerCluster(isHosted);
+        addClusterController(cluster, "host-c1");
+        assertEquals(1, cluster.getContainers().size());
+        ClusterControllerContainer container = (ClusterControllerContainer) cluster.getContainers().get(0);
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        container.getConfig(qrBuilder);
+        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
+        assertEquals(512, qrStartConfig.jvm().heapsize());
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        container.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(10, threadpoolConfig.maxthreads());
+    }
+
     @Test
     public void requireThatJvmArgsControlWorksForHostedAndNot() {
         verifyJvmArgs(true, false);
@@ -138,9 +159,6 @@ public class ContainerClusterTest {
         verifyJvmArgs(false, true);
     }
 
-    private void verifyThatWeCanHandleNull(boolean isHosted) {
-
-    }
     @Test
     public void requireThatWeCanhandleNull() {
         ContainerCluster cluster = createContainerCluster(false);
@@ -166,6 +184,13 @@ public class ContainerClusterTest {
 
     private static void addContainer(ContainerCluster cluster, String name, String hostName) {
         Container container = new Container(cluster, name, 0);
+        container.setHostResource(new HostResource(new Host(null, hostName)));
+        container.initService();
+        cluster.addContainer(container);
+    }
+
+    private static void addClusterController(ContainerCluster cluster, String hostName) {
+        Container container = new ClusterControllerContainer(cluster, 1, false);
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService();
         cluster.addContainer(container);
