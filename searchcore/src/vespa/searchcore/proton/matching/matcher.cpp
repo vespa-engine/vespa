@@ -166,13 +166,6 @@ private:
     const uint32_t          _maxThreads;
 };
 
-namespace {
-
-size_t estimateNumThreads(size_t hits, size_t minHits) {
-    return static_cast<size_t>(std::ceil(double(hits)/double(minHits)));
-}
-
-}
 SearchReply::UP
 Matcher::match(const SearchRequest &request,
                vespalib::ThreadBundle &threadBundle,
@@ -227,12 +220,7 @@ Matcher::match(const SearchRequest &request,
             rp(attrContext, metaStore, sessionMgr, groupingContext,
                sessionId, request.sortSpec, params.offset, params.hits);
 
-        size_t numThreadsPerSearch = _rankSetup->getNumThreadsPerSearch();
-        if ((numThreadsPerSearch > 1) && (_rankSetup->getMinHitsPerThread() > 0)) {
-            numThreadsPerSearch = (mtf->estimate().empty)
-                ? 1
-                : std::min(numThreadsPerSearch, estimateNumThreads(mtf->estimate().estHits, _rankSetup->getMinHitsPerThread()));
-        }
+        size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate());
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
         ResultProcessor::Result::UP result = master.match(params, limitedThreadBundle, *mtf, rp, _distributionKey, _rankSetup->getNumSearchPartitions());
@@ -252,8 +240,7 @@ Matcher::match(const SearchRequest &request,
                    numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
     }
     total_matching_time.stop();
-    my_stats.queryCollateralTime(total_matching_time.elapsed().sec()
-                                 - my_stats.queryLatencyAvg());
+    my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
     {
         vespalib::LockGuard guard(_statsLock);
         _stats.add(my_stats);

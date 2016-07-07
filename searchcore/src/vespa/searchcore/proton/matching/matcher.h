@@ -66,8 +66,16 @@ private:
             search::grouping::GroupingContext & groupingContext,
             std::unique_ptr<search::grouping::GroupingSession> gs);
 
-    Matcher(const Matcher &);
-    Matcher &operator=(const Matcher &);
+    size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits) {
+        size_t threads = _rankSetup->getNumThreadsPerSearch();
+        if ((threads > 1) && (_rankSetup->getMinHitsPerThread() > 0)) {
+            threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, _rankSetup->getMinHitsPerThread()));
+        }
+        return threads;
+    }
+    static size_t numThreads(size_t hits, size_t minHits) {
+        return static_cast<size_t>(std::ceil(double(hits)/double(minHits)));
+    }
 public:
     /**
      * Convenience typedefs.
@@ -75,6 +83,9 @@ public:
     typedef std::unique_ptr<Matcher> UP;
     typedef std::shared_ptr<Matcher> SP;
 
+
+    Matcher(const Matcher &) = delete;
+    Matcher &operator=(const Matcher &) = delete;
     /**
      * Create a new matcher. The schema represents the current index
      * layout.
