@@ -10,6 +10,11 @@ responseCompressionLevel              int    default=6
 # Whether to enable HTTP keep-alive for requests that support this.
 httpKeepAliveEnabled                  bool   default=true
 
+# Maximum number of request per http connection before server will hangup.
+# Naming taken from apache http server.
+# 0 means never hangup.
+maxKeepAliveRequests                  int    default=0
+
 # Whether the request body of POSTed forms should be removed (form parameters are available as request parameters).
 removeRawPostBodyForWwwUrlEncodedPost bool   default=false
 

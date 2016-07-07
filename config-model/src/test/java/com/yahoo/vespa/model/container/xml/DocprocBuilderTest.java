@@ -216,7 +216,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     public void testQrStartConfig() {
         QrStartConfig.Jvm jvm = qrStartConfig.jvm();
         assertThat(jvm.server(), is(true));
-        assertThat(jvm.verbosegc(), is(false));
+        assertThat(jvm.verbosegc(), is(true));
         assertThat(jvm.gcopts(), is(""));
         assertThat(jvm.heapsize(), is(1536));
         assertThat(jvm.stacksize(), is(512));

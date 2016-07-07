@@ -116,8 +116,6 @@ unset LD_PRELOAD
 # will be picked up by standalone-container:
 export standalone_jdisc_container__app_location=${appdir}
 export standalone_jdisc_container__deployment_profile=configserver
-# used by vespa/models etc:
-export VESPA_WEB_SERVICE_PORT=4080
 
 # class path
 CP="${VESPA_HOME}lib/jars/jdisc_core-jar-with-dependencies.jar"
@@ -151,5 +149,6 @@ run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-Djdisc.logger.tag=jdisc/configserver \
 	-Dfile.encoding=UTF-8 \
 	-Dzookeeperlogfile=${VESPA_HOME}logs/vespa/zookeeper.configserver.log \
+	-DThreadedRequestHandler.timeout=910 \
 	-cp "$CP" \
 	com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar

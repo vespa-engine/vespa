@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.log.LogLevel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 
 /**
@@ -44,7 +44,7 @@ public class Configserver extends AbstractService {
     public int getWantedPort() {
     	try {
     		// TODO: Provide configserver port as argument when creating this service instead
-    		Process process = new ProcessBuilder(Defaults.getDefaults().vespaHome() + "libexec/vespa/vespa-config.pl", "-configserverport").start();
+                Process process = new ProcessBuilder(getDefaults().underVespaHome("bin/vespa-print-default"), "configserver_rpc_port").start();
     		InputStream in = process.getInputStream();
     		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
     		return Integer.parseInt(reader.readLine().trim());

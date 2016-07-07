@@ -51,6 +51,7 @@ public class RankProfile implements Serializable, Cloneable {
     private int keepRankCount = -1;
 
     private int numThreadsPerSearch = -1;
+    private int minHitsPerThread = -1;
     private int numSearchPartitions = -1;
 
     private double termwiseLimit = 1.0;
@@ -435,6 +436,14 @@ public class RankProfile implements Serializable, Cloneable {
 
     public void setNumThreadsPerSearch(int numThreads) {
         this.numThreadsPerSearch = numThreads;
+    }
+
+    public int getMinHitsPerThread() {
+        return minHitsPerThread;
+    }
+
+    public void setMinHitsPerThread(int minHits) {
+        this.minHitsPerThread = minHits;
     }
 
     public void setNumSearchPartitions(int numSearchPartitions) {

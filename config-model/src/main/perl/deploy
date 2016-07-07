@@ -303,7 +303,7 @@ sub fetch_directory {
 sub get_configsource_url {
   my ($command) = @_;
 
-  my @configsources = split(' ', `$VESPA_HOME/libexec/vespa/vespa-config.pl -confighttpsources`);
+  my @configsources = split(' ', `$VESPA_HOME/bin/vespa-print-default configservers_http`);
   my $configsource_url = shift(@configsources);
   if (!$configsource_url) {
     die "Could not get url to config server, make sure that VESPA_HOME and services.addr_configserver is set\n";

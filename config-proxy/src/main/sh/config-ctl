@@ -64,9 +64,6 @@ ROOT=$VESPA_HOME
 export ROOT
 cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
-# get common PATH:
-. $ROOT/libexec/vespa/common-env.sh
-
 P_SENTINEL=var/run/sentinel.pid
 P_CONFIG_PROXY=var/run/configproxy.pid
 
@@ -105,7 +102,7 @@ export LD_LIBRARY_PATH="$VESPA_HOME/lib64"
 
 case $1 in
     start)
-        configsources=`libexec/vespa/vespa-config.pl -configsources`
+        configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$vespa_base__jvmargs_configproxy
         if [ "$userargs" == "" ]; then
             userargs=$services__jvmargs_configproxy
