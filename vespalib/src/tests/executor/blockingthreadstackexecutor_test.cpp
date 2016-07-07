@@ -8,6 +8,8 @@
 
 using namespace vespalib;
 
+constexpr int msWait = 30000;
+
 class MyTask : public Executor::Task
 {
 private:
@@ -19,19 +21,17 @@ public:
         : _entryGate(entryGate),
           _exitLatch(exitLatch)
     {}
-
     virtual void run() override {
-        _entryGate.await(30000);
+        _entryGate.await(msWait);
         _exitLatch.countDown();
     }
-
     static Task::UP create(Gate &entryGate, CountDownLatch &exitLatch) {
         return std::make_unique<MyTask>(entryGate, exitLatch);
     }
 };
 
 void
-addTaskToExecutor(BlockingThreadStackExecutor *executor, Gate *workersEntryGate, CountDownLatch *workersExitLatch, Gate *exitGate)
+blockedExecute(BlockingThreadStackExecutor *executor, Gate *workersEntryGate, CountDownLatch *workersExitLatch, Gate *exitGate)
 {
     executor->execute(MyTask::create(*workersEntryGate, *workersExitLatch)); // this should be a blocking call
     exitGate->countDown();
@@ -44,47 +44,68 @@ struct Fixture
     BlockingThreadStackExecutor executor;
     Gate workersEntryGate;
     CountDownLatch workersExitLatch;
-    Gate threadExitGate;
+    Gate blockedExecuteGate;
 
     Fixture(uint32_t taskLimit, uint32_t tasksToWaitFor)
         : executor(1, 128000, taskLimit),
           workersEntryGate(),
           workersExitLatch(tasksToWaitFor),
-          threadExitGate()
+          blockedExecuteGate()
     {}
     void execute(size_t numTasks) {
         for (size_t i = 0; i < numTasks; ++i) {
             executor.execute(MyTask::create(workersEntryGate, workersExitLatch));
         }
     }
+    void updateTaskLimit(uint32_t taskLimit) {
+        executor.setTaskLimit(taskLimit);
+    }
     void openForWorkers() {
         workersEntryGate.countDown();
     }
     void waitForWorkers() {
-        workersExitLatch.await(30000);
+        workersExitLatch.await(msWait);
     }
-    void assertAddTaskThreadIsBlocked() {
-        threadExitGate.await(10);
-        EXPECT_EQUAL(1u, threadExitGate.getCount());
+    void assertExecuteIsBlocked() {
+        blockedExecuteGate.await(10);
+        EXPECT_EQUAL(1u, blockedExecuteGate.getCount());
     }
-    void assertAddTaskThreadIsFinished() {
-        threadExitGate.await(30000);
-        EXPECT_EQUAL(0u, threadExitGate.getCount());
+    void waitForExecuteIsFinished() {
+        blockedExecuteGate.await(msWait);
+        EXPECT_EQUAL(0u, blockedExecuteGate.getCount());
     }
-    ThreadUP createAddTaskThread() {
-        return std::make_unique<std::thread>(addTaskToExecutor, &executor, &workersEntryGate, &workersExitLatch, &threadExitGate);
+    ThreadUP blockedExecuteThread() {
+        return std::make_unique<std::thread>(blockedExecute, &executor, &workersEntryGate, &workersExitLatch, &blockedExecuteGate);
+    }
+    void blockedExecuteAndWaitUntilFinished() {
+        ThreadUP thread = blockedExecuteThread();
+        TEST_DO(assertExecuteIsBlocked());
+        openForWorkers();
+        TEST_DO(waitForExecuteIsFinished());
+        thread->join();
+        waitForWorkers();
     }
 };
 
 TEST_F("require that execute() blocks when task limits is reached", Fixture(3, 4))
 {
     f.execute(3);
-    ThreadUP thread = f.createAddTaskThread();
-    TEST_DO(f.assertAddTaskThreadIsBlocked());
-    f.openForWorkers();
-    TEST_DO(f.assertAddTaskThreadIsFinished());
-    thread->join();
-    f.waitForWorkers();
+    f.blockedExecuteAndWaitUntilFinished();
+}
+
+TEST_F("require that task limit can be increased", Fixture(3, 5))
+{
+    f.execute(3);
+    f.updateTaskLimit(4);
+    f.execute(1);
+    f.blockedExecuteAndWaitUntilFinished();
+}
+
+TEST_F("require that task limit can be decreased", Fixture(3, 3))
+{
+    f.execute(2);
+    f.updateTaskLimit(2);
+    f.blockedExecuteAndWaitUntilFinished();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
