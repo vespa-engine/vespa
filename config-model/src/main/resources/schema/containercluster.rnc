@@ -64,12 +64,12 @@ HttpServer =  element server {
 }
 
 AccessLog = element accesslog {
-    attribute type { "yapache" | "vespa" | "disabled" }? &
+    attribute type { string "yapache" | string "vespa" | string "disabled" }? &
     attribute fileNamePattern { string }? &
     attribute symlinkName { string }? &
 
     attribute rotationInterval { string }? &
-    attribute rotationScheme { "date" | "sequence" }?
+    attribute rotationScheme { string "date" | string "sequence" }?
 }
 
 # REST-API:
