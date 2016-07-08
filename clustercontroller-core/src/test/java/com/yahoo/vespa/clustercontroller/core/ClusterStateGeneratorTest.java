@@ -389,7 +389,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_available_storage_nodes_available() {
+    public void cluster_down_if_less_than_min_count_of_storage_nodes_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
@@ -401,7 +401,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_available_storage_nodes_are_available() {
+    public void cluster_not_down_if_more_than_min_count_of_storage_nodes_are_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN);
@@ -412,7 +412,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_down_if_less_than_min_available_distributors_available() {
+    public void cluster_down_if_less_than_min_count_of_distributors_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN)
@@ -424,7 +424,7 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void cluster_not_down_if_more_than_min_available_distributors_are_available() {
+    public void cluster_not_down_if_more_than_min_count_of_distributors_are_available() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN);
@@ -458,6 +458,97 @@ public class ClusterStateGeneratorTest {
         final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:1.0 .1.s:r"));
     }
+
+    @Test
+    public void cluster_down_if_less_than_min_ratio_of_storage_nodes_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.DOWN)
+                .reportStorageNodeState(2, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfStorageNodesUp(0.5);
+
+        // TODO de-dupe a lot of these tests?
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
+    }
+
+    @Test
+    public void cluster_not_down_if_more_than_min_ratio_of_storage_nodes_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.DOWN);
+        // Min node ratio is inclusive, i.e. 0.5 of 2 nodes is enough for cluster to be up.
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfStorageNodesUp(0.5);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
+    }
+
+    @Test
+    public void cluster_down_if_less_than_min_ratio_of_distributors_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(0, State.DOWN)
+                .reportDistributorNodeState(2, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfDistributorNodesUp(0.5);
+
+        // TODO de-dupe a lot of these tests?
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
+    }
+
+    @Test
+    public void cluster_not_down_if_more_than_min_ratio_of_distributors_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(0, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfDistributorNodesUp(0.5);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
+    }
+
+    @Test
+    public void group_nodes_are_marked_down_if_group_availability_too_low() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
+                .bringEntireClusterUp()
+                .reportStorageNodeState(4, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.68);
+
+        // Node 4 is down, which is more than 32% of nodes down in group #2. Nodes 3,5 should be implicitly
+        // marked down as it is in the same group.
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:9 storage:9 .3.s:d .4.s:d .5.s:d"));
+    }
+
+    @Test
+    public void group_nodes_are_not_marked_down_if_group_availability_sufficiently_high() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
+                .bringEntireClusterUp()
+                .reportStorageNodeState(4, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.65);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:9 storage:9 .4.s:d")); // No other nodes down implicitly
+    }
+
+    @Test
+    public void implicitly_downed_group_nodes_receive_a_state_description() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(2).eachWithNodeCount(2))
+                .bringEntireClusterUp()
+                .reportStorageNodeState(3, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.51);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(true), equalTo("distributor:4 storage:4 " +
+                ".2.s:d .2.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
+                ".3.s:d .3.m:mockdesc")); // Preserve description for non-implicitly taken down node
+    }
+
+    // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 
     // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions? outdated RPC already sets Down
     // in timer event handling function, so might not be needed.
