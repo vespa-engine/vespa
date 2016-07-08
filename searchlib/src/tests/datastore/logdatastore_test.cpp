@@ -128,6 +128,52 @@ TEST("testThatLidInfoOrdersFileChunkSize") {
     EXPECT_TRUE(LidInfo(1, 1, 2) < LidInfo(2, 1, 1));
 }
 
+TEST("test that DirectIOPadding works accordng to spec") {
+    constexpr size_t FILE_SIZE= 100000;
+    FastOS_File file("directio.test");
+    file.EnableDirectIO();
+    EXPECT_TRUE(file.OpenReadWrite());
+    std::vector<char> buffer(FILE_SIZE, 'a');
+    EXPECT_EQUAL(FILE_SIZE, file.Write2(&buffer[0], buffer.size()));
+    size_t padBefore(0);
+    size_t padAfter(0);
+
+    EXPECT_TRUE(file.DirectIOPadding(4096, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(0u, padBefore);
+    EXPECT_EQUAL(0u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4095, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(4095u, padBefore);
+    EXPECT_EQUAL(0u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(1u, padBefore);
+    EXPECT_EQUAL(0u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4096, 4097, padBefore, padAfter));
+    EXPECT_EQUAL(0u, padBefore);
+    EXPECT_EQUAL(4095u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4096, 4095, padBefore, padAfter));
+    EXPECT_EQUAL(0u, padBefore);
+    EXPECT_EQUAL(1u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4095, padBefore, padAfter));
+    EXPECT_EQUAL(1u, padBefore);
+    EXPECT_EQUAL(0u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(1u, padBefore);
+    EXPECT_EQUAL(4095u, padAfter);
+
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(1u, padBefore);
+    EXPECT_EQUAL(4095u, padAfter);
+
+    EXPECT_TRUE(file.Close());
+    FastOS_File::Delete(file.GetFileName());
+}
+
 TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
     EXPECT_TRUE(FastOS_File::MakeDirectory("growing"));
