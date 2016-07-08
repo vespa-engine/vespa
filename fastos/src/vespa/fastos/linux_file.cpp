@@ -330,6 +330,10 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset,
                                     size_t &padAfter)
 {
     if (_directIOEnabled) {
+        if (offset+length > _cachedSize) {
+            // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
+            _cachedSize = GetSize();
+        }
         padBefore = offset & (_directIOFileAlign - 1);
         padAfter = _directIOFileAlign - ((padBefore + length) & (_directIOFileAlign - 1));
 
