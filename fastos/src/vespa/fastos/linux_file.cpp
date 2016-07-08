@@ -322,19 +322,23 @@ bool
 FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBefore, size_t &padAfter)
 {
     if (_directIOEnabled) {
-        if (int64_t(offset+length) > _cachedSize) {
-            // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
-            // The main reason is that it will not reflect the file being extended by another filedescriptor.
-            _cachedSize = GetSize();
-        }
+
         padBefore = offset & (_directIOFileAlign - 1);
         padAfter = _directIOFileAlign - ((padBefore + length) & (_directIOFileAlign - 1));
 
         if (padAfter == _directIOFileAlign) {
             padAfter = 0;
-        } else if ((static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
-                   (static_cast<int64_t>(offset + length) <= _cachedSize)) {
-            padAfter = _cachedSize - offset - length;
+        }
+        if (int64_t(offset+length+padAfter) > _cachedSize) {
+            // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
+            // The main reason is that it will not reflect the file being extended by another filedescriptor.
+            _cachedSize = GetSize();
+        }
+        if ((padAfter != 0) &&
+            (static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
+            (static_cast<int64_t>(offset + length) <= _cachedSize))
+        {
+            padAfter = _cachedSize - (offset + length);
         }
 
         if (static_cast<uint64_t>(offset + length + padAfter) <= static_cast<uint64_t>(_cachedSize)) {
