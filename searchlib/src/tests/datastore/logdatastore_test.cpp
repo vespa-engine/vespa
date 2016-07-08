@@ -129,12 +129,13 @@ TEST("testThatLidInfoOrdersFileChunkSize") {
 }
 
 TEST("test that DirectIOPadding works accordng to spec") {
-    constexpr size_t FILE_SIZE = 4096*30;
+    constexpr size_t FILE_SIZE = 4096*3;
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
-    std::vector<char> buffer(FILE_SIZE, 'a');
-    EXPECT_EQUAL(FILE_SIZE, file.Write2(&buffer[0], buffer.size()));
+    vespalib::AlignedHeapAlloc buf(FILE_SIZE, 4096);
+    memset(buf.get(), 'a', buf.size());
+    EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);
     size_t padAfter(0);
 
@@ -169,6 +170,23 @@ TEST("test that DirectIOPadding works accordng to spec") {
     EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
+
+    EXPECT_FALSE(file.DirectIOPadding(FILE_SIZE-1, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(0u, padBefore);
+    EXPECT_EQUAL(0u, padAfter);
+    EXPECT_EQUAL(FILE_SIZE, file.GetSize());
+
+    FastOS_File file2("directio.test");
+    file2.EnableDirectIO();
+    EXPECT_TRUE(file2.OpenWriteOnlyExisting(true));
+    EXPECT_EQUAL(FILE_SIZE, file2.GetSize());
+    EXPECT_EQUAL(FILE_SIZE, file2.Write2(buf.get(), FILE_SIZE));
+    EXPECT_EQUAL(FILE_SIZE, file2.GetSize());
+    EXPECT_TRUE(file2.Close());
+
+    EXPECT_TRUE(file.DirectIOPadding(FILE_SIZE-1, 4096, padBefore, padAfter));
+    EXPECT_EQUAL(4095u, padBefore);
+    EXPECT_EQUAL(1u, padAfter);
 
     EXPECT_TRUE(file.Close());
     FastOS_File::Delete(file.GetFileName());
