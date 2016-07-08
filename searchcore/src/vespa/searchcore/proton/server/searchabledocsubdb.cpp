@@ -4,7 +4,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchabledocsubdb");
 
-#include "searchable_document_retriever.h"
 #include "searchabledocsubdb.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
