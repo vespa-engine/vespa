@@ -11,6 +11,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.concurrent.Executor;
 
 /**
@@ -61,6 +62,13 @@ public class HttpHandler extends LoggingRequestHandler {
             e.printStackTrace();
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         }
+    }
+
+    // Override default, since we need a higher timeout
+    @Override
+    public Duration getTimeout() {
+        // TODO: Make configurable? Should be higher than timeouts used by clients
+        return Duration.ofSeconds(910);
     }
 
     private String getMessage(Exception e, HttpRequest request) {
