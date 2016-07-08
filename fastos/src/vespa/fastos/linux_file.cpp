@@ -28,19 +28,13 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
   (reinterpret_cast<unsigned long>(buf) & (_directIOMemAlign - 1)) == 0)
 
 ssize_t
-FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length,
-                                int64_t readOffset)
+FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult = ::pread(fh, buffer, length, readOffset);
     if (readResult < 0 && _failedHandler != NULL) {
         int error = errno;
         const char *fileName = GetFileName();
-        _failedHandler("read",
-                       fileName,
-                       error,
-                       readOffset,
-                       length,
-                       readResult);
+        _failedHandler("read", fileName, error, readOffset, length, readResult);
         errno = error;
     }
     return readResult;
@@ -55,12 +49,7 @@ FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
         int error = errno;
         int64_t readOffset = GetPosition();
         const char *fileName = GetFileName();
-        _failedHandler("read",
-                       fileName,
-                       error,
-                       readOffset,
-                       length,
-                       readResult);
+        _failedHandler("read", fileName, error, readOffset, length, readResult);
         errno = error;
     }
     return readResult;
@@ -68,19 +57,13 @@ FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 
 
 ssize_t
-FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length,
-                                 int64_t writeOffset)
+FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
     ssize_t writeRes = ::pwrite(fh, buffer, length, writeOffset);
     if (writeRes < 0 && _failedHandler != NULL) {
         int error = errno;
         const char *fileName = GetFileName();
-        _failedHandler("write",
-                       fileName,
-                       error,
-                       writeOffset,
-                       length,
-                       writeRes);
+        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
         errno = error;
     }
     return writeRes;
@@ -94,12 +77,7 @@ FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length)
         int error = errno;
         int64_t writeOffset = GetPosition();
         const char *fileName = GetFileName();
-        _failedHandler("write",
-                       fileName,
-                       error,
-                       writeOffset,
-                       length,
-                       writeRes);
+        _failedHandler("write", fileName, error, writeOffset, length, writeRes);
         errno = error;
     }
     return writeRes;
@@ -148,16 +126,14 @@ FastOS_Linux_File::ReadBufInternal(void *buffer, size_t length, int64_t readOffs
             if (DIRECTIOPOSSIBLE(buffer, alignedLength, readOffset)) {
                 size_t remain(length - alignedLength);
                 if (alignedLength > 0) {
-                    readResult = readInternal(_filedes, buffer, alignedLength,
-                                              readOffset);
+                    readResult = readInternal(_filedes, buffer, alignedLength, readOffset);
                 } else {
                     readResult = 0;
                 }
                 if (static_cast<size_t>(readResult) == alignedLength &&
                     remain != 0) {
-                    ssize_t readResult2 = readUnalignedEnd(
-                            static_cast<char *>(buffer) + alignedLength,
-                            remain, readOffset + alignedLength);
+                    ssize_t readResult2 = readUnalignedEnd(static_cast<char *>(buffer) + alignedLength,
+                                                           remain, readOffset + alignedLength);
                     if (readResult == 0) {
                         readResult = readResult2;
                     } else if (readResult2 > 0) {
@@ -224,16 +200,13 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
             if (DIRECTIOPOSSIBLE(buffer, alignedLength, _filePointer)) {
                 size_t remain(length - alignedLength);
                 if (alignedLength > 0) {
-                    writeRes = writeInternal(_filedes, buffer, alignedLength,
-                                      _filePointer);
+                    writeRes = writeInternal(_filedes, buffer, alignedLength, _filePointer);
                 } else {
                     writeRes = 0;
                 }
-                if (static_cast<size_t>(writeRes) == alignedLength &&
-                    remain != 0) {
-                    ssize_t writeRes2 = writeUnalignedEnd(
-                            static_cast<const char *>(buffer) + alignedLength,
-                            remain, _filePointer + alignedLength);
+                if (static_cast<size_t>(writeRes) == alignedLength && remain != 0) {
+                    ssize_t writeRes2 = writeUnalignedEnd(static_cast<const char *>(buffer) + alignedLength,
+                                                          remain, _filePointer + alignedLength);
                     if (writeRes == 0) {
                         writeRes = writeRes2;
                     } else if (writeRes2 > 0) {
@@ -272,7 +245,7 @@ FastOS_Linux_File::SetPosition(int64_t desiredPosition)
 
 
 int64_t
-FastOS_Linux_File::GetPosition(void)
+FastOS_Linux_File::GetPosition()
 {
     return _directIOEnabled ? _filePointer : FastOS_UNIX_File::GetPosition();
 }
@@ -312,8 +285,7 @@ FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
 
 void *
 FastOS_Linux_File::
-allocateGenericDirectIOBuffer(size_t byteSize,
-                              void *&realPtr)
+allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
 {
     size_t memoryAlignment = _directIOMemAlign;
     realPtr = malloc(byteSize + memoryAlignment - 1);
@@ -322,16 +294,14 @@ allocateGenericDirectIOBuffer(size_t byteSize,
 
 
 size_t
-FastOS_Linux_File::getMaxDirectIOMemAlign(void)
+FastOS_Linux_File::getMaxDirectIOMemAlign()
 {
     return _directIOMemAlign;
 }
 
 
 bool
-FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment,
-                                            size_t &transferGranularity,
-                                            size_t &transferMaximum)
+FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum)
 {
     bool rc = false;
 
@@ -349,20 +319,26 @@ FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment,
 
 
 bool
-FastOS_Linux_File::DirectIOPadding (int64_t offset,
-                                    size_t length,
-                                    size_t &padBefore,
-                                    size_t &padAfter)
+FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBefore, size_t &padAfter)
 {
     if (_directIOEnabled) {
+
         padBefore = offset & (_directIOFileAlign - 1);
         padAfter = _directIOFileAlign - ((padBefore + length) & (_directIOFileAlign - 1));
 
         if (padAfter == _directIOFileAlign) {
             padAfter = 0;
-        } else if ((static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
-                   (static_cast<int64_t>(offset + length) <= _cachedSize)) {
-            padAfter = _cachedSize - offset - length;
+        }
+        if (int64_t(offset+length+padAfter) > _cachedSize) {
+            // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
+            // The main reason is that it will not reflect the file being extended by another filedescriptor.
+            _cachedSize = GetSize();
+        }
+        if ((padAfter != 0) &&
+            (static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
+            (static_cast<int64_t>(offset + length) <= _cachedSize))
+        {
+            padAfter = _cachedSize - (offset + length);
         }
 
         if (static_cast<uint64_t>(offset + length + padAfter) <= static_cast<uint64_t>(_cachedSize)) {
@@ -378,7 +354,7 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset,
 
 
 void
-FastOS_Linux_File::EnableDirectIO(void)
+FastOS_Linux_File::EnableDirectIO()
 {
     if (!IsOpened()) {
         _directIOEnabled = true;
@@ -395,8 +371,9 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
     if (_directIOEnabled && (_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
         _directIOEnabled = false;
     }
-    if (_syncWritesEnabled)
+    if (_syncWritesEnabled) {
         openFlags |= FASTOS_FILE_OPEN_SYNCWRITES;
+    }
     if (_directIOEnabled) {
         rc = FastOS_UNIX_File::Open(openFlags | FASTOS_FILE_OPEN_DIRECTIO, filename);
         if ( ! rc ) {  //Retry without directIO.
@@ -430,7 +407,7 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
 
 
 bool
-FastOS_Linux_File::InitializeClass(void)
+FastOS_Linux_File::InitializeClass()
 {
     return FastOS_UNIX_File::InitializeClass();
 }

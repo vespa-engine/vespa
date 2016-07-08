@@ -25,76 +25,34 @@ protected:
 
 public:
     FastOS_Linux_File (const char *filename = NULL);
-    virtual ~FastOS_Linux_File () {
+    ~FastOS_Linux_File () {
         Close();
     }
+    bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
+    bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
+    void EnableDirectIO() override;
+    bool SetPosition(int64_t desiredPosition) override;
+    int64_t GetPosition() override;
+    bool SetSize(int64_t newSize) override;
+    void ReadBuf(void *buffer, size_t length, int64_t readOffset) override;
+    void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;
 
-    virtual bool
-    GetDirectIORestrictions(size_t &memoryAlignment,
-                            size_t &transferGranularity,
-                            size_t &transferMaximum);
 
-    virtual bool
-    DirectIOPadding(int64_t offset, size_t length,
-                    size_t &padBefore,
-                    size_t &padAfter);
+    ssize_t Read(void *buffer, size_t len) override;
+    ssize_t Write2(const void *buffer, size_t len) override;
+    bool Open(unsigned int openFlags, const char *filename) override;
 
-    virtual void
-    EnableDirectIO(void);
-
-    virtual bool
-    SetPosition(int64_t desiredPosition);
-
-    virtual int64_t
-    GetPosition(void);
-
-    virtual bool
-    SetSize(int64_t newSize);
-
-    virtual void
-    ReadBuf(void *buffer, size_t length, int64_t readOffset);
-
-    virtual void *
-    AllocateDirectIOBuffer(size_t byteSize, void *&realPtr);
-
-    static void *
-    allocateGenericDirectIOBuffer(size_t byteSize,
-                                  void *&realPtr);
-
-    static size_t
-    getMaxDirectIOMemAlign(void);
-
-    virtual ssize_t
-    Read(void *buffer, size_t len);
-
-    virtual ssize_t
-    Write2(const void *buffer, size_t len);
-
-    virtual bool
-    Open(unsigned int openFlags, const char *filename = NULL);
-
-    static bool
-    InitializeClass(void);
+    static bool InitializeClass();
+    static size_t getMaxDirectIOMemAlign();
+    static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
 private:
-    ssize_t
-    readUnalignedEnd(void *buffer, size_t length, int64_t readOffset);
-    ssize_t
-    writeUnalignedEnd(const void *buffer, size_t length, int64_t readOffset);
-    ssize_t
-    ReadBufInternal(void *buffer, size_t length, int64_t readOffset);
-
-    ssize_t
-    readInternal(int fh, void *buffer, size_t length, int64_t readOffset);
-
-    ssize_t
-    readInternal(int fh, void *buffer, size_t length);
-
-    ssize_t
-    writeInternal(int fh, const void *buffer, size_t length,
-                  int64_t writeOffset);
-
-    ssize_t
-    writeInternal(int fh, const void *buffer, size_t length);
+    ssize_t readUnalignedEnd(void *buffer, size_t length, int64_t readOffset);
+    ssize_t writeUnalignedEnd(const void *buffer, size_t length, int64_t readOffset);
+    ssize_t ReadBufInternal(void *buffer, size_t length, int64_t readOffset);
+    ssize_t readInternal(int fh, void *buffer, size_t length, int64_t readOffset);
+    ssize_t readInternal(int fh, void *buffer, size_t length);
+    ssize_t writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset);
+    ssize_t writeInternal(int fh, const void *buffer, size_t length);
 
     static const size_t _directIOFileAlign;
     static const size_t _directIOMemAlign;
