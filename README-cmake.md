@@ -89,7 +89,7 @@ This parameter is optional.
 
     vespa_generate_config(<for-target-name> <config-def-path>)
     
-`vespa_generate_config` generates [config](http://vespa.corp.yahoo.com/6/documentation/cloudconfig/config-introduction.html) from config definition (`.def`) files.
+`vespa_generate_config` generates from config definition (`.def`) files.
 
 `<for-target-name>` is the name of the target you want the generated config object to be linked to.
 This target needs to have been defined before you call `vespa_generate_config`.
