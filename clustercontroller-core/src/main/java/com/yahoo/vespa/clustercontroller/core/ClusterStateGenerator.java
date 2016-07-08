@@ -9,6 +9,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -29,6 +30,7 @@ public class ClusterStateGenerator {
         public int minDistributorNodesUp = 1;
         public double minRatioOfStorageNodesUp = 0.0;
         public double minRatioOfDistributorNodesUp = 0.0;
+        public double minNodeRatioPerGroup = 0.0;
 
         Params() {
             this.transitionTimes = buildTransitionTimeMap(0, 0);
@@ -74,6 +76,11 @@ public class ClusterStateGenerator {
 
         Params minRatioOfDistributorNodesUp(double minRatio) {
             this.minRatioOfDistributorNodesUp = minRatio;
+            return this;
+        }
+
+        Params minNodeRatioPerGroup(double minRatio) {
+            this.minNodeRatioPerGroup = minRatio;
             return this;
         }
 
@@ -147,6 +154,21 @@ public class ClusterStateGenerator {
         return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
     }
 
+    private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState, final Params params) {
+        final GroupAvailabilityCalculator calc = new GroupAvailabilityCalculator.Builder()
+                .withMinNodeRatioPerGroup(params.minNodeRatioPerGroup)
+                .withDistribution(params.cluster.getDistribution())
+                .build();
+        final Set<Integer> nodesToTakeDown = calc.nodesThatShouldBeDown(workingState);
+
+        for (Integer idx : nodesToTakeDown) {
+            final Node node = new Node(NodeType.STORAGE, idx);
+            final NodeState newState = new NodeState(NodeType.STORAGE, State.DOWN);
+            newState.setDescription("group node availability below configured threshold");
+            workingState.setNodeState(node, newState);
+        }
+    }
+
     public static ClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
         ClusterState workingState = emptyClusterState();
@@ -154,6 +176,8 @@ public class ClusterStateGenerator {
             final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
         }
+
+        takeDownGroupsWithTooLowAvailability(workingState, params);
 
         if (!sufficientNodesAreAvailbleInCluster(workingState, params)) {
             workingState.setClusterState(State.DOWN);
@@ -179,13 +203,22 @@ public class ClusterStateGenerator {
     private static boolean sufficientNodesAreAvailbleInCluster(final ClusterState state, final Params params) {
         final ContentCluster cluster = params.cluster;
 
-        long upStorageCount = countAvailableNodesOfType(NodeType.STORAGE, cluster, state);
-        long upDistributorCount = countAvailableNodesOfType(NodeType.DISTRIBUTOR, cluster, state);
+        final long upStorageCount = countAvailableNodesOfType(NodeType.STORAGE, cluster, state);
+        final long upDistributorCount = countAvailableNodesOfType(NodeType.DISTRIBUTOR, cluster, state);
+        // There's a 1-1 relationship between distributors and storage nodes, so don't need to
+        // keep track of separate node counts for computing availability ratios.
+        final long nodeCount = cluster.getConfiguredNodes().size();
 
         if (upStorageCount < params.minStorageNodesUp) {
             return false;
         }
         if (upDistributorCount < params.minDistributorNodesUp) {
+            return false;
+        }
+        if (params.minRatioOfStorageNodesUp * nodeCount > upStorageCount) {
+            return false;
+        }
+        if (params.minRatioOfDistributorNodesUp * nodeCount > upDistributorCount) {
             return false;
         }
         return true;
@@ -206,9 +239,9 @@ public class ClusterStateGenerator {
      *  - DONE - no maintenance transition for distributor nodes
      *  - DONE - max premature crashes (reported up/down cycle -> generated down)
      *  - DONE - node startup timestamp inclusion if not all distributors have observed timestamps
-     *  - WIP - min node count (distributor, storage) in state up for cluster to be up
-     *  - min node ratio (distributor, storage) in state up for cluster to be up
-     *  - implicit group node availability (only down-edge has to be considered, huzzah!)
+     *  - DONE - min node count (distributor, storage) in state up for cluster to be up
+     *  - DONE - min node ratio (distributor, storage) in state up for cluster to be up
+     *  - WIP - implicit group node availability (only down-edge has to be considered, huzzah!)
      *  - max init progress time (reported init -> generated down)
      *  - slobrok disconnect grace period (reported down -> generated down)
      *  - distribution bits inferred from storage nodes and config
