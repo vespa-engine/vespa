@@ -82,8 +82,7 @@ class ClusterFixture {
     }
 
     ClusterFixture reportStorageNodeState(final int index, NodeState nodeState) {
-        final Node node = new Node(NodeType.STORAGE, index);
-        doReportNodeState(node, nodeState);
+        doReportNodeState(new Node(NodeType.STORAGE, index), nodeState);
         return this;
     }
 
@@ -91,6 +90,11 @@ class ClusterFixture {
         final Node node = new Node(NodeType.DISTRIBUTOR, index);
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, state);
         doReportNodeState(node, nodeState);
+        return this;
+    }
+
+    ClusterFixture reportDistributorNodeState(final int index, NodeState nodeState) {
+        doReportNodeState(new Node(NodeType.DISTRIBUTOR, index), nodeState);
         return this;
     }
 
@@ -165,5 +169,11 @@ class ClusterFixture {
         ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
 
         return new ClusterFixture(cluster, distribution);
+    }
+
+    ClusterStateGenerator.Params generatorParams() {
+        ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+        params.cluster = cluster;
+        return params;
     }
 }
