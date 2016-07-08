@@ -322,7 +322,7 @@ bool
 FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBefore, size_t &padAfter)
 {
     if (_directIOEnabled) {
-        if (offset+length > _cachedSize) {
+        if (int64_t(offset+length) > _cachedSize) {
             // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
             _cachedSize = GetSize();
         }
