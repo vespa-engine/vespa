@@ -32,53 +32,37 @@ FileUtil::LoadedMmap::LoadedMmap(const vespalib::string &fileName)
         if (res == 0) {
             size_t sz = stbuf.st_size;
             if (sz) {
-                void *tmpBuffer = mmap(NULL, sz,
-                                       PROT_READ, MAP_PRIVATE,
-                                       fd.fd(), 0);
+                void *tmpBuffer = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd.fd(), 0);
                 if (tmpBuffer != MAP_FAILED) {
                     _mapSize = sz;
                     _mapBuffer = tmpBuffer;
                     uint32_t hl = GenericHeader::getMinSize();
                     bool badHeader = true;
                     if (sz >= hl) {
-                        GenericHeader::MMapReader rd(static_cast<const char *>
-                                                     (tmpBuffer), sz);
+                        GenericHeader::MMapReader rd(static_cast<const char *>(tmpBuffer), sz);
                         _header = std::make_unique<GenericHeader>();
                         size_t headerLen =  _header->read(rd);
                         if ((headerLen <= _mapSize) &&
-                            FileSizeCalculator::extractFileSize(*_header,
-                                                                headerLen,
-                                                                fileName,
-                                                                sz)) {
+                            FileSizeCalculator::extractFileSize(*_header, headerLen, fileName, sz)) {
                             _size = sz - headerLen;
-                            _buffer = static_cast<char *>
-                                      (_mapBuffer) + headerLen;
+                            _buffer = static_cast<char *>(_mapBuffer) + headerLen;
                             badHeader = false;
                         }
                     }
                     if (badHeader) {
-                        throw IllegalStateException(
-                                make_string("bad file header: %s",
-                                        fileName.c_str()));
+                        throw IllegalStateException(make_string("bad file header: %s", fileName.c_str()));
                     }
                 } else {
-                    throw IllegalStateException(
-                            make_string("Failed mmaping '%s'"
-                                        " of size %" PRIu64 " errno(%d)",
-                                        fileName.c_str(),
-                                        static_cast<uint64_t>(sz),
-                                        errno));
+                    throw IllegalStateException(make_string("Failed mmaping '%s' of size %" PRIu64 " errno(%d)",
+                                                            fileName.c_str(), static_cast<uint64_t>(sz), errno));
                 }
             }
         } else {
-            throw IllegalStateException(
-                    make_string("Failed fstat '%s' of fd %d with result = %d",
-                                fileName.c_str(), fd.fd(), res));
+            throw IllegalStateException(make_string("Failed fstat '%s' of fd %d with result = %d",
+                                                    fileName.c_str(), fd.fd(), res));
         }
     } else {
-        throw IllegalStateException(
-                make_string("Failed opening '%s' for reading errno(%d)",
-                            fileName.c_str(), errno));
+        throw IllegalStateException(make_string("Failed opening '%s' for reading errno(%d)", fileName.c_str(), errno));
     }
 }
 
@@ -97,12 +81,9 @@ FileUtil::openFile(const vespalib::string &fileName)
     std::unique_ptr<Fast_BufferedFile> file(new Fast_BufferedFile());
     file->EnableDirectIO();
     if (!file->OpenReadOnly(fileName.c_str())) {
-        LOG(error, "could not open %s: %s",
-            file->GetFileName(), getLastErrorString().c_str());
+        LOG(error, "could not open %s: %s", file->GetFileName(), getLastErrorString().c_str());
         file->Close();
-        throw IllegalStateException(
-                make_string("Failed opening '%s' for direct IO reading.",
-                            file->GetFileName()));
+        throw IllegalStateException(make_string("Failed opening '%s' for direct IO reading.", file->GetFileName()));
     }
     return file;
 }
@@ -114,8 +95,7 @@ FileUtil::loadFile(const vespalib::string &fileName)
     LoadedBuffer::UP data(new LoadedMmap(fileName));
     FastOS_File file(fileName.c_str());
     if (!file.OpenReadOnly()) {
-        LOG(error, "could not open %s: %s",
-            file.GetFileName(), getLastErrorString().c_str());
+        LOG(error, "could not open %s: %s", file.GetFileName(), getLastErrorString().c_str());
     }
     file.Close();
     return data;

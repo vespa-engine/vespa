@@ -34,7 +34,7 @@ BlockingThreadStackExecutor::wakeup(MonitorGuard & monitor)
 void
 BlockingThreadStackExecutor::setTaskLimit(uint32_t taskLimit)
 {
-    ThreadStackExecutorBase::setTaskLimit(taskLimit);
+    internalSetTaskLimit(taskLimit);
 }
 
 } // namespace vespalib

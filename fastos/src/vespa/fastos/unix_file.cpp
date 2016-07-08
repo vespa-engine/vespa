@@ -255,6 +255,7 @@ FastOS_UNIX_File::Close(void)
         }
 
         if (_mmapbase != NULL) {
+            madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
             munmap(static_cast<char *>(_mmapbase), _mmaplen);
             _mmapbase = NULL;
             _mmaplen = 0;

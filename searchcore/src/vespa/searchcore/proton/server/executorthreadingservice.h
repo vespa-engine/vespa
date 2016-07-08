@@ -44,6 +44,8 @@ public:
 
     void setTaskLimit(uint32_t taskLimit);
 
+    void setUnboundTaskLimit();
+
     // Expose the underlying executors for stats fetching and testing.
     vespalib::ThreadStackExecutorBase &getMasterExecutor() {
         return _masterExecutor;

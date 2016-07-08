@@ -4,8 +4,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchabledocsubdb");
 
-#include "searchable_document_retriever.h"
 #include "searchabledocsubdb.h"
+#include "fast_access_document_retriever.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
@@ -343,7 +343,7 @@ SearchableDocSubDB::getSearchableStats() const
 IDocumentRetriever::UP
 SearchableDocSubDB::getDocumentRetriever()
 {
-    return IDocumentRetriever::UP(new SearchableDocumentRetriever(_rFeedView.get(), _rSearchView.get()));
+    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(_rFeedView.get(), _rSearchView.get()->getAttributeManager()));
 }
 
 MatchingStats
