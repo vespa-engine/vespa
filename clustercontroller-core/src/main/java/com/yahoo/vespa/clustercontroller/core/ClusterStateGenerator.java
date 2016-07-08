@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Pure functional cluster state generator which deterministically constructs a full
@@ -20,11 +23,63 @@ public class ClusterStateGenerator {
     static class Params {
         public ContentCluster cluster;
         public Map<NodeType, Integer> transitionTimes;
-        public long currentTimeInMillis;
+        public long currentTimeInMillis = 0;
+        public int maxPrematureCrashes = 0;
+        public int minStorageNodesUp = 1;
+        public int minDistributorNodesUp = 1;
+        public double minRatioOfStorageNodesUp = 0.0;
+        public double minRatioOfDistributorNodesUp = 0.0;
+
+        Params() {
+            this.transitionTimes = buildTransitionTimeMap(0, 0);
+        }
+
+        // FIXME de-dupe
+        static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
+            Map<com.yahoo.vdslib.state.NodeType, java.lang.Integer> maxTransitionTime = new TreeMap<>();
+            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.DISTRIBUTOR, distributorTransitionTime);
+            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.STORAGE, storageTransitionTime);
+            return maxTransitionTime;
+        }
+
+        Params transitionTimes(int timeMs) {
+            this.transitionTimes = buildTransitionTimeMap(timeMs, timeMs);
+            return this;
+        }
+
+        Params currentTimeInMilllis(long currentTimeMs) {
+            this.currentTimeInMillis = currentTimeMs;
+            return this;
+        }
+
+        Params maxPrematureCrashes(int count) {
+            this.maxPrematureCrashes = count;
+            return this;
+        }
+
+        Params minStorageNodesUp(int nodes) {
+            this.minStorageNodesUp = nodes;
+            return this;
+        }
+
+        Params minDistributorNodesUp(int nodes) {
+            this.minDistributorNodesUp = nodes;
+            return this;
+        }
+
+        Params minRatioOfStorageNodesUp(double minRatio) {
+            this.minRatioOfStorageNodesUp = minRatio;
+            return this;
+        }
+
+        Params minRatioOfDistributorNodesUp(double minRatio) {
+            this.minRatioOfDistributorNodesUp = minRatio;
+            return this;
+        }
 
         static Params fromOptions(FleetControllerOptions opts) {
             return new Params();
-        }
+        } // TODO
     }
 
     private static ClusterState emptyClusterState() {
@@ -35,11 +90,19 @@ public class ClusterStateGenerator {
         }
     }
 
-    private static NodeState baselineNodeState(final NodeInfo nodeInfo, final Params params) {
+    private static NodeState computeEffectiveNodeState(final NodeInfo nodeInfo, final Params params) {
         final NodeState reported = nodeInfo.getReportedState();
         final NodeState wanted = nodeInfo.getWantedState();
 
         NodeState baseline = reported.clone();
+
+        if (params.maxPrematureCrashes != 0 && nodeInfo.getPrematureCrashCount() > params.maxPrematureCrashes) {
+            baseline.setState(State.DOWN);
+        }
+
+        if (startupTimestampAlreadyObservedByAllNodes(nodeInfo, baseline)) {
+            baseline.setStartTimestamp(0);
+        }
 
         if (reported.above(wanted)) {
             // Only copy state and description from Wanted state; this preserves auxiliary
@@ -47,6 +110,9 @@ public class ClusterStateGenerator {
             baseline.setState(wanted.getState());
             baseline.setDescription(wanted.getDescription());
         }
+        // FIXME make the below maintenance transitions more explicit that they can only
+        // happen for storage nodes, not for distributors.
+
         // Special case: since each node is published with a single state, if we let a Retired node
         // be published with Initializing, it'd start receiving feed and merges. Avoid this by
         // having it be in maintenance instead for the duration of the init period.
@@ -63,11 +129,15 @@ public class ClusterStateGenerator {
         return baseline;
     }
 
+    private static boolean startupTimestampAlreadyObservedByAllNodes(NodeInfo nodeInfo, NodeState baseline) {
+        return baseline.getStartTimestamp() == nodeInfo.getStartTimestamp(); // FIXME rename NodeInfo getter/setter
+    }
+
     private static boolean withinTemporalMaintenancePeriod(final NodeInfo nodeInfo,
                                                            final NodeState baseline,
                                                            final Params params)
     {
-        if (nodeInfo.getNode().getType() != NodeType.STORAGE) {
+        if (!nodeInfo.isStorage()) {
             return false;
         }
         final Integer transitionTime = params.transitionTimes.get(nodeInfo.getNode().getType());
@@ -80,22 +150,45 @@ public class ClusterStateGenerator {
     public static ClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
         ClusterState workingState = emptyClusterState();
-        // FIXME temporary only
-        int availableNodes = 0;
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
-            // FIXME temporary only
-            final NodeState nodeState = baselineNodeState(nodeInfo, params);
+            final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
-            if (nodeInfo.getReportedState().getState() != State.DOWN) { // FIXME
-                ++availableNodes;
-            }
         }
 
-        if (availableNodes == 0) {
-            workingState.setClusterState(State.DOWN); // FIXME not correct
+        if (!sufficientNodesAreAvailbleInCluster(workingState, params)) {
+            workingState.setClusterState(State.DOWN);
         }
 
         return workingState;
+    }
+
+    private static boolean nodeStateIsConsideredAvailable(NodeState ns) {
+        return (ns.getState() == State.UP || ns.getState() == State.RETIRED || ns.getState() == State.INITIALIZING);
+    }
+
+    private static long countAvailableNodesOfType(final NodeType type,
+                                                  final ContentCluster cluster,
+                                                  final ClusterState state)
+    {
+        return cluster.getConfiguredNodes().values().stream()
+                .map(node -> state.getNodeState(new Node(type, node.index())))
+                .filter(ClusterStateGenerator::nodeStateIsConsideredAvailable)
+                .count();
+    }
+
+    private static boolean sufficientNodesAreAvailbleInCluster(final ClusterState state, final Params params) {
+        final ContentCluster cluster = params.cluster;
+
+        long upStorageCount = countAvailableNodesOfType(NodeType.STORAGE, cluster, state);
+        long upDistributorCount = countAvailableNodesOfType(NodeType.DISTRIBUTOR, cluster, state);
+
+        if (upStorageCount < params.minStorageNodesUp) {
+            return false;
+        }
+        if (upDistributorCount < params.minDistributorNodesUp) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -111,13 +204,13 @@ public class ClusterStateGenerator {
      *  - DONE - retired node in init is set to maintenance to inhibit load+merges
      *  - DONE - max transition time (reported down -> implicit generated maintenance -> generated down)
      *  - DONE - no maintenance transition for distributor nodes
-     *  - max init progress time (reported init -> generated down)
-     *  - max premature crashes (reported up/down cycle -> generated down)
-     *  - node startup timestamp inclusion if not all distributors have observed timestamps
-     *  - min node count (distributor, storage) in state up for cluster to be up
+     *  - DONE - max premature crashes (reported up/down cycle -> generated down)
+     *  - DONE - node startup timestamp inclusion if not all distributors have observed timestamps
+     *  - WIP - min node count (distributor, storage) in state up for cluster to be up
      *  - min node ratio (distributor, storage) in state up for cluster to be up
      *  - implicit group node availability (only down-edge has to be considered, huzzah!)
-     *  - slobrok disconnect grace period (reported down -> generated up)
+     *  - max init progress time (reported init -> generated down)
+     *  - slobrok disconnect grace period (reported down -> generated down)
      *  - distribution bits inferred from storage nodes and config
      *  - generation of accurate edge events for state deltas <- this is a sneaky one
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)

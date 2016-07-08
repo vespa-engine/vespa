@@ -218,12 +218,11 @@ public class ClusterStateGeneratorTest {
     @Test
     public void reported_down_node_within_transition_time_has_maintenance_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
-        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-        params.cluster = fixture.cluster;
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .currentTimeInMilllis(10_000)
+                .transitionTimes(2000);
         // FIXME why do we even have transition times for distributors when they inherently
         // cannot go into maintenance mode..? Must only be for up -> down edge.
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
-        params.currentTimeInMillis = 10_000;
 
         fixture.reportStorageNodeState(1, State.DOWN);
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
@@ -246,13 +245,9 @@ public class ClusterStateGeneratorTest {
     @Test
     public void reported_node_down_after_transition_time_has_down_generated_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
-        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-        params.cluster = fixture.cluster;
-        // FIXME why do we even have transition times for distributors when they inherently
-        // cannot go into maintenance mode..? Must only be for up -> down edge.
-        // FIXME de-dupe
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
-        params.currentTimeInMillis = 11_000;
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .currentTimeInMilllis(11_000)
+                .transitionTimes(2000);
 
         fixture.reportStorageNodeState(1, State.DOWN);
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
@@ -265,11 +260,9 @@ public class ClusterStateGeneratorTest {
     @Test
     public void distributor_nodes_are_not_implicitly_transitioned_to_maintenance_mode() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
-        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-        params.cluster = fixture.cluster;
-        // FIXME de-dupe
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
-        params.currentTimeInMillis = 10_000;
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .currentTimeInMilllis(10_000)
+                .transitionTimes(2000);
 
         fixture.reportDistributorNodeState(2, State.DOWN);
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.DISTRIBUTOR, 2));
@@ -282,11 +275,9 @@ public class ClusterStateGeneratorTest {
     @Test
     public void transient_maintenance_mode_does_not_override_wanted_down_state() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
-        final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-        params.cluster = fixture.cluster;
-        // FIXME de-dupe
-        params.transitionTimes = ClusterFixture.buildTransitionTimeMap(2000, 2000);
-        params.currentTimeInMillis = 10_000;
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .currentTimeInMilllis(10_000)
+                .transitionTimes(2000);
 
         fixture.proposeStorageNodeWantedState(2, State.DOWN);
         fixture.reportStorageNodeState(2, State.DOWN);
@@ -298,5 +289,176 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:d"));
     }
 
-    // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions?
+    @Test
+    public void crash_count_exceeding_limit_marks_node_as_down() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 3));
+        nodeInfo.setPrematureCrashCount(11);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .3.s:d"));
+    }
+
+    @Test
+    public void crash_count_not_exceeding_limit_does_not_mark_node_as_down() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 3));
+        nodeInfo.setPrematureCrashCount(10); // "Max crashes" range is inclusive
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5"));
+    }
+
+    @Test
+    public void exceeded_crash_count_does_not_override_wanted_maintenance_state() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(1, State.MAINTENANCE);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        nodeInfo.setPrematureCrashCount(11);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
+    }
+
+    @Test
+    public void non_observed_storage_node_start_timestamp_is_included_in_state() {
+        final NodeState nodeState = new NodeState(NodeType.STORAGE, State.UP);
+        // A reported state timestamp that is not yet marked as observed in the NodeInfo
+        // for the same node is considered not observed by other nodes and must therefore
+        // be included in the generated cluster state
+        nodeState.setStartTimestamp(5000);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, nodeState);
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.t:5000"));
+    }
+
+    @Test
+    public void non_observed_distributor_start_timestamp_is_included_in_state() {
+        final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, State.UP);
+        nodeState.setStartTimestamp(6000);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(1, nodeState);
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 .1.t:6000 storage:5"));
+    }
+
+    @Test
+    public void fully_observed_storage_node_timestamp_not_included_in_state() {
+        final NodeState nodeState = new NodeState(NodeType.STORAGE, State.UP);
+        nodeState.setStartTimestamp(5000);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, nodeState);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+        nodeInfo.setStartTimestamp(5000);
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5"));
+    }
+
+    @Test
+    public void fully_observed_distributor_timestamp_not_included_in_state() {
+        final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, State.UP);
+        nodeState.setStartTimestamp(6000);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(0, nodeState);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.DISTRIBUTOR, 0));
+        nodeInfo.setStartTimestamp(6000);
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5"));
+    }
+
+    @Test
+    public void cluster_down_if_less_than_min_available_storage_nodes_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.DOWN)
+                .reportStorageNodeState(2, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
+    }
+
+    @Test
+    public void cluster_not_down_if_more_than_min_available_storage_nodes_are_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
+    }
+
+    @Test
+    public void cluster_down_if_less_than_min_available_distributors_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(0, State.DOWN)
+                .reportDistributorNodeState(2, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minDistributorNodesUp(2);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
+    }
+
+    @Test
+    public void cluster_not_down_if_more_than_min_available_distributors_are_available() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(0, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minDistributorNodesUp(2);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
+    }
+
+    @Test
+    public void maintenance_mode_counted_as_down_for_cluster_availability() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.DOWN)
+                .proposeStorageNodeWantedState(2, State.MAINTENANCE);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:3 .0.s:d .2.s:m"));
+    }
+
+    @Test
+    public void init_and_retired_counted_as_up_for_cluster_availability() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.INITIALIZING)
+                .proposeStorageNodeWantedState(1, State.RETIRED);
+        // Any node being treated as down should take down the cluster here
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(3);
+
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:1.0 .1.s:r"));
+    }
+
+    // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions? outdated RPC already sets Down
+    // in timer event handling function, so might not be needed.
 }
