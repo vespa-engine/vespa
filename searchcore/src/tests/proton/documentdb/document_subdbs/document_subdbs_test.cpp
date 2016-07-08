@@ -14,7 +14,6 @@ LOG_SETUP("document_subdbs_test");
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
 #include <vespa/searchcore/proton/server/idocumentsubdb.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
-#include <vespa/searchcore/proton/server/searchable_document_retriever.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
@@ -497,7 +496,7 @@ TEST_F("require that managers and components are instantiated", SearchableFixtur
 	EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
 	EXPECT_TRUE(dynamic_cast<SearchableFeedView *>(f._subDb.getFeedView().get()) != NULL);
 	EXPECT_TRUE(dynamic_cast<SearchView *>(f._subDb.getSearchView().get()) != NULL);
-	EXPECT_TRUE(dynamic_cast<SearchableDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+	EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
 }
 
 template<typename Fixture>

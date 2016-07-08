@@ -16,7 +16,6 @@
 #include "maintenancecontroller.h"
 #include "protonconfigurer.h"
 #include "searchable_doc_subdb_configurer.h"
-#include "searchable_document_retriever.h"
 #include "searchabledocsubdb.h"
 #include "summaryadapter.h"
 #include "visibilityhandler.h"
