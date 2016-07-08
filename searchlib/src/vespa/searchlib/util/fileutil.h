@@ -23,65 +23,28 @@ public:
      **/
     class LoadedBuffer
     {
-    private:
-        LoadedBuffer(const LoadedBuffer & rhs);
-
-        LoadedBuffer &
-        operator =(const LoadedBuffer & rhs);
     protected:
         void * _buffer;
         size_t _size;
         std::unique_ptr<GenericHeader> _header;
     public:
+        LoadedBuffer(const LoadedBuffer & rhs) = delete;
+        LoadedBuffer & operator =(const LoadedBuffer & rhs) = delete;
         typedef std::unique_ptr<LoadedBuffer> UP;
 
         LoadedBuffer(void * buf, size_t sz)
             : _buffer(buf),
               _size(sz),
               _header(nullptr)
-        {
-        }
+        { }
 
-        virtual
-        ~LoadedBuffer()
-        {
-        }
-
-        const void *
-        buffer() const
-        {
-            return _buffer;
-        }
-
-        const char *
-        c_str() const
-        {
-            return static_cast<const char *>(_buffer);
-        }
-
-        size_t
-        size() const
-        {
-            return _size;
-        }
-
-        bool
-        empty() const
-        {
-            return _size == 0;
-        }
-
-        size_t
-        size(size_t elemSize) const
-        {
-            return  _size/elemSize;
-        }
-
-        const GenericHeader &
-        getHeader() const
-        {
-            return *_header;
-        }
+        virtual ~LoadedBuffer() { }
+        const void * buffer() const { return _buffer; }
+        const char *  c_str() const { return static_cast<const char *>(_buffer); }
+        size_t size() const { return _size; }
+        bool  empty() const { return _size == 0; }
+        size_t size(size_t elemSize) const { return  _size/elemSize; }
+        const GenericHeader &getHeader() const { return *_header; }
     };
 
     /**
@@ -94,23 +57,20 @@ public:
     public:
         LoadedMmap(const vespalib::string &fileName);
 
-        virtual
-        ~LoadedMmap();
+        virtual ~LoadedMmap();
     };
 
     /**
      * Opens and returns the file with the given name for reading.
      * Enables direct IO on the file.
      **/
-    static std::unique_ptr<Fast_BufferedFile>
-    openFile(const vespalib::string &fileName);
+    static std::unique_ptr<Fast_BufferedFile> openFile(const vespalib::string &fileName);
 
     /**
      * Loads and returns the file with the given name.
      * Mmaps the file into the returned buffer.
      **/
-    static LoadedBuffer::UP
-    loadFile(const vespalib::string &fileName);
+    static LoadedBuffer::UP loadFile(const vespalib::string &fileName);
 };
 
 class FileReaderBase
