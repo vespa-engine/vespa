@@ -41,7 +41,7 @@ public:
     static bool MakeDirectory(const char *name);
     static void RemoveDirectory(const char *name);
 
-    static std::string getCurrentDirectory(void);
+    static std::string getCurrentDirectory();
 
     static bool SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
     static int GetMaximumFilenameLength (const char *pathName);
@@ -56,10 +56,10 @@ public:
           _mmapEnabled(false)
     { }
 
-    char *ToString(void);
+    char *ToString();
     bool Open(unsigned int openFlags, const char *filename) override;
     bool Close() override;
-    bool IsOpened(void) const override { return _filedes >= 0; }
+    bool IsOpened() const override { return _filedes >= 0; }
 
     void enableMemoryMap(int flags) override {
         _mmapEnabled = true;
@@ -78,7 +78,7 @@ public:
         }
     }
 
-    bool IsMemoryMapped(void) const override { return _mmapbase != NULL; }
+    bool IsMemoryMapped() const override { return _mmapbase != NULL; }
     bool SetPosition(int64_t desiredPosition) override;
     int64_t GetPosition() override;
     int64_t GetSize() override;
@@ -89,7 +89,7 @@ public:
     void dropFromCache() const override;
 
     static bool Delete(const char *filename);
-    static int GetLastOSError(void) { return errno; }
+    static int GetLastOSError() { return errno; }
     static Error TranslateError(const int osError);
     static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);
@@ -112,7 +112,7 @@ private:
     char *_statName;
     char *_statFilenameP;
 
-    void DoStat(void);
+    void DoStat();
 
 protected:
     DIR *_dir;

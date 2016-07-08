@@ -43,17 +43,17 @@ FastOS_FileInterface::FastOS_FileInterface(const char *filename)
 }
 
 
-FastOS_FileInterface::~FastOS_FileInterface(void)
+FastOS_FileInterface::~FastOS_FileInterface()
 {
     free(_filename);
 }
 
-bool FastOS_FileInterface::InitializeClass (void)
+bool FastOS_FileInterface::InitializeClass ()
 {
     return true;
 }
 
-bool FastOS_FileInterface::CleanupClass (void)
+bool FastOS_FileInterface::CleanupClass ()
 {
     return true;
 }
@@ -136,7 +136,7 @@ FastOS_FileInterface::ReadBuf(void *buffer, size_t length, int64_t readOffset)
 
 
 void
-FastOS_FileInterface::EnableDirectIO(void)
+FastOS_FileInterface::EnableDirectIO()
 {
     // Only subclasses with support for DirectIO do something here.
 }
@@ -150,7 +150,7 @@ FastOS_FileInterface::SetWriteChunkSize(size_t writeChunkSize)
 
 
 void
-FastOS_FileInterface::EnableSyncWrites(void)
+FastOS_FileInterface::EnableSyncWrites()
 {
     if (!IsOpened())
         _syncWritesEnabled = true;
@@ -209,7 +209,7 @@ FastOS_FileInterface::MemoryMapPtr(int64_t position) const
 
 
 bool
-FastOS_FileInterface::IsMemoryMapped(void) const
+FastOS_FileInterface::IsMemoryMapped() const
 {
     // Only subclases with support for memory mapping do something here.
     return false;
@@ -360,7 +360,7 @@ FastOS_FileInterface::SetFileName(const char *filename)
 
 
 const char *
-FastOS_FileInterface::GetFileName(void) const
+FastOS_FileInterface::GetFileName() const
 {
     return (_filename != NULL) ? _filename : "";
 }
@@ -468,34 +468,20 @@ FastOS_FileInterface::OpenWriteOnly(const char *filename)
 
 
 bool
-FastOS_FileInterface::OpenStdin(void)
+FastOS_FileInterface::OpenStdin()
 {
     return Open(FASTOS_FILE_OPEN_STDIN);
 }
 
-
-bool
-FastOS_FileInterface::OpenStdout(void)
-{
-    return Open(FASTOS_FILE_OPEN_STDOUT);
-}
-
-
-bool
-FastOS_FileInterface::OpenStderr(void)
-{
-    return Open(FASTOS_FILE_OPEN_STDERR);
-}
-
 FastOS_File::Error
-FastOS_FileInterface::GetLastError(void)
+FastOS_FileInterface::GetLastError()
 {
     return FastOS_File::TranslateError(FastOS_File::GetLastOSError());
 }
 
 
 std::string
-FastOS_FileInterface::getLastErrorString(void)
+FastOS_FileInterface::getLastErrorString()
 {
     int err = FastOS_File::GetLastOSError();
     return FastOS_File::getErrorString(err);

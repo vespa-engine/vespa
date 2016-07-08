@@ -37,7 +37,7 @@ const int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
  * Example (how to read 10 bytes from the file 'hello.txt'):
  *
  * @code
- *   void Foo::Bar (void)
+ *   void Foo::Bar ()
  *   {
  *      FastOS_File file("hello.txt");
  *
@@ -105,7 +105,7 @@ protected:
     char         *_filename;
     unsigned int  _openFlags;
     bool          _directIOEnabled;
-    bool	  _syncWritesEnabled;
+    bool          _syncWritesEnabled;
     static FailedHandler _failedHandler;
 ;
 
@@ -115,8 +115,7 @@ public:
     int getFAdviseOptions()                     const { return _fAdviseOptions; }
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
 
-    char *ToString ()
-    {
+    char *ToString () {
         const char dummy[]="FastOS_File::ToString() deprecated";
         char *str = new char [strlen(dummy) + 1];
         strcpy(str, dummy);
@@ -128,21 +127,20 @@ public:
      * @ref FastOS_Application::Init().
      * @return Boolean success/failure
      */
-    static bool InitializeClass (void);
+    static bool InitializeClass ();
 
     /**
      * Cleanup the file class. This is invoked by
      * @ref FastOS_Application::Cleanup().
      * @return Boolean success/failure
      */
-    static bool CleanupClass (void);
+    static bool CleanupClass ();
 
     /**
      * Set the handler called on fatal file errors.
      * @param failedHandler new handler routine.
      */
-    static void SetFailedHandler(FailedHandler failedHandler)
-    {
+    static void SetFailedHandler(FailedHandler failedHandler) {
         _failedHandler = failedHandler;
     }
 
@@ -190,8 +188,7 @@ public:
      * @param  keepFile a 'const char *' value. If supplied, leave files with
      *                  this name alone.
      */
-    static void EmptyDirectory( const char *dir,
-                               const char *keepFile = NULL);
+    static void EmptyDirectory( const char *dir, const char *keepFile = NULL);
 
     /**
      * Make a directory (special compatibility version)
@@ -208,7 +205,7 @@ public:
      * Return path separator string. This will yield "/" on UNIX systems.
      * @return pointer to path separator character string
      */
-    static const char *GetPathSeparator(void) { return "/";};
+    static const char *GetPathSeparator() { return "/";};
 
     /**
      * Constructor. A filename could be supplied at this point, or specified
@@ -221,7 +218,7 @@ public:
      * Destructor. If the current file is open, the destructor will close
      * it for you.
      */
-    virtual ~FastOS_FileInterface(void);
+    virtual ~FastOS_FileInterface();
 
     /**
      * Associate a new filename with this object. This filename will be
@@ -236,7 +233,7 @@ public:
      * has been set, an empty string is returned instead.
      * @return The filename associated with the File object
      */
-    virtual const char *GetFileName(void) const;
+    virtual const char *GetFileName() const;
 
     /**
      * Open a file.
@@ -264,8 +261,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenReadWrite(const char *filename=NULL);
+    bool OpenReadWrite(const char *filename=NULL);
 
     /**
      * Open a file for read/write access. This method fails if the file does
@@ -278,8 +274,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenExisting(bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenExisting(bool abortIfNotExist=false, const char *filename=NULL);
 
     /**
      * Open a file for read access. This method fails if the file does
@@ -292,9 +287,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenReadOnlyExisting (bool abortIfNotExist=false,
-                          const char *filename=NULL);
+    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
 
     /**
      * Open a file for write access. If the file does not exist, it is created.
@@ -306,8 +299,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenWriteOnlyTruncate(const char *filename=NULL);
+    bool OpenWriteOnlyTruncate(const char *filename=NULL);
 
     /**
      * Open a file for write access. This method fails if the file does
@@ -320,9 +312,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenWriteOnlyExisting (bool abortIfNotExist=false,
-                           const char *filename=NULL);
+    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
 
     /**
      * Open a file for read-access only. This method fails if the file does
@@ -333,8 +323,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenReadOnly(const char *filename=NULL);
+    bool OpenReadOnly(const char *filename=NULL);
 
     /**
      * Open a file for write-access only.  The file will be created if it does
@@ -345,30 +334,22 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool
-    OpenWriteOnly(const char *filename=NULL);
+    bool OpenWriteOnly(const char *filename=NULL);
 
-    bool
-    OpenStdin(void);
-
-    bool
-    OpenStdout(void);
-
-    bool
-    OpenStderr(void);
+    bool OpenStdin();
 
     /**
      * Close the file. The call will successfully do nothing if the file
      * already is closed.
      * @return Boolean success/failure
      */
-    virtual bool Close(void) = 0;
+    virtual bool Close() = 0;
 
     /**
      * Is the file currently opened?
      * @return true if the file is opened, else false
      */
-    virtual bool IsOpened(void) const = 0;
+    virtual bool IsOpened() const = 0;
 
     /**
      * Read [length] bytes into [buffer].
@@ -444,12 +425,12 @@ public:
      * Get the filepointer. -1 is returned if the operation fails.
      * @return current position of file pointer (in bytes)
      */
-    virtual int64_t GetPosition(void) = 0;
+    virtual int64_t GetPosition() = 0;
 
     /**
      * const version of @link GetPosition
      */
-    int64_t getPosition(void) const { return const_cast<FastOS_FileInterface *>(this)->GetPosition(); }
+    int64_t getPosition() const { return const_cast<FastOS_FileInterface *>(this)->GetPosition(); }
 
     /**
      * Return the file size. This method requires that the file is
@@ -458,25 +439,25 @@ public:
      * If an error occurs, the returned value is -1.
      * @return file size (in bytes)
      */
-    virtual int64_t GetSize(void) = 0;
+    virtual int64_t GetSize() = 0;
 
     /**
      * const version of @link GetSize
      */
-    int64_t getSize(void) const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
+    int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
 
     /**
      * Return the time when file was last modified.
      * @return time of last modification
      */
-    virtual time_t GetModificationTime(void) = 0;
+    virtual time_t GetModificationTime() = 0;
 
     /**
      * Delete the file. This method requires that the file is
      * currently not opened.
      * @return Boolean success/failure
      */
-    virtual bool Delete(void) = 0;
+    virtual bool Delete() = 0;
 
     /**
      * Rename/move a file or directory. This method requires that
@@ -492,21 +473,19 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    virtual bool Sync(void) = 0;
+    virtual bool Sync() = 0;
 
     /**
      * Are we in some kind of file read mode?
      */
-    bool IsReadMode(void)
-    {
+    bool IsReadMode() {
         return ((_openFlags & FASTOS_FILE_OPEN_READ) != 0);
     }
 
     /**
      * Are we in some kind of file write mode?
      */
-    bool IsWriteMode(void)
-    {
+    bool IsWriteMode() {
         return ((_openFlags & FASTOS_FILE_OPEN_WRITE) != 0);
     }
 
@@ -531,16 +510,14 @@ public:
      * disk I/O could not be enabled. In that case
      * @ref GetDirectIORestrictions will return false.
      */
-    virtual void EnableDirectIO(void);
+    virtual void EnableDirectIO();
 
-    virtual void
-    EnableSyncWrites(void);
+    virtual void EnableSyncWrites();
 
     /**
      * Set the write chunk size used in WriteBuf.
      */
-    void
-    SetWriteChunkSize(size_t writeChunkSize);
+    void SetWriteChunkSize(size_t writeChunkSize);
 
     /**
      * Get restrictions for direct disk I/O. The file should be opened
@@ -616,7 +593,7 @@ public:
      * Inquiry if file content is mapped into memory.
      * @return true if file is mapped in memory, false otherwise.
      */
-    virtual bool IsMemoryMapped(void) const;
+    virtual bool IsMemoryMapped() const;
 
     /**
      * Will drop whatever is in the FS cache when called. Does not have effect in the future.
@@ -667,15 +644,14 @@ public:
      * via this method. See @ref Error for possible error codes.
      * @return Error code
      */
-    static Error GetLastError(void);
+    static Error GetLastError();
 
     /**
      * Similar to @ref GetLastError(), but this method returns a string
      * instead of an error code.
      * @return String describing the last error
      */
-    static std::string
-    getLastErrorString(void);
+    static std::string getLastErrorString();
 };
 
 
@@ -733,7 +709,7 @@ public:
  *
  * Example:
  * @code
- *   void Foo::Bar(void)
+ *   void Foo::Bar()
  *   {
  *      // Scan and print the contents of the directory '/usr/src/include'
  *
@@ -783,7 +759,7 @@ public:
      *
      * Frees operating system resources related to the directory scan.
      */
-    virtual ~FastOS_DirectoryScanInterface(void)
+    virtual ~FastOS_DirectoryScanInterface()
     {
         free(_searchPath);
     }
@@ -803,7 +779,7 @@ public:
      *
      * @return Boolean success/failure
      */
-    virtual bool ReadNext(void) = 0;
+    virtual bool ReadNext() = 0;
 
     /**
      * After a successful @ref ReadNext() this method is used to
@@ -814,7 +790,7 @@ public:
      *
      * @return    True if the entry is a directory, else false.
      */
-    virtual bool IsDirectory(void) = 0;
+    virtual bool IsDirectory() = 0;
 
 
     /**
@@ -826,7 +802,7 @@ public:
      *
      * @return    True if the entry is a regular file, else false.
      */
-    virtual bool IsRegular(void) = 0;
+    virtual bool IsRegular() = 0;
 
     /**
      * After a successful @ref ReadNext() this method is used to
@@ -837,7 +813,7 @@ public:
      *
      * @return    A pointer to the recently read directory entry.
      */
-    virtual const char *GetName(void) = 0;
+    virtual const char *GetName() = 0;
 
     /**
      * Check whether the creation of a directory scan succeeded or
@@ -845,7 +821,7 @@ public:
      *
      * return    True if the directory scan is valid.
      */
-    virtual bool IsValidScan(void) const = 0;
+    virtual bool IsValidScan() const = 0;
 };
 
 #include <vespa/fastos/linux_file.h>

@@ -30,9 +30,9 @@ public:
     }
     bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
-    void EnableDirectIO(void) override;
+    void EnableDirectIO() override;
     bool SetPosition(int64_t desiredPosition) override;
-    int64_t GetPosition(void) override;
+    int64_t GetPosition() override;
     bool SetSize(int64_t newSize) override;
     void ReadBuf(void *buffer, size_t length, int64_t readOffset) override;
     void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;
@@ -43,7 +43,7 @@ public:
     bool Open(unsigned int openFlags, const char *filename) override;
 
     static bool InitializeClass();
-    static size_t getMaxDirectIOMemAlign(void);
+    static size_t getMaxDirectIOMemAlign();
     static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
 private:
     ssize_t readUnalignedEnd(void *buffer, size_t length, int64_t readOffset);

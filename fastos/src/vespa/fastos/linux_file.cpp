@@ -28,8 +28,7 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
   (reinterpret_cast<unsigned long>(buf) & (_directIOMemAlign - 1)) == 0)
 
 ssize_t
-FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length,
-                                int64_t readOffset)
+FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult = ::pread(fh, buffer, length, readOffset);
     if (readResult < 0 && _failedHandler != NULL) {
@@ -58,8 +57,7 @@ FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 
 
 ssize_t
-FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length,
-                                 int64_t writeOffset)
+FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
     ssize_t writeRes = ::pwrite(fh, buffer, length, writeOffset);
     if (writeRes < 0 && _failedHandler != NULL) {
@@ -247,7 +245,7 @@ FastOS_Linux_File::SetPosition(int64_t desiredPosition)
 
 
 int64_t
-FastOS_Linux_File::GetPosition(void)
+FastOS_Linux_File::GetPosition()
 {
     return _directIOEnabled ? _filePointer : FastOS_UNIX_File::GetPosition();
 }
@@ -287,8 +285,7 @@ FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
 
 void *
 FastOS_Linux_File::
-allocateGenericDirectIOBuffer(size_t byteSize,
-                              void *&realPtr)
+allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
 {
     size_t memoryAlignment = _directIOMemAlign;
     realPtr = malloc(byteSize + memoryAlignment - 1);
@@ -297,16 +294,14 @@ allocateGenericDirectIOBuffer(size_t byteSize,
 
 
 size_t
-FastOS_Linux_File::getMaxDirectIOMemAlign(void)
+FastOS_Linux_File::getMaxDirectIOMemAlign()
 {
     return _directIOMemAlign;
 }
 
 
 bool
-FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment,
-                                            size_t &transferGranularity,
-                                            size_t &transferMaximum)
+FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum)
 {
     bool rc = false;
 
@@ -324,10 +319,7 @@ FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment,
 
 
 bool
-FastOS_Linux_File::DirectIOPadding (int64_t offset,
-                                    size_t length,
-                                    size_t &padBefore,
-                                    size_t &padAfter)
+FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBefore, size_t &padAfter)
 {
     if (_directIOEnabled) {
         if (offset+length > _cachedSize) {
@@ -357,7 +349,7 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset,
 
 
 void
-FastOS_Linux_File::EnableDirectIO(void)
+FastOS_Linux_File::EnableDirectIO()
 {
     if (!IsOpened()) {
         _directIOEnabled = true;
@@ -410,7 +402,7 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
 
 
 bool
-FastOS_Linux_File::InitializeClass(void)
+FastOS_Linux_File::InitializeClass()
 {
     return FastOS_UNIX_File::InitializeClass();
 }
