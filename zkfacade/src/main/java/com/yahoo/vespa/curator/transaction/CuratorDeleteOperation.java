@@ -12,15 +12,25 @@ import org.apache.curator.framework.api.transaction.CuratorTransaction;
 class CuratorDeleteOperation implements CuratorOperation {
 
     private final String path;
-
+    
     CuratorDeleteOperation(String path) {
         this.path = path;
     }
 
     @Override
-    public void check(Curator curator) {
-        if ( ! curator.exists(Path.fromString(path)) )
+    public void check(Curator curator, TransactionChanges changes) {
+        if (  ! curator.exists(Path.fromString(path)) && ! changes.create(path))
             throw new IllegalStateException("Cannot perform " + this + ": Path does not exist");
+        if (hasNondeletedChildren(Path.fromString(path), curator, changes) || changes.createsChildrenOf(path))
+            throw new IllegalStateException("Cannot perform " + this + ": Path is not empty");
+        changes.addDelete(path);
+    }
+    
+    private boolean hasNondeletedChildren(Path path, Curator curator, TransactionChanges changes) {
+        for (String childName : curator.getChildren(path))
+            if ( ! changes.delete(path.append(childName).getAbsolute()))
+                return true;
+        return false;
     }
 
     @Override

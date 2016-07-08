@@ -24,12 +24,13 @@ class CuratorCreateOperation implements CuratorOperation {
     }
 
     @Override
-    public void check(Curator curator) {
+    public void check(Curator curator, TransactionChanges changes) {
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return; // root; ok
         String parent = path.substring(0, lastSlash);
-        if (!parent.isEmpty() && ! curator.exists(Path.fromString(parent)) )
+        if ( ! parent.isEmpty() && ! curator.exists(Path.fromString(parent)) && ! changes.create(parent))
             throw new IllegalStateException("Cannot perform " + this + ": Parent '" + parent + "' does not exist");
+        changes.addCreate(path);
     }
 
     @Override

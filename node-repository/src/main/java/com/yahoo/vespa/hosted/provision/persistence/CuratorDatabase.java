@@ -73,7 +73,7 @@ public class CuratorDatabase {
      */
     public CuratorTransaction newCuratorTransactionIn(NestedTransaction transaction) {
         // Add a counting transaction first, to make sure we always invalidate the current state on any transaction commit
-        transaction.add(new CountingCuratorTransaction(changeGenerationCounter), CuratorTransaction.class);
+        transaction.add(new EagerCountingCuratorTransaction(changeGenerationCounter), CuratorTransaction.class);
         CuratorTransaction curatorTransaction = new CuratorTransaction(curator);
         transaction.add(curatorTransaction);
         return curatorTransaction;

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * A session represents an instance of an application that can be edited, prepared and activated. This

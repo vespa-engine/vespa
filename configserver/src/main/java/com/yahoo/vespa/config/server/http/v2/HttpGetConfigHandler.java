@@ -8,7 +8,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;

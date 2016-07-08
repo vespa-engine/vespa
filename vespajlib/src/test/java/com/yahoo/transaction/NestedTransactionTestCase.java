@@ -111,30 +111,12 @@ public class NestedTransactionTestCase {
         }
     }
 
-    private static class MockTransaction implements Transaction {
+    private static class MockTransaction extends AbstractTransaction {
 
         public boolean prepared = false, committed = false, rolledback = false;
-        private List<Operation> operations = new ArrayList<>();
 
         public MockTransaction(String name) {
-            operations.add(new MockOperation(name));
-        }
-
-        @Override
-        public Transaction add(Operation operation) {
-            operations.add(operation);
-            return this;
-        }
-
-        @Override
-        public Transaction add(List<Operation> operation) {
-            operations.addAll(operation);
-            return this;
-        }
-
-        @Override
-        public List<Operation> operations() {
-            return operations;
+            add(new MockOperation(name));
         }
 
         @Override
@@ -154,10 +136,6 @@ public class NestedTransactionTestCase {
             if ( ! committed)
                 throw new IllegalStateException("Rollback before commit");
             rolledback = true;
-        }
-
-        @Override
-        public void close() {
         }
 
     }

@@ -6,9 +6,10 @@ import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 
@@ -53,10 +54,10 @@ public class LocalSessionRepoTest extends TestWithCurator {
                         Path.fromString("counter"),
                         Path.fromString("sessions")),
                 Path.createRoot(),
-                new MemoryApplicationRepo(),
+                new MemoryTenantApplications(),
                 tenantFileSystemDirs, new HostRegistry<>(),
                 tenantName);
-        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, new MemoryApplicationRepo(), clock, 5);
+        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, new MemoryTenantApplications(), clock, 5);
     }
 
     @Test

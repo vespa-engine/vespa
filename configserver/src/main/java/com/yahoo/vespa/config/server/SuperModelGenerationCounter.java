@@ -2,9 +2,13 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.path.Path;
+import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.Curator;
+
+import java.util.logging.Logger;
 
 /**
  * Distributed global generation counter for the super model.
@@ -36,5 +40,56 @@ public class SuperModelGenerationCounter implements GenerationCounter {
      */
     public synchronized long get() {
         return counter.get();
+    }
+
+    /** Returns a transaction which increments this */
+    public IncrementTransaction incrementTransaction() {
+        return new IncrementTransaction(counter);
+    }
+    
+    /** An increment transaction */
+    public static class IncrementTransaction extends AbstractTransaction {
+
+        /** Creates a counting curator transaction containing a single increment operation */
+        public IncrementTransaction(CuratorCounter counter) {
+            add(new IncrementOperation(counter));
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void commit() {
+            for (Operation operation : operations())
+                ((IncrementOperation)operation).commit();
+        }
+
+        @Override
+        public void rollbackOrLog() {
+            for (Operation operation : operations())
+                ((IncrementOperation)operation).rollback();
+        }
+
+        public static class IncrementOperation implements Transaction.Operation {
+
+            private static final Logger log = Logger.getLogger(IncrementOperation.class.getName());
+            private final CuratorCounter counter;
+
+            public IncrementOperation(CuratorCounter counter) {
+                this.counter = counter;
+            }
+
+            public void commit() {
+                counter.next();
+            }
+
+            public void rollback() {
+                // ok; we're just losing a generation number
+            }
+
+            public String toString() { return "increment " + counterPath + " operation"; }
+
+        }
+
     }
 }

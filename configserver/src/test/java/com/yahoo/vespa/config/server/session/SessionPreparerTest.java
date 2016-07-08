@@ -19,14 +19,17 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
 import org.junit.Before;
@@ -197,7 +200,7 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     private Set<Rotation> readRotationsFromZK(ApplicationId applicationId) {
-        return new RotationsCache(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
+        return new Rotations(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
     }
 
     @Test
@@ -219,7 +222,7 @@ public class SessionPreparerTest extends TestWithCurator {
 
         final String rotations = "foo.msbe.global.vespa.yahooapis.com";
         final ApplicationId applicationId = applicationId("test");
-        new RotationsCache(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
+        new Rotations(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
         final PrepareParams params = new PrepareParams().applicationId(applicationId);
         final File app = new File("src/test/resources/deploy/app");
         preparer.prepare(getContext(getApplicationPackage(app)), getLogger(), params, Optional.empty(), tenantPath);
@@ -234,7 +237,7 @@ public class SessionPreparerTest extends TestWithCurator {
     }
 
     private SessionContext getContext(FilesApplicationPackage app) throws IOException {
-        return new SessionContext(app, new SessionZooKeeperClient(curator, appPath), app.getAppDir(), new MemoryApplicationRepo(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
+        return new SessionContext(app, new SessionZooKeeperClient(curator, appPath), app.getAppDir(), new MemoryTenantApplications(), new HostRegistry<>(), new SuperModelGenerationCounter(curator));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {

@@ -58,4 +58,5 @@ public class VersionState {
     public String toString() {
         return String.format("Current version:%s, stored version:%s", currentVersion(), storedVersion());
     }
+
 }

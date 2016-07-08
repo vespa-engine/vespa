@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
@@ -16,23 +19,45 @@ import java.util.HashMap;
  * @author lulf
  * @since 5.1
  */
+// TODO: This is a ZK cache. We should probably remove it, or make that explicit
 public class SessionRepo<SESSIONTYPE extends Session> {
 
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
     public synchronized void addSession(SESSIONTYPE session) {
-        final long sessionId = session.getSessionId();
-        if (sessions.containsKey(sessionId)) {
-            throw new IllegalArgumentException("There already exists a session with id '" + sessionId + "'");
-        }
-        sessions.put(sessionId, session);
+        internalAddSession(session);
     }
 
-    public synchronized void removeSession(long id) {
-        if ( ! sessions.containsKey(id)) {
+    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    protected synchronized final void internalAddSession(SESSIONTYPE session) {
+        if (sessions.containsKey(session.getSessionId()))
+            throw new IllegalArgumentException("There already exists a session with id '" + session.getSessionId() + "'");
+        sessions.put(session.getSessionId(), session);
+    }
+
+    public synchronized void removeSessionOrThrow(long id) {
+        internalRemoveSessionOrThrow(id);
+    }
+
+    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    protected synchronized final void internalRemoveSessionOrThrow(long id) {
+        if ( ! sessions.containsKey(id))
             throw new IllegalArgumentException("No such session exists '" + id + "'");
-        }
         sessions.remove(id);
+    }
+
+    /** 
+     * Removes a session in a transaction
+     * 
+     * @param id the id of the session to remove
+     * @return the removed session, or null if none was found
+     */
+    public synchronized SESSIONTYPE removeSession(long id) { return sessions.remove(id); }
+    
+    public void removeSession(long id, NestedTransaction nestedTransaction) {
+        SessionRepoTransaction transaction = new SessionRepoTransaction();
+        transaction.addRemoveOperation(id);
+        nestedTransaction.add(transaction);
     }
 
     /**
@@ -75,4 +100,60 @@ public class SessionRepo<SESSIONTYPE extends Session> {
     public synchronized Collection<SESSIONTYPE> listSessions() {
         return new ArrayList<>(sessions.values());
     }
+    
+    public class SessionRepoTransaction extends AbstractTransaction {
+
+        public void addRemoveOperation(long sessionIdToRemove) {
+            add(new RemoveOperation(sessionIdToRemove));
+        }
+        
+        @Override
+        public void prepare() { }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void commit() {
+            for (Operation operation : operations())
+                ((SessionOperation)operation).commit();
+        }
+        
+        @Override
+        @SuppressWarnings("unchecked")
+        public void rollbackOrLog() {
+            for (Operation operation : operations())
+                ((SessionOperation)operation).rollback();
+        }
+        
+        public abstract class SessionOperation implements Transaction.Operation {
+            
+            abstract void commit();
+            
+            abstract void rollback();
+            
+        }
+        
+        public class RemoveOperation extends SessionOperation {
+            
+            private final long sessionIdToRemove;
+            private SESSIONTYPE removed = null;
+            
+            public RemoveOperation(long sessionIdToRemove) {
+                this.sessionIdToRemove = sessionIdToRemove;
+            }
+
+            @Override
+            public void commit() {
+                removed = removeSession(sessionIdToRemove);
+            }
+
+            @Override
+            public void rollback() {
+                if (removed != null)
+                    addSession(removed);
+            }
+
+        }
+
+    }
+    
 }

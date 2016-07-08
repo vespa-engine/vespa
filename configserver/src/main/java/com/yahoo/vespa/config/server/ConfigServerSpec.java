@@ -10,6 +10,7 @@ import java.util.List;
  * @author tonytv
  */
 public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServerSpec {
+
     private final String hostName;
     private final int configServerPort;
     private final int httpPort;
@@ -70,4 +71,5 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
     public String toString() {
         return "hostname=" + hostName + ", rpc port=" + configServerPort + ", http port=" + httpPort + ", zookeeper port=" + zooKeeperPort;
     }
+
 }

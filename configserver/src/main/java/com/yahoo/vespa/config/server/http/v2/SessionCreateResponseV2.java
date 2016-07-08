@@ -4,9 +4,9 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.Tenant;
 import com.yahoo.vespa.config.server.http.SessionCreateResponse;
 import com.yahoo.vespa.config.server.http.SessionResponse;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 /**
  * Creates a response for SessionCreateHandler (v2).

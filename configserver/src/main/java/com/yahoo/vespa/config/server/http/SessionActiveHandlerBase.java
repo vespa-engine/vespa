@@ -4,9 +4,9 @@ package com.yahoo.vespa.config.server.http;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.vespa.config.server.ActivateLock;
+import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.deploy.Deployer;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -30,10 +30,10 @@ public class SessionActiveHandlerBase extends SessionHandler {
                             TimeoutBudget timeoutBudget,
                             Optional<Provisioner> hostProvisioner,
                             LocalSession localSession) {
-        // TODO: Use an injected deployer from the callers of this instead
+        // TODO: Use an injected applicationRepository from the callers of this instead
         // TODO: And then get rid of the activateLock and localSessionRepo arguments in deployFromPreparedSession
-        Deployer deployer = new Deployer(null, HostProvisionerProvider.from(hostProvisioner), null, null);
-        Deployment deployment = deployer.deployFromPreparedSession(localSession, activateLock, localSessionRepo, timeoutBudget.timeLeft());
+        ApplicationRepository applicationRepository = new ApplicationRepository(null, HostProvisionerProvider.from(hostProvisioner), null, null);
+        Deployment deployment = applicationRepository.deployFromPreparedSession(localSession, activateLock, localSessionRepo, timeoutBudget.timeLeft());
         deployment.setIgnoreLockFailure(shouldIgnoreLockFailure(request));
         deployment.setIgnoreSessionStaleFailure(shouldIgnoreSessionStaleFailure(request));
         deployment.activate();

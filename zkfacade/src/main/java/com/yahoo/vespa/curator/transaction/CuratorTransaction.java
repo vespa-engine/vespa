@@ -1,74 +1,68 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.transaction;
 
-import com.yahoo.transaction.Transaction;
+import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.vespa.curator.Curator;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Transaction implementation against ZooKeeper.
  *
  * @author lulf
  */
-public class CuratorTransaction implements Transaction {
+public class CuratorTransaction extends AbstractTransaction {
 
-    private static final Logger log = Logger.getLogger(CuratorTransaction.class.getName());
-    private final List<Operation> operations = new ArrayList<>();
     private final Curator curator;
+    private boolean prepared = false;
 
     public CuratorTransaction(Curator curator) {
         this.curator = curator;
     }
-
-    @Override
-    public Transaction add(Operation operation) {
-        this.operations.add(operation);
-        return this;
+    
+    /** Returns an empty curator transaction */
+    public static CuratorTransaction empty(Curator curator) {
+        return new CuratorTransaction(curator);
+    }
+    
+    /** Returns a curator transaction having a single operation */
+    public static CuratorTransaction from(CuratorOperation operation, Curator curator) {
+        CuratorTransaction transaction = new CuratorTransaction(curator);
+        transaction.add(operation);
+        return transaction;
     }
 
-    @Override
-    public Transaction add(List<Operation> operations) {
-        this.operations.addAll(operations);
-        return this;
+    /** Returns a curator transaction having a list of operations */
+    public static CuratorTransaction from(List<CuratorOperation> operations, Curator curator) {
+        CuratorTransaction transaction = new CuratorTransaction(curator);
+        for (Operation operation : operations)
+            transaction.add(operation);
+        return transaction;
     }
-
-    @Override
-    public List<Operation> operations() { return operations; }
 
     @Override
     public void prepare() {
-        for (Operation operation : operations)
-            ((CuratorOperation)operation).check(curator);
+        TransactionChanges changes = new TransactionChanges();
+        for (Operation operation : operations())
+            ((CuratorOperation)operation).check(curator, changes);
+        prepared = true;
     }
 
+    /** Commits this transaction. If it is not already prepared this will prepare it first */
     @Override
     public void commit() {
         try {
+            if ( ! prepared)
+                prepare();
             org.apache.curator.framework.api.transaction.CuratorTransaction transaction = curator.framework().inTransaction();
-            for (Operation operation : operations) {
-                CuratorOperation zkOperation = (CuratorOperation) operation;
-                transaction = zkOperation.and(transaction);
+            for (Operation operation : operations()) {
+                transaction = ((CuratorOperation)operation).and(transaction);
             }
             ((CuratorTransactionFinal) transaction).commit();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    @Override
-    public void rollbackOrLog() {
-        log.severe("The following ZooKeeper operations were incorrectly committed and probably require " +
-                   "manual correction: " + operations);
-    }
-
-    @Override
-    public void close() {
-        operations.clear();
     }
 
 }

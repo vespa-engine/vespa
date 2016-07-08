@@ -163,9 +163,11 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    public void deactivate(ApplicationId application) {
+    public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            zkClient.writeTo(Node.State.inactive, zkClient.getNodes(application, Node.State.reserved, Node.State.active));
+            zkClient.writeTo(Node.State.inactive, 
+                             zkClient.getNodes(application, Node.State.reserved, Node.State.active), 
+                             transaction);
         }
     }
 

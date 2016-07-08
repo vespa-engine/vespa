@@ -5,13 +5,14 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.ApplicationSet;
-import com.yahoo.vespa.config.server.HostRegistry;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -42,6 +43,10 @@ public class SessionHandlerTest {
 
     public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method, Cmd cmd, Long id) {
         return createTestRequest(path, method, cmd, id, "");
+    }
+
+    public static HttpRequest createTestRequest(String path, com.yahoo.jdisc.http.HttpRequest.Method method) {
+        return HttpRequest.createTestRequest("http://" + hostname + ":" + port + path, method);
     }
 
     public static HttpRequest createTestRequest(String path) {
@@ -144,15 +149,19 @@ public class SessionHandlerTest {
 
         @Override
         public void delete() {  }
+
+        @Override
+        public void delete(NestedTransaction transaction) {  }
+
     }
 
-    public static enum Cmd {
+    public enum Cmd {
         PREPARED("prepared"),
         ACTIVE("active"),
         CONTENT("content");
         private final String name;
 
-        private Cmd(String s) {
+        Cmd(String s) {
             this.name = s;
         }
 

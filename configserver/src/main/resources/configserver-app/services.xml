@@ -6,7 +6,7 @@
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
     <component id="com.yahoo.vespa.zookeeper.ZooKeeperServer" bundle="zkfacade" />
-    <component id="com.yahoo.vespa.config.server.RpcServer" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.rpc.RpcServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ConfigServerDB" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.session.FileDistributionFactory" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry" bundle="configserver" />
@@ -17,10 +17,10 @@
     <component id="com.yahoo.vespa.config.server.provision.HostProvisionerProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.curator.Curator" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.InjectedGlobalComponentRegistry" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.Tenants" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.tenant.Tenants" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.PermanentApplicationPackage" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.HostRegistries" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.deploy.Deployer" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.host.HostRegistries" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.zookeeper.ConfigCurator" bundle="configserver" />
     <component id="com.yahoo.container.jdisc.metric.state.StateMetricConsumerFactory" bundle="container-disc" />

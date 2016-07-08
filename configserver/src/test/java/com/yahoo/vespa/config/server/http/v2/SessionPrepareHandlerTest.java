@@ -17,10 +17,10 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.ApplicationSet;
-import com.yahoo.vespa.config.server.HostRegistry;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
@@ -55,7 +55,7 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
 
     @Before
     public void setupRepo() throws Exception {
-        ApplicationRepo applicationRepo = new MemoryApplicationRepo();
+        TenantApplications applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         localRepo = new LocalSessionRepo(applicationRepo);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
@@ -77,7 +77,7 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
 
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
-        ApplicationRepo applicationRepoDefault = new MemoryApplicationRepo();
+        TenantApplications applicationRepoDefault = new MemoryTenantApplications();
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault);
         final TenantName tenantName = TenantName.defaultName();
         addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new SessionCreateHandlerTestBase.MockSessionFactory());
@@ -193,7 +193,7 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
         builder.createTenant(tenantName).withSessionFactory(sessionFactory)
                 .withLocalSessionRepo(localSessionRepo)
                 .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(new MemoryApplicationRepo());
+                .withApplicationRepo(new MemoryTenantApplications());
         return builder;
     }
 

@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.TestWithTenant;
 import org.junit.Test;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -21,9 +20,9 @@ public class ListTenantsTest extends TenantTest {
 
     @Test
     public void testListTenants() throws Exception {
-        tenants.createTenant(a);
-        tenants.createTenant(b);
-        tenants.createTenant(c);
+        tenants.writeTenantPath(a);
+        tenants.writeTenantPath(b);
+        tenants.writeTenantPath(c);
 
         ListTenantsHandler listTenantsHandler = new ListTenantsHandler(testExecutor(), null, tenants);
         

@@ -12,7 +12,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.TestComponentRegistry;

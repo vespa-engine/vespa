@@ -227,7 +227,7 @@ public class Curator {
     }
 
     /**
-     * Returns the children at the given path.
+     * Returns the names of the children at the given path.
      * If the path does not exist or have no children an empty list (never null) is returned.
      */
     public List<String> getChildren(Path path) {
