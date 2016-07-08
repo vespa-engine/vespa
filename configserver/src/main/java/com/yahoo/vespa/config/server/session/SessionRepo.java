@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.NotFoundException;
@@ -24,32 +25,39 @@ public class SessionRepo<SESSIONTYPE extends Session> {
     private final HashMap<Long, SESSIONTYPE> sessions = new HashMap<>();
 
     public synchronized void addSession(SESSIONTYPE session) {
-        final long sessionId = session.getSessionId();
-        if (sessions.containsKey(sessionId)) {
-            throw new IllegalArgumentException("There already exists a session with id '" + sessionId + "'");
-        }
-        sessions.put(sessionId, session);
+        internalAddSession(session);
+    }
+
+    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    protected synchronized final void internalAddSession(SESSIONTYPE session) {
+        if (sessions.containsKey(session.getSessionId()))
+            throw new IllegalArgumentException("There already exists a session with id '" + session.getSessionId() + "'");
+        sessions.put(session.getSessionId(), session);
     }
 
     public synchronized void removeSessionOrThrow(long id) {
-        if ( ! sessions.containsKey(id)) {
+        internalRemoveSessionOrThrow(id);
+    }
+
+    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    protected synchronized final void internalRemoveSessionOrThrow(long id) {
+        if ( ! sessions.containsKey(id))
             throw new IllegalArgumentException("No such session exists '" + id + "'");
-        }
         sessions.remove(id);
     }
 
     /** 
-     * Removes a session
+     * Removes a session in a transaction
      * 
      * @param id the id of the session to remove
      * @return the removed session, or null if none was found
      */
     public synchronized SESSIONTYPE removeSession(long id) { return sessions.remove(id); }
     
-    public SessionRepoTransaction removeSessionTransaction(long id) {
+    public void removeSession(long id, NestedTransaction nestedTransaction) {
         SessionRepoTransaction transaction = new SessionRepoTransaction();
         transaction.addRemoveOperation(id);
-        return transaction;
+        nestedTransaction.add(transaction);
     }
 
     /**

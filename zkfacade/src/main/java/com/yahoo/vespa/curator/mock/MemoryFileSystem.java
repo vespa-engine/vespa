@@ -92,6 +92,16 @@ class MemoryFileSystem extends FileSystem {
     public void replaceRoot(Node newRoot) { this.root = newRoot; }
 
     /**
+     * Lists the entire content of this file system as a multiline string.
+     * Useful for debugging.
+     */
+    public String dumpState() { 
+        StringBuilder b = new StringBuilder();
+        root.writeRecursivelyTo(b, "");
+        return b.toString();
+    }
+
+    /**
      * A node in this file system. Nodes may have children (a "directory"),
      * content (a "file"), or both.
      */
@@ -103,7 +113,7 @@ class MemoryFileSystem extends FileSystem {
         /** The local name of this node */
         private final String name;
 
-        /** The content of this node. This buffer is effectively immutable. */
+        /** The content of this node, never null. This buffer is effectively immutable. */
         private byte[] content;
 
         private Map<String, Node> children = new LinkedHashMap<>();
@@ -186,6 +196,24 @@ class MemoryFileSystem extends FileSystem {
 
         /** Returns an unmodifiable map of the immediate children of this indexed by their local name */
         public Map<String, Node> children() { return Collections.unmodifiableMap(children); }
+
+        /** 
+         * Dumps the content of this and all children recursively to the given string builder.
+         * Useful for debugging.
+         * 
+         * @param b the builder to write to
+         * @param pathPrefix, the path to this node, never ending by "/"
+         */
+        public void writeRecursivelyTo(StringBuilder b, String pathPrefix) {
+            String path = ( pathPrefix.equals("/") ? "" : pathPrefix ) + "/" + name;
+            b.append(path);
+            if (content.length > 0)
+                b.append(" [content: ").append(content.length).append(" bytes]");
+            b.append("\n");
+            
+            for (Node child : children.values())
+                child.writeRecursivelyTo(b, path);
+        }
 
         @Override
         public String toString() {

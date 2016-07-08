@@ -105,7 +105,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (session == null) return false;
 
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(localSessionRepo.removeSessionTransaction(session.getSessionId()));
+        localSessionRepo.removeSession(session.getSessionId(), transaction);
         session.delete(transaction); // TODO: Not tested
 
         transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not tested

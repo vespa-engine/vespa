@@ -251,7 +251,10 @@ public class ApplicationHandlerTest {
         
         Tenants tenants = new Tenants(globalComponents, Metrics.createTestMetrics()); // Creates the application path element in zk
         tenants.writeTenantPath(tenantName);
-        TenantApplications tenantApplications = ZKTenantApplications.create(curator, tenantPath.append(Tenant.APPLICATIONS), null, tenantName);
+        TenantApplications tenantApplications = ZKTenantApplications.create(curator, 
+                                                                            tenantPath.append(Tenant.APPLICATIONS), 
+                                                                            new MockReloadHandler(), // TODO: Use the real one
+                                                                            tenantName);
         Tenant tenant = TenantBuilder.create(globalComponents, applicationId.tenant(), tenantPath)
                                      .withApplicationRepo(tenantApplications)
                                      .build();
@@ -268,7 +271,7 @@ public class ApplicationHandlerTest {
                                                     null,
                                                     new SuperModelGenerationCounter(curator));
         tenant.getLocalSessionRepo().addSession(new LocalSession(tenantName, sessionId, null, context));
-        sessionClient.writeApplicationId(applicationId); // TODO: Instead, use Applicationrepository to deploy the application
+        sessionClient.writeApplicationId(applicationId); // TODO: Instead, use ApplicationRepository to deploy the application
 
         tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenantName, sessionId,
                                                                    new TestComponentRegistry(curator,

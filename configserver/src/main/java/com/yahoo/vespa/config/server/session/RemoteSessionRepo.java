@@ -10,6 +10,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
@@ -80,8 +81,43 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, executorService);
         this.directoryCache.start();
         this.directoryCache.addListener(this);
-        sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+        sessionsChanged();
     }
+
+    //---------- START overrides to keep sessions changed in sync 
+
+    @Override
+    public synchronized void addSession(RemoteSession session) {
+        super.addSession(session);
+        sessionAdded(session.getSessionId());
+    }
+
+    @Override
+    public synchronized void removeSessionOrThrow(long id) {
+        super.removeSessionOrThrow(id);
+        sessionRemoved(id);
+    }
+
+    /**
+     * Removes a session
+     *
+     * @param id the id of the session to remove
+     * @return the removed session, or null if none was found
+     */
+    @Override
+    public synchronized RemoteSession removeSession(long id) { 
+        RemoteSession session = super.removeSession(id);
+        sessionRemoved(id);
+        return session;
+    }
+
+    @Override
+    public void removeSession(long id, NestedTransaction transaction) {
+        super.removeSession(id, transaction);
+        transaction.onCommitted(() -> sessionRemoved(id));
+    }
+
+    //---------- END overrides to keep sessions changed in sync 
 
     private void loadActiveSession(RemoteSession session) {
         tryReload(session.ensureApplicationLoaded(), session.logPre());
@@ -115,30 +151,22 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         return sessions;
     }
 
-    synchronized void sessionsChanged(List<Long> sessions) throws NumberFormatException {
+    synchronized void sessionsChanged() throws NumberFormatException {
+        List<Long> sessions = getSessionList(directoryCache.getCurrentData());
         checkForRemovedSessions(sessions);
         checkForAddedSessions(sessions);
     }
 
     private void checkForRemovedSessions(List<Long> sessions) {
-        for (RemoteSession session : listSessions()) {
-            if (!sessions.contains(session.getSessionId())) {
-                SessionStateWatcher watcher = sessionStateWatchers.remove(session.getSessionId());
-                watcher.close();
-                removeSessionOrThrow(session.getSessionId());
-                metrics.incRemovedSessions();
-            }
-        }
+        for (RemoteSession session : listSessions())
+            if ( ! sessions.contains(session.getSessionId()))
+                sessionRemoved(session.getSessionId());
     }
-
+    
     private void checkForAddedSessions(List<Long> sessions) {
-        for (Long sessionId : sessions) {
-            if (getSession(sessionId) == null) {
-                log.log(LogLevel.DEBUG, "Loading session id " + sessionId);
-                newSession(sessionId);
-                metrics.incAddedSessions();
-            }
-        }
+        for (Long sessionId : sessions)
+            if (getSession(sessionId) == null)
+                sessionAdded(sessionId);
     }
 
     /**
@@ -146,7 +174,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      *
      * @param sessionId session id for the new session
      */
-    private void newSession(long sessionId) {
+    private void sessionAdded(long sessionId) {
         try {
             log.log(LogLevel.DEBUG, "Adding session to RemoteSessionRepo: " + sessionId);
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
@@ -155,10 +183,18 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
             fileCache.addListener(this);
             loadSessionIfActive(session);
             sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, reloadHandler, session, metrics));
-            addSession(session);
+            internalAddSession(session);
+            metrics.incAddedSessions();
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed loading session " + sessionId + " (no config for this session can be served) : " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
         }
+    }
+
+    private void sessionRemoved(long sessionId) {
+        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
+        watcher.close();
+        internalRemoveSessionOrThrow(sessionId);
+        metrics.incRemovedSessions();
     }
 
     private void loadSessionIfActive(RemoteSession session) {
@@ -206,11 +242,11 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         }
         switch (event.getType()) {
             case CHILD_ADDED:
-                sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+                sessionsChanged();
                 synchronizeOnNew(getSessionList(Collections.singletonList(event.getData())));
                 break;
             case CHILD_REMOVED:
-                sessionsChanged(getSessionList(directoryCache.getCurrentData()));
+                sessionsChanged();
                 break;
         }
     }
