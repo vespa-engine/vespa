@@ -205,7 +205,7 @@ public:
      * Return path separator string. This will yield "/" on UNIX systems.
      * @return pointer to path separator character string
      */
-    static const char *GetPathSeparator() { return "/";};
+    static const char *GetPathSeparator() { return "/"; }
 
     /**
      * Constructor. A filename could be supplied at this point, or specified

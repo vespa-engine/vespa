@@ -324,6 +324,7 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBe
     if (_directIOEnabled) {
         if (int64_t(offset+length) > _cachedSize) {
             // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
+            // The main reason is that it will not reflect the file being extended by another filedescriptor.
             _cachedSize = GetSize();
         }
         padBefore = offset & (_directIOFileAlign - 1);
