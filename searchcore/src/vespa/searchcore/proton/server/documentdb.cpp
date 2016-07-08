@@ -98,9 +98,10 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
+      _defaultExecutorTaskLimit(protonCfg.indexing.tasklimit),
       _writeService(std::max(1, protonCfg.indexing.threads),
                     indexing_thread_stack_size,
-                    protonCfg.indexing.tasklimit),
+                    _defaultExecutorTaskLimit),
       _initializeThreads(initializeThreads),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
@@ -442,6 +443,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
             configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
         hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
         _visibility.setVisibilityDelay(visibilityDelay);
+    }
+    if (_visibility.getVisibilityDelay() > 0) {
+        _writeService.setUnboundTaskLimit();
+    } else {
+        _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
         _subDBs.applyConfig(*configSnapshot, *_activeConfigSnapshot, serialNum, params);

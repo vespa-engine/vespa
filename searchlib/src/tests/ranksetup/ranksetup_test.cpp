@@ -485,6 +485,7 @@ void RankSetupTest::testRankSetup()
     env.getProperties().add(dump::Feature::NAME, "foo");
     env.getProperties().add(dump::Feature::NAME, "bar");
     env.getProperties().add(matching::NumThreadsPerSearch::NAME, "3");
+    env.getProperties().add(matching::MinHitsPerThread::NAME, "8");
     env.getProperties().add(matchphase::DegradationAttribute::NAME, "mystaticrankattr");
     env.getProperties().add(matchphase::DegradationAscendingOrder::NAME, "true");
     env.getProperties().add(matchphase::DegradationMaxHits::NAME, "12345");
@@ -509,6 +510,7 @@ void RankSetupTest::testRankSetup()
     EXPECT_EQUAL(rs.getDumpFeatures()[0], vespalib::string("foo"));
     EXPECT_EQUAL(rs.getDumpFeatures()[1], vespalib::string("bar"));
     EXPECT_EQUAL(rs.getNumThreadsPerSearch(), 3u);
+    EXPECT_EQUAL(rs.getMinHitsPerThread(), 8u);
     EXPECT_EQUAL(rs.getDegradationAttribute(), "mystaticrankattr");
     EXPECT_EQUAL(rs.isDegradationOrderAscending(), true);
     EXPECT_EQUAL(rs.getDegradationMaxHits(), 12345u);

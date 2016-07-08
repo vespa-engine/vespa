@@ -36,6 +36,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory,
       _secondPhaseRankFeature(),
       _degradationAttribute(),
       _numThreads(0),
+      _minHitsPerThread(0),
       _numSearchPartitions(0),
       _heapSize(0),
       _arraySize(0),
@@ -75,6 +76,7 @@ RankSetup::configure()
     }
     set_termwise_limit(indexproperties::matching::TermwiseLimit::lookup(_indexEnv.getProperties()));
     setNumThreadsPerSearch(indexproperties::matching::NumThreadsPerSearch::lookup(_indexEnv.getProperties()));
+    setMinHitsPerThread(indexproperties::matching::MinHitsPerThread::lookup(_indexEnv.getProperties()));
     setNumSearchPartitions(indexproperties::matching::NumSearchPartitions::lookup(_indexEnv.getProperties()));
     setHeapSize(indexproperties::hitcollector::HeapSize::lookup(_indexEnv.getProperties()));
     setArraySize(indexproperties::hitcollector::ArraySize::lookup(_indexEnv.getProperties()));

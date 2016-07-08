@@ -95,6 +95,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private int rerankCount = -1;
         private int keepRankCount = -1;
         private int numThreadsPerSearch = -1;
+        private int minHitsPerThread = -1;
         private int numSearchPartitions = -1;
         private double termwiseLimit = 1.0;
         private double rankScoreDropLimit = -Double.MAX_VALUE;
@@ -131,6 +132,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rerankCount = rankProfile.getRerankCount();
             matchPhaseSettings = rankProfile.getMatchPhaseSettings();
             numThreadsPerSearch = rankProfile.getNumThreadsPerSearch();
+            minHitsPerThread = rankProfile.getMinHitsPerThread();
             numSearchPartitions = rankProfile.getNumSearchPartitions();
             termwiseLimit = rankProfile.getTermwiseLimit();
             keepRankCount = rankProfile.getKeepRankCount();
@@ -302,6 +304,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (numThreadsPerSearch > 0) {
                 props.put("vespa.matching.numthreadspersearch", numThreadsPerSearch + "");
+            }
+            if (minHitsPerThread > 0) {
+                props.put("vespa.matching.minhitsperthread", minHitsPerThread + "");
             }
             if (numSearchPartitions >= 0) {
                 props.put("vespa.matching.numsearchpartitions", numSearchPartitions + "");

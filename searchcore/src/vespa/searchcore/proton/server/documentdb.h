@@ -16,7 +16,6 @@
 #include "maintenancecontroller.h"
 #include "protonconfigurer.h"
 #include "searchable_doc_subdb_configurer.h"
-#include "searchable_document_retriever.h"
 #include "searchabledocsubdb.h"
 #include "summaryadapter.h"
 #include "visibilityhandler.h"
@@ -91,6 +90,7 @@ private:
 
     DocTypeName                   _docTypeName;
     vespalib::string              _baseDir;
+    uint32_t                      _defaultExecutorTaskLimit;
     // Only one thread per executor, or dropFeedView() will fail.
     ExecutorThreadingService      _writeService;
     // threads for initializer tasks during proton startup

@@ -6,10 +6,12 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.*;
 import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -55,6 +57,27 @@ public class ThreadedRequestHandlerTestCase {
         assertTrue(requestHandler.exitLatch.await(60, TimeUnit.SECONDS));
         assertNull(requestHandler.content.read());
         assertNotNull(requestHandler.request.getTimeout(TimeUnit.MILLISECONDS));
+
+        assertTrue(responseHandler.latch.await(60, TimeUnit.SECONDS));
+        assertNull(responseHandler.content.read());
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatOverriddenRequestTimeoutIsUsed() throws InterruptedException {
+        Executor executor = Executors.newSingleThreadExecutor();
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ContainerBuilder builder = driver.newContainerBuilder();
+        MyRequestHandler requestHandler = MyRequestHandler.newWithTimeout(executor, Duration.ofSeconds(1));
+        builder.serverBindings().bind("http://localhost/", requestHandler);
+        driver.activateContainer(builder);
+
+        MyResponseHandler responseHandler = new MyResponseHandler();
+        driver.dispatchRequest("http://localhost/", responseHandler);
+
+        requestHandler.entryLatch.countDown();
+        assertTrue(requestHandler.exitLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(1, (long)requestHandler.request.getTimeout(TimeUnit.SECONDS));
 
         assertTrue(responseHandler.latch.await(60, TimeUnit.SECONDS));
         assertNull(responseHandler.content.read());
@@ -226,14 +249,20 @@ public class ThreadedRequestHandlerTestCase {
         final boolean consumeContent;
         final boolean createResponse;
         final boolean throwException;
+        final Duration timeout;
         Response response = null;
         Request request = null;
 
-        MyRequestHandler(Executor executor, boolean consumeContent, boolean createResponse, boolean throwException) {
+        MyRequestHandler(Executor executor,
+                         boolean consumeContent,
+                         boolean createResponse,
+                         boolean throwException,
+                         Duration timeout) {
             super(executor);
             this.consumeContent = consumeContent;
             this.createResponse = createResponse;
             this.throwException = throwException;
+            this.timeout = timeout;
         }
 
         @Override
@@ -260,24 +289,34 @@ public class ThreadedRequestHandlerTestCase {
             }
         }
 
+        @Override
+        public Duration getTimeout() {
+            if (timeout == null) return super.getTimeout();
+            return timeout;
+        }
+
         static MyRequestHandler newInstance(Executor executor) {
-            return new MyRequestHandler(executor, true, true, false);
+            return new MyRequestHandler(executor, true, true, false, null);
         }
 
         static MyRequestHandler newThrowException(Executor executor) {
-            return new MyRequestHandler(executor, true, true, true);
+            return new MyRequestHandler(executor, true, true, true, null);
         }
 
         static MyRequestHandler newIgnoreContent(Executor executor) {
-            return new MyRequestHandler(executor, false, true, false);
+            return new MyRequestHandler(executor, false, true, false, null);
         }
 
         static MyRequestHandler newIgnoreResponse(Executor executor) {
-            return new MyRequestHandler(executor, true, false, false);
+            return new MyRequestHandler(executor, true, false, false, null);
         }
 
         static MyRequestHandler newIgnoreAll(Executor executor) {
-            return new MyRequestHandler(executor, false, false, false);
+            return new MyRequestHandler(executor, false, false, false, null);
+        }
+
+        static MyRequestHandler newWithTimeout(Executor executor, Duration timeout) {
+            return new MyRequestHandler(executor, false, false, false, timeout);
         }
     }
 

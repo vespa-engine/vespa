@@ -108,14 +108,14 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
                                stats.groupingTimeCount());
     rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount());
     if (stats.getNumPartitions() > 0) {
-        if (stats.getNumPartitions() == partitions.size()) {
+        if (stats.getNumPartitions() <= partitions.size()) {
             for (size_t i(0), m(stats.getNumPartitions()); i < m; i++) {
                 DocIdPartition & partition(*partitions[i]);
                 const MatchingStats::Partition & s(stats.getPartition(i));
                 partition.update(s);
             }
         } else {
-            vespalib::string msg(make_string("Num partitions use '%ld' is not equal to number of partitions '%ld' configured.",
+            vespalib::string msg(make_string("Num partitions used '%ld' is larger than number of partitions '%ld' configured.",
                                              stats.getNumPartitions(),
                                              partitions.size()));
             throw vespalib::IllegalStateException(msg, VESPA_STRLOC);

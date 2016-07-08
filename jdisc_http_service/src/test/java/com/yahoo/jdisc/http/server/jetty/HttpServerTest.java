@@ -440,6 +440,23 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
+    @Test
+    public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
+        final int MAX_KEEPALIVE_REQUESTS = 100;
+        final TestDriver driver = TestDrivers.newConfiguredInstance(new EchoRequestHandler(),
+                new ServerConfig.Builder().maxKeepAliveRequests(MAX_KEEPALIVE_REQUESTS),
+                new ConnectorConfig.Builder());
+        for (int i = 0; i < MAX_KEEPALIVE_REQUESTS - 1; i++) {
+            driver.client().get("/status.html")
+                    .expectStatusCode(is(OK))
+                    .expectNoHeader(CONNECTION);
+        }
+        driver.client().get("/status.html")
+                .expectStatusCode(is(OK))
+                .expectHeader(CONNECTION, is(CLOSE));
+        assertThat(driver.close(), is(true));
+    }
+
     @Test(enabled = false)
     public void requireThatRequestTrailersAreSupported() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(new RequestHandlerThatEchoesTrailers());

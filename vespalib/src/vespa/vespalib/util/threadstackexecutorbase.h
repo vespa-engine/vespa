@@ -139,6 +139,7 @@ protected:
      * @param taskLimit upper limit on accepted tasks
      **/
     ThreadStackExecutorBase(uint32_t stackSize, uint32_t taskLimit);
+
     /**
      * This will start the theads. This is to avoid starting tasks in
      * constructor of base class.
@@ -146,6 +147,12 @@ protected:
      * @param threads number of worker threads (concurrent tasks)
      */
     void start(uint32_t threads);
+
+    /**
+     * Sets a new upper limit for accepted number of tasks.
+     */
+    void internalSetTaskLimit(uint32_t taskLimit);
+
 public:
     /**
      * Observe and reset stats for this object.

@@ -1,1 +1,4 @@
 threadstackexecutor_test.cpp
+executor_test.cpp
+stress_test.cpp
+blockingthreadstackexecutor_test.cpp

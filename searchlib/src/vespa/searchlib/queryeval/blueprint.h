@@ -259,8 +259,7 @@ public:
     Blueprint::UP removeChild(size_t n);
     SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
 
-    virtual HitEstimate
-    combine(const std::vector<HitEstimate> &data) const = 0;
+    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(std::vector<Blueprint*> &children) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;

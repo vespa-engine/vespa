@@ -30,6 +30,7 @@ using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
+using search::fef::Location;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
@@ -44,8 +45,7 @@ namespace proton {
 namespace matching {
 
 namespace {
-void AddLocationNode(const string &location_str, Node::UP &query_tree,
-                     search::fef::Location &fef_location) {
+void AddLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
     if (location_str.empty()) {
         return;
     }
@@ -89,8 +89,7 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree,
 
 bool
 Query::buildTree(const vespalib::stringref &stack, const string &location,
-                 const ViewResolver &resolver,
-                 const search::fef::IIndexEnvironment &indexEnv)
+                 const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     _query_tree =
@@ -113,7 +112,7 @@ Query::extractTerms(vector<const ITermData *> &terms)
 }
 
 void
-Query::extractLocations(vector<const search::fef::Location *> &locations)
+Query::extractLocations(vector<const Location *> &locations)
 {
     locations.clear();
     locations.push_back(&_location);
@@ -126,9 +125,7 @@ Query::setBlackListBlueprint(Blueprint::UP blackListBlueprint)
 }
 
 void
-Query::reserveHandles(const IRequestContext & requestContext,
-                      ISearchContext &context,
-                      MatchDataLayout &mdl)
+Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &context, MatchDataLayout &mdl)
 {
     MatchDataReserveVisitor reserve_visitor(mdl);
     _query_tree->accept(reserve_visitor);
@@ -158,6 +155,12 @@ Query::fetchPostings(void)
 {
     _blueprint->getState(); // ensure final state is cached to ensure thread safety
     _blueprint->fetchPostings(true);
+}
+
+Blueprint::HitEstimate
+Query::estimate() const
+{
+    return _blueprint->getState().estimate();
 }
 
 SearchIterator::UP
