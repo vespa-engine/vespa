@@ -31,6 +31,8 @@ import java.util.Optional;
  * @author lulf
  * @since 5.1
  */
+// This is really the store of an application, whether it is active or in an edit session
+// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;

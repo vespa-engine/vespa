@@ -124,6 +124,9 @@ public class ApplicationHandlerTest {
 
         long sessionId = 1;
         {
+            // This block is a real test of the interplay of (most of) the components of the config server
+            // TODO: Extract it to ApplicationRepositoryTest, rewrite to bypass the HTTP layer and extend
+            //       as login is moved from the HTTP layer into ApplicationRepository
             Tenants tenants = addApplication(defaultId, sessionId);
             ApplicationHandler handler = createApplicationHandler(tenants);
             Tenant mytenant = tenants.tenantsCopy().get(defaultId.tenant());
@@ -137,10 +140,8 @@ public class ApplicationHandlerTest {
             assertThat(provisioner.lastApplicationId.tenant(), is(mytenantName));
             assertThat(provisioner.lastApplicationId, is(defaultId));
 
-            //--------
             assertNull(mytenant.getLocalSessionRepo().getSession(sessionId));
-            System.out.println("Application id after delete: " + applicationData.getApplicationId());
-            //--------
+            assertNull(mytenant.getRemoteSessionRepo().getSession(sessionId));
         }
         
         sessionId++;
