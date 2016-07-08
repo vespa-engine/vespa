@@ -445,7 +445,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setTaskLimit(std::numeric_limits<uint32_t>::max());
+        _writeService.setUnboundTaskLimit();
     } else {
         _writeService.setTaskLimit(_defaultExecutorTaskLimit);
     }

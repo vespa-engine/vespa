@@ -151,7 +151,7 @@ protected:
     /**
      * Sets a new upper limit for accepted number of tasks.
      */
-    void setTaskLimit(uint32_t taskLimit);
+    void internalSetTaskLimit(uint32_t taskLimit);
 
 public:
     /**

@@ -63,5 +63,11 @@ ExecutorThreadingService::setTaskLimit(uint32_t taskLimit)
     _attributeFieldWriter.setTaskLimit(taskLimit);
 }
 
+void
+ExecutorThreadingService::setUnboundTaskLimit()
+{
+    setTaskLimit(std::numeric_limits<uint32_t>::max());
+}
+
 } // namespace proton
 
