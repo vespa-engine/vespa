@@ -129,7 +129,7 @@ TEST("testThatLidInfoOrdersFileChunkSize") {
 }
 
 TEST("test that DirectIOPadding works accordng to spec") {
-    constexpr size_t FILE_SIZE= 100000;
+    constexpr size_t FILE_SIZE = 4096*30;
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
@@ -144,11 +144,11 @@ TEST("test that DirectIOPadding works accordng to spec") {
 
     EXPECT_TRUE(file.DirectIOPadding(4095, 4096, padBefore, padAfter));
     EXPECT_EQUAL(4095u, padBefore);
-    EXPECT_EQUAL(0u, padAfter);
+    EXPECT_EQUAL(1u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
-    EXPECT_EQUAL(0u, padAfter);
+    EXPECT_EQUAL(4095u, padAfter);
 
     EXPECT_TRUE(file.DirectIOPadding(4096, 4097, padBefore, padAfter));
     EXPECT_EQUAL(0u, padBefore);
