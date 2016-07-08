@@ -343,7 +343,7 @@ SearchableDocSubDB::getSearchableStats() const
 IDocumentRetriever::UP
 SearchableDocSubDB::getDocumentRetriever()
 {
-    return IDocumentRetriever::UP(new SearchableDocumentRetriever(_rFeedView.get(), _rSearchView.get()));
+    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(_rFeedView.get(), _rSearchView.get()->getAttributeManager()));
 }
 
 MatchingStats
