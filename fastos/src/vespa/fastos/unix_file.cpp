@@ -29,8 +29,7 @@ FastOS_UNIX_File::GetPosition(void)
 
 
 bool
-FastOS_UNIX_File::Stat(const char *filename,
-                       FastOS_StatInfo *statInfo)
+FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 {
     bool rc = false;
 
@@ -51,10 +50,11 @@ FastOS_UNIX_File::Stat(const char *filename,
         statInfo->_modifiedTimeNS += stbuf.st_mtim.tv_nsec;
         rc = true;
     } else {
-        if (errno == ENOENT)
+        if (errno == ENOENT) {
             statInfo->_error = FastOS_StatInfo::FileNotFound;
-        else
+        } else {
             statInfo->_error = FastOS_StatInfo::Unknown;
+        }
     }
 
     return rc;
@@ -94,15 +94,15 @@ FastOS_UNIX_File::getCurrentDirectory(void)
 {
     std::string res;
     int maxPathLen = FastOS_File::GetMaximumPathLength(".");
-    if (maxPathLen == -1)
+    if (maxPathLen == -1) {
         maxPathLen = 16384;
-    else if (maxPathLen < 512)
+    } else if (maxPathLen < 512) {
         maxPathLen = 512;
+    }
 
     char *currentDir = new char [maxPathLen + 1];
 
-    if (getcwd(currentDir, maxPathLen) != NULL)
-    {
+    if (getcwd(currentDir, maxPathLen) != NULL) {
         res = currentDir;
     }
     delete [] currentDir;
@@ -116,8 +116,7 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
 {
     unsigned int accessFlags=0;
 
-    if ((openFlags & (FASTOS_FILE_OPEN_READ |
-                      FASTOS_FILE_OPEN_DIRECTIO)) != 0) {
+    if ((openFlags & (FASTOS_FILE_OPEN_READ | FASTOS_FILE_OPEN_DIRECTIO)) != 0) {
         if ((openFlags & FASTOS_FILE_OPEN_WRITE) != 0) {
             // Open for reading and writing
             accessFlags = O_RDWR;
@@ -130,8 +129,7 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
         accessFlags = O_WRONLY;
     }
 
-    if (((openFlags & FASTOS_FILE_OPEN_EXISTING) == 0) &&
-        ((openFlags & FASTOS_FILE_OPEN_WRITE) != 0)) {
+    if (((openFlags & FASTOS_FILE_OPEN_EXISTING) == 0) && ((openFlags & FASTOS_FILE_OPEN_WRITE) != 0)) {
         // Create file if it does not exist
         accessFlags |= O_CREAT;
     }
@@ -190,9 +188,9 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         _openFlags = openFlags;
         rc = true;
     } else {
-        if (filename != NULL)
+        if (filename != NULL) {
             SetFileName(filename);
-
+        }
         unsigned int accessFlags = CalcAccessFlags(openFlags);
 
         _filedes = open(_filename, accessFlags, 0664);
@@ -246,9 +244,9 @@ FastOS_UNIX_File::Close(void)
     bool ok = true;
 
     if (_filedes >= 0) {
-        if ((_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0)
+        if ((_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
             ok = true;
-        else {
+        } else {
             do {
                 ok = (close(_filedes) == 0);
             } while (!ok && errno == EINTR);
@@ -280,8 +278,9 @@ FastOS_UNIX_File::GetSize(void)
 
     int res = fstat(_filedes, &stbuf);
 
-    if (res == 0)
+    if (res == 0) {
         fileSize = stbuf.st_size;
+    }
 
     return fileSize;
 }
@@ -319,16 +318,14 @@ FastOS_UNIX_File::Delete(void)
     return (unlink(_filename) == 0);
 }
 
-bool FastOS_UNIX_File::Rename (const char *currentFileName,
-                               const char *newFileName)
+bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileName)
 {
     bool rc = false;
 
     // Enforce documentation. If the destination file exists,
     // fail Rename.
     FastOS_StatInfo statInfo;
-    if (!FastOS_File::Stat(newFileName, &statInfo))
-    {
+    if (!FastOS_File::Stat(newFileName, &statInfo)) {
         rc = (rename(currentFileName, newFileName) == 0);
     } else {
         errno = EEXIST;
@@ -350,8 +347,9 @@ FastOS_UNIX_File::SetSize(int64_t newSize)
 {
     bool rc = false;
 
-    if (ftruncate(_filedes, static_cast<off_t>(newSize)) == 0)
+    if (ftruncate(_filedes, static_cast<off_t>(newSize)) == 0) {
         rc = SetPosition(newSize);
+    }
 
     return rc;
 }
@@ -403,8 +401,9 @@ int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
     struct statfs statBuf;
     int statVal = -1;
     statVal = statfs(path, &statBuf);
-    if (statVal == 0)
+    if (statVal == 0) {
         freeSpace = int64_t(statBuf.f_bavail) * int64_t(statBuf.f_bsize);
+    }
 
     return freeSpace;
 }
@@ -495,8 +494,9 @@ FastOS_UNIX_DirectoryScan::DoStat(void)
 bool
 FastOS_UNIX_DirectoryScan::IsDirectory(void)
 {
-    if (!_statRun)
+    if (!_statRun) {
         DoStat();
+    }
 
     return _isDirectory;
 }
@@ -505,8 +505,9 @@ FastOS_UNIX_DirectoryScan::IsDirectory(void)
 bool
 FastOS_UNIX_DirectoryScan::IsRegular(void)
 {
-    if (!_statRun)
+    if (!_statRun) {
         DoStat();
+    }
 
     return _isRegular;
 }

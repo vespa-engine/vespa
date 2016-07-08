@@ -7,10 +7,7 @@
 * Class definitions for FastOS_UNIX_File and FastOS_UNIX_DirectoryScan.
 *****************************************************************************/
 
-
-
 #pragma once
-
 
 #include <vespa/fastos/file.h>
 
@@ -32,24 +29,21 @@ protected:
     int    _mmapFlags;
     bool   _mmapEnabled;
 
-    static unsigned int
-    CalcAccessFlags(unsigned int openFlags);
+    static unsigned int CalcAccessFlags(unsigned int openFlags);
 
 public:
     static bool Rename (const char *currentFileName, const char *newFileName);
-    bool Rename (const char *newFileName)
-    { return FastOS_FileInterface::Rename(newFileName); }
+    bool Rename (const char *newFileName) {
+        return FastOS_FileInterface::Rename(newFileName);
+    }
 
     static bool Stat(const char *filename, FastOS_StatInfo *statInfo);
     static bool MakeDirectory(const char *name);
     static void RemoveDirectory(const char *name);
 
-    static std::string
-    getCurrentDirectory(void);
+    static std::string getCurrentDirectory(void);
 
-    static bool SetCurrentDirectory (const char *pathName) {
-        return (chdir(pathName) == 0);
-    }
+    static bool SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
     static int GetMaximumFilenameLength (const char *pathName);
     static int GetMaximumPathLength (const char *pathName);
 
@@ -60,27 +54,19 @@ public:
           _filedes(-1),
           _mmapFlags(0),
           _mmapEnabled(false)
-    {
-    }
+    { }
 
     char *ToString(void);
+    bool Open(unsigned int openFlags, const char *filename) override;
+    bool Close() override;
+    bool IsOpened(void) const override { return _filedes >= 0; }
 
-    virtual bool Open(unsigned int openFlags, const char *filename=NULL);
-
-    virtual bool Close(void);
-
-    virtual bool IsOpened(void) const
-    {
-        return _filedes >= 0;
-    }
-
-    virtual void enableMemoryMap(int flags) {
+    void enableMemoryMap(int flags) override {
         _mmapEnabled = true;
         _mmapFlags = flags;
     }
 
-    virtual void *MemoryMapPtr(int64_t position) const
-    {
+    void *MemoryMapPtr(int64_t position) const override {
         if (_mmapbase != NULL) {
             if (position < int64_t(_mmaplen)) {
                 return static_cast<void *>(static_cast<char *>(_mmapbase) + position);
@@ -92,36 +78,21 @@ public:
         }
     }
 
-    virtual bool IsMemoryMapped(void) const {
-        return _mmapbase != NULL;
-    }
-
-    virtual bool SetPosition(int64_t desiredPosition);
-
-    virtual int64_t GetPosition(void);
-
-    virtual int64_t GetSize(void);
-    virtual time_t GetModificationTime(void);
+    bool IsMemoryMapped(void) const override { return _mmapbase != NULL; }
+    bool SetPosition(int64_t desiredPosition) override;
+    int64_t GetPosition() override;
+    int64_t GetSize() override;
+    time_t GetModificationTime() override;
+    bool Delete() override;
+    bool Sync() override;
+    bool SetSize(int64_t newSize) override;
+    void dropFromCache() const override;
 
     static bool Delete(const char *filename);
-    virtual bool Delete(void);
-
-    virtual bool Sync(void);
-
-    virtual bool SetSize(int64_t newSize);
-
-    static int GetLastOSError(void)
-    {
-        return errno;
-    };
-
+    static int GetLastOSError(void) { return errno; }
     static Error TranslateError(const int osError);
-
-    static std::string
-    getErrorString(const int osError);
-
+    static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);
-    void dropFromCache() const override;
 };
 
 
@@ -149,13 +120,11 @@ protected:
 
 public:
     FastOS_UNIX_DirectoryScan(const char *searchPath);
-    ~FastOS_UNIX_DirectoryScan(void);
+    ~FastOS_UNIX_DirectoryScan();
 
-    bool ReadNext(void);
-    bool IsDirectory(void);
-    bool IsRegular(void);
-
-    const char *GetName(void);
-
-    bool IsValidScan(void) const;
+    bool ReadNext() override;
+    bool IsDirectory() override;
+    bool IsRegular() override;
+    const char *GetName() override;
+    bool IsValidScan() const override;
 };
