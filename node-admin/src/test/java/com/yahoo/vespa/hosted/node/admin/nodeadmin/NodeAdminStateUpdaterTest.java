@@ -72,12 +72,16 @@ public class NodeAdminStateUpdaterTest {
         NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
         latch.await();
+
+        when(nodeAdmin.isFrozen()).thenReturn(true);
         int numberOfElements = accumulatedArgumentList.size();
         assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
                 is(Optional.of("Not all node agents are frozen.")));
         assertTrue(numberOfElements > 4);
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
         Thread.sleep(2);
+
+        when(nodeAdmin.isFrozen()).thenReturn(false);
         assertThat(accumulatedArgumentList.size(), is(numberOfElements));
         assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
                 is(Optional.empty()));
