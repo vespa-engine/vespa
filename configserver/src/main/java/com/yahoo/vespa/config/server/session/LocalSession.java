@@ -178,6 +178,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         }
     }
 
+    // The rest of this class should be moved elsewhere ...
+    
     private static class FileTransaction extends AbstractTransaction {
         
         public static FileTransaction from(FileOperation operation) {
@@ -212,7 +214,11 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         void commit();
         
     }
-    
+
+    /** 
+     * Recursively deletes this path and everything below. 
+     * Succeeds with no action if the path does not exist.
+     */
     private static class DeleteOperation implements FileOperation {
 
         private final String pathToDelete;
@@ -223,7 +229,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         
         @Override
         public void commit() {
-            // TODO: Consider checking path existence first and throwing exception if it exists but the call returns false
+            // TODO: Check delete access in prepare()
             IOUtils.recursiveDeleteDir(new File(pathToDelete));
         }
 

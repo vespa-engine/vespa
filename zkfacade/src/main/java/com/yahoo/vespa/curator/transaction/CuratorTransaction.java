@@ -5,6 +5,8 @@ import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 
+import java.util.List;
+
 /**
  * Transaction implementation against ZooKeeper.
  *
@@ -28,6 +30,14 @@ public class CuratorTransaction extends AbstractTransaction {
     public static CuratorTransaction from(CuratorOperation operation, Curator curator) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         transaction.add(operation);
+        return transaction;
+    }
+
+    /** Returns a curator transaction having a list of operations */
+    public static CuratorTransaction from(List<CuratorOperation> operations, Curator curator) {
+        CuratorTransaction transaction = new CuratorTransaction(curator);
+        for (Operation operation : operations)
+            transaction.add(operation);
         return transaction;
     }
 
