@@ -81,7 +81,6 @@ vespa_add_library(searchcore_server STATIC
     sample_attribute_usage_job.cpp
     schema_config_validator.cpp
     searchable_doc_subdb_configurer.cpp
-    searchable_document_retriever.cpp
     searchable_feed_view.cpp
     searchabledocsubdb.cpp
     searchcontext.cpp

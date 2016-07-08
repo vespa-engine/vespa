@@ -15,6 +15,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.log.LogLevel;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -37,7 +38,7 @@ import javax.annotation.concurrent.GuardedBy;
 public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(ThreadedRequestHandler.class.getName());
-    private static final int TIMEOUT = Integer.parseInt(System.getProperty("ThreadedRequestHandler.timeout", "300"));
+    private static final Duration TIMEOUT = Duration.ofSeconds(Integer.parseInt(System.getProperty("ThreadedRequestHandler.timeout", "300")));
     private final Executor executor;
     protected final Metric metric;
     private final boolean allowAsyncResponse;
@@ -81,7 +82,12 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        request.setTimeout(TIMEOUT, TimeUnit.SECONDS);
+        if (request.getTimeout(TimeUnit.SECONDS) == null) {
+            Duration timeout = getTimeout();
+            if (timeout != null) {
+                request.setTimeout(timeout.getSeconds(), TimeUnit.SECONDS);
+            }
+        }
         BufferedContentChannel content = new BufferedContentChannel();
         final RequestTask command = new RequestTask(request, content, responseHandler);
         try {
@@ -93,6 +99,10 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             logRejectedRequests();
         }
         return content;
+    }
+
+    public Duration getTimeout() {
+        return TIMEOUT;
     }
 
     private void logRejectedRequests() {

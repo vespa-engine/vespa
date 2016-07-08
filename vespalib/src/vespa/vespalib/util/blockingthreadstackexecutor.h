@@ -27,6 +27,11 @@ public:
      **/
     BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit);
     ~BlockingThreadStackExecutor();
+
+    /**
+     * Sets a new upper limit for accepted number of tasks.
+     */
+    void setTaskLimit(uint32_t taskLimit);
 };
 
 } // namespace vespalib

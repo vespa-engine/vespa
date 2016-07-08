@@ -129,6 +129,13 @@ ThreadStackExecutorBase::start(uint32_t threads)
     }
 }
 
+void
+ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
+{
+    MonitorGuard monitor(_monitor);
+    _taskLimit = taskLimit;
+}
+
 ThreadStackExecutorBase::Stats
 ThreadStackExecutorBase::getStats()
 {
