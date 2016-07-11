@@ -34,7 +34,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final NodeAdmin nodeAdmin;
-    private boolean frozen = false;
     private final Object monitor = new Object();
     private final Orchestrator orchestrator;
     private final String dockerHostHostName;
@@ -61,7 +60,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
-            debug.put("frozen", frozen);
             debug.put("dockerHostHostName", dockerHostHostName);
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
         }
@@ -76,10 +74,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
      */
     public Optional<String> setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
-            frozen = wantedState == SUSPENDED;
+            nodeAdmin.setFrozen(wantedState == SUSPENDED);
 
-            if (frozen) {
-                if (!nodeAdmin.freezeAndCheckIfAllFrozen()) {
+            if (nodeAdmin.isFrozen()) {
+                if (!nodeAdmin.freezeNodeAgentsAndCheckIfAllFrozen()) {
                     return Optional.of("Not all node agents are frozen.");
                 }
                 // Fetch active nodes from node repo before suspending nodes.
@@ -95,7 +93,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 }
                 return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
             } else {
-                nodeAdmin.unfreeze();
+                nodeAdmin.unfreezeNodeAgents();
                 // we let the NodeAgent do the resume against the orchestrator.
                 return Optional.empty();
             }
@@ -104,7 +102,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
         synchronized (monitor) {
-            if (frozen) {
+            if (nodeAdmin.isFrozen()) {
                 log.log(Level.FINE, "Frozen, skipping fetching info from node repository");
                 return;
             }

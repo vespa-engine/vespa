@@ -26,20 +26,17 @@ import java.util.function.Function;
 public class ComponentsProviderImpl implements ComponentsProvider {
 
     private final Docker docker;
-    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
+    private final NodeAdminStateUpdater nodeAdminStateUpdater;
 
+    private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
+    private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 60000;
     private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
     private static final String ENV_HOSTNAME = "HOSTNAME";
-    private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 60000;
     // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
-    // whitch happens rarely. Changes of apps running etc it detected by the NodeAgent.
+    // which happens rarely. Changes of apps running etc it detected by the NodeAgent.
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
     public ComponentsProviderImpl(final Docker docker) {
         this.docker = docker;
-    }
-
-    @Override
-    public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         String baseHostName = java.util.Optional.ofNullable(System.getenv(ENV_HOSTNAME))
                 .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
 
@@ -54,7 +51,12 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, NODE_AGENT_SCAN_INTERVAL_MILLIS);
-        return new NodeAdminStateUpdater(
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
+    }
+
+    @Override
+    public NodeAdminStateUpdater getNodeAdminStateUpdater() {
+        return nodeAdminStateUpdater;
     }
 }
