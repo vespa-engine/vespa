@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +38,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Docker docker;
     private final Function<HostName, NodeAgent> nodeAgentFactory;
-    private boolean frozen = false;
+    private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<HostName, NodeAgent> nodeAgents = new HashMap<>();
 
@@ -84,11 +85,11 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     public boolean isFrozen() {
-        return frozen;
+        return frozen.get();
     }
 
     public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+        this.frozen.set(frozen);
     }
 
     public Set<HostName> getListOfHosts() {
