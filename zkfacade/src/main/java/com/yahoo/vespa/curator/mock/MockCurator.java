@@ -130,6 +130,12 @@ public class MockCurator extends Curator {
         curatorFramework.start();
     }
 
+    /**
+     * Lists the entire content of this curator instance as a multiline string.
+     * Useful for debugging.
+     */
+    public String dumpState() { return fileSystem.dumpState(); }
+
     /** Returns a started curator framework */
     public CuratorFramework framework() { return curatorFramework; }
 
@@ -168,6 +174,7 @@ public class MockCurator extends Curator {
         Node parent = root.getNode(Paths.get(path.getParentPath().toString()), false);
         if (parent == null) throw new KeeperException.NoNodeException(path.toString());
         Node node = parent.children().get(path.getName());
+        if (node == null) throw new KeeperException.NoNodeException(path.getName() + " under " + parent);
         if ( ! node.children().isEmpty() && ! deleteChildren)
             throw new KeeperException.NotEmptyException(path.toString());
         parent.remove(path.getName());
@@ -360,6 +367,7 @@ public class MockCurator extends Curator {
                 }
             }
             catch (Exception e) {
+                e.printStackTrace(); // TODO: Remove
                 throw new RuntimeException("Exception notifying listeners", e);
             }
         }
@@ -516,13 +524,12 @@ public class MockCurator extends Curator {
 
         @Override
         public List<ChildData> getCurrentData() {
-            Node parent = fileSystem.root().getNode(Paths.get(path.toString()), false);
-            if (parent == null) return Collections.emptyList(); // behavior in this case is unspecified
-
-            List<ChildData> data = new ArrayList<>();
-            collectData(parent, path, data);
-            Collections.sort(data);
-            return data;
+            List<ChildData> childData = new ArrayList<>();
+            for (String childName : getChildren(path)) {
+                Path childPath = path.append(childName);
+                childData.add(new ChildData(childPath.getAbsolute(), null, getData(childPath).get()));
+            }
+            return childData;
         }
 
         private void collectData(Node parent, Path parentPath, List<ChildData> data) {

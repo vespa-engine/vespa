@@ -24,12 +24,23 @@ public interface NodeAdmin {
      * Causes the NodeAgents to freeze, meaning they will not pick up any changes from NodeRepository.
      * @return if NodeAgent is frozen.
      */
-    boolean freezeAndCheckIfAllFrozen();
+    boolean freezeNodeAgentsAndCheckIfAllFrozen();
 
     /**
      * Causes the NodeAgent to unfreeze and start picking up changes from NodeRepository.
      */
-    void unfreeze();
+    void unfreezeNodeAgents();
+
+    /**
+     * Returns whether the NodeAdmin itself is currently frozen, meaning it will not pick up any changes
+     * from NodeRepository.
+     */
+    boolean isFrozen();
+
+    /**
+     * Sets the current frozen status for NodeAdmin
+     */
+    void setFrozen(boolean frozen);
 
     /**
      * Returns list of hosts.

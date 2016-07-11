@@ -109,7 +109,9 @@ public class ProvisionResourceTest {
     public void test_recycle_deallocated() {
         createNodesInRepository(2, 0);
         assignNode(application, 2);
-        nodeRepository.deactivate(application);
+        NestedTransaction deactivateTransaction = new NestedTransaction();
+        nodeRepository.deactivate(application, deactivateTransaction);
+        deactivateTransaction.commit();
         List<Node> nodes = nodeRepository.deallocate(nodeRepository.getNodes(application, Node.State.inactive));
         assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty).size());

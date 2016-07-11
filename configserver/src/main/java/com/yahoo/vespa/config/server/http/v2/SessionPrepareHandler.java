@@ -11,10 +11,10 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.ApplicationSet;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.Tenants;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActionsFormatter;
@@ -34,7 +34,9 @@ import java.util.logging.Logger;
  * @author hmusum
  * @since 5.1.29
  */
+// TODO: Move business logic out of the HTTP layer and delegate to a ApplicationRepository
 public class SessionPrepareHandler extends SessionHandler {
+
     private static final Logger log = Logger.getLogger(SessionPrepareHandler.class.getName());
 
     private final Tenants tenants;
@@ -99,7 +101,7 @@ public class SessionPrepareHandler extends SessionHandler {
 
     private static Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         try {
             long currentActiveSessionId = applicationRepo.getSessionIdForApplication(appId);
             final RemoteSession currentActiveSession = tenant.getRemoteSessionRepo().getSession(currentActiveSessionId);

@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.server.model.SuperModel;
+import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
 import java.io.IOException;
 import java.io.StringReader;

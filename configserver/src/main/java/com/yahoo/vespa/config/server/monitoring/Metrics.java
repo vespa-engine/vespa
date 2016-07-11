@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 4.2
  */
 public class Metrics extends TimerTask implements MetricUpdaterFactory {
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Metrics.class.getName());
     private static final String METRIC_REQUESTS = getMetricName("requests");
     private static final String METRIC_FAILED_REQUESTS = getMetricName("failedRequests");

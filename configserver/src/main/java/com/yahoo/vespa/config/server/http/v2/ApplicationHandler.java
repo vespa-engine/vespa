@@ -1,27 +1,38 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.config.provision.*;
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.RotationsCache;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
-import com.yahoo.vespa.config.server.http.*;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.http.ContentHandler;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.HttpHandler;
+import com.yahoo.vespa.config.server.http.JSONResponse;
+import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.SessionHandler;
+import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
+import com.yahoo.vespa.curator.Curator;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -36,6 +47,7 @@ import java.util.concurrent.Executor;
  * @author hmusum
  * @since 5.4
  */
+// TODO: Move business logic out of the http layer
 public class ApplicationHandler extends HttpHandler {
 
     private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";
@@ -45,40 +57,28 @@ public class ApplicationHandler extends HttpHandler {
     private final ApplicationConvergenceChecker convergeChecker;
     private final Zone zone;
     private final LogServerLogGrabber logServerLogGrabber;
+    private final ApplicationRepository applicationRepository;
 
     public ApplicationHandler(Executor executor, AccessLog accessLog, Tenants tenants,
                               HostProvisionerProvider hostProvisionerProvider, Zone zone,
                               ApplicationConvergenceChecker convergeChecker,
-                              LogServerLogGrabber logServerLogGrabber) {
+                              LogServerLogGrabber logServerLogGrabber,
+                              ConfigserverConfig configserverConfig, Curator curator) {
         super(executor, accessLog);
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.convergeChecker = convergeChecker;
         this.logServerLogGrabber = logServerLogGrabber;
+        this.applicationRepository = new ApplicationRepository(tenants, hostProvisionerProvider, configserverConfig, curator);
     }
 
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        Tenant tenant = verifyTenantAndApplication(applicationId);
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
-        final long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
-        final LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
-        final LocalSession session = localSessionRepo.getSession(sessionId);
-        if (session == null) {
-            return HttpErrorResponse.notFoundError("Unable to delete " + applicationId + " (session id " + sessionId + "):" +
-                                                   "No local deployment for this application found on this config server");
-        }
-        log.log(LogLevel.INFO, "Deleting " + applicationId);
-        localSessionRepo.removeSession(session.getSessionId());
-        session.delete();
-        RotationsCache rotationsCache = new RotationsCache(tenant.getCurator(), tenant.getPath());
-        rotationsCache.deleteRotationFromZooKeeper(applicationId);
-        applicationRepo.deleteApplication(applicationId);
-        if (hostProvisioner.isPresent()) {
-            hostProvisioner.get().removed(applicationId);
-        }
+        boolean removed = applicationRepository.remove(applicationId);
+        if ( ! removed)
+            return HttpErrorResponse.notFoundError("Unable to delete " + applicationId + ": Not found");
         return new DeleteApplicationResponse(Response.Status.OK, applicationId);
     }
 
@@ -126,7 +126,7 @@ public class ApplicationHandler extends HttpHandler {
     private HttpResponse handlePostRestart(HttpRequest request, ApplicationId applicationId) {
         if (getBindingMatch(request).groupCount() != 7)
             throw new NotFoundException("Illegal POST restart request '" + request.getUri() +
-                    "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
+                                        "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
         if (hostProvisioner.isPresent())
             hostProvisioner.get().restart(applicationId, hostFilterFrom(request));
         return new JSONResponse(Response.Status.OK); // return empty
@@ -165,7 +165,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private Application getApplication(Tenant tenant, ApplicationId applicationId) {
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         RemoteSessionRepo remoteSessionRepo = tenant.getRemoteSessionRepo();
         long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
         RemoteSession session = remoteSessionRepo.getSession(sessionId, 0);
@@ -173,7 +173,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
     }
 

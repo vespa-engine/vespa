@@ -7,8 +7,11 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,14 +62,14 @@ public class HostHandlerTest {
         assertThat(hostRegistries, is(hostHandler.hostRegistries));
         long sessionId = 1;
         ApplicationId id = ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName());
-        ApplicationHandlerTest.addApplication(tenants.tenantsCopy().get(mytenant), id, sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.tenantsCopy().get(mytenant), id, sessionId);
         assertApplicationForHost(hostname, mytenant, id, Zone.defaultZone());
     }
 
     @Test
     public void require_that_handler_gives_error_for_unknown_hostname() throws Exception {
         long sessionId = 1;
-        ApplicationHandlerTest.addApplication(tenants.tenantsCopy().get(mytenant), ApplicationId.defaultId(), sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.tenantsCopy().get(mytenant), ApplicationId.defaultId(), sessionId);
         final String hostname = "unknown";
         assertErrorForHost(hostname,
                 Response.Status.NOT_FOUND,

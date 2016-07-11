@@ -6,14 +6,18 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.transaction.AbstractTransaction;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
@@ -27,10 +31,12 @@ import java.util.Optional;
  * @author lulf
  * @since 5.1
  */
+// This is really the store of an application, whether it is active or in an edit session
+// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;
-    private final ApplicationRepo applicationRepo;
+    private final TenantApplications applicationRepo;
     private final SessionZooKeeperClient zooKeeperClient;
     private final SessionPreparer sessionPreparer;
     private final SessionContext sessionContext;
@@ -114,13 +120,19 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         return getSessionId() > sessionId;
     }
 
-    /**
-     * Deletes this session from ZooKeeper and filesystem, as well as making sure the supermodel generation counter is incremented.
-     */
+    /** Delete this session */
+    // TODO: Use transactional delete instead
     public void delete() {
         superModelGenerationCounter.increment();
         IOUtils.recursiveDeleteDir(serverDB);
         zooKeeperClient.delete();
+    }
+
+    /** Add transactions to delete this session to the given nested transaction */
+    public void delete(NestedTransaction transaction) {
+        transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
+        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())), SuperModelGenerationCounter.IncrementTransaction.class);
+        transaction.add(superModelGenerationCounter.incrementTransaction());
     }
 
     @Override
@@ -167,4 +179,62 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
             return Tenants.logPre(getApplicationId());
         }
     }
+
+    // The rest of this class should be moved elsewhere ...
+    
+    private static class FileTransaction extends AbstractTransaction {
+        
+        public static FileTransaction from(FileOperation operation) {
+            FileTransaction transaction = new FileTransaction();
+            transaction.add(operation);
+            return transaction;
+        }
+
+        @Override
+        public void prepare() { }
+
+        @Override
+        public void commit() {
+            for (Operation operation : operations())
+                ((FileOperation)operation).commit();
+        }
+
+    }
+    
+    /** Factory for file operations */
+    private static class FileOperations {
+        
+        /** Creates an operation which recursively deletes the given path */
+        public static DeleteOperation delete(String pathToDelete) {
+            return new DeleteOperation(pathToDelete);
+        }
+        
+    }
+    
+    private interface FileOperation extends Transaction.Operation {
+
+        void commit();
+        
+    }
+
+    /** 
+     * Recursively deletes this path and everything below. 
+     * Succeeds with no action if the path does not exist.
+     */
+    private static class DeleteOperation implements FileOperation {
+
+        private final String pathToDelete;
+        
+        public DeleteOperation(String pathToDelete) {
+            this.pathToDelete = pathToDelete;
+        }
+        
+        @Override
+        public void commit() {
+            // TODO: Check delete access in prepare()
+            IOUtils.recursiveDeleteDir(new File(pathToDelete));
+        }
+
+    }
+
 }

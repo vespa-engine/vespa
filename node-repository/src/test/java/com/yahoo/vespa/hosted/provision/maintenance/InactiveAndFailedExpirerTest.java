@@ -68,7 +68,9 @@ public class InactiveAndFailedExpirerTest {
         provisioner.activate(transaction, applicationId, asHosts(nodes));
         transaction.commit();
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.active).size());
-        nodeRepository.deactivate(applicationId);
+        NestedTransaction deactivateTransaction = new NestedTransaction();
+        nodeRepository.deactivate(applicationId, deactivateTransaction);
+        deactivateTransaction.commit();
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.inactive).size());
 
         // Inactive times out

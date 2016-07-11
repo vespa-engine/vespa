@@ -5,7 +5,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.server.MockRequestHandler;
+import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.vespa.config.server.http.HttpListConfigsHandler.ListConfigsResponse;
 
 import org.junit.Before;

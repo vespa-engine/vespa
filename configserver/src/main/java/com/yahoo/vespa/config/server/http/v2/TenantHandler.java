@@ -9,14 +9,14 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.server.Tenant;
-import com.yahoo.vespa.config.server.application.ApplicationRepo;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.Tenants;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * Handler to create, get and delete a tenant.
@@ -37,7 +37,7 @@ public class TenantHandler extends HttpHandler {
     protected HttpResponse handlePUT(HttpRequest request) {
         TenantName tenant = getAndValidateTenantFromRequest(request);
         try {
-            tenants.createTenant(tenant);
+            tenants.writeTenantPath(tenant);
         } catch (Exception e) {
             throw new InternalServerException(Exceptions.toMessageString(e));
         }
@@ -73,7 +73,7 @@ public class TenantHandler extends HttpHandler {
     protected HttpResponse handleDELETE(HttpRequest request) {
         TenantName tenantName = getExistingTenant(request);
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        ApplicationRepo applicationRepo = tenant.getApplicationRepo();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
         final List<ApplicationId> activeApplications = applicationRepo.listApplications();
         if (activeApplications.isEmpty()) {
             try {

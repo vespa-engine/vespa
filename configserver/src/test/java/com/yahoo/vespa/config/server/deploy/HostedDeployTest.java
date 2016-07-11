@@ -15,7 +15,8 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.config.server.TestWithTenant;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.tenant.TestWithTenant;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -46,10 +47,10 @@ public class HostedDeployTest extends TestWithTenant {
     public void testRedeploy() throws InterruptedException, IOException {
         ApplicationId id = deployApp();
 
-        Deployer deployer = new Deployer(tenants, HostProvisionerProvider.withProvisioner(createHostProvisioner()),
-                                         new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
+        ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.withProvisioner(createHostProvisioner()),
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
 
-        Optional<com.yahoo.config.provision.Deployment> deployment = deployer.deployFromLocalActive(id, Duration.ofSeconds(60));
+        Optional<com.yahoo.config.provision.Deployment> deployment = applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
@@ -90,7 +91,7 @@ public class HostedDeployTest extends TestWithTenant {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             // noop
         }
 

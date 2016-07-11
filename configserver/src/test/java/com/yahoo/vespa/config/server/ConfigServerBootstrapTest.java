@@ -4,7 +4,11 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
+import com.yahoo.vespa.config.server.tenant.TenantRequestHandler;
+import com.yahoo.vespa.config.server.tenant.TestWithTenant;
 import com.yahoo.vespa.config.server.version.VersionState;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,7 +73,7 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         }
     }
 
-    public static class MockRpc extends com.yahoo.vespa.config.server.MockRpc {
+    public static class MockRpc extends com.yahoo.vespa.config.server.rpc.MockRpc {
         public volatile boolean started = false;
         public volatile boolean stopped = false;
 

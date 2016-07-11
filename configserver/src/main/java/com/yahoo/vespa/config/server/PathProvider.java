@@ -11,13 +11,12 @@ import com.yahoo.path.Path;
  * * @since 5.1.24
  */
 public class PathProvider {
+
     private final Path root;
     // Path for Vespa-related data stored in Zookeeper (subpaths are relative to this path)
     // NOTE: This should not be exposed, as this path can be different in testing, depending on how we configure it.
     private static final String APPS_ZK_NODE               = "sessions";
     private static final String VESPA_ZK_PATH              = "/vespa/config";
-    //private static final String VESPA_ZK_PATH              = "/config/v2/tenants/default";
-    private static final String LIVEAPP_ZK_NODE            = "liveapp";
 
     @Inject
     public PathProvider() {
@@ -40,7 +39,4 @@ public class PathProvider {
         return getSessionDirs().append(String.valueOf(sessionId));
     }
 
-    public Path getLiveApp() {
-        return root.append(LIVEAPP_ZK_NODE);
-    }
 }

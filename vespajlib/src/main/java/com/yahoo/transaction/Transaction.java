@@ -4,8 +4,11 @@ package com.yahoo.transaction;
 import java.util.List;
 
 /**
- * An interface for building a transaction and committing it. Implementations are required to atomically apply changes
+ * A transaction against a single system, which may include several operations against the system, 
+ * to be committed as one.
+ * Implementations are required to atomically apply changes
  * in the commit step or throw an exception if it fails.
+ * Operations are performed in the order they are added.
  *
  * @author lulf
  * @author bratseth
@@ -65,8 +68,9 @@ public interface Transaction extends AutoCloseable {
 
     /**
      * Operations that a transaction supports should implement this interface.
+     * It does not define any methods because the interface to use is a contract between the
+     * specific transaction and operation type used.
      */
-    public interface Operation {
-    }
+    interface Operation { }
 
 }

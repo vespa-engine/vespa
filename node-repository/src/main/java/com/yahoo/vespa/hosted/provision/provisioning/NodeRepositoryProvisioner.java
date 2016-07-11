@@ -87,8 +87,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Override
-    public void removed(ApplicationId application) {
-        nodeRepository.deactivate(application);
+    public void remove(NestedTransaction transaction, ApplicationId application) {
+        nodeRepository.deactivate(application, transaction);
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 
 /**
  * Interface representing a reload handler.
@@ -10,17 +11,19 @@ import com.yahoo.config.provision.ApplicationId;
  * @since 5.1.24
  */
 public interface ReloadHandler {
+
     /**
      * Reload config with the one contained in the application.
      *
      * @param applicationSet The set of applications to set as active.
      */
-    public void reloadConfig(ApplicationSet applicationSet);
+    void reloadConfig(ApplicationSet applicationSet);
 
     /**
      * Remove an application and resources related to it.
      *
      * @param applicationId to be removed
      */
-    public void removeApplication(ApplicationId applicationId);
+    void removeApplication(ApplicationId applicationId);
+
 }

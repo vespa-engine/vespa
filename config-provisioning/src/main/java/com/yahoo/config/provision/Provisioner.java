@@ -33,14 +33,31 @@ public interface Provisioner {
      * @param application The {@link ApplicationId} that was activated.
      * @param hosts a set of {@link HostSpec}.
      */
-    public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
+    void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
 
     /**
      * Notifies provisioner that an application has been removed.
      *
      * @param application The {@link ApplicationId} that was removed.
+     * @deprecated use remove(transaction, application) instead
      */
-    public void removed(ApplicationId application);
+    @Deprecated
+    default void removed(ApplicationId application) {
+        throw new IllegalStateException("Unexpected use of deprecated method");
+    }
+
+    /**
+     * Transactionally remove this application.
+     * This default implementation delegates to removed(application), i.e performs the removal non-transactional.
+     * 
+     * @param application
+     */
+    // TODO: Remove the default implementation in this when
+    //       no applications are on a version before 5.17
+    @SuppressWarnings("deprecation")
+    default void remove(NestedTransaction transaction, ApplicationId application) {
+        removed(application);
+    }
 
     /**
      * Requests a restart of the services of the given application
@@ -48,6 +65,6 @@ public interface Provisioner {
      * @param application the application to restart
      * @param filter a filter which matches the application nodes to restart
      */
-    public void restart(ApplicationId application, HostFilter filter);
+    void restart(ApplicationId application, HostFilter filter);
 
 }

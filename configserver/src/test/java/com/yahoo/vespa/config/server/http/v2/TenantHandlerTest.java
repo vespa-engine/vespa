@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,7 +59,7 @@ public class TenantHandlerTest extends TenantTest {
  
     @Test
     public void testGetExisting() throws Exception {
-        tenants.createTenant(a);
+        tenants.writeTenantPath(a);
         TenantGetResponse response = (TenantGetResponse) handler.handleGET(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET));
         assertResponseEquals(response, "{\"message\":\"Tenant 'a' exists.\"}");
     }
@@ -92,7 +92,7 @@ public class TenantHandlerTest extends TenantTest {
         final int sessionId = 1;
         ApplicationId app = ApplicationId.from(a,
                                                ApplicationName.from("foo"), InstanceName.defaultName());
-        ApplicationHandlerTest.addApplication(tenant, app, sessionId);
+        ApplicationHandlerTest.addMockApplication(tenant, app, sessionId);
 
         try {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));

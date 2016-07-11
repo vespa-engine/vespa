@@ -20,6 +20,6 @@ public interface Deployer {
      *         was not present for this id (meaning it either is not active or active on another
      *         node in the config server cluster)
      */
-    public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout);
+    Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout);
 
 }

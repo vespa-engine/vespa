@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.curator.mock.MockCurator;
 

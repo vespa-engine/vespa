@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.concurrent.Executor;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -26,8 +25,8 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
-import com.yahoo.vespa.config.server.Tenants;
-import com.yahoo.vespa.config.server.MockRequestHandler;
+import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.rpc.MockRequestHandler;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;

@@ -34,7 +34,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.application.MemoryApplicationRepo;
+import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.SessionActiveHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase.MockSessionFactory;
@@ -47,7 +47,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     public void setup() throws Exception {
         tenant = TenantName.from("activatetest");
         remoteSessionRepo = new RemoteSessionRepo();
-        applicationRepo = new MemoryApplicationRepo();
+        applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(applicationRepo);
@@ -59,7 +59,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     }
 
     @Test
-    public void require_correct_response_on_success() throws Exception {
+    public void testActivation() throws Exception {
         activateAndAssertOK(1, 0);
     }
 
@@ -76,7 +76,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     public void testActivationOfUnpreparedSession() throws Exception {
         // Needed so we can test that previous active session is still active after a failed activation
         RemoteSession firstSession = activateAndAssertOK(90l, 0l);
-        long sessionId = 91l;
+        long sessionId = 91L;
         ActivateRequest activateRequest = new ActivateRequest(sessionId, 0l, Session.Status.NEW, "").invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
@@ -84,6 +84,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         assertThat(getRenderedString(actResponse), is("{\"error-code\":\"BAD_REQUEST\",\"message\":\"tenant:"+tenant+" app:default:default Session " + sessionId + " is not prepared\"}"));
         assertThat(session.getStatus(), is(not(Session.Status.ACTIVATE)));
         assertThat(firstSession.getStatus(), is(Session.Status.ACTIVATE));
+        
     }
 
     @Test
@@ -188,7 +189,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             removed = true;
             lastApplicationId = application;
         }
@@ -209,7 +210,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         }
 
         @Override
-        public void removed(ApplicationId application) {
+        public void remove(NestedTransaction transaction, ApplicationId application) {
             throw new IllegalArgumentException("Cannot remove application");
         }
 

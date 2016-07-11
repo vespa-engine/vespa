@@ -11,8 +11,8 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
-import com.yahoo.vespa.config.server.HostRegistries;
-import com.yahoo.vespa.config.server.HostRegistry;
+import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.*;
 
 import java.util.concurrent.Executor;

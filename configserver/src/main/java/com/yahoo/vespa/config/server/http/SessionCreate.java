@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;

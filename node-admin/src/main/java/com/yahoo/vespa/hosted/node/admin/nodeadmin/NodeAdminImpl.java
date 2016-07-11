@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +38,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Docker docker;
     private final Function<HostName, NodeAgent> nodeAgentFactory;
+    private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<HostName, NodeAgent> nodeAgents = new HashMap<>();
 
@@ -63,7 +64,7 @@ public class NodeAdminImpl implements NodeAdmin {
         garbageCollectDockerImages(containersToRun);
     }
 
-    public boolean freezeAndCheckIfAllFrozen() {
+    public boolean freezeNodeAgentsAndCheckIfAllFrozen() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             // We could make this blocking, this could speed up the suspend call a bit, but not sure if it is
             // worth it (it could block the rest call for some time and might have implications).
@@ -77,10 +78,18 @@ public class NodeAdminImpl implements NodeAdmin {
         return true;
     }
 
-    public void unfreeze() {
+    public void unfreezeNodeAgents() {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             nodeAgent.unfreeze();
         }
+    }
+
+    public boolean isFrozen() {
+        return frozen.get();
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen.set(frozen);
     }
 
     public Set<HostName> getListOfHosts() {
@@ -90,11 +99,10 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public Map<String, Object> debugInfo() {
         Map<String, Object> debug = new LinkedHashMap<>();
-        List<Map<String, Object>> nodeAgentDebugs = new ArrayList<>();
+        debug.put("isFrozen", frozen);
 
-        for (Map.Entry<HostName, NodeAgent> node : nodeAgents.entrySet()) {
-            nodeAgentDebugs.add(node.getValue().debugInfo());
-        }
+        List<Map<String, Object>> nodeAgentDebugs = nodeAgents.entrySet().stream()
+                .map(node -> node.getValue().debugInfo()).collect(Collectors.toList());
         debug.put("NodeAgents", nodeAgentDebugs);
         return debug;
     }

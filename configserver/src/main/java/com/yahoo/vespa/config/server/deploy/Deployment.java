@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
@@ -11,7 +10,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.ActivateLock;
+import com.yahoo.vespa.config.server.tenant.ActivateLock;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 /**
  * The process of deploying an application.
- * Deployments are created by a {@link Deployer}.
+ * Deployments are created by a {@link ApplicationRepository}.
  * Instances of this are not multithread safe.
  *
  * @author lulf
@@ -69,16 +69,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.prepared = prepared;
     }
 
-    static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
-                                 Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                                 Duration timeout, Clock clock) {
+    public static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
+                                        Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
+                                        Duration timeout, Clock clock) {
         return new Deployment(session, localSessionRepo, tenantPath, configserverConfig, hostProvisioner, activateLock,
                               timeout, clock, false);
     }
 
-    static Deployment prepared(LocalSession session, LocalSessionRepo localSessionRepo,
-                               Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                               Duration timeout, Clock clock) {
+    public static Deployment prepared(LocalSession session, LocalSessionRepo localSessionRepo,
+                                      Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
+                                      Duration timeout, Clock clock) {
         return new Deployment(session, localSessionRepo, null, null, hostProvisioner, activateLock,
                               timeout, clock, true);
     }
@@ -132,8 +132,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } finally {
             activateLock.release();
         }
-        final ApplicationMetaData metaData = session.getMetaData();
-        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + " activated successfully. Config generation " + metaData.getGeneration());
+        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
+                               " activated successfully. Config generation " + session.getMetaData().getGeneration());
     }
 
     /**

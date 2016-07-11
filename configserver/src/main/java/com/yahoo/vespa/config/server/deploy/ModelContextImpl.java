@@ -21,6 +21,7 @@ import java.util.Set;
  * @author lulf
  */
 public class ModelContextImpl implements ModelContext {
+
     private final ApplicationPackage applicationPackage;
     private final Optional<Model> previousModel;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
@@ -157,4 +158,5 @@ public class ModelContextImpl implements ModelContext {
             return rotations;
         }
     }
+
 }
