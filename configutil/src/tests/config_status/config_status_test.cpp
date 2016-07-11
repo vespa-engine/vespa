@@ -7,7 +7,8 @@
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vector>
+#include <string>
 
 using namespace config;
 
@@ -56,7 +57,11 @@ public:
     ConfigStatus::Flags flags;
     std::unique_ptr<ConfigStatus> status;
 
-    Status(int httpport) : flags() {
+    Status(int httpport,
+           const ConfigStatus::Flags& cfg_flags,
+           const std::vector<std::string>& model_hosts)
+        : flags(cfg_flags)
+    {
         flags.verbose = true;
         ConfigSet set;
         ConfigContext::SP ctx(new ConfigContext(set));
@@ -74,23 +79,33 @@ public:
         service.clustername = "default";
         service.ports.push_back(port);
 
-        cloud::config::ModelConfigBuilder::Hosts host;
-        host.services.push_back(service);
-        host.name = "localhost";
+        for (auto& mhost : model_hosts) {
+            cloud::config::ModelConfigBuilder::Hosts host;
+            host.services.push_back(service);
+            host.name = mhost;
 
-        builder.hosts.push_back(host);
+            builder.hosts.push_back(host);
+        }
 
         set.addBuilder("admin/model", &builder);
         config::ConfigUri uri("admin/model", ctx);
         std::unique_ptr<ConfigStatus> s(new ConfigStatus(flags, uri));
         status = std::move(s);
-    };
+    }
+
+    Status(int httpport)
+        : Status(httpport, ConfigStatus::Flags(), {{"localhost"}})
+    {}
 
     ~Status() {
-    };
+    }
 };
 
-TEST_FF("all ok", HTTPStatus(std::string("{\"config\": { \"all\": { \"generation\": 1 } }}")), Status(f1.getListenPort())) {
+std::string ok_json_at_gen_1() {
+    return "{\"config\": { \"all\": { \"generation\": 1 } }}";
+}
+
+TEST_FF("all ok", HTTPStatus(ok_json_at_gen_1()), Status(f1.getListenPort())) {
     ASSERT_EQUAL(0, f2.status->action());
 }
 
@@ -104,6 +119,15 @@ TEST_FF("bad json", HTTPStatus(std::string("{")), Status(f1.getListenPort())) {
 
 TEST_FF("http failure", HTTPStatus(true), Status(f1.getListenPort())) {
     ASSERT_EQUAL(1, f2.status->action());
+}
+
+TEST_F("queried host set can be constrained", HTTPStatus(ok_json_at_gen_1())) {
+    HostFilter filter({"localhost"});
+    std::vector<std::string> hosts(
+            {"localhost", "no-such-host.foo.yahoo.com"});
+    Status status(f1.getListenPort(), ConfigStatus::Flags(filter), hosts);
+    // Non-existing host should never be contacted.
+    ASSERT_EQUAL(0, status.status->action());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,3 +1,4 @@
 tests/config_status
 tests/model_inspect
 tests/tags
+tests/host_filter

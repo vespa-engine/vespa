@@ -139,10 +139,14 @@ ConfigStatus::action()
 
     for (size_t i = 0; i < _cfg->hosts.size(); i++) {
         const cloud::config::ModelConfig::Hosts &hconf = _cfg->hosts[i];
+        // TODO PERF: don't fetch entire model when we're only looking for
+        // a subset of hosts.
+        if (!_flags.host_filter.includes(hconf.name)) {
+            continue;
+        }
 
         for (size_t j = 0; j < hconf.services.size(); j++) {
             const cloud::config::ModelConfig::Hosts::Services &svc = hconf.services[j];
-
             if (svc.type == "configserver") {
                 continue;
             }
