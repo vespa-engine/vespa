@@ -24,8 +24,6 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
- * Validators that must be run after search cluster search definition deriving are
- * defined in PostSdValidation.
  *
  * @author hmusum
  * @since 2010-01-29
