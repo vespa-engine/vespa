@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
+import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogMessage;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;
@@ -23,7 +24,9 @@ import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
@@ -41,33 +44,39 @@ public class RankSetupValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        File cfgDir = makeTempConfigDir(deployState.getDeployLogger());
-        if (cfgDir == null) return;
+        try {
+            File cfgDir = Files.createTempDirectory("deploy_ranksetup").toFile();
 
-        for (AbstractSearchCluster cluster : model.getSearchClusters()) {
-            // Skipping rank expression checking for streaming clusters, not implemented yet
-            if (cluster.isRealtime()) {
-                IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
-                String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
-                for (DocumentDatabase docDb : sc.getDocumentDbs()) {
-                    String searchDir = clusterDir + docDb.getDerivedConfiguration().getSearch().getName() + "/";
-                    writeConfigs(searchDir, docDb);
-                    if (!validate("dir:" + searchDir, sc, docDb.getDerivedConfiguration().getSearch().getName(), deployState.getDeployLogger(), cfgDir)) {
-                        return;
+            for (AbstractSearchCluster cluster : model.getSearchClusters()) {
+                // Skipping rank expression checking for streaming clusters, not implemented yet
+                if (cluster.isRealtime()) {
+                    IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
+                    String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
+                    for (DocumentDatabase docDb : sc.getDocumentDbs()) {
+                        final String name = docDb.getDerivedConfiguration().getSearch().getName();
+                        String searchDir = clusterDir + name + "/";
+                        writeConfigs(searchDir, docDb);
+                        if (!validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
+                            return;
+                        }
                     }
                 }
             }
+            deleteTempDir(cfgDir);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        deleteTempDir(cfgDir);
     }
 
-    private boolean validate(String configId, SearchCluster sc, String sdName, DeployLogger logger, File tempDir) {
+    private boolean validate(String configId, SearchCluster searchCluster, String sdName, DeployLogger logger, File tempDir) {
+        Instant start = Instant.now();
         try {
-            boolean ret = execValidate(configId, sc, sdName, logger);
+            boolean ret = execValidate(configId, searchCluster, sdName, logger);
             if (!ret) {
                 // Give up, don't say same error msg repeatedly
                 deleteTempDir(tempDir);
             }
+            logger.log(LogLevel.DEBUG, String.format("Validating %s for %s, %s took %s ms", sdName, searchCluster, configId, Duration.between(start, Instant.now()).toMillis()));
             return ret;
         } catch (IllegalArgumentException e) {
             deleteTempDir(tempDir);
@@ -81,8 +90,7 @@ public class RankSetupValidator extends Validator {
         }
     }
 
-    private void writeConfigs(String dir, AbstractConfigProducer producer) {
-        try {
+    private void writeConfigs(String dir, AbstractConfigProducer producer) throws IOException {
             RankProfilesConfig.Builder rpb = new RankProfilesConfig.Builder();
             RankProfilesConfig.Producer rpProd = (RankProfilesConfig.Producer) producer;
             rpProd.getConfig(rpb);
@@ -97,9 +105,6 @@ public class RankSetupValidator extends Validator {
             AttributesConfig.Producer acProd = (AttributesConfig.Producer) producer;
             acProd.getConfig(acb);
             writeConfig(dir, "attributes.cfg", new AttributesConfig(acb));
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
@@ -115,17 +120,16 @@ public class RankSetupValidator extends Validator {
                 validateFail(ret.getSecond(), sc, sdName, logger);
             }
         } catch (IOException e) {
-            validateWarn(executer, e, logger);
+            validateWarn(e, logger);
             return false;
         }
         return true;
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    private void validateWarn(ProcessExecuter executer, Exception e, DeployLogger logger) {
+    private void validateWarn(Exception e, DeployLogger logger) {
         String msg = "Unable to execute 'verify_ranksetup', validation of rank expressions will only take place when you start Vespa: " +
                 Exceptions.toMessageString(e);
-        logger.log(Level.WARNING, msg);
+        logger.log(LogLevel.WARNING, msg);
     }
 
     private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger logger) {
@@ -141,19 +145,10 @@ public class RankSetupValidator extends Validator {
             }
         }
         if (force) {
-            logger.log(Level.WARNING, errMsg + "(Continuing because of force.)");
+            logger.log(LogLevel.WARNING, errMsg + "(Continuing because of force.)");
         } else {
             throw new IllegalArgumentException(errMsg);
         }
     }
 
-    private File makeTempConfigDir(DeployLogger deployLogger) {
-        String name = "/tmp/deploy_ranksetup_" + System.currentTimeMillis() + "/";
-        File tempDir = new File(name);
-        if (!tempDir.mkdir()) {
-            deployLogger.log(Level.WARNING, "Not able to create '" + name + "' when validating rank setup");
-            return null;
-        }
-        return tempDir;
-    }
 }
