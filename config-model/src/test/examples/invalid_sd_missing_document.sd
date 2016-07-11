@@ -1,0 +1,7 @@
+search imageconfig {
+
+	field key type string {
+		indexing: summary | attribute
+	}
+
+}

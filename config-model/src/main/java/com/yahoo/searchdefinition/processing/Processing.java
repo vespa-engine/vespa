@@ -28,9 +28,9 @@ public class Processing {
                                RankProfileRegistry rankProfileRegistry,
                                QueryProfiles queryProfiles) {
         search.process();
+        new SearchMustHaveDocument(search, deployLogger, rankProfileRegistry, queryProfiles).process();
         new UrlFieldValidator(search, deployLogger, rankProfileRegistry, queryProfiles).process();
         new BuiltInFieldSets(search, deployLogger, rankProfileRegistry, queryProfiles).process();
-        new SearchMustHaveDocument(search, deployLogger, rankProfileRegistry, queryProfiles).process();
         new ReservedDocumentNames(search, deployLogger, rankProfileRegistry, queryProfiles).process();
         new IndexFieldNames(search, deployLogger, rankProfileRegistry, queryProfiles).process();
         new IntegerIndex2Attribute(search, deployLogger, rankProfileRegistry, queryProfiles).process();
