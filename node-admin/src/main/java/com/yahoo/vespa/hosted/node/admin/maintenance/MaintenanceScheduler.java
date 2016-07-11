@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.io.IOUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,8 +44,8 @@ public class MaintenanceScheduler implements Runnable {
                 try {
                     MaintenanceJob job = jobQueue.remove();
                     Process p = Runtime.getRuntime().exec("scripts/maintenance.sh " + String.join(" ", job.getArgs()));
-                    String output = inputStreamToString(p.getInputStream());
-                    String errors = inputStreamToString(p.getErrorStream());
+                    String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
+                    String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
                     if (! output.isEmpty()) log.log(Level.INFO, output);
                     if (! errors.isEmpty()) log.log(Level.SEVERE, errors);
@@ -54,17 +56,6 @@ public class MaintenanceScheduler implements Runnable {
         } catch (RuntimeException e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + rate.toMinutes() + " minutes", e);
         }
-    }
-
-    private static String inputStreamToString(InputStream outputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(outputStream));
-
-        String line;
-        StringBuilder stringBuilder = new StringBuilder();
-        while((line = bufferedReader.readLine()) != null) {
-            stringBuilder.append(line).append("\r\n");
-        }
-        return stringBuilder.toString();
     }
 
     public void deconstruct() {
