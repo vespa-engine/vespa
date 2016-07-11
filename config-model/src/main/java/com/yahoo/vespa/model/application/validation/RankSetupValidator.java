@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.logging.Logger;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
@@ -36,6 +37,7 @@ import java.time.Instant;
  *
  */
 public class RankSetupValidator extends Validator {
+    private static final Logger log = Logger.getLogger(RankSetupValidator.class.getName());
     private final boolean force;
 
     public RankSetupValidator(boolean force) {
@@ -68,15 +70,19 @@ public class RankSetupValidator extends Validator {
         }
     }
 
-    private boolean validate(String configId, SearchCluster searchCluster, String sdName, DeployLogger logger, File tempDir) {
+    private boolean validate(String configId, SearchCluster searchCluster, String sdName, DeployLogger deployLogger, File tempDir) {
         Instant start = Instant.now();
         try {
-            boolean ret = execValidate(configId, searchCluster, sdName, logger);
+            boolean ret = execValidate(configId, searchCluster, sdName, deployLogger);
             if (!ret) {
                 // Give up, don't say same error msg repeatedly
                 deleteTempDir(tempDir);
             }
-            logger.log(LogLevel.DEBUG, String.format("Validating %s for %s, %s took %s ms", sdName, searchCluster, configId, Duration.between(start, Instant.now()).toMillis()));
+            log.log(LogLevel.DEBUG, String.format("Validating %s for %s, %s took %s ms",
+                                                  sdName,
+                                                  searchCluster,
+                                                  configId,
+                                                  Duration.between(start, Instant.now()).toMillis()));
             return ret;
         } catch (IllegalArgumentException e) {
             deleteTempDir(tempDir);
@@ -111,28 +117,28 @@ public class RankSetupValidator extends Validator {
         IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(ConfigInstance.serialize(config)), false);
     }
 
-    private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger logger) {
+    private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
         String job = "verify_ranksetup-bin " + configId;
         ProcessExecuter executer = new ProcessExecuter();
         try {
             Pair<Integer, String> ret = executer.exec(job);
             if (ret.getFirst() != 0) {
-                validateFail(ret.getSecond(), sc, sdName, logger);
+                validateFail(ret.getSecond(), sc, sdName, deployLogger);
             }
         } catch (IOException e) {
-            validateWarn(e, logger);
+            validateWarn(e, deployLogger);
             return false;
         }
         return true;
     }
 
-    private void validateWarn(Exception e, DeployLogger logger) {
+    private void validateWarn(Exception e, DeployLogger deployLogger) {
         String msg = "Unable to execute 'verify_ranksetup', validation of rank expressions will only take place when you start Vespa: " +
                 Exceptions.toMessageString(e);
-        logger.log(LogLevel.WARNING, msg);
+        deployLogger.log(LogLevel.WARNING, msg);
     }
 
-    private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger logger) {
+    private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
         String errMsg = "For search cluster '" + sc.getClusterName() + "', search definition '" + sdName + "': error in rank setup. Details:\n";
         for (String line : output.split("\n")) {
             // Remove debug lines from start script
@@ -145,7 +151,7 @@ public class RankSetupValidator extends Validator {
             }
         }
         if (force) {
-            logger.log(LogLevel.WARNING, errMsg + "(Continuing because of force.)");
+            deployLogger.log(LogLevel.WARNING, errMsg + "(Continuing because of force.)");
         } else {
             throw new IllegalArgumentException(errMsg);
         }
