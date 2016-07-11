@@ -7,6 +7,7 @@ import io.airlift.command.SingleCommand;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.time.Duration;
 
 /**
  * @author valerijf
@@ -36,7 +37,7 @@ public class DeleteOldAppData {
     }
 
 
-    public static void deleteOldAppData(String path, int maxAgeSeconds, String prefix, String suffix) {
+    public static void deleteOldAppData(String path, long maxAgeSeconds, String prefix, String suffix) {
         File deleteFolder = new File(path);
         File[] filesInDeleteFolder = deleteFolder.listFiles();
 
@@ -76,7 +77,7 @@ public class DeleteOldAppData {
 
     @Option(name = {"--max_age"},
             description = "Delete files older than (in seconds)")
-    private int maxAge = 0;
+    private long maxAge = Duration.ofDays(7).getSeconds();
 
     @Option(name = {"--prefix"},
             description = "Delete files that start with prefix")
