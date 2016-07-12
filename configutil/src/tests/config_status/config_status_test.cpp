@@ -57,7 +57,7 @@ public:
     ConfigStatus::Flags flags;
     std::unique_ptr<ConfigStatus> status;
 
-    Status(int httpport,
+    Status(int http_port,
            const ConfigStatus::Flags& cfg_flags,
            const std::vector<std::string>& model_hosts)
         : flags(cfg_flags)
@@ -68,7 +68,7 @@ public:
         cloud::config::ModelConfigBuilder builder;
         
         cloud::config::ModelConfigBuilder::Hosts::Services::Ports port;
-        port.number = httpport;
+        port.number = http_port;
         port.tags = "http state";
 
         cloud::config::ModelConfigBuilder::Hosts::Services service;
@@ -93,8 +93,8 @@ public:
         status = std::move(s);
     }
 
-    Status(int httpport)
-        : Status(httpport, ConfigStatus::Flags(), {{"localhost"}})
+    Status(int http_port)
+        : Status(http_port, ConfigStatus::Flags(), {{"localhost"}})
     {}
 
     ~Status() {
