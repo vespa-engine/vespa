@@ -1,0 +1,10 @@
+#!/bin/sh
+
+
+if [ -z "$CLASSPATH" ]; then
+    CLASSPATH=/home/y/lib/jars/node-admin-maintenance-jar-with-dependencies.jar
+fi
+
+java \
+        -cp $CLASSPATH \
+        com.yahoo.vespa.hosted.node.admin.maintenance.Maintainer "$@"
