@@ -11,6 +11,7 @@ import io.airlift.command.ParseOptionMissingException;
  * @author valerijf
  */
 public class Maintainer {
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("maintainer.jar")
                 .withDescription("This tool makes it easy to delete old log files and other node-admin app data.")
