@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.test.VespaModelTester;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -458,7 +459,7 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(5, clusterControllers.getContainers().size());
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
     }
 
     public void testClusterControllersAreNotPlacedOnRetiredNodes() {
@@ -625,9 +626,10 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(3, clusterControllers.getContainers().size());
+        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
     }
 
+    @Ignore // TODO: unignore when feature is enabled again
     @Test
     public void test2ContentNodesOn2ClustersWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
         String services =
@@ -661,7 +663,7 @@ public class ModelProvisioningTest {
 
         ContentCluster cluster1 = model.getContentClusters().get("content1");
         ContainerCluster clusterControllers1 = cluster1.getClusterControllers();
-        assertEquals(3, clusterControllers1.getContainers().size());
+        assertEquals(1, clusterControllers1.getContainers().size());
         assertEquals("content1-node0",  clusterControllers1.getContainers().get(0).getHostName());
         assertEquals("content1-node1",  clusterControllers1.getContainers().get(1).getHostName());
         assertEquals("container-node0", clusterControllers1.getContainers().get(2).getHostName());
