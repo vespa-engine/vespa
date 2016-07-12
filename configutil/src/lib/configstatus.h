@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "hostfilter.h"
 #include <vespa/config-model.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/config.h>
@@ -9,9 +10,15 @@ class ConfigStatus
 {
 public:
     struct Flags {
+        HostFilter host_filter;
         bool verbose;
         Flags()
-            : verbose(false)
+            : host_filter(), verbose(false)
+        {}
+
+        explicit Flags(const HostFilter& filter)
+            : host_filter(filter),
+              verbose(false)
         {}
     };
 

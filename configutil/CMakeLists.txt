@@ -19,4 +19,5 @@ vespa_define_module(
     src/tests/config_status
     src/tests/model_inspect
     src/tests/tags
+    src/tests/host_filter
     )

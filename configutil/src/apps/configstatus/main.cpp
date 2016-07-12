@@ -3,17 +3,19 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/defaults.h>
 #include <vespa/log/log.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 LOG_SETUP("vespa-config-status");
 #include <iostream>
 #include <lib/configstatus.h>
+#include <lib/hostfilter.h>
 
-class Application : public FastOS_Application
-{
+class Application : public FastOS_Application {
     ConfigStatus::Flags _flags;
     vespalib::string _cfgId;
     vespalib::string _specString;
     int parseOpts();
     vespalib::string getSources();
+    HostFilter parse_host_set(vespalib::stringref raw_arg) const;
 public:
     void usage(void);
     int Main(void);
@@ -21,13 +23,11 @@ public:
     Application() : _flags(), _cfgId("admin/model"), _specString("") {}
 };
 
-int
-Application::parseOpts()
-{
+int Application::parseOpts() {
     char c = '?';
     const char *optArg = NULL;
     int optInd = 0;
-    while ((c = GetOpt("c:s:vC:", optArg, optInd)) != -1) {
+    while ((c = GetOpt("c:s:vC:f:", optArg, optInd)) != -1) {
         switch (c) {
         case 'v':
             _flags.verbose = true;
@@ -41,6 +41,9 @@ Application::parseOpts()
         case 'h':
             usage();
             exit(0);
+        case 'f':
+            _flags.host_filter = parse_host_set(optArg);
+            break;
         default:
             usage();
             exit(1);
@@ -52,21 +55,28 @@ Application::parseOpts()
     return optInd;
 }
 
+HostFilter Application::parse_host_set(vespalib::stringref raw_arg) const {
+    vespalib::StringTokenizer tokenizer(raw_arg, ",");
+    tokenizer.removeEmptyTokens();
 
-void
-Application::usage(void)
-{
-    std::cerr <<
-        "vespa-config-status version 1.0"                                  << std::endl <<
-        "Usage: " << _argv[0] << " [options] "                             << std::endl <<
-        "options: [-v] for verbose"                                        << std::endl <<
-        "         [-c host] or [-c host:port] to specify config server"    << std::endl <<
-        std::endl;
+    HostFilter::HostSet hosts;
+    for (auto& host : tokenizer) {
+        hosts.emplace(host);
+    }
+    return HostFilter(std::move(hosts));
 }
 
-int
-Application::Main(void)
-{
+void Application::usage() {
+    std::cerr << "vespa-config-status version 1.0\n"
+              << "Usage: " << _argv[0] << " [options]\n"
+              << "options: [-v] for verbose\n"
+              << "         [-c host] or [-c host:port] to specify config server\n"
+              << "         [-f host0,...,hostN] filter to only query config\n"
+                 "         status for the given comma-separated set of hosts\n"
+              << std::endl;
+}
+
+int Application::Main() {
     parseOpts();
 
     config::ServerSpec spec(_specString);
@@ -76,9 +86,7 @@ Application::Main(void)
     return status.action();
 }
 
-vespalib::string
-Application::getSources(void)
-{
+vespalib::string Application::getSources() {
     vespalib::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
         if (! specs.empty()) specs += ",";
@@ -87,9 +95,7 @@ Application::getSources(void)
     return specs;
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     Application app;
     return app.Entry(argc, argv);
 }
