@@ -9,6 +9,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -31,6 +32,7 @@ public class ClusterStateGenerator {
         public double minRatioOfStorageNodesUp = 0.0;
         public double minRatioOfDistributorNodesUp = 0.0;
         public double minNodeRatioPerGroup = 0.0;
+        public int idealDistributionBits = 16;
 
         Params() {
             this.transitionTimes = buildTransitionTimeMap(0, 0);
@@ -84,6 +86,11 @@ public class ClusterStateGenerator {
             return this;
         }
 
+        Params idealDistributionBits(int distributionBits) {
+            this.idealDistributionBits = distributionBits;
+            return this;
+        }
+
         static Params fromOptions(FleetControllerOptions opts) {
             return new Params();
         } // TODO
@@ -97,25 +104,32 @@ public class ClusterStateGenerator {
         }
     }
 
+    private static boolean nodeIsConsideredTooUnstable(final NodeInfo nodeInfo, final Params params) {
+        return (params.maxPrematureCrashes != 0
+                && nodeInfo.getPrematureCrashCount() > params.maxPrematureCrashes);
+    }
+
+    private static void applyWantedStateToBaselineState(final NodeState baseline, final NodeState wanted) {
+        // Only copy state and description from Wanted state; this preserves auxiliary
+        // information such as disk states and startup timestamp.
+        baseline.setState(wanted.getState());
+        baseline.setDescription(wanted.getDescription());
+    }
+
     private static NodeState computeEffectiveNodeState(final NodeInfo nodeInfo, final Params params) {
         final NodeState reported = nodeInfo.getReportedState();
         final NodeState wanted = nodeInfo.getWantedState();
 
         NodeState baseline = reported.clone();
 
-        if (params.maxPrematureCrashes != 0 && nodeInfo.getPrematureCrashCount() > params.maxPrematureCrashes) {
+        if (nodeIsConsideredTooUnstable(nodeInfo, params)) {
             baseline.setState(State.DOWN);
         }
-
         if (startupTimestampAlreadyObservedByAllNodes(nodeInfo, baseline)) {
             baseline.setStartTimestamp(0);
         }
-
         if (reported.above(wanted)) {
-            // Only copy state and description from Wanted state; this preserves auxiliary
-            // information such as disk states and startup timestamp.
-            baseline.setState(wanted.getState());
-            baseline.setDescription(wanted.getDescription());
+            applyWantedStateToBaselineState(baseline, wanted);
         }
         // FIXME make the below maintenance transitions more explicit that they can only
         // happen for storage nodes, not for distributors.
@@ -126,7 +140,6 @@ public class ClusterStateGenerator {
         if (reported.getState() == State.INITIALIZING && wanted.getState() == State.RETIRED) {
             baseline.setState(State.MAINTENANCE);
         }
-
         if (withinTemporalMaintenancePeriod(nodeInfo, baseline, params)
                 && wanted.getState() == State.UP)
         {
@@ -169,6 +182,32 @@ public class ClusterStateGenerator {
         }
     }
 
+    private static Node storageNode(int index) {
+        return new Node(NodeType.STORAGE, index);
+    }
+
+    // TODO we'll want to explicitly persist a bit upper bound in ZooKeeper and ensure we
+    // never go below it (this is not the case today). Nodes that have min bits lower than
+    // this will just have to start splitting out in the background before being allowed
+    // to join the cluster.
+
+    private static int inferDistributionBitCount(final ContentCluster cluster,
+                                                 final ClusterState state,
+                                                 final Params params)
+    {
+        int bitCount = params.idealDistributionBits;
+        Optional<Integer> minBits = cluster.getConfiguredNodes().values().stream()
+                .map(configuredNode -> cluster.getNodeInfo(storageNode(configuredNode.index())))
+                .filter(node -> state.getNodeState(node.getNode()).getState().oneOf("iur"))
+                .map(nodeInfo -> nodeInfo.getReportedState().getMinUsedBits())
+                .min(Integer::compare);
+        if (minBits.isPresent() && minBits.get() < bitCount) {
+            bitCount = minBits.get();
+        }
+
+        return bitCount;
+    }
+
     public static ClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
         ClusterState workingState = emptyClusterState();
@@ -182,12 +221,15 @@ public class ClusterStateGenerator {
         if (!sufficientNodesAreAvailbleInCluster(workingState, params)) {
             workingState.setClusterState(State.DOWN);
         }
+        workingState.setDistributionBits(inferDistributionBitCount(cluster, workingState, params));
 
         return workingState;
     }
 
     private static boolean nodeStateIsConsideredAvailable(NodeState ns) {
-        return (ns.getState() == State.UP || ns.getState() == State.RETIRED || ns.getState() == State.INITIALIZING);
+        return (ns.getState() == State.UP
+                || ns.getState() == State.RETIRED
+                || ns.getState() == State.INITIALIZING);
     }
 
     private static long countAvailableNodesOfType(final NodeType type,
@@ -241,10 +283,12 @@ public class ClusterStateGenerator {
      *  - DONE - node startup timestamp inclusion if not all distributors have observed timestamps
      *  - DONE - min node count (distributor, storage) in state up for cluster to be up
      *  - DONE - min node ratio (distributor, storage) in state up for cluster to be up
-     *  - WIP - implicit group node availability (only down-edge has to be considered, huzzah!)
+     *  - DONE - implicit group node availability (only down-edge has to be considered, huzzah!)
+     *  - DONE - distribution bits inferred from storage nodes
+     *  - DONE - distribution bits inferred from nodes in states IUR only
+     *  - DONE - distribution bits inferred from config
      *  - max init progress time (reported init -> generated down)
      *  - slobrok disconnect grace period (reported down -> generated down)
-     *  - distribution bits inferred from storage nodes and config
      *  - generation of accurate edge events for state deltas <- this is a sneaky one
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)
      *  - reverse init progress(?)

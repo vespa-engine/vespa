@@ -548,6 +548,55 @@ public class ClusterStateGeneratorTest {
                 ".3.s:d .3.m:mockdesc")); // Preserve description for non-implicitly taken down node
     }
 
+    /**
+     * Cluster-wide distribution bit count cannot be higher than the lowest split bit
+     * count reported by the set of storage nodes. This is because the distribution bit
+     * directly impacts which level of the bucket tree is considered the root level,
+     * and any buckets caught over this level would not be accessible in the data space.
+     */
+    @Test
+    public void distribution_bits_bounded_by_reported_min_bits_by_storage_node() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7));
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("bits:7 distributor:3 storage:3"));
+    }
+
+    @Test
+    public void distribution_bits_bounded_by_lowest_reporting_storage_node() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(6))
+                .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(5));
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("bits:5 distributor:3 storage:3"));
+    }
+
+    @Test
+    public void distribution_bits_bounded_by_config_parameter() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3).bringEntireClusterUp();
+
+        final ClusterStateGenerator.Params params = fixture.generatorParams().idealDistributionBits(12);
+        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("bits:12 distributor:3 storage:3"));
+    }
+
+    @Test
+    public void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7))
+                .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.DOWN).setMinUsedBits(6))
+                .reportStorageNodeState(2, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(5))
+                .proposeStorageNodeWantedState(2, State.MAINTENANCE);
+
+        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("bits:7 distributor:3 storage:3 .1.s:d .2.s:m"));
+    }
+
     // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 
     // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions? outdated RPC already sets Down
