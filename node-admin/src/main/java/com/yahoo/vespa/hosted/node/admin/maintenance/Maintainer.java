@@ -1,11 +1,11 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
-import io.airlift.command.Cli;
-import io.airlift.command.Command;
-import io.airlift.command.Help;
-import io.airlift.command.Option;
-import io.airlift.command.ParseArgumentsUnexpectedException;
-import io.airlift.command.ParseOptionMissingException;
+import io.airlift.airline.Cli;
+import io.airlift.airline.Command;
+import io.airlift.airline.Help;
+import io.airlift.airline.Option;
+import io.airlift.airline.ParseArgumentsUnexpectedException;
+import io.airlift.airline.ParseOptionMissingException;
 
 /**
  * @author valerijf
