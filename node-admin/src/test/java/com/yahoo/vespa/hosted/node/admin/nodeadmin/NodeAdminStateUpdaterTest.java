@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,9 +53,9 @@ public class NodeAdminStateUpdaterTest {
         NodeAdmin nodeAdmin = mock(NodeAdmin.class);
         final List<ContainerNodeSpec> accumulatedArgumentList = Collections.synchronizedList(new ArrayList<>());
         final CountDownLatch latch = new CountDownLatch(5);
-        doAnswer((Answer<Object>) invocation -> {
+        doAnswer(invocation -> {
             List<ContainerNodeSpec> containersToRunInArgument = (List<ContainerNodeSpec>) invocation.getArguments()[0];
-            containersToRunInArgument.forEach(element -> accumulatedArgumentList.add(element));
+            containersToRunInArgument.forEach(accumulatedArgumentList::add);
             latch.countDown();
             if (accumulatedArgumentList.size() == 2) {
                 throw new RuleBaseException("This exception is expected, and should show up in the log.");
