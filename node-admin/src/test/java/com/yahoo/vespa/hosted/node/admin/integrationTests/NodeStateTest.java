@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -93,40 +94,40 @@ public class NodeStateTest {
     }
 
 
-//    @Test
-//    public void activeToDirty() throws InterruptedException, IOException {
-//        // Change node state to dirty
-//        NodeRepoMock.updateContainerNodeSpec(
-//                initialContainerNodeSpec.hostname,
-//                initialContainerNodeSpec.wantedDockerImage,
-//                initialContainerNodeSpec.containerName,
-//                NodeState.DIRTY,
-//                initialContainerNodeSpec.wantedRestartGeneration,
-//                initialContainerNodeSpec.currentRestartGeneration,
-//                initialContainerNodeSpec.minCpuCores,
-//                initialContainerNodeSpec.minMainMemoryAvailableGb,
-//                initialContainerNodeSpec.minDiskAvailableGb);
-//
-//        // Wait until it is marked ready
-//        Optional<ContainerNodeSpec> containerNodeSpec;
-//        while ((containerNodeSpec = nodeRepositoryMock.getContainerNodeSpec(hostName)).isPresent()
-//                && containerNodeSpec.get().nodeState != NodeState.READY) {
-//            Thread.sleep(10);
-//        }
-//
-//        assertThat(nodeRepositoryMock.getContainerNodeSpec(hostName).get().nodeState, is(NodeState.READY));
-//
-//
-//        // Wait until docker receives deleteContainer request
-//        String expectedDockerRequests = "stopContainer with ContainerName: ContainerName { name=container }\n" +
-//                "deleteContainer with ContainerName: ContainerName { name=container }\n" +
-//                "deleteApplicationStorage with ContainerName: ContainerName { name=container }\n";
-//        while (!DockerMock.getRequests().endsWith(expectedDockerRequests)) {
-//            Thread.sleep(10);
-//        }
-//
-//        assertThat(DockerMock.getRequests(), endsWith(expectedDockerRequests));
-//    }
+    @Test
+    public void activeToDirty() throws InterruptedException, IOException {
+        // Change node state to dirty
+        NodeRepoMock.updateContainerNodeSpec(
+                initialContainerNodeSpec.hostname,
+                initialContainerNodeSpec.wantedDockerImage,
+                initialContainerNodeSpec.containerName,
+                NodeState.DIRTY,
+                initialContainerNodeSpec.wantedRestartGeneration,
+                initialContainerNodeSpec.currentRestartGeneration,
+                initialContainerNodeSpec.minCpuCores,
+                initialContainerNodeSpec.minMainMemoryAvailableGb,
+                initialContainerNodeSpec.minDiskAvailableGb);
+
+        // Wait until it is marked ready
+        Optional<ContainerNodeSpec> containerNodeSpec;
+        while ((containerNodeSpec = nodeRepositoryMock.getContainerNodeSpec(hostName)).isPresent()
+                && containerNodeSpec.get().nodeState != NodeState.READY) {
+            Thread.sleep(10);
+        }
+
+        assertThat(nodeRepositoryMock.getContainerNodeSpec(hostName).get().nodeState, is(NodeState.READY));
+
+
+        // Wait until docker receives deleteContainer request
+        String expectedDockerRequests = "stopContainer with ContainerName: ContainerName { name=container }\n" +
+                "deleteContainer with ContainerName: ContainerName { name=container }\n" +
+                "deleteApplicationStorage with ContainerName: ContainerName { name=container }\n";
+        while (!DockerMock.getRequests().endsWith(expectedDockerRequests)) {
+            Thread.sleep(10);
+        }
+
+        assertThat(DockerMock.getRequests(), endsWith(expectedDockerRequests));
+    }
 
 
     @Test

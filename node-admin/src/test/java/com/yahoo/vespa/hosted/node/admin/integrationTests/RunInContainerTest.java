@@ -13,7 +13,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -48,6 +47,9 @@ public class RunInContainerTest {
             throw new RuntimeException(e);
         }
         OrchestratorMock.reset();
+        NodeRepoMock.reset();
+        DockerMock.reset();
+
         port = findRandomOpenPort();
         System.out.println("PORT IS " + port);
         container = JDisc.fromServicesXml(createServiceXml(port), Networking.enable);
@@ -107,7 +109,6 @@ public class RunInContainerTest {
     }
 
     @Test
-    @Ignore
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
@@ -115,7 +116,7 @@ public class RunInContainerTest {
         assertThat(doPutCall("suspend"), is(false));
         assertThat(OrchestratorMock.getRequests(), is("Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]\n"));
 
-        assertThat(doGetInfoCall(), is("{\"isRunningUpdates\":false,\"baseHostName\":\"localhost\",\"NodeAdmin\":{\"NodeAgents\":[]}}"));
+        assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }
 
 
