@@ -42,7 +42,7 @@ public class DeleteOldAppDataTest {
 
     @Test
     public void testDeleteAll() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(0));
     }
@@ -50,42 +50,42 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteAllDefaultMaxAge() {
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(),
-                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, null, false);
+                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(22));
     }
 
     @Test
     public void testDeletePrefix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_", false);
 
         assertThat(folder.getRoot().listFiles().length, is(6)); // 5 abc files + 1 week_old_file
     }
 
     @Test
     public void testDeleteSuffix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, ".json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(7));
     }
 
     @Test
     public void testDeletePrefixAndSuffix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(13)); // 5 abc files + 7 test_*_file.test files + week_old_file
     }
 
     @Test
     public void testDeleteOld() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 600, null, null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 600, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(13)); // All 23 - 6 (from test_*_.json) - 3 (from test_*_file.test) - 1 week old file
     }
 
     @Test
     public void testDeleteWithAllParameters() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 200, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 200, "^test_.*\\.json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(15)); // All 23 - 8 (from test_*_.json)
     }
@@ -93,7 +93,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteWithSubDirectoriesNoRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", false);
 
         // 6 test_*.json from subFolder1/
         // + 9 test_*.json and 4 abc_*.json from subFolder2/
@@ -106,7 +106,7 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteWithSubDirectoriesRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", true);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", true);
 
         // 4 abc_*.json from subFolder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root

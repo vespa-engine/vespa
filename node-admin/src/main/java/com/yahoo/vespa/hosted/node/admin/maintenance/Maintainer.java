@@ -64,17 +64,13 @@ public class Maintainer {
                 description = "Delete files older than (in seconds)")
         private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
 
-        @Option(name = {"--prefix"},
-                description = "Delete files that start with prefix")
-        private String prefix;
-
-        @Option(name = {"--suffix"},
-                description = "Delete files that end with suffix")
-        private String suffix;
+        @Option(name = {"--name"},
+                description = "Delete files where name matches the regex")
+        private String name;
 
         @Override
         public void run() {
-            DeleteOldAppData.deleteFiles(path, maxAge, prefix, suffix, false);
+            DeleteOldAppData.deleteFiles(path, maxAge, name, false);
         }
     }
 }

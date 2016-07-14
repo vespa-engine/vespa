@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.regex.Pattern;
 
 /**
  * @author valerijf
@@ -15,13 +16,13 @@ public class DeleteOldAppData {
      *
      * @param basePath       Base path from where to start the search
      * @param maxAgeSeconds  Delete files older (last modified date) than maxAgeSeconds
-     * @param fileNamePrefix Delete files with filename starting with fileNamePrefix
-     * @param fileNameSuffix Delete files with filename (including extension) ending with fileNameSuffix
+     * @param fileName       Delete files where regex matches against filename
      * @param recursive      Delete files in sub-directories (with the same criteria)
      */
-    public static void deleteFiles(String basePath, long maxAgeSeconds, String fileNamePrefix, String fileNameSuffix, boolean recursive) {
+    public static void deleteFiles(String basePath, long maxAgeSeconds, String fileName, boolean recursive) {
         File deleteDirectory = new File(basePath);
         File[] filesInDeleteDirectory = deleteDirectory.listFiles();
+        Pattern fileNamePattern = fileName != null ? Pattern.compile(fileName) : null;
 
         if (filesInDeleteDirectory == null) {
             throw new IllegalArgumentException("The specified path is not a directory");
@@ -29,12 +30,11 @@ public class DeleteOldAppData {
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() && recursive) {
-                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNamePrefix, fileNameSuffix, true);
+                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileName, true);
                 if (file.list().length == 0 && !file.delete()) {
                     System.err.println("Could not delete directory: " + file.getAbsolutePath());
                 }
-            } else if ((fileNamePrefix == null || file.getName().startsWith(fileNamePrefix))
-                    && (fileNameSuffix == null || file.getName().endsWith(fileNameSuffix))) {
+            } else if (fileNamePattern == null || fileNamePattern.matcher(file.getName()).find()) {
                 if (file.lastModified() + maxAgeSeconds * 1000 < System.currentTimeMillis()) {
                     if (!file.delete()) {
                         System.err.println("Could not delete file: " + file.getAbsolutePath());
@@ -65,7 +65,7 @@ public class DeleteOldAppData {
                     (dirNamePrefix == null || file.getName().startsWith(dirNamePrefix)) &&
                     (dirNameSuffix == null || file.getName().endsWith(dirNameSuffix)) &&
                     file.lastModified() + maxAgeSeconds * 1000 < System.currentTimeMillis()) {
-                deleteFiles(file.getPath(), 0, null, null, true);
+                deleteFiles(file.getPath(), 0, null, true);
                 if (file.list().length == 0 && !file.delete()) {
                     System.err.println("Could not delete directory: " + file.getAbsolutePath());
                 }
