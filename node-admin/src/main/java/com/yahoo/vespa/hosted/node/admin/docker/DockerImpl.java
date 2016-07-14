@@ -75,6 +75,8 @@ public class DockerImpl implements Docker {
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
+    public static final String APP_DATA_DIRECTORY_PREFIX = "cleanup_";
+
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -206,7 +208,7 @@ public class DockerImpl implements Docker {
             log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
-        Path to = applicationStoragePathForNodeAdmin("cleanup_" + containerName.asString() + "_" + filenameFormatter
+        Path to = applicationStoragePathForNodeAdmin(APP_DATA_DIRECTORY_PREFIX + containerName.asString() + "_" + filenameFormatter
                 .format(Date.from(Instant.now())));
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         Files.move(from, to);
