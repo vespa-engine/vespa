@@ -29,7 +29,7 @@ public class Maintainer {
 
 
     @Command(name = "delete-old-app-data", description = "Deletes all data within a folder and its sub-folders which matches the criteria")
-    private static class DeleteOldAppDataArguments implements Runnable {
+    public static class DeleteOldAppDataArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
                 description = "Path to directory which contains the app data")
@@ -54,7 +54,7 @@ public class Maintainer {
     }
 
     @Command(name = "delete-old-logs", description = "Deletes all log files that match the criteria in path")
-    private static class DeleteOldLogsArguments implements Runnable {
+    public static class DeleteOldLogsArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
                 description = "Path to directory which contains the app data")
