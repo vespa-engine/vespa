@@ -4,6 +4,7 @@ import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.event
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.ClusterEventWithDescription.clusterEventWithDescription;
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -19,8 +20,10 @@ import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class EventDiffCalculatorTest {
 
@@ -52,12 +55,13 @@ public class EventDiffCalculatorTest {
 
     private static class EventFixture {
         final ClusterFixture clusterFixture;
+        // TODO could reasonably put shared state into a common class to avoid dupes for both before/after
         ClusterStateReason clusterReasonBefore = emptyClusterStateReason();
         ClusterStateReason clusterReasonAfter = emptyClusterStateReason();
-        Map<Node, NodeStateReason> nodeReasonsBefore = emptyNodeStateReasons();
-        Map<Node, NodeStateReason> nodeReasonsAfter = emptyNodeStateReasons();
         ClusterState clusterStateBefore = clusterState("");
         ClusterState clusterStateAfter = clusterState("");
+        final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
+        final Map<Node, NodeStateReason> nodeReasonsAfter = new HashMap<>();
 
         EventFixture(int nodeCount) {
             this.clusterFixture = ClusterFixture.forFlatCluster(nodeCount);
@@ -69,6 +73,14 @@ public class EventDiffCalculatorTest {
         }
         EventFixture clusterStateAfter(String stateStr) {
             clusterStateAfter = clusterState(stateStr);
+            return this;
+        }
+        EventFixture storageNodeReasonBefore(int index, NodeStateReason reason) {
+            nodeReasonsBefore.put(storageNode(index), reason);
+            return this;
+        }
+        EventFixture storageNodeReasonAfter(int index, NodeStateReason reason) {
+            nodeReasonsAfter.put(storageNode(index), reason);
             return this;
         }
 
@@ -98,7 +110,7 @@ public class EventDiffCalculatorTest {
                 .clusterStateAfter("distributor:3 storage:3 .0.s:d");
 
         final List<Event> events = fixture.computeEventDiff();
-        assertEquals(events.size(), 1);
+        assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
                 nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
@@ -111,10 +123,29 @@ public class EventDiffCalculatorTest {
                 .clusterStateAfter("distributor:3 .1.s:d storage:3");
 
         final List<Event> events = fixture.computeEventDiff();
-        assertEquals(events.size(), 1);
+        assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(distributorNode(1)),
                 nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+    }
+
+    @Test
+    public void multiple_node_state_transitions_emit_multiple_node_state_events() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3 .1.s:d")
+                .clusterStateAfter("distributor:3 .2.s:d storage:3 .0.s:r");
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(3));
+        assertThat(events, hasItem(allOf(
+                eventForNode(distributorNode(2)),
+                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(0)),
+                nodeEventWithDescription("Altered node state in cluster from 'U' to 'R'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Altered node state in cluster from 'D' to 'U'"))));
     }
 
     @Test
@@ -124,7 +155,60 @@ public class EventDiffCalculatorTest {
                 .clusterStateAfter("distributor:3 storage:3");
 
         final List<Event> events = fixture.computeEventDiff();
-        assertEquals(events.size(), 0);
+        assertThat(events.size(), equalTo(0));
+    }
+
+    @Test
+    public void node_down_edge_with_group_down_reason_has_separate_event_emitted() {
+        // We sneakily use a flat cluster here but still use a 'group down' reason. Differ doesn't currently care.
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3 .1.s:d")
+                .storageNodeReasonAfter(1, NodeStateReason.GROUP_IS_DOWN);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        // Both the regular edge event and the group down event is emitted
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Setting node down as the total availability of " +
+                                         "its group is below the configured threshold"))));
+    }
+
+    @Test
+    public void group_down_to_group_down_does_not_emit_new_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3 .1.s:d")
+                .clusterStateAfter("distributor:3 storage:3 .1.s:m")
+                .storageNodeReasonBefore(1, NodeStateReason.GROUP_IS_DOWN)
+                .storageNodeReasonAfter(1, NodeStateReason.GROUP_IS_DOWN);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        // Should not get a group availability event since nothing has changed in this regard
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Altered node state in cluster from 'D' to 'M'"))));
+    }
+
+    @Test
+    public void group_down_to_clear_reason_emits_group_up_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3 .2.s:d")
+                .clusterStateAfter("distributor:3 storage:3")
+                .storageNodeReasonBefore(2, NodeStateReason.GROUP_IS_DOWN); // But no after-reason.
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(2)),
+                nodeEventWithDescription("Altered node state in cluster from 'D' to 'U'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(2)),
+                nodeEventWithDescription("Group node availability restored; taking node back up"))));
     }
 
     @Test
@@ -134,10 +218,12 @@ public class EventDiffCalculatorTest {
                 .clusterStateAfter("distributor:3 storage:3");
 
         final List<Event> events = fixture.computeEventDiff();
-        assertEquals(events.size(), 1);
+        assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(
                 clusterEventWithDescription("Enough nodes available for system to become up")));
     }
+
+    // TODO test cluster down edges (no reason + different reasons)
 
     // TODO test type of event (CURRENT vs REPORTED etc)
     // TODO test and handle that events are created with correct time!
