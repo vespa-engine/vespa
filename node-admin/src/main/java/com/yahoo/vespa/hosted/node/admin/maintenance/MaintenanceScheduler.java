@@ -29,7 +29,7 @@ public class MaintenanceScheduler implements Runnable {
         addJob("delete-old-app-data",
                 "--path=/host/home/docker/container-storage",
                 "--max_age=" + Duration.ofDays(7).getSeconds(),
-                "--prefix=" + DockerImpl.APP_DATA_DIRECTORY_PREFIX);
+                "--prefix=" + DockerImpl.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
     }
 
     public static void addJob(String... args) {
