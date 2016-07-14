@@ -8,9 +8,11 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author valerijf
@@ -114,10 +116,63 @@ public class DeleteOldAppDataTest {
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(18));
     }
 
+    @Test
+    public void testDeleteFilesWhereFilenameRegexAlsoMatchesDirectories() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_", false);
+
+        assertThat(folder.getRoot().listFiles().length, is(8)); // 5 abc files + 1 week_old_file + 2 directories
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDeleteWithInvalidBasePath() throws IOException {
+        DeleteOldAppData.deleteFiles("/some/made/up/dir/", 0, null, false);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDeleteFilesExceptNMostRecentWithNegativeN() {
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), -5);
+    }
+
+    @Test
+    public void testDeleteFilesExceptFiveMostRecent() {
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), 5);
+
+        assertThat(folder.getRoot().listFiles().length, is(5));
+
+        String[] oldestFiles = {"test_5_file.test", "test_6_file.test", "test_8.json", "test_9.json", "week_old_file.json"};
+        String[] remainingFiles = folder.getRoot().list();
+        Arrays.sort(remainingFiles);
+
+        assertArrayEquals(oldestFiles, remainingFiles);
+    }
+
+    @Test
+    public void testDeleteFilesExceptNMostRecentWithLargeN() {
+        String[] filesPreDelete = folder.getRoot().list();
+
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), 50);
+
+        assertArrayEquals(filesPreDelete, folder.getRoot().list());
+    }
+
+    @Test
+    public void testDeleteDirectories() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteDirectories(folder.getRoot().getAbsolutePath(), 0, ".*folder2");
+
+        //23 files in root
+        // + 6 in test_folder1 + test_folder1 itself
+        assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(30));
+    }
+
+
     private void initSubDirectories() throws IOException {
-        File subFolder1 = folder.newFolder("subFolder1");
-        File subFolder2 = folder.newFolder("subFolder2");
-        File subSubFolder2 = folder.newFolder("subFolder2/subSubFolder2");
+        File subFolder1 = folder.newFolder("test_folder1");
+        File subFolder2 = folder.newFolder("test_folder2");
+        File subSubFolder2 = folder.newFolder("test_folder2/subSubFolder2");
 
         for (int j=0; j<6; j++) {
             File.createTempFile("test_", ".json", subFolder1);
