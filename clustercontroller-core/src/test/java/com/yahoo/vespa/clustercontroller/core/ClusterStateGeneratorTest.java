@@ -584,6 +584,7 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("bits:12 distributor:3 storage:3"));
     }
 
+    // TODO do we really want this behavior?? It's the legacy one, but it seems... dangerous.
     @Test
     public void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
@@ -601,4 +602,5 @@ public class ClusterStateGeneratorTest {
 
     // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions? outdated RPC already sets Down
     // in timer event handling function, so might not be needed.
+
 }

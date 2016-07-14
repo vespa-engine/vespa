@@ -10,8 +10,9 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
+import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
+import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -199,40 +200,6 @@ public class GroupAutoTakedownTest {
         assertEquals("version:2 distributor:9 storage:9 .3.s:d .4.s:d .5.s:d", fixture.generatedClusterState());
     }
 
-    private static class NodeEventWithDescription extends ArgumentMatcher<NodeEvent> {
-        private final String expected;
-
-        NodeEventWithDescription(String expected) {
-            this.expected = expected;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            return expected.equals(((NodeEvent)o).getDescription());
-        }
-    }
-
-    private static NodeEventWithDescription nodeEventWithDescription(String description) {
-        return new NodeEventWithDescription(description);
-    }
-
-    private static class EventForNode extends ArgumentMatcher<NodeEvent> {
-        private final Node expected;
-
-        EventForNode(Node expected) {
-            this.expected = expected;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            return ((NodeEvent)o).getNode().getNode().equals(expected);
-        }
-    }
-
-    private static EventForNode eventForNode(Node expected) {
-        return new EventForNode(expected);
-    }
-
     private static Node contentNode(int index) {
         return new Node(NodeType.STORAGE, index);
     }
@@ -267,7 +234,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void wanted_state_retired_implicitly_down_node_transitioned_it_to_retired_mode_immediately() {
+    public void wanted_state_retired_implicitly_down_node_is_transitioned_to_retired_mode_immediately() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.99);
 

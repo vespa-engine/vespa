@@ -923,7 +923,7 @@ public class SystemStateGenerator {
                     + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".",
                     NodeEvent.Type.CURRENT, timeNow), isMaster);
             return (handlePrematureCrash(node, nodeListener) ? null : new NodeState(node.getNode().getType(), State.DOWN).setDescription(
-                    "Got reverse intialize progress. Assuming node have prematurely crashed"));
+                    "Got reverse initialize progress. Assuming node has prematurely crashed"));
         }
 
 

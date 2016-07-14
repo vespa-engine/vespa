@@ -176,4 +176,8 @@ class ClusterFixture {
         params.cluster = cluster;
         return params;
     }
+
+    ContentCluster cluster() {
+        return this.cluster;
+    }
 }
