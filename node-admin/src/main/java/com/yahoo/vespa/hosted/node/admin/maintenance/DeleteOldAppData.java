@@ -2,7 +2,11 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author valerijf
@@ -14,15 +18,15 @@ public class DeleteOldAppData {
     /**
      * (Recursively) deletes files if they match all the criteria, also deletes empty directories.
      *
-     * @param basePath       Base path from where to start the search
-     * @param maxAgeSeconds  Delete files older (last modified date) than maxAgeSeconds
-     * @param fileName       Delete files where regex matches against filename
-     * @param recursive      Delete files in sub-directories (with the same criteria)
+     * @param basePath      Base path from where to start the search
+     * @param maxAgeSeconds Delete files older (last modified date) than maxAgeSeconds
+     * @param fileNameRegex Delete files where filename matches fileNameRegex
+     * @param recursive     Delete files in sub-directories (with the same criteria)
      */
-    public static void deleteFiles(String basePath, long maxAgeSeconds, String fileName, boolean recursive) {
+    public static void deleteFiles(String basePath, long maxAgeSeconds, String fileNameRegex, boolean recursive) {
         File deleteDirectory = new File(basePath);
         File[] filesInDeleteDirectory = deleteDirectory.listFiles();
-        Pattern fileNamePattern = fileName != null ? Pattern.compile(fileName) : null;
+        Pattern fileNamePattern = fileNameRegex != null ? Pattern.compile(fileNameRegex) : null;
 
         if (filesInDeleteDirectory == null) {
             throw new IllegalArgumentException("The specified path is not a directory");
@@ -30,7 +34,7 @@ public class DeleteOldAppData {
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() && recursive) {
-                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileName, true);
+                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
                 if (file.list().length == 0 && !file.delete()) {
                     System.err.println("Could not delete directory: " + file.getAbsolutePath());
                 }
@@ -45,16 +49,46 @@ public class DeleteOldAppData {
     }
 
     /**
+     * Deletes all files in target directory except the n most recent (by modified date)
+     *
+     * @param basePath          Base path to delete from
+     * @param nMostRecentToKeep Number of most recent files to keep
+     */
+    public static void deleteFilesExceptNMostRecent(String basePath, int nMostRecentToKeep) {
+        File deleteDirectory = new File(basePath);
+        File[] deleteDirContents = deleteDirectory.listFiles();
+
+        if (deleteDirContents == null) {
+            throw new IllegalArgumentException("The specified path is not a directory");
+        }
+
+        if (nMostRecentToKeep < 1) {
+            throw new IllegalArgumentException("Number of files to keep must be a positive number");
+        }
+
+        List<File> filesInDeleteDir = Arrays.stream(deleteDirContents).filter(File::isFile).collect(Collectors.toList());
+        if (filesInDeleteDir.size() <= nMostRecentToKeep) return;
+
+        Collections.sort(filesInDeleteDir, (f1, f2) -> Long.signum(f1.lastModified() - f2.lastModified()));
+
+        for (int i = nMostRecentToKeep; i < filesInDeleteDir.size(); i++) {
+            if (!filesInDeleteDir.get(i).delete()) {
+                System.err.println("Could not delete file: " + filesInDeleteDir.get(i).getAbsolutePath());
+            }
+        }
+    }
+
+    /**
      * Deletes directories and their contents if they match all the criteria
      *
      * @param basePath      Base path to delete the directories from
      * @param maxAgeSeconds Delete directories older (last modified date) than maxAgeSeconds
-     * @param dirNamePrefix Delete directories with name starting with dirNamePrefix
-     * @param dirNameSuffix Delete directories with name ending with dirNameSuffix
+     * @param dirNameRegex  Delete directories where directory name matches dirNameRegex
      */
-    public static void deleteDirectories(String basePath, long maxAgeSeconds, String dirNamePrefix, String dirNameSuffix) {
+    public static void deleteDirectories(String basePath, long maxAgeSeconds, String dirNameRegex) {
         File deleteDirectory = new File(basePath);
         File[] filesInDeleteDirectory = deleteDirectory.listFiles();
+        Pattern dirNamePattern = dirNameRegex != null ? Pattern.compile(dirNameRegex) : null;
 
         if (filesInDeleteDirectory == null) {
             throw new IllegalArgumentException("The specified path is not a directory");
@@ -62,8 +96,7 @@ public class DeleteOldAppData {
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() &&
-                    (dirNamePrefix == null || file.getName().startsWith(dirNamePrefix)) &&
-                    (dirNameSuffix == null || file.getName().endsWith(dirNameSuffix)) &&
+                    (dirNameRegex == null || dirNamePattern.matcher(file.getName()).find()) &&
                     file.lastModified() + maxAgeSeconds * 1000 < System.currentTimeMillis()) {
                 deleteFiles(file.getPath(), 0, null, true);
                 if (file.list().length == 0 && !file.delete()) {
