@@ -50,12 +50,11 @@ public class EventDiffCalculator {
     }
 
     public static List<Event> computeEventDiff(final Params params) {
-        final ContentCluster cluster = params.cluster;
         final ClusterState prevState = params.previousClusterState.getClusterState();
         final ClusterState currentState = params.currentClusterState.getClusterState();
         final List<Event> events = new ArrayList<>();
 
-        emitPerNodeDiffEvents(cluster, prevState, currentState, events);
+        emitPerNodeDiffEvents(params, events);
         emitWholeClusterDiffEvent(prevState, currentState, events);
 
         return events;
@@ -71,11 +70,12 @@ public class EventDiffCalculator {
         }
     }
 
-    private static void emitPerNodeDiffEvents(ContentCluster cluster,
-                                              ClusterState prevState,
-                                              ClusterState currentState,
-                                              List<Event> events)
-    {
+    private static void emitPerNodeDiffEvents(final Params params, List<Event> events) {
+        final ContentCluster cluster = params.cluster;
+        final ClusterState prevState = params.previousClusterState.getClusterState();
+        final ClusterState currentState = params.currentClusterState.getClusterState();
+
+        // TODO refactor!
         for (ConfiguredNode node : cluster.getConfiguredNodes().values()) {
             for (NodeType nodeType : NodeType.getTypes()) {
                 final Node n = new Node(nodeType, node.index());
@@ -87,6 +87,18 @@ public class EventDiffCalculator {
                             String.format("Altered node state in cluster from '%s' to '%s'",
                                     nodePrev.toString(true), nodeCurr.toString(true)),
                             NodeEvent.Type.CURRENT, 0/*FIXME*/));
+
+                    // TODO refactor!
+                    NodeStateReason prevReason = params.previousClusterState.getNodeStateReasons().get(n);
+                    NodeStateReason currReason = params.currentClusterState.getNodeStateReasons().get(n);
+                    if (prevReason != NodeStateReason.GROUP_IS_DOWN && currReason == NodeStateReason.GROUP_IS_DOWN) {
+                        events.add(new NodeEvent(info, "Setting node down as the total availability of its " +
+                                "group is below the configured threshold",
+                                NodeEvent.Type.CURRENT, 0/*FIXME*/));
+                    } else if (prevReason == NodeStateReason.GROUP_IS_DOWN && currReason != NodeStateReason.GROUP_IS_DOWN) {
+                        events.add(new NodeEvent(info, "Group node availability restored; taking node back up",
+                                NodeEvent.Type.CURRENT, 0/*FIXME*/));
+                    }
                 }
             }
         }
