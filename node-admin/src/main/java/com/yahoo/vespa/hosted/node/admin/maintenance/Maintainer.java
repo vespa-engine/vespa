@@ -7,6 +7,9 @@ import io.airlift.airline.Option;
 import io.airlift.airline.ParseArgumentsUnexpectedException;
 import io.airlift.airline.ParseOptionMissingException;
 
+import java.io.File;
+import java.time.Duration;
+
 /**
  * @author valerijf
  */
@@ -16,7 +19,9 @@ public class Maintainer {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("maintainer.jar")
                 .withDescription("This tool makes it easy to delete old log files and other node-admin app data.")
                 .withDefaultCommand(Help.class)
-                .withCommands(Help.class, DeleteOldAppDataArguments.class, DeleteOldLogsArguments.class);
+                .withCommands(Help.class, DeleteOldAppDataArguments.class, DeleteOldLogsArguments.class,
+                        CleanLogsArguments.class, CleanLogArchiveArguments.class, CleanFileDistributionArguments.class,
+                        CleanCoreDumpsArguments.class);
 
         Cli<Runnable> gitParser = builder.build();
         try {
@@ -39,17 +44,13 @@ public class Maintainer {
                 description = "Delete directories older than (in seconds)")
         private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
 
-        @Option(name = {"--prefix"},
-                description = "Delete directories that start with prefix")
-        private String prefix;
-
-        @Option(name = {"--suffix"},
-                description = "Delete directories that end with suffix")
-        private String suffix;
+        @Option(name = {"--name"},
+                description = "Delete directories where name matches the regex")
+        private String regex;
 
         @Override
         public void run() {
-            DeleteOldAppData.deleteDirectories(path, maxAge, prefix, suffix);
+            DeleteOldAppData.deleteDirectories(path, maxAge, regex);
         }
     }
 
@@ -71,6 +72,59 @@ public class Maintainer {
         @Override
         public void run() {
             DeleteOldAppData.deleteFiles(path, maxAge, name, false);
+        }
+    }
+
+    @Command(name = "clean-logs", description = "Deletes old elasticsearch2, logstash2, daemontools_y, nginx, and vespa logs")
+    public static class CleanLogsArguments implements Runnable {
+        @Override
+        public void run() {
+            String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
+                    "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
+
+            for (String pathToClean : pathsToClean) {
+                File path = new File(pathToClean);
+                if (path.exists()) {
+                    DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*\\.log.+", false);
+                    DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*QueryAccessLog.*", false);
+                }
+            }
+        }
+    }
+
+    @Command(name = "clean-logarchive", description = "Deletes old log archive entries")
+    public static class CleanLogArchiveArguments implements Runnable {
+        @Override
+        public void run() {
+            File logArchiveDir = new File("/home/y/logs/vespa/logarchive");
+
+            if (logArchiveDir.exists()) {
+                DeleteOldAppData.deleteFiles(logArchiveDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
+            }
+        }
+    }
+
+    @Command(name = "clean-filedistribution", description = "Filedistribution clean up, see jira:VESPA-775")
+    public static class CleanFileDistributionArguments implements Runnable {
+        @Override
+        public void run() {
+            File fileDistrDir = new File("/home/y/var/db/vespa/filedistribution");
+
+            if (fileDistrDir.exists()) {
+                DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
+            }
+        }
+    }
+
+    @Command(name = "clean-core-dumps", description = "Clean core dumps")
+    public static class CleanCoreDumpsArguments implements Runnable {
+        @Override
+        public void run() {
+            File coreDumpsDir = new File("/home/y/var/crash");
+
+            if (coreDumpsDir.exists()) {
+                DeleteOldAppData.deleteFilesExceptNMostRecent(coreDumpsDir.getAbsolutePath(), 1);
+            }
         }
     }
 }
