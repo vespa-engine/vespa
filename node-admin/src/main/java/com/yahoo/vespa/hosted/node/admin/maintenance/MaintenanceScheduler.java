@@ -1,10 +1,9 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerImpl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.util.Queue;
@@ -21,29 +20,30 @@ import java.util.logging.Logger;
 public class MaintenanceScheduler implements Runnable {
     protected static final Logger log = Logger.getLogger(MaintenanceScheduler.class.getName());
 
-    private final Duration rate;
-    private final ScheduledExecutorService service;
-    private static Queue<MaintenanceJob> jobQueue = new LinkedBlockingQueue<>();
+    private static final Duration rate = Duration.ofMinutes(1);
+    private static final ScheduledExecutorService service = new ScheduledThreadPoolExecutor(1);
+    private static Queue<String> jobQueue = new LinkedBlockingQueue<>();
 
-    public MaintenanceScheduler(Duration rate) {
-        this.rate = rate;
-
-        this.service = new ScheduledThreadPoolExecutor(1);
-        this.service.scheduleAtFixedRate(this, rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
+    static {
+        service.scheduleAtFixedRate(new MaintenanceScheduler(), rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
+        addJob("delete-old-app-data",
+                "--path=/host/home/docker/container-storage",
+                "--max_age=" + Duration.ofDays(7).getSeconds(),
+                "--prefix=" + DockerImpl.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
     }
 
-    public static void addJob(MaintenanceJob job) {
-        jobQueue.add(job);
+    public static void addJob(String... args) {
+        jobQueue.add(String.join(" ", args));
     }
 
 
     @Override
     public void run() {
         try {
-            while(jobQueue.size() > 0) {
+            for (String args : jobQueue) {
                 try {
-                    MaintenanceJob job = jobQueue.remove();
-                    Process p = Runtime.getRuntime().exec("scripts/maintenance.sh " + String.join(" ", job.getArgs()));
+                    Process p = Runtime.getRuntime().exec(
+                            "sudo /home/y/libexec/vespa/node-admin/maintenance.sh " + args);
                     String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
                     String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
@@ -58,20 +58,7 @@ public class MaintenanceScheduler implements Runnable {
         }
     }
 
-    public void deconstruct() {
-        this.service.shutdown();
-    }
-
-
-    public static class MaintenanceJob {
-        private String[] args;
-
-        public MaintenanceJob(String[] args) {
-            this.args = args;
-        }
-
-        public String[] getArgs() {
-            return args;
-        }
+    public static void deconstruct() {
+        service.shutdown();
     }
 }

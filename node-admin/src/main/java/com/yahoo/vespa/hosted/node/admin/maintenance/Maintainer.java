@@ -28,7 +28,7 @@ public class Maintainer {
     }
 
 
-    @Command(name = "delete-old-app-data", description = "Deletes all data within a folder and its sub-folders which matches the criteria")
+    @Command(name = "delete-old-app-data", description = "Deletes all directories and their contents that matches the criteria")
     public static class DeleteOldAppDataArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
@@ -36,20 +36,20 @@ public class Maintainer {
         private String path;
 
         @Option(name = {"--max_age"},
-                description = "Delete files older than (in seconds)")
+                description = "Delete directories older than (in seconds)")
         private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
 
         @Option(name = {"--prefix"},
-                description = "Delete files that start with prefix")
+                description = "Delete directories that start with prefix")
         private String prefix;
 
         @Option(name = {"--suffix"},
-                description = "Delete files that end with suffix")
+                description = "Delete directories that end with suffix")
         private String suffix;
 
         @Override
         public void run() {
-            DeleteOldAppData.deleteOldAppData(path, maxAge, prefix, suffix, true);
+            DeleteOldAppData.deleteDirectories(path, maxAge, prefix, suffix);
         }
     }
 
@@ -57,7 +57,7 @@ public class Maintainer {
     public static class DeleteOldLogsArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
-                description = "Path to directory which contains the app data")
+                description = "Path to directory which contains the log data")
         private String path;
 
         @Option(name = {"--max_age"},
@@ -74,7 +74,7 @@ public class Maintainer {
 
         @Override
         public void run() {
-            DeleteOldAppData.deleteOldAppData(path, maxAge, prefix, suffix, false);
+            DeleteOldAppData.deleteFiles(path, maxAge, prefix, suffix, false);
         }
     }
 }
