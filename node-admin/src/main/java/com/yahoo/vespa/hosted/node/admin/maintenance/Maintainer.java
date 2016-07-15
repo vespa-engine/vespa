@@ -41,11 +41,11 @@ public class Maintainer {
         private String path;
 
         @Option(name = {"--max_age"},
-                description = "Delete directories older than (in seconds)")
+                description = "Maximum age (in seconds) of directory to keep")
         private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
 
         @Option(name = {"--name"},
-                description = "Delete directories where name matches the regex")
+                description = "Regex pattern to match against the directory name")
         private String regex;
 
         @Override
@@ -62,11 +62,11 @@ public class Maintainer {
         private String path;
 
         @Option(name = {"--max_age"},
-                description = "Delete files older than (in seconds)")
+                description = "Maximum age (in seconds) of file to keep")
         private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
 
         @Option(name = {"--name"},
-                description = "Delete files where name matches the regex")
+                description = "Regex pattern to match against the filename")
         private String name;
 
         @Override
