@@ -28,10 +28,12 @@ public class DeleteOldAppData {
         File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
         for (File file : filesInDeleteDirectory) {
-            if (file.isDirectory() && recursive) {
-                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
-                if (file.list().length == 0 && !file.delete()) {
-                    System.err.println("Could not delete directory: " + file.getAbsolutePath());
+            if (file.isDirectory()) {
+                if (recursive) {
+                    deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
+                    if (file.list().length == 0 && !file.delete()) {
+                        System.err.println("Could not delete directory: " + file.getAbsolutePath());
+                    }
                 }
             } else if (isPatternMatchingFilename(fileNamePattern, file) &&
                     isTimeSinceLastModifiedMoreThan(file, Duration.ofSeconds(maxAgeSeconds))) {
