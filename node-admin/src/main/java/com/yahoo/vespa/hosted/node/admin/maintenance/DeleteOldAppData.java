@@ -67,6 +67,20 @@ public class DeleteOldAppData {
         }
     }
 
+    public static void deleteFilesLargerThan(File baseDirectory, long sizeInBytes) {
+        File[] filesInBaseDirectory = getContentsOfDirectory(baseDirectory.getAbsolutePath());
+
+        for (File file : filesInBaseDirectory) {
+            if (file.isDirectory()) {
+                deleteFilesLargerThan(file, sizeInBytes);
+            } else {
+                if (file.length() > sizeInBytes && !file.delete()) {
+                    System.err.println("Could not delete file: " + file.getAbsolutePath());
+                }
+            }
+        }
+    }
+
     /**
      * Deletes directories and their contents if they match all the criteria
      *
