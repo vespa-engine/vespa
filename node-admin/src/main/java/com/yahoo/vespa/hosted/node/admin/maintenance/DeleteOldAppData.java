@@ -33,11 +33,10 @@ public class DeleteOldAppData {
                 if (file.list().length == 0 && !file.delete()) {
                     System.err.println("Could not delete directory: " + file.getAbsolutePath());
                 }
-            } else if (fileNamePattern == null || fileNamePattern.matcher(file.getName()).find()) {
-                if (file.lastModified() + maxAgeSeconds * 1000 < System.currentTimeMillis()) {
-                    if (!file.delete()) {
-                        System.err.println("Could not delete file: " + file.getAbsolutePath());
-                    }
+            } else if (isPatternMatchingFilename(fileNamePattern, file) &&
+                    isTimeSinceLastModifiedMoreThan(file, Duration.ofSeconds(maxAgeSeconds))) {
+                if (!file.delete()) {
+                    System.err.println("Could not delete file: " + file.getAbsolutePath());
                 }
             }
         }
@@ -81,8 +80,8 @@ public class DeleteOldAppData {
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() &&
-                    (dirNameRegex == null || dirNamePattern.matcher(file.getName()).find()) &&
-                    file.lastModified() + maxAgeSeconds * 1000 < System.currentTimeMillis()) {
+                    isPatternMatchingFilename(dirNamePattern, file) &&
+                    isTimeSinceLastModifiedMoreThan(getMostRecentlyModifiedFileIn(file), Duration.ofSeconds(maxAgeSeconds))) {
                 deleteFiles(file.getPath(), 0, null, true);
                 if (file.list().length == 0 && !file.delete()) {
                     System.err.println("Could not delete directory: " + file.getAbsolutePath());
@@ -100,5 +99,29 @@ public class DeleteOldAppData {
         }
 
         return directoryContents;
+    }
+
+    private static File getMostRecentlyModifiedFileIn(File baseFile) {
+        File mostRecent = baseFile;
+        File[] filesInDirectory = getContentsOfDirectory(baseFile.getAbsolutePath());
+
+        for (File file : filesInDirectory) {
+            if (file.isDirectory()) {
+                file = getMostRecentlyModifiedFileIn(file);
+            }
+
+            if (file.lastModified() > mostRecent.lastModified()) {
+                mostRecent = file;
+            }
+        }
+        return mostRecent;
+    }
+
+    private static boolean isTimeSinceLastModifiedMoreThan(File file, Duration duration) {
+        return System.currentTimeMillis() - file.lastModified() > duration.toMillis();
+    }
+
+    private static boolean isPatternMatchingFilename(Pattern pattern, File file) {
+        return pattern == null || pattern.matcher(file.getName()).find();
     }
 }

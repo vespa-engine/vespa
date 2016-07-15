@@ -97,11 +97,11 @@ public class DeleteOldAppDataTest {
         initSubDirectories();
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", false);
 
-        // 6 test_*.json from subFolder1/
-        // + 9 test_*.json and 4 abc_*.json from subFolder2/
-        // + 13 test_*.json from subFolder2/subSubFolder2/
+        // 6 test_*.json from test_folder1/
+        // + 9 test_*.json and 4 abc_*.json from test_folder2/
+        // + 13 test_*.json from test_folder2/subSubFolder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root
-        // + subFolder1/ and subFolder2/ and subFolder2/subSubFolder2/ themselves
+        // + test_folder1/ and test_folder2/ and test_folder2/subSubFolder2/ themselves
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(48));
     }
 
@@ -110,9 +110,9 @@ public class DeleteOldAppDataTest {
         initSubDirectories();
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", true);
 
-        // 4 abc_*.json from subFolder2/
+        // 4 abc_*.json from test_folder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root
-        // + subFolder2/ itself
+        // + test_folder2/ itself
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(18));
     }
 
@@ -168,14 +168,29 @@ public class DeleteOldAppDataTest {
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(30));
     }
 
+    @Test
+    public void testDeleteDirectoriesBasedOnAge() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteDirectories(folder.getRoot().getAbsolutePath(), 50, ".*folder.*");
+
+        //23 files in root
+        // + 13 in test_folder2
+        // + 13 in subSubFolder2
+        // + test_folder2 + subSubFolder2 itself
+        assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(51));
+    }
+
 
     private void initSubDirectories() throws IOException {
         File subFolder1 = folder.newFolder("test_folder1");
         File subFolder2 = folder.newFolder("test_folder2");
         File subSubFolder2 = folder.newFolder("test_folder2/subSubFolder2");
 
+
         for (int j=0; j<6; j++) {
-            File.createTempFile("test_", ".json", subFolder1);
+            File temp = File.createTempFile("test_", ".json", subFolder1);
+            temp.setLastModified(System.currentTimeMillis() - (j+1)*Duration.ofSeconds(60).toMillis());
         }
 
         for (int j=0; j<9; j++) {
@@ -187,8 +202,14 @@ public class DeleteOldAppDataTest {
         }
 
         for (int j=0; j<13; j++) {
-            File.createTempFile("test_", ".json", subSubFolder2);
+            File temp = File.createTempFile("test_", ".json", subSubFolder2);
+            temp.setLastModified(System.currentTimeMillis() - (j+1)*Duration.ofSeconds(40).toMillis());
         }
+
+        //Must be after all the files have been created
+        subFolder1.setLastModified(System.currentTimeMillis() - Duration.ofHours(2).toMillis());
+        subFolder2.setLastModified(System.currentTimeMillis() - Duration.ofHours(1).toMillis());
+        subSubFolder2.setLastModified(System.currentTimeMillis() - Duration.ofHours(3).toMillis());
     }
 
     private static int getNumberOfFilesAndDirectoriesIn(File folder) {
