@@ -26,7 +26,7 @@ public class MaintenanceScheduler extends AbstractComponent implements Runnable 
     private static Queue<String> jobQueue = new LinkedBlockingQueue<>();
 
     public MaintenanceScheduler() {
-        service.scheduleAtFixedRate(new MaintenanceScheduler(), rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
+        service.scheduleAtFixedRate(this, rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
         addJob("delete-old-app-data",
                 "--path=/host/home/docker/container-storage",
                 "--max_age=" + Duration.ofDays(7).getSeconds(),
