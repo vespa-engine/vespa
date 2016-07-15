@@ -3,27 +3,22 @@ package com.yahoo.vespa.clustercontroller.core;// Copyright 2016 Yahoo Inc. Lice
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.ClusterEventWithDescription.clusterEventWithDescription;
+import static com.yahoo.vespa.clustercontroller.core.matchers.EventTypeIs.eventTypeIs;
+import static com.yahoo.vespa.clustercontroller.core.matchers.EventTimeIs.eventTimeIs;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
-import com.yahoo.vespa.clustercontroller.core.ClusterStateReason;
-import com.yahoo.vespa.clustercontroller.core.Event;
-import com.yahoo.vespa.clustercontroller.core.EventDiffCalculator;
-import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class EventDiffCalculatorTest {
 
@@ -62,6 +57,7 @@ public class EventDiffCalculatorTest {
         ClusterState clusterStateAfter = clusterState("");
         final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
         final Map<Node, NodeStateReason> nodeReasonsAfter = new HashMap<>();
+        long currentTimeMs = 0;
 
         EventFixture(int nodeCount) {
             this.clusterFixture = ClusterFixture.forFlatCluster(nodeCount);
@@ -91,6 +87,10 @@ public class EventDiffCalculatorTest {
             this.clusterReasonAfter = reason;
             return this;
         }
+        EventFixture currentTimeMs(long timeMs) {
+            this.currentTimeMs = timeMs;
+            return this;
+        }
 
         List<Event> computeEventDiff() {
             final AnnotatedClusterState stateBefore = new AnnotatedClusterState(
@@ -102,7 +102,8 @@ public class EventDiffCalculatorTest {
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
                             .previousClusterState(stateBefore)
-                            .currentClusterState(stateAfter));
+                            .currentClusterState(stateAfter)
+                            .currentTimeMs(currentTimeMs));
         }
 
         static EventFixture createForNodes(int nodeCount) {
@@ -121,6 +122,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
+                eventTypeIs(NodeEvent.Type.CURRENT),
                 nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
     }
 
@@ -134,7 +136,20 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(distributorNode(1)),
+                eventTypeIs(NodeEvent.Type.CURRENT),
                 nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+    }
+
+    @Test
+    public void node_state_change_event_is_tagged_with_given_time() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3 .0.s:d")
+                .currentTimeMs(123456);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(eventTimeIs(123456)));
     }
 
     @Test
@@ -182,6 +197,7 @@ public class EventDiffCalculatorTest {
                 nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
+                eventTypeIs(NodeEvent.Type.CURRENT),
                 nodeEventWithDescription("Setting node down as the total availability of " +
                                          "its group is below the configured threshold"))));
     }
@@ -216,6 +232,7 @@ public class EventDiffCalculatorTest {
                 nodeEventWithDescription("Altered node state in cluster from 'D' to 'U'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(2)),
+                eventTypeIs(NodeEvent.Type.CURRENT),
                 nodeEventWithDescription("Group node availability restored; taking node back up"))));
     }
 
@@ -241,6 +258,18 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(
                 clusterEventWithDescription("Cluster is down")));
+    }
+
+    @Test
+    public void cluster_event_is_tagged_with_given_time() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3")
+                .currentTimeMs(56789);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(eventTimeIs(56789)));
     }
 
     @Test
@@ -307,8 +336,4 @@ public class EventDiffCalculatorTest {
                 clusterEventWithDescription("Too low ratio of available distributor nodes. Setting cluster state down")));
     }
 
-    // TODO test cluster down edges (no reason + different reasons)
-
-    // TODO test type of event (CURRENT vs REPORTED etc)
-    // TODO test and handle that events are created with correct time!
 }

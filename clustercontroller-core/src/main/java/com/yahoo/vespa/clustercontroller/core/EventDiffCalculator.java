@@ -43,7 +43,7 @@ public class EventDiffCalculator {
             this.currentClusterState = clusterState;
             return this;
         }
-        public Params currentTime(long time) {
+        public Params currentTimeMs(long time) {
             this.currentTime = time;
             return this;
         }
@@ -57,36 +57,40 @@ public class EventDiffCalculator {
         return events;
     }
 
-    private static ClusterEvent createClusterEvent(String description) {
-        return new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE/*TODO TEST*/, description, 0/*FIXME*/);
+    private static ClusterEvent createClusterEvent(String description, Params params) {
+        return new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE, description, params.currentTime);
     }
 
     private static boolean clusterDownBecause(final Params params, ClusterStateReason reason) {
         return params.currentClusterState.getClusterStateReason() == reason;
     }
 
-    private static void emitWholeClusterDiffEvent(final Params params, List<Event> events) {
+    private static void emitWholeClusterDiffEvent(final Params params, final List<Event> events) {
         final ClusterState prevState = params.previousClusterState.getClusterState();
         final ClusterState currentState = params.currentClusterState.getClusterState();
 
         if (clusterHasTransitionedToUpState(prevState, currentState)) {
-            events.add(createClusterEvent("Enough nodes available for system to become up"));
+            events.add(createClusterEvent("Enough nodes available for system to become up", params));
         } else if (clusterHasTransitionedToDownState(prevState, currentState)) {
             if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE)) {
-                events.add(createClusterEvent("Too few storage nodes available in cluster. Setting cluster state down"));
+                events.add(createClusterEvent("Too few storage nodes available in cluster. Setting cluster state down", params));
             } else if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE)) {
-                events.add(createClusterEvent("Too few distributor nodes available in cluster. Setting cluster state down"));
+                events.add(createClusterEvent("Too few distributor nodes available in cluster. Setting cluster state down", params));
             } else if (clusterDownBecause(params, ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO)) {
-                events.add(createClusterEvent("Too low ratio of available storage nodes. Setting cluster state down"));
+                events.add(createClusterEvent("Too low ratio of available storage nodes. Setting cluster state down", params));
             } else if (clusterDownBecause(params, ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO)) {
-                events.add(createClusterEvent("Too low ratio of available distributor nodes. Setting cluster state down"));
+                events.add(createClusterEvent("Too low ratio of available distributor nodes. Setting cluster state down", params));
             } else {
-                events.add(createClusterEvent("Cluster is down"));
+                events.add(createClusterEvent("Cluster is down", params));
             }
         }
     }
 
-    private static void emitPerNodeDiffEvents(final Params params, List<Event> events) {
+    private static NodeEvent createNodeEvent(NodeInfo nodeInfo, String description, Params params) {
+        return new NodeEvent(nodeInfo, description, NodeEvent.Type.CURRENT, params.currentTime);
+    }
+
+    private static void emitPerNodeDiffEvents(final Params params, final List<Event> events) {
         final ContentCluster cluster = params.cluster;
         final ClusterState prevState = params.previousClusterState.getClusterState();
         final ClusterState currentState = params.currentClusterState.getClusterState();
@@ -99,21 +103,17 @@ public class EventDiffCalculator {
                 final NodeState nodeCurr = currentState.getNodeState(n);
                 if (!nodeCurr.equals(nodePrev)) {
                     final NodeInfo info = cluster.getNodeInfo(n);
-                    events.add(new NodeEvent(info,
-                            String.format("Altered node state in cluster from '%s' to '%s'",
-                                    nodePrev.toString(true), nodeCurr.toString(true)),
-                            NodeEvent.Type.CURRENT, 0/*FIXME*/));
+                    events.add(createNodeEvent(info, String.format("Altered node state in cluster from '%s' to '%s'",
+                                    nodePrev.toString(true), nodeCurr.toString(true)), params));
 
                     // TODO refactor!
                     NodeStateReason prevReason = params.previousClusterState.getNodeStateReasons().get(n);
                     NodeStateReason currReason = params.currentClusterState.getNodeStateReasons().get(n);
                     if (prevReason != NodeStateReason.GROUP_IS_DOWN && currReason == NodeStateReason.GROUP_IS_DOWN) {
-                        events.add(new NodeEvent(info, "Setting node down as the total availability of its " +
-                                "group is below the configured threshold",
-                                NodeEvent.Type.CURRENT, 0/*FIXME*/));
+                        events.add(createNodeEvent(info, "Setting node down as the total availability of its " +
+                                "group is below the configured threshold", params));
                     } else if (prevReason == NodeStateReason.GROUP_IS_DOWN && currReason != NodeStateReason.GROUP_IS_DOWN) {
-                        events.add(new NodeEvent(info, "Group node availability restored; taking node back up",
-                                NodeEvent.Type.CURRENT, 0/*FIXME*/));
+                        events.add(createNodeEvent(info, "Group node availability restored; taking node back up", params));
                     }
                 }
             }
