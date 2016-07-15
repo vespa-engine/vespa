@@ -50,23 +50,39 @@ public class EventDiffCalculator {
     }
 
     public static List<Event> computeEventDiff(final Params params) {
-        final ClusterState prevState = params.previousClusterState.getClusterState();
-        final ClusterState currentState = params.currentClusterState.getClusterState();
         final List<Event> events = new ArrayList<>();
 
         emitPerNodeDiffEvents(params, events);
-        emitWholeClusterDiffEvent(prevState, currentState, events);
-
+        emitWholeClusterDiffEvent(params, events);
         return events;
     }
 
-    private static void emitWholeClusterDiffEvent(ClusterState prevState,
-                                                  ClusterState currentState,
-                                                  List<Event> events)
-    {
+    private static ClusterEvent createClusterEvent(String description) {
+        return new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE/*TODO TEST*/, description, 0/*FIXME*/);
+    }
+
+    private static boolean clusterDownBecause(final Params params, ClusterStateReason reason) {
+        return params.currentClusterState.getClusterStateReason() == reason;
+    }
+
+    private static void emitWholeClusterDiffEvent(final Params params, List<Event> events) {
+        final ClusterState prevState = params.previousClusterState.getClusterState();
+        final ClusterState currentState = params.currentClusterState.getClusterState();
+
         if (clusterHasTransitionedToUpState(prevState, currentState)) {
-            events.add(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE/*TODO TEST*/,
-                    "Enough nodes available for system to become up", 0/*FIXME*/));
+            events.add(createClusterEvent("Enough nodes available for system to become up"));
+        } else if (clusterHasTransitionedToDownState(prevState, currentState)) {
+            if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE)) {
+                events.add(createClusterEvent("Too few storage nodes available in cluster. Setting cluster state down"));
+            } else if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE)) {
+                events.add(createClusterEvent("Too few distributor nodes available in cluster. Setting cluster state down"));
+            } else if (clusterDownBecause(params, ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO)) {
+                events.add(createClusterEvent("Too low ratio of available storage nodes. Setting cluster state down"));
+            } else if (clusterDownBecause(params, ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO)) {
+                events.add(createClusterEvent("Too low ratio of available distributor nodes. Setting cluster state down"));
+            } else {
+                events.add(createClusterEvent("Cluster is down"));
+            }
         }
     }
 
@@ -106,6 +122,10 @@ public class EventDiffCalculator {
 
     private static boolean clusterHasTransitionedToUpState(ClusterState prevState, ClusterState currentState) {
         return prevState.getClusterState() != State.UP && currentState.getClusterState() == State.UP;
+    }
+
+    private static boolean clusterHasTransitionedToDownState(ClusterState prevState, ClusterState currentState) {
+        return prevState.getClusterState() != State.DOWN && currentState.getClusterState() == State.DOWN;
     }
 
     public static Params params() { return new Params(); }
