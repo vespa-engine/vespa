@@ -28,10 +28,12 @@ public class DeleteOldAppData {
         File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
         for (File file : filesInDeleteDirectory) {
-            if (file.isDirectory() && recursive) {
-                deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
-                if (file.list().length == 0 && !file.delete()) {
-                    System.err.println("Could not delete directory: " + file.getAbsolutePath());
+            if (file.isDirectory()) {
+                if (recursive) {
+                    deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
+                    if (file.list().length == 0 && !file.delete()) {
+                        System.err.println("Could not delete directory: " + file.getAbsolutePath());
+                    }
                 }
             } else if (isPatternMatchingFilename(fileNamePattern, file) &&
                     isTimeSinceLastModifiedMoreThan(file, Duration.ofSeconds(maxAgeSeconds))) {
@@ -63,6 +65,20 @@ public class DeleteOldAppData {
         for (int i = nMostRecentToKeep; i < filesInDeleteDir.size(); i++) {
             if (!filesInDeleteDir.get(i).delete()) {
                 System.err.println("Could not delete file: " + filesInDeleteDir.get(i).getAbsolutePath());
+            }
+        }
+    }
+
+    public static void deleteFilesLargerThan(File baseDirectory, long sizeInBytes) {
+        File[] filesInBaseDirectory = getContentsOfDirectory(baseDirectory.getAbsolutePath());
+
+        for (File file : filesInBaseDirectory) {
+            if (file.isDirectory()) {
+                deleteFilesLargerThan(file, sizeInBytes);
+            } else {
+                if (file.length() > sizeInBytes && !file.delete()) {
+                    System.err.println("Could not delete file: " + file.getAbsolutePath());
+                }
             }
         }
     }

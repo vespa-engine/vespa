@@ -1,11 +1,13 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -158,6 +160,25 @@ public class DeleteOldAppDataTest {
     }
 
     @Test
+    public void testDeleteFilesLargerThan10B() throws IOException {
+        initSubDirectories();
+
+        File temp1 = new File(folder.getRoot(), "small_file");
+        writeNBytesToFiles(temp1, 50);
+
+        File temp2 = new File(folder.getRoot(), "some_file");
+        writeNBytesToFiles(temp2, 20);
+
+        File temp3 = new File(folder.getRoot(), "test_folder1/some_other_file");
+        writeNBytesToFiles(temp3, 75);
+
+        DeleteOldAppData.deleteFilesLargerThan(folder.getRoot(), 10);
+
+        assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(58));
+        assertThat(temp1.exists() || temp2.exists() || temp3.exists(), is(false));
+    }
+
+    @Test
     public void testDeleteDirectories() throws IOException {
         initSubDirectories();
 
@@ -222,5 +243,11 @@ public class DeleteOldAppDataTest {
         }
 
         return total;
+    }
+
+    private static void writeNBytesToFiles(File file, int nBytes) throws IOException {
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write(StringUtils.repeat("0", nBytes));
+        }
     }
 }
