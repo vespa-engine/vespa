@@ -32,4 +32,13 @@ public class AnnotatedClusterState {
     public ClusterStateReason getClusterStateReason() {
         return clusterStateReason;
     }
+
+    @Override
+    public String toString() {
+        return clusterState.toString();
+    }
+
+    public String toString(boolean verbose) {
+        return clusterState.toString(verbose);
+    }
 }
