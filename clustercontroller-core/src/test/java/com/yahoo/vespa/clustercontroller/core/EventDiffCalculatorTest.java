@@ -83,6 +83,14 @@ public class EventDiffCalculatorTest {
             nodeReasonsAfter.put(storageNode(index), reason);
             return this;
         }
+        EventFixture clusterReasonBefore(ClusterStateReason reason) {
+            this.clusterReasonBefore = reason;
+            return this;
+        }
+        EventFixture clusterReasonAfter(ClusterStateReason reason) {
+            this.clusterReasonAfter = reason;
+            return this;
+        }
 
         List<Event> computeEventDiff() {
             final AnnotatedClusterState stateBefore = new AnnotatedClusterState(
@@ -212,7 +220,7 @@ public class EventDiffCalculatorTest {
     }
 
     @Test
-    public void cluster_up_edge_emits_sufficient_node_availaiblity_event() {
+    public void cluster_up_edge_emits_sufficient_node_availability_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
                 .clusterStateBefore("cluster:d distributor:3 storage:3")
                 .clusterStateAfter("distributor:3 storage:3");
@@ -221,6 +229,82 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(
                 clusterEventWithDescription("Enough nodes available for system to become up")));
+    }
+
+    @Test
+    public void cluster_down_event_without_reason_annotation_emits_generic_down_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3");
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Cluster is down")));
+    }
+
+    @Test
+    public void no_event_emitted_for_cluster_down_to_down_edge() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("cluster:d distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3");
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(0));
+    }
+
+    @Test
+    public void too_few_storage_nodes_cluster_down_reason_emits_corresponding_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3")
+                .clusterReasonAfter(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        // TODO these messages currently don't include the current configured limits
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Too few storage nodes available in cluster. Setting cluster state down")));
+    }
+
+    @Test
+    public void too_few_distributor_nodes_cluster_down_reason_emits_corresponding_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3")
+                .clusterReasonAfter(ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Too few distributor nodes available in cluster. Setting cluster state down")));
+    }
+
+    @Test
+    public void too_low_storage_node_ratio_cluster_down_reason_emits_corresponding_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3")
+                .clusterReasonAfter(ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Too low ratio of available storage nodes. Setting cluster state down")));
+    }
+
+    // TODO de-dupe very similar tests for cluster down edge with reason
+    @Test
+    public void too_low_distributor_node_ratio_cluster_down_reason_emits_corresponding_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .clusterStateAfter("cluster:d distributor:3 storage:3")
+                .clusterReasonAfter(ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Too low ratio of available distributor nodes. Setting cluster state down")));
     }
 
     // TODO test cluster down edges (no reason + different reasons)
