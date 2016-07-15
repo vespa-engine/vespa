@@ -9,6 +9,8 @@ import io.airlift.airline.ParseOptionMissingException;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author valerijf
@@ -21,7 +23,7 @@ public class Maintainer {
                 .withDefaultCommand(Help.class)
                 .withCommands(Help.class, DeleteOldAppDataArguments.class, DeleteOldLogsArguments.class,
                         CleanLogsArguments.class, CleanLogArchiveArguments.class, CleanFileDistributionArguments.class,
-                        CleanCoreDumpsArguments.class);
+                        CleanCoreDumpsArguments.class, CleanHomeArguments.class);
 
         Cli<Runnable> gitParser = builder.build();
         try {
@@ -124,6 +126,24 @@ public class Maintainer {
 
             if (coreDumpsDir.exists()) {
                 DeleteOldAppData.deleteFilesExceptNMostRecent(coreDumpsDir.getAbsolutePath(), 1);
+            }
+        }
+    }
+
+    @Command(name = "clean-home", description = "Clean home directories for large files")
+    public static class CleanHomeArguments implements Runnable {
+        @Override
+        public void run() {
+            List<String> exceptions = Arrays.asList("docker", "y", "yahoo");
+            File homeDir = new File("/home/");
+            long MB = 1 << 20;
+
+            if (homeDir.exists() && homeDir.isDirectory()) {
+                for (File file : homeDir.listFiles()) {
+                    if (! exceptions.contains(file.getName())) {
+                        DeleteOldAppData.deleteFilesLargerThan(file, 100*MB);
+                    }
+                }
             }
         }
     }
