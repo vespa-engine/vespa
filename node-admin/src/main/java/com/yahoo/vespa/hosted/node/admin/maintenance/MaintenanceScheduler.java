@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImpl;
 
@@ -17,14 +18,14 @@ import java.util.logging.Logger;
 /**
  * @author valerijf
  */
-public class MaintenanceScheduler implements Runnable {
+public class MaintenanceScheduler extends AbstractComponent implements Runnable {
     protected static final Logger log = Logger.getLogger(MaintenanceScheduler.class.getName());
 
     private static final Duration rate = Duration.ofMinutes(1);
     private static final ScheduledExecutorService service = new ScheduledThreadPoolExecutor(1);
     private static Queue<String> jobQueue = new LinkedBlockingQueue<>();
 
-    static {
+    public MaintenanceScheduler() {
         service.scheduleAtFixedRate(new MaintenanceScheduler(), rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
         addJob("delete-old-app-data",
                 "--path=/host/home/docker/container-storage",
@@ -41,6 +42,7 @@ public class MaintenanceScheduler implements Runnable {
     public void run() {
         try {
             for (String args : jobQueue) {
+                log.log(Level.INFO, "Maintenance: Running " + args);
                 try {
                     Process p = Runtime.getRuntime().exec(
                             "sudo /home/y/libexec/vespa/node-admin/maintenance.sh " + args);
@@ -58,7 +60,8 @@ public class MaintenanceScheduler implements Runnable {
         }
     }
 
-    public static void deconstruct() {
+    @Override
+    public void deconstruct() {
         service.shutdown();
     }
 }
