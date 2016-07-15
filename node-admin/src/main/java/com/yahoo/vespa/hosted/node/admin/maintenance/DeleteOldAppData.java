@@ -24,13 +24,8 @@ public class DeleteOldAppData {
      * @param recursive     Delete files in sub-directories (with the same criteria)
      */
     public static void deleteFiles(String basePath, long maxAgeSeconds, String fileNameRegex, boolean recursive) {
-        File deleteDirectory = new File(basePath);
-        File[] filesInDeleteDirectory = deleteDirectory.listFiles();
         Pattern fileNamePattern = fileNameRegex != null ? Pattern.compile(fileNameRegex) : null;
-
-        if (filesInDeleteDirectory == null) {
-            throw new IllegalArgumentException("The specified path is not a directory");
-        }
+        File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() && recursive) {
@@ -55,12 +50,7 @@ public class DeleteOldAppData {
      * @param nMostRecentToKeep Number of most recent files to keep
      */
     public static void deleteFilesExceptNMostRecent(String basePath, int nMostRecentToKeep) {
-        File deleteDirectory = new File(basePath);
-        File[] deleteDirContents = deleteDirectory.listFiles();
-
-        if (deleteDirContents == null) {
-            throw new IllegalArgumentException("The specified path is not a directory");
-        }
+        File[] deleteDirContents = getContentsOfDirectory(basePath);
 
         if (nMostRecentToKeep < 1) {
             throw new IllegalArgumentException("Number of files to keep must be a positive number");
@@ -86,13 +76,8 @@ public class DeleteOldAppData {
      * @param dirNameRegex  Delete directories where directory name matches dirNameRegex
      */
     public static void deleteDirectories(String basePath, long maxAgeSeconds, String dirNameRegex) {
-        File deleteDirectory = new File(basePath);
-        File[] filesInDeleteDirectory = deleteDirectory.listFiles();
         Pattern dirNamePattern = dirNameRegex != null ? Pattern.compile(dirNameRegex) : null;
-
-        if (filesInDeleteDirectory == null) {
-            throw new IllegalArgumentException("The specified path is not a directory");
-        }
+        File[] filesInDeleteDirectory = getContentsOfDirectory(basePath);
 
         for (File file : filesInDeleteDirectory) {
             if (file.isDirectory() &&
@@ -104,5 +89,16 @@ public class DeleteOldAppData {
                 }
             }
         }
+    }
+
+    private static File[] getContentsOfDirectory(String directoryPath) {
+        File directory = new File(directoryPath);
+        File[] directoryContents = directory.listFiles();
+
+        if (directoryContents == null) {
+            throw new IllegalArgumentException("The specified path is not a directory");
+        }
+
+        return directoryContents;
     }
 }
