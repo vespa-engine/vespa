@@ -8,9 +8,11 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author valerijf
@@ -42,7 +44,7 @@ public class DeleteOldAppDataTest {
 
     @Test
     public void testDeleteAll() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(0));
     }
@@ -50,42 +52,42 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteAllDefaultMaxAge() {
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(),
-                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, null, false);
+                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(22));
     }
 
     @Test
     public void testDeletePrefix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_", false);
 
         assertThat(folder.getRoot().listFiles().length, is(6)); // 5 abc files + 1 week_old_file
     }
 
     @Test
     public void testDeleteSuffix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, ".json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(7));
     }
 
     @Test
     public void testDeletePrefixAndSuffix() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(13)); // 5 abc files + 7 test_*_file.test files + week_old_file
     }
 
     @Test
     public void testDeleteOld() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 600, null, null, false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 600, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(13)); // All 23 - 6 (from test_*_.json) - 3 (from test_*_file.test) - 1 week old file
     }
 
     @Test
     public void testDeleteWithAllParameters() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 200, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 200, "^test_.*\\.json$", false);
 
         assertThat(folder.getRoot().listFiles().length, is(15)); // All 23 - 8 (from test_*_.json)
     }
@@ -93,34 +95,102 @@ public class DeleteOldAppDataTest {
     @Test
     public void testDeleteWithSubDirectoriesNoRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", false);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", false);
 
-        // 6 test_*.json from subFolder1/
-        // + 9 test_*.json and 4 abc_*.json from subFolder2/
-        // + 13 test_*.json from subFolder2/subSubFolder2/
+        // 6 test_*.json from test_folder1/
+        // + 9 test_*.json and 4 abc_*.json from test_folder2/
+        // + 13 test_*.json from test_folder2/subSubFolder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root
-        // + subFolder1/ and subFolder2/ and subFolder2/subSubFolder2/ themselves
+        // + test_folder1/ and test_folder2/ and test_folder2/subSubFolder2/ themselves
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(48));
     }
 
     @Test
     public void testDeleteWithSubDirectoriesRecursive() throws IOException {
         initSubDirectories();
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "test_", ".json", true);
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_.*\\.json$", true);
 
-        // 4 abc_*.json from subFolder2/
+        // 4 abc_*.json from test_folder2/
         // + 7 test_*_file.test and 5 *-abc.json and 1 week_old_file from root
-        // + subFolder2/ itself
+        // + test_folder2/ itself
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(18));
     }
 
+    @Test
+    public void testDeleteFilesWhereFilenameRegexAlsoMatchesDirectories() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_", false);
+
+        assertThat(folder.getRoot().listFiles().length, is(8)); // 5 abc files + 1 week_old_file + 2 directories
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDeleteWithInvalidBasePath() throws IOException {
+        DeleteOldAppData.deleteFiles("/some/made/up/dir/", 0, null, false);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testDeleteFilesExceptNMostRecentWithNegativeN() {
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), -5);
+    }
+
+    @Test
+    public void testDeleteFilesExceptFiveMostRecent() {
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), 5);
+
+        assertThat(folder.getRoot().listFiles().length, is(5));
+
+        String[] oldestFiles = {"test_5_file.test", "test_6_file.test", "test_8.json", "test_9.json", "week_old_file.json"};
+        String[] remainingFiles = folder.getRoot().list();
+        Arrays.sort(remainingFiles);
+
+        assertArrayEquals(oldestFiles, remainingFiles);
+    }
+
+    @Test
+    public void testDeleteFilesExceptNMostRecentWithLargeN() {
+        String[] filesPreDelete = folder.getRoot().list();
+
+        DeleteOldAppData.deleteFilesExceptNMostRecent(folder.getRoot().getAbsolutePath(), 50);
+
+        assertArrayEquals(filesPreDelete, folder.getRoot().list());
+    }
+
+    @Test
+    public void testDeleteDirectories() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteDirectories(folder.getRoot().getAbsolutePath(), 0, ".*folder2");
+
+        //23 files in root
+        // + 6 in test_folder1 + test_folder1 itself
+        assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(30));
+    }
+
+    @Test
+    public void testDeleteDirectoriesBasedOnAge() throws IOException {
+        initSubDirectories();
+
+        DeleteOldAppData.deleteDirectories(folder.getRoot().getAbsolutePath(), 50, ".*folder.*");
+
+        //23 files in root
+        // + 13 in test_folder2
+        // + 13 in subSubFolder2
+        // + test_folder2 + subSubFolder2 itself
+        assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(51));
+    }
+
+
     private void initSubDirectories() throws IOException {
-        File subFolder1 = folder.newFolder("subFolder1");
-        File subFolder2 = folder.newFolder("subFolder2");
-        File subSubFolder2 = folder.newFolder("subFolder2/subSubFolder2");
+        File subFolder1 = folder.newFolder("test_folder1");
+        File subFolder2 = folder.newFolder("test_folder2");
+        File subSubFolder2 = folder.newFolder("test_folder2/subSubFolder2");
+
 
         for (int j=0; j<6; j++) {
-            File.createTempFile("test_", ".json", subFolder1);
+            File temp = File.createTempFile("test_", ".json", subFolder1);
+            temp.setLastModified(System.currentTimeMillis() - (j+1)*Duration.ofSeconds(60).toMillis());
         }
 
         for (int j=0; j<9; j++) {
@@ -132,8 +202,14 @@ public class DeleteOldAppDataTest {
         }
 
         for (int j=0; j<13; j++) {
-            File.createTempFile("test_", ".json", subSubFolder2);
+            File temp = File.createTempFile("test_", ".json", subSubFolder2);
+            temp.setLastModified(System.currentTimeMillis() - (j+1)*Duration.ofSeconds(40).toMillis());
         }
+
+        //Must be after all the files have been created
+        subFolder1.setLastModified(System.currentTimeMillis() - Duration.ofHours(2).toMillis());
+        subFolder2.setLastModified(System.currentTimeMillis() - Duration.ofHours(1).toMillis());
+        subSubFolder2.setLastModified(System.currentTimeMillis() - Duration.ofHours(3).toMillis());
     }
 
     private static int getNumberOfFilesAndDirectoriesIn(File folder) {
