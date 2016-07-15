@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -12,14 +11,26 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
+
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ClusterStateGeneratorTest {
 
-    private static ClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
+    // TODO de-dupe!
+    private static Node storageNode(int index) {
+        return new Node(NodeType.STORAGE, index);
+    }
+
+    private static Node distributorNode(int index) {
+        return new Node(NodeType.DISTRIBUTOR, index);
+    }
+
+    private static AnnotatedClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
         final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
         params.cluster = fixture.cluster;
         params.transitionTimes = ClusterFixture.buildTransitionTimeMap(0, 0);
@@ -30,15 +41,15 @@ public class ClusterStateGeneratorTest {
     @Test
     public void cluster_with_all_nodes_reported_down_has_state_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(6).markEntireClusterDown();
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
-        assertThat(state.getClusterState(), is(State.DOWN));
+        assertThat(state.getClusterState().getClusterState(), is(State.DOWN));
     }
 
     @Test
     public void cluster_with_all_nodes_up_state_correct_distributor_and_storage_count() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(6).bringEntireClusterUp();
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:6 storage:6"));
     }
@@ -49,7 +60,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(2, State.DOWN)
                 .reportDistributorNodeState(4, State.STOPPING);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:9 .2.s:d .4.s:s storage:9"));
     }
@@ -61,7 +72,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.DOWN)
                 .reportStorageNodeState(4, State.STOPPING);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .0.s:d .4.s:s"));
     }
@@ -75,7 +86,7 @@ public class ClusterStateGeneratorTest {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(9)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(2, stateWithDisks);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .2.d:7 .2.d.5.s:d"));
     }
@@ -88,7 +99,7 @@ public class ClusterStateGeneratorTest {
                 .proposeDistributorWantedState(5, State.DOWN) // Down worse than Up
                 .reportDistributorNodeState(2, State.STOPPING)
                 .proposeDistributorWantedState(2, State.DOWN); // Down worse than Stopping
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:7 .2.s:d .5.s:d storage:7"));
     }
@@ -103,7 +114,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(2, State.MAINTENANCE) // Maintenance worse than Stopping
                 .proposeStorageNodeWantedState(4, State.RETIRED) // Retired is "worse" than Up
                 .proposeStorageNodeWantedState(5, State.DOWN); // Down worse than Up
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:7 storage:7 .2.s:m .4.s:r .5.s:d"));
     }
@@ -114,7 +125,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(0, State.DOWN)
                 .proposeDistributorWantedState(0, State.UP);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:7 .0.s:d storage:7"));
     }
@@ -127,7 +138,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(1, State.UP)
                 .reportStorageNodeState(2, State.DOWN)
                 .proposeStorageNodeWantedState(2, State.RETIRED);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:7 storage:7 .1.s:d .2.s:d"));
     }
@@ -144,7 +155,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, State.INITIALIZING)
                 .proposeStorageNodeWantedState(1, State.RETIRED);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .1.s:m"));
     }
@@ -163,7 +174,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(3, State.MAINTENANCE)
                 .reportStorageNodeState(4, State.INITIALIZING)
                 .proposeStorageNodeWantedState(4, State.MAINTENANCE);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:7 storage:7 .0.s:m .2.s:m .3.s:m .4.s:m"));
     }
@@ -175,7 +186,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(1, State.MAINTENANCE, "foo")
                 .proposeStorageNodeWantedState(2, State.DOWN, "bar")
                 .proposeStorageNodeWantedState(3, State.RETIRED, "baz");
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         // We have to use toString(true) to get verbose printing including the descriptions,
         // as these are omitted by default.
@@ -196,7 +207,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(2, State.RETIRED)
                 .reportStorageNodeState(3, stateWithDisks)
                 .proposeStorageNodeWantedState(3, State.MAINTENANCE);
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         // TODO verify that it's correct that Down nodes don't report disk states..!
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .2.s:r .2.d:5 .2.d.3.s:d " +
@@ -210,7 +221,7 @@ public class ClusterStateGeneratorTest {
         nodes.set(2, new ConfiguredNode(2, true));
         fixture.cluster.setNodes(nodes);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:r"));
     }
@@ -231,13 +242,13 @@ public class ClusterStateGeneratorTest {
         // at which point it should finally transition to generated state Down.
         nodeInfo.setTransitionTime(9000);
         {
-            final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+            final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
             assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
         }
 
         nodeInfo.setTransitionTime(10999);
         {
-            final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+            final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
             assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
         }
     }
@@ -253,7 +264,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
         nodeInfo.setTransitionTime(9000);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:d"));
     }
 
@@ -268,7 +279,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.DISTRIBUTOR, 2));
         nodeInfo.setTransitionTime(9000);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 .2.s:d storage:5"));
     }
 
@@ -284,7 +295,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 2));
         nodeInfo.setTransitionTime(9000);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         // Should _not_ be in maintenance mode, since we explicitly want it to stay down.
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:d"));
     }
@@ -297,7 +308,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 3));
         nodeInfo.setPrematureCrashCount(11);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .3.s:d"));
     }
 
@@ -309,7 +320,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 3));
         nodeInfo.setPrematureCrashCount(10); // "Max crashes" range is inclusive
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 storage:5"));
     }
 
@@ -323,7 +334,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
         nodeInfo.setPrematureCrashCount(11);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
     }
 
@@ -339,7 +350,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, nodeState);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.t:5000"));
     }
 
@@ -352,7 +363,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportDistributorNodeState(1, nodeState);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 .1.t:6000 storage:5"));
     }
 
@@ -368,7 +379,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
         nodeInfo.setStartTimestamp(5000);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 storage:5"));
     }
 
@@ -384,7 +395,7 @@ public class ClusterStateGeneratorTest {
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.DISTRIBUTOR, 0));
         nodeInfo.setStartTimestamp(6000);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 storage:5"));
     }
 
@@ -396,8 +407,9 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(2, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
+        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE));
     }
 
     @Test
@@ -407,8 +419,9 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(0, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
+        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
     }
 
     @Test
@@ -419,8 +432,9 @@ public class ClusterStateGeneratorTest {
                 .reportDistributorNodeState(2, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minDistributorNodesUp(2);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
+        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE));
     }
 
     @Test
@@ -430,8 +444,9 @@ public class ClusterStateGeneratorTest {
                 .reportDistributorNodeState(0, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minDistributorNodesUp(2);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
+        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
     }
 
     @Test
@@ -442,7 +457,7 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(2, State.MAINTENANCE);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(2);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:3 .0.s:d .2.s:m"));
     }
 
@@ -455,7 +470,7 @@ public class ClusterStateGeneratorTest {
         // Any node being treated as down should take down the cluster here
         final ClusterStateGenerator.Params params = fixture.generatorParams().minStorageNodesUp(3);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:1.0 .1.s:r"));
     }
 
@@ -468,8 +483,9 @@ public class ClusterStateGeneratorTest {
         final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfStorageNodesUp(0.5);
 
         // TODO de-dupe a lot of these tests?
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
+        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO));
     }
 
     @Test
@@ -480,8 +496,9 @@ public class ClusterStateGeneratorTest {
         // Min node ratio is inclusive, i.e. 0.5 of 2 nodes is enough for cluster to be up.
         final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfStorageNodesUp(0.5);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
+        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
     }
 
     @Test
@@ -493,8 +510,9 @@ public class ClusterStateGeneratorTest {
         final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfDistributorNodesUp(0.5);
 
         // TODO de-dupe a lot of these tests?
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
+        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO));
     }
 
     @Test
@@ -504,8 +522,9 @@ public class ClusterStateGeneratorTest {
                 .reportDistributorNodeState(0, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minRatioOfDistributorNodesUp(0.5);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
+        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
     }
 
     @Test
@@ -518,7 +537,7 @@ public class ClusterStateGeneratorTest {
 
         // Node 4 is down, which is more than 32% of nodes down in group #2. Nodes 3,5 should be implicitly
         // marked down as it is in the same group.
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .3.s:d .4.s:d .5.s:d"));
     }
 
@@ -530,7 +549,7 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(4, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.65);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .4.s:d")); // No other nodes down implicitly
     }
 
@@ -542,10 +561,23 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(3, State.DOWN);
         final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.51);
 
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(true), equalTo("distributor:4 storage:4 " +
                 ".2.s:d .2.m:group\\x20node\\x20availability\\x20below\\x20configured\\x20threshold " +
                 ".3.s:d .3.m:mockdesc")); // Preserve description for non-implicitly taken down node
+    }
+
+    @Test
+    public void implicitly_downed_group_nodes_are_annotated_with_group_reason() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(2).eachWithNodeCount(2))
+                .bringEntireClusterUp()
+                .reportStorageNodeState(3, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.51);
+
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.getNodeStateReasons(),
+                hasStateReasonForNode(storageNode(2), NodeStateReason.GROUP_IS_DOWN));
     }
 
     /**
@@ -560,7 +592,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7));
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("bits:7 distributor:3 storage:3"));
     }
 
@@ -571,7 +603,7 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(6))
                 .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(5));
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("bits:5 distributor:3 storage:3"));
     }
 
@@ -580,7 +612,7 @@ public class ClusterStateGeneratorTest {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3).bringEntireClusterUp();
 
         final ClusterStateGenerator.Params params = fixture.generatorParams().idealDistributionBits(12);
-        final ClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("bits:12 distributor:3 storage:3"));
     }
 
@@ -594,7 +626,7 @@ public class ClusterStateGeneratorTest {
                 .reportStorageNodeState(2, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(5))
                 .proposeStorageNodeWantedState(2, State.MAINTENANCE);
 
-        final ClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("bits:7 distributor:3 storage:3 .1.s:d .2.s:m"));
     }
 

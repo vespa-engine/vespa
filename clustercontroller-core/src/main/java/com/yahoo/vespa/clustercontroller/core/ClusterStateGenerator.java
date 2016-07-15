@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -89,23 +89,26 @@ public class ClusterStateGenerator {
         } // TODO
     }
 
-    static ClusterState generatedStateFrom(final Params params) {
+    static AnnotatedClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
         final ClusterState workingState = emptyClusterState();
+        final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
             final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
         }
 
-        takeDownGroupsWithTooLowAvailability(workingState, params);
+        takeDownGroupsWithTooLowAvailability(workingState, nodeStateReasons, params);
 
-        if (!sufficientNodesAreAvailbleInCluster(workingState, params)) {
+        final Optional<ClusterStateReason> reasonToBeDown = clusterDownReason(workingState, params);
+        if (reasonToBeDown.isPresent()) {
             workingState.setClusterState(State.DOWN);
+
         }
         workingState.setDistributionBits(inferDistributionBitCount(cluster, workingState, params));
 
-        return workingState;
+        return new AnnotatedClusterState(workingState, reasonToBeDown.orElse(null/*FIXME*/), nodeStateReasons);
     }
 
     private static ClusterState emptyClusterState() {
@@ -192,7 +195,7 @@ public class ClusterStateGenerator {
         return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
     }
 
-    private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState, final Params params) {
+    private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState, Map<Node, NodeStateReason> nodeStateReasons, final Params params) {
         final GroupAvailabilityCalculator calc = new GroupAvailabilityCalculator.Builder()
                 .withMinNodeRatioPerGroup(params.minNodeRatioPerGroup)
                 .withDistribution(params.cluster.getDistribution())
@@ -200,9 +203,11 @@ public class ClusterStateGenerator {
         final Set<Integer> nodesToTakeDown = calc.nodesThatShouldBeDown(workingState);
 
         for (Integer idx : nodesToTakeDown) {
+            final Node node = storageNode(idx);
             final NodeState newState = new NodeState(NodeType.STORAGE, State.DOWN);
             newState.setDescription("group node availability below configured threshold");
-            workingState.setNodeState(storageNode(idx), newState);
+            workingState.setNodeState(node, newState);
+            nodeStateReasons.put(node, NodeStateReason.GROUP_IS_DOWN);
         }
     }
 
@@ -249,7 +254,7 @@ public class ClusterStateGenerator {
                 .count();
     }
 
-    private static boolean sufficientNodesAreAvailbleInCluster(final ClusterState state, final Params params) {
+    private static Optional<ClusterStateReason> clusterDownReason(final ClusterState state, final Params params) {
         final ContentCluster cluster = params.cluster;
 
         final long upStorageCount = countAvailableNodesOfType(NodeType.STORAGE, cluster, state);
@@ -259,18 +264,18 @@ public class ClusterStateGenerator {
         final long nodeCount = cluster.getConfiguredNodes().size();
 
         if (upStorageCount < params.minStorageNodesUp) {
-            return false;
+            return Optional.of(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE);
         }
         if (upDistributorCount < params.minDistributorNodesUp) {
-            return false;
+            return Optional.of(ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE);
         }
         if (params.minRatioOfStorageNodesUp * nodeCount > upStorageCount) {
-            return false;
+            return Optional.of(ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO);
         }
         if (params.minRatioOfDistributorNodesUp * nodeCount > upDistributorCount) {
-            return false;
+            return Optional.of(ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO);
         }
-        return true;
+        return Optional.empty();
     }
 
     /**
