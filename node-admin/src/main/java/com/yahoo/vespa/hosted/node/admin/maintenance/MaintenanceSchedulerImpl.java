@@ -32,7 +32,16 @@ public class MaintenanceSchedulerImpl extends AbstractComponent implements Runna
     private final ScheduledExecutorService service = new ScheduledThreadPoolExecutor(1);
     private Queue<String> jobQueue = new LinkedBlockingQueue<>();
 
-    public MaintenanceSchedulerImpl() {
+    private static MaintenanceScheduler maintenanceScheduler = null;
+
+    // Because of the regular job queue, we must have only one instance of this class
+    public static MaintenanceScheduler getInstance() {
+        if (maintenanceScheduler == null) maintenanceScheduler = new MaintenanceSchedulerImpl();
+
+        return maintenanceScheduler;
+    }
+
+    private MaintenanceSchedulerImpl() {
         service.scheduleAtFixedRate(this, rate.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
 
         addRegularJob(Maintainer.JOB_DELETE_OLD_APP_DATA,

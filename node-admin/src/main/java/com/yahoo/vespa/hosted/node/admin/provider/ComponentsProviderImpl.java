@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceSchedulerImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
@@ -48,7 +49,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
         Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
-        MaintenanceSchedulerImpl maintenanceScheduler = new MaintenanceSchedulerImpl();
+        MaintenanceScheduler maintenanceScheduler = MaintenanceSchedulerImpl.getInstance();
 
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);
