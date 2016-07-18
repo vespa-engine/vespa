@@ -39,17 +39,19 @@ public class DockerFailTest {
             e.printStackTrace();
         }
 
+        MaintenanceSchedulerMock.reset();
         OrchestratorMock.reset();
         NodeRepoMock.reset();
         DockerMock.reset();
 
+        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
         OrchestratorMock orchestratorMock = new OrchestratorMock();
         nodeRepositoryMock = new NodeRepoMock();
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
         HostName hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(
