@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
@@ -59,8 +60,8 @@ public class NodeAdminImpl implements NodeAdmin {
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
+        MaintenanceScheduler.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
-
         garbageCollectDockerImages(containersToRun);
     }
 

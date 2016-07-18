@@ -32,14 +32,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +70,7 @@ public class DockerImpl implements Docker {
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
-    private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    public static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
@@ -195,22 +192,6 @@ public class DockerImpl implements Docker {
         } catch (DockerException|InterruptedException e) {
             throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
         }
-    }
-
-    /**
-     * Delete application storage, implemented by moving it away for later cleanup
-     */
-    @Override
-    public void deleteApplicationStorage(ContainerName containerName) throws IOException {
-        Path from = applicationStoragePathForNodeAdmin(containerName.asString());
-        if (!Files.exists(from)) {
-            log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
-            return;
-        }
-        Path to = applicationStoragePathForNodeAdmin(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
-                containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
-        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
-        Files.move(from, to);
     }
 
     @Override
