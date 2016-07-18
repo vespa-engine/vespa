@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImpl;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

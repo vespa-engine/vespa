@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.maintenance;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;

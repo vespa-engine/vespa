@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.maintenance;
 
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;

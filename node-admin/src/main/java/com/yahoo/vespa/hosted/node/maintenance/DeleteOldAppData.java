@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.maintenance;
 
 import java.io.File;
 import java.time.Duration;

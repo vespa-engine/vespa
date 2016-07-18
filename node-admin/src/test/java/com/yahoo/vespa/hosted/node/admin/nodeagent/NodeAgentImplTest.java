@@ -11,8 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -20,8 +18,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyDouble;
@@ -395,7 +391,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -436,7 +432,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -475,7 +471,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -517,7 +513,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -560,7 +556,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -602,7 +598,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(nodeAgent, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -639,7 +635,7 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(nodeAgent).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -684,7 +680,7 @@ public class NodeAgentImplTest {
         verify(docker, never()).stopContainer(any(ContainerName.class));
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(nodeAgent).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -726,7 +722,7 @@ public class NodeAgentImplTest {
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
         final InOrder inOrder = inOrder(docker, nodeRepository);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(nodeAgent).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -769,7 +765,7 @@ public class NodeAgentImplTest {
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
         final InOrder inOrder = inOrder(docker, nodeRepository);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(nodeAgent).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),

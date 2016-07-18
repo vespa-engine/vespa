@@ -339,7 +339,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void deleteContainerStorage(ContainerName containerName) throws IOException {
+    public void deleteContainerStorage(ContainerName containerName) throws IOException {
         MaintenanceScheduler.deleteOldAppData("/home/y/var", 0);
 
         Path from = DockerImpl.applicationStoragePathForNodeAdmin(containerName.asString());
