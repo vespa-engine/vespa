@@ -16,6 +16,14 @@ import java.util.List;
  * @author valerijf
  */
 public class Maintainer {
+    public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
+    public static final String JOB_DELETE_OLD_LOGS = "delete-old-logs";
+    public static final String JOB_CLEAN_LOGS = "clean-logs";
+    public static final String JOB_CLEAN_LOGARCHIVE = "clean-logarchive";
+    public static final String JOB_CLEAN_FILEDISTRIBUTION = "clean-filedistribution";
+    public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
+    public static final String JOB_CLEAN_HOME = "clean-home";
+
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("maintainer.jar")
@@ -34,8 +42,7 @@ public class Maintainer {
         }
     }
 
-
-    @Command(name = "delete-old-app-data", description = "Deletes all directories and their contents that matches the criteria")
+    @Command(name = JOB_DELETE_OLD_APP_DATA, description = "Deletes all directories and their contents that matches the criteria")
     public static class DeleteOldAppDataArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
@@ -56,7 +63,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "delete-old-logs", description = "Deletes all log files that match the criteria in path")
+    @Command(name = JOB_DELETE_OLD_LOGS, description = "Deletes all log files that match the criteria in path")
     public static class DeleteOldLogsArguments implements Runnable {
         @Option(name = {"--path"},
                 required = true,
@@ -77,7 +84,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "clean-logs", description = "Deletes old elasticsearch2, logstash2, daemontools_y, nginx, and vespa logs")
+    @Command(name = JOB_CLEAN_LOGS, description = "Deletes old elasticsearch2, logstash2, daemontools_y, nginx, and vespa logs")
     public static class CleanLogsArguments implements Runnable {
         @Override
         public void run() {
@@ -94,7 +101,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "clean-logarchive", description = "Deletes old log archive entries")
+    @Command(name = JOB_CLEAN_LOGARCHIVE, description = "Deletes old log archive entries")
     public static class CleanLogArchiveArguments implements Runnable {
         @Override
         public void run() {
@@ -106,7 +113,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "clean-filedistribution", description = "Filedistribution clean up, see jira:VESPA-775")
+    @Command(name = JOB_CLEAN_FILEDISTRIBUTION, description = "Filedistribution clean up, see jira:VESPA-775")
     public static class CleanFileDistributionArguments implements Runnable {
         @Override
         public void run() {
@@ -118,7 +125,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "clean-core-dumps", description = "Clean core dumps")
+    @Command(name = JOB_CLEAN_CORE_DUMPS, description = "Clean core dumps")
     public static class CleanCoreDumpsArguments implements Runnable {
         @Override
         public void run() {
@@ -130,7 +137,7 @@ public class Maintainer {
         }
     }
 
-    @Command(name = "clean-home", description = "Clean home directories for large files")
+    @Command(name = JOB_CLEAN_HOME, description = "Clean home directories for large files")
     public static class CleanHomeArguments implements Runnable {
         @Override
         public void run() {
