@@ -295,7 +295,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             case ACTIVE:
-                maintenanceScheduler.cleanNodeAgent();
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -319,12 +319,12 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestrator.resume(nodeSpec.hostname);
                 break;
             case INACTIVE:
-                maintenanceScheduler.cleanNodeAgent();
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             case PROVISIONED:
             case DIRTY:
-                maintenanceScheduler.cleanNodeAgent();
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.log(LogLevel.INFO, logPrefix + "State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);

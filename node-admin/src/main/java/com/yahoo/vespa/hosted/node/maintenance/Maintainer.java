@@ -18,9 +18,6 @@ import java.util.List;
 public class Maintainer {
     public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
     public static final String JOB_DELETE_OLD_LOGS = "delete-old-logs";
-    public static final String JOB_CLEAN_LOGS = "clean-logs";
-    public static final String JOB_CLEAN_LOGARCHIVE = "clean-logarchive";
-    public static final String JOB_CLEAN_FILEDISTRIBUTION = "clean-filedistribution";
     public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
     public static final String JOB_CLEAN_HOME = "clean-home";
 
@@ -30,7 +27,6 @@ public class Maintainer {
                 .withDescription("This tool makes it easy to delete old log files and other node-admin app data.")
                 .withDefaultCommand(Help.class)
                 .withCommands(Help.class, DeleteOldAppDataArguments.class, DeleteOldLogsArguments.class,
-                        CleanLogsArguments.class, CleanLogArchiveArguments.class, CleanFileDistributionArguments.class,
                         CleanCoreDumpsArguments.class, CleanHomeArguments.class);
 
         Cli<Runnable> gitParser = builder.build();
@@ -81,47 +77,6 @@ public class Maintainer {
         @Override
         public void run() {
             DeleteOldAppData.deleteFiles(path, maxAge, name, false);
-        }
-    }
-
-    @Command(name = JOB_CLEAN_LOGS, description = "Deletes old elasticsearch2, logstash2, daemontools_y, nginx, and vespa logs")
-    public static class CleanLogsArguments implements Runnable {
-        @Override
-        public void run() {
-            String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
-                    "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
-
-            for (String pathToClean : pathsToClean) {
-                File path = new File(pathToClean);
-                if (path.exists()) {
-                    DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*\\.log.+", false);
-                    DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*QueryAccessLog.*", false);
-                }
-            }
-        }
-    }
-
-    @Command(name = JOB_CLEAN_LOGARCHIVE, description = "Deletes old log archive entries")
-    public static class CleanLogArchiveArguments implements Runnable {
-        @Override
-        public void run() {
-            File logArchiveDir = new File("/home/y/logs/vespa/logarchive");
-
-            if (logArchiveDir.exists()) {
-                DeleteOldAppData.deleteFiles(logArchiveDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
-            }
-        }
-    }
-
-    @Command(name = JOB_CLEAN_FILEDISTRIBUTION, description = "Filedistribution clean up, see jira:VESPA-775")
-    public static class CleanFileDistributionArguments implements Runnable {
-        @Override
-        public void run() {
-            File fileDistrDir = new File("/home/y/var/db/vespa/filedistribution");
-
-            if (fileDistrDir.exists()) {
-                DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
-            }
         }
     }
 

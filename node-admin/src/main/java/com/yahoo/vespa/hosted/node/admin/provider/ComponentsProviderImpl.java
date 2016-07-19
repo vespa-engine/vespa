@@ -49,7 +49,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
         Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
-        MaintenanceScheduler maintenanceScheduler = MaintenanceSchedulerImpl.getInstance();
+        MaintenanceScheduler maintenanceScheduler = new MaintenanceSchedulerImpl();
 
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);

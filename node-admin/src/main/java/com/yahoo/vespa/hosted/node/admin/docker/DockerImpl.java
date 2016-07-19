@@ -80,7 +80,6 @@ public class DockerImpl implements Docker {
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
             getDefaults().underVespaHome("logs"),
