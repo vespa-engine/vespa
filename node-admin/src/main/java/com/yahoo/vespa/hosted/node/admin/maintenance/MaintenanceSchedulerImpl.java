@@ -61,24 +61,50 @@ public class MaintenanceSchedulerImpl extends AbstractComponent implements Runna
     }
 
 
+    /**
+     * Deletes directories and their contents if they match all the criteria
+     *
+     * @param basePath      Base path to delete the directories from
+     * @param maxAgeSeconds Delete directories older (last modified date) than maxAgeSeconds
+     */
     @Override
-    public void deleteOldAppData(String path, long maxAge) {
-        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_APP_DATA, "--path=" + path, "--max_age=" + maxAge);
+    public void deleteOldAppData(String basePath, long maxAgeSeconds) {
+        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_APP_DATA, "--path=" + basePath, "--max_age=" + maxAgeSeconds);
     }
 
+    /**
+     * Deletes directories and their contents if they match all the criteria
+     *
+     * @param basePath      Base path to delete the directories from
+     * @param maxAgeSeconds Delete directories older (last modified date) than maxAgeSeconds
+     * @param dirNameRegex  Delete directories where directory name matches dirNameRegex
+     */
     @Override
-    public void deleteOldAppData(String path, long maxAge, String name) {
-        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_APP_DATA, "--path=" + path, "--max_age=" + maxAge, "--name=" + name);
+    public void deleteOldAppData(String basePath, long maxAgeSeconds, String dirNameRegex) {
+        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_APP_DATA, "--path=" + basePath, "--max_age=" + maxAgeSeconds, "--name=" + dirNameRegex);
     }
 
+    /**
+     * Recursively deletes files if they match all the criteria, also deletes empty directories.
+
+     * @param basePath      Base path from where to start the search
+     * @param maxAgeSeconds Delete files older (last modified date) than maxAgeSeconds
+     */
     @Override
-    public void deleteOldLogs(String path, long maxAge) {
-        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_LOGS, "--path=" + path, "--max_age=" + maxAge);
+    public void deleteOldLogs(String basePath, long maxAgeSeconds) {
+        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_LOGS, "--path=" + basePath, "--max_age=" + maxAgeSeconds);
     }
 
+    /**
+     * Recursively deletes files if they match all the criteria, also deletes empty directories.
+     *
+     * @param basePath      Base path from where to start the search
+     * @param maxAgeSeconds Delete files older (last modified date) than maxAgeSeconds
+     * @param fileNameRegex Delete files where filename matches fileNameRegex
+     */
     @Override
-    public void deleteOldLogs(String path, long maxAge, String name) {
-        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_LOGS, "--path=" + path, "--max_age=" + maxAge, "--name=" + name);
+    public void deleteOldLogs(String basePath, long maxAgeSeconds, String fileNameRegex) {
+        runMaintenanceJob(Maintainer.JOB_DELETE_OLD_LOGS, "--path=" + basePath, "--max_age=" + maxAgeSeconds, "--name=" + fileNameRegex);
     }
 
     @Override
