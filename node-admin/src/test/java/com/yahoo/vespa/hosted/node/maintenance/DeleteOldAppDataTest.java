@@ -52,14 +52,6 @@ public class DeleteOldAppDataTest {
     }
 
     @Test
-    public void testDeleteAllDefaultMaxAge() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(),
-                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, false);
-
-        assertThat(folder.getRoot().listFiles().length, is(22));
-    }
-
-    @Test
     public void testDeletePrefix() {
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, "^test_", false);
 

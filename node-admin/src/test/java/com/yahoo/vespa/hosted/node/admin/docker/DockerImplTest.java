@@ -10,6 +10,7 @@ import com.spotify.docker.client.ObjectMapperProvider;
 import com.spotify.docker.client.messages.ExecState;
 import com.spotify.docker.client.messages.Image;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -48,13 +49,6 @@ public class DockerImplTest {
         String dataDirectory = Defaults.getDefaults().vespaHome() + "logs";
         String directoryOnHost = "/home/docker/container-storage/my-container" + dataDirectory;
         assertThat(binds, hasItem(directoryOnHost + ":" + dataDirectory));
-    }
-
-    @Test
-    public void locationOfContainerStorageInNodeAdmin() {
-        assertEquals(
-                "/host/home/docker/container-storage/docker1-1",
-                DockerImpl.applicationStoragePathForNodeAdmin("docker1-1").toString());
     }
 
     @Test
