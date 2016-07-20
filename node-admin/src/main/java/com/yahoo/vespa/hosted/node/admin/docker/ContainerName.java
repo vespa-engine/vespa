@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @author bakksjo
  */
 public class ContainerName {
-    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+");
+    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
     private final String name;
 
     public ContainerName(final String name) {
