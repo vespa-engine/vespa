@@ -259,6 +259,20 @@ public class RestApiTest {
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'currentRestartGeneration': Node is not allocated\"}");
     }
 
+    @Test
+    public void testNodePatchToRemoveDockerReadyFields() throws IOException {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
+                        Utf8.toBytes("{" +
+                                "\"currentVespaVersion\": \"\"," +
+                                "\"currentDockerImage\": \"\"" +
+                                "}"
+                        ),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host5.yahoo.com\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), "node5-after-changes.json");
+    }
+
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
     public void testSingleNodeRendering() throws IOException {

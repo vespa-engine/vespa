@@ -58,7 +58,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant);
-        nodes.add(node5.setStatus(node5.status().setDockerImage("image-123")));
+        nodes.add(node5.setStatus(node5.status().setDockerImage("image-123").setVespaVersion(new Version("1.2.3"))));
 
         nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
