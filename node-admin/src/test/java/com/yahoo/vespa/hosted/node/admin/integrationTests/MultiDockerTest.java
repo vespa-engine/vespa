@@ -41,17 +41,19 @@ public class MultiDockerTest {
             e.printStackTrace();
         }
 
+        MaintenanceSchedulerMock.reset();
         OrchestratorMock.reset();
         NodeRepoMock.reset();
         DockerMock.reset();
 
+        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
         OrchestratorMock orchestratorMock = new OrchestratorMock();
         nodeRepositoryMock = new NodeRepoMock();
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
-        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
+        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
 
@@ -102,13 +104,13 @@ public class MultiDockerTest {
 
                 "stopContainer with ContainerName: ContainerName { name=container2 }\n" +
                 "deleteContainer with ContainerName: ContainerName { name=container2 }\n" +
-                "deleteApplicationStorage with ContainerName: ContainerName { name=container2 }\n" +
 
                 "startContainer with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }, " +
                 "minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n"));
 
+        assertThat(MaintenanceSchedulerMock.getRequests(), is("DeleteContainerStorage with ContainerName: ContainerName { name=container2 }\n"));
 
         String nodeRepoExpectedRequests =
                 "updateNodeAttributes with HostName: host1, restartGeneration: 1, DockerImage: DockerImage { imageId=image1 }, containerVespaVersion: null\n" +

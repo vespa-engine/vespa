@@ -46,17 +46,19 @@ public class NodeStateTest {
             e.printStackTrace();
         }
 
+        MaintenanceSchedulerMock.reset();
         OrchestratorMock.reset();
         NodeRepoMock.reset();
         DockerMock.reset();
 
+        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
         OrchestratorMock orchestratorMock = new OrchestratorMock();
         nodeRepositoryMock = new NodeRepoMock();
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
         hostName = new HostName("hostName");
         initialContainerNodeSpec = new ContainerNodeSpec(
@@ -120,8 +122,7 @@ public class NodeStateTest {
 
         // Wait until docker receives deleteContainer request
         String expectedDockerRequests = "stopContainer with ContainerName: ContainerName { name=container }\n" +
-                "deleteContainer with ContainerName: ContainerName { name=container }\n" +
-                "deleteApplicationStorage with ContainerName: ContainerName { name=container }\n";
+                "deleteContainer with ContainerName: ContainerName { name=container }\n";
         while (!DockerMock.getRequests().endsWith(expectedDockerRequests)) {
             Thread.sleep(10);
         }

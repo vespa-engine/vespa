@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Docker docker;
     private final Function<HostName, NodeAgent> nodeAgentFactory;
+    private final MaintenanceScheduler maintenanceScheduler;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<HostName, NodeAgent> nodeAgents = new HashMap<>();
@@ -50,17 +52,19 @@ public class NodeAdminImpl implements NodeAdmin {
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
-    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory, int nodeAgentScanIntervalMillis) {
+    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory,
+                         final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
+        this.maintenanceScheduler = maintenanceScheduler;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
+        maintenanceScheduler.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
-
         garbageCollectDockerImages(containersToRun);
     }
 

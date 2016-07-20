@@ -20,12 +20,13 @@ import java.util.function.Function;
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
     public NodeRepoMock nodeRepositoryMock = new NodeRepoMock();
+    private MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
     private OrchestratorMock orchestratorMock = new OrchestratorMock();
     private Docker dockerMock = new DockerMock();
 
     private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-            new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock));
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, 100);
+            new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
 
     @Override

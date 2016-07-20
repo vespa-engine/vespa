@@ -10,6 +10,7 @@ import com.spotify.docker.client.ObjectMapperProvider;
 import com.spotify.docker.client.messages.ExecState;
 import com.spotify.docker.client.messages.Image;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -43,18 +44,11 @@ import static org.mockito.Mockito.when;
 public class DockerImplTest {
     @Test
     public void data_directories_are_mounted_in_from_the_host() {
-        List<String> binds = DockerImpl.applicationStorageToMount("my-container");
+        List<String> binds = DockerImpl.applicationStorageToMount(new ContainerName("my-container"));
 
         String dataDirectory = Defaults.getDefaults().vespaHome() + "logs";
         String directoryOnHost = "/home/docker/container-storage/my-container" + dataDirectory;
         assertThat(binds, hasItem(directoryOnHost + ":" + dataDirectory));
-    }
-
-    @Test
-    public void locationOfContainerStorageInNodeAdmin() {
-        assertEquals(
-                "/host/home/docker/container-storage/docker1-1",
-                DockerImpl.applicationStoragePathForNodeAdmin("docker1-1").toString());
     }
 
     @Test

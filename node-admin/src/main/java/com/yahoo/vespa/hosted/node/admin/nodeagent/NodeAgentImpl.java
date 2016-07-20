@@ -5,6 +5,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
@@ -46,6 +47,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
+    private final MaintenanceScheduler maintenanceScheduler;
 
     private final Object monitor = new Object();
 
@@ -71,12 +73,14 @@ public class NodeAgentImpl implements NodeAgent {
             final HostName hostName,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
-            final DockerOperations dockerOperations) {
+            final DockerOperations dockerOperations,
+            final MaintenanceScheduler maintenanceScheduler) {
         this.logPrefix = "NodeAgent(" + hostName + "): ";
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
         this.dockerOperations = dockerOperations;
+        this.maintenanceScheduler = maintenanceScheduler;
     }
 
     @Override
@@ -284,12 +288,6 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         switch (nodeSpec.nodeState) {
-            case PROVISIONED:
-                removeContainerIfNeededUpdateContainerState(nodeSpec);
-                logger.log(LogLevel.INFO, logPrefix + "State is provisioned, will delete application storage and mark node as ready");
-                dockerOperations.deleteContainerStorage(nodeSpec.containerName);
-                nodeRepository.markAsReady(nodeSpec.hostname);
-                break;
             case READY:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
@@ -297,6 +295,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             case ACTIVE:
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -320,12 +319,15 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestrator.resume(nodeSpec.hostname);
                 break;
             case INACTIVE:
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
+            case PROVISIONED:
             case DIRTY:
+                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
-                logger.log(LogLevel.INFO, logPrefix + "State is dirty, will delete application storage and mark node as ready");
-                dockerOperations.deleteContainerStorage(nodeSpec.containerName);
+                logger.log(LogLevel.INFO, logPrefix + "State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
+                maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
                 nodeRepository.markAsReady(nodeSpec.hostname);
                 break;
             case FAILED:
