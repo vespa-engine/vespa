@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImpl;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
@@ -13,8 +12,6 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,14 +61,13 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
         }
 
-        Path from = Maintainer.applicationStoragePathForNode(containerName.asString());
+        Path from = Maintainer.applicationStoragePathForNode(containerName);
         if (!Files.exists(from)) {
             log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
 
-        Path to = Maintainer.applicationStoragePathForNode(Maintainer.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
-                containerName.asString() + "_" + DockerImpl.filenameFormatter.format(Date.from(Instant.now())));
+        Path to = Maintainer.applicationStoragePathForNodeCleanup(containerName);
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
         Files.move(from, to);
@@ -91,7 +87,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     }
 
     private File resolveContainerPath(ContainerName containerName, String relativePath) {
-        return Maintainer.applicationStoragePathForNode(containerName.asString()).resolve(relativePath).toFile();
+        return Maintainer.applicationStoragePathForNode(containerName).resolve(relativePath).toFile();
     }
 
     private static String[] concatenateArrays(String[] ar1, String[] ar2) {

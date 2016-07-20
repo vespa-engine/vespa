@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.maintenance;
 
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;
 import io.airlift.airline.Help;
@@ -9,9 +10,14 @@ import io.airlift.airline.ParseOptionMissingException;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 /**
@@ -21,12 +27,17 @@ public class Maintainer {
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+    private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
-    public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
+    private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
     public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
     public static final String JOB_CLEAN_HOME = "clean-home";
+
+    static {
+        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
@@ -48,7 +59,7 @@ public class Maintainer {
     public static class DeleteOldAppDataArguments implements Runnable {
         @Override
         public void run() {
-            String path = applicationStoragePathForNode("/").toString();
+            String path = applicationStorageRootPathForNode().toString();
             String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
             DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
@@ -85,12 +96,20 @@ public class Maintainer {
         }
     }
 
-
-    public static Path applicationStoragePathForHost(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName);
+    public static Path applicationStoragePathForHost(ContainerName containerName) {
+        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName.asString());
     }
 
-    public static Path applicationStoragePathForNode(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName);
+    public static Path applicationStorageRootPathForNode() {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toAbsolutePath();
+    }
+
+    public static Path applicationStoragePathForNode(ContainerName containerName) {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString());
+    }
+
+    public static Path applicationStoragePathForNodeCleanup(ContainerName containerName) {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
+                containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
     }
 }

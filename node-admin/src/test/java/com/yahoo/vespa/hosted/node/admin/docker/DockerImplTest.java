@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class DockerImplTest {
     @Test
     public void data_directories_are_mounted_in_from_the_host() {
-        List<String> binds = DockerImpl.applicationStorageToMount("my-container");
+        List<String> binds = DockerImpl.applicationStorageToMount(new ContainerName("my-container"));
 
         String dataDirectory = Defaults.getDefaults().vespaHome() + "logs";
         String directoryOnHost = "/home/docker/container-storage/my-container" + dataDirectory;

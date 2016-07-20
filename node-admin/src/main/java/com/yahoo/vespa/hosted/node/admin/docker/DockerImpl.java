@@ -35,8 +35,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,11 +68,9 @@ public class DockerImpl implements Docker {
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
-    public static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
-        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
@@ -209,7 +204,7 @@ public class DockerImpl implements Docker {
                     hostConfig(
                             HostConfig.builder()
                                     .networkMode("none")
-                                    .binds(applicationStorageToMount(containerName.asString()))
+                                    .binds(applicationStorageToMount(containerName))
                                     .build())
                     .env("CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())).
                             hostname(hostName.s());
@@ -332,7 +327,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    static List<String> applicationStorageToMount(String containerName) {
+    static List<String> applicationStorageToMount(ContainerName containerName) {
         // From-paths when mapping volumes are as seen by the Docker daemon (host)
         Path destination = Maintainer.applicationStoragePathForHost(containerName);
 
