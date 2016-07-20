@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Type-safe value wrapper for docker container names.
@@ -9,10 +10,14 @@ import java.util.Objects;
  * @author bakksjo
  */
 public class ContainerName {
+    private static final Pattern legalContainerNamePattern = Pattern.compile("^[a-zA-Z0-9-]+$");
     private final String name;
 
     public ContainerName(final String name) {
         this.name = Objects.requireNonNull(name);
+        if (! legalContainerNamePattern.matcher(name).matches()) {
+            throw new IllegalArgumentException("Illegal container name: " + name + ". Must only consist of [a-zA-Z0-9-]");
+        }
     }
 
     public String asString() {
