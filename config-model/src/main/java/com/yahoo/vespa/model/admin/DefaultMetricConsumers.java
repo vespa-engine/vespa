@@ -206,6 +206,10 @@ public class DefaultMetricConsumers {
         metrics.add(new Metric("httpapi_succeeded.rate"));
         metrics.add(new Metric("httpapi_failed.rate"));
 
+        metrics.add(new Metric("mem.heap.total.average"));
+        metrics.add(new Metric("mem.heap.free.average"));
+        metrics.add(new Metric("mem.heap.used.average"));
+
 
         // Config server
         metrics.add(new Metric("configserver.requests.count", "configserver.requests"));
