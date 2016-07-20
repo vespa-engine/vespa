@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
  */
 
 public class DeleteOldAppData {
-    public static final long DEFAULT_MAX_AGE_IN_SECONDS = Duration.ofDays(7).getSeconds();
-
     /**
      * (Recursively) deletes files if they match all the criteria, also deletes empty directories.
      *

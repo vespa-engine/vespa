@@ -26,6 +26,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
@@ -76,10 +77,6 @@ public class DockerImpl implements Docker {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
-    private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
             getDefaults().underVespaHome("logs"),
@@ -337,21 +334,13 @@ public class DockerImpl implements Docker {
 
     static List<String> applicationStorageToMount(String containerName) {
         // From-paths when mapping volumes are as seen by the Docker daemon (host)
-        Path destination = applicationStoragePathForHost(containerName);
+        Path destination = Maintainer.applicationStoragePathForHost(containerName);
 
         return Stream.concat(
                         Stream.of("/etc/hosts:/etc/hosts"),
                         DIRECTORIES_TO_MOUNT.stream()
                                 .map(directory -> bindDirective(destination, directory)))
                 .collect(Collectors.toList());
-    }
-
-    private static Path applicationStoragePathForHost(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName);
-    }
-
-    public static Path applicationStoragePathForNodeAdmin(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName);
     }
 
     private static String bindDirective(Path applicationStorageStorage, String directory) {

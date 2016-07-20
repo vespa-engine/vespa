@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * @author valerijf
@@ -26,7 +25,6 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     protected final Logger log = Logger.getLogger(MaintenanceSchedulerImpl.class.getName());
 
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
-    private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     @Override
     public void removeOldFilesFromNode(ContainerName containerName) {
@@ -55,27 +53,24 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
     @Override
     public void cleanNodeAdmin() {
-        execute(Maintainer.JOB_DELETE_OLD_APP_DATA,
-                "--path=" + DockerImpl.applicationStoragePathForNodeAdmin("/"),
-                "--max_age=" + Duration.ofDays(7).getSeconds(),
-                "--name=" + "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
-
+        execute(Maintainer.JOB_DELETE_OLD_APP_DATA);
         execute(Maintainer.JOB_CLEAN_HOME);
     }
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        execute(Maintainer.JOB_DELETE_OLD_APP_DATA,
-                "--path=" + DockerImpl.applicationStoragePathForNodeAdmin("/home/y/var"),
-                "--max_age=" + 0);
+        File yVarDir = resolveContainerPath(containerName, "/home/y/var");
+        if (yVarDir.exists()) {
+            DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
+        }
 
-        Path from = DockerImpl.applicationStoragePathForNodeAdmin(containerName.asString());
+        Path from = Maintainer.applicationStoragePathForNodeAdmin(containerName.asString());
         if (!Files.exists(from)) {
             log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
 
-        Path to = DockerImpl.applicationStoragePathForNodeAdmin(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
+        Path to = Maintainer.applicationStoragePathForNodeAdmin(Maintainer.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + DockerImpl.filenameFormatter.format(Date.from(Instant.now())));
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
@@ -96,7 +91,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     }
 
     private File resolveContainerPath(ContainerName containerName, String relativePath) {
-        return DockerImpl.applicationStoragePathForNodeAdmin(containerName.asString()).resolve(relativePath).toFile();
+        return Maintainer.applicationStoragePathForNodeAdmin(containerName.asString()).resolve(relativePath).toFile();
     }
 
     private static String[] concatenateArrays(String[] ar1, String[] ar2) {

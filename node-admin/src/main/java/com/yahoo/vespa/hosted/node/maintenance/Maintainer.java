@@ -3,21 +3,28 @@ package com.yahoo.vespa.hosted.node.maintenance;
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;
 import io.airlift.airline.Help;
-import io.airlift.airline.Option;
 import io.airlift.airline.ParseArgumentsUnexpectedException;
 import io.airlift.airline.ParseOptionMissingException;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author valerijf
  */
 public class Maintainer {
+    private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
+    private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+
+    public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
+
     public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
-    public static final String JOB_DELETE_OLD_LOGS = "delete-old-logs";
     public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
     public static final String JOB_CLEAN_HOME = "clean-home";
 
@@ -26,8 +33,7 @@ public class Maintainer {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("maintainer.jar")
                 .withDescription("This tool makes it easy to delete old log files and other node-admin app data.")
                 .withDefaultCommand(Help.class)
-                .withCommands(Help.class, DeleteOldAppDataArguments.class, DeleteOldLogsArguments.class,
-                        CleanCoreDumpsArguments.class, CleanHomeArguments.class);
+                .withCommands(Help.class, DeleteOldAppDataArguments.class, CleanCoreDumpsArguments.class, CleanHomeArguments.class);
 
         Cli<Runnable> gitParser = builder.build();
         try {
@@ -38,45 +44,14 @@ public class Maintainer {
         }
     }
 
-    @Command(name = JOB_DELETE_OLD_APP_DATA, description = "Deletes all directories and their contents that matches the criteria")
+    @Command(name = JOB_DELETE_OLD_APP_DATA, description = "Deletes old app data")
     public static class DeleteOldAppDataArguments implements Runnable {
-        @Option(name = {"--path"},
-                required = true,
-                description = "Path to directory which contains the app data")
-        private String path;
-
-        @Option(name = {"--max_age"},
-                description = "Maximum age (in seconds) of directory to keep")
-        private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
-
-        @Option(name = {"--name"},
-                description = "Regex pattern to match against the directory name")
-        private String regex;
-
         @Override
         public void run() {
-            DeleteOldAppData.deleteDirectories(path, maxAge, regex);
-        }
-    }
+            String path = applicationStoragePathForNodeAdmin("/").toString();
+            String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
-    @Command(name = JOB_DELETE_OLD_LOGS, description = "Deletes all log files that match the criteria in path")
-    public static class DeleteOldLogsArguments implements Runnable {
-        @Option(name = {"--path"},
-                required = true,
-                description = "Path to directory which contains the log data")
-        private String path;
-
-        @Option(name = {"--max_age"},
-                description = "Maximum age (in seconds) of file to keep")
-        private long maxAge = DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS;
-
-        @Option(name = {"--name"},
-                description = "Regex pattern to match against the filename")
-        private String name;
-
-        @Override
-        public void run() {
-            DeleteOldAppData.deleteFiles(path, maxAge, name, false);
+            DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
         }
     }
 
@@ -108,5 +83,14 @@ public class Maintainer {
                 }
             }
         }
+    }
+
+
+    public static Path applicationStoragePathForHost(String containerName) {
+        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName);
+    }
+
+    public static Path applicationStoragePathForNodeAdmin(String containerName) {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName);
     }
 }
