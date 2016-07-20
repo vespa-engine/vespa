@@ -64,13 +64,13 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
         }
 
-        Path from = Maintainer.applicationStoragePathForNodeAdmin(containerName.asString());
+        Path from = Maintainer.applicationStoragePathForNode(containerName.asString());
         if (!Files.exists(from)) {
             log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
 
-        Path to = Maintainer.applicationStoragePathForNodeAdmin(Maintainer.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
+        Path to = Maintainer.applicationStoragePathForNode(Maintainer.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + DockerImpl.filenameFormatter.format(Date.from(Instant.now())));
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
@@ -91,7 +91,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     }
 
     private File resolveContainerPath(ContainerName containerName, String relativePath) {
-        return Maintainer.applicationStoragePathForNodeAdmin(containerName.asString()).resolve(relativePath).toFile();
+        return Maintainer.applicationStoragePathForNode(containerName.asString()).resolve(relativePath).toFile();
     }
 
     private static String[] concatenateArrays(String[] ar1, String[] ar2) {

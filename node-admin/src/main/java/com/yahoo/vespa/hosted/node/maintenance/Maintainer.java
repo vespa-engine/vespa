@@ -48,7 +48,7 @@ public class Maintainer {
     public static class DeleteOldAppDataArguments implements Runnable {
         @Override
         public void run() {
-            String path = applicationStoragePathForNodeAdmin("/").toString();
+            String path = applicationStoragePathForNode("/").toString();
             String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
             DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
@@ -90,7 +90,7 @@ public class Maintainer {
         return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName);
     }
 
-    public static Path applicationStoragePathForNodeAdmin(String containerName) {
+    public static Path applicationStoragePathForNode(String containerName) {
         return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName);
     }
 }
