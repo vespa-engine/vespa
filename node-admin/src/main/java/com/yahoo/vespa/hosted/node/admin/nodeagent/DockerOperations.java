@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -79,10 +78,6 @@ public class DockerOperations {
             return true;
         }
         return false;
-    }
-
-    public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        docker.deleteApplicationStorage(containerName);
     }
 
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {

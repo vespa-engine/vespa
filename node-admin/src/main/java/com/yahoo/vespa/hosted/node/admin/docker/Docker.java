@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,8 +26,6 @@ public interface Docker {
     CompletableFuture<DockerImage> pullImageAsync(DockerImage image);
 
     boolean imageIsDownloaded(DockerImage image);
-
-    void deleteApplicationStorage(ContainerName containerName) throws IOException;
 
     String getVespaVersion(ContainerName containerName);
 

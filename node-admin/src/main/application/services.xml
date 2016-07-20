@@ -7,7 +7,6 @@
     </handler>
     <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
     <component id="docker" class="com.yahoo.vespa.hosted.node.admin.docker.DockerImpl" bundle="node-admin"/>
-    <component id="maintenance" class="com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler" bundle="node-admin"/>
 
     <config name='nodeadmin.docker.docker'>
       <caCertPath>/host/docker/certs/ca_cert.pem</caCertPath>

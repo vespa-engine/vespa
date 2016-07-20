@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.Container;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
@@ -49,8 +50,9 @@ public class NodeAdminImplTest {
     public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
         final Docker docker = mock(Docker.class);
         final Function<HostName, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
+        final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, 100);
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, 100);
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);

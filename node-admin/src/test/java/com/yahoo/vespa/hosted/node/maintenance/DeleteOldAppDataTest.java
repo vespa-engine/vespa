@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.admin.maintenance;
+package com.yahoo.vespa.hosted.node.maintenance;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -49,14 +49,6 @@ public class DeleteOldAppDataTest {
         DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(), 0, null, false);
 
         assertThat(folder.getRoot().listFiles().length, is(0));
-    }
-
-    @Test
-    public void testDeleteAllDefaultMaxAge() {
-        DeleteOldAppData.deleteFiles(folder.getRoot().getAbsolutePath(),
-                DeleteOldAppData.DEFAULT_MAX_AGE_IN_SECONDS, null, false);
-
-        assertThat(folder.getRoot().listFiles().length, is(22));
     }
 
     @Test

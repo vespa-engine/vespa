@@ -8,11 +8,10 @@ import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -20,8 +19,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyDouble;
@@ -53,8 +50,9 @@ public class NodeAgentImplTest {
     private final Docker docker = mock(Docker.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
+    private final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
 
-    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -395,7 +393,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -436,7 +434,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -475,7 +473,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -517,7 +515,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -560,7 +558,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -602,7 +600,7 @@ public class NodeAgentImplTest {
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
-        verify(docker, never()).deleteApplicationStorage(any(ContainerName.class));
+        verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -636,10 +634,10 @@ public class NodeAgentImplTest {
         nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(HostName.class));
-        final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
+        final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository, maintenanceScheduler);
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -682,9 +680,9 @@ public class NodeAgentImplTest {
 
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
-        final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
+        final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository, maintenanceScheduler);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -725,8 +723,8 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
-        final InOrder inOrder = inOrder(docker, nodeRepository);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        final InOrder inOrder = inOrder(docker, nodeRepository, maintenanceScheduler);
+        inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),
@@ -768,8 +766,8 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
-        final InOrder inOrder = inOrder(docker, nodeRepository);
-        inOrder.verify(docker).deleteApplicationStorage(containerName);
+        final InOrder inOrder = inOrder(docker, nodeRepository, maintenanceScheduler);
+        inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
         verify(docker, never()).startContainer(
                 any(DockerImage.class),

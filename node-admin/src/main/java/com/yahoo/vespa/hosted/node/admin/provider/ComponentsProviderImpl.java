@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceSchedulerImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -46,11 +48,12 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         }
 
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
-
         Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
+        MaintenanceScheduler maintenanceScheduler = new MaintenanceSchedulerImpl();
+
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker));
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, NODE_AGENT_SCAN_INTERVAL_MILLIS);
+                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);
+        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, NODE_AGENT_SCAN_INTERVAL_MILLIS);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
     }

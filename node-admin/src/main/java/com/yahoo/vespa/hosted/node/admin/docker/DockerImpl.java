@@ -26,20 +26,16 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,17 +68,10 @@ public class DockerImpl implements Docker {
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
-    private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
-        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
-    private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
             getDefaults().underVespaHome("logs"),
@@ -197,22 +185,6 @@ public class DockerImpl implements Docker {
         }
     }
 
-    /**
-     * Delete application storage, implemented by moving it away for later cleanup
-     */
-    @Override
-    public void deleteApplicationStorage(ContainerName containerName) throws IOException {
-        Path from = applicationStoragePathForNodeAdmin(containerName.asString());
-        if (!Files.exists(from)) {
-            log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
-            return;
-        }
-        Path to = applicationStoragePathForNodeAdmin(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
-                containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
-        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
-        Files.move(from, to);
-    }
-
     @Override
     public void startContainer(
             final DockerImage dockerImage,
@@ -232,7 +204,7 @@ public class DockerImpl implements Docker {
                     hostConfig(
                             HostConfig.builder()
                                     .networkMode("none")
-                                    .binds(applicationStorageToMount(containerName.asString()))
+                                    .binds(applicationStorageToMount(containerName))
                                     .build())
                     .env("CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())).
                             hostname(hostName.s());
@@ -355,23 +327,15 @@ public class DockerImpl implements Docker {
         }
     }
 
-    static List<String> applicationStorageToMount(String containerName) {
+    static List<String> applicationStorageToMount(ContainerName containerName) {
         // From-paths when mapping volumes are as seen by the Docker daemon (host)
-        Path destination = applicationStoragePathForHost(containerName);
+        Path destination = Maintainer.applicationStoragePathForHost(containerName);
 
         return Stream.concat(
                         Stream.of("/etc/hosts:/etc/hosts"),
                         DIRECTORIES_TO_MOUNT.stream()
                                 .map(directory -> bindDirective(destination, directory)))
                 .collect(Collectors.toList());
-    }
-
-    private static Path applicationStoragePathForHost(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName);
-    }
-
-    public static Path applicationStoragePathForNodeAdmin(String containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName);
     }
 
     private static String bindDirective(Path applicationStorageStorage, String directory) {

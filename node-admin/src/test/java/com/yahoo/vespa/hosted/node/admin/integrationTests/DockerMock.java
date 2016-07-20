@@ -102,13 +102,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void deleteApplicationStorage(ContainerName containerName) throws IOException {
-        synchronized (monitor) {
-            requests.append("deleteApplicationStorage with ContainerName: ").append(containerName).append("\n");
-        }
-    }
-
-    @Override
     public String getVespaVersion(ContainerName containerName) {
         return null;
     }
