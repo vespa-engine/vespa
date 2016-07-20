@@ -10,13 +10,14 @@ import java.util.regex.Pattern;
  * @author bakksjo
  */
 public class ContainerName {
-    private static final Pattern legalContainerNamePattern = Pattern.compile("^[a-zA-Z0-9-]+$");
+    private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+");
     private final String name;
 
     public ContainerName(final String name) {
         this.name = Objects.requireNonNull(name);
-        if (! legalContainerNamePattern.matcher(name).matches()) {
-            throw new IllegalArgumentException("Illegal container name: " + name + ". Must only consist of [a-zA-Z0-9-]");
+        if (! LEGAL_CONTAINER_NAME_PATTERN.matcher(name).matches()) {
+            throw new IllegalArgumentException("Illegal container name: " + name + ". Must match " +
+                    LEGAL_CONTAINER_NAME_PATTERN.toString());
         }
     }
 
