@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
@@ -13,18 +14,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author valerijf
  */
 public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
-    protected final Logger log = Logger.getLogger(MaintenanceSchedulerImpl.class.getName());
-
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
 
     @Override
     public void removeOldFilesFromNode(ContainerName containerName) {
+        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAgent-" + containerName.asString());
+
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
         for (String pathToClean : pathsToClean) {
@@ -45,17 +45,20 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
 
-        execute(Maintainer.JOB_CLEAN_CORE_DUMPS);
+        execute(logger, Maintainer.JOB_CLEAN_CORE_DUMPS);
     }
 
     @Override
     public void cleanNodeAdmin() {
-        execute(Maintainer.JOB_DELETE_OLD_APP_DATA);
-        execute(Maintainer.JOB_CLEAN_HOME);
+        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAdmin");
+        execute(logger, Maintainer.JOB_DELETE_OLD_APP_DATA);
+        execute(logger, Maintainer.JOB_CLEAN_HOME);
     }
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
+        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAgent-" + containerName.asString());
+
         File yVarDir = resolveContainerPath(containerName, "/home/y/var");
         if (yVarDir.exists()) {
             DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
@@ -63,24 +66,24 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
         Path from = Maintainer.applicationStoragePathForNode(containerName);
         if (!Files.exists(from)) {
-            log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
+            logger.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
             return;
         }
 
         Path to = Maintainer.applicationStoragePathForNodeCleanup(containerName);
-        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
+        logger.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
         Files.move(from, to);
     }
 
-    private void execute(String... params) {
+    private void execute(PrefixLogger logger, String... params) {
         try {
             Process p = Runtime.getRuntime().exec(concatenateArrays(baseArguments, params));
             String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
             String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
-            if (! output.isEmpty()) log.log(Level.INFO, "[Maintenance] Output :" + output);
-            if (! errors.isEmpty()) log.log(Level.SEVERE, "[Maintenance] Errors :" + errors);
+            if (! output.isEmpty()) logger.log(Level.INFO, output);
+            if (! errors.isEmpty()) logger.log(Level.SEVERE, errors);
         } catch (IOException e) {
             e.printStackTrace();
         }

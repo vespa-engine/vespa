@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -23,7 +24,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * @author stiankri
  */
 public class NodeAdminImpl implements NodeAdmin {
-    private static final Logger logger = Logger.getLogger(NodeAdmin.class.getName());
+    private static final PrefixLogger logger = new PrefixLogger(NodeAdmin.class.getName(), "NodeAdmin");
 
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
@@ -194,7 +194,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
             if (!nodeSpec.isPresent()) {
                 assert existingContainer.isPresent();
-                logger.warning("Container " + existingContainer.get() + " exists, but is not in node repository runlist");
+                logger.log(Level.WARNING, "Container " + existingContainer.get() + " exists, but is not in node repository runlist");
                 return;
             }
 
