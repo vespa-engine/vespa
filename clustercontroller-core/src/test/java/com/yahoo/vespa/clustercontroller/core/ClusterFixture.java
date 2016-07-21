@@ -172,9 +172,7 @@ class ClusterFixture {
     }
 
     ClusterStateGenerator.Params generatorParams() {
-        ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-        params.cluster = cluster;
-        return params;
+        return new ClusterStateGenerator.Params().cluster(cluster);
     }
 
     ContentCluster cluster() {
