@@ -59,6 +59,7 @@ mkdir -p $INSTALLPATH/var/vespa/bundlecache/
 mkdir -p $INSTALLPATH/var/vespa/cache/config/
 mkdir -p $INSTALLPATH/var/vespa/cmdlines/
 mkdir -p $INSTALLPATH/var/zookeeper/version-2/
+mkdir -p $INSTALLPATH/sbin
 
 ln -s $PREFIX/lib/jars/config-model-fat.jar $INSTALLPATH/conf/configserver-app/components/config-model-fat.jar
 ln -s $PREFIX/lib/jars/configserver-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/configserver.jar
@@ -67,7 +68,3 @@ ln -s $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/co
 ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s storaged-bin $INSTALLPATH/sbin/distributord-bin
-
-
-
-
