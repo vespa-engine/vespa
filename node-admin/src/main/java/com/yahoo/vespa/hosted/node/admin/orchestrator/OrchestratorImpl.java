@@ -30,6 +30,7 @@ import java.util.logging.Level;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class.getName());
     // TODO: Figure out the port dynamically.
     private static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
@@ -75,8 +76,6 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
-        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class.getName());
-
         try {
             return hostSuspensionClient.apply(hostSuspensionClient -> {
                 BatchHostSuspendRequest request = new BatchHostSuspendRequest(parentHostName, hostNames);
@@ -88,10 +87,10 @@ public class OrchestratorImpl implements Orchestrator {
                 // Orchestrator doesn't care about this node, so don't let that stop us.
                 return Optional.empty();
             }
-            logger.log(Level.INFO, "Orchestrator rejected suspend request for host " + parentHostName, e);
+            NODE_ADMIN_LOGGER.log(Level.INFO, "Orchestrator rejected suspend request for host " + parentHostName, e);
             return Optional.of(e.getLocalizedMessage());
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            NODE_ADMIN_LOGGER.log(Level.WARNING, "Unable to communicate with orchestrator", e);
             return Optional.of("Unable to communicate with orchestrator" + e.getMessage());
         }
     }

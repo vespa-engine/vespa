@@ -19,6 +19,8 @@ import java.util.logging.Level;
  * @author valerijf
  */
 public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class.getName());
+
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
 
     @Override
@@ -50,9 +52,8 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
     @Override
     public void cleanNodeAdmin() {
-        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class.getName());
-        execute(logger, Maintainer.JOB_DELETE_OLD_APP_DATA);
-        execute(logger, Maintainer.JOB_CLEAN_HOME);
+        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_DELETE_OLD_APP_DATA);
+        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_CLEAN_HOME);
     }
 
     @Override

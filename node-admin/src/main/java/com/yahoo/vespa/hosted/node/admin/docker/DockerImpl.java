@@ -58,6 +58,8 @@ import java.util.stream.Stream;
  * @author stiankri
  */
 public class DockerImpl implements Docker {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(DockerImpl.class.getName());
+
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
@@ -425,20 +427,18 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteImage(final DockerImage dockerImage) {
-        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(DockerImpl.class.getName());
-
         try {
-            logger.log(Level.INFO, "Deleting docker image " + dockerImage);
+            NODE_ADMIN_LOGGER.log(Level.INFO, "Deleting docker image " + dockerImage);
             final List<RemovedImage> removedImages = docker.removeImage(dockerImage.asString());
             for (RemovedImage removedImage : removedImages) {
                 if (removedImage.type() != RemovedImage.Type.DELETED) {
-                    logger.log(Level.INFO, "Result of deleting docker image " + dockerImage + ": " + removedImage);
+                    NODE_ADMIN_LOGGER.log(Level.INFO, "Result of deleting docker image " + dockerImage + ": " + removedImage);
                 }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interrupt", e);
         } catch (DockerException e) {
-            logger.log(Level.WARNING, "Could not delete docker image " + dockerImage, e);
+            NODE_ADMIN_LOGGER.log(Level.WARNING, "Could not delete docker image " + dockerImage, e);
         }
     }
 

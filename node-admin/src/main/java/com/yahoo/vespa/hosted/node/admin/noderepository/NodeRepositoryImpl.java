@@ -29,6 +29,7 @@ import java.util.Set;
  * @author stiankri
  */
 public class NodeRepositoryImpl implements NodeRepository {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class.getName());
     private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
 
     private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
@@ -45,7 +46,6 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
-        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class.getName());
         final GetNodesResponse nodesForHost = nodeRepositoryClient.apply(nodeRepositoryApi ->
                 nodeRepositoryApi.getNodesWithParentHost(baseHostName, true));
 
@@ -59,7 +59,7 @@ public class NodeRepositoryImpl implements NodeRepository {
             try {
                 nodeSpec = createContainerNodeSpec(node);
             } catch (IllegalArgumentException | NullPointerException e) {
-                logger.log(LogLevel.WARNING, "Bad node received from node repo when requesting children of the "
+                NODE_ADMIN_LOGGER.log(LogLevel.WARNING, "Bad node received from node repo when requesting children of the "
                         + baseHostName + " host: " + node, e);
                 continue;
             }
