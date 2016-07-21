@@ -105,7 +105,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 Optional.ofNullable(node.minDiskAvailableGb));
     }
 
-    private static ContainerName containerNameFromHostName(final String hostName) {
+    public static ContainerName containerNameFromHostName(final String hostName) {
         return new ContainerName(hostName.split("\\.")[0]);
     }
 
