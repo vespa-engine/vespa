@@ -102,7 +102,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
         synchronized (monitor) {
             if (nodeAdmin.isFrozen()) {
-                logger.log(Level.FINE, "Frozen, skipping fetching info from node repository");
+                logger.info("Frozen, skipping fetching info from node repository");
                 return;
             }
             final List<ContainerNodeSpec> containersToRun;

@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 
 import java.util.logging.Level;
@@ -29,19 +30,19 @@ public class PrefixLogger {
         logger.log(level, prefix + message, thrown);
     }
 
-    public void log(Level level, String message) {
+    private void log(Level level, String message) {
         logger.log(level, prefix + message);
     }
 
     public void info(String message) {
-        log(Level.INFO, message);
+        log(LogLevel.INFO, message);
     }
 
-    public void severe(String message) {
-        log(Level.SEVERE, message);
+    public void error(String message) {
+        log(LogLevel.ERROR, message);
     }
 
     public void warning(String message) {
-        log(Level.WARNING, message);
+        log(LogLevel.WARNING, message);
     }
 }
