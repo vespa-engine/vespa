@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
@@ -21,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author stiankri
@@ -29,7 +30,6 @@ import java.util.logging.Logger;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
-    private static final Logger logger = Logger.getLogger(OrchestratorImpl.class.getName());
     // TODO: Figure out the port dynamically.
     private static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
@@ -52,6 +52,9 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean suspend(final HostName hostName) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class.getName(),
+                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+
         try {
             return hostApiClient.apply(api -> {
                 final UpdateHostResponse response = api.suspend(hostName.s());
@@ -72,6 +75,8 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
+        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class.getName());
+
         try {
             return hostSuspensionClient.apply(hostSuspensionClient -> {
                 BatchHostSuspendRequest request = new BatchHostSuspendRequest(parentHostName, hostNames);
@@ -93,6 +98,9 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean resume(final HostName hostName) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class.getName(),
+                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+
         try {
             final boolean resumeSucceeded = hostApiClient.apply(api -> {
                 final UpdateHostResponse response = api.resume(hostName.s());

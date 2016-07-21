@@ -23,7 +23,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
     @Override
     public void removeOldFilesFromNode(ContainerName containerName) {
-        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAgent-" + containerName.asString());
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class.getName(), containerName);
 
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
@@ -50,14 +50,14 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
     @Override
     public void cleanNodeAdmin() {
-        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAdmin");
+        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class.getName());
         execute(logger, Maintainer.JOB_DELETE_OLD_APP_DATA);
         execute(logger, Maintainer.JOB_CLEAN_HOME);
     }
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        PrefixLogger logger = new PrefixLogger(MaintenanceSchedulerImpl.class.getName(), "NodeAgent-" + containerName.asString());
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class.getName(), containerName);
 
         File yVarDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
         if (yVarDir.exists()) {
