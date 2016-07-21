@@ -25,11 +25,11 @@ public class PrefixLogger {
         return new PrefixLogger(clazz, "NodeAgent-" + containerName.asString());
     }
 
-    public void log(Level level, String msg, Throwable thrown) {
-        logger.log(level, prefix + msg, thrown);
+    public void log(Level level, String message, Throwable thrown) {
+        logger.log(level, prefix + message, thrown);
     }
 
-    public void log(Level level, String msg) {
-        logger.log(level, prefix + msg);
+    public void log(Level level, String message) {
+        logger.log(level, prefix + message);
     }
 }
