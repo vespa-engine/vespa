@@ -34,6 +34,9 @@ public class ClusterStateGenerator {
         public double minRatioOfDistributorNodesUp = 0.0;
         public double minNodeRatioPerGroup = 0.0;
         public int idealDistributionBits = 16;
+        public int highestObservedDistributionBitCount = 16;
+        public int lowestObservedDistributionBitCount = 16;
+        public int maxInitProgressTime = 5000;
 
         Params() {
             this.transitionTimes = buildTransitionTimeMap(0, 0);
@@ -47,6 +50,14 @@ public class ClusterStateGenerator {
             return maxTransitionTime;
         }
 
+        Params cluster(ContentCluster cluster) {
+            this.cluster = cluster;
+            return this;
+        }
+        Params maxInitProgressTime(int maxTime) {
+            this.maxInitProgressTime = maxTime;
+            return this;
+        }
         Params transitionTimes(int timeMs) {
             this.transitionTimes = buildTransitionTimeMap(timeMs, timeMs);
             return this;
@@ -83,6 +94,14 @@ public class ClusterStateGenerator {
             this.idealDistributionBits = distributionBits;
             return this;
         }
+        Params highestObservedDistributionBitCount(int bitCount) {
+            this.highestObservedDistributionBitCount = bitCount;
+            return this;
+        }
+        Params lowestObservedDistributionBitCount(int bitCount) {
+            this.lowestObservedDistributionBitCount = bitCount;
+            return this;
+        }
 
         static Params fromOptions(FleetControllerOptions opts) {
             return new Params();
@@ -91,7 +110,7 @@ public class ClusterStateGenerator {
 
     static AnnotatedClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
-        final ClusterState workingState = emptyClusterState();
+        final ClusterState workingState = ClusterStateUtil.emptyState();
         final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
@@ -104,19 +123,10 @@ public class ClusterStateGenerator {
         final Optional<ClusterStateReason> reasonToBeDown = clusterDownReason(workingState, params);
         if (reasonToBeDown.isPresent()) {
             workingState.setClusterState(State.DOWN);
-
         }
         workingState.setDistributionBits(inferDistributionBitCount(cluster, workingState, params));
 
         return new AnnotatedClusterState(workingState, reasonToBeDown.orElse(null/*FIXME*/), nodeStateReasons);
-    }
-
-    private static ClusterState emptyClusterState() {
-        try {
-            return new ClusterState("");
-        } catch (Exception e) {
-            throw new RuntimeException(e); // Should never happen for empty state string
-        }
     }
 
     private static boolean nodeIsConsideredTooUnstable(final NodeInfo nodeInfo, final Params params) {
@@ -136,26 +146,62 @@ public class ClusterStateGenerator {
         final NodeState wanted   = nodeInfo.getWantedState();
         final NodeState baseline = reported.clone();
 
-        if (nodeIsConsideredTooUnstable(nodeInfo, params)) {
+        // TODO cleanup, simplify this logic once we have tests for all known edge cases
+        // TODO move shouldForceInitToDown into applyStorage...() ?
+        if (nodeIsConsideredTooUnstable(nodeInfo, params) || shouldForceInitToDown(nodeInfo, reported)) {
             baseline.setState(State.DOWN);
         }
         if (startupTimestampAlreadyObservedByAllNodes(nodeInfo, baseline)) {
             baseline.setStartTimestamp(0);
         }
-        if (reported.above(wanted)) {
+        if (nodeInfo.isStorage()) {
+            applyStorageSpecificStateTransforms(nodeInfo, params, reported, wanted, baseline);
+        }
+        if (reported.above(wanted)) { // FIXME baseline vs reported here (maintenance <-- above --> down is relevant)
             applyWantedStateToBaselineState(baseline, wanted);
-        }
-        if (nodeInfo.isDistributor()) {
-            return baseline; // Nothing more to be done for distributors
-        }
-        if (shouldForceInitToMaintenance(reported, wanted)
-            || (withinTemporalMaintenancePeriod(nodeInfo, baseline, params)
-                && wanted.getState() == State.UP))
-        {
-            baseline.setState(State.MAINTENANCE);
         }
 
         return baseline;
+    }
+
+    private static void applyStorageSpecificStateTransforms(NodeInfo nodeInfo, Params params, NodeState reported,
+                                                            NodeState wanted, NodeState baseline)
+    {
+        if (reported.getState() == State.INITIALIZING) {
+            if (timedOutWithoutNewInitProgress(reported, nodeInfo, params)
+                    || nodeInfo.recentlyObservedUnstableDuringInit())
+            {
+                baseline.setState(State.DOWN);
+            }
+            if (shouldForceInitToMaintenance(reported, wanted)) {
+                baseline.setState(State.MAINTENANCE);
+            }
+        }
+        // TODO ensure that maintenance cannot override Down for any other cases
+        if (withinTemporalMaintenancePeriod(nodeInfo, baseline, params) && wanted.getState() != State.DOWN) {
+            baseline.setState(State.MAINTENANCE);
+        }
+    }
+
+    private static boolean timedOutWithoutNewInitProgress(final NodeState reported, final NodeInfo nodeInfo, final Params params) {
+        if (reported.getState() != State.INITIALIZING) {
+            return false;
+        }
+        return nodeInfo.getInitProgressTime() + params.maxInitProgressTime <= params.currentTimeInMillis;
+    }
+
+    private static boolean initializingNodeIsListingBuckets(final NodeState reported) {
+        return reported.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001;
+    }
+
+    // Init while listing buckets should be treated as Down, as distributors expect a storage node
+    // in Init mode to have a bucket set readily available. Clients also expect a node in Init to
+    // be able to receive operations.
+    private static boolean shouldForceInitToDown(final NodeInfo nodeInfo, final NodeState reported) {
+        if (nodeInfo.isDistributor()) {
+            return false;
+        }
+        return reported.getState() == State.INITIALIZING && initializingNodeIsListingBuckets(reported);
     }
 
     // Special case: since each node is published with a single state, if we let a Retired node
@@ -185,11 +231,8 @@ public class ClusterStateGenerator {
                                                            final NodeState baseline,
                                                            final Params params)
     {
-        if (!nodeInfo.isStorage()) {
-            return false;
-        }
         final Integer transitionTime = params.transitionTimes.get(nodeInfo.getNode().getType());
-        if (transitionTime == 0 || baseline.getState() != State.DOWN) {
+        if (transitionTime == 0 || !baseline.getState().oneOf("sd")) {
             return false;
         }
         return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
@@ -233,6 +276,9 @@ public class ClusterStateGenerator {
 
         if (minBits.isPresent() && minBits.get() < bitCount) { // TODO simplify?
             bitCount = minBits.get();
+        }
+        if (bitCount > params.lowestObservedDistributionBitCount && bitCount < params.idealDistributionBits) {
+            bitCount = params.lowestObservedDistributionBitCount;
         }
 
         return bitCount;

@@ -161,6 +161,61 @@ public class ClusterStateGeneratorTest {
     }
 
     /**
+     * A storage node will report itself as being in initializing mode immediately when
+     * starting up. It can only accept external operations once it has finished listing
+     * the set of buckets (but not necessarily their contents). As a consequence of this,
+     * we have to map reported init state while bucket listing mode to Down. This will
+     * prevent clients from thinking they can use the node and prevent distributors form
+     * trying to fetch yet non-existent bucket sets from it.
+     *
+     * Detecting the bucket-listing stage is currently done by inspecting its init progress
+     * value and triggering on a sufficiently low value.
+     */
+    @Test
+    public void storage_node_in_init_mode_while_listing_buckets_is_marked_down() {
+        final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
+        initWhileListingBuckets.setInitProgress(0.0);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(1, initWhileListingBuckets);
+
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .1.s:d"));
+    }
+
+    /**
+     * Implicit down while reported as init should not kick into effect if the Wanted state
+     * is set to Maintenance.
+     */
+    @Test
+    public void implicit_down_while_listing_buckets_does_not_override_wanted_state() {
+        final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
+        initWhileListingBuckets.setInitProgress(0.0);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(1, initWhileListingBuckets)
+                .proposeStorageNodeWantedState(1, State.MAINTENANCE);
+
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .1.s:m"));
+    }
+
+    @Test
+    public void distributor_nodes_in_init_mode_are_not_mapped_to_down() {
+        final NodeState initWhileListingBuckets = new NodeState(NodeType.DISTRIBUTOR, State.INITIALIZING);
+        initWhileListingBuckets.setInitProgress(0.0);
+
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportDistributorNodeState(1, initWhileListingBuckets);
+
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:3 .1.s:i .1.i:0.0 storage:3"));
+    }
+
+    /**
      * Maintenance mode overrides all reported states, even Down.
      */
     @Test
@@ -226,18 +281,15 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:r"));
     }
 
-    @Test
-    public void reported_down_node_within_transition_time_has_maintenance_generated_state() {
+    private void do_test_change_within_node_transition_time_window_generates_maintenance(State reportedState) {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
         final ClusterStateGenerator.Params params = fixture.generatorParams()
                 .currentTimeInMilllis(10_000)
                 .transitionTimes(2000);
-        // FIXME why do we even have transition times for distributors when they inherently
-        // cannot go into maintenance mode..? Must only be for up -> down edge.
 
-        fixture.reportStorageNodeState(1, State.DOWN);
+        fixture.reportStorageNodeState(1, reportedState);
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
-        // Node 1 transitioned to reported Down at time 9000ms after epoch. This means that according to the
+        // Node 1 transitioned to reported `reportedState` at time 9000ms after epoch. This means that according to the
         // above transition time config, it should remain in generated maintenance mode until time 11000ms,
         // at which point it should finally transition to generated state Down.
         nodeInfo.setTransitionTime(9000);
@@ -251,6 +303,16 @@ public class ClusterStateGeneratorTest {
             final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
             assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
         }
+    }
+
+    @Test
+    public void reported_down_node_within_transition_time_has_maintenance_generated_state() {
+        do_test_change_within_node_transition_time_window_generates_maintenance(State.DOWN);
+    }
+
+    @Test
+    public void reported_stopping_node_within_transition_time_has_maintenance_generated_state() {
+        do_test_change_within_node_transition_time_window_generates_maintenance(State.STOPPING);
     }
 
     @Test
@@ -298,6 +360,22 @@ public class ClusterStateGeneratorTest {
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         // Should _not_ be in maintenance mode, since we explicitly want it to stay down.
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:d"));
+    }
+
+    @Test
+    public void reported_down_retired_node_within_transition_time_transitions_to_maintenance() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5).bringEntireClusterUp();
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .currentTimeInMilllis(10_000)
+                .transitionTimes(2000);
+
+        fixture.proposeStorageNodeWantedState(2, State.RETIRED);
+        fixture.reportStorageNodeState(2, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 2));
+        nodeInfo.setTransitionTime(9000);
+
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .2.s:m"));
     }
 
     @Test
@@ -587,7 +665,7 @@ public class ClusterStateGeneratorTest {
      * and any buckets caught over this level would not be accessible in the data space.
      */
     @Test
-    public void distribution_bits_bounded_by_reported_min_bits_by_storage_node() {
+    public void distribution_bits_bounded_by_reported_min_bits_from_storage_node() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(1, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(7));
@@ -616,7 +694,7 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("bits:12 distributor:3 storage:3"));
     }
 
-    // TODO do we really want this behavior?? It's the legacy one, but it seems... dangerous.
+    // TODO do we really want this behavior?? It's the legacy one, but it seems... dangerous.. Especially for maintenance
     @Test
     public void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
@@ -629,6 +707,104 @@ public class ClusterStateGeneratorTest {
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("bits:7 distributor:3 storage:3 .1.s:d .2.s:m"));
     }
+
+    private String do_test_distribution_bit_watermark(int lowestObserved, int node0MinUsedBits) {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(node0MinUsedBits));
+
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .highestObservedDistributionBitCount(8) // TODO is this even needed for our current purposes?
+                .lowestObservedDistributionBitCount(lowestObserved);
+
+        return ClusterStateGenerator.generatedStateFrom(params).toString();
+    }
+
+    /**
+     * Distribution bit increases should not take place incrementally. Doing so would
+     * let e.g. a transition from 10 bits to 20 bits cause 10 interim full re-distributions.
+     */
+    @Test
+    public void published_distribution_bit_bound_by_low_watermark_when_nodes_report_less_than_config_bits() {
+        assertThat(do_test_distribution_bit_watermark(5, 5),
+                   equalTo("bits:5 distributor:3 storage:3"));
+        assertThat(do_test_distribution_bit_watermark(5, 6),
+                   equalTo("bits:5 distributor:3 storage:3"));
+        assertThat(do_test_distribution_bit_watermark(5, 15),
+                   equalTo("bits:5 distributor:3 storage:3"));
+    }
+
+    @Test
+    public void published_state_jumps_to_configured_ideal_bits_when_all_nodes_report_it() {
+        // Note: the rest of the mocked nodes always report 16 bits by default
+        assertThat(do_test_distribution_bit_watermark(5, 16),
+                   equalTo("distributor:3 storage:3")); // "bits:16" implied
+    }
+
+    private String do_test_storage_node_with_no_init_progress(State wantedState) {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING))
+                .proposeStorageNodeWantedState(0, wantedState);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+        nodeInfo.setInitProgressTime(10_000);
+
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .maxInitProgressTime(1000)
+                .currentTimeInMilllis(11_000);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        return state.toString();
+    }
+
+    @Test
+    public void storage_node_with_no_init_progress_within_timeout_is_marked_down() {
+        assertThat(do_test_storage_node_with_no_init_progress(State.UP),
+                   equalTo("distributor:3 storage:3 .0.s:d"));
+    }
+
+    /**
+     * As per usual, we shouldn't transition implicitly to Down if Maintenance is set
+     * as the wanted state.
+     */
+    @Test
+    public void maintenance_wanted_state_overrides_storage_node_with_no_init_progress() {
+        assertThat(do_test_storage_node_with_no_init_progress(State.MAINTENANCE),
+                   equalTo("distributor:3 storage:3 .0.s:m"));
+    }
+
+    /**
+     * Legacy behavior: if a node has crashed (i.e. transition into Down) at least once
+     * while in Init mode, its subsequent init mode will not be made public.
+     * This means the node will remain in a Down-state until it has finished
+     * initializing. This is presumably because unstable nodes may not be able to finish
+     * their init stage and would otherwise pop in and out of the cluster state.
+     */
+    @Test
+    public void unstable_init_storage_node_has_init_state_substituted_by_down() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, State.INITIALIZING)
+                .reportStorageNodeState(0, State.DOWN) // Init->Down triggers unstable init flag
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.s:d"));
+    }
+
+    @Test
+    public void storage_node_with_crashes_but_not_unstable_init_does_not_have_init_state_substituted_by_down() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+        nodeInfo.setPrematureCrashCount(5);
+
+        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.s:i .0.i:0.5"));
+    }
+
+    // TODO test init progress time of zero == feature disabled
 
     // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 

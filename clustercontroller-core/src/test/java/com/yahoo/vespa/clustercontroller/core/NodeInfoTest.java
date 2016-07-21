@@ -1,0 +1,73 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.clustercontroller.core;
+
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class NodeInfoTest {
+
+    @Test
+    public void unstable_init_flag_is_initially_clear() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(3);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertFalse(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    private static ClusterFixture fixtureWithNodeMarkedAsUnstableInit(int nodeIndex) {
+        return ClusterFixture.forFlatCluster(3)
+                .reportStorageNodeState(nodeIndex, State.INITIALIZING)
+                .reportStorageNodeState(nodeIndex, State.DOWN);
+    }
+
+    @Test
+    public void down_edge_during_init_state_marks_as_unstable_init() {
+        ClusterFixture fixture = fixtureWithNodeMarkedAsUnstableInit(1);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertTrue(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    @Test
+    public void stopping_edge_during_init_does_not_mark_as_unstable_init() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(3).reportStorageNodeState(0, State.INITIALIZING);
+        fixture.reportStorageNodeState(0, State.STOPPING);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+
+        assertFalse(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    /**
+     * The cluster controller will, after a time of observed stable state, reset the crash
+     * counter for a given node. This should also reset the unstable init flag to keep it
+     * from haunting a now stable node.
+     */
+    @Test
+    public void zeroing_crash_count_resets_unstable_init_flag() {
+        ClusterFixture fixture = fixtureWithNodeMarkedAsUnstableInit(1);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        nodeInfo.setPrematureCrashCount(0);
+        assertFalse(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    /**
+     * A non-zero crash count update, on the other hand, implies the node is suffering
+     * further instabilities and should not clear the unstable init flag.
+     */
+    @Test
+    public void non_zero_crash_count_update_does_not_reset_unstable_init_flag() {
+        ClusterFixture fixture = fixtureWithNodeMarkedAsUnstableInit(1);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        nodeInfo.setPrematureCrashCount(3);
+        assertTrue(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
+
+    // TODO test the opposite edge
+
+}

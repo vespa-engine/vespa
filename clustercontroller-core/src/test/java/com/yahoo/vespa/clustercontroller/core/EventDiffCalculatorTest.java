@@ -53,8 +53,8 @@ public class EventDiffCalculatorTest {
         // TODO could reasonably put shared state into a common class to avoid dupes for both before/after
         ClusterStateReason clusterReasonBefore = emptyClusterStateReason();
         ClusterStateReason clusterReasonAfter = emptyClusterStateReason();
-        ClusterState clusterStateBefore = clusterState("");
-        ClusterState clusterStateAfter = clusterState("");
+        ClusterState clusterStateBefore = ClusterStateUtil.emptyState();
+        ClusterState clusterStateAfter = ClusterStateUtil.emptyState();
         final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
         final Map<Node, NodeStateReason> nodeReasonsAfter = new HashMap<>();
         long currentTimeMs = 0;

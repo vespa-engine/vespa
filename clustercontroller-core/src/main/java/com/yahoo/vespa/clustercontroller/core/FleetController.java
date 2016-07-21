@@ -7,6 +7,7 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.*;
@@ -638,7 +639,34 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // Send getNodeState requests to zero or more nodes.
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
         didWork |= systemStateGenerator.watchTimers(cluster, this);
-        didWork |= systemStateGenerator.notifyIfNewSystemState(cluster, this);
+
+        boolean newStateAvailable = systemStateGenerator.notifyIfNewSystemState(cluster, this); // FIXME deprecated!
+        didWork |= newStateAvailable;
+
+        // TODO begin wiring stuff together here!
+        if (newStateAvailable) {
+            // FIXME temporary!
+            ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
+            params.transitionTimes = options.maxTransitionTime;
+            params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
+                    .cluster(cluster)
+                    .maxPrematureCrashes(options.maxPrematureCrashes)
+                    .minStorageNodesUp(options.minStorageNodesUp)
+                    .minDistributorNodesUp(options.minDistributorNodesUp)
+                    .minRatioOfStorageNodesUp(options.minRatioOfStorageNodesUp)
+                    .minRatioOfDistributorNodesUp(options.minRatioOfDistributorNodesUp)
+                    .minNodeRatioPerGroup(options.minNodeRatioPerGroup)
+                    .idealDistributionBits(options.distributionBits)
+                    .lowestObservedDistributionBitCount(systemStateGenerator.getClusterState().getDistributionBitCount()); // FIXME MAD HAX
+            final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+            final ClusterState shinyState = state.getClusterState();
+            final ClusterState legacyState = systemStateGenerator.getClusterState();
+            state.getClusterState().setVersion(legacyState.getVersion());
+            if (!structurallySimilar(legacyState, shinyState)) { // FIXME bork bork bork
+                throw new IllegalStateException("State generation mismatch! Old: " + legacyState.toString()
+                        + ", new: " + shinyState.toString());
+            }
+        }
 
         if ( ! isStateGatherer) {
             if ( ! isMaster) {
@@ -649,6 +677,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
         isStateGatherer = true;
         return didWork;
+    }
+
+    private static boolean structurallySimilar(final ClusterState lhs, final ClusterState rhs) {
+        if (lhs.getClusterState() == State.DOWN && rhs.getClusterState() == State.DOWN) {
+            return true;
+        }
+        return lhs.toString().equals(rhs.toString());
     }
 
     private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
@@ -693,6 +728,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (InterruptedException e) {
             log.log(LogLevel.DEBUG, "Event thread stopped by interrupt exception: " + e);
         } catch (Throwable t) {
+            t.printStackTrace();
             log.log(LogLevel.ERROR, "Fatal error killed fleet controller", t);
             synchronized (monitor) { running = false; }
             System.exit(1);
