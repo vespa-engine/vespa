@@ -130,7 +130,7 @@ public class NodeRepositoryImpl implements NodeRepository {
             UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class,
                     containerNameFromHostName(hostName.toString()));
-            logger.log(LogLevel.ERROR, "Response code " + response.getStatus() + ": " + updateResponse.message);
+            logger.error("Response code " + response.getStatus() + ": " + updateResponse.message);
             throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
         }
     }

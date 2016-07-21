@@ -153,10 +153,10 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             loopThread.join(10000);
             if (loopThread.isAlive()) {
-                logger.severe("Could not stop host thread " + hostname);
+                logger.error("Could not stop host thread " + hostname);
             }
         } catch (InterruptedException e1) {
-            logger.severe("Interrupted; Could not stop host thread " + hostname);
+            logger.error("Interrupted; Could not stop host thread " + hostname);
         }
     }
 
@@ -250,7 +250,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(waittimeLeft);
                     } catch (InterruptedException e) {
-                        logger.severe("Interrupted, but ignoring this: " + hostname);
+                        logger.error("Interrupted, but ignoring this: " + hostname);
                         continue;
                     }
                     waittimeLeft -= Duration.between(start, Instant.now()).toMillis();

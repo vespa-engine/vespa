@@ -82,7 +82,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
             if (! output.isEmpty()) logger.info(output);
-            if (! errors.isEmpty()) logger.severe(errors);
+            if (! errors.isEmpty()) logger.error(errors);
         } catch (IOException e) {
             e.printStackTrace();
         }
