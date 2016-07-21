@@ -112,4 +112,8 @@ public class Maintainer {
         return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
     }
+
+    public static Path applicationStoragePathRelativeToNode(ContainerName containerName, String relativePath) {
+        return Paths.get(Maintainer.applicationStoragePathForNode(containerName).toString(), relativePath);
+    }
 }
