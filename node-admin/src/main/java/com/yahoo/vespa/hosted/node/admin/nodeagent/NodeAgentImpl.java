@@ -80,7 +80,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.hostname = hostName;
         this.dockerOperations = dockerOperations;
         this.maintenanceScheduler = maintenanceScheduler;
-        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class.getName(),
+        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
     }
 

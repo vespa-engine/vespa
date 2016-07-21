@@ -19,13 +19,13 @@ import java.util.logging.Level;
  * @author valerijf
  */
 public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class);
 
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
 
     @Override
     public void removeOldFilesFromNode(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class.getName(), containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class, containerName);
 
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
@@ -58,7 +58,7 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class.getName(), containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class, containerName);
 
         File yVarDir = resolveContainerPath(containerName, "/home/y/var");
         if (yVarDir.exists()) {

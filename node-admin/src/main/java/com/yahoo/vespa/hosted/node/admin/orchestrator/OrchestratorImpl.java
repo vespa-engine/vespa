@@ -30,7 +30,7 @@ import java.util.logging.Level;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class);
     // TODO: Figure out the port dynamically.
     private static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
@@ -53,7 +53,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean suspend(final HostName hostName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class.getName(),
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
 
         try {
@@ -97,7 +97,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean resume(final HostName hostName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class.getName(),
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
 
         try {

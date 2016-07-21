@@ -12,17 +12,17 @@ public class PrefixLogger {
     private String prefix;
     private Logger logger;
 
-    private PrefixLogger(String className, String prefix) {
-        this.logger = Logger.getLogger(className);
+    private PrefixLogger(Class clazz, String prefix) {
+        this.logger = Logger.getLogger(clazz.getName());
         this.prefix = prefix + ": ";
     }
 
-    public static PrefixLogger getNodeAdminLogger(String className) {
-        return new PrefixLogger(className, "NodeAdmin");
+    public static PrefixLogger getNodeAdminLogger(Class clazz) {
+        return new PrefixLogger(clazz, "NodeAdmin");
     }
 
-    public static PrefixLogger getNodeAgentLogger(String className, ContainerName containerName) {
-        return new PrefixLogger(className, "NodeAgent-" + containerName.asString());
+    public static PrefixLogger getNodeAgentLogger(Class clazz, ContainerName containerName) {
+        return new PrefixLogger(clazz, "NodeAgent-" + containerName.asString());
     }
 
     public void log(Level level, String msg, Throwable thrown) {

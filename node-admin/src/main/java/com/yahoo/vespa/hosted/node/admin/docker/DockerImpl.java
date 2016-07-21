@@ -59,7 +59,7 @@ import java.util.stream.Stream;
  * @author stiankri
  */
 public class DockerImpl implements Docker {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(DockerImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(DockerImpl.class);
 
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -282,7 +282,7 @@ public class DockerImpl implements Docker {
     private void setupContainerNetworking(ContainerName containerName,
                                           HostName hostName,
                                           int containerPid) throws UnknownHostException {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class.getName(), containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
         InetAddress inetAddress = InetAddress.getByName(hostName.s());
         String ipAddress = inetAddress.getHostAddress();
 

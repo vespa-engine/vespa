@@ -29,7 +29,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
-    private final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdminStateUpdater.class.getName());
+    private final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdminStateUpdater.class);
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final NodeAdmin nodeAdmin;

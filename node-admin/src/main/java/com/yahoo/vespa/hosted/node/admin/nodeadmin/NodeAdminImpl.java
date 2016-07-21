@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * @author stiankri
  */
 public class NodeAdminImpl implements NodeAdmin {
-    private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class.getName());
+    private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
 
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
