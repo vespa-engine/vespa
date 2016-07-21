@@ -194,7 +194,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
             if (!nodeSpec.isPresent()) {
                 assert existingContainer.isPresent();
-                logger.log(Level.WARNING, "Container " + existingContainer.get() + " exists, but is not in node repository runlist");
+                logger.warning("Container " + existingContainer.get() + " exists, but is not in node repository runlist");
                 return;
             }
 

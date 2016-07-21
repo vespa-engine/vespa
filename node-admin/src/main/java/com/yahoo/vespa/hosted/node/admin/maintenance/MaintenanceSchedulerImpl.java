@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
@@ -13,7 +12,6 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.logging.Level;
 
 /**
  * @author valerijf
@@ -67,11 +65,12 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
         Path from = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/");
         if (!Files.exists(from)) {
-            logger.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
+            logger.info("The application storage at " + from + " doesn't exist");
             return;
         }
 
         Path to = Maintainer.applicationStoragePathForNodeCleanup(containerName);
+        logger.info("Deleting application storage by moving it from " + from + " to " + to);
         logger.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         Path to = Maintainer.pathInNodeAdminToNodeCleanup(containerName);
         log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
@@ -85,8 +84,8 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
             String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
-            if (! output.isEmpty()) logger.log(Level.INFO, output);
-            if (! errors.isEmpty()) logger.log(Level.SEVERE, errors);
+            if (! output.isEmpty()) logger.info(output);
+            if (! errors.isEmpty()) logger.severe(errors);
         } catch (IOException e) {
             e.printStackTrace();
         }

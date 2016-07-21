@@ -299,7 +299,7 @@ public class DockerImpl implements Docker {
         for (int retry = 0; retry < 30; ++retry) {
             try {
                 runCommand(command);
-                logger.log(LogLevel.INFO, "Done setting up network");
+                logger.info("Done setting up network");
                 return;
             } catch (Exception e) {
                 final int sleepSecs = 3;
@@ -428,11 +428,11 @@ public class DockerImpl implements Docker {
     @Override
     public void deleteImage(final DockerImage dockerImage) {
         try {
-            NODE_ADMIN_LOGGER.log(Level.INFO, "Deleting docker image " + dockerImage);
+            NODE_ADMIN_LOGGER.info("Deleting docker image " + dockerImage);
             final List<RemovedImage> removedImages = docker.removeImage(dockerImage.asString());
             for (RemovedImage removedImage : removedImages) {
                 if (removedImage.type() != RemovedImage.Type.DELETED) {
-                    NODE_ADMIN_LOGGER.log(Level.INFO, "Result of deleting docker image " + dockerImage + ": " + removedImage);
+                    NODE_ADMIN_LOGGER.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
                 }
             }
         } catch (InterruptedException e) {

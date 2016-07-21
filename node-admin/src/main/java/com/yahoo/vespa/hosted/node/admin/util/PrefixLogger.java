@@ -32,4 +32,16 @@ public class PrefixLogger {
     public void log(Level level, String message) {
         logger.log(level, prefix + message);
     }
+
+    public void info(String message) {
+        log(Level.INFO, message);
+    }
+
+    public void severe(String message) {
+        log(Level.SEVERE, message);
+    }
+
+    public void warning(String message) {
+        log(Level.WARNING, message);
+    }
 }

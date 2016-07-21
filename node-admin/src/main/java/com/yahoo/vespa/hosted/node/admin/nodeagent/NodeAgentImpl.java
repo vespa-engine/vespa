@@ -20,7 +20,6 @@ import java.util.Map;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
@@ -154,10 +153,10 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             loopThread.join(10000);
             if (loopThread.isAlive()) {
-                logger.log(Level.SEVERE, "Could not stop host thread " + hostname);
+                logger.severe("Could not stop host thread " + hostname);
             }
         } catch (InterruptedException e1) {
-            logger.log(Level.SEVERE, "Interrupted; Could not stop host thread " + hostname);
+            logger.severe("Interrupted; Could not stop host thread " + hostname);
         }
     }
 
@@ -166,7 +165,7 @@ public class NodeAgentImpl implements NodeAgent {
             return;
         }
         addDebugMessage("Starting optional node program resume command");
-        logger.log(Level.INFO, "Starting optional node program resume command");
+        logger.info("Starting optional node program resume command");
         dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
         containerState = RUNNING;
     }
@@ -179,7 +178,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.wantedDockerImage.get(),
                 containerVespaVersion);
         if (!currentAttributes.equals(lastAttributesSet)) {
-            logger.log(Level.INFO, "Publishing new set of attributes to node repo: "
+            logger.info("Publishing new set of attributes to node repo: "
                     + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
                     lastAttributesSet + "} -> {" + currentAttributes + "}");
@@ -191,7 +190,7 @@ public class NodeAgentImpl implements NodeAgent {
             lastAttributesSet = currentAttributes;
         }
 
-        logger.log(Level.INFO, "Call resume against Orchestrator");
+        logger.info("Call resume against Orchestrator");
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
@@ -251,7 +250,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(waittimeLeft);
                     } catch (InterruptedException e) {
-                        logger.log(Level.SEVERE, "Interrupted, but ignoring this: " + hostname);
+                        logger.severe("Interrupted, but ignoring this: " + hostname);
                         continue;
                     }
                     waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
@@ -327,7 +326,7 @@ public class NodeAgentImpl implements NodeAgent {
             case DIRTY:
                 maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
-                logger.log(LogLevel.INFO, "State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
+                logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
                 nodeRepository.markAsReady(nodeSpec.hostname);
                 break;
