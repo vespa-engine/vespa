@@ -6,10 +6,12 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeRepositoryApi;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
@@ -22,13 +24,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * @author stiankri
  */
 public class NodeRepositoryImpl implements NodeRepository {
-    private static final Logger logger = Logger.getLogger(NodeRepositoryImpl.class.getName());
     private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
 
     private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
@@ -45,6 +45,7 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
+        PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class.getName());
         final GetNodesResponse nodesForHost = nodeRepositoryClient.apply(nodeRepositoryApi ->
                 nodeRepositoryApi.getNodesWithParentHost(baseHostName, true));
 
@@ -128,6 +129,8 @@ public class NodeRepositoryImpl implements NodeRepository {
         } catch (javax.ws.rs.WebApplicationException e) {
             final Response response = e.getResponse();
             UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class.getName(),
+                    containerNameFromHostName(hostName.toString()));
             logger.log(LogLevel.ERROR, "Response code " + response.getStatus() + ": " + updateResponse.message);
             throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
         }
