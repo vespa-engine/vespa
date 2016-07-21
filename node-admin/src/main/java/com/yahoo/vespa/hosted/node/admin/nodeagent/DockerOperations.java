@@ -73,7 +73,7 @@ public class DockerOperations {
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
-            logger.log(LogLevel.INFO, "Will remove container " + existingContainer.get() + ": " + removeReason.get());
+            logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
@@ -139,7 +139,7 @@ public class DockerOperations {
         }
 
         if (result.isPresent() && !result.get().isSuccess()) {
-            logger.log(LogLevel.WARNING, "The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
+            logger.warning("The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
                     + " failed: " + result.get().getOutput() + " for container " + containerName.asString());
         }
     }
@@ -147,7 +147,7 @@ public class DockerOperations {
     void startContainer(final ContainerNodeSpec nodeSpec) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
-        logger.log(Level.INFO, "Starting container " + nodeSpec.containerName);
+        logger.info("Starting container " + nodeSpec.containerName);
         // TODO: Properly handle absent min* values
         docker.startContainer(
                 nodeSpec.wantedDockerImage.get(),
@@ -161,7 +161,7 @@ public class DockerOperations {
     void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
-        logger.log(LogLevel.INFO, "Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
+        logger.info("Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
         asyncPullResult.whenComplete((dockerImage, throwable) -> {
             if (throwable != null) {
@@ -197,10 +197,10 @@ public class DockerOperations {
                 // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
                 // needs to contain routines for drain and suspend. For many image, these can just be dummy routines.
 
-                logger.log(Level.INFO, "Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
+                logger.info("Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
                 final boolean suspendAllowed = orchestrator.suspend(nodeSpec.hostname);
                 if (!suspendAllowed) {
-                    logger.log(Level.INFO, "Orchestrator rejected suspend of node");
+                    logger.info("Orchestrator rejected suspend of node");
                     // TODO: change suspend() to throw an exception if suspend is denied
                     throw new OrchestratorException("Failed to get permission to suspend " + nodeSpec.hostname);
                 }
@@ -208,11 +208,11 @@ public class DockerOperations {
                 trySuspendNode(containerName);
             }
 
-            logger.log(Level.INFO, "Stopping container " + containerName);
+            logger.info("Stopping container " + containerName);
             docker.stopContainer(containerName);
         }
 
-        logger.log(Level.INFO, "Deleting container " + containerName);
+        logger.info("Deleting container " + containerName);
         docker.deleteContainer(containerName);
     }
 

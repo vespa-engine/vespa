@@ -113,7 +113,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 return;
             }
             if (containersToRun == null) {
-                logger.log(Level.WARNING, "Got null from node repository");
+                logger.warning("Got null from node repository");
                 return;
             }
             try {
