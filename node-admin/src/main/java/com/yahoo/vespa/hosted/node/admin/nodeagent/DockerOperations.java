@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -181,7 +182,7 @@ public class DockerOperations {
 
     private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
             throws Exception {
-        String logPrefix = "NodeAgent(" + nodeSpec.hostname+ "): ";
+        PrefixLogger logger = new PrefixLogger(DockerOperations.class.getName(), "NodeAgent-" + nodeSpec.containerName.asString());
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
@@ -201,10 +202,10 @@ public class DockerOperations {
                 // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
                 // needs to contain routines for drain and suspend. For many image, these can just be dummy routines.
 
-                logger.log(Level.INFO, logPrefix + "Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
+                logger.log(Level.INFO, "Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
                 final boolean suspendAllowed = orchestrator.suspend(nodeSpec.hostname);
                 if (!suspendAllowed) {
-                    logger.log(Level.INFO, logPrefix + "Orchestrator rejected suspend of node");
+                    logger.log(Level.INFO, "Orchestrator rejected suspend of node");
                     // TODO: change suspend() to throw an exception if suspend is denied
                     throw new OrchestratorException("Failed to get permission to suspend " + nodeSpec.hostname);
                 }
@@ -212,11 +213,11 @@ public class DockerOperations {
                 trySuspendNode(containerName);
             }
 
-            logger.log(Level.INFO, logPrefix + "Stopping container " + containerName);
+            logger.log(Level.INFO, "Stopping container " + containerName);
             docker.stopContainer(containerName);
         }
 
-        logger.log(Level.INFO, logPrefix + "Deleting container " + containerName);
+        logger.log(Level.INFO, "Deleting container " + containerName);
         docker.deleteContainer(containerName);
     }
 

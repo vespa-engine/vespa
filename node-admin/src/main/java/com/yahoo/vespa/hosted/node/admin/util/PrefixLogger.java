@@ -12,7 +12,7 @@ public class PrefixLogger {
 
     public PrefixLogger(String className, String prefix) {
         this.logger = Logger.getLogger(className);
-        this.prefix = prefix + " ";
+        this.prefix = prefix + ": ";
     }
 
     public void log(Level level, String msg, Throwable thrown) {
