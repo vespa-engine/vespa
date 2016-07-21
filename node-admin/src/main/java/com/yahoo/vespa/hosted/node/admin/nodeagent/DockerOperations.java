@@ -42,7 +42,7 @@ public class DockerOperations {
         try {
             return docker.getVespaVersion(containerName);
         } catch (RuntimeException e) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), containerName);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
             logger.log(Level.WARNING, "Ignoring failure", e);
             return null;
         }
@@ -72,7 +72,7 @@ public class DockerOperations {
         }
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), nodeSpec.containerName);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
             logger.log(LogLevel.INFO, "Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
@@ -124,7 +124,7 @@ public class DockerOperations {
      * Any failures are logged and ignored.
      */
     private void trySuspendNode(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
         Optional<ProcessResult> result;
 
         try {
@@ -145,7 +145,7 @@ public class DockerOperations {
     }
 
     void startContainer(final ContainerNodeSpec nodeSpec) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), nodeSpec.containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
         logger.log(Level.INFO, "Starting container " + nodeSpec.containerName);
         // TODO: Properly handle absent min* values
@@ -159,7 +159,7 @@ public class DockerOperations {
     }
 
     void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), nodeSpec.containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
         logger.log(LogLevel.INFO, "Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
@@ -177,7 +177,7 @@ public class DockerOperations {
 
     private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
             throws Exception {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class.getName(), nodeSpec.containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend

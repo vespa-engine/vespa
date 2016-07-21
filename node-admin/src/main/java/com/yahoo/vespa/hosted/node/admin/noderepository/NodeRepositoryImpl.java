@@ -6,7 +6,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeRepositoryApi;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
@@ -29,7 +28,7 @@ import java.util.Set;
  * @author stiankri
  */
 public class NodeRepositoryImpl implements NodeRepository {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
     private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
 
     private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
@@ -129,7 +128,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         } catch (javax.ws.rs.WebApplicationException e) {
             final Response response = e.getResponse();
             UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class.getName(),
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class,
                     containerNameFromHostName(hostName.toString()));
             logger.log(LogLevel.ERROR, "Response code " + response.getStatus() + ": " + updateResponse.message);
             throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
