@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -201,7 +200,7 @@ public class NodeAdminImpl implements NodeAdmin {
             try {
                 ensureNodeAgentForNodeIsStarted(nodeSpec.get());
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Failed to bring container to desired state", e);
+                logger.warning("Failed to bring container to desired state", e);
             }
         });
     }

@@ -26,7 +26,7 @@ public class PrefixLogger {
         return new PrefixLogger(clazz, "NodeAgent-" + containerName.asString());
     }
 
-    public void log(Level level, String message, Throwable thrown) {
+    private void log(Level level, String message, Throwable thrown) {
         logger.log(level, prefix + message, thrown);
     }
 
@@ -34,15 +34,28 @@ public class PrefixLogger {
         logger.log(level, prefix + message);
     }
 
+
     public void info(String message) {
         log(LogLevel.INFO, message);
+    }
+
+    public void info(String message, Throwable thrown) {
+        log(LogLevel.INFO, message, thrown);
     }
 
     public void error(String message) {
         log(LogLevel.ERROR, message);
     }
 
+    public void error(String message, Throwable thrown) {
+        log(LogLevel.ERROR, message, thrown);
+    }
+
     public void warning(String message) {
         log(LogLevel.WARNING, message);
+    }
+
+    public void warning(String message, Throwable thrown) {
+        log(LogLevel.WARNING, message, thrown);
     }
 }

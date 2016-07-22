@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
@@ -58,7 +57,7 @@ public class NodeRepositoryImpl implements NodeRepository {
             try {
                 nodeSpec = createContainerNodeSpec(node);
             } catch (IllegalArgumentException | NullPointerException e) {
-                NODE_ADMIN_LOGGER.log(LogLevel.WARNING, "Bad node received from node repo when requesting children of the "
+                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
                         + baseHostName + " host: " + node, e);
                 continue;
             }

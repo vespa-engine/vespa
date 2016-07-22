@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -18,7 +17,6 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -43,7 +41,7 @@ public class DockerOperations {
             return docker.getVespaVersion(containerName);
         } catch (RuntimeException e) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
-            logger.log(Level.WARNING, "Ignoring failure", e);
+            logger.warning("Ignoring failure", e);
             return null;
         }
     }
@@ -133,7 +131,7 @@ public class DockerOperations {
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.log(LogLevel.WARNING,  "Failed trying to suspend container " + containerName.asString() + "  with "
+            logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
             return;
         }
@@ -165,7 +163,7 @@ public class DockerOperations {
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
         asyncPullResult.whenComplete((dockerImage, throwable) -> {
             if (throwable != null) {
-                logger.log(Level.WARNING, "Failed to pull docker image " + nodeSpec.wantedDockerImage, throwable);
+                logger.warning("Failed to pull docker image " + nodeSpec.wantedDockerImage, throwable);
                 return;
             }
             assert nodeSpec.wantedDockerImage.get().equals(dockerImage);
