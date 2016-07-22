@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -13,12 +12,11 @@ import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -31,7 +29,6 @@ public class DockerOperations {
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
 
-    private static final Logger logger = Logger.getLogger(DockerOperations.class.getName());
     private final Docker docker;
 
     public DockerOperations(Docker docker) {
@@ -41,9 +38,10 @@ public class DockerOperations {
     // Returns null on problems
     public String getVespaVersionOrNull(ContainerName containerName) {
         try {
-        return docker.getVespaVersion(containerName);
+            return docker.getVespaVersion(containerName);
         } catch (RuntimeException e) {
-            logger.log(Level.WARNING, "Ignoring failure", e);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
+            logger.warning("Ignoring failure", e);
             return null;
         }
     }
@@ -72,8 +70,8 @@ public class DockerOperations {
         }
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
-            logger.log(LogLevel.INFO, "NodeAgent(" + hostname + "): " + "Will remove container " + existingContainer.get() + ": "
-                    + removeReason.get());
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+            logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
@@ -124,7 +122,7 @@ public class DockerOperations {
      * Any failures are logged and ignored.
      */
     private void trySuspendNode(ContainerName containerName) {
-
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
         Optional<ProcessResult> result;
 
         try {
@@ -133,22 +131,21 @@ public class DockerOperations {
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.log(LogLevel.WARNING,  "Failed trying to suspend container " + containerName.asString() + "  with "
+            logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
             return;
         }
 
         if (result.isPresent() && !result.get().isSuccess()) {
-
-            logger.log(LogLevel.WARNING, "The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
+            logger.warning("The suspend program " + Arrays.toString(SUSPEND_NODE_COMMAND)
                     + " failed: " + result.get().getOutput() + " for container " + containerName.asString());
         }
     }
 
     void startContainer(final ContainerNodeSpec nodeSpec) {
-        String logPrefix = "NodeAgent(" + nodeSpec.hostname+ "): ";
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
-        logger.log(Level.INFO, logPrefix + "Starting container " + nodeSpec.containerName);
+        logger.info("Starting container " + nodeSpec.containerName);
         // TODO: Properly handle absent min* values
         docker.startContainer(
                 nodeSpec.wantedDockerImage.get(),
@@ -160,16 +157,13 @@ public class DockerOperations {
     }
 
     void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
-        String logPrefix = "NodeAgent(" + nodeSpec.hostname+ "): ";
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
-        logger.log(LogLevel.INFO, logPrefix + "Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
+        logger.info("Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
         asyncPullResult.whenComplete((dockerImage, throwable) -> {
             if (throwable != null) {
-                logger.log(
-                        Level.WARNING,
-                        logPrefix + "Failed to pull docker image " + nodeSpec.wantedDockerImage,
-                        throwable);
+                logger.warning("Failed to pull docker image " + nodeSpec.wantedDockerImage, throwable);
                 return;
             }
             assert nodeSpec.wantedDockerImage.get().equals(dockerImage);
@@ -181,7 +175,7 @@ public class DockerOperations {
 
     private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
             throws Exception {
-        String logPrefix = "NodeAgent(" + nodeSpec.hostname+ "): ";
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
@@ -201,10 +195,10 @@ public class DockerOperations {
                 // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
                 // needs to contain routines for drain and suspend. For many image, these can just be dummy routines.
 
-                logger.log(Level.INFO, logPrefix + "Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
+                logger.info("Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
                 final boolean suspendAllowed = orchestrator.suspend(nodeSpec.hostname);
                 if (!suspendAllowed) {
-                    logger.log(Level.INFO, logPrefix + "Orchestrator rejected suspend of node");
+                    logger.info("Orchestrator rejected suspend of node");
                     // TODO: change suspend() to throw an exception if suspend is denied
                     throw new OrchestratorException("Failed to get permission to suspend " + nodeSpec.hostname);
                 }
@@ -212,11 +206,11 @@ public class DockerOperations {
                 trySuspendNode(containerName);
             }
 
-            logger.log(Level.INFO, logPrefix + "Stopping container " + containerName);
+            logger.info("Stopping container " + containerName);
             docker.stopContainer(containerName);
         }
 
-        logger.log(Level.INFO, logPrefix + "Deleting container " + containerName);
+        logger.info("Deleting container " + containerName);
         docker.deleteContainer(containerName);
     }
 
@@ -226,7 +220,7 @@ public class DockerOperations {
 
         if (result.isPresent() && !result.get().isSuccess()) {
             throw new RuntimeException("Container " +containerName.asString()
-                    + ": command " + RESUME_NODE_COMMAND + " failed: " + result.get());
+                    + ": command " + Arrays.toString(RESUME_NODE_COMMAND) + " failed: " + result.get());
         }
     }
 }

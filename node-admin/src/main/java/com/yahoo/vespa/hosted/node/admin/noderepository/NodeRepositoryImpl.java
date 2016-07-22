@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
@@ -10,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesRespons
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeRepositoryApi;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
@@ -22,13 +22,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * @author stiankri
  */
 public class NodeRepositoryImpl implements NodeRepository {
-    private static final Logger logger = Logger.getLogger(NodeRepositoryImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
     private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
 
     private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
@@ -58,7 +57,7 @@ public class NodeRepositoryImpl implements NodeRepository {
             try {
                 nodeSpec = createContainerNodeSpec(node);
             } catch (IllegalArgumentException | NullPointerException e) {
-                logger.log(LogLevel.WARNING, "Bad node received from node repo when requesting children of the "
+                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
                         + baseHostName + " host: " + node, e);
                 continue;
             }
@@ -105,7 +104,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 Optional.ofNullable(node.minDiskAvailableGb));
     }
 
-    private static ContainerName containerNameFromHostName(final String hostName) {
+    public static ContainerName containerNameFromHostName(final String hostName) {
         return new ContainerName(hostName.split("\\.")[0]);
     }
 
@@ -128,7 +127,9 @@ public class NodeRepositoryImpl implements NodeRepository {
         } catch (javax.ws.rs.WebApplicationException e) {
             final Response response = e.getResponse();
             UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
-            logger.log(LogLevel.ERROR, "Response code " + response.getStatus() + ": " + updateResponse.message);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class,
+                    containerNameFromHostName(hostName.toString()));
+            logger.error("Response code " + response.getStatus() + ": " + updateResponse.message);
             throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
         }
     }

@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -16,8 +17,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
@@ -29,8 +28,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
-    private static final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
-
+    private final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdminStateUpdater.class);
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final NodeAdmin nodeAdmin;
@@ -103,24 +101,24 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
         synchronized (monitor) {
             if (nodeAdmin.isFrozen()) {
-                log.log(Level.FINE, "Frozen, skipping fetching info from node repository");
+                logger.info("Frozen, skipping fetching info from node repository");
                 return;
             }
             final List<ContainerNodeSpec> containersToRun;
             try {
                 containersToRun = nodeRepository.getContainersToRun();
             } catch (Throwable t) {
-                log.log(Level.WARNING, "Failed fetching container info from node repository", t);
+                logger.warning("Failed fetching container info from node repository", t);
                 return;
             }
             if (containersToRun == null) {
-                log.log(Level.WARNING, "Got null from node repository");
+                logger.warning("Got null from node repository");
                 return;
             }
             try {
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Throwable t) {
-                log.log(Level.WARNING, "Failed updating node admin: ", t);
+                logger.warning("Failed updating node admin: ", t);
                 return;
             }
         }

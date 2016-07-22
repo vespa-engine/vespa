@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
@@ -20,8 +22,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author stiankri
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
-    private static final Logger logger = Logger.getLogger(OrchestratorImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class);
     // TODO: Figure out the port dynamically.
     private static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
@@ -52,6 +52,9 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public boolean suspend(final HostName hostName) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
+                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+
         try {
             return hostApiClient.apply(api -> {
                 final UpdateHostResponse response = api.suspend(hostName.s());
@@ -62,10 +65,10 @@ public class OrchestratorImpl implements Orchestrator {
                 // Orchestrator doesn't care about this node, so don't let that stop us.
                 return true;
             }
-            logger.log(Level.INFO, "Orchestrator rejected suspend request for host " + hostName, e);
+            logger.info("Orchestrator rejected suspend request for host " + hostName, e);
             return false;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            logger.warning("Unable to communicate with orchestrator", e);
             return false;
         }
     }
@@ -83,16 +86,19 @@ public class OrchestratorImpl implements Orchestrator {
                 // Orchestrator doesn't care about this node, so don't let that stop us.
                 return Optional.empty();
             }
-            logger.log(Level.INFO, "Orchestrator rejected suspend request for host " + parentHostName, e);
+            NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, e);
             return Optional.of(e.getLocalizedMessage());
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
             return Optional.of("Unable to communicate with orchestrator" + e.getMessage());
         }
     }
 
     @Override
     public boolean resume(final HostName hostName) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
+                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+
         try {
             final boolean resumeSucceeded = hostApiClient.apply(api -> {
                 final UpdateHostResponse response = api.resume(hostName.s());
@@ -100,10 +106,10 @@ public class OrchestratorImpl implements Orchestrator {
             });
             return resumeSucceeded;
         } catch (ClientErrorException e) {
-            logger.log(Level.INFO, "Orchestrator rejected resume request for host " + hostName, e);
+            logger.info("Orchestrator rejected resume request for host " + hostName, e);
             return false;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            logger.warning("Unable to communicate with orchestrator", e);
             return false;
         }
     }

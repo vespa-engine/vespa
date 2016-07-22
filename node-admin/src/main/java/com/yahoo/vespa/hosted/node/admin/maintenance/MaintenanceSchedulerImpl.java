@@ -1,8 +1,8 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
@@ -12,19 +12,19 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author valerijf
  */
 public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
-    protected final Logger log = Logger.getLogger(MaintenanceSchedulerImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(MaintenanceSchedulerImpl.class);
 
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
 
     @Override
     public void removeOldFilesFromNode(ContainerName containerName) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class, containerName);
+
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
         for (String pathToClean : pathsToClean) {
@@ -45,17 +45,19 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
 
-        execute(Maintainer.JOB_CLEAN_CORE_DUMPS);
+        execute(logger, Maintainer.JOB_CLEAN_CORE_DUMPS);
     }
 
     @Override
     public void cleanNodeAdmin() {
-        execute(Maintainer.JOB_DELETE_OLD_APP_DATA);
-        execute(Maintainer.JOB_CLEAN_HOME);
+        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_DELETE_OLD_APP_DATA);
+        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_CLEAN_HOME);
     }
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class, containerName);
+
         File yVarDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
         if (yVarDir.exists()) {
             DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
@@ -63,24 +65,24 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
 
         Path from = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/");
         if (!Files.exists(from)) {
-            log.log(LogLevel.INFO, "The application storage at " + from + " doesn't exist");
+            logger.info("The application storage at " + from + " doesn't exist");
             return;
         }
 
         Path to = Maintainer.pathInNodeAdminToNodeCleanup(containerName);
-        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
+        logger.info("Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
         Files.move(from, to);
     }
 
-    private void execute(String... params) {
+    private void execute(PrefixLogger logger, String... params) {
         try {
             Process p = Runtime.getRuntime().exec(concatenateArrays(baseArguments, params));
             String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
             String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
-            if (! output.isEmpty()) log.log(Level.INFO, "[Maintenance] Output :" + output);
-            if (! errors.isEmpty()) log.log(Level.SEVERE, "[Maintenance] Errors :" + errors);
+            if (! output.isEmpty()) logger.info(output);
+            if (! errors.isEmpty()) logger.error(errors);
         } catch (IOException e) {
             e.printStackTrace();
         }

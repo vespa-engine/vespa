@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -18,8 +19,6 @@ import java.util.Map;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
@@ -37,11 +36,10 @@ public class NodeAgentImpl implements NodeAgent {
 
     private boolean workToDoNow = true;
 
-    private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
+    private final PrefixLogger logger;
 
     private DockerImage imageBeingDownloaded = null;
 
-    private final String logPrefix;
     private final HostName hostname;
 
     private final NodeRepository nodeRepository;
@@ -75,12 +73,13 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final MaintenanceScheduler maintenanceScheduler) {
-        this.logPrefix = "NodeAgent(" + hostName + "): ";
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
         this.dockerOperations = dockerOperations;
         this.maintenanceScheduler = maintenanceScheduler;
+        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
+                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
     }
 
     @Override
@@ -153,10 +152,10 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             loopThread.join(10000);
             if (loopThread.isAlive()) {
-                logger.severe("Could not stop host thread " + hostname);
+                logger.error("Could not stop host thread " + hostname);
             }
         } catch (InterruptedException e1) {
-            logger.severe("Interrupted; Could not stop host thread " + hostname);
+            logger.error("Interrupted; Could not stop host thread " + hostname);
         }
     }
 
@@ -165,7 +164,7 @@ public class NodeAgentImpl implements NodeAgent {
             return;
         }
         addDebugMessage("Starting optional node program resume command");
-        logger.log(Level.INFO, logPrefix + "Starting optional node program resume command");
+        logger.info("Starting optional node program resume command");
         dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
         containerState = RUNNING;
     }
@@ -178,7 +177,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.wantedDockerImage.get(),
                 containerVespaVersion);
         if (!currentAttributes.equals(lastAttributesSet)) {
-            logger.log(Level.INFO, logPrefix + "Publishing new set of attributes to node repo: "
+            logger.info("Publishing new set of attributes to node repo: "
                     + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
                     lastAttributesSet + "} -> {" + currentAttributes + "}");
@@ -190,7 +189,7 @@ public class NodeAgentImpl implements NodeAgent {
             lastAttributesSet = currentAttributes;
         }
 
-        logger.log(Level.INFO, logPrefix + "Call resume against Orchestrator");
+        logger.info("Call resume against Orchestrator");
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
@@ -250,7 +249,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(waittimeLeft);
                     } catch (InterruptedException e) {
-                        logger.severe("Interrupted, but ignoring this: " + hostname);
+                        logger.error("Interrupted, but ignoring this: " + hostname);
                         continue;
                     }
                     waittimeLeft -= Duration.between(start, Instant.now()).toMillis();
@@ -264,10 +263,10 @@ public class NodeAgentImpl implements NodeAgent {
                 try {
                     tick();
                 } catch (Exception e) {
-                    logger.log(LogLevel.ERROR, logPrefix + "Unhandled exception, ignoring.", e);
+                    logger.error("Unhandled exception, ignoring.", e);
                     addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
-                    logger.log(LogLevel.ERROR, logPrefix + "Unhandled throwable, taking down system.", t);
+                    logger.error("Unhandled throwable, taking down system.", t);
                     System.exit(234);
                 }
             }
@@ -326,7 +325,7 @@ public class NodeAgentImpl implements NodeAgent {
             case DIRTY:
                 maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
-                logger.log(LogLevel.INFO, logPrefix + "State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
+                logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
                 nodeRepository.markAsReady(nodeSpec.hostname);
                 break;

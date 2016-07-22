@@ -19,13 +19,13 @@ import com.spotify.docker.client.messages.ExecState;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.RemovedImage;
-import com.yahoo.log.LogLevel;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -47,7 +47,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -58,7 +57,7 @@ import java.util.stream.Stream;
  * @author stiankri
  */
 public class DockerImpl implements Docker {
-    private static final Logger log = Logger.getLogger(DockerImpl.class.getName());
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(DockerImpl.class);
 
     private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -281,6 +280,7 @@ public class DockerImpl implements Docker {
     private void setupContainerNetworking(ContainerName containerName,
                                           HostName hostName,
                                           int containerPid) throws UnknownHostException {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
         InetAddress inetAddress = InetAddress.getByName(hostName.s());
         String ipAddress = inetAddress.getHostAddress();
 
@@ -298,17 +298,16 @@ public class DockerImpl implements Docker {
         for (int retry = 0; retry < 30; ++retry) {
             try {
                 runCommand(command);
-                log.log(LogLevel.INFO, "Container " + containerName.asString() + ": Done setting up network");
+                logger.info("Done setting up network");
                 return;
             } catch (Exception e) {
                 final int sleepSecs = 3;
-                log.log(LogLevel.WARNING, "Container " + containerName.asString()
-                        + ": Failed to configure network with command " + command
+                logger.warning("Failed to configure network with command " + command
                         + ", will retry in " + sleepSecs + " seconds", e);
                 try {
                     Thread.sleep(sleepSecs * 1000);
                 } catch (InterruptedException e1) {
-                    log.log(LogLevel.WARNING, "Sleep interrupted", e1);
+                    logger.warning("Sleep interrupted", e1);
                 }
             }
         }
@@ -428,17 +427,17 @@ public class DockerImpl implements Docker {
     @Override
     public void deleteImage(final DockerImage dockerImage) {
         try {
-            log.info("Deleting docker image " + dockerImage);
+            NODE_ADMIN_LOGGER.info("Deleting docker image " + dockerImage);
             final List<RemovedImage> removedImages = docker.removeImage(dockerImage.asString());
             for (RemovedImage removedImage : removedImages) {
                 if (removedImage.type() != RemovedImage.Type.DELETED) {
-                    log.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
+                    NODE_ADMIN_LOGGER.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
                 }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interrupt", e);
         } catch (DockerException e) {
-            log.log(Level.WARNING, "Could not delete docker image " + dockerImage, e);
+            NODE_ADMIN_LOGGER.warning("Could not delete docker image " + dockerImage, e);
         }
     }
 
