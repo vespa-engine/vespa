@@ -59,7 +59,7 @@ public class Maintainer {
     public static class DeleteOldAppDataArguments implements Runnable {
         @Override
         public void run() {
-            String path = applicationStorageRootPathForNode().toString();
+            String path = APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toString();
             String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
             DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
@@ -96,24 +96,42 @@ public class Maintainer {
         }
     }
 
-    public static Path applicationStoragePathForHost(ContainerName containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName.asString());
-    }
 
-    public static Path applicationStorageRootPathForNode() {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toAbsolutePath();
-    }
-
-    public static Path applicationStoragePathForNode(ContainerName containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString());
-    }
-
-    public static Path applicationStoragePathForNodeCleanup(ContainerName containerName) {
+    /**
+     * Absolute path in node admin container to the node cleanup directory.
+     */
+    public static Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
         return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
     }
 
-    public static Path applicationStoragePathRelativeToNode(ContainerName containerName, String relativePath) {
-        return Paths.get(Maintainer.applicationStoragePathForNode(containerName).toString(), relativePath);
+    /**
+     * Translates an absolute path in node agent container to an absolute path in node admin container.
+     * @param containerName name of the node agent container
+     * @param absolutePathInNode absolute path in that container
+     * @return the absolute path in node admin container pointing at the same inode
+     */
+    public static Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+        if (! new File(absolutePathInNode).isAbsolute()) {
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+        }
+
+        return Paths.get(APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString()).toString(),
+                absolutePathInNode);
+    }
+
+    /**
+     * Translates an absolute path in node agent container to an absolute path in host.
+     * @param containerName name of the node agent container
+     * @param absolutePathInNode absolute path in that container
+     * @return the absolute path in host pointing at the same inode
+     */
+    public static Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+        if (! new File(absolutePathInNode).isAbsolute()) {
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+        }
+
+        return Paths.get(APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName.asString()).toString(),
+                absolutePathInNode);
     }
 }
