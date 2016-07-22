@@ -69,11 +69,8 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
             return;
         }
 
-        Path to = Maintainer.applicationStoragePathForNodeCleanup(containerName);
-        logger.info("Deleting application storage by moving it from " + from + " to " + to);
-        logger.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
         Path to = Maintainer.pathInNodeAdminToNodeCleanup(containerName);
-        log.log(LogLevel.INFO, "Deleting application storage by moving it from " + from + " to " + to);
+        logger.info("Deleting application storage by moving it from " + from + " to " + to);
         //TODO: move to maintenance JVM
         Files.move(from, to);
     }
