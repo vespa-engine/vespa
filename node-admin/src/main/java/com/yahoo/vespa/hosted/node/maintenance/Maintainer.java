@@ -24,9 +24,10 @@ import java.util.regex.Pattern;
  * @author valerijf
  */
 public class Maintainer {
+    private static final Path ROOT = Paths.get("/");
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = ROOT.resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -116,8 +117,9 @@ public class Maintainer {
             throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
         }
 
-        return Paths.get(APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString()).toString(),
-                absolutePathInNode);
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN
+                .resolve(containerName.asString())
+                .resolve(ROOT.relativize(Paths.get(absolutePathInNode)));
     }
 
     /**
@@ -131,7 +133,8 @@ public class Maintainer {
             throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
         }
 
-        return Paths.get(APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName.asString()).toString(),
-                absolutePathInNode);
+        return APPLICATION_STORAGE_PATH_FOR_HOST
+                .resolve(containerName.asString())
+                .resolve(ROOT.relativize(Paths.get(absolutePathInNode)));
     }
 }
