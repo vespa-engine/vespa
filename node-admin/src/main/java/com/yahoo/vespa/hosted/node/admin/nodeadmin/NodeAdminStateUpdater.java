@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
@@ -109,7 +108,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             try {
                 containersToRun = nodeRepository.getContainersToRun();
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "Failed fetching container info from node repository", t);
+                logger.warning("Failed fetching container info from node repository", t);
                 return;
             }
             if (containersToRun == null) {
@@ -119,7 +118,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             try {
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "Failed updating node admin: ", t);
+                logger.warning("Failed updating node admin: ", t);
                 return;
             }
         }

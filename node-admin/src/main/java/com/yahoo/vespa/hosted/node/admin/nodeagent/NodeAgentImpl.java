@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
@@ -264,10 +263,10 @@ public class NodeAgentImpl implements NodeAgent {
                 try {
                     tick();
                 } catch (Exception e) {
-                    logger.log(LogLevel.ERROR, "Unhandled exception, ignoring.", e);
+                    logger.error("Unhandled exception, ignoring.", e);
                     addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
-                    logger.log(LogLevel.ERROR, "Unhandled throwable, taking down system.", t);
+                    logger.error("Unhandled throwable, taking down system.", t);
                     System.exit(234);
                 }
             }

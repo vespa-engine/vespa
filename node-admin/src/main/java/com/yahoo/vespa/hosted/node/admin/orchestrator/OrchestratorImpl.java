@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * @author stiankri
@@ -66,10 +65,10 @@ public class OrchestratorImpl implements Orchestrator {
                 // Orchestrator doesn't care about this node, so don't let that stop us.
                 return true;
             }
-            logger.log(Level.INFO, "Orchestrator rejected suspend request for host " + hostName, e);
+            logger.info("Orchestrator rejected suspend request for host " + hostName, e);
             return false;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            logger.warning("Unable to communicate with orchestrator", e);
             return false;
         }
     }
@@ -87,10 +86,10 @@ public class OrchestratorImpl implements Orchestrator {
                 // Orchestrator doesn't care about this node, so don't let that stop us.
                 return Optional.empty();
             }
-            NODE_ADMIN_LOGGER.log(Level.INFO, "Orchestrator rejected suspend request for host " + parentHostName, e);
+            NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, e);
             return Optional.of(e.getLocalizedMessage());
         } catch (IOException e) {
-            NODE_ADMIN_LOGGER.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
             return Optional.of("Unable to communicate with orchestrator" + e.getMessage());
         }
     }
@@ -107,10 +106,10 @@ public class OrchestratorImpl implements Orchestrator {
             });
             return resumeSucceeded;
         } catch (ClientErrorException e) {
-            logger.log(Level.INFO, "Orchestrator rejected resume request for host " + hostName, e);
+            logger.info("Orchestrator rejected resume request for host " + hostName, e);
             return false;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to communicate with orchestrator", e);
+            logger.warning("Unable to communicate with orchestrator", e);
             return false;
         }
     }

@@ -19,7 +19,6 @@ import com.spotify.docker.client.messages.ExecState;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.RemovedImage;
-import com.yahoo.log.LogLevel;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -303,12 +302,12 @@ public class DockerImpl implements Docker {
                 return;
             } catch (Exception e) {
                 final int sleepSecs = 3;
-                logger.log(LogLevel.WARNING, "Failed to configure network with command " + command
+                logger.warning("Failed to configure network with command " + command
                         + ", will retry in " + sleepSecs + " seconds", e);
                 try {
                     Thread.sleep(sleepSecs * 1000);
                 } catch (InterruptedException e1) {
-                    logger.log(LogLevel.WARNING, "Sleep interrupted", e1);
+                    logger.warning("Sleep interrupted", e1);
                 }
             }
         }
@@ -438,7 +437,7 @@ public class DockerImpl implements Docker {
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interrupt", e);
         } catch (DockerException e) {
-            NODE_ADMIN_LOGGER.log(Level.WARNING, "Could not delete docker image " + dockerImage, e);
+            NODE_ADMIN_LOGGER.warning("Could not delete docker image " + dockerImage, e);
         }
     }
 
