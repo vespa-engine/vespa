@@ -16,8 +16,6 @@ import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForN
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class ClusterStateGeneratorTest {
 
@@ -802,6 +800,27 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.s:i .0.i:0.5"));
+    }
+
+    @Test
+    public void generator_params_can_inherit_values_from_controller_options() {
+        FleetControllerOptions options = new FleetControllerOptions("foocluster");
+        options.maxPrematureCrashes = 1;
+        options.minStorageNodesUp = 2;
+        options.minDistributorNodesUp = 3;
+        options.minRatioOfStorageNodesUp = 0.4;
+        options.minRatioOfDistributorNodesUp = 0.5;
+        options.minNodeRatioPerGroup = 0.6;
+        options.distributionBits = 7;
+        options.maxTransitionTime = ClusterStateGenerator.Params.buildTransitionTimeMap(1000, 2000);
+        final ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
+        assertThat(params.maxPrematureCrashes, equalTo(options.maxPrematureCrashes));
+        assertThat(params.minStorageNodesUp, equalTo(options.minStorageNodesUp));
+        assertThat(params.minDistributorNodesUp, equalTo(options.minDistributorNodesUp));
+        assertThat(params.minRatioOfStorageNodesUp, equalTo(options.minRatioOfStorageNodesUp));
+        assertThat(params.minRatioOfDistributorNodesUp, equalTo(options.minRatioOfDistributorNodesUp));
+        assertThat(params.minNodeRatioPerGroup, equalTo(options.minNodeRatioPerGroup));
+        assertThat(params.transitionTimes, equalTo(options.maxTransitionTime));
     }
 
     // TODO test init progress time of zero == feature disabled

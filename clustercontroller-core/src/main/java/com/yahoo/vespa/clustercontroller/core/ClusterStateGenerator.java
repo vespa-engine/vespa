@@ -62,6 +62,10 @@ public class ClusterStateGenerator {
             this.transitionTimes = buildTransitionTimeMap(timeMs, timeMs);
             return this;
         }
+        Params transitionTimes(Map<NodeType, Integer> times) {
+            this.transitionTimes = times;
+            return this;
+        }
         Params currentTimeInMilllis(long currentTimeMs) {
             this.currentTimeInMillis = currentTimeMs;
             return this;
@@ -103,9 +107,22 @@ public class ClusterStateGenerator {
             return this;
         }
 
+        /**
+         * Infer parameters from controller options. Important: does _not_ set cluster;
+         * it must be explicitly set afterwards on the returned parameter object before
+         * being used to compute states.
+         */
         static Params fromOptions(FleetControllerOptions opts) {
-            return new Params();
-        } // TODO
+            return new Params()
+                    .maxPrematureCrashes(opts.maxPrematureCrashes)
+                    .minStorageNodesUp(opts.minStorageNodesUp)
+                    .minDistributorNodesUp(opts.minDistributorNodesUp)
+                    .minRatioOfStorageNodesUp(opts.minRatioOfStorageNodesUp)
+                    .minRatioOfDistributorNodesUp(opts.minRatioOfDistributorNodesUp)
+                    .minNodeRatioPerGroup(opts.minNodeRatioPerGroup)
+                    .idealDistributionBits(opts.distributionBits)
+                    .transitionTimes(opts.maxTransitionTime);
+        }
     }
 
     static AnnotatedClusterState generatedStateFrom(final Params params) {
@@ -345,7 +362,7 @@ public class ClusterStateGenerator {
      *  - DONE - distribution bits inferred from storage nodes
      *  - DONE - distribution bits inferred from nodes in states IUR only
      *  - DONE - distribution bits inferred from config
-     *  - WIP - generation of accurate edge events for state deltas <- this is a sneaky one
+     *  - DONE - generation of accurate edge events for state deltas <- this is a sneaky one
      *  - max init progress time (reported init -> generated down)
      *  - slobrok disconnect grace period (reported down -> generated down)
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)

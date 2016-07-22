@@ -647,9 +647,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (newStateAvailable) {
             // FIXME temporary!
             ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-            params.transitionTimes = options.maxTransitionTime;
             params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
                     .cluster(cluster)
+                    .transitionTimes(options.maxTransitionTime)
                     .maxPrematureCrashes(options.maxPrematureCrashes)
                     .minStorageNodesUp(options.minStorageNodesUp)
                     .minDistributorNodesUp(options.minDistributorNodesUp)
