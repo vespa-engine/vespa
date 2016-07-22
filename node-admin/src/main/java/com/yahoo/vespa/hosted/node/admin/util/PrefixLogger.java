@@ -13,16 +13,16 @@ public class PrefixLogger {
     private String prefix;
     private Logger logger;
 
-    private PrefixLogger(Class clazz, String prefix) {
+    private <T> PrefixLogger(Class<T> clazz, String prefix) {
         this.logger = Logger.getLogger(clazz.getName());
         this.prefix = prefix + ": ";
     }
 
-    public static PrefixLogger getNodeAdminLogger(Class clazz) {
+    public static <T> PrefixLogger getNodeAdminLogger(Class<T> clazz) {
         return new PrefixLogger(clazz, "NodeAdmin");
     }
 
-    public static PrefixLogger getNodeAgentLogger(Class clazz, ContainerName containerName) {
+    public static <T> PrefixLogger getNodeAgentLogger(Class<T> clazz, ContainerName containerName) {
         return new PrefixLogger(clazz, "NodeAgent-" + containerName.asString());
     }
 
