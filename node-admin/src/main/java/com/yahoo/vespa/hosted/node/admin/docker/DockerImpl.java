@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -328,23 +327,12 @@ public class DockerImpl implements Docker {
     }
 
     static List<String> applicationStorageToMount(ContainerName containerName) {
-        // From-paths when mapping volumes are as seen by the Docker daemon (host)
-        Path destination = Maintainer.applicationStoragePathForHost(containerName);
-
         return Stream.concat(
                         Stream.of("/etc/hosts:/etc/hosts"),
-                        DIRECTORIES_TO_MOUNT.stream()
-                                .map(directory -> bindDirective(destination, directory)))
+                        DIRECTORIES_TO_MOUNT.stream().map(directory ->
+                                Maintainer.pathInHostFromPathInNode(containerName, directory).toString() +
+                        ":" + directory))
                 .collect(Collectors.toList());
-    }
-
-    private static String bindDirective(Path applicationStorageStorage, String directory) {
-        if (!directory.startsWith("/")) {
-            throw new RuntimeException("Expected absolute path, got " + directory);
-        }
-
-        Path hostPath = applicationStorageStorage.resolve(directory.substring(1));
-        return hostPath.toFile().getAbsolutePath() + ":" + directory;
     }
 
     @Override

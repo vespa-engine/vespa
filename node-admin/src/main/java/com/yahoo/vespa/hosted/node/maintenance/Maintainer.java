@@ -24,9 +24,10 @@ import java.util.regex.Pattern;
  * @author valerijf
  */
 public class Maintainer {
+    private static final Path ROOT = Paths.get("/");
     private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
     private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = Paths.get("/").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
+    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = ROOT.resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -59,7 +60,7 @@ public class Maintainer {
     public static class DeleteOldAppDataArguments implements Runnable {
         @Override
         public void run() {
-            String path = applicationStorageRootPathForNode().toString();
+            String path = APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toString();
             String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
             DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
@@ -96,20 +97,46 @@ public class Maintainer {
         }
     }
 
-    public static Path applicationStoragePathForHost(ContainerName containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_HOST.resolve(containerName.asString());
-    }
 
-    public static Path applicationStorageRootPathForNode() {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toAbsolutePath();
-    }
-
-    public static Path applicationStoragePathForNode(ContainerName containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(containerName.asString());
-    }
-
-    public static Path applicationStoragePathForNodeCleanup(ContainerName containerName) {
+    /**
+     * Absolute path in node admin container to the node cleanup directory.
+     */
+    public static Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
         return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
+    }
+
+    /**
+     * Translates an absolute path in node agent container to an absolute path in node admin container.
+     * @param containerName name of the node agent container
+     * @param absolutePathInNode absolute path in that container
+     * @return the absolute path in node admin container pointing at the same inode
+     */
+    public static Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+        Path pathInNode = Paths.get(absolutePathInNode);
+        if (! pathInNode.isAbsolute()) {
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+        }
+
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN
+                .resolve(containerName.asString())
+                .resolve(ROOT.relativize(pathInNode));
+    }
+
+    /**
+     * Translates an absolute path in node agent container to an absolute path in host.
+     * @param containerName name of the node agent container
+     * @param absolutePathInNode absolute path in that container
+     * @return the absolute path in host pointing at the same inode
+     */
+    public static Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+        Path pathInNode = Paths.get(absolutePathInNode);
+        if (! pathInNode.isAbsolute()) {
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+        }
+
+        return APPLICATION_STORAGE_PATH_FOR_HOST
+                .resolve(containerName.asString())
+                .resolve(ROOT.relativize(pathInNode));
     }
 }
