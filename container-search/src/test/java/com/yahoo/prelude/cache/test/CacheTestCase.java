@@ -130,10 +130,22 @@ public class CacheTestCase extends TestCase {
 
     public void testExpire() throws InterruptedException {
         Cache cache=new Cache(10*1024,50, 10000, Statistics.nullImplementation); // 10 KB, 50ms expire
-        cache.put("foo", "bar");
-        cache.put("hey", "ho");
-        assertEquals(cache.get("foo"), "bar");
-        assertEquals(cache.get("hey"), "ho");
+        boolean success = false;
+        for (int tries = 0; tries < 10; tries++) {
+            long before = System.currentTimeMillis();
+            cache.put("foo", "bar");
+            cache.put("hey", "ho");
+            Object got1 = cache.get("foo");
+            Object got2 = cache.get("hey");
+            long after = System.currentTimeMillis();
+            if (after - before < 50) {
+                assertEquals(got1, "bar");
+                assertEquals(got2, "ho");
+                success = true;
+                break;
+            }
+        }
+        assertTrue(success);
         Thread.sleep(100);
         assertNull(cache.get("foo"));
         assertNull(cache.get("hey"));
