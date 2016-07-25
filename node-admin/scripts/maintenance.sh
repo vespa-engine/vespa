@@ -7,4 +7,4 @@ fi
 
 java \
         -cp $CLASSPATH \
-        com.yahoo.vespa.hosted.node.admin.maintenance.Maintainer "$@"
+        com.yahoo.vespa.hosted.node.maintenance.Maintainer "$@"
