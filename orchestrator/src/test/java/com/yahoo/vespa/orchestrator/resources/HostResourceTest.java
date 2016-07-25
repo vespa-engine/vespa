@@ -136,6 +136,15 @@ public class HostResourceTest {
     }
 
     @Test
+    public void returns_200_empty_batch() throws Exception {
+        HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
+        BatchHostSuspendRequest request =
+                new BatchHostSuspendRequest("parentHostname", Collections.emptyList());
+        BatchOperationResult response = hostSuspensionResource.suspendAll(request);
+        assertThat(response.success());
+    }
+
+    @Test
     public void throws_404_when_host_unknown() throws Exception {
         try {
             HostResource hostResource =

@@ -41,7 +41,7 @@ public class HostSuspensionResource implements HostSuspensionApi {
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
         }
         final List<String> hostnamesAsStrings = request.getHostnames();
-        if (hostnamesAsStrings == null || hostnamesAsStrings.isEmpty()) {
+        if (hostnamesAsStrings == null) {
             String message = "hostnames missing in request: " + request;
             log.log(LogLevel.DEBUG, message);
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
