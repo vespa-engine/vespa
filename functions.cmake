@@ -182,6 +182,7 @@ function(vespa_add_library TARGET)
 
     if(ARG_INSTALL)
         install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
+        __install_header_files(${TARGET})
     endif()
 
     if(ARG_OUTPUT_NAME)
@@ -190,6 +191,18 @@ function(vespa_add_library TARGET)
 
     __add_target_to_module(${TARGET})
     __export_include_directories(${TARGET})
+endfunction()
+
+function(__install_header_files TARGET)
+    # Only install header files for main libraries (that does not contain underscore).
+    # Currently all header files are installed as they are not explicitly listed for each library.
+    if (NOT ${TARGET} MATCHES "_")
+      file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
+      foreach(HEADER ${HEADERS})
+          get_filename_component(RELDIR ${HEADER} DIRECTORY)
+          install(FILES ${HEADER} DESTINATION include/vespa/${TARGET}/${RELDIR})
+      endforeach()
+   endif()   
 endfunction()
 
 function(vespa_add_executable TARGET)
