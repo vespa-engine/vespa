@@ -77,68 +77,6 @@ make %{_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=%{buildroot}
 
-# BEGIN - Put this in post install script called by make install
-# Rewrite config def file names
-for path in %{buildroot}/%{_prefix}var/db/vespa/config_server/serverdb/classes/*.def; do
-    dir=$(dirname $path)
-    filename=$(basename $path)
-    namespace=$(grep '^ *namespace *=' $path | sed 's/ *namespace *= *//')
-    if [ "$namespace" ]; then
-        case $filename in
-            $namespace.*)
-                ;;
-            *)
-                mv $path $dir/$namespace.$filename ;;
-        esac
-    fi
-done
-
-mkdir -p %{buildroot}/%{_prefix}/conf/configserver/
-mkdir -p %{buildroot}/%{_prefix}/conf/configserver-app/
-mkdir -p %{buildroot}/%{_prefix}/conf/configserver-app/config-models/
-mkdir -p %{buildroot}/%{_prefix}/conf/configserver-app/components/
-mkdir -p %{buildroot}/%{_prefix}/conf/filedistributor/
-mkdir -p %{buildroot}/%{_prefix}/conf/node-admin-app/
-mkdir -p %{buildroot}/%{_prefix}/conf/node-admin-app/components/
-mkdir -p %{buildroot}/%{_prefix}/conf/zookeeper/
-mkdir -p %{buildroot}/%{_prefix}/libexec/jdisc_core/
-mkdir -p %{buildroot}/%{_prefix}/libexec/vespa/modelplugins/
-mkdir -p %{buildroot}/%{_prefix}/libexec/vespa/plugins/qrs/
-mkdir -p %{buildroot}/%{_prefix}/libexec/yjava_daemon/bin/
-mkdir -p %{buildroot}/%{_prefix}/logs/jdisc_core/
-mkdir -p %{buildroot}/%{_prefix}/logs/vespa/
-mkdir -p %{buildroot}/%{_prefix}/logs/vespa/
-mkdir -p %{buildroot}/%{_prefix}/logs/vespa/configserver/
-mkdir -p %{buildroot}/%{_prefix}/logs/vespa/search/
-mkdir -p %{buildroot}/%{_prefix}/logs/vespa/qrs/
-mkdir -p %{buildroot}/%{_prefix}/share/vespa/
-mkdir -p %{buildroot}/%{_prefix}/share/vespa/schema/version/6.x/schema/
-mkdir -p %{buildroot}/%{_prefix}/tmp/vespa/
-mkdir -p %{buildroot}/%{_prefix}/var/db/jdisc/logcontrol/
-mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/
-mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/config_server/serverdb/configs/
-mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/config_server/serverdb/configs/application/
-mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/config_server/serverdb/applications/
-mkdir -p %{buildroot}/%{_prefix}/var/db/vespa/logcontrol/
-mkdir -p %{buildroot}/%{_prefix}/var/jdisc_container/
-mkdir -p %{buildroot}/%{_prefix}/var/jdisc_core/
-mkdir -p %{buildroot}/%{_prefix}/var/run/
-mkdir -p %{buildroot}/%{_prefix}/var/spool/vespa/
-mkdir -p %{buildroot}/%{_prefix}/var/spool/master/inbox/
-mkdir -p %{buildroot}/%{_prefix}/var/vespa/bundlecache/
-mkdir -p %{buildroot}/%{_prefix}/var/vespa/cache/config/
-mkdir -p %{buildroot}/%{_prefix}/var/vespa/cmdlines/
-mkdir -p %{buildroot}/%{_prefix}/var/zookeeper/version-2/
-
-ln -s %{_prefix}/lib/jars/config-model-fat.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/config-model-fat.jar
-ln -s %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/configserver.jar
-ln -s %{_prefix}/lib/jars/orchestrator-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/orchestrator.jar
-ln -s %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/node-repository.jar
-ln -s %{_prefix}/lib/jars/zkfacade-jar-with-dependencies.jar %{buildroot}/%{_prefix}/conf/configserver-app/components/zkfacade.jar
-ln -s %{_prefix}/conf/configserver-app/components %{buildroot}/%{_prefix}/lib/jars/config-models
-ln -s storaged-bin %{buildroot}/%{_prefix}/sbin/distributord-bin
-# END - Put this in post install script called by make install
-
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system

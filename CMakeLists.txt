@@ -70,3 +70,7 @@ __create_module_targets(TARGETS "module")
 
 # Create module targets with name ${MODULE}+test depending on every test target defined within that module
 __create_module_targets(TEST_TARGETS "test")
+
+# Post installation steps. Need to be the last install(...) call in this file.
+install(CODE "execute_process(COMMAND ${CMAKE_CURRENT_LIST_DIR}/dist/post_install.sh ${CMAKE_INSTALL_PREFIX})")
+
