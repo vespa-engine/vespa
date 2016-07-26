@@ -182,7 +182,7 @@ function(vespa_add_library TARGET)
 
     if(ARG_INSTALL)
         install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
-        __install_header_files(${TARGET})
+        __install_header_files()
     endif()
 
     if(ARG_OUTPUT_NAME)
@@ -193,15 +193,23 @@ function(vespa_add_library TARGET)
     __export_include_directories(${TARGET})
 endfunction()
 
-function(__install_header_files TARGET)
-    # Only install header files for main libraries (that does not contain underscore).
-    # Currently all header files are installed as they are not explicitly listed for each library.
-    if (NOT ${TARGET} MATCHES "_")
-      file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
-      foreach(HEADER ${HEADERS})
-          get_filename_component(RELDIR ${HEADER} DIRECTORY)
-          install(FILES ${HEADER} DESTINATION include/vespa/${TARGET}/${RELDIR})
-      endforeach()
+function(__install_header_files)
+    # Currently all header files are installed as they are not explicitly listed for each library. The
+    # proper way would be for each module to list its header files to install.
+
+    # Only install header for targets in */src/vespa/*.
+    string(REPLACE "/" ";" PATH_COMPONENTS ${CMAKE_CURRENT_SOURCE_DIR})
+    list(REVERSE PATH_COMPONENTS)
+    list(GET PATH_COMPONENTS 1 SECOND_ELEMENT)
+    list(GET PATH_COMPONENTS 2 THIRD_ELEMENT)
+    if (${SECOND_ELEMENT} STREQUAL "vespa" AND ${THIRD_ELEMENT} STREQUAL "src")
+        # Preserve the name */src/vespa/<name> as not every module has <name>=module name (e.g. vespalog)
+        get_filename_component(RELATIVE_TO ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+        file(GLOB_RECURSE HEADERS RELATIVE ${RELATIVE_TO} "*.h")
+        foreach(HEADER ${HEADERS})
+            get_filename_component(RELDIR ${HEADER} DIRECTORY)
+            install(FILES ${RELATIVE_TO}/${HEADER} DESTINATION include/vespa/${RELDIR})
+        endforeach()
    endif()   
 endfunction()
 
