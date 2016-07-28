@@ -229,7 +229,7 @@ public class ClusterStateGenerator {
     }
 
     private static boolean startupTimestampAlreadyObservedByAllNodes(final NodeInfo nodeInfo, final NodeState baseline) {
-        return baseline.getStartTimestamp() == nodeInfo.getStartTimestamp(); // FIXME rename NodeInfo getter/setter
+        return baseline.getStartTimestamp() == nodeInfo.getStartTimestamp(); // TODO rename NodeInfo getter/setter
     }
 
     /**
@@ -367,14 +367,12 @@ public class ClusterStateGenerator {
      *  - slobrok disconnect grace period (reported down -> generated down)
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)
      *  - reverse init progress(?)
-     *  - mark "listing buckets" stage as down, since node can't receive load yet at that point
+     *  - DONE - mark "listing buckets" stage as down, since node can't receive load yet at that point
      *  - interaction with ClusterStateView
      *
      * Features such as minimum time before/between cluster state broadcasts are handled outside
      * the state generator.
      * Cluster state version management is also handled outside the generator.
-     *
-     * TODO how to ensure timer updates know that states should be altered?
      *
      * TODO move generator logic into own sub-package?
      */

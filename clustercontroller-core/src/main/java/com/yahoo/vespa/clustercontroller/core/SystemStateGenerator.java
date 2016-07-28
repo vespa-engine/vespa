@@ -116,6 +116,14 @@ public class SystemStateGenerator {
         return Collections.unmodifiableList(systemStateHistory);
     }
 
+    public boolean stateMayHaveChanged() {
+        return nextStateViewChanged;
+    }
+
+    public void unsetStateChangedFlag() {
+        nextStateViewChanged = false;
+    }
+
     public void setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
         minDistributorNodesUp = minDistNodes;
         minStorageNodesUp = minStorNodes;

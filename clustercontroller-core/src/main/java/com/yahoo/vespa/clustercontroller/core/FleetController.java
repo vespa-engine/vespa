@@ -40,6 +40,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final NodeStateGatherer stateGatherer;
     private final SystemStateGenerator systemStateGenerator;
     private final SystemStateBroadcaster systemStateBroadcaster;
+    private final StateVersionTracker stateVersionTracker;
     private final StatusPageServerInterface statusPageServer;
     private final RpcServer rpcServer;
     private final DatabaseHandler database;
@@ -106,6 +107,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         this.stateGatherer = nodeStateGatherer;
         this.systemStateGenerator = systemStateGenerator;
         this.systemStateBroadcaster = systemStateBroadcaster;
+        this.stateVersionTracker = new StateVersionTracker();
         this.metricUpdater = metricUpdater;
 
         this.statusPageServer = statusPage;
@@ -121,7 +123,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 new NodeHealthRequestHandler(dataExtractor));
         this.statusRequestRouter.addHandler(
                 "^/clusterstate",
-                new ClusterStateRequestHandler(systemStateGenerator));
+                new ClusterStateRequestHandler(stateVersionTracker));
         this.statusRequestRouter.addHandler(
                 "^/$",
                 new LegacyIndexPageRequestHandler(
@@ -247,7 +249,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public com.yahoo.vdslib.state.ClusterState getSystemState() {
         synchronized(monitor) {
-            return systemStateGenerator.getClusterState();
+            //return systemStateGenerator.getClusterState();
+            return stateVersionTracker.getVersionedClusterState();
         }
     }
 
@@ -511,7 +514,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             didWork |= processAnyPendingStatusPageRequest();
 
             if (rpcServer != null) {
-                didWork |= rpcServer.handleRpcRequests(cluster, systemStateGenerator.getClusterState(), this, this);
+                //didWork |= rpcServer.handleRpcRequests(cluster, systemStateGenerator.getClusterState(), this, this);
+                didWork |= rpcServer.handleRpcRequests(cluster, stateVersionTracker.getVersionedClusterState(), this, this);
             }
 
             processAllQueuedRemoteTasks();
@@ -611,7 +615,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ( ! remoteTasks.isEmpty()) {
             RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
             context.cluster = cluster;
-            context.currentState = systemStateGenerator.getConsolidatedClusterState();
+            //context.currentState = systemStateGenerator.getConsolidatedClusterState();
+            context.currentState = stateVersionTracker.getVersionedClusterState();
             context.masterInfo = masterElectionHandler;
             context.nodeStateOrHostInfoChangeHandler = this;
             context.nodeAddedOrRemovedListener = this;
@@ -640,31 +645,23 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
         didWork |= systemStateGenerator.watchTimers(cluster, this);
 
-        boolean newStateAvailable = systemStateGenerator.notifyIfNewSystemState(cluster, this); // FIXME deprecated!
-        didWork |= newStateAvailable;
+        // TODO move out, doesn't belong in a function with this name
+        if (systemStateGenerator.stateMayHaveChanged()) {
+            systemStateGenerator.unsetStateChangedFlag();
+            ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
+            params.currentTimeInMilllis(timer.getCurrentTimeInMillis()).cluster(cluster)
+                    .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
+            final AnnotatedClusterState candidate = ClusterStateGenerator.generatedStateFrom(params);
 
-        // TODO begin wiring stuff together here!
-        if (newStateAvailable) {
-            // FIXME temporary!
-            ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
-            params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
-                    .cluster(cluster)
-                    .transitionTimes(options.maxTransitionTime)
-                    .maxPrematureCrashes(options.maxPrematureCrashes)
-                    .minStorageNodesUp(options.minStorageNodesUp)
-                    .minDistributorNodesUp(options.minDistributorNodesUp)
-                    .minRatioOfStorageNodesUp(options.minRatioOfStorageNodesUp)
-                    .minRatioOfDistributorNodesUp(options.minRatioOfDistributorNodesUp)
-                    .minNodeRatioPerGroup(options.minNodeRatioPerGroup)
-                    .idealDistributionBits(options.distributionBits)
-                    .lowestObservedDistributionBitCount(systemStateGenerator.getClusterState().getDistributionBitCount()); // FIXME MAD HAX
-            final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
-            final ClusterState shinyState = state.getClusterState();
-            final ClusterState legacyState = systemStateGenerator.getClusterState();
-            state.getClusterState().setVersion(legacyState.getVersion());
-            if (!structurallySimilar(legacyState, shinyState)) { // FIXME bork bork bork
-                throw new IllegalStateException("State generation mismatch! Old: " + legacyState.toString()
-                        + ", new: " + shinyState.toString());
+            if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)) {
+                //emitEventsForAlteredStateEdges(state);
+                stateVersionTracker.applyAndVersionNewState(candidate);
+                // TODO needs to invoke analogue of SystemStateGenerator.recordNewClusterStateHasBeenChosen
+                log.log(LogLevel.INFO, String.format("Controller %d: new cluster state: %s",
+                        options.fleetControllerIndex,
+                        stateVersionTracker.getVersionedClusterState()));
+                handleNewSystemState(stateVersionTracker.getVersionedClusterState());
+                didWork = true;
             }
         }
 
@@ -672,18 +669,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isMaster) {
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became node state gatherer as we are fleetcontroller master candidate.", timer.getCurrentTimeInMillis()));
                 // Update versions to use so what is shown is closer to what is reality on the master
-                systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
+                //systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
+                stateVersionTracker.setCurrentVersion(database.getLatestSystemStateVersion());
             }
         }
         isStateGatherer = true;
         return didWork;
-    }
-
-    private static boolean structurallySimilar(final ClusterState lhs, final ClusterState rhs) {
-        if (lhs.getClusterState() == State.DOWN && rhs.getClusterState() == State.DOWN) {
-            return true;
-        }
-        return lhs.toString().equals(rhs.toString());
     }
 
     private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
@@ -692,11 +683,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isMaster) {
                 metricUpdater.becameMaster();
                 // If we just became master, restore wanted states from database
-                systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
+                //systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
+                stateVersionTracker.setCurrentVersion(database.getLatestSystemStateVersion());
                 didWork = database.loadStartTimestamps(cluster);
                 didWork |= database.loadWantedStates(databaseContext);
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "
-                        + systemStateGenerator.getClusterState().getVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
+                        + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
                 log.log(LogLevel.DEBUG, "At time " + currentTime + " we set first system state broadcast time to be "

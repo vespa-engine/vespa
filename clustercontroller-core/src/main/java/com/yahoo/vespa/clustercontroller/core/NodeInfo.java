@@ -428,7 +428,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public void setSystemStateVersionSent(ClusterState state) {
         if (state == null) throw new Error("Should not clear info for last version sent");
         if (systemStateVersionSent.containsKey(state.getVersion())) {
-            throw new IllegalStateException("We have already sent cluster state version " + version + " to " + node);
+            throw new IllegalStateException("We have already sent cluster state version " + state.getVersion() + " to " + node);
         }
         systemStateVersionSent.put(state.getVersion(), state);
     }

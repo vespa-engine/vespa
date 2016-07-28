@@ -2,19 +2,19 @@
 package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vespa.clustercontroller.core.StateVersionTracker;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
-import com.yahoo.vespa.clustercontroller.core.SystemStateGenerator;
 
 public class ClusterStateRequestHandler implements StatusPageServer.RequestHandler  {
-    private final SystemStateGenerator systemStateGenerator;
+    private final StateVersionTracker stateVersionTracker;
 
-    public ClusterStateRequestHandler(SystemStateGenerator systemStateGenerator) {
-        this.systemStateGenerator = systemStateGenerator;
+    public ClusterStateRequestHandler(StateVersionTracker stateVersionTracker) {
+        this.stateVersionTracker = stateVersionTracker;
     }
     @Override
     public StatusPageResponse handle(StatusPageServer.HttpRequest request) {
-        ClusterState cs = systemStateGenerator.getClusterState();
+        ClusterState cs = stateVersionTracker.getVersionedClusterState();
 
         StatusPageResponse response = new StatusPageResponse();
         response.setContentType("text/plain");
