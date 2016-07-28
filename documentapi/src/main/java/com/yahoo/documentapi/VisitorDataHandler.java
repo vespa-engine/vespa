@@ -85,8 +85,9 @@ public abstract class VisitorDataHandler {
     /**
      * Called when a data message is received.
      *
+     * IMPORTANT:
      * May be called concurrently from multiple threads. Any internal state
-     * mutations must be done in a thread-safe manner.
+     * mutations MUST be done in a thread-safe manner.
      *
      * @param m The message received
      * @param token A token to reply with when finished processing the message.
