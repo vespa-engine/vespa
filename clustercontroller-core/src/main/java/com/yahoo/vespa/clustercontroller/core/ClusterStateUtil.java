@@ -6,14 +6,19 @@ import com.yahoo.vdslib.state.ClusterState;
 class ClusterStateUtil {
 
     static ClusterState emptyState() {
+        return stateFromString("");
+    }
+
+    /**
+     * Parse a given cluster state string into a returned ClusterState instance, wrapping any
+     * parse exceptions in a RuntimeException.
+     */
+    static ClusterState stateFromString(final String stateStr) {
         try {
-            return new ClusterState("");
+            return new ClusterState(stateStr);
         } catch (Exception e) {
-            throw new RuntimeException(e); // Should never happen for empty state string
+            throw new RuntimeException(e);
         }
     }
 
-    static boolean structurallyEqual(final ClusterState lhs, final ClusterState rhs) {
-        return false;
-    }
 }

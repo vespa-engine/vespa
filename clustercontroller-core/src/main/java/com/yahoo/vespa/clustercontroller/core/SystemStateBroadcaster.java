@@ -33,6 +33,7 @@ public class SystemStateBroadcaster {
     }
 
     public void handleNewSystemState(ClusterState state) {
+        log.log(LogLevel.INFO, String.format("Broadcaster got state: %s", state)); // FIXME TEMP
         systemState = state;
     }
 
@@ -125,11 +126,11 @@ public class SystemStateBroadcaster {
             }
             if (nodeNeedsToObserveStartupTimestamps(node)) {
                 ClusterState newState = buildModifiedClusterState(dbContext);
-                log.log(LogLevel.DEBUG, "Sending modified system state version " + systemState.getVersion()
+                log.log(LogLevel.INFO, "Sending modified system state version " + systemState.getVersion()
                         + " to node " + node + ": " + newState);
                 communicator.setSystemState(newState, node, waiter);
             } else {
-                log.log(LogLevel.DEBUG, "Sending system state version " + systemState.getVersion() + " to node " + node
+                log.log(LogLevel.INFO, "Sending system state version " + systemState.getVersion() + " to node " + node
                         + ". (went down time " + node.getWentDownWithStartTime() + ", node start time " + node.getStartTimestamp() + ")");
                 communicator.setSystemState(systemState, node, waiter);
             }

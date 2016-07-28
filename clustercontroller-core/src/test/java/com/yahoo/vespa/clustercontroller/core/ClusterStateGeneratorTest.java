@@ -692,7 +692,9 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("bits:12 distributor:3 storage:3"));
     }
 
-    // TODO do we really want this behavior?? It's the legacy one, but it seems... dangerous.. Especially for maintenance
+    // TODO do we really want this behavior? It's the legacy one, but it seems... dangerous.. Especially for maintenance
+    // TODO We generally want to avoid distribution bit decreases if at all possible, since "collapsing"
+    // the top-level bucket space can cause data loss on timestamp collisions across super buckets.
     @Test
     public void distribution_bit_not_influenced_by_nodes_down_or_in_maintenance() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
@@ -783,7 +785,7 @@ public class ClusterStateGeneratorTest {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.INITIALIZING)
-                .reportStorageNodeState(0, State.DOWN) // Init->Down triggers unstable init flag
+                .reportStorageNodeState(0, State.DOWN) // Init -> Down triggers unstable init flag
                 .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
 
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);

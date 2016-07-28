@@ -21,6 +21,14 @@ public class AnnotatedClusterState {
         this.nodeStateReasons = nodeStateReasons;
     }
 
+    public static AnnotatedClusterState emptyState() {
+        return new AnnotatedClusterState(ClusterStateUtil.emptyState(), null/*TODO*/, emptyNodeStateReasons());
+    }
+
+    static Map<Node, NodeStateReason> emptyNodeStateReasons() {
+        return Collections.emptyMap();
+    }
+
     public ClusterState getClusterState() {
         return clusterState;
     }
