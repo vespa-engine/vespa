@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * visiting not to halt. The class is thread safe.
  *
  * @author Håkon Humberset
- * @author @vekterli
+ * @author vekterli
  */
 public class VisitorDataQueue extends VisitorDataHandler {
 
