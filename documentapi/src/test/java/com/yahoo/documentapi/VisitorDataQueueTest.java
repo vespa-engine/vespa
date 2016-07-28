@@ -11,6 +11,7 @@ import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.vdslib.Entry;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -24,7 +25,8 @@ public class VisitorDataQueueTest {
 
     private final DocumentTypeManager docMan = new DocumentTypeManager();
 
-    public VisitorDataQueueTest() {
+    @Before
+    public void setUp() {
         DocumentTypeManagerConfigurer.configure(docMan, "file:./test/cfg/testdoc.cfg");
     }
 
@@ -32,20 +34,20 @@ public class VisitorDataQueueTest {
         return new PutDocumentMessage(new DocumentPut(new Document(docMan.getDocumentType("testdoc"), docId)));
     }
 
-    private RemoveDocumentMessage createRemoveMessage(final String docId) {
+    private static RemoveDocumentMessage createRemoveMessage(final String docId) {
         return new RemoveDocumentMessage(new DocumentId(docId));
     }
 
-    private AckToken createDummyAckToken() {
+    private static AckToken createDummyAckToken() {
         return new AckToken(new Object());
     }
 
-    private void assertNonNullDocumentListResponse(final VisitorResponse response) {
+    private static void assertNonNullDocumentListResponse(final VisitorResponse response) {
         assertThat(response, notNullValue());
         assertThat(response, instanceOf(DocumentListVisitorResponse.class));
     }
 
-    private void assertResponseHasSinglePut(final VisitorResponse response, final DocumentPut expectedInstance) {
+    private static void assertResponseHasSinglePut(final VisitorResponse response, final DocumentPut expectedInstance) {
         assertNonNullDocumentListResponse(response);
         final DocumentListVisitorResponse visitorResponse = (DocumentListVisitorResponse)response;
         assertThat(visitorResponse.getDocumentList().size(), equalTo(1));
@@ -75,7 +77,7 @@ public class VisitorDataQueueTest {
         assertThat(queue.getNext(), nullValue()); // Queue now empty
     }
 
-    private void assertResponseHasSingleRemove(final VisitorResponse response, final String docId) {
+    private static void assertResponseHasSingleRemove(final VisitorResponse response, final String docId) {
         assertNonNullDocumentListResponse(response);
         final DocumentListVisitorResponse visitorResponse = (DocumentListVisitorResponse)response;
         assertThat(visitorResponse.getDocumentList().size(), equalTo(1));
