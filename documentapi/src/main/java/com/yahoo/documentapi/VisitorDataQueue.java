@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class VisitorDataQueue extends VisitorDataHandler {
 
-    final BlockingQueue<VisitorResponse> pendingResponses = new LinkedBlockingQueue<>();
+    private final BlockingQueue<VisitorResponse> pendingResponses = new LinkedBlockingQueue<>();
 
     /** Creates a new visitor data queue. */
     public VisitorDataQueue() {
