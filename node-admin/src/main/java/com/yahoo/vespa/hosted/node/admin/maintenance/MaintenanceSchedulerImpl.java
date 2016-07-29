@@ -57,8 +57,8 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(MaintenanceSchedulerImpl.class, containerName);
-
         File yVarDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
+
         if (yVarDir.exists()) {
             DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
         }
