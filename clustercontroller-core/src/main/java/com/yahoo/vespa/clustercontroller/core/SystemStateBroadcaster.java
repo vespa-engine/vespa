@@ -126,11 +126,11 @@ public class SystemStateBroadcaster {
             }
             if (nodeNeedsToObserveStartupTimestamps(node)) {
                 ClusterState newState = buildModifiedClusterState(dbContext);
-                log.log(LogLevel.INFO, "Sending modified system state version " + systemState.getVersion()
+                log.log(LogLevel.DEBUG, "Sending modified system state version " + systemState.getVersion()
                         + " to node " + node + ": " + newState);
                 communicator.setSystemState(newState, node, waiter);
             } else {
-                log.log(LogLevel.INFO, "Sending system state version " + systemState.getVersion() + " to node " + node
+                log.log(LogLevel.DEBUG, "Sending system state version " + systemState.getVersion() + " to node " + node
                         + ". (went down time " + node.getWentDownWithStartTime() + ", node start time " + node.getStartTimestamp() + ")");
                 communicator.setSystemState(systemState, node, waiter);
             }

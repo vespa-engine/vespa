@@ -248,6 +248,8 @@ public class DatabaseHandler {
                 log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex
                         + ": Attempting to store last system state version " + pendingStore.lastSystemStateVersion
                         + " into zookeeper.");
+                // TODO guard version write with a CaS predicated on the version we last read/wrote.
+                // TODO Drop leadership status if there is a mismatch, as it implies we're racing with another leader.
                 if (database.storeLatestSystemStateVersion(pendingStore.lastSystemStateVersion)) {
                     currentlyStored.lastSystemStateVersion = pendingStore.lastSystemStateVersion;
                     pendingStore.lastSystemStateVersion = null;

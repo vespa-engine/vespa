@@ -8,6 +8,7 @@ public class StateVersionTracker {
     // state version when starting from 1 will be 2. This matches legacy behavior and a bunch
     // of existing tests expect it.
     private int currentVersion = 1;
+    private int lastZooKeeperVersion = 0;
     // The lowest published distribution bit count for the lifetime of this controller.
     // TODO this mirrors legacy behavior, but should be moved into stable ZK state.
     private int lowestObservedDistributionBits = 16;
@@ -15,16 +16,17 @@ public class StateVersionTracker {
     private ClusterState currentUnversionedState = ClusterStateUtil.emptyState();
     private AnnotatedClusterState currentClusterState = AnnotatedClusterState.emptyState();
 
-    /**
-     * Called with version fetched from ZooKeeper, or when incrementing version numbers
-     * before pushing out a new cluster state.
-     */
-    public void setCurrentVersion(int version) {
+    public void setVersionRetrievedFromZooKeeper(int version) {
         this.currentVersion = Math.max(1, version);
+        this.lastZooKeeperVersion = this.currentVersion;
     }
 
     public int getCurrentVersion() {
         return this.currentVersion;
+    }
+
+    public boolean hasReceivedNewVersionFromZooKeeper() {
+        return currentVersion <= lastZooKeeperVersion;
     }
 
     public int getLowestObservedDistributionBits() {
