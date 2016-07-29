@@ -7,7 +7,6 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
-import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.*;
@@ -646,14 +645,15 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         didWork |= systemStateGenerator.watchTimers(cluster, this);
 
         // TODO move out, doesn't belong in a function with this name
-        if (systemStateGenerator.stateMayHaveChanged()) {
+        if (mustRecomputeCandidateClusterState()) {
             systemStateGenerator.unsetStateChangedFlag();
             ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
             params.currentTimeInMilllis(timer.getCurrentTimeInMillis()).cluster(cluster)
                     .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
             final AnnotatedClusterState candidate = ClusterStateGenerator.generatedStateFrom(params);
 
-            if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)) {
+            if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
+                    || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
                 //emitEventsForAlteredStateEdges(state);
                 stateVersionTracker.applyAndVersionNewState(candidate);
                 // TODO needs to invoke analogue of SystemStateGenerator.recordNewClusterStateHasBeenChosen
@@ -669,12 +669,15 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isMaster) {
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became node state gatherer as we are fleetcontroller master candidate.", timer.getCurrentTimeInMillis()));
                 // Update versions to use so what is shown is closer to what is reality on the master
-                //systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
-                stateVersionTracker.setCurrentVersion(database.getLatestSystemStateVersion());
+                stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
             }
         }
         isStateGatherer = true;
         return didWork;
+    }
+
+    private boolean mustRecomputeCandidateClusterState() {
+        return systemStateGenerator.stateMayHaveChanged() || stateVersionTracker.hasReceivedNewVersionFromZooKeeper();
     }
 
     private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
@@ -683,8 +686,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isMaster) {
                 metricUpdater.becameMaster();
                 // If we just became master, restore wanted states from database
-                //systemStateGenerator.setLatestSystemStateVersion(database.getLatestSystemStateVersion());
-                stateVersionTracker.setCurrentVersion(database.getLatestSystemStateVersion());
+                stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
                 didWork = database.loadStartTimestamps(cluster);
                 didWork |= database.loadWantedStates(databaseContext);
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "

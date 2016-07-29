@@ -25,7 +25,7 @@ public class StateVersionTrackerTest {
     @Test
     public void version_is_incremented_when_new_state_is_applied() {
         final StateVersionTracker versionTracker = new StateVersionTracker();
-        versionTracker.setCurrentVersion(100);
+        versionTracker.setVersionRetrievedFromZooKeeper(100);
         versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"));
         assertThat(versionTracker.getCurrentVersion(), equalTo(101));
         assertThat(versionTracker.getVersionedClusterState().toString(), equalTo("version:101 distributor:2 storage:2"));
@@ -40,8 +40,30 @@ public class StateVersionTrackerTest {
     @Test
     public void set_current_version_caps_lowest_version_to_1() {
         final StateVersionTracker versionTracker = new StateVersionTracker();
-        versionTracker.setCurrentVersion(0);
+        versionTracker.setVersionRetrievedFromZooKeeper(0);
         assertThat(versionTracker.getCurrentVersion(), equalTo(1));
+    }
+
+    // TODO or should it be initially true?
+    @Test
+    public void new_version_from_zk_predicate_initially_false() {
+        final StateVersionTracker versionTracker = new StateVersionTracker();
+        assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(false));
+    }
+
+    @Test
+    public void new_version_from_zk_predicate_true_after_setting_zk_version() {
+        final StateVersionTracker versionTracker = new StateVersionTracker();
+        versionTracker.setVersionRetrievedFromZooKeeper(5);
+        assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(true));
+    }
+
+    @Test
+    public void new_version_from_zk_predicate_false_after_applying_higher_version() {
+        final StateVersionTracker versionTracker = new StateVersionTracker();
+        versionTracker.setVersionRetrievedFromZooKeeper(5);
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"));
+        assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(false));
     }
 
     @Test
