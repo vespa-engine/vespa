@@ -14,6 +14,7 @@ import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
@@ -24,6 +25,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.util.VespaSSLConfig;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -40,11 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -104,22 +106,13 @@ public class DockerImpl implements Docker {
     @Inject
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                .withRegistryUrl(config.uri())
+                .withDockerHost(config.uri().replace("https", "tcp"))
                 .withDockerCertPath(config.uri())
                 .withDockerTlsVerify(true)
-                .withProperties(certificates(config))
-                .build()));
-    }
-
-    private static Properties certificates(DockerConfig config) {
-        NODE_ADMIN_LOGGER.info("tlscacert: " + config.caCertPath() + " | " +
-                "tlscert: " + config.clientCertPath() + " | " +
-                "tlskey: " +  config.clientKeyPath());
-        Properties certificates = new Properties();
-        certificates.setProperty("tlscacert", config.caCertPath());
-        certificates.setProperty("tlscert", config.clientCertPath());
-        certificates.setProperty("tlskey", config.clientKeyPath());
-        return certificates;
+                .withCustomSslConfig(new VespaSSLConfig(config.caCertPath(), config.clientCertPath(), config.clientKeyPath()))
+                .build())
+            .withDockerCmdExecFactory(new JerseyDockerCmdExecFactory()
+                .withReadTimeout((int) TimeUnit.MINUTES.toSeconds(30))));
     }
 
 
