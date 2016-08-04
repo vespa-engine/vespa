@@ -39,20 +39,20 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
 
         // GET with filters
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host3.yahoo.com%20host6.yahoo.com"), "application2-nodes.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host2.yahoo.com%20host1.yahoo.com"), "application2-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterType=content"), "active-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&clusterId=id2"), "application2-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&application=tenant2.application2.instance2"), "application2-nodes.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&parentHost=parent.yahoo.com,parent.host.yahoo.com"), "parent-nodes.json");
 
         // POST restart command
-        assertRestart(1, new Request("http://localhost:8080/nodes/v2/command/restart?hostname=host3.yahoo.com",
+        assertRestart(1, new Request("http://localhost:8080/nodes/v2/command/restart?hostname=host2.yahoo.com",
                          new byte[0], Request.Method.POST));
         assertRestart(2, new Request("http://localhost:8080/nodes/v2/command/restart?application=tenant2.application2.instance2",
                          new byte[0], Request.Method.POST));
         assertRestart(4, new Request("http://localhost:8080/nodes/v2/command/restart",
                          new byte[0], Request.Method.POST));
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host3.yahoo.com"),
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"restartGeneration\":3");
 
         // POST reboot command
@@ -62,7 +62,7 @@ public class RestApiTest {
                         new byte[0], Request.Method.POST));
         assertReboot(9, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host3.yahoo.com"),
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":3");
 
         // POST new nodes
