@@ -524,17 +524,21 @@ TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
 
     EXPECT_TRUE(fooH->_done.await(LONG_TIMEOUT));
     EXPECT_EQUAL(25ul, fooH->_oldestSerial);
-    // [ 10, 25 ], [ 10, 25, 25 ] and [ 10, 20, 25 ] are legal histories
+    // [ 10, 25 ], [10, 10, 25], [ 10, 25, 25 ] and [ 10, 20, 25 ] are
+    // legal histories
     FlushDoneHistory fooHFlushDoneHistory(fooH->getFlushDoneHistory());
     if (fooHFlushDoneHistory != FlushDoneHistory({ 10, 25 }) &&
+        fooHFlushDoneHistory != FlushDoneHistory({ 10, 10, 25 }) &&
         fooHFlushDoneHistory != FlushDoneHistory({ 10, 25, 25 })) {
         EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), fooHFlushDoneHistory);
     }
     EXPECT_TRUE(barH->_done.await(LONG_TIMEOUT));
     EXPECT_EQUAL(20ul, barH->_oldestSerial);
-    // [ 5, 20 ], [ 5, 20, 20 ] and [ 5, 15, 20 ] are legal histories
+    // [ 5, 20 ], [5, 5, 20], [ 5, 20, 20 ] and [ 5, 15, 20 ] are
+    // legal histories
     FlushDoneHistory barHFlushDoneHistory(barH->getFlushDoneHistory());
     if (barHFlushDoneHistory != FlushDoneHistory({ 5, 20 }) &&
+        barHFlushDoneHistory != FlushDoneHistory({ 5, 5, 20 }) &&
         barHFlushDoneHistory != FlushDoneHistory({ 5, 20, 20 })) {
         EXPECT_EQUAL(FlushDoneHistory({ 5, 15, 20 }), barHFlushDoneHistory);
     }
