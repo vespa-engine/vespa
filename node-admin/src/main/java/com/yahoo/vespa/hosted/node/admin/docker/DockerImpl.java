@@ -1,24 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.InspectExecResponse;
+import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
-import com.spotify.docker.client.ContainerNotFoundException;
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerCertificateException;
-import com.spotify.docker.client.DockerCertificates;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerClient.ExecCreateParam;
-import com.spotify.docker.client.DockerException;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.ContainerState;
-import com.spotify.docker.client.messages.ExecState;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.Image;
-import com.spotify.docker.client.messages.RemovedImage;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -29,11 +27,12 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,12 +40,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -105,25 +103,25 @@ public class DockerImpl implements Docker {
 
     @Inject
     public DockerImpl(final DockerConfig config) {
-        this(DefaultDockerClient.builder().
-                uri(config.uri()).
-                dockerCertificates(certificates(config)).
-                readTimeoutMillis(TimeUnit.MINUTES.toMillis(30)). // Some operations may take minutes.
-                build());
+        this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
+                .withRegistryUrl(config.uri())
+                .withDockerCertPath(config.uri())
+                .withDockerTlsVerify(true)
+                .withProperties(certificates(config))
+                .build()));
     }
 
-
-    private static DockerCertificates certificates(DockerConfig config) {
-        try {
-            return DockerCertificates.builder()
-                    .caCertPath(Paths.get(config.caCertPath()))
-                    .clientCertPath(Paths.get(config.clientCertPath()))
-                    .clientKeyPath(Paths.get(config.clientKeyPath()))
-                    .build().get();
-        } catch (DockerCertificateException e) {
-            throw new RuntimeException("Failed configuring certificates for contacting docker daemon.", e);
-        }
+    private static Properties certificates(DockerConfig config) {
+        NODE_ADMIN_LOGGER.info("tlscacert: " + config.caCertPath() + " | " +
+                "tlscert: " + config.clientCertPath() + " | " +
+                "tlskey: " +  config.clientKeyPath());
+        Properties certificates = new Properties();
+        certificates.setProperty("tlscacert", config.caCertPath());
+        certificates.setProperty("tlscert", config.clientCertPath());
+        certificates.setProperty("tlskey", config.clientKeyPath());
+        return certificates;
     }
+
 
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
@@ -131,10 +129,8 @@ public class DockerImpl implements Docker {
         // be accessed by the task, forcing it to always go through removeScheduledPoll() before completing the task.
         final Runnable task = () -> {
             try {
-                docker.pull(image.asString());
+                docker.pullImageCmd(image.asString());
                 removeScheduledPoll(image).complete(image);
-            } catch (InterruptedException e) {
-                removeScheduledPoll(image).completeExceptionally(e);
             } catch (DockerException e) {
                 if (imageIsDownloaded(image)) {
                     /* TODO: the docker client is not in sync with the server protocol causing it to throw
@@ -174,11 +170,11 @@ public class DockerImpl implements Docker {
     @Override
     public boolean imageIsDownloaded(final DockerImage dockerImage) {
         try {
-            List<Image> images = docker.listImages(DockerClient.ListImagesParam.allImages());
+            List<Image> images = docker.listImagesCmd().withShowAll(true).exec();
             return images.stream().
-                    flatMap(image -> image.repoTags().stream()).
+                    flatMap(image -> Arrays.stream(image.getRepoTags())).
                     anyMatch(tag -> tag.equals(dockerImage.asString()));
-        } catch (DockerException|InterruptedException e) {
+        } catch (DockerException e) {
             throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
         }
     }
@@ -193,38 +189,40 @@ public class DockerImpl implements Docker {
             double minMainMemoryAvailableGb) {
         try {
             final double GIGA = Math.pow(2.0, 30.0);
+            InetAddress nodeInetAddress = Inet6Address.getByName(hostName.s());
+            String nodeIpAddress = nodeInetAddress.getHostAddress();
+            String hostIpAddress = Inet6Address.getLocalHost().getHostAddress();
+
+            CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
+                    .withImage(dockerImage.asString())
+                    .withLabels(CONTAINER_LABELS)
+                    .withEnv(new String[]{"CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())})
+                    .withHostName(hostName.s())
+                    .withNetworkMode("bridge")
+                    .withBinds(applicationStorageToMount(containerName))
+                    .withDns(hostIpAddress)
+                    .withIpv6Address(nodeIpAddress);
+
+
             // TODO: Enforce disk constraints
             // TODO: Consider if CPU shares or quoata should be set. For now we are just assuming they are
             // nicely controlled by docker.
-            ContainerConfig.Builder containerConfigBuilder = ContainerConfig.builder().
-                    image(dockerImage.asString()).
-                    labels(CONTAINER_LABELS).
-                    hostConfig(
-                            HostConfig.builder()
-                                    .networkMode("none")
-                                    .binds(applicationStorageToMount(containerName))
-                                    .build())
-                    .env("CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())).
-                            hostname(hostName.s());
+
             if (minMainMemoryAvailableGb > 0.00001) {
-                containerConfigBuilder.memory((long) (GIGA * minMainMemoryAvailableGb));
-            }
-            docker.createContainer(containerConfigBuilder.build(), containerName.asString());
-            //HostConfig hostConfig = HostConfig.builder().create();
-            docker.startContainer(containerName.asString());
-
-            ContainerInfo containerInfo = docker.inspectContainer(containerName.asString());
-            ContainerState state = containerInfo.state();
-
-            if (state.running()) {
-                Integer pid = state.pid();
-                if (pid == null) {
-                    throw new DockerException("PID of running container for host " + hostName + " is null");
-                }
-                setupContainerNetworking(containerName, hostName, pid);
+                containerConfigBuilder.withMemory((long) (GIGA * minMainMemoryAvailableGb));
             }
 
-        } catch (IOException | DockerException | InterruptedException e) {
+            CreateContainerResponse response = containerConfigBuilder.exec();
+            docker.startContainerCmd(response.getId()).exec();
+
+//            if (state.running()) {
+//                Integer pid = state.pid();
+//                if (pid == null) {
+//                    throw new DockerException("PID of running container for host " + hostName + " is null");
+//                }
+//                setupContainerNetworking(containerName, hostName, pid);
+//            }
+        } catch (IOException | DockerException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
         }
     }
@@ -254,23 +252,21 @@ public class DockerImpl implements Docker {
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         assert args.length >= 1;
         try {
-            final String execId = docker.execCreate(
-                    containerName.asString(),
-                    args,
-                    ExecCreateParam.attachStdout(),
-                    ExecCreateParam.attachStderr());
+            final ExecCreateCmdResponse response = docker.execCreateCmd(containerName.asString())
+                    .withCmd(args)
+                    .withAttachStdout(true)
+                    .exec();
 
-            try (final LogStream stream = docker.execStart(execId)) {
-                // This will block until program exits
-                final String output = stream.readFully();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ExecStartCmd execStartCmd = docker.execStartCmd(response.getId());
+            execStartCmd.exec(new ExecStartResultCallback(output, output)).awaitCompletion();
 
-                final ExecState state = docker.execInspect(execId);
-                assert !state.running();
-                Integer exitCode = state.exitCode();
-                assert exitCode != null;
+            final InspectExecResponse state = docker.inspectExecCmd(execStartCmd.getExecId()).exec();
+            assert !state.isRunning();
+            Integer exitCode = state.getExitCode();
+            assert exitCode != null;
 
-                return new ProcessResult(exitCode, output);
-            }
+            return new ProcessResult(exitCode, new String(output.toByteArray()));
         } catch (DockerException | InterruptedException e) {
             throw new RuntimeException("Container " + containerName.asString()
                     + " failed to execute " + Arrays.toString(args));
@@ -325,22 +321,23 @@ public class DockerImpl implements Docker {
         }
     }
 
-    static List<String> applicationStorageToMount(ContainerName containerName) {
+    static List<Bind> applicationStorageToMount(ContainerName containerName) {
         return Stream.concat(
                         Stream.of("/etc/hosts:/etc/hosts"),
                         DIRECTORIES_TO_MOUNT.stream().map(directory ->
                                 Maintainer.pathInHostFromPathInNode(containerName, directory).toString() +
                         ":" + directory))
+                .map(Bind::parse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public void stopContainer(final ContainerName containerName) {
-        Optional<com.spotify.docker.client.messages.Container> dockerContainer = getContainerFromName(containerName, true);
+        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
             try {
-                docker.stopContainer(dockerContainer.get().id(), SECONDS_TO_WAIT_BEFORE_KILLING);
-            } catch (DockerException|InterruptedException e) {
+                docker.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+            } catch (DockerException e) {
                 throw new RuntimeException("Failed to stop container", e);
             }
         }
@@ -348,11 +345,11 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteContainer(ContainerName containerName) {
-        Optional<com.spotify.docker.client.messages.Container> dockerContainer = getContainerFromName(containerName, true);
+        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
             try {
-                docker.removeContainer(dockerContainer.get().id());
-            } catch (DockerException|InterruptedException e) {
+                docker.removeContainerCmd(dockerContainer.get().getId());
+            } catch (DockerException e) {
                 throw new RuntimeException("Failed to delete container", e);
             }
         }
@@ -362,11 +359,11 @@ public class DockerImpl implements Docker {
     public List<Container> getAllManagedContainers() {
         try {
 
-            return docker.listContainers(DockerClient.ListContainersParam.allContainers(true)).stream().
-                    filter(this::isManaged).
-                    flatMap(this::asContainer).
-                    collect(Collectors.toList());
-        } catch (DockerException|InterruptedException e) {
+            return docker.listContainersCmd().withShowAll(true).exec().stream()
+                    .filter(this::isManaged)
+                    .flatMap(this::asContainer)
+                    .collect(Collectors.toList());
+        } catch (DockerException e) {
             throw new RuntimeException("Failed to delete container", e);
         }
     }
@@ -379,45 +376,45 @@ public class DockerImpl implements Docker {
                 .findFirst();
     }
 
-    private Stream<Container> asContainer(com.spotify.docker.client.messages.Container dockerClientContainer) {
+    private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
         try {
-            final ContainerInfo containerInfo = docker.inspectContainer(dockerClientContainer.id());
+            final InspectContainerResponse response = docker.inspectContainerCmd(dockerClientContainer.getId()).exec();
             return Stream.of(new Container(
-                    new HostName(containerInfo.config().hostname()),
-                    new DockerImage(dockerClientContainer.image()),
-                    new ContainerName(decode(containerInfo.name())),
-                    containerInfo.state().running()));
-        } catch(ContainerNotFoundException e) {
-            return Stream.empty();
-        } catch (InterruptedException|DockerException e) {
+                    new HostName(response.getConfig().getHostName()),
+                    new DockerImage(dockerClientContainer.getImage()),
+                    new ContainerName(decode(response.getName())),
+                    response.getState().getRunning()));
+        } catch (DockerException e) {
             //TODO: do proper exception handling
             throw new RuntimeException("Failed talking to docker daemon", e);
         }
     }
 
 
-    private Optional<com.spotify.docker.client.messages.Container> getContainerFromName(
+    private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(
             final ContainerName containerName, final boolean alsoGetStoppedContainers) {
         try {
-            return docker.listContainers(DockerClient.ListContainersParam.allContainers(alsoGetStoppedContainers)).stream().
-                    filter(this::isManaged).
-                    filter(container -> matchName(container, containerName.asString())).
+            return docker.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
+                    .filter(this::isManaged)
+                    .filter(container -> matchName(container, containerName.asString())).
                     findFirst();
-        } catch (DockerException|InterruptedException e) {
+        } catch (DockerException e) {
             throw new RuntimeException("Failed to get container from name", e);
         }
     }
 
-    private boolean isManaged(final com.spotify.docker.client.messages.Container container) {
-        final Map<String, String> labels = container.labels();
+
+
+    private boolean isManaged(final com.github.dockerjava.api.model.Container container) {
+        final Map<String, String> labels = container.getLabels();
         if (labels == null) {
             return false;
         }
         return LABEL_VALUE_MANAGEDBY.equals(labels.get(LABEL_NAME_MANAGEDBY));
     }
 
-    private boolean matchName(com.spotify.docker.client.messages.Container container, String targetName) {
-        return container.names().stream().anyMatch(encodedName -> decode(encodedName).equals(targetName));
+    private boolean matchName(com.github.dockerjava.api.model.Container container, String targetName) {
+        return Arrays.stream(container.getNames()).anyMatch(encodedName -> decode(encodedName).equals(targetName));
     }
 
     private String decode(String encodedContainerName) {
@@ -428,14 +425,7 @@ public class DockerImpl implements Docker {
     public void deleteImage(final DockerImage dockerImage) {
         try {
             NODE_ADMIN_LOGGER.info("Deleting docker image " + dockerImage);
-            final List<RemovedImage> removedImages = docker.removeImage(dockerImage.asString());
-            for (RemovedImage removedImage : removedImages) {
-                if (removedImage.type() != RemovedImage.Type.DELETED) {
-                    NODE_ADMIN_LOGGER.info("Result of deleting docker image " + dockerImage + ": " + removedImage);
-                }
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Unexpected interrupt", e);
+            docker.removeImageCmd(dockerImage.asString()).exec();
         } catch (DockerException e) {
             NODE_ADMIN_LOGGER.warning("Could not delete docker image " + dockerImage, e);
         }
@@ -458,21 +448,21 @@ public class DockerImpl implements Docker {
             final Map<String, String> dependencies = new HashMap<>();
 
             // Populate maps with images (including tags) and their dependencies (parents).
-            for (Image image : docker.listImages(DockerClient.ListImagesParam.allImages())) {
-                objects.put(image.id(), new DockerObject(image.id(), DockerObjectType.IMAGE));
-                if (image.parentId() != null && !image.parentId().isEmpty()) {
-                    dependencies.put(image.id(), image.parentId());
+            for (Image image : docker.listImagesCmd().withShowAll(true).exec()) {
+                objects.put(image.getId(), new DockerObject(image.getId(), DockerObjectType.IMAGE));
+                if (image.getParentId() != null && !image.getParentId().isEmpty()) {
+                    dependencies.put(image.getId(), image.getParentId());
                 }
-                for (String tag : image.repoTags()) {
+                for (String tag : image.getRepoTags()) {
                     objects.put(tag, new DockerObject(tag, DockerObjectType.IMAGE_TAG));
-                    dependencies.put(tag, image.id());
+                    dependencies.put(tag, image.getId());
                 }
             }
 
             // Populate maps with containers and their dependency to the image they run on.
-            for (com.spotify.docker.client.messages.Container container : docker.listContainers(DockerClient.ListContainersParam.allContainers(true))) {
-                objects.put(container.id(), new DockerObject(container.id(), DockerObjectType.CONTAINER));
-                dependencies.put(container.id(), container.image());
+            for (com.github.dockerjava.api.model.Container container : docker.listContainersCmd().withShowAll(true).exec()) {
+                objects.put(container.getId(), new DockerObject(container.getId(), DockerObjectType.CONTAINER));
+                dependencies.put(container.getId(), container.getImage());
             }
 
             // Now update every object with its dependencies.
@@ -488,7 +478,7 @@ public class DockerImpl implements Docker {
                     .map(obj -> obj.id)
                     .map(DockerImage::new)
                     .collect(Collectors.toSet());
-        } catch (InterruptedException|DockerException e) {
+        } catch (DockerException e) {
             throw new RuntimeException("Unexpected exception", e);
         }
     }
