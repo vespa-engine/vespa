@@ -29,8 +29,10 @@ public:
     bool valid() const { return (_size >= sizeof(sa_family_t)); }
     bool is_ipv4() const { return (valid() && (_addr.ss_family == AF_INET)); }
     bool is_ipv6() const { return (valid() && (_addr.ss_family == AF_INET6)); }
+    bool is_ipc() const { return (valid() && (_addr.ss_family == AF_UNIX)); }
     int port() const;
     vespalib::string ip_address() const;
+    vespalib::string path() const;
     vespalib::string spec() const;
     SocketHandle connect() const;
     SocketHandle listen(int backlog = 500) const;
@@ -53,6 +55,7 @@ public:
         }
         return SocketAddress();
     }
+    static SocketAddress from_path(const vespalib::string &path);
 };
 
 } // namespace vespalib
