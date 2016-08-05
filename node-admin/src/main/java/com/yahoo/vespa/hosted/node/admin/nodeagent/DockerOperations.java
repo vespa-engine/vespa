@@ -48,11 +48,19 @@ public class DockerOperations {
 
     // Returns true if started
     public boolean startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+        logger.error("CALLING GET CONTAINER");
         final Optional<Container> existingContainer = docker.getContainer(nodeSpec.hostname);
         if (!existingContainer.isPresent()) {
+            logger.error("  CONTAINER NOT PRESENT, STARTING");
+
             startContainer(nodeSpec);
+            logger.error("  STARTED!!");
+
             return true;
         } else {
+            logger.error("  CONTAINER ALREADY THERE");
+
             return false;
         }
     }

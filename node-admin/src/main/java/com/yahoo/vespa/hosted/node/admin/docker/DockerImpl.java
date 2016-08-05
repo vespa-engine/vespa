@@ -106,13 +106,21 @@ public class DockerImpl implements Docker {
     @Inject
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                .withDockerHost(config.uri().replace("https", "tcp"))
-                .withDockerCertPath(config.uri())
+
+                .withDockerHost("tcp://127.0.0.1:2376")//config.uri().replace("https", "tcp"))
+               // .withDockerCertPath(config.uri())
                 .withDockerTlsVerify(true)
                 .withCustomSslConfig(new VespaSSLConfig(config.caCertPath(), config.clientCertPath(), config.clientKeyPath()))
                 .build())
-            .withDockerCmdExecFactory(new JerseyDockerCmdExecFactory()
+            .withDockerCmdExecFactory(
+                  //  new NettyDockerCmdExecFactory()
+                    new JerseyDockerCmdExecFactory()
+                    .withConnectTimeout(100)
+                    .withMaxPerRouteConnections(100)
+                   .withMaxTotalConnections(100)
+
                 .withReadTimeout((int) TimeUnit.MINUTES.toSeconds(30))));
+            ));
     }
 
 
