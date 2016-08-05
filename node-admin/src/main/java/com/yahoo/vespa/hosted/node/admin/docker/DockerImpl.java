@@ -262,7 +262,7 @@ public class DockerImpl implements Docker {
             return new ProcessResult(exitCode, new String(output.toByteArray()));
         } catch (DockerException | InterruptedException e) {
             throw new RuntimeException("Container " + containerName.asString()
-                    + " failed to execute " + Arrays.toString(args));
+                    + " failed to execute " + Arrays.toString(args), e);
         }
     }
 
