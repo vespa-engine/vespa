@@ -6,3 +6,4 @@ threadstackexecutor_test
 vespalib_executor_test_app
 vespalib_stress_test_app
 vespalib_threadstackexecutor_test_app
+/vespalib_blockingthreadstackexecutor_test_app
