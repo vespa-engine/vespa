@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.collect.ComparisonChain;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -66,7 +64,7 @@ class GroupPreparer {
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use active nodes from other groups that will otherwise be retired
-            List<Node> accepted = nodeList.offer(sortNodeListByCost(surplusActiveNodes), canChangeGroup);
+            List<Node> accepted = nodeList.offer(surplusActiveNodes, canChangeGroup);
             surplusActiveNodes.removeAll(accepted);
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
@@ -75,14 +73,14 @@ class GroupPreparer {
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use inactive nodes
-            accepted = nodeList.offer(sortNodeListByCost(nodeRepository.getNodes(application, Node.State.inactive)), !canChangeGroup);
+            accepted = nodeList.offer(nodeRepository.getNodes(application, Node.State.inactive), !canChangeGroup);
             nodeList.update(nodeRepository.reserve(accepted));
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
                 List<Node> readyNodes = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready);
-                accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
+                accepted = nodeList.offer(stripeOverHosts(readyNodes), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
             if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
@@ -100,16 +98,6 @@ class GroupPreparer {
             throw new OutOfCapacityException("Could not satisfy request for " + nodeCount +
                                              " nodes of " + flavor + " for " + cluster + ".");
         }
-    }
-
-    /** Sort nodes according to their cost, and if the cost is equal, sort by hostname (to get stable tests) */
-    private List<Node> sortNodeListByCost(List<Node> nodeList) {
-        Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                .compare(n1.configuration().flavor().cost(), n2.configuration().flavor().cost())
-                .compare(n1.hostname(), n2.hostname())
-                .result()
-        );
-        return nodeList;
     }
 
     /** Return the input nodes in an order striped over their parent hosts */
