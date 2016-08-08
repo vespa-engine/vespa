@@ -10,13 +10,13 @@
   "canonicalFlavor":"default",
   "cost":200,
   "owner": {
-    "tenant": "tenant3",
-    "application": "application3",
-    "instance": "instance3"
+    "tenant": "tenant2",
+    "application": "application2",
+    "instance": "instance2"
   },
   "membership": {
     "clustertype": "content",
-    "clusterid": "id3",
+    "clusterid": "id2",
     "group": "0",
     "index": 1,
     "retired": false
