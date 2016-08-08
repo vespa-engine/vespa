@@ -96,7 +96,7 @@ public class DockerImpl implements Docker {
     @GuardedBy("monitor")
     private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
 
-    public DockerImpl(final DockerClient dockerClient) {
+    DockerImpl(final DockerClient dockerClient) {
         this.docker = dockerClient;
     }
 
@@ -109,23 +109,12 @@ public class DockerImpl implements Docker {
                 .build())
             .withDockerCmdExecFactory(
                     new JerseyDockerCmdExecFactory()
-                    .withConnectTimeout(100)
-                    .withMaxPerRouteConnections(100)
-                    .withMaxTotalConnections(100)
-                    .withReadTimeout((int) TimeUnit.MINUTES.toSeconds(30))
+                    .withConnectTimeout((int) TimeUnit.SECONDS.toMillis(100))
+                    .withMaxPerRouteConnections((int) TimeUnit.SECONDS.toMillis(100))
+                    .withMaxTotalConnections(10000)
+                    .withReadTimeout((int) TimeUnit.MINUTES.toMillis(30))
             ));
-
-        NODE_ADMIN_LOGGER.info("PRINTING RUNNING CONTAINERS: ");
-        docker.listContainersCmd().withShowAll(true).exec().stream().forEach(
-                container -> NODE_ADMIN_LOGGER.info(container.toString())
-        );
-
-        NODE_ADMIN_LOGGER.info("MANAGED CONTAINERS: ");
-        this.getAllManagedContainers().stream().forEach(
-                container -> NODE_ADMIN_LOGGER.info(container.toString())
-        );
     }
-
 
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
@@ -195,10 +184,15 @@ public class DockerImpl implements Docker {
             final double GIGA = Math.pow(2.0, 30.0);
             InetAddress nodeInetAddress = Inet6Address.getByName(hostName.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
-            String hostIpAddress = Inet6Address.getLocalHost().getHostAddress();
+            Optional<InetAddress> hostInetAddress = Arrays.stream(Inet6Address.getAllByName(Inet6Address.getLocalHost().getHostName()))
+                    .filter(i -> i instanceof Inet6Address).findFirst();
+            String hostIpAddress = hostInetAddress.isPresent() ? hostInetAddress.get().getHostAddress() : "";
+
+            NODE_ADMIN_LOGGER.info("Hostname: " + hostName.s() + " | Node IP: " + nodeIpAddress +
+                    " | Host IP: " + hostIpAddress);
 
             CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
-                    .withImage(dockerImage.asString())
+                    .withName(containerName.asString())
                     .withLabels(CONTAINER_LABELS)
                     .withEnv(new String[]{"CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())})
                     .withHostName(hostName.s())
