@@ -18,6 +18,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,7 +51,7 @@ public class ZookeeperStatusServiceTest {
 
         testingServer = new TestingServer();
         curatorFramework = createConnectedCuratorFramework(testingServer);
-        zookeeperStatusService = new ZookeeperStatusService(curatorFramework);
+        zookeeperStatusService = new ZookeeperStatusService(curatorFramework, Clock.systemUTC());
     }
 
     private static CuratorFramework createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
@@ -100,9 +104,55 @@ public class ZookeeperStatusServiceTest {
     }
 
     @Test
+    public void host_state_is_reset_after_6_hours() throws Exception {
+        testingServer = new TestingServer();
+        curatorFramework = createConnectedCuratorFramework(testingServer);
+        TestClock clock = new TestClock(Instant.now());
+        zookeeperStatusService = new ZookeeperStatusService(curatorFramework, clock);
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
+                TestIds.APPLICATION_INSTANCE_REFERENCE)) {
+            statusRegistry.setHostState(TestIds.HOST_NAME1, HostStatus.ALLOWED_TO_BE_DOWN);
+        }
+        clock.instant = Instant.now().plus(5, ChronoUnit.HOURS);
+        assertThat(
+        zookeeperStatusService.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
+                .getHostStatus(TestIds.HOST_NAME1),
+                is(HostStatus.ALLOWED_TO_BE_DOWN));
+
+        clock.instant = Instant.now().plus(7, ChronoUnit.HOURS);
+
+        assertThat(
+                zookeeperStatusService.forApplicationInstance(TestIds.APPLICATION_INSTANCE_REFERENCE)
+                        .getHostStatus(TestIds.HOST_NAME1),
+                is(HostStatus.NO_REMARKS));
+    }
+
+    static class TestClock extends Clock {
+        Instant instant;
+
+        public TestClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        @Override
+        public Instant instant() {
+            return instant;
+        }
+        @Override
+        public ZoneId getZone() {
+            return null;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return null;
+        }
+    }
+
+    @Test
     public void locks_are_exclusive() throws Exception {
         try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2, Clock.systemUTC());
 
             final CompletableFuture<Void> lockedSuccessfullyFuture;
             try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
@@ -149,7 +199,7 @@ public class ZookeeperStatusServiceTest {
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
         try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2, Clock.systemUTC());
 
             try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
                     TestIds.APPLICATION_INSTANCE_REFERENCE)) {
@@ -227,7 +277,7 @@ public class ZookeeperStatusServiceTest {
     @Test(expected = AssertionError.class)
     public void multiple_locks_in_a_single_thread_gives_error() throws InterruptedException {
         try (CuratorFramework curatorFramework2 = createConnectedCuratorFramework(testingServer)) {
-            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2);
+            ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curatorFramework2, Clock.systemUTC());
 
             try (MutableStatusRegistry statusRegistry1 = zookeeperStatusService
                     .lockApplicationInstance_forCurrentThreadOnly(TestIds.APPLICATION_INSTANCE_REFERENCE);
