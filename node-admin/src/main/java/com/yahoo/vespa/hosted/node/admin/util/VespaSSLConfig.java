@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.core.SSLConfig;
+import com.yahoo.nodeadmin.docker.DockerConfig;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -38,14 +39,10 @@ import static java.util.Objects.requireNonNull;
  * SSL Config from local files.
  */
 public class VespaSSLConfig implements SSLConfig {
-    private final String caCertPath;
-    private final String clientCertPath;
-    private final String clientKeyPath;
+    private final DockerConfig config;
 
-    public VespaSSLConfig(String caCertPath, String clientCertPath, String clientKeyPath) {
-        this.caCertPath = caCertPath;
-        this.clientCertPath = clientCertPath;
-        this.clientKeyPath = clientKeyPath;
+    public VespaSSLConfig(DockerConfig config) {
+        this.config = config;
     }
 
     @Override
@@ -61,9 +58,9 @@ public class VespaSSLConfig implements SSLConfig {
                 System.setProperty("https.protocols", httpProtocols);
             }
 
-            String keypem = new String(Files.readAllBytes(Paths.get(clientKeyPath)));
-            String certpem = new String(Files.readAllBytes(Paths.get(clientCertPath)));
-            String capem = new String(Files.readAllBytes(Paths.get(caCertPath)));
+            String keypem = new String(Files.readAllBytes(Paths.get(config.clientKeyPath())));
+            String certpem = new String(Files.readAllBytes(Paths.get(config.clientCertPath())));
+            String capem = new String(Files.readAllBytes(Paths.get(config.caCertPath())));
 
             sslConfig.keyStore(createKeyStore(keypem, certpem));
             sslConfig.keyStorePassword("docker");
@@ -212,7 +209,6 @@ public class VespaSSLConfig implements SSLConfig {
         }
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -220,17 +216,12 @@ public class VespaSSLConfig implements SSLConfig {
 
         VespaSSLConfig that = (VespaSSLConfig) o;
 
-        if (!caCertPath.equals(that.caCertPath)) return false;
-        if (!clientCertPath.equals(that.clientCertPath)) return false;
-        return clientKeyPath.equals(that.clientKeyPath);
+        return config.equals(that.config);
 
     }
 
     @Override
     public int hashCode() {
-        int result = caCertPath.hashCode();
-        result = 31 * result + clientCertPath.hashCode();
-        result = 31 * result + clientKeyPath.hashCode();
-        return result;
+        return config.hashCode();
     }
 }

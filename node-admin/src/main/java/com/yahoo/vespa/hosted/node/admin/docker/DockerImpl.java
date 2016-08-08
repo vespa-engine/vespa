@@ -16,7 +16,6 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.common.base.Joiner;
-import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -31,10 +30,8 @@ import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -106,21 +103,27 @@ public class DockerImpl implements Docker {
     @Inject
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-
                 .withDockerHost("tcp://127.0.0.1:2376")//config.uri().replace("https", "tcp"))
-               // .withDockerCertPath(config.uri())
                 .withDockerTlsVerify(true)
-                .withCustomSslConfig(new VespaSSLConfig(config.caCertPath(), config.clientCertPath(), config.clientKeyPath()))
+                .withCustomSslConfig(new VespaSSLConfig(config))
                 .build())
             .withDockerCmdExecFactory(
-                  //  new NettyDockerCmdExecFactory()
                     new JerseyDockerCmdExecFactory()
                     .withConnectTimeout(100)
                     .withMaxPerRouteConnections(100)
-                   .withMaxTotalConnections(100)
-
-                .withReadTimeout((int) TimeUnit.MINUTES.toSeconds(30))));
+                    .withMaxTotalConnections(100)
+                    .withReadTimeout((int) TimeUnit.MINUTES.toSeconds(30))
             ));
+
+        NODE_ADMIN_LOGGER.info("PRINTING RUNNING CONTAINERS: ");
+        docker.listContainersCmd().withShowAll(true).exec().stream().forEach(
+                container -> NODE_ADMIN_LOGGER.info(container.toString())
+        );
+
+        NODE_ADMIN_LOGGER.info("MANAGED CONTAINERS: ");
+        this.getAllManagedContainers().stream().forEach(
+                container -> NODE_ADMIN_LOGGER.info(container.toString())
+        );
     }
 
 
@@ -215,14 +218,6 @@ public class DockerImpl implements Docker {
 
             CreateContainerResponse response = containerConfigBuilder.exec();
             docker.startContainerCmd(response.getId()).exec();
-
-//            if (state.running()) {
-//                Integer pid = state.pid();
-//                if (pid == null) {
-//                    throw new DockerException("PID of running container for host " + hostName + " is null");
-//                }
-//                setupContainerNetworking(containerName, hostName, pid);
-//            }
         } catch (IOException | DockerException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
         }
@@ -274,53 +269,6 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void setupContainerNetworking(ContainerName containerName,
-                                          HostName hostName,
-                                          int containerPid) throws UnknownHostException {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
-        InetAddress inetAddress = InetAddress.getByName(hostName.s());
-        String ipAddress = inetAddress.getHostAddress();
-
-        final List<String> command = new LinkedList<>();
-        command.add("sudo");
-        command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
-
-        Environment.NetworkType networkType = Environment.networkType();
-        if (networkType != Environment.NetworkType.normal) {
-            command.add("--" + networkType);
-        }
-        command.add(Integer.toString(containerPid));
-        command.add(ipAddress);
-
-        for (int retry = 0; retry < 30; ++retry) {
-            try {
-                runCommand(command);
-                logger.info("Done setting up network");
-                return;
-            } catch (Exception e) {
-                final int sleepSecs = 3;
-                logger.warning("Failed to configure network with command " + command
-                        + ", will retry in " + sleepSecs + " seconds", e);
-                try {
-                    Thread.sleep(sleepSecs * 1000);
-                } catch (InterruptedException e1) {
-                    logger.warning("Sleep interrupted", e1);
-                }
-            }
-        }
-    }
-
-    private void runCommand(final List<String> command) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-        int resultCode = process.waitFor();
-        if (resultCode != 0) {
-            throw new Exception("Command " + Joiner.on(' ').join(command) + " failed: " + output);
-        }
-    }
 
     static List<Bind> applicationStorageToMount(ContainerName containerName) {
         return Stream.concat(
@@ -359,13 +307,12 @@ public class DockerImpl implements Docker {
     @Override
     public List<Container> getAllManagedContainers() {
         try {
-
             return docker.listContainersCmd().withShowAll(true).exec().stream()
                     .filter(this::isManaged)
                     .flatMap(this::asContainer)
                     .collect(Collectors.toList());
         } catch (DockerException e) {
-            throw new RuntimeException("Failed to delete container", e);
+            throw new RuntimeException("Could not retrieve all container", e);
         }
     }
 
