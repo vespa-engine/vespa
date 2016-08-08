@@ -310,9 +310,10 @@ class IOThread implements Runnable, AutoCloseable {
                         return ThreadState.DISCONNECTED;
                     }
                     return ThreadState.CONNECTED;
-                } catch (Exception ex) {
+                } catch (Throwable throwable1) {
                     drainFirstDocumentInQueueIfOld();
-                    log.log(Level.WARNING, "Connect did not work out " + endpoint, ex);
+                    log.log(Level.WARNING, "Connect did not work out " + endpoint, throwable1);
+                    executeProblemsCounter.incrementAndGet();
                     return ThreadState.DISCONNECTED;
                 }
             case CONNECTED:
@@ -320,11 +321,13 @@ class IOThread implements Runnable, AutoCloseable {
                     client.handshake();
                     successfullHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
+                    executeProblemsCounter.incrementAndGet();
                     log.log(Level.WARNING, "Handshake did not work out " + endpoint, ser.getMessage());
                     drainFirstDocumentInQueueIfOld();
                     return ThreadState.CONNECTED;
-                } catch (Exception ex) { // This cover IOException as well
-                    log.log(Level.WARNING, "Problem with Handshake " + endpoint, ex.getMessage());
+                } catch (Throwable throwable) { // This cover IOException as well
+                    executeProblemsCounter.incrementAndGet();
+                    log.log(Level.WARNING, "Problem with Handshake " + endpoint, throwable.getMessage());
                     drainFirstDocumentInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
