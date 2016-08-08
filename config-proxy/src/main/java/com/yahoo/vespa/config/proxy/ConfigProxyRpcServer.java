@@ -110,7 +110,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getConfigV3(Request req) {
-        log.log(LogLevel.DEBUG, "getConfigV2");
+        log.log(LogLevel.SPAM, "getConfigV3");
         JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
         if (isProtocolVersionSupported(request)) {
             preHandle(req);
@@ -155,14 +155,18 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         }
         try {
             RawConfig config = proxyServer.resolveConfig(request);
-            if (ProxyServer.configOrGenerationHasChanged(config, request)) {
+            if (config == null) {
+                if (log.isLoggable(LogLevel.DEBUG)) {
+                    log.log(LogLevel.DEBUG, "No config received yet for " + request.getShortDescription() + ",not sending response");
+                }
+            } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, "Should send response for " + request.getShortDescription() + ",config=" + config);
                 }
                 returnOkResponse(request, config);
             } else {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Should not send response for " + request.getShortDescription() + ", config=" + config);
+                    log.log(LogLevel.DEBUG, "No new config for " + request.getShortDescription() + ",not sending response");
                 }
             }
         } catch (Exception e) {
@@ -320,7 +324,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         request.addOkResponse(config.getPayload(), config.getGeneration(), config.getConfigMd5());
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
-                    ",config=" + config.getPayload());
+                    ",config=" + config.getPayload() + ",generation=" + config.getGeneration());
         }
 
         // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse
