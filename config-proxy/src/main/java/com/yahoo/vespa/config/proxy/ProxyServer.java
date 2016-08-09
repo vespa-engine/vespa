@@ -155,7 +155,7 @@ public class ProxyServer implements Runnable {
     }
 
     private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient((ConfigSourceSet) configSource, clientUpdater, cacheManager, timingValues, statistics, delayedResponses);
+        return new RpcConfigSourceClient((ConfigSourceSet) configSource, clientUpdater, cacheManager, timingValues, delayedResponses);
     }
 
     private void setupSigTermHandler() {
