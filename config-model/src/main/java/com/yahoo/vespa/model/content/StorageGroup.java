@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -154,6 +155,16 @@ public class StorageGroup {
         return false;
     }
 
+    public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification, 
+                                                                      String clusterIdString, 
+                                                                      HostSystem hostSystem, 
+                                                                      String groupIndex, 
+                                                                      DeployLogger logger) {
+        ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
+        Optional<ClusterSpec.Group> groupId = groupIndex == null ? Optional.empty() : Optional.of(ClusterSpec.Group.from(groupIndex));
+        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, groupId, logger);
+    }
+
     public static class Builder {
 
         private final ModelElement clusterElement;
@@ -237,7 +248,10 @@ public class StorageGroup {
              * @return the storage group build by this
              */
             public StorageGroup buildHosted(ContentCluster owner, Optional<GroupBuilder> parent) {
-                Map<HostResource, ClusterMembership> hostMapping = nodeRequirement.isPresent() ? allocateHosts(owner) : Collections.emptyMap();
+                Map<HostResource, ClusterMembership> hostMapping =
+                        nodeRequirement.isPresent() ?
+                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().getHostSystem(), storageGroup.getIndex(), deployLogger) :
+                        Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
                 if (hostGroups.size() > 1) {
@@ -287,12 +301,6 @@ public class StorageGroup {
                 return sb.toString();
             }
 
-            private Map<HostResource, ClusterMembership> allocateHosts(ContentCluster parent) {
-                ClusterSpec.Id clusterId = ClusterSpec.Id.from(parent.getStorageNodes().getClusterName());
-                Optional<ClusterSpec.Group> groupId = storageGroup.getIndex() == null ? Optional.empty() : Optional.of(ClusterSpec.Group.from(storageGroup.getIndex()));
-                return nodeRequirement.get().provision(parent.getRoot().getHostSystem(), ClusterSpec.Type.content, clusterId, groupId, deployLogger);
-            }
-
             /** Collect hosts per group */
             private Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> collectAllocatedSubgroups(Map<HostResource, ClusterMembership> hostMapping) {
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
@@ -334,7 +342,7 @@ public class StorageGroup {
          * <li>group and nodes is present: This is a leaf group specifying a set of nodes</li>
          * <li>only group is present: This is a nonleaf group</li>
          * <li>only nodes is present: This is the implicitly specified toplevel leaf group, or a set of groups
-         *                            specified using a group count attrbute.
+         *                            specified using a group count attribute.
          * </ul>
          */
         private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {

@@ -9,7 +9,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.ConfigModelRepoAdder;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
