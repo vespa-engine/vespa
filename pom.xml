@@ -1110,7 +1110,7 @@
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
-        <curator.version>2.9.1</curator.version>
+        <curator.version>2.11.0</curator.version>
         <jackson2.version>2.5.3</jackson2.version>
         <jersey2.version>2.10.1</jersey2.version>
         <jetty.version>9.3.9.v20160517</jetty.version>
