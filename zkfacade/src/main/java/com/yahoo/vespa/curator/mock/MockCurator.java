@@ -10,7 +10,35 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorLockException;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.*;
+import org.apache.curator.framework.api.ACLBackgroundPathAndBytesable;
+import org.apache.curator.framework.api.ACLCreateModeBackgroundPathAndBytesable;
+import org.apache.curator.framework.api.ACLPathAndBytesable;
+import org.apache.curator.framework.api.BackgroundCallback;
+import org.apache.curator.framework.api.BackgroundPathAndBytesable;
+import org.apache.curator.framework.api.BackgroundPathable;
+import org.apache.curator.framework.api.BackgroundVersionable;
+import org.apache.curator.framework.api.ChildrenDeletable;
+import org.apache.curator.framework.api.CreateBackgroundModeACLable;
+import org.apache.curator.framework.api.CreateBuilder;
+import org.apache.curator.framework.api.CuratorListener;
+import org.apache.curator.framework.api.CuratorWatcher;
+import org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.curator.framework.api.ExistsBuilder;
+import org.apache.curator.framework.api.ExistsBuilderMain;
+import org.apache.curator.framework.api.GetACLBuilder;
+import org.apache.curator.framework.api.GetChildrenBuilder;
+import org.apache.curator.framework.api.GetDataBuilder;
+import org.apache.curator.framework.api.GetDataWatchBackgroundStatable;
+import org.apache.curator.framework.api.PathAndBytesable;
+import org.apache.curator.framework.api.Pathable;
+import org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
+import org.apache.curator.framework.api.SetACLBuilder;
+import org.apache.curator.framework.api.SetDataBackgroundVersionable;
+import org.apache.curator.framework.api.SetDataBuilder;
+import org.apache.curator.framework.api.SyncBuilder;
+import org.apache.curator.framework.api.UnhandledErrorListener;
+import org.apache.curator.framework.api.WatchPathable;
+import org.apache.curator.framework.api.Watchable;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionBridge;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
@@ -556,6 +584,30 @@ public class MockCurator extends Curator {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
+        public PathAndBytesable<T> inBackground() {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public PathAndBytesable<T> inBackground(Object o) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public PathAndBytesable<T> inBackground(BackgroundCallback backgroundCallback) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public PathAndBytesable<T> inBackground(BackgroundCallback backgroundCallback, Object o) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public PathAndBytesable<T> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public PathAndBytesable<T> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
         public ACLBackgroundPathAndBytesable<T> withMode(CreateMode createMode) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
@@ -623,66 +675,37 @@ public class MockCurator extends Curator {
             return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
         }
 
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground() {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground(Object o) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Object o) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
     }
 
     private class MockBackgroundPathableBuilder<T> implements BackgroundPathable<T>, Watchable<BackgroundPathable<T>> {
 
         @Override
-        public ErrorListenerPathable<T> inBackground() {
+        public Pathable<T> inBackground() {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ErrorListenerPathable<T> inBackground(Object o) {
+        public Pathable<T> inBackground(Object o) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ErrorListenerPathable<T> inBackground(BackgroundCallback backgroundCallback) {
+        public Pathable<T> inBackground(BackgroundCallback backgroundCallback) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ErrorListenerPathable<T> inBackground(BackgroundCallback backgroundCallback, Object o) {
+        public Pathable<T> inBackground(BackgroundCallback backgroundCallback, Object o) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ErrorListenerPathable<T> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
+        public Pathable<T> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ErrorListenerPathable<T> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
+        public Pathable<T> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
@@ -800,35 +823,6 @@ public class MockCurator extends Curator {
             return null;
         }
 
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground() {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground(Object o) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback backgroundCallback) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback backgroundCallback, Object o) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
-        @Override
-        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
     }
 
     /** Allows addition of directoryListeners which are never called */
@@ -907,7 +901,7 @@ public class MockCurator extends Curator {
             }
 
             @Override
-            public ACLCreateModePathAndBytesable<CuratorTransactionBridge> compressed() {
+            public ACLPathAndBytesable<CuratorTransactionBridge> compressed() {
                 throw new UnsupportedOperationException("Not implemented in MockCurator");
             }
 
@@ -949,7 +943,7 @@ public class MockCurator extends Curator {
         private class MockTransactionSetDataBuilder implements TransactionSetDataBuilder {
 
             @Override
-            public VersionPathAndBytesable<CuratorTransactionBridge> compressed() {
+            public PathAndBytesable<CuratorTransactionBridge> compressed() {
                 throw new UnsupportedOperationException("Not implemented in MockCurator");
             }
 
