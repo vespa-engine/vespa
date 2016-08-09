@@ -130,7 +130,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
         if (admin != null) {
             Routing routing = configModels.getRouting();
             if (routing == null) {
-                routing = new Routing(ConfigModelContext.create(configModels, this, "routing", Optional.empty()));
+                routing = new Routing(ConfigModelContext.create(configModels, this, "routing"));
                 configModels.add(routing);
             }
             this.routing = routing;

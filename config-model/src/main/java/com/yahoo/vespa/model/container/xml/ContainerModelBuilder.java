@@ -435,6 +435,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private List<Container> createNodesFromClusterReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+        // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
         String referenceId = nodesElement.getAttribute("of");
         Element services = servicesRootOf(nodesElement).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
         Element referencedCluster = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
@@ -490,10 +491,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private Optional<Element> findChildById(Element parent, String id) {
-        for (Element child : XML.getChildren(parent)) {
-            System.out.println("Checking if " + id + " equals id of " + child.getTagName() + ": " + child.getAttribute("id"));
+        for (Element child : XML.getChildren(parent))
             if (id.equals(child.getAttribute("id"))) return Optional.of(child);
-        }
         return Optional.empty();
     }
 

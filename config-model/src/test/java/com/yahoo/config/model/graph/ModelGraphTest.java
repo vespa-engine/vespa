@@ -64,10 +64,10 @@ public class ModelGraphTest {
         ModelGraph graph = new ModelGraphBuilder().addBuilder(new GraphMock.BC()).addBuilder(new GraphMock.BB()).addBuilder(new GraphMock.BA()).build();
         List<ModelNode> nodes = graph.topologicalSort();
         MockRoot root = new MockRoot();
-        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, root, "first", Optional.empty()));
-        GraphMock.B b = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second", Optional.empty()));
-        GraphMock.B b2 = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second2", Optional.empty()));
-        GraphMock.C c = (GraphMock.C) nodes.get(2).createModel(ConfigModelContext.create(null, root, "third", Optional.empty()));
+        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, root, "first"));
+        GraphMock.B b = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second"));
+        GraphMock.B b2 = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second2"));
+        GraphMock.C c = (GraphMock.C) nodes.get(2).createModel(ConfigModelContext.create(null, root, "third"));
         assertNotNull(a);
         assertNotNull(b);
         assertNotNull(b2);
@@ -81,9 +81,6 @@ public class ModelGraphTest {
         assertThat(c.b.size(), is(2));
         assertTrue(c.b.contains(b));
         assertTrue(c.b.contains(b2));
-        for (ConfigModel m : c.b) {
-            System.out.println(m.getId());
-        }
     }
 
     @Rule
@@ -94,7 +91,7 @@ public class ModelGraphTest {
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("Constructor for " + GraphMock.Bad.class.getName() + " must have as its first argument a " + ConfigModelContext.class.getName());
         ModelNode node = new ModelNode(new GraphMock.Bad.Builder());
-        node.createModel(ConfigModelContext.create(null, new MockRoot(), "foo", Optional.empty()));
+        node.createModel(ConfigModelContext.create(null, new MockRoot(), "foo"));
     }
 
     @Test
@@ -102,7 +99,7 @@ public class ModelGraphTest {
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("Unable to find constructor argument class java.lang.String for com.yahoo.config.model.graph.GraphMock$Bad2");
         ModelNode node = new ModelNode(new GraphMock.Bad2.Builder());
-        node.createModel(ConfigModelContext.create(null, new MockRoot(), "foo", Optional.empty()));
+        node.createModel(ConfigModelContext.create(null, new MockRoot(), "foo"));
     }
 
     @Test
@@ -110,8 +107,8 @@ public class ModelGraphTest {
         ModelGraph graph = new ModelGraphBuilder().addBuilder(new GraphMock.BC()).addBuilder(new GraphMock.BA()).build();
         List<ModelNode> nodes = graph.topologicalSort();
         MockRoot root = new MockRoot();
-        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, root, "first", Optional.empty()));
-        GraphMock.C c = (GraphMock.C) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second", Optional.empty()));
+        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, root, "first"));
+        GraphMock.C c = (GraphMock.C) nodes.get(1).createModel(ConfigModelContext.create(null, root, "second"));
         assertThat(c.a, is(a));
         assertTrue(c.b.isEmpty());
     }

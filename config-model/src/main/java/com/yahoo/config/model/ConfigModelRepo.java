@@ -174,8 +174,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
 
     private ConfigModel buildModel(ModelNode node, DeployState deployState, AbstractConfigProducer parent, Element servicesElement) {
         ConfigModelBuilder builder = node.builder;
-        ConfigModelContext context = ConfigModelContext.create(deployState, this, parent, 
-                                                               getIdString(servicesElement), Optional.of(servicesElement));
+        ConfigModelContext context = ConfigModelContext.create(deployState, this, parent, getIdString(servicesElement));
         return builder.build(node, servicesElement, context);
     }
 

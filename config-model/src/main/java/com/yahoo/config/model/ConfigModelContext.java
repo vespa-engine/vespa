@@ -22,15 +22,13 @@ public class ConfigModelContext {
     private final String producerId;
     private final DeployState deployState;
     private final ConfigModelRepoAdder configModelRepoAdder;
-    private final Optional<Element> servicesElement;
 
     private ConfigModelContext(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
-                               AbstractConfigProducer parent, String producerId, Optional<Element> servicesElement) {
+                               AbstractConfigProducer parent, String producerId) {
         this.deployState = deployState;
         this.configModelRepoAdder = configModelRepoAdder;
         this.parent = parent;
         this.producerId = producerId;
-        this.servicesElement = servicesElement;
     }
 
     public ApplicationPackage getApplicationPackage() { return deployState.getApplicationPackage(); }
@@ -38,20 +36,18 @@ public class ConfigModelContext {
     public AbstractConfigProducer getParentProducer() { return parent; }
     public DeployLogger getDeployLogger() { return deployState.getDeployLogger(); }
     public DeployState getDeployState() { return deployState; }
-    /** Returns the services element (root) in which this model needs to be built, if any */
-    public Optional<Element> servicesElement() { return servicesElement; }
 
     /** Returns write access to the config model repo, or null (only) if this is improperly initialized during testing */
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }
 
     /** Create a new context with a different parent */
     public ConfigModelContext withParent(AbstractConfigProducer newParent) {
-        return ConfigModelContext.create(deployState, configModelRepoAdder, newParent, producerId, servicesElement);
+        return ConfigModelContext.create(deployState, configModelRepoAdder, newParent, producerId);
     }
 
     /** Create a new context with a different config model producer id */
     public ConfigModelContext withId(String producerId) {
-        return ConfigModelContext.create(deployState, configModelRepoAdder, parent, producerId, servicesElement);
+        return ConfigModelContext.create(deployState, configModelRepoAdder, parent, producerId);
     }
 
     /**
@@ -60,12 +56,11 @@ public class ConfigModelContext {
      * @param deployState the global deploy state for this model
      * @param parent the parent to be used for the config model
      * @param producerId the id to be used for the config model
-     * @param servicesElement the services element (root) in which this model needs to be built, if any
      * @return a model context that can be passed to a model
      */
     public static ConfigModelContext create(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent, String producerId, Optional<Element> servicesElement) {
-        return new ConfigModelContext(deployState, configModelRepoAdder, parent, producerId, servicesElement);
+                                            AbstractConfigProducer parent, String producerId) {
+        return new ConfigModelContext(deployState, configModelRepoAdder, parent, producerId);
     }
 
     /**
@@ -73,12 +68,11 @@ public class ConfigModelContext {
      * 
      * @param parent the parent to be used for the config model.
      * @param producerId the id to be used for the config model.
-     * @param servicesElement the services element (root) in which this model needs to be built, if any
      * @return a model context that can be passed to a model.
      */
     public static ConfigModelContext create(ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent, String producerId, Optional<Element> servicesElement) {
-        return create(parent.getRoot().getDeployState(), configModelRepoAdder, parent, producerId, servicesElement);
+                                            AbstractConfigProducer parent, String producerId) {
+        return create(parent.getRoot().getDeployState(), configModelRepoAdder, parent, producerId);
     }
 
 }

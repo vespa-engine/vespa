@@ -30,12 +30,12 @@ public class ConfigModelContextTest {
                 .build();
         DeployState deployState = DeployState.createTestState(pkg);
         DeployLogger logger = deployState.getDeployLogger();
-        ConfigModelContext ctx = ConfigModelContext.create(deployState, null, root, id, Optional.empty());
+        ConfigModelContext ctx = ConfigModelContext.create(deployState, null, root, id);
         assertThat(ctx.getApplicationPackage(), is(pkg));
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         assertThat(ctx.getDeployLogger(), is(logger));
-        ctx = ConfigModelContext.create(null, root, id, Optional.empty());
+        ctx = ConfigModelContext.create(null, root, id);
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         AbstractConfigProducer newRoot = new MockRoot("bar");

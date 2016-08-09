@@ -57,8 +57,7 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      */
     public final MODEL build(DeployState deployState, ConfigModelRepo configModelRepo, 
                              AbstractConfigProducer parent, Element spec) {
-        ConfigModelContext context = ConfigModelContext.create(deployState, configModelRepo, parent, 
-                                                               getIdString(spec), Optional.empty());
+        ConfigModelContext context = ConfigModelContext.create(deployState, configModelRepo, parent, getIdString(spec));
         return build(new DefaultModelInstanceFactory(), spec, context);
     }
 
