@@ -51,6 +51,7 @@ import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -383,29 +384,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addContainers(Collections.singleton(container));
         }
         else {
-            String defaultJvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-            String defaultPreLoad = null;
-            if (nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) {
-                defaultPreLoad = nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME);
-            }
-            boolean useCpuSocketAffinity = false;
-            if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME)) {
-                useCpuSocketAffinity = Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
-            }
-            List<Container> result = new ArrayList<>();
-            result.addAll(createNodesFromXmlNodeCount(cluster, nodesElement));
-            addNodesFromXmlNodeList(cluster, spec, nodesElement, result);
-            applyDefaultJvmArgs(result, defaultJvmArgs);
-            applyRoutingAliasProperties(result, cluster);
-            if (defaultPreLoad != null) {
-                applyDefaultPreload(result, defaultPreLoad);
-            }
-            if (useCpuSocketAffinity) {
-                AbstractService.distributeCpuSocketAffinity(result);
-            }
+            List<Container> nodes = createNodes(cluster, nodesElement);
+            applyDefaultJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
+            applyRoutingAliasProperties(nodes, cluster);
+            applyDefaultPreload(nodes, nodesElement);
+            if (useCpuSocketAffinity(nodesElement))
+                AbstractService.distributeCpuSocketAffinity(nodes);
 
-            cluster.addContainers(result);
+            cluster.addContainers(nodes);
         }
+    }
+    
+    private List<Container> createNodes(ContainerCluster cluster, Element nodesElement) {
+        if (nodesElement.hasAttribute("count"))
+            return createNodesFromNodeCount(cluster, nodesElement);
+        else if (nodesElement.hasAttribute("of"))
+            return createNodesFromClusterReference(cluster, nodesElement);
+        else // the non-hosted option
+            return createNodesFromNodeList(cluster, nodesElement);
     }
 
     private void applyRoutingAliasProperties(List<Container> result, ContainerCluster cluster) {
@@ -430,30 +426,43 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addNodesFromXmlNodeList(ContainerCluster cluster,
-            Element spec, Element nodesElement, List<Container> result) {
+    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement) {
+        List<Container> nodes = new ArrayList<>();
+        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
+        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(), ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
+        for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
+            String id = "container." + entry.getValue().index();
+            Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
+            container.setHostResource(entry.getKey());
+            container.initService();
+            nodes.add(container);
+        }
+        return nodes;
+    }
+
+    private List<Container> createNodesFromClusterReference(ContainerCluster cluster, Element nodesElement) {
+        List<Container> nodes = new ArrayList<>();
+        String clusterReferenceId = nodesElement.getAttribute("of");
+        // TODO
+        return nodes;
+    }
+
+    private List<Container> createNodesFromNodeList(ContainerCluster cluster, Element nodesElement) {
+        List<Container> nodes = new ArrayList<>();
         int nodeCount = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
             Container container = new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem);
-            result.add(container);
-            ++nodeCount;
+            nodes.add(container);
+            nodeCount++;
         }
+        return nodes;
     }
-
-    private List<Container> createNodesFromXmlNodeCount(ContainerCluster cluster, Element nodesElement) {
-        List<Container> result = new ArrayList<>();
-        if (nodesElement.hasAttribute("count")) {
-            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
-            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(), ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
-            for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
-                String id = "container." + entry.getValue().index();
-                Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
-                container.setHostResource(entry.getKey());
-                container.initService();
-                result.add(container);
-            }
-        }
-        return result;
+    
+    private boolean useCpuSocketAffinity(Element nodesElement) {
+        if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME))
+            return Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
+        else
+            return false;
     }
 
     private void applyDefaultJvmArgs(List<Container> containers, String defaultJvmArgs) {
@@ -463,10 +472,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void applyDefaultPreload(List<Container> containers, String defaultPreLoad) {
-        for (Container container: containers) {
-            container.setPreLoad(defaultPreLoad);
-        }
+    private void applyDefaultPreload(List<Container> containers, Element nodesElement) {
+        if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
+        for (Container container: containers)
+            container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
     private void addSearchHandler(ContainerCluster cluster, Element searchElement) {

@@ -147,6 +147,66 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testCombinedCluster() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes of='content1'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content1'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+    }
+
+    @Test
+    public void testMultipleCombinedClusters() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes of='content1'/>" +
+                "  </container>" +
+                "  <container version='1.0' id='container2'>" +
+                "     <nodes of='content2'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content1'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "  <content version='1.0' id='content2'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(5);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in content2", 3, model.getContentClusters().get("content2").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container2", 3, model.getContainerClusters().get("container2").getContainers().size());
+    }
+
+    @Test
     public void testNodeCountForContentGroupHierarchy() {
         String services = 
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

@@ -350,7 +350,7 @@ public final class ContainerCluster
         for (Container container : containers) {
             container.setClusterName(name);
             container.setProp("clustername", name)
-                    .setProp("index", index++);
+                     .setProp("index", index++);
             setRotations(container, getRotations(), getGlobalServiceId(), name);
             container.setProp("activeRotation", Boolean.toString(getActiveRotation()));
         }

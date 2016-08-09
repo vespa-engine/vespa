@@ -186,6 +186,8 @@ NodesOfContainerCluster = element nodes {
     attribute preload { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
     (
+      attribute of { xsd:string }
+      |
       (
         attribute count { xsd:positiveInteger } &
         attribute flavor { xsd:string }? &
