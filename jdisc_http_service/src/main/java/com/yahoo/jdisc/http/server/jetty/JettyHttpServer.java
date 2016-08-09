@@ -14,6 +14,7 @@ import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
+import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.ConnectorStatistics;
 import org.eclipse.jetty.server.Handler;
@@ -25,6 +26,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -59,50 +61,50 @@ import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 public class JettyHttpServer extends AbstractServerProvider {
 
     public interface Metrics {
-        final String NAME_DIMENSION = "serverName";
-        final String PORT_DIMENSION = "serverPort";
+        String NAME_DIMENSION = "serverName";
+        String PORT_DIMENSION = "serverPort";
 
-        final String NUM_ACTIVE_REQUESTS = "serverNumActiveRequests";
-        final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
-        final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
-        final String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
-        final String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
-        final String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
+        String NUM_ACTIVE_REQUESTS = "serverNumActiveRequests";
+        String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
+        String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
+        String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
+        String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
+        String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
 
-        final String NUM_BYTES_RECEIVED = "serverBytesReceived";
-        final String NUM_BYTES_SENT     = "serverBytesSent";
-        final String MANHATTAN_NUM_BYTES_RECEIVED = "http.in.bytes";
-        final String MANHATTAN_NUM_BYTES_SENT     = "http.out.bytes";
+        String NUM_BYTES_RECEIVED = "serverBytesReceived";
+        String NUM_BYTES_SENT     = "serverBytesSent";
+        String MANHATTAN_NUM_BYTES_RECEIVED = "http.in.bytes";
+        String MANHATTAN_NUM_BYTES_SENT     = "http.out.bytes";
 
-        final String NUM_CONNECTIONS = "serverNumConnections";
-        final String NUM_CONNECTIONS_IDLE = "serverNumConnectionsIdle";
-        final String NUM_UNEXPECTED_DISCONNECTS = "serverNumUnexpectedDisconnects";
+        String NUM_CONNECTIONS = "serverNumConnections";
+        String NUM_CONNECTIONS_IDLE = "serverNumConnectionsIdle";
+        String NUM_UNEXPECTED_DISCONNECTS = "serverNumUnexpectedDisconnects";
 
         /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
-        final String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
-        final String NUM_REQUESTS = "serverNumRequests";
-        final String MANHATTAN_NUM_REQUESTS = "http.requests";
+        String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
+        String NUM_REQUESTS = "serverNumRequests";
+        String MANHATTAN_NUM_REQUESTS = "http.requests";
 
-        final String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
-        final String NUM_FAILED_RESPONSES = "serverNumFailedResponses";
-        final String NUM_SUCCESSFUL_WRITES = "serverNumSuccessfulResponseWrites";
-        final String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
+        String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
+        String NUM_FAILED_RESPONSES = "serverNumFailedResponses";
+        String NUM_SUCCESSFUL_WRITES = "serverNumSuccessfulResponseWrites";
+        String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
 
-        final String NETWORK_LATENCY = "serverNetworkLatency";
-        final String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
-        final String MANHATTAN_TOTAL_SUCCESSFUL_LATENCY = "http.latency";
-        final String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
-        final String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
-        final String MANHATTAN_TIME_TO_FIRST_BYTE = "http.out.firstbytetime";
+        String NETWORK_LATENCY = "serverNetworkLatency";
+        String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
+        String MANHATTAN_TOTAL_SUCCESSFUL_LATENCY = "http.latency";
+        String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
+        String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
+        String MANHATTAN_TIME_TO_FIRST_BYTE = "http.out.firstbytetime";
 
-        final String RESPONSES_1XX = "http.status.1xx";
-        final String RESPONSES_2XX = "http.status.2xx";
-        final String RESPONSES_3XX = "http.status.3xx";
-        final String RESPONSES_4XX = "http.status.4xx";
-        final String RESPONSES_5XX = "http.status.5xx";
+        String RESPONSES_1XX = "http.status.1xx";
+        String RESPONSES_2XX = "http.status.2xx";
+        String RESPONSES_3XX = "http.status.3xx";
+        String RESPONSES_4XX = "http.status.4xx";
+        String RESPONSES_5XX = "http.status.5xx";
 
-        final String STARTED_MILLIS = "serverStartedMillis";
-        final String MANHATTAN_STARTED_MILLIS = "proc.uptime";
+        String STARTED_MILLIS = "serverStartedMillis";
+        String MANHATTAN_STARTED_MILLIS = "proc.uptime";
     }
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
@@ -126,9 +128,8 @@ public class JettyHttpServer extends AbstractServerProvider {
             final FilterInvoker filterInvoker,
             final AccessLog accessLog) {
         super(container);
-        if (connectorFactories.allComponents().isEmpty()) {
+        if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
-        }
         this.metric = metric;
 
         server = new Server();
@@ -154,7 +155,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
 
-        final RequestLog requestLog = new AccessLogRequestLog(accessLog);
+        RequestLog requestLog = new AccessLogRequestLog(accessLog);
 
         server.setHandler(
                 getHandlerCollection(
@@ -165,7 +166,7 @@ public class JettyHttpServer extends AbstractServerProvider {
                         jDiscFilterInvokerFilter,
                         requestLog));
 
-        final int numMetricReporterThreads = 1;
+        int numMetricReporterThreads = 1;
         metricReporterExecutor = Executors.newScheduledThreadPool(
                 numMetricReporterThreads,
                 new ThreadFactoryBuilder()
@@ -195,13 +196,13 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
-        final GzipHandler gzipHandler = newGzipHandler(serverConfig);
+        GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(servletContextHandler);
 
-        final StatisticsHandler statisticsHandler = newStatisticsHandler();
+        StatisticsHandler statisticsHandler = newStatisticsHandler();
         statisticsHandler.setHandler(gzipHandler);
 
-        final RequestLogHandler requestLogHandler = new RequestLogHandler();
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
         requestLogHandler.setRequestLog(requestLog);
 
         HandlerCollection handlerCollection = new HandlerCollection();
@@ -363,10 +364,21 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
-        final GzipHandler gzipHandler = new GzipHandler();
+        GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
         gzipHandler.setCheckGzExists(false);
         gzipHandler.setIncludedMethods("GET", "POST");
         return gzipHandler;
     }
+
+    /** A subclass which overrides Jetty's default behavior of including user-agent in the vary field */
+    private static class GzipHandlerWithVaryHeaderFixed extends GzipHandler {
+
+        @Override
+        public HttpField getVaryField() {
+            return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING;            
+        }
+        
+    }
+    
 }
