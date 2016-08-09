@@ -24,7 +24,7 @@ public abstract class ConfigSourceClient {
                                            ConfigProxyStatistics statistics,
                                            DelayedResponses delayedResponses) {
         if (source instanceof ConfigSourceSet) {
-            return new RpcConfigSourceClient((ConfigSourceSet) source, clientUpdater, cacheManager, timingValues, statistics, delayedResponses);
+            return new RpcConfigSourceClient((ConfigSourceSet) source, clientUpdater, cacheManager, timingValues, delayedResponses);
         } else if (source instanceof MapBackedConfigSource) {
             return (ConfigSourceClient) source;
         } else {

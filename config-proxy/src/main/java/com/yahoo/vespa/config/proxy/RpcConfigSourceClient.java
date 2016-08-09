@@ -41,10 +41,10 @@ public class RpcConfigSourceClient extends ConfigSourceClient {
     private Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
 
 
-    RpcConfigSourceClient(ConfigSourceSet configSourceSet, ClientUpdater clientUpdater,
+    RpcConfigSourceClient(ConfigSourceSet configSourceSet,
+                          ClientUpdater clientUpdater,
                           CacheManager cacheManager,
                           TimingValues timingValues,
-                          ConfigProxyStatistics statistics,
                           DelayedResponses delayedResponses) {
         this.configSourceSet = configSourceSet;
         this.clientUpdater = clientUpdater;
