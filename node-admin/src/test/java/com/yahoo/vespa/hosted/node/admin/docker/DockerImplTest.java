@@ -5,13 +5,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
+import com.github.dockerjava.api.command.InspectExecCmd;
+import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.command.ListImagesCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,14 +35,9 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author tonytv
@@ -58,7 +59,7 @@ public class DockerImplTest {
         doAnswer(invocationOnMock -> {
             latch.await();
             return null;
-        }).when(dockerClient).pullImageCmd(any(String.class)).exec(any());
+        }).when(dockerClient).pullImageCmd(any(String.class));
         final Docker docker = new DockerImpl(dockerClient);
         final DockerImage dockerImage = new DockerImage("test-image");
 
@@ -116,48 +117,36 @@ public class DockerImplTest {
 
     @Test
     public void testExecuteCompletes() throws Exception {
-
-//        ByteArrayOutputStream output = new ByteArrayOutputStream();
-//        ExecStartCmd execStartCmd = docker.execStartCmd(response.getId());
-//        execStartCmd.exec(new ExecStartResultCallback(output, output)).awaitCompletion();
-//
-//        final InspectExecResponse state = docker.inspectExecCmd(execStartCmd.getExecId()).exec();
-//        assert !state.isRunning();
-//        Integer exitCode = state.getExitCode();
-//        assert exitCode != null;
-
-
-        final ExecCreateCmdResponse response = mock(ExecCreateCmdResponse.class);
-        final DockerClient dockerClient = mock(DockerClient.class);
         final String containerId = "container-id";
         final String[] command = new String[] {"/bin/ls", "-l"};
         final String execId = "exec-id";
-        final String commandOutput = "command output";
+        final int exitCode = 3;
 
+        final DockerClient dockerClient = mock(DockerClient.class);
+
+        final ExecCreateCmdResponse response = mock(ExecCreateCmdResponse.class);
         when(response.getId()).thenReturn(execId);
 
-        when(dockerClient.execCreateCmd(eq(containerId))
-                .withCmd(eq(command))
-                .withAttachStdout(true)
-                .exec())
-            .thenReturn(response);
+        final ExecCreateCmd execCreateCmd = mock(ExecCreateCmd.class);
+        when(dockerClient.execCreateCmd(any(String.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.withCmd(Matchers.<String>anyVararg())).thenReturn(execCreateCmd);
+        when(execCreateCmd.withAttachStdout(any(Boolean.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.exec()).thenReturn(response);
 
-//        final LogStream logStream = mock(LogStream.class);
-//        when(dockerClient.execStart(execId)).thenReturn(logStream);
-//
-//        final ExecState execState = mock(ExecState.class);
-//        when(dockerClient.execInspect(execId)).thenReturn(execState);
-//
-//        when(execState.running()).thenReturn(false);
-        final int exitCode = 3;
-//        when(execState.exitCode()).thenReturn(exitCode);
-//
-//        when(logStream.readFully()).thenReturn(commandOutput);
+        final ExecStartCmd execStartCmd = mock(ExecStartCmd.class);
+        when(dockerClient.execStartCmd(any(String.class))).thenReturn(execStartCmd);
+        when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenReturn(mock(ExecStartResultCallback.class));
+
+        final InspectExecCmd inspectExecCmd = mock(InspectExecCmd.class);
+        final InspectExecResponse state = mock(InspectExecResponse.class);
+        when(dockerClient.inspectExecCmd(any(String.class))).thenReturn(inspectExecCmd);
+        when(inspectExecCmd.exec()).thenReturn(state);
+        when(state.isRunning()).thenReturn(false);
+        when(state.getExitCode()).thenReturn(exitCode);
 
         final Docker docker = new DockerImpl(dockerClient);
         final ProcessResult result = docker.executeInContainer(new ContainerName(containerId), command);
         assertThat(result.getExitStatus(), is(exitCode));
-        assertThat(result.getOutput(), is(commandOutput));
     }
 
     @Test
@@ -265,10 +254,13 @@ public class DockerImplTest {
             final ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
 
             when(dockerClient.listImagesCmd()).thenReturn(listImagesCmd);
+            when(listImagesCmd.withShowAll(true)).thenReturn(listImagesCmd);
             when(listImagesCmd.exec()).thenReturn(existingImages);
 
             when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
+            when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
             when(listContainersCmd.exec()).thenReturn(existingContainers);
+
             final Set<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
                     .map(DockerImage::new)
                     .collect(Collectors.toSet());
