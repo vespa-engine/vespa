@@ -17,6 +17,8 @@ rpm -i "vespa*-${VESPA_VERSION}-*.rpm"
 # Workaround until we figure out why rpm does not set the ownership.
 chown -R vespa:vespa /opt/vespa
 
+export VESPA_CONFIG_SERVERS=$(hostname)
+
 /opt/vespa/bin/vespa-start-configserver
 /opt/vespa/bin/vespa-start-services
 

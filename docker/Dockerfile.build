@@ -1,38 +1,32 @@
 FROM centos:7
 
 # Needed to build vespa
-RUN yum -y install epel-release
-RUN yum -y install centos-release-scl
-RUN yum -y install devtoolset-4-gcc-c++
-RUN yum -y install devtoolset-4-libatomic-devel
-RUN yum -y install make
-RUN yum -y install cmake3
-RUN yum -y install ccache
-RUN yum -y install Judy-devel
-RUN yum -y install lz4-devel
-RUN yum -y install zlib-devel
-RUN yum -y install maven
-RUN yum -y install libicu-devel
-RUN yum -y install llvm-devel
-RUN yum -y install llvm-static
-RUN yum -y install java-1.8.0-openjdk-devel
-RUN yum -y install openssl
-RUN yum -y install openssl-devel
-RUN yum -y install rpm-build
-RUN yum -y install perl
-RUN yum -y install perl-Env
-RUN yum -y install perl-JSON
-
-# Install vespa dependencies
-RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-RUN yum -y install vespa-boost-devel
-RUN yum -y install vespa-libtorrent-devel
-RUN yum -y install vespa-zookeeper-c-client-devel
-RUN yum -y install vespa-cppunit-devel
-
-# Install utilities
-RUN yum -y install sudo
-
-# Enable devtoolset-4 by default
-RUN echo "source /opt/rh/devtoolset-4/enable" > /etc/profile.d/devtoolset-4.sh
+RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo && \
+    yum -y install epel-release && \
+    yum -y install centos-release-scl && \
+    yum -y install devtoolset-4-gcc-c++ \
+                   devtoolset-4-libatomic-devel \
+                   make \
+                   cmake3 \
+                   ccache \
+                   Judy-devel \
+                   lz4-devel \
+                   zlib-devel \
+                   maven \
+                   libicu-devel \
+                   llvm-devel \
+                   llvm-static \
+                   java-1.8.0-openjdk-devel \
+                   openssl \
+                   openssl-devel \
+                   rpm-build \
+                   perl \
+                   perl-Env \
+                   perl-JSON \
+                   sudo \
+                   vespa-boost-devel \
+                   vespa-libtorrent-devel \
+                   vespa-zookeeper-c-client-devel \
+                   vespa-cppunit-devel && \
+    echo "source /opt/rh/devtoolset-4/enable" > /etc/profile.d/devtoolset-4.sh
 
