@@ -9,6 +9,8 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -18,6 +20,7 @@ import static org.junit.Assert.assertThat;
  * @since 5.1
  */
 public class ConfigModelContextTest {
+
     @Test
     public void testConfigModelContext() {
         AbstractConfigProducer root = new MockRoot();
@@ -27,18 +30,19 @@ public class ConfigModelContextTest {
                 .build();
         DeployState deployState = DeployState.createTestState(pkg);
         DeployLogger logger = deployState.getDeployLogger();
-        ConfigModelContext ctx = ConfigModelContext.create(deployState, null, root, id);
+        ConfigModelContext ctx = ConfigModelContext.create(deployState, null, root, id, Optional.empty());
         assertThat(ctx.getApplicationPackage(), is(pkg));
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         assertThat(ctx.getDeployLogger(), is(logger));
-        ctx = ConfigModelContext.createFromParentAndId(null, root, id);
+        ctx = ConfigModelContext.create(null, root, id, Optional.empty());
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         AbstractConfigProducer newRoot = new MockRoot("bar");
-        ctx = ctx.modifyParent(newRoot);
+        ctx = ctx.withParent(newRoot);
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(not(root)));
         assertThat(ctx.getParentProducer(), is(newRoot));
     }
+
 }

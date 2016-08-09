@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 
@@ -124,11 +125,12 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
         this.admin = admin;
     }
 
+    // TODO: Do this as another config model depending on the other models
     public void setupRouting(ConfigModelRepo configModels) {
         if (admin != null) {
             Routing routing = configModels.getRouting();
             if (routing == null) {
-                routing = new Routing(ConfigModelContext.createFromParentAndId(configModels, this, "routing"));
+                routing = new Routing(ConfigModelContext.create(configModels, this, "routing", Optional.empty()));
                 configModels.add(routing);
             }
             this.routing = routing;
