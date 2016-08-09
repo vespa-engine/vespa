@@ -160,9 +160,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                     log.log(LogLevel.DEBUG, "No config received yet for " + request.getShortDescription() + ",not sending response");
                 }
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "Should send response for " + request.getShortDescription() + ",config=" + config);
-                }
                 returnOkResponse(request, config);
             } else {
                 if (log.isLoggable(LogLevel.DEBUG)) {
