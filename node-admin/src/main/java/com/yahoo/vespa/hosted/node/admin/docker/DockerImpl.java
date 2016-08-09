@@ -16,6 +16,7 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.common.base.Joiner;
+import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -30,8 +31,9 @@ import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.Inet6Address;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -103,7 +105,7 @@ public class DockerImpl implements Docker {
     @Inject
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                .withDockerHost("tcp://127.0.0.1:2376")//config.uri().replace("https", "tcp"))
+                .withDockerHost(config.uri().replace("https", "tcp"))
                 .withDockerTlsVerify(true)
                 .withCustomSslConfig(new VespaSSLConfig(config))
                 .build())
@@ -182,24 +184,14 @@ public class DockerImpl implements Docker {
             double minMainMemoryAvailableGb) {
         try {
             final double GIGA = Math.pow(2.0, 30.0);
-            InetAddress nodeInetAddress = Inet6Address.getByName(hostName.s());
-            String nodeIpAddress = nodeInetAddress.getHostAddress();
-            Optional<InetAddress> hostInetAddress = Arrays.stream(Inet6Address.getAllByName(Inet6Address.getLocalHost().getHostName()))
-                    .filter(i -> i instanceof Inet6Address).findFirst();
-            String hostIpAddress = hostInetAddress.isPresent() ? hostInetAddress.get().getHostAddress() : "";
-
-            NODE_ADMIN_LOGGER.info("Hostname: " + hostName.s() + " | Node IP: " + nodeIpAddress +
-                    " | Host IP: " + hostIpAddress);
 
             CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
                     .withName(containerName.asString())
                     .withLabels(CONTAINER_LABELS)
                     .withEnv(new String[]{"CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())})
                     .withHostName(hostName.s())
-                    .withNetworkMode("bridge")
-                    .withBinds(applicationStorageToMount(containerName))
-                    .withDns(hostIpAddress)
-                    .withIpv6Address(nodeIpAddress);
+                    .withNetworkMode("none")
+                    .withBinds(applicationStorageToMount(containerName));
 
 
             // TODO: Enforce disk constraints
@@ -208,6 +200,16 @@ public class DockerImpl implements Docker {
 
             if (minMainMemoryAvailableGb > 0.00001) {
                 containerConfigBuilder.withMemory((long) (GIGA * minMainMemoryAvailableGb));
+            }
+
+            InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
+            InspectContainerResponse.ContainerState state = containerInfo.getState();
+            if (state.getRunning()) {
+                Integer pid = state.getPid();
+                if (pid == null) {
+                    throw new DockerException("PID of running container for host " + hostName + " is null", 0);
+                }
+                setupContainerNetworking(containerName, hostName, pid);
             }
 
             CreateContainerResponse response = containerConfigBuilder.exec();
@@ -263,6 +265,53 @@ public class DockerImpl implements Docker {
         }
     }
 
+    private void setupContainerNetworking(ContainerName containerName,
+                                          HostName hostName,
+                                          int containerPid) throws UnknownHostException {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
+        InetAddress inetAddress = InetAddress.getByName(hostName.s());
+        String ipAddress = inetAddress.getHostAddress();
+
+        final List<String> command = new LinkedList<>();
+        command.add("sudo");
+        command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
+
+        Environment.NetworkType networkType = Environment.networkType();
+        if (networkType != Environment.NetworkType.normal) {
+            command.add("--" + networkType);
+        }
+        command.add(Integer.toString(containerPid));
+        command.add(ipAddress);
+
+        for (int retry = 0; retry < 30; ++retry) {
+            try {
+                runCommand(command);
+                logger.info("Done setting up network");
+                return;
+            } catch (Exception e) {
+                final int sleepSecs = 3;
+                logger.warning("Failed to configure network with command " + command
+                        + ", will retry in " + sleepSecs + " seconds", e);
+                try {
+                    Thread.sleep(sleepSecs * 1000);
+                } catch (InterruptedException e1) {
+                    logger.warning("Sleep interrupted", e1);
+                }
+            }
+        }
+    }
+
+    private void runCommand(final List<String> command) throws Exception {
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+
+        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
+        int resultCode = process.waitFor();
+        if (resultCode != 0) {
+            throw new Exception("Command " + Joiner.on(' ').join(command) + " failed: " + output);
+        }
+    }
 
     static List<Bind> applicationStorageToMount(ContainerName containerName) {
         return Stream.concat(
