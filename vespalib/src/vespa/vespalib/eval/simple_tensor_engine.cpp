@@ -8,18 +8,6 @@
 namespace vespalib {
 namespace eval {
 
-namespace {
-
-std::vector<vespalib::string> dimension_names(const ValueType &type) {
-    std::vector<vespalib::string> result;
-    for (const auto &dimension: type.dimensions()) {
-        result.push_back(dimension.name);
-    }
-    return result;
-}
-
-} // namespace vespalib::eval::<unnamed>
-
 const SimpleTensorEngine SimpleTensorEngine::_engine;
 
 ValueType
@@ -51,7 +39,7 @@ SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op
 {
     assert(&tensor.engine() == this);
     const SimpleTensor &simple_tensor = static_cast<const SimpleTensor&>(tensor);
-    std::vector<vespalib::string> dimensions = dimension_names(simple_tensor.type());
+    std::vector<vespalib::string> dimensions = simple_tensor.type().dimension_names();
     auto result = simple_tensor.reduce(op, dimensions);
     assert(result->type().is_double());
     assert(result->cells().size() == 1u);

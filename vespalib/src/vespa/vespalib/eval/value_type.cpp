@@ -81,6 +81,16 @@ DimensionResult intersect(const DimensionList &lhs, const DimensionList &rhs) {
 
 constexpr size_t ValueType::Dimension::npos;
 
+std::vector<vespalib::string>
+ValueType::dimension_names() const
+{
+    std::vector<vespalib::string> result;
+    for (const auto &dimension: _dimensions) {
+        result.push_back(dimension.name);
+    }
+    return result;
+}
+
 ValueType
 ValueType::remove_dimensions(const std::vector<vespalib::string> &dimensions_in) const
 {
