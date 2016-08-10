@@ -712,6 +712,7 @@ Test::testDirname()
     ASSERT_EQUAL("mydir", dirname("mydir/foo"));
     ASSERT_EQUAL(".", dirname("notFound"));
     ASSERT_EQUAL("/", dirname("/notFound"));
+    ASSERT_EQUAL("here/there", dirname("here/there/everywhere"));
 }
 
 void
@@ -728,15 +729,15 @@ Test::testGetOpenErrorString()
     vespalib::string err1 = getOpenErrorString(1, "mydir/foo");
     vespalib::string normErr1 =  normalizeOpenError(err1);
     vespalib::string expErr1 = "error=x fileStat[name=mydir/foo mode=x uid=x gid=x size=x mtime=x] dirStat[name=mydir mode=x uid=x gid=x size=x mtime=x]";
-    std::cout << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
+    std::cerr << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
         ", normalized to " << normErr1 << std::endl;
-    ASSERT_EQUAL(expErr1, normErr1);
+    EXPECT_EQUAL(expErr1, normErr1);
     vespalib::string err2 = getOpenErrorString(1, "notFound");
     vespalib::string normErr2 =  normalizeOpenError(err2);
     vespalib::string expErr2 = "error=x fileStat[name=notFound errno=x] dirStat[name=. mode=x uid=x gid=x size=x mtime=x]";
-    std::cout << "getOpenErrorString(1, \"notFound\") is " << err2 <<
+    std::cerr << "getOpenErrorString(1, \"notFound\") is " << err2 <<
         ", normalized to " << normErr2 << std::endl;
-    ASSERT_EQUAL(expErr2, normErr2);
+    EXPECT_EQUAL(expErr2, normErr2);
     rmdir(dirName, true);
 }
 
