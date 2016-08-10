@@ -131,6 +131,7 @@ public class DockerImplTest {
         when(dockerClient.execCreateCmd(any(String.class))).thenReturn(execCreateCmd);
         when(execCreateCmd.withCmd(Matchers.<String>anyVararg())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(any(Boolean.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.withAttachStderr(any(Boolean.class))).thenReturn(execCreateCmd);
         when(execCreateCmd.exec()).thenReturn(response);
 
         final ExecStartCmd execStartCmd = mock(ExecStartCmd.class);

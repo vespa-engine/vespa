@@ -66,6 +66,11 @@ public class DockerImpl implements Docker {
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
     private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
 
+    private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
+    private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
+    private static final int DOCKER_CONNECT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(100);
+    private static final int DOCKER_READ_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(30);
+
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
     }
@@ -105,16 +110,17 @@ public class DockerImpl implements Docker {
     @Inject
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
+                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
                 .withDockerHost(config.uri().replace("https", "tcp"))
                 .withDockerTlsVerify(true)
                 .withCustomSslConfig(new VespaSSLConfig(config))
                 .build())
             .withDockerCmdExecFactory(
                     new JerseyDockerCmdExecFactory()
-                    .withConnectTimeout((int) TimeUnit.SECONDS.toMillis(100))
-                    .withMaxPerRouteConnections((int) TimeUnit.SECONDS.toMillis(100))
-                    .withMaxTotalConnections(10000)
-                    .withReadTimeout((int) TimeUnit.MINUTES.toMillis(30))
+                    .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
+                    .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
+                    .withConnectTimeout(DOCKER_CONNECT_TIMEOUT)
+                    .withReadTimeout(DOCKER_READ_TIMEOUT)
             ));
     }
 
@@ -130,6 +136,7 @@ public class DockerImpl implements Docker {
                 if (imageIsDownloaded(image)) {
                     /* TODO: the docker client is not in sync with the server protocol causing it to throw
                      * "java.io.IOException: Stream closed", even if the pull succeeded; thus ignoring here
+                     * MAY NO LONGER APPLY, was written when spotify/docker-client API was used.
                      */
                     removeScheduledPoll(image).complete(image);
                 } else {
@@ -207,7 +214,7 @@ public class DockerImpl implements Docker {
             if (state.getRunning()) {
                 Integer pid = state.getPid();
                 if (pid == null) {
-                    throw new DockerException("PID of running container for host " + hostName + " is null", 0);
+                    throw new RuntimeException("PID of running container for host " + hostName + " is null");
                 }
                 setupContainerNetworking(containerName, hostName, pid);
             }
@@ -247,6 +254,7 @@ public class DockerImpl implements Docker {
             final ExecCreateCmdResponse response = docker.execCreateCmd(containerName.asString())
                     .withCmd(args)
                     .withAttachStdout(true)
+                    .withAttachStderr(true)
                     .exec();
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();

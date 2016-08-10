@@ -36,7 +36,10 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * SSL Config from local files.
+ * This class is based off {@link com.github.dockerjava.core.LocalDirectorySSLConfig}, but with the ability to
+ * specify path to each of the certificates instead of directory path. Additionally it includes
+ * {@link com.github.dockerjava.core.util.CertificateUtils} because of version conflict of with
+ * com.google.code.findbugs.annotations
  */
 public class VespaSSLConfig implements SSLConfig {
     private final DockerConfig config;
