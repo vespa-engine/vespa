@@ -12,20 +12,26 @@ public class Hasher<T> {
 
     public static class NodeFactor<T> {
         private final T node;
+
         /**
          * The relative weight of the different nodes.
          * Hashing are based on the proportions of the weights.
          */
         private final int load;
+
         public NodeFactor(T node, int load) {
             this.node = node;
             this.load = load;
         }
+
         public final T getNode() { return node; }
-        public final int    getLoad() { return load; }
+
+        public final int getLoad() { return load; }
+
     }
 
     public static class NodeList<T> {
+
         private final NodeFactor<T>[] nodes;
 
         private int totalLoadFactor;
@@ -44,18 +50,19 @@ public class Hasher<T> {
             return nodes.length;
         }
 
-        public  T select(int code, int trynum) {
+        public T select(int code, int trynum) {
             if (totalLoadFactor <= 0) return null;
 
             // Multiply by a prime number much bigger than the likely number of hosts
             int hashValue=(Math.abs(code*76103)) % totalLoadFactor;
             int sumLoad=0;
-            int targetNode=0;
+            int targetNode;
             for (targetNode=0; targetNode<nodes.length; targetNode++) {
                 sumLoad +=nodes[targetNode].getLoad();
                 if (sumLoad > hashValue)
                     break;
             }
+            
             // Skip the ones we have tried before.
             targetNode += trynum;
             targetNode %= nodes.length;
@@ -63,7 +70,7 @@ public class Hasher<T> {
         }
 
         public boolean hasNode(T node) {
-            for(int i = 0;i<nodes.length;i++) {
+            for (int i = 0;i<nodes.length;i++) {
                 if(node == nodes[i].getNode()) {
                     return true;
                 }

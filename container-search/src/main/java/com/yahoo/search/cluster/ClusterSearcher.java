@@ -35,19 +35,15 @@ import java.util.concurrent.*;
  */
 public abstract class ClusterSearcher<T> extends PingableSearcher implements NodeManager<T> {
 
-    private Hasher<T> hasher = new Hasher<>();
-    private ClusterMonitor<T> monitor = new ClusterMonitor<>(this, "dummy");
+    private final Hasher<T> hasher;
+    private final ClusterMonitor<T> monitor = new ClusterMonitor<>(this, "dummy");
 
     /**
      * Creates a new cluster searcher
      *
-     * @param id
-     *                the id of this searcher
-     * @param connections
-     *                the connections of the cluster
-     * @param internal
-     *                whether or not this cluster is internal (part of the same
-     *                installation)
+     * @param id the id of this searcher
+     * @param connections the connections of the cluster
+     * @param internal whether or not this cluster is internal (part of the same installation)
      */
     public ClusterSearcher(ComponentId id, List<T> connections, boolean internal) {
         this(id, connections, new Hasher<T>(), internal);
@@ -63,10 +59,10 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     }
 
     /**
-     * Pinging a node by sending a query NodeManager method, called from
-     * ClusterMonitor
+     * Pinging a node by sending a query NodeManager method, called from ClusterMonitor
      */
-    public final @Override void ping(T p, Executor executor) {
+    @Override
+    public final void ping(T p, Executor executor) {
         log(LogLevel.FINE, "Sending ping to: ", p);
         Pinger pinger = new Pinger(p);
         FutureTask<Pong> future = new FutureTask<>(pinger);
@@ -76,26 +72,22 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         Throwable logThrowable = null;
 
         try {
-            pong = future.get(monitor.getConfiguration().getFailLimit(),
-                    TimeUnit.MILLISECONDS);
+            pong = future.get(monitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             pong = new Pong();
-            pong.addError(ErrorMessage
-                    .createUnspecifiedError("Ping was interrupted: " + p));
+            pong.addError(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + p));
             logThrowable = e;
         } catch (ExecutionException e) {
             pong = new Pong();
-            pong.addError(ErrorMessage
-                    .createUnspecifiedError("Execution was interrupted: " + p));
+            pong.addError(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + p));
             logThrowable = e;
         } catch (LinkageError e) { // Typically Osgi woes
             pong = new Pong();
             pong.addError(ErrorMessage.createErrorInPluginSearcher("Class loading problem",e));
-            logThrowable=e;
+            logThrowable = e;
         } catch (TimeoutException e) {
             pong = new Pong();
-            pong.addError(ErrorMessage
-                    .createNoAnswerWhenPingingNode("Ping thread timed out."));
+            pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out."));
         }
         future.cancel(true);
 
@@ -107,32 +99,24 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             log(LogLevel.FINE, "Answered ping - ", p);
         }
 
-        if (logThrowable != null) { // This looks strange, but yes - it is
-                                    // needed
-            String logMsg;
-            if (logThrowable instanceof TimeoutException) {
-                logMsg = "Ping timed out for " + getId().getName() + ".";
-            } else {
-                StackTraceElement[] trace = logThrowable.getStackTrace();
-                String traceAsString = null;
-                if (trace != null) {
-                    StringBuilder b = new StringBuilder(": ");
-                    for (StackTraceElement k : trace) {
-                        if (k == null) {
-                            b.append("null\n");
-                        } else {
-                            b.append(k.toString()).append('\n');
-                        }
+        if (logThrowable != null) {
+            StackTraceElement[] trace = logThrowable.getStackTrace();
+            String traceAsString = null;
+            if (trace != null) {
+                StringBuilder b = new StringBuilder(": ");
+                for (StackTraceElement k : trace) {
+                    if (k == null) {
+                        b.append("null\n");
+                    } else {
+                        b.append(k.toString()).append('\n');
                     }
-                    traceAsString = b.toString();
                 }
-                logMsg = "Caught " + logThrowable.getClass().getName()
-                        + " exception in " + getId().getName() + " ping"
-                        + (trace == null ? ", no stack trace available." : traceAsString);
+                traceAsString = b.toString();
             }
-            getLogger().warning(logMsg);
+            getLogger().warning("Caught " + logThrowable.getClass().getName()
+                                + " exception in " + getId().getName() + " ping"
+                                + (trace == null ? ", no stack trace available." : traceAsString));
         }
-
     }
 
     /**
@@ -162,8 +146,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         Result result;
         T connection = getFirstConnection(nodes, code, tries, query);
         do {
-            // The loop is in case there are other searchers available
-            // able to produce results
+            // The loop is in case there are other searchers available able to produce results
             if (connection == null)
                 return search(query, execution, ErrorMessage
                         .createNoBackendsInService("No in node could handle " + query + " according to " +
@@ -298,47 +281,37 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
      * Perform the fill against the given connection. Add an error to the result
      * or throw an exception on failures.
      */
-    protected abstract void fill(Result result, String summaryClass,
-            Execution execution, T connection);
+    protected abstract void fill(Result result, String summaryClass, Execution execution, T connection);
 
     /** NodeManager method, called from ClusterMonitor */
-    public @Override
-    void working(T node) {
+    @Override
+    public void working(T node) {
         getHasher().add(node);
     }
 
     /** NodeManager method, called from ClusterMonitor */
-    public @Override
-    void failed(T node) {
+    @Override
+    public void failed(T node) {
         getHasher().remove(node);
     }
 
-    /**
-     * Returns the hasher used internally in this. Do not mutate this hasher
-     * while in use.
-     */
-    public Hasher<T> getHasher() {
-        return hasher;
-    }
+    /** Returns the hasher used internally in this. Do not mutate this hasher while in use. */
+    public Hasher<T> getHasher() { return hasher; }
 
     /** Returns the monitor of these nodes */
-    public ClusterMonitor<T> getMonitor() {
-        return monitor;
-    }
+    public ClusterMonitor<T> getMonitor() { return monitor; }
 
     /** Returns true if this query has timed out now */
     protected boolean timedOut(Query query) {
-        long duration = query.getDurationTime();
-        return duration >= query.getTimeout();
+        return query.getDurationTime() >= query.getTimeout();
     }
 
     protected void log(java.util.logging.Level level, Object... objects) {
-        if (!getLogger().isLoggable(level))
-            return;
+        if ( ! getLogger().isLoggable(level)) return;
+
         StringBuilder sb = new StringBuilder();
-        for (Object object : objects) {
+        for (Object object : objects)
             sb.append(object);
-        }
         getLogger().log(level, sb.toString());
     }
 

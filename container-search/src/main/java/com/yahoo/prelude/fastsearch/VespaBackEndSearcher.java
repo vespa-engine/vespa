@@ -644,10 +644,13 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     protected boolean isLoggingFine() {
         return getLogger().isLoggable(Level.FINE);
     }
+
     public boolean isLocalDispatching() {
         return localDispatching;
     }
+
     public void setLocalDispatching(boolean localDispatching) {
         this.localDispatching = localDispatching;
     }
+
 }
