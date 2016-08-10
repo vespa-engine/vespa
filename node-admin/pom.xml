@@ -72,10 +72,6 @@
                     <artifactId>jersey-client</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.glassfish.jersey.connectors</groupId>
-                    <artifactId>jersey-apache-connector</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.glassfish.jersey.core</groupId>
                     <artifactId>jersey-common</artifactId>
                 </exclusion>
