@@ -107,14 +107,14 @@ public class ClusterSearcher extends Searcher {
         this.hasher = new Hasher();
         this.fs4ResourcePool = listeners;
         monitor = new ClusterMonitor(this, monitorConfig, vipStatus);
-        final int searchClusterIndex = clusterConfig.clusterId();
+        int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
-        final QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
+        QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
         Dispatcher dispatcher = new Dispatcher(dispatchConfig);
 
-        final String eventName = clusterModelName + ".cache_hit_ratio";
+        String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters()
                 .setNameExtension(false).setLogRaw(false).setLogMean(true));
 
@@ -122,36 +122,35 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(),
                 DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
-        final CacheParams cacheParams = new CacheParams(createCache(clusterConfig, clusterModelName));
-        final SummaryParameters docSumParams = new SummaryParameters(qrsConfig
+        CacheParams cacheParams = new CacheParams(createCache(clusterConfig, clusterModelName));
+        SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
 
-        for (final DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
+        for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
             documentTypes.add(docTypeName);
 
-            for (final DocumentdbInfoConfig.Documentdb.Rankprofile profile : docDb.rankprofile()) {
+            for (DocumentdbInfoConfig.Documentdb.Rankprofile profile : docDb.rankprofile()) {
                 addValidRankProfile(profile.name(), docTypeName);
             }
         }
 
         boolean gotExpectedBackend = false;
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            final VdsStreamingSearcher searcher = vdsCluster(searchClusterIndex,
-                    searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                    documentDbConfig);
+            VdsStreamingSearcher searcher = vdsCluster(searchClusterIndex,
+                                                       searchClusterConfig, cacheParams, emulationConfig, docSumParams,
+                                                       documentDbConfig);
             addBackendSearcher(searcher);
             gotExpectedBackend = true;
         } else {
             for (int i = 0; i < searchClusterConfig.dispatcher().size(); i++) {
-                final Backend b = createBackend(
-                        searchClusterConfig.dispatcher(i));
-                final FastSearcher searcher = searchDispatch(searchClusterIndex,
-                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                        documentDbConfig, b, dispatcher, i);
+                Backend b = createBackend(searchClusterConfig.dispatcher(i));
+                FastSearcher searcher = searchDispatch(searchClusterIndex,
+                                                       searchClusterConfig, cacheParams, emulationConfig, docSumParams,
+                                                       documentDbConfig, b, dispatcher, i);
                 try {
-                    searcher.setLocalDispatching(!isRemote(searchClusterConfig.dispatcher(i).host()));
+                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(i).host()));
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }

@@ -44,6 +44,7 @@ public class Hasher {
         newNodes[oldNodes.length] = node;
         return newNodes;
     }
+
     /**
      * Make a node available for search.
      */
@@ -78,15 +79,13 @@ public class Hasher {
 
     /** Removes a node */
     public void remove(VespaBackEndSearcher node) {
-        if (allNodes.length == 0) {
-            return;
-        }
+        if (allNodes.length == 0) return;
 
         VespaBackEndSearcher[] newNodes = removeNode(node, allNodes);
         if (newNodes != allNodes) {
             if (running && newNodes.length == 0) {
                 log.log(LogLevel.WARNING, "No longer any nodes for this cluster when"
-                        + " removing malfunctioning " + node.toString() + ".");
+                                          + " removing malfunctioning " + node.toString() + ".");
             }
             allNodes = newNodes;
         }
@@ -95,8 +94,8 @@ public class Hasher {
         if (newNodes != localNodes) {
             if (running && localNodes.length == 0) {
                 log.log(LogLevel.WARNING, "Removing malfunctioning " + node.toString()
-                        + " from traffic leaves no local dispatchers, performance"
-                        + " degradation is to expected.");
+                                          + " from traffic leaves no local dispatchers, performance"
+                                          + " degradation is to expected.");
             }
             localNodes = newNodes;
         }
@@ -109,26 +108,22 @@ public class Hasher {
     /**
      * Return a node, prefer local nodes, try to skip already hit nodes.
      *
-     * @param trynum
-     *            hint to skip already used nodes
+     * @param trynum hint to skip already used nodes
      * @return the selected node, or null if this hasher has no nodes
      */
     public VespaBackEndSearcher select(int trynum) {
         VespaBackEndSearcher[] nodes = allNodes;
+        if (nodes.length == 0) return null;
 
-        if (nodes.length == 0) {
-            return null;
-        } else {
-            if (localNodes.length > 0) {
-                nodes = localNodes;
-                if (localNodes.length == 1) {
-                    return nodes[0];
-                } else {
-                    return nodes[Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length)];
-                }
+        if (localNodes.length > 0) {
+            nodes = localNodes;
+            if (localNodes.length == 1) {
+                return nodes[0];
             } else {
                 return nodes[Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length)];
             }
+        } else {
+            return nodes[Math.abs(avoidAllQrsHitSameTld.incrementAndGet() % nodes.length)];
         }
     }
 
