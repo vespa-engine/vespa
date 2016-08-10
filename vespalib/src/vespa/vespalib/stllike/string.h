@@ -114,7 +114,8 @@ public:
     size_type rfind(char c, size_type e=npos) const {
         if (!empty()) {
             const char *b = begin();
-            for (size_type i(std::min(size()-1, e)); i > 0; i--) {
+            for (size_type i(std::min(size()-1, e) + 1); i > 0;) {
+                --i;
                 if (c == b[i]) {
                     return i;
                 }
