@@ -48,7 +48,7 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
     public abstract void doBuild(MODEL model, Element spec, ConfigModelContext modelContext);
 
     /**
-     * Builds a standalone instance of this component model.
+     * Builds an instance of this component model.
      * This calls instantiate(...), instance.setUp(...), doBuild(instance, ...).
      *
      * @param deployState a global deployment state used for this model.

@@ -399,7 +399,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (nodesElement.hasAttribute("count"))
             return createNodesFromNodeCount(cluster, nodesElement);
         else if (nodesElement.hasAttribute("of"))
-            return createNodesFromClusterReference(cluster, nodesElement, context);
+            return createNodesFromContentClusterReference(cluster, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(cluster, nodesElement);
     }
@@ -434,7 +434,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(hosts, cluster);
     }
     
-    private List<Container> createNodesFromClusterReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<Container> createNodesFromContentClusterReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
         String referenceId = nodesElement.getAttribute("of");
         Element services = servicesRootOf(nodesElement).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
