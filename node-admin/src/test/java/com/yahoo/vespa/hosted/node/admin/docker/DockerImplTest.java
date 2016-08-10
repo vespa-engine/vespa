@@ -4,14 +4,20 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.ObjectMapperProvider;
-import com.spotify.docker.client.messages.ExecState;
-import com.spotify.docker.client.messages.Image;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.ExecCreateCmd;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
+import com.github.dockerjava.api.command.InspectExecCmd;
+import com.github.dockerjava.api.command.InspectExecResponse;
+import com.github.dockerjava.api.command.ListContainersCmd;
+import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,14 +35,9 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author tonytv
@@ -44,11 +45,11 @@ import static org.mockito.Mockito.when;
 public class DockerImplTest {
     @Test
     public void data_directories_are_mounted_in_from_the_host() {
-        List<String> binds = DockerImpl.applicationStorageToMount(new ContainerName("my-container"));
+        List<Bind> binds = DockerImpl.applicationStorageToMount(new ContainerName("my-container"));
 
         String dataDirectory = Defaults.getDefaults().vespaHome() + "logs";
         String directoryOnHost = "/home/docker/container-storage/my-container" + dataDirectory;
-        assertThat(binds, hasItem(directoryOnHost + ":" + dataDirectory));
+        assertThat(binds, hasItem(Bind.parse(directoryOnHost + ":" + dataDirectory)));
     }
 
     @Test
@@ -58,7 +59,7 @@ public class DockerImplTest {
         doAnswer(invocationOnMock -> {
             latch.await();
             return null;
-        }).when(dockerClient).pull(any(String.class));
+        }).when(dockerClient).pullImageCmd(any(String.class));
         final Docker docker = new DockerImpl(dockerClient);
         final DockerImage dockerImage = new DockerImage("test-image");
 
@@ -116,33 +117,37 @@ public class DockerImplTest {
 
     @Test
     public void testExecuteCompletes() throws Exception {
-        final DockerClient dockerClient = mock(DockerClient.class);
         final String containerId = "container-id";
         final String[] command = new String[] {"/bin/ls", "-l"};
         final String execId = "exec-id";
-        when(dockerClient.execCreate(
-                eq(containerId),
-                eq(command),
-                anyVararg(),
-                anyVararg())).thenReturn(execId);
-
-        final LogStream logStream = mock(LogStream.class);
-        when(dockerClient.execStart(execId)).thenReturn(logStream);
-
-        final ExecState execState = mock(ExecState.class);
-        when(dockerClient.execInspect(execId)).thenReturn(execState);
-
-        when(execState.running()).thenReturn(false);
         final int exitCode = 3;
-        when(execState.exitCode()).thenReturn(exitCode);
 
-        final String commandOutput = "command output";
-        when(logStream.readFully()).thenReturn(commandOutput);
+        final DockerClient dockerClient = mock(DockerClient.class);
+
+        final ExecCreateCmdResponse response = mock(ExecCreateCmdResponse.class);
+        when(response.getId()).thenReturn(execId);
+
+        final ExecCreateCmd execCreateCmd = mock(ExecCreateCmd.class);
+        when(dockerClient.execCreateCmd(any(String.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.withCmd(Matchers.<String>anyVararg())).thenReturn(execCreateCmd);
+        when(execCreateCmd.withAttachStdout(any(Boolean.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.withAttachStderr(any(Boolean.class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.exec()).thenReturn(response);
+
+        final ExecStartCmd execStartCmd = mock(ExecStartCmd.class);
+        when(dockerClient.execStartCmd(any(String.class))).thenReturn(execStartCmd);
+        when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenReturn(mock(ExecStartResultCallback.class));
+
+        final InspectExecCmd inspectExecCmd = mock(InspectExecCmd.class);
+        final InspectExecResponse state = mock(InspectExecResponse.class);
+        when(dockerClient.inspectExecCmd(any(String.class))).thenReturn(inspectExecCmd);
+        when(inspectExecCmd.exec()).thenReturn(state);
+        when(state.isRunning()).thenReturn(false);
+        when(state.getExitCode()).thenReturn(exitCode);
 
         final Docker docker = new DockerImpl(dockerClient);
         final ProcessResult result = docker.executeInContainer(new ContainerName(containerId), command);
         assertThat(result.getExitStatus(), is(exitCode));
-        assertThat(result.getOutput(), is(commandOutput));
     }
 
     @Test
@@ -223,7 +228,7 @@ public class DockerImplTest {
 
     private static class ImageGcTester {
         private final List<Image> existingImages;
-        private List<com.spotify.docker.client.messages.Container> existingContainers = Collections.emptyList();
+        private List<com.github.dockerjava.api.model.Container> existingContainers = Collections.emptyList();
 
         private ImageGcTester(final List<Image> images) {
             this.existingImages = images;
@@ -246,8 +251,17 @@ public class DockerImplTest {
         public void expectUnusedImages(final String... imageIds) throws Exception {
             final DockerClient dockerClient = mock(DockerClient.class);
             final Docker docker = new DockerImpl(dockerClient);
-            when(dockerClient.listImages(anyVararg())).thenReturn(existingImages);
-            when(dockerClient.listContainers(anyVararg())).thenReturn(existingContainers);
+            final ListImagesCmd listImagesCmd = mock(ListImagesCmd.class);
+            final ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
+
+            when(dockerClient.listImagesCmd()).thenReturn(listImagesCmd);
+            when(listImagesCmd.withShowAll(true)).thenReturn(listImagesCmd);
+            when(listImagesCmd.exec()).thenReturn(existingImages);
+
+            when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
+            when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
+            when(listContainersCmd.exec()).thenReturn(existingContainers);
+
             final Set<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
                     .map(DockerImage::new)
                     .collect(Collectors.toSet());
@@ -272,7 +286,7 @@ public class DockerImplTest {
                     + toClass + " with Jackson: " + e, e);
         }
         try {
-            return new ObjectMapperProvider().getContext(null).readValue(serialized, toClass);
+            return new ObjectMapper().readValue(serialized, toClass);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to convert " + serialized + " to "
                     + toClass + " with Jackson: " + e, e);
@@ -313,8 +327,8 @@ public class DockerImplTest {
         private static ContainerBuilder forId(final String id) { return new ContainerBuilder(id); }
         public ContainerBuilder withImage(String image) { this.image = image; return this; }
 
-        public com.spotify.docker.client.messages.Container toContainer() {
-            return createFrom(com.spotify.docker.client.messages.Container.class, this);
+        public com.github.dockerjava.api.model.Container toContainer() {
+            return createFrom(com.github.dockerjava.api.model.Container.class, this);
         }
     }
 }
