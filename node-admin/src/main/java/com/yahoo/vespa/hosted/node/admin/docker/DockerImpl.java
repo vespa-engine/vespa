@@ -200,7 +200,6 @@ public class DockerImpl implements Docker {
                     .withNetworkMode("none")
                     .withBinds(applicationStorageToMount(containerName));
 
-
             // TODO: Enforce disk constraints
             // TODO: Consider if CPU shares or quoata should be set. For now we are just assuming they are
             // nicely controlled by docker.
@@ -208,6 +207,8 @@ public class DockerImpl implements Docker {
             if (minMainMemoryAvailableGb > 0.00001) {
                 containerConfigBuilder.withMemory((long) (GIGA * minMainMemoryAvailableGb));
             }
+            CreateContainerResponse response = containerConfigBuilder.exec();
+            docker.startContainerCmd(response.getId()).exec();
 
             InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
             InspectContainerResponse.ContainerState state = containerInfo.getState();
@@ -218,9 +219,6 @@ public class DockerImpl implements Docker {
                 }
                 setupContainerNetworking(containerName, hostName, pid);
             }
-
-            CreateContainerResponse response = containerConfigBuilder.exec();
-            docker.startContainerCmd(response.getId()).exec();
         } catch (IOException | DockerException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
         }
