@@ -3,64 +3,33 @@
 #include <vespa/log/log.h>
 LOG_SETUP("fileutil_test");
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <iostream>
 #include <vector>
+#include <regex>
 
 namespace vespalib {
 
-class Test : public vespalib::TestApp
+vespalib::string normalizeOpenError(const vespalib::string str)
 {
-public:
-    void testOpen();
-    void testIsOpen();
-    void testStat();
-    void testResize();
-    void testDirFunctions();
-    void testUnlink();
-    void testRename();
-    void testCopy();
-    void testCopyConstructorAndAssignmentOperator();
-    void testLazyFile();
-    void testSymlink();
-    void testReadAll();
-    int Main();
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("fileutil_test");
-    srandom(1);
-    std::cerr << "testOpen\n";
-    testOpen();
-    std::cerr << "testIsOpen\n";
-    testIsOpen();
-    std::cerr << "testStat\n";
-    testStat();
-    std::cerr << "testResize\n";
-    testResize();
-    std::cerr << "testDirFunctions\n";
-    testDirFunctions();
-    std::cerr << "testUnlink\n";
-    testUnlink();
-    std::cerr << "testRename\n";
-    testRename();
-    std::cerr << "testCopy\n";
-    testCopy();
-    std::cerr << "testCopyConstructorAndAssignmentOperator\n";
-    testCopyConstructorAndAssignmentOperator();
-    std::cerr << "testLazyFile\n";
-    testLazyFile();
-    std::cerr << "testSymlink\n";
-    testSymlink();
-    std::cerr << "testReadAll\n";
-    testReadAll();
-    TEST_DONE();
+    std::regex modeex(" mode=[0-7]+");
+    std::regex uidex(" uid=[0-9]+");
+    std::regex gidex(" gid=[0-9]+");
+    std::regex sizeex(" size=[0-9]+");
+    std::regex mtimeex(" mtime=[0-9]+");
+    std::regex errnoex(" errno=[0-9]+\\(\"[^\"]+\"\\)");
+    std::regex errorex("^error=[0-9]+\\(\"[^\"]+\"\\)");
+    std::string tmp1 = std::regex_replace(std::string(str), modeex, " mode=x");
+    std::string tmp2 = std::regex_replace(tmp1, uidex, " uid=x");
+    tmp1 = std::regex_replace(tmp2, gidex, " gid=x");
+    tmp2 = std::regex_replace(tmp1, sizeex, " size=x");
+    tmp1 = std::regex_replace(tmp2, mtimeex, " mtime=x");
+    tmp2 = std::regex_replace(tmp1, errnoex, " errno=x");
+    tmp1 = std::regex_replace(tmp2, errorex, "error=x");
+    return tmp1;
 }
 
-void
-Test::testOpen()
+TEST("require that vespalib::File::open works")
 {
         // Opening non-existing file for reading should fail.
     try{
@@ -173,8 +142,7 @@ Test::testOpen()
     }
 }
 
-void
-Test::testIsOpen()
+TEST("require that vespalib::File::isOpen works")
 {
     File f("myfile");
     ASSERT_TRUE(!f.isOpen());
@@ -184,8 +152,7 @@ Test::testIsOpen()
     ASSERT_TRUE(!f.isOpen());
 }
 
-void
-Test::testStat()
+TEST("require that vespalib::File::stat works")
 {
     unlink("myfile");
     rmdir("mydir", true);
@@ -218,8 +185,7 @@ Test::testStat()
     EXPECT_EQUAL(true, fileExists("mydir"));
 }
 
-void
-Test::testResize()
+TEST("require that vespalib::File::resize works")
 {
     unlink("myfile");
     File f("myfile");
@@ -239,8 +205,7 @@ Test::testResize()
     EXPECT_EQUAL(std::string("foo"), std::string(&vec[0], 3));
 }
 
-void
-Test::testDirFunctions()
+TEST("require that vespalib::mkdir and vespalib::rmdir works")
 {
     rmdir("mydir", true);
     ASSERT_TRUE(!fileExists("mydir"));
@@ -325,8 +290,7 @@ Test::testDirFunctions()
     }
 }
 
-void
-Test::testUnlink()
+TEST("require that vespalib::unlink works")
 {
         // Fails on directory
     try{
@@ -351,8 +315,7 @@ Test::testUnlink()
     }
 }
 
-void
-Test::testRename()
+TEST("require that vespalib::rename works")
 {
     rmdir("mydir", true);
     File f("myfile");
@@ -432,8 +395,7 @@ Test::testRename()
     }
 }
 
-void
-Test::testCopy()
+TEST("require that vespalib::copy works")
 {
     rmdir("mydir", true);
     File f("myfile");
@@ -480,8 +442,7 @@ Test::testCopy()
     }
 }
 
-void
-Test::testCopyConstructorAndAssignmentOperator()
+TEST("require that copy constructor and assignment for vespalib::File works")
 {
         // Copy file not opened.
     {
@@ -522,8 +483,7 @@ Test::testCopyConstructorAndAssignmentOperator()
     }
 }
 
-void
-Test::testLazyFile()
+TEST("require that vespalib::LazyFile works")
 {
         // Copy constructor
     {
@@ -578,8 +538,7 @@ Test::testLazyFile()
     }
 }
 
-void
-Test::testSymlink()
+TEST("require that vespalib::symlink works")
 {
     // Target exists
     {
@@ -641,8 +600,7 @@ Test::testSymlink()
     }
 }
 
-void
-Test::testReadAll()
+TEST("require that we can read all data written to file")
 {
     // Write text into a file.
     unlink("myfile");
@@ -680,7 +638,39 @@ Test::testReadAll()
     }
 }
 
+TEST("require that vespalib::dirname works")
+{
+    ASSERT_EQUAL("mydir", dirname("mydir/foo"));
+    ASSERT_EQUAL(".", dirname("notFound"));
+    ASSERT_EQUAL("/", dirname("/notFound"));
+    ASSERT_EQUAL("here/there", dirname("here/there/everywhere"));
+}
+
+TEST("require that vespalib::getOpenErrorString works")
+{
+    stringref dirName = "mydir";
+    rmdir(dirName, true);
+    mkdir(dirName, false);
+    {
+        File foo("mydir/foo");
+        foo.open(File::CREATE);
+        foo.close();
+    }
+    vespalib::string err1 = getOpenErrorString(1, "mydir/foo");
+    vespalib::string normErr1 =  normalizeOpenError(err1);
+    vespalib::string expErr1 = "error=x fileStat[name=mydir/foo mode=x uid=x gid=x size=x mtime=x] dirStat[name=mydir mode=x uid=x gid=x size=x mtime=x]";
+    std::cerr << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
+        ", normalized to " << normErr1 << std::endl;
+    EXPECT_EQUAL(expErr1, normErr1);
+    vespalib::string err2 = getOpenErrorString(1, "notFound");
+    vespalib::string normErr2 =  normalizeOpenError(err2);
+    vespalib::string expErr2 = "error=x fileStat[name=notFound errno=x] dirStat[name=. mode=x uid=x gid=x size=x mtime=x]";
+    std::cerr << "getOpenErrorString(1, \"notFound\") is " << err2 <<
+        ", normalized to " << normErr2 << std::endl;
+    EXPECT_EQUAL(expErr2, normErr2);
+    rmdir(dirName, true);
+}
+
 } // vespalib
 
-TEST_APPHOOK(vespalib::Test)
-
+TEST_MAIN() { TEST_RUN_ALL(); }

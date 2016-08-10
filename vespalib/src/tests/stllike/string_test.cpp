@@ -247,6 +247,11 @@ TEST("testString") {
         EXPECT_EQUAL(5u, s.rfind("ca"));
         EXPECT_EQUAL(0u, s.find("ab"));
         EXPECT_EQUAL(3u, s.rfind("ab"));
+        stringref s2("abc");
+        EXPECT_EQUAL(2u, s2.rfind('c'));
+        EXPECT_EQUAL(1u, s2.rfind('b'));
+        EXPECT_EQUAL(0u, s2.rfind('a'));
+        EXPECT_EQUAL(string::npos, s2.rfind('d'));
     }
 
     EXPECT_EQUAL("a" + stringref("b"), string("ab"));
