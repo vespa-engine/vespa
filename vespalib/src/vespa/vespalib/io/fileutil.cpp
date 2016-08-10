@@ -759,4 +759,55 @@ getAlignedBuffer(size_t size)
         return MallocAutoPtr(ptr);
 }
 
+string dirname(const stringref name)
+{
+    size_t found = name.rfind('/');
+    if (found == string::npos) {
+        return string(".");
+    } else if (found == 0) {
+        return string("/");
+    } else {
+        return name.substr(0, found);
+    }
+}
+
+namespace {
+
+void addStat(asciistream &os, const stringref name)
+{
+    struct ::stat filestat;
+    memset(&filestat, '\0', sizeof(filestat));
+    int statres = ::stat(name.c_str(), &filestat);
+    int err = 0;
+    if (statres != 0) {
+        err = errno;
+    }
+    os << "[name=" << name;
+    if (statres != 0) {
+        char errorBuf[128];
+        const char *errorString = strerror_r(err, errorBuf, sizeof(errorBuf));
+        os << " errno=" << err << "(\"" << errorString << "\")";
+    } else {
+        os << " mode=" << oct << filestat.st_mode << dec <<
+            " uid=" << filestat.st_uid << " gid=" << filestat.st_gid <<
+            " size=" << filestat.st_size << " mtime=" << filestat.st_mtime;
+    }
+    os << "]";
+}
+
+}
+
+string
+getOpenErrorString(const int osError, const stringref filename)
+{
+    asciistream os;
+    string dirName(dirname(filename));
+    os << "error="  << osError << "(\"" <<
+        getErrorString(osError) << "\") fileStat";
+    addStat(os, filename);
+    os << " dirStat";
+    addStat(os, dirName.c_str());
+    return os.str();
+}
+
 } // vespalib

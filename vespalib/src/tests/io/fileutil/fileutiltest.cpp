@@ -6,8 +6,28 @@ LOG_SETUP("fileutil_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <iostream>
 #include <vector>
+#include <regex>
 
 namespace vespalib {
+
+vespalib::string normalizeOpenError(const vespalib::string str)
+{
+    std::regex modeex(" mode=[0-7]+");
+    std::regex uidex(" uid=[0-9]+");
+    std::regex gidex(" gid=[0-9]+");
+    std::regex sizeex(" size=[0-9]+");
+    std::regex mtimeex(" mtime=[0-9]+");
+    std::regex errnoex(" errno=[0-9]+\\(\"[^\"]+\"\\)");
+    std::regex errorex("^error=[0-9]+\\(\"[^\"]+\"\\)");
+    std::string tmp1 = std::regex_replace(std::string(str), modeex, " mode=0");
+    std::string tmp2 = std::regex_replace(tmp1, uidex, " uid=0");
+    tmp1 = std::regex_replace(tmp2, gidex, " gid=0");
+    tmp2 = std::regex_replace(tmp1, sizeex, " size=0");
+    tmp1 = std::regex_replace(tmp2, mtimeex, " mtime=0");
+    tmp2 = std::regex_replace(tmp1, errnoex, " errno=0");
+    tmp1 = std::regex_replace(tmp2, errorex, "error=0");
+    return tmp1;
+}
 
 class Test : public vespalib::TestApp
 {
@@ -24,6 +44,8 @@ public:
     void testLazyFile();
     void testSymlink();
     void testReadAll();
+    void testDirname();
+    void testGetOpenErrorString();
     int Main();
 };
 
@@ -56,6 +78,10 @@ Test::Main()
     testSymlink();
     std::cerr << "testReadAll\n";
     testReadAll();
+    std::cerr << "testDirname\n";
+    testDirname();
+    std::cerr << "testGetOpenErrorString\n";
+    testGetOpenErrorString();
     TEST_DONE();
 }
 
@@ -678,6 +704,40 @@ Test::testReadAll()
         chunk.assign(content.begin() + offset, text.size());
         ASSERT_EQUAL(text, chunk);
     }
+}
+
+void
+Test::testDirname()
+{
+    ASSERT_EQUAL("mydir", dirname("mydir/foo"));
+    ASSERT_EQUAL(".", dirname("notFound"));
+    ASSERT_EQUAL("/", dirname("/notFound"));
+}
+
+void
+Test::testGetOpenErrorString()
+{
+    stringref dirName = "mydir";
+    rmdir(dirName, true);
+    mkdir(dirName, false);
+    {
+        File foo("mydir/foo");
+        foo.open(File::CREATE);
+        foo.close();
+    }
+    vespalib::string err1 = getOpenErrorString(1, "mydir/foo");
+    vespalib::string normErr1 =  normalizeOpenError(err1);
+    vespalib::string expErr1 = "error=0 fileStat[name=mydir/foo mode=0 uid=0 gid=0 size=0 mtime=0] dirStat[name=mydir mode=0 uid=0 gid=0 size=0 mtime=0]";
+    std::cout << "getOpenErrorString(1, \"mydir/foo\") is " << err1 <<
+        ", normalized to " << normErr1 << std::endl;
+    ASSERT_EQUAL(expErr1, normErr1);
+    vespalib::string err2 = getOpenErrorString(1, "notFound");
+    vespalib::string normErr2 =  normalizeOpenError(err2);
+    vespalib::string expErr2 = "error=0 fileStat[name=notFound errno=0] dirStat[name=. mode=0 uid=0 gid=0 size=0 mtime=0]";
+    std::cout << "getOpenErrorString(1, \"notFound\") is " << err2 <<
+        ", normalized to " << normErr2 << std::endl;
+    ASSERT_EQUAL(expErr2, normErr2);
+    rmdir(dirName, true);
 }
 
 } // vespalib

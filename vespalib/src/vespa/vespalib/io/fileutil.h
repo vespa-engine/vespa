@@ -447,5 +447,8 @@ extern DirectoryList listDirectory(const vespalib::stringref & path);
 
 extern MallocAutoPtr getAlignedBuffer(size_t size);
 
+string dirname(const stringref name);
+string getOpenErrorString(const int osError, const stringref name);
+
 } // vespalib
 

@@ -8,6 +8,7 @@ LOG_SETUP(".diskindex.pagedict4file");
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/io/fileutil.h>
 
 namespace
 {
@@ -16,6 +17,17 @@ vespalib::string myPId("PageDict4P.1");
 vespalib::string mySPId("PageDict4SP.1");
 vespalib::string mySSId("PageDict4SS.1");
 vespalib::string emptyId;
+
+void checkOpenWriteOnly(bool ok, const vespalib::string &fileName)
+{
+    if (!ok) {
+        int osError = errno;
+        LOG(error, "Could not open %s for write: %s",
+            fileName.c_str(),
+            vespalib::getOpenErrorString(osError, fileName.c_str()).c_str());
+        abort();
+    }
+}
 
 }
 
@@ -401,16 +413,15 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
         _ssfile.EnableDirectIO();
     }
     bool ok = _pfile.OpenWriteOnly(pname.c_str());
-    assert(ok);
-    (void) ok;
+    checkOpenWriteOnly(ok, pname);
     _pWriteContext.setFile(&_pfile);
 
     ok = _spfile.OpenWriteOnly(spname.c_str());
-    assert(ok);
+    checkOpenWriteOnly(ok, spname);
     _spWriteContext.setFile(&_spfile);
 
     ok = _ssfile.OpenWriteOnly(ssname.c_str());
-    assert(ok);
+    checkOpenWriteOnly(ok, ssname);
     _ssWriteContext.setFile(&_ssfile);
 
     if (!_checkPointData) {
