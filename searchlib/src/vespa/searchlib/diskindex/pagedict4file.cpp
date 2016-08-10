@@ -18,7 +18,7 @@ vespalib::string mySPId("PageDict4SP.1");
 vespalib::string mySSId("PageDict4SS.1");
 vespalib::string emptyId;
 
-void checkOpenWriteOnly(bool ok, const vespalib::string &fileName)
+void assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
 {
     if (!ok) {
         int osError = errno;
@@ -413,15 +413,15 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
         _ssfile.EnableDirectIO();
     }
     bool ok = _pfile.OpenWriteOnly(pname.c_str());
-    checkOpenWriteOnly(ok, pname);
+    assertOpenWriteOnly(ok, pname);
     _pWriteContext.setFile(&_pfile);
 
     ok = _spfile.OpenWriteOnly(spname.c_str());
-    checkOpenWriteOnly(ok, spname);
+    assertOpenWriteOnly(ok, spname);
     _spWriteContext.setFile(&_spfile);
 
     ok = _ssfile.OpenWriteOnly(ssname.c_str());
-    checkOpenWriteOnly(ok, ssname);
+    assertOpenWriteOnly(ok, ssname);
     _ssWriteContext.setFile(&_ssfile);
 
     if (!_checkPointData) {
