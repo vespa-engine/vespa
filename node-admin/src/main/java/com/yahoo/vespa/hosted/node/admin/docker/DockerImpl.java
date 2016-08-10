@@ -68,8 +68,8 @@ public class DockerImpl implements Docker {
 
     private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
-    private static final int DOCKER_CONNECT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(100);
-    private static final int DOCKER_READ_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(30);
+    private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
+    private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
@@ -119,8 +119,8 @@ public class DockerImpl implements Docker {
                     new JerseyDockerCmdExecFactory()
                     .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
                     .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                    .withConnectTimeout(DOCKER_CONNECT_TIMEOUT)
-                    .withReadTimeout(DOCKER_READ_TIMEOUT)
+                    .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
+                    .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
             ));
     }
 
