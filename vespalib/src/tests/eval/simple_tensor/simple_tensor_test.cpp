@@ -127,7 +127,7 @@ TEST("require that simple tensors can have their values negated") {
     auto result = SimpleTensor::perform(operation::Neg(), *tensor);
     EXPECT_EQUAL(Check(*expect), Check(*result));
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().perform(operation::Neg(), *tensor, stash);
+    const Value &result2 = SimpleTensorEngine::ref().map(operation::Neg(), *tensor, stash);
     EXPECT_EQUAL(Check(*expect), Check(unwrap(result2)));    
 }
 
@@ -152,7 +152,7 @@ TEST("require that simple tensors can be multiplied with each other") {
     auto result = SimpleTensor::perform(operation::Mul(), *lhs, *rhs);
     EXPECT_EQUAL(Check(*expect), Check(*result));
     Stash stash;
-    const Value &result2 = SimpleTensorEngine::ref().perform(operation::Mul(), *lhs, *rhs, stash);
+    const Value &result2 = SimpleTensorEngine::ref().apply(operation::Mul(), *lhs, *rhs, stash);
     EXPECT_EQUAL(Check(*expect), Check(unwrap(result2)));
 }
 
@@ -185,7 +185,7 @@ TEST("require that simple tensors support dimension reduction") {
     const Value &result_sum_y_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"y"}, stash);
     const Value &result_sum_x_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x"}, stash);
     const Value &result_sum_all_2 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {"x", "y"}, stash); 
-    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), stash);
+    const Value &result_sum_all_3 = SimpleTensorEngine::ref().reduce(*tensor, operation::Add(), {}, stash);
     EXPECT_EQUAL(Check(*expect_sum_y), Check(unwrap(result_sum_y_2)));
     EXPECT_EQUAL(Check(*expect_sum_x), Check(unwrap(result_sum_x_2)));
     EXPECT_TRUE(result_sum_all_2.is_double());

@@ -18,12 +18,6 @@ SimpleTensorEngine::type_of(const Tensor &tensor) const
     return simple_tensor.type();
 }
 
-std::unique_ptr<eval::Tensor>
-SimpleTensorEngine::create(const TensorSpec &spec) const
-{
-    return SimpleTensor::create(spec);
-}
-
 bool
 SimpleTensorEngine::equal(const Tensor &a, const Tensor &b) const
 {
@@ -34,16 +28,10 @@ SimpleTensorEngine::equal(const Tensor &a, const Tensor &b) const
     return SimpleTensor::equal(simple_a, simple_b);
 }
 
-const Value &
-SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op, Stash &stash) const
+std::unique_ptr<eval::Tensor>
+SimpleTensorEngine::create(const TensorSpec &spec) const
 {
-    assert(&tensor.engine() == this);
-    const SimpleTensor &simple_tensor = static_cast<const SimpleTensor&>(tensor);
-    std::vector<vespalib::string> dimensions = simple_tensor.type().dimension_names();
-    auto result = simple_tensor.reduce(op, dimensions);
-    assert(result->type().is_double());
-    assert(result->cells().size() == 1u);
-    return stash.create<DoubleValue>(result->cells()[0].value);
+    return SimpleTensor::create(spec);
 }
 
 const Value &
@@ -51,7 +39,7 @@ SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op
 {
     assert(&tensor.engine() == this);
     const SimpleTensor &simple_tensor = static_cast<const SimpleTensor&>(tensor);
-    auto result = simple_tensor.reduce(op, dimensions);
+    auto result = simple_tensor.reduce(op, dimensions.empty() ? simple_tensor.type().dimension_names() : dimensions);
     if (result->type().is_double()) {
         assert(result->cells().size() == 1u);
         return stash.create<DoubleValue>(result->cells()[0].value);
@@ -60,7 +48,7 @@ SimpleTensorEngine::reduce(const eval::Tensor &tensor, const BinaryOperation &op
 }
 
 const Value &
-SimpleTensorEngine::perform(const UnaryOperation &op, const eval::Tensor &a, Stash &stash) const
+SimpleTensorEngine::map(const UnaryOperation &op, const eval::Tensor &a, Stash &stash) const
 {
     assert(&a.engine() == this);
     const SimpleTensor &simple_a = static_cast<const SimpleTensor&>(a);    
@@ -69,7 +57,7 @@ SimpleTensorEngine::perform(const UnaryOperation &op, const eval::Tensor &a, Sta
 }
 
 const Value &
-SimpleTensorEngine::perform(const BinaryOperation &op, const eval::Tensor &a, const eval::Tensor &b, Stash &stash) const
+SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, const eval::Tensor &b, Stash &stash) const
 {
     assert(&a.engine() == this);
     assert(&b.engine() == this);

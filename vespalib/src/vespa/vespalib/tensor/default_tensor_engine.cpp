@@ -26,6 +26,22 @@ DefaultTensorEngine::type_of(const Tensor &tensor) const
     return my_tensor.getType().as_value_type();
 }
 
+bool
+DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
+{
+    assert(&a.engine() == this);
+    assert(&b.engine() == this);
+    const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
+    const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
+    return my_a.equals(my_b);
+}
+
+struct IsAddOperation : public eval::DefaultOperationVisitor {
+    bool result = false;
+    void visitDefault(const eval::Operation &) override {}
+    void visit(const eval::operation::Add &) override { result = true; }
+};
+
 std::unique_ptr<eval::Tensor>
 DefaultTensorEngine::create(const TensorSpec &spec) const
 {
@@ -76,36 +92,6 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
     }
 }
 
-bool
-DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
-{
-    assert(&a.engine() == this);
-    assert(&b.engine() == this);
-    const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
-    const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
-    return my_a.equals(my_b);
-}
-
-struct IsAddOperation : public eval::DefaultOperationVisitor {
-    bool result = false;
-    void visitDefault(const eval::Operation &) override {}
-    void visit(const eval::operation::Add &) override { result = true; }
-};
-
-const eval::Value &
-DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, Stash &stash) const
-{    
-    assert(&tensor.engine() == this);
-    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    IsAddOperation check;
-    op.accept(check);
-    if (check.result) {
-        return stash.create<eval::DoubleValue>(my_tensor.sum());        
-    } else {
-        return stash.create<ErrorValue>();
-    }
-}
-
 const eval::Value &
 DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
@@ -114,17 +100,19 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
     IsAddOperation check;
     op.accept(check);
     if (check.result) {
-        tensor::Tensor::UP result;
-        for (const auto &dimension: dimensions) {
-            if (result) {
-                result = result->sum(dimension);
-            } else {
-                result = my_tensor.sum(dimension);
+        if (dimensions.empty()) { // sum
+            return stash.create<eval::DoubleValue>(my_tensor.sum());
+        } else { // dimension sum
+            tensor::Tensor::UP result;
+            for (const auto &dimension: dimensions) {
+                if (result) {
+                    result = result->sum(dimension);
+                } else {
+                    result = my_tensor.sum(dimension);
+                }
             }
+            return stash.create<TensorValue>(std::move(result));
         }
-        return stash.create<TensorValue>(std::move(result));
-    } else {
-        return stash.create<ErrorValue>();
     }
     return stash.create<ErrorValue>();
 }
@@ -136,7 +124,7 @@ struct CellFunctionAdapter : tensor::CellFunction {
 };
 
 const eval::Value &
-DefaultTensorEngine::perform(const UnaryOperation &op, const Tensor &a, Stash &stash) const
+DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash) const
 {
     assert(&a.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
@@ -176,7 +164,7 @@ struct TensorOperationOverride : eval::DefaultOperationVisitor {
 };
 
 const eval::Value &
-DefaultTensorEngine::perform(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const
+DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const
 {
     assert(&a.engine() == this);
     assert(&b.engine() == this);
