@@ -9,6 +9,7 @@ package com.yahoo.vespa.model;
  * @since 5.12
  */
 public class Affinity {
+
     private final int cpuSocket;
 
     private Affinity(int cpuSocket) {
@@ -34,4 +35,5 @@ public class Affinity {
             return new Affinity(cpuSocket);
         }
     }
+
 }

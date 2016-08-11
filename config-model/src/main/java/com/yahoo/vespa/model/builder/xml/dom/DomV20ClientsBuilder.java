@@ -110,25 +110,6 @@ public class DomV20ClientsBuilder {
         return ret;
     }
 
-    static String getHttpFileServerRootDir(Element parentHttpFileServer, Element httpFileServer) {
-        String ret="";
-        if (parentHttpFileServer != null) {
-            for (Element child : XML.getChildren(parentHttpFileServer)) {
-                if ("rootdir".equals(child.getNodeName())) {
-                    ret = child.getFirstChild().getNodeValue();
-                }
-            }
-        }
-        if (httpFileServer != null) {
-            for (Element child : XML.getChildren(httpFileServer)) {
-                if ("rootdir".equals(child.getNodeName())) {
-                    ret = child.getFirstChild().getNodeValue();
-                }
-            }
-        }
-        return ret;
-    }
-
     private void createLoadTypes(Element element, Clients clients) {
         for (Element e : XML.getChildren(element, "type")) {
             String priority = e.getAttribute("default-priority");

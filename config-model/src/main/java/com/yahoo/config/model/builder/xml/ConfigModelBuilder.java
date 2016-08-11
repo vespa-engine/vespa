@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Builds a config model using DOM parsers
@@ -54,7 +55,8 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      * @param parent the root config producer this should be added to
      * @param spec the XML element this is constructed from
      */
-    public final MODEL build(DeployState deployState, ConfigModelRepo configModelRepo, AbstractConfigProducer parent, Element spec) {
+    public final MODEL build(DeployState deployState, ConfigModelRepo configModelRepo, 
+                             AbstractConfigProducer parent, Element spec) {
         ConfigModelContext context = ConfigModelContext.create(deployState, configModelRepo, parent, getIdString(spec));
         return build(new DefaultModelInstanceFactory(), spec, context);
     }

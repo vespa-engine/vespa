@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.generic;
 
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
@@ -12,6 +11,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -32,7 +32,7 @@ public class GenericServicesModelTest {
     @Test
     public void test_generic_services_model() {
         MockRoot root = new MockRoot();
-        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.createFromParentAndId(null, root, "foo"));
+        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.create(null, root, "foo"));
         assertThat(model.serviceClusters().size(), is(0));
         model.addCluster(new ServiceCluster(root, "mycluster", "/bin/foo"));
         assertThat(model.serviceClusters().size(), is(1));

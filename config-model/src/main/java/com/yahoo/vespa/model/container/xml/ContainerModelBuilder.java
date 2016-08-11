@@ -51,6 +51,7 @@ import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 
+import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -127,7 +128,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }.build(modelContext.getParentProducer(), spec);
     }
 
-    private void addClusterContent(ContainerCluster cluster, Element spec, ConfigModelContext modelContext) {
+    private void addClusterContent(ContainerCluster cluster, Element spec, ConfigModelContext context) {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
 
         addConfiguredComponents(cluster, spec);
@@ -137,20 +138,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addRestApis(spec, cluster);
         addServlets(spec, cluster);
         addProcessing(spec, cluster);
-        addSearch(spec, cluster, modelContext.getDeployState().getQueryProfiles(), modelContext.getDeployState().getSemanticRules());
+        addSearch(spec, cluster, context.getDeployState().getQueryProfiles(), context.getDeployState().getSemanticRules());
         addDocproc(spec, cluster);
-        addDocumentApi(spec, cluster);  //NOTE: Document API must be set up _after_ search!
+        addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
         addAccessLogs(cluster, spec);
         addRoutingAliases(cluster, spec);
-        addNodes(cluster, spec);
+        addNodes(cluster, spec, context);
 
         addClientProviders(spec, cluster);
         addServerProviders(spec, cluster);
         addLegacyFilters(spec, cluster);
 
         addDefaultHandlers(cluster);
-        addStatusHandlers(cluster, modelContext);
+        addStatusHandlers(cluster, context);
         addDefaultComponents(cluster);
         setDefaultMetricConsumerFactory(cluster);
 
@@ -354,17 +355,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void checkVersion(Element spec) {
         String version = spec.getAttribute("version");
 
-        if (!Version.fromString(version).equals(new Version(1))) {
+        if ( ! Version.fromString(version).equals(new Version(1))) {
             throw new RuntimeException("Expected container version to be 1.0, but got " + version);
         }
     }
 
-    private void addNodes(ContainerCluster cluster, Element spec) {
-        if (standaloneBuilder) {
+    private void addNodes(ContainerCluster cluster, Element spec, ConfigModelContext context) {
+        if (standaloneBuilder)
             addStandaloneNode(cluster);
-        } else {
-            addNodesFromXml(cluster, spec);
-        }
+        else
+            addNodesFromXml(cluster, spec, context);
     }
 
     private void addStandaloneNode(ContainerCluster cluster) {
@@ -372,7 +372,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(Collections.singleton(container));
     }
 
-    private void addNodesFromXml(ContainerCluster cluster, Element spec) {
+    private void addNodesFromXml(ContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element nodesElement = XML.getChild(spec, "nodes");
         if (nodesElement == null) { // default single node on localhost
             Container container = new Container(cluster, "container.0", 0);
@@ -383,29 +383,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addContainers(Collections.singleton(container));
         }
         else {
-            String defaultJvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-            String defaultPreLoad = null;
-            if (nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) {
-                defaultPreLoad = nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME);
-            }
-            boolean useCpuSocketAffinity = false;
-            if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME)) {
-                useCpuSocketAffinity = Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
-            }
-            List<Container> result = new ArrayList<>();
-            result.addAll(createNodesFromXmlNodeCount(cluster, nodesElement));
-            addNodesFromXmlNodeList(cluster, spec, nodesElement, result);
-            applyDefaultJvmArgs(result, defaultJvmArgs);
-            applyRoutingAliasProperties(result, cluster);
-            if (defaultPreLoad != null) {
-                applyDefaultPreload(result, defaultPreLoad);
-            }
-            if (useCpuSocketAffinity) {
-                AbstractService.distributeCpuSocketAffinity(result);
-            }
+            List<Container> nodes = createNodes(cluster, nodesElement, context);
+            applyDefaultJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
+            applyRoutingAliasProperties(nodes, cluster);
+            applyDefaultPreload(nodes, nodesElement);
+            if (useCpuSocketAffinity(nodesElement))
+                AbstractService.distributeCpuSocketAffinity(nodes);
 
-            cluster.addContainers(result);
+            cluster.addContainers(nodes);
         }
+    }
+    
+    private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+        if (nodesElement.hasAttribute("count"))
+            return createNodesFromNodeCount(cluster, nodesElement);
+        else if (nodesElement.hasAttribute("of"))
+            return createNodesFromContentServiceReference(cluster, nodesElement, context);
+        else // the non-hosted option
+            return createNodesFromNodeList(cluster, nodesElement);
     }
 
     private void applyRoutingAliasProperties(List<Container> result, ContainerCluster cluster) {
@@ -430,30 +425,84 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addNodesFromXmlNodeList(ContainerCluster cluster,
-            Element spec, Element nodesElement, List<Container> result) {
+    private List<Container> createNodesFromNodeCount(ContainerCluster cluster, Element nodesElement) {
+        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
+        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
+                                                                                  ClusterSpec.Type.container,
+                                                                                  ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
+        return createNodesFromHosts(hosts, cluster);
+    }
+    
+    private List<Container> createNodesFromContentServiceReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+        // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
+        String referenceId = nodesElement.getAttribute("of");
+        Element services = servicesRootOf(nodesElement).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
+        Element referencedService = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
+        if ( ! referencedService.getTagName().equals("content"))
+            throw new IllegalArgumentException(cluster + " references service '" + referenceId + "', " +
+                                               "but that is not a content service");
+        Element referencedNodesElement = XML.getChild(referencedService, "nodes");
+        if (referencedNodesElement == null)
+            throw new IllegalArgumentException(cluster + " references service '" + referenceId + "' to supply nodes, " + 
+                                               "but that service has no <nodes> element");
+        Map<HostResource, ClusterMembership> hosts = 
+                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
+                                            referenceId, 
+                                            cluster.getRoot().getHostSystem(),
+                                            null,
+                                            context.getDeployLogger());
+        return createNodesFromHosts(hosts, cluster);
+    }
+    
+    /** Returns the services element above the given Element, or empty if there is no services element */
+    private Optional<Element> servicesRootOf(Element element) {
+        Node parent = element.getParentNode();
+        if (parent == null) return Optional.empty();
+        if ( ! (parent instanceof Element)) return Optional.empty();
+        Element parentElement = (Element)parent;
+        if (parentElement.getTagName().equals("services")) return Optional.of(parentElement);
+        return servicesRootOf(parentElement);
+    }
+    
+    private List<Container> createNodesFromHosts(Map<HostResource, ClusterMembership> hosts, ContainerCluster cluster) {
+        List<Container> nodes = new ArrayList<>();
+        for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
+            String id = "container." + entry.getValue().index();
+            Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
+            container.setHostResource(entry.getKey());
+            container.initService();
+            nodes.add(container);
+        }
+        return nodes;
+    }
+
+    private List<Container> createNodesFromNodeList(ContainerCluster cluster, Element nodesElement) {
+        List<Container> nodes = new ArrayList<>();
         int nodeCount = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
             Container container = new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem);
-            result.add(container);
-            ++nodeCount;
+            nodes.add(container);
+            nodeCount++;
         }
+        return nodes;
     }
 
-    private List<Container> createNodesFromXmlNodeCount(ContainerCluster cluster, Element nodesElement) {
-        List<Container> result = new ArrayList<>();
-        if (nodesElement.hasAttribute("count")) {
-            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
-            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(), ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
-            for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
-                String id = "container." + entry.getValue().index();
-                Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
-                container.setHostResource(entry.getKey());
-                container.initService();
-                result.add(container);
-            }
-        }
-        return result;
+    private IllegalArgumentException clusterReferenceNotFoundException(ContainerCluster cluster, String referenceId) {
+        return new IllegalArgumentException(cluster + " references service '" + referenceId +
+                                            "' but this service is not defined");
+    }
+
+    private Optional<Element> findChildById(Element parent, String id) {
+        for (Element child : XML.getChildren(parent))
+            if (id.equals(child.getAttribute("id"))) return Optional.of(child);
+        return Optional.empty();
+    }
+
+    private boolean useCpuSocketAffinity(Element nodesElement) {
+        if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME))
+            return Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
+        else
+            return false;
     }
 
     private void applyDefaultJvmArgs(List<Container> containers, String defaultJvmArgs) {
@@ -463,10 +512,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void applyDefaultPreload(List<Container> containers, String defaultPreLoad) {
-        for (Container container: containers) {
-            container.setPreLoad(defaultPreLoad);
-        }
+    private void applyDefaultPreload(List<Container> containers, Element nodesElement) {
+        if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
+        for (Container container: containers)
+            container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
     private void addSearchHandler(ContainerCluster cluster, Element searchElement) {

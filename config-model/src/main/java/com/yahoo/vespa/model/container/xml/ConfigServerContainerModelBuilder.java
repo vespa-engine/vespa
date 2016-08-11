@@ -36,14 +36,14 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         ApplicationPackage app = modelContext.getDeployState().getApplicationPackage();
-        if (!app.getFiles(Path.fromString(HOSTED_VESPA_INCLUDE_DIR), ".xml").isEmpty()) {
+        if ( ! app.getFiles(Path.fromString(HOSTED_VESPA_INCLUDE_DIR), ".xml").isEmpty()) {
             app.validateIncludeDir(HOSTED_VESPA_INCLUDE_DIR);
             List<Element> configModelElements = Xml.allElemsFromPath(app, HOSTED_VESPA_INCLUDE_DIR);
             mergeInto(spec, configModelElements);
         }
 
         ConfigserverCluster cluster = new ConfigserverCluster(modelContext.getParentProducer(), "configserver", options);
-        super.doBuild(model, spec, modelContext.modifyParent(cluster));
+        super.doBuild(model, spec, modelContext.withParent(cluster));
         cluster.setContainerCluster(model.getCluster());
     }
 

@@ -9,7 +9,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.ConfigModelRepoAdder;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -192,14 +191,12 @@ public class Content extends ConfigModel {
         public void doBuild(Content content, Element xml, ConfigModelContext modelContext) {
             Admin admin = content.adminModel != null ? content.adminModel.getAdmin() : null; // This is null in tests only
             content.cluster = new ContentCluster.Builder(admin, modelContext.getDeployLogger()).build(content.containers, modelContext.getParentProducer(), xml);
-            buildIndexingClusters(content,
-                                  modelContext.getConfigModelRepoAdder(),
+            buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */
-        private void buildIndexingClusters(Content content,
-                                           ConfigModelRepoAdder configModelRepoAdder,
+        private void buildIndexingClusters(Content content, ConfigModelContext modelContext,
                                            ApplicationConfigProducerRoot root) {
             if ( ! content.getCluster().getSearch().hasIndexedCluster()) return;
 
@@ -207,18 +204,18 @@ public class Content extends ConfigModel {
             if (indexedSearchCluster.hasExplicitIndexingCluster()) {
                 setExistingIndexingCluster(indexedSearchCluster, content.containers);
             } else if (content.isHosted) {
-                setContainerAsIndexingCluster(indexedSearchCluster, content, configModelRepoAdder, root);
+                setContainerAsIndexingCluster(indexedSearchCluster, content, modelContext, root);
             } else {
-                createImplicitIndexingCluster(indexedSearchCluster, content, configModelRepoAdder, root);
+                createImplicitIndexingCluster(indexedSearchCluster, content, modelContext, root);
             }
         }
 
         private void setContainerAsIndexingCluster(IndexedSearchCluster indexedSearchCluster,
                                                    Content content,
-                                                   ConfigModelRepoAdder configModelRepoAdder,
+                                                   ConfigModelContext modelContext,
                                                    ApplicationConfigProducerRoot root) {
             if (content.containers.isEmpty()) {
-                createImplicitIndexingCluster(indexedSearchCluster, content, configModelRepoAdder, root);
+                createImplicitIndexingCluster(indexedSearchCluster, content, modelContext, root);
             } else {
                 ContainerCluster targetCluster = getContainerWithDocproc(content.containers);
                 if (targetCluster == null)
@@ -270,17 +267,16 @@ public class Content extends ConfigModel {
         /** Create a new container cluster for indexing and add it to the Vespa model */
         private void createImplicitIndexingCluster(IndexedSearchCluster cluster,
                                                    Content content,
-                                                   ConfigModelRepoAdder configModelRepoAdder,
+                                                   ConfigModelContext modelContext,
                                                    ApplicationConfigProducerRoot root) {
             String indexerName = cluster.getIndexingClusterName();
-            AbstractConfigProducer p = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
-            if (p == null)
-                p = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ConfigModelContext context = ConfigModelContext.createFromParentAndId(configModelRepoAdder, p, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(context.getParentProducer(), "cluster." + indexerName, indexerName);
-            ContainerModel indexingClusterModel = new ContainerModel(ConfigModelContext.createFromParentAndId(configModelRepoAdder, p, indexingCluster.getSubId()));
+            AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
+            if (parent == null)
+                parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
+            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName);
+            ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
-            configModelRepoAdder.add(indexingClusterModel);
+            modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
             content.ownedIndexingCluster = Optional.of(indexingCluster);
 
             ContainerModelBuilder.addDefaultHandler_legacyBuilder(indexingCluster);
