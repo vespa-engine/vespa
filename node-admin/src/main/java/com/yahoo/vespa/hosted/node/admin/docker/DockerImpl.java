@@ -32,6 +32,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -191,33 +192,48 @@ public class DockerImpl implements Docker {
             double minMainMemoryAvailableGb) {
         try {
             final double GIGA = Math.pow(2.0, 30.0);
+            InetAddress nodeInetAddress = InetAddress.getByName(hostName.s());
+            String nodeIpAddress = nodeInetAddress.getHostAddress();
+
+            NODE_ADMIN_LOGGER.info("--- Starting up " + hostName.s() + " with node IP: " + nodeIpAddress);
 
             CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
                     .withName(containerName.asString())
                     .withLabels(CONTAINER_LABELS)
                     .withEnv(new String[]{"CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())})
                     .withHostName(hostName.s())
-                    .withNetworkMode("none")
                     .withBinds(applicationStorageToMount(containerName));
 
             // TODO: Enforce disk constraints
             // TODO: Consider if CPU shares or quoata should be set. For now we are just assuming they are
             // nicely controlled by docker.
-
             if (minMainMemoryAvailableGb > 0.00001) {
                 containerConfigBuilder.withMemory((long) (GIGA * minMainMemoryAvailableGb));
             }
+
+            //If container's IP address is IPv6, use our custom network mode and let docker handle networking.
+            //If container's IP address is IPv4, set up networking manually as before. In the future docker should
+            //set up the IPv4 network as well.
+            if (nodeInetAddress instanceof Inet6Address) {
+                containerConfigBuilder.withNetworkMode("habla").withIpv6Address(nodeIpAddress);
+            } else {
+                containerConfigBuilder.withNetworkMode("none");
+            }
+
             CreateContainerResponse response = containerConfigBuilder.exec();
             docker.startContainerCmd(response.getId()).exec();
 
-            InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
-            InspectContainerResponse.ContainerState state = containerInfo.getState();
-            if (state.getRunning()) {
-                Integer pid = state.getPid();
-                if (pid == null) {
-                    throw new RuntimeException("PID of running container for host " + hostName + " is null");
+            //Run the python network setup script if IP is v4
+            if (! (nodeInetAddress instanceof Inet6Address)) {
+                InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
+                InspectContainerResponse.ContainerState state = containerInfo.getState();
+                if (state.getRunning()) {
+                    Integer pid = state.getPid();
+                    if (pid == null) {
+                        throw new RuntimeException("PID of running container for host " + hostName + " is null");
+                    }
+                    setupContainerNetworking(containerName, hostName, pid);
                 }
-                setupContainerNetworking(containerName, hostName, pid);
             }
         } catch (IOException | DockerException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
