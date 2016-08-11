@@ -207,6 +207,49 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testNonExistingCombinedClusterReference() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes of='container2'/>" +
+                "  </container>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2);
+        try {
+            tester.createModel(xmlWithNodes, true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("container cluster 'container1' references service 'container2' but this service is not defined", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInvalidCombinedClusterReference() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes of='container2'/><!-- invalid; only content clusters can be referenced -->" +
+                "  </container>" +
+                "  <container version='1.0' id='container2'>" +
+                "     <nodes count='2'/>" +
+                "  </container>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2);
+        try {
+            tester.createModel(xmlWithNodes, true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("container cluster 'container1' references service 'container2', but that is not a content service", e.getMessage());
+        }
+    }
+
+    @Test
     public void testNodeCountForContentGroupHierarchy() {
         String services = 
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

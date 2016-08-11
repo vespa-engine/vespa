@@ -52,7 +52,6 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 
 import com.yahoo.vespa.model.content.StorageGroup;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -399,7 +398,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (nodesElement.hasAttribute("count"))
             return createNodesFromNodeCount(cluster, nodesElement);
         else if (nodesElement.hasAttribute("of"))
-            return createNodesFromContentClusterReference(cluster, nodesElement, context);
+            return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(cluster, nodesElement);
     }
@@ -434,15 +433,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(hosts, cluster);
     }
     
-    private List<Container> createNodesFromContentClusterReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<Container> createNodesFromContentServiceReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
         String referenceId = nodesElement.getAttribute("of");
         Element services = servicesRootOf(nodesElement).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
-        Element referencedCluster = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
-        Element referencedNodesElement = XML.getChild(referencedCluster, "nodes");
+        Element referencedService = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
+        if ( ! referencedService.getTagName().equals("content"))
+            throw new IllegalArgumentException(cluster + " references service '" + referenceId + "', " +
+                                               "but that is not a content service");
+        Element referencedNodesElement = XML.getChild(referencedService, "nodes");
         if (referencedNodesElement == null)
             throw new IllegalArgumentException(cluster + " references service '" + referenceId + "' to supply nodes, " + 
-                                               " but that service has no <nodes> element");
+                                               "but that service has no <nodes> element");
         Map<HostResource, ClusterMembership> hosts = 
                 StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
                                             referenceId, 
@@ -487,7 +489,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private IllegalArgumentException clusterReferenceNotFoundException(ContainerCluster cluster, String referenceId) {
         return new IllegalArgumentException(cluster + " references service '" + referenceId +
-                                            "' but this cluster is not defined");
+                                            "' but this service is not defined");
     }
 
     private Optional<Element> findChildById(Element parent, String id) {
