@@ -11,4 +11,6 @@ vespa_add_library(vsm_vsmbase OBJECT
     docsumconfig.cpp
     DEPENDS
     vsm_vconfig
+    AFTER
+    vsm_vconfig
 )
