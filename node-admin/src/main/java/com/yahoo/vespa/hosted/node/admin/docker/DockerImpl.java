@@ -346,7 +346,7 @@ public class DockerImpl implements Docker {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
             try {
-                docker.removeContainerCmd(dockerContainer.get().getId());
+                docker.removeContainerCmd(dockerContainer.get().getId()).exec();
             } catch (DockerException e) {
                 throw new RuntimeException("Failed to delete container", e);
             }
