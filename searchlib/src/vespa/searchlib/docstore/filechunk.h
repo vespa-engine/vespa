@@ -245,7 +245,7 @@ public:
      * Maximum matrix sum is (rows * columns).
      * Maximum matrix sum when all data is ordered is (rows + columns - 1).
      *
-     * We use matrix sum divided by mininum matrix sum as metric. When all
+     * We use matrix sum divided by minimum matrix sum as metric. When all
      * data is ordered we get a number in the range [1.0, 2.0).
      */
     double getBucketSpread() const {
