@@ -106,7 +106,7 @@ void op_not_member(State &state, uint64_t) {
 void op_tensor_sum(State &state, uint64_t) {
     const eval::Tensor *tensor = state.peek(0).as_tensor();
     if (tensor != nullptr) {
-        state.replace(1, tensor->engine().reduce(*tensor, operation::Add(), state.stash));
+        state.replace(1, tensor->engine().reduce(*tensor, operation::Add(), {}, state.stash));
     } else {
         state.replace(1, state.stash.create<ErrorValue>());
     }

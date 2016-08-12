@@ -29,7 +29,7 @@ TensorValue::equal(const Value &rhs) const
 const Value &
 TensorValue::apply(const UnaryOperation &op, Stash &stash) const
 {
-    return _value->engine().perform(op, *_value, stash);
+    return _value->engine().map(op, *_value, stash);
 }
 
 const Value &
@@ -39,7 +39,7 @@ TensorValue::apply(const BinaryOperation &op, const Value &rhs, Stash &stash) co
     if ((other == nullptr) || (&other->engine() != &_value->engine())) {
         return stash.create<ErrorValue>();
     }
-    return _value->engine().perform(op, *_value, *other, stash);
+    return _value->engine().apply(op, *_value, *other, stash);
 }
 
 } // namespace vespalib::eval

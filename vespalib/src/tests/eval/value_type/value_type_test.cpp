@@ -3,6 +3,7 @@
 #include <vespa/vespalib/eval/value_type.h>
 #include <vespa/vespalib/eval/value_type_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <ostream>
 
 using namespace vespalib::eval;
@@ -47,6 +48,15 @@ TEST("require that TENSOR value type sorts dimensions") {
     EXPECT_EQUAL(t.dimensions()[1].size, npos);
     EXPECT_EQUAL(t.dimensions()[2].name, "z");
     EXPECT_EQUAL(t.dimensions()[2].size, 30u);
+}
+
+TEST("require that dimension names can be obtained") {
+    EXPECT_EQUAL(ValueType::double_type().dimension_names(),
+                 std::vector<vespalib::string>({}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}, {"x", 30}}).dimension_names(),
+                 std::vector<vespalib::string>({"x", "y"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}, {"x", 30}, {"z"}}).dimension_names(),
+                 std::vector<vespalib::string>({"x", "y", "z"}));
 }
 
 void verify_equal(const ValueType &a, const ValueType &b) {
