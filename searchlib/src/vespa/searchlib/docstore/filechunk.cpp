@@ -232,6 +232,7 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _erasedBytes(0),
       _diskFootprint(0),
       _sumNumBuckets(0),
+      _numChunksWithBuckets(0),
       _numUniqueBuckets(0),
       _file(),
       _bucketizer(bucketizer),
@@ -274,6 +275,9 @@ void
 FileChunk::addNumBuckets(size_t numBucketsInChunk)
 {
     _sumNumBuckets += numBucketsInChunk;
+    if (numBucketsInChunk != 0) {
+        ++_numChunksWithBuckets;
+    }
 }
 
 class TmpChunkMeta : public ChunkMeta,
