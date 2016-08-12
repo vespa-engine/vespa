@@ -116,6 +116,7 @@ public class DockerImpl implements Docker {
                 .withDockerHost(config.uri().replace("https", "tcp"))
                 .withDockerTlsVerify(true)
                 .withCustomSslConfig(new VespaSSLConfig(config))
+                .withApiVersion("1.23")
                 .build())
             .withDockerCmdExecFactory(
                     new JerseyDockerCmdExecFactory()
