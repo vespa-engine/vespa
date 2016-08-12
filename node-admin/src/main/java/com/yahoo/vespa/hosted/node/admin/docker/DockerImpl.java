@@ -71,6 +71,7 @@ public class DockerImpl implements Docker {
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
     private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
     private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
+    private static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
@@ -191,11 +192,13 @@ public class DockerImpl implements Docker {
             double minDiskAvailableGb,
             double minMainMemoryAvailableGb) {
         try {
-            final double GIGA = Math.pow(2.0, 30.0);
             InetAddress nodeInetAddress = InetAddress.getByName(hostName.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
+            final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
+            final double GIGA = Math.pow(2.0, 30.0);
 
-            NODE_ADMIN_LOGGER.info("--- Starting up " + hostName.s() + " with node IP: " + nodeIpAddress);
+            NODE_ADMIN_LOGGER.info("--- Starting up " + hostName.s() + " with node IP: " + nodeIpAddress +
+                    ", running IPv6: " + isRunningIPv6);
 
             CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
                     .withName(containerName.asString())
@@ -214,8 +217,8 @@ public class DockerImpl implements Docker {
             //If container's IP address is IPv6, use our custom network mode and let docker handle networking.
             //If container's IP address is IPv4, set up networking manually as before. In the future docker should
             //set up the IPv4 network as well.
-            if (nodeInetAddress instanceof Inet6Address) {
-                containerConfigBuilder.withNetworkMode("habla").withIpv6Address(nodeIpAddress);
+            if (isRunningIPv6) {
+                containerConfigBuilder.withNetworkMode(DOCKER_CUSTOM_IP6_NETWORK_NAME).withIpv6Address(nodeIpAddress);
             } else {
                 containerConfigBuilder.withNetworkMode("none");
             }
@@ -223,17 +226,8 @@ public class DockerImpl implements Docker {
             CreateContainerResponse response = containerConfigBuilder.exec();
             docker.startContainerCmd(response.getId()).exec();
 
-            //Run the python network setup script if IP is v4
-            if (! (nodeInetAddress instanceof Inet6Address)) {
-                InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
-                InspectContainerResponse.ContainerState state = containerInfo.getState();
-                if (state.getRunning()) {
-                    Integer pid = state.getPid();
-                    if (pid == null) {
-                        throw new RuntimeException("PID of running container for host " + hostName + " is null");
-                    }
-                    setupContainerNetworking(containerName, hostName, pid);
-                }
+            if (! isRunningIPv6) {
+                setupContainerIPv4Networking(containerName, hostName);
             }
         } catch (IOException | DockerException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
@@ -287,10 +281,20 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void setupContainerNetworking(ContainerName containerName,
-                                          HostName hostName,
-                                          int containerPid) throws UnknownHostException {
+    private void setupContainerIPv4Networking(ContainerName containerName,
+                                              HostName hostName) throws UnknownHostException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
+
+        InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
+        InspectContainerResponse.ContainerState state = containerInfo.getState();
+        Integer containerPid = -1;
+        if (state.getRunning()) {
+            containerPid = state.getPid();
+            if (containerPid == null) {
+                throw new RuntimeException("PID of running container for host " + hostName + " is null");
+            }
+        }
+
         InetAddress inetAddress = InetAddress.getByName(hostName.s());
         String ipAddress = inetAddress.getHostAddress();
 
@@ -302,7 +306,7 @@ public class DockerImpl implements Docker {
         if (networkType != Environment.NetworkType.normal) {
             command.add("--" + networkType);
         }
-        command.add(Integer.toString(containerPid));
+        command.add(containerPid.toString());
         command.add(ipAddress);
 
         for (int retry = 0; retry < 30; ++retry) {
