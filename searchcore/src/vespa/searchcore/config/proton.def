@@ -341,19 +341,19 @@ initialize.threads int default = 0
 
 ## Portion of enumstore address space that can be used before put and update
 ## portion of feed is blocked.
-writefilter.attribute.enumstorelimit double default = 1.0
+writefilter.attribute.enumstorelimit double default = 0.9
 
 ## Portion of attribute multivalue mapping address space that can be used
 ## before put and update portion of feed is blocked.
-writefilter.attribute.multivaluelimit double default = 1.0
+writefilter.attribute.multivaluelimit double default = 0.9
 
 ## Portion of physical memory that can be resident memory in anonymous mapping
 ## by the proton process before put and update portion of feed is blocked.
-writefilter.memorylimit double default = 1.0
+writefilter.memorylimit double default = 0.9
 
 ## Portion of space on disk partition that can be used or reserved before
 ## put and update portion of feed is blocked.
-writefilter.disklimit double default = 1.0
+writefilter.disklimit double default = 0.9
 
 ## Interval between sampling of disk and memory usage. Default is 60 seconds.
 writefilter.sampleinterval double default = 60.0
