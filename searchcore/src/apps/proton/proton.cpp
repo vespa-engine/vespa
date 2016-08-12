@@ -246,6 +246,7 @@ App::Main()
                 spiProton->shutdown();
                 EV_STOPPING("servicelayer", "clean shutdown");
             }
+            protonUP.reset();
             EV_STOPPING("proton", "clean shutdown");
         }
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
