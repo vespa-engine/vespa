@@ -45,6 +45,10 @@ template <typename T> void Op2<T>::accept(OperationVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));
 }
 
+template <typename T> const BinaryOperation &Op2<T>::store(Stash &stash) const {
+    return stash.create<T>();
+}
+
 namespace operation {
 double Neg::eval(double a) const { return -a; }
 double Not::eval(double a) const { return (a != 0.0) ? 0.0 : 1.0; }

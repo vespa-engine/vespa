@@ -41,6 +41,7 @@ struct UnaryOperation : Operation {
 struct BinaryOperation : Operation {
     const Value &perform(const Value &a, const Value &b, Stash &stash) const;
     virtual double eval(double a, double b) const = 0;
+    virtual const BinaryOperation &store(Stash &stash) const = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -53,16 +54,24 @@ struct Op1 : UnaryOperation {
 template <typename T>
 struct Op2 : BinaryOperation {
     virtual void accept(OperationVisitor &visitor) const override;
+    virtual const BinaryOperation &store(Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------
 
 /**
- * This class binds the first parameter of a binary operation to a
- * numeric value, acting as a unary operation. Note that using
- * visitation will still reveal the underlying operation type.
+ * A non-trivial custom unary operation. Typically used for closures
+ * and lambdas.
  **/
-class BindLeft : public UnaryOperation
+struct CustomUnaryOperation : Op1<CustomUnaryOperation> {};
+
+//-----------------------------------------------------------------------------
+
+/**
+ * This class binds the first parameter of a binary operation to a
+ * numeric value, acting as a custom unary operation.
+ **/
+class BindLeft : public CustomUnaryOperation
 {
 private:
     const BinaryOperation &_op;
@@ -70,15 +79,13 @@ private:
 public:
     BindLeft(const BinaryOperation &op, double a) : _op(op), _a(a) {}
     double eval(double b) const override { return _op.eval(_a, b); }
-    virtual void accept(OperationVisitor &visitor) const override { _op.accept(visitor); }
 };
 
 /**
  * This class binds the second parameter of a binary operation to a
- * numeric value, acting as a unary operation. Note that using
- * visitation will still reveal the underlying operation type.
+ * numeric value, acting as a custom unary operation.
  **/
-class BindRight : public UnaryOperation
+class BindRight : public CustomUnaryOperation
 {
 private:
     const BinaryOperation &_op;
@@ -86,7 +93,6 @@ private:
 public:
     BindRight(const BinaryOperation &op, double b) : _op(op), _b(b) {}
     double eval(double a) const override { return _op.eval(a, _b); }
-    virtual void accept(OperationVisitor &visitor) const override { _op.accept(visitor); }
 };
 
 //-----------------------------------------------------------------------------
