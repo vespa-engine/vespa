@@ -790,6 +790,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return (Result) r;
     }
 
+    /**
+     * Adds JSONP (Json with padding) support.
+     *
+     * Basically, if the JSON renderer receives a query parameter "jsoncallback=...",
+     * the JSON response will be wrapped in a function call with the name specified
+     * by the client. This side-steps the same-origin policy, thus supports calling
+     * Vespa from javascript loaded from a different domain then the Vespa instance.
+     */
     private void beginJsonCallback(OutputStream stream) throws IOException {
         if (shouldRenderJsonCallback()) {
             String jsonCallback = getJsonCallback() + "(";
