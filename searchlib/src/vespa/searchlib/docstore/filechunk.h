@@ -229,10 +229,30 @@ public:
                ? getDiskFootprint()
                : size_t(getDiskFootprint() * double(_erasedBytes)/_addedBytes);
     }
+    /**
+     * Get a metric for unorder of data in the file relative to when
+     * the data is ordered.
+     *
+     * Consider a two-dimentional matrix, with rows of chunks
+     * containing buckets and columns of buckets present in chunks.
+     * Each matrix element contains '1' if the bucket is present in
+     * the chunk or '0' if the bucket is not present in the chunk.
+     *
+     * Constraint of matrix is that all row sums must be nonzero, and
+     * all column sums must be nonzero.
+     *
+     * Minimum matrix sum is (max(rows, columns)).
+     * Maximum matrix sum is (rows * columns).
+     * Maximum matrix sum when all data is ordered is (rows + columns - 1).
+     *
+     * We use matrix sum divided by mininum matrix sum as metric. When all
+     * data is ordered we get a number in the range [1.0, 2.0).
+     */
     double getBucketSpread() const {
-        return ((_chunkInfo.empty() || (_numUniqueBuckets == 0))
+        return (((_numChunksWithBuckets == 0) || (_numUniqueBuckets == 0))
                 ? 1.0
-                : double(_sumNumBuckets)/_numUniqueBuckets);
+                : (double(_sumNumBuckets) /
+                   std::max(_numUniqueBuckets, _numChunksWithBuckets)));
     }
     void addNumBuckets(size_t numBucketsInChunk);
 
@@ -288,6 +308,7 @@ private:
     size_t                 _erasedBytes;
     size_t                 _diskFootprint;
     size_t                 _sumNumBuckets;
+    size_t                 _numChunksWithBuckets;
     size_t                 _numUniqueBuckets;
     File                   _file;
 protected:
