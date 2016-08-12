@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,6 +70,7 @@ import com.yahoo.yolean.trace.TraceVisitor;
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
+    private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
 
     private enum RenderDecision {
         YES, NO, DO_NOT_KNOW;
@@ -129,6 +131,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private Deque<Integer> renderedChildren;
     private boolean debugRendering;
     private LongSupplier timeSource;
+    private OutputStream stream;
 
     private class TraceRenderer extends TraceVisitor {
         private final long basetime;
@@ -301,10 +304,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         renderedChildren = null;
         debugRendering = false;
         timeSource = () -> System.currentTimeMillis();
+        stream = null;
     }
 
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
+        beginJsonCallback(stream);
         generator = generatorFactory.createGenerator(stream, JsonEncoding.UTF8);
         renderedChildren = new ArrayDeque<>();
         debugRendering = getDebugRendering(getResult().getQuery());
@@ -764,6 +769,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void endResponse() throws IOException {
         generator.close();
+        endJsonCallback();
     }
 
     @Override
@@ -782,6 +788,44 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 "JsonRenderer can only render instances of com.yahoo.search.Result, got instance of %s.",
                 r.getClass());
         return (Result) r;
+    }
+
+    /**
+     * Adds JSONP (Json with padding) support.
+     *
+     * Basically, if the JSON renderer receives a query parameter "jsoncallback=...",
+     * the JSON response will be wrapped in a function call with the name specified
+     * by the client. This side-steps the same-origin policy, thus supports calling
+     * Vespa from javascript loaded from a different domain then the Vespa instance.
+     */
+    private void beginJsonCallback(OutputStream stream) throws IOException {
+        if (shouldRenderJsonCallback()) {
+            String jsonCallback = getJsonCallback() + "(";
+            stream.write(jsonCallback.getBytes(StandardCharsets.UTF_8));
+            this.stream = stream;
+        }
+    }
+
+    private void endJsonCallback() throws IOException {
+        if (shouldRenderJsonCallback() && stream != null) {
+            stream.write(");".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private boolean shouldRenderJsonCallback() {
+        String jsonCallback = getJsonCallback();
+        return jsonCallback != null && !"".equals(jsonCallback);
+    }
+
+    private String getJsonCallback() {
+        Result result = getResult();
+        if (result != null) {
+            Query query = result.getQuery();
+            if (query != null) {
+                return query.properties().getString(JSON_CALLBACK, null);
+            }
+        }
+        return null;
     }
 
     /**

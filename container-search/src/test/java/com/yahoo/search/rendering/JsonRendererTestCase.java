@@ -131,10 +131,15 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    private Result newEmptyResult() {
-        Query q = new Query("/?query=a");
+    private Result newEmptyResult(String[] args) {
+        String query = "/?" + String.join("&", args);
+        Query q = new Query(query);
         Result r = new Result(q);
         return r;
+    }
+
+    private Result newEmptyResult() {
+        return newEmptyResult(new String[] {"query=a"});
     }
 
     @Test
@@ -1082,6 +1087,44 @@ public class JsonRendererTestCase {
         String summary = render(r);
         System.out.println(summary);
         assertEqualJson(expected, summary);
+    }
+
+    @Test
+    public final void testJsonCallback() throws IOException, InterruptedException, ExecutionException, JSONException {
+        String expected = "{\n"
+                + "    \"root\": {\n"
+                + "        \"children\": [\n"
+                + "            {\n"
+                + "                \"fields\": {\n"
+                + "                    \"documentid\": \"id:unittest:smoke::whee\"\n"
+                + "                },\n"
+                + "                \"id\": \"id:unittest:smoke::whee\",\n"
+                + "                \"relevance\": 1.0\n"
+                + "            }\n"
+                + "        ],\n"
+                + "        \"fields\": {\n"
+                + "            \"totalCount\": 1\n"
+                + "        },\n"
+                + "        \"id\": \"toplevel\",\n"
+                + "        \"relevance\": 1.0\n"
+                + "    }\n"
+                + "}\n";
+
+        String jsonCallback = "some_function_name";
+        Result r = newEmptyResult(new String[] {"query=a", "jsoncallback="+jsonCallback} );
+        Hit h = new Hit("jsonCallbackTest");
+        h.setField("documentid", new DocumentId("id:unittest:smoke::whee"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+
+        String jsonCallbackBegin = summary.substring(0, jsonCallback.length() + 1);
+        String jsonCallbackEnd = summary.substring(summary.length() - 2);
+        String json = summary.substring(jsonCallback.length() + 1, summary.length() - 2);
+
+        assertEquals(jsonCallback + "(", jsonCallbackBegin);
+        assertEqualJson(expected, json);
+        assertEquals(");", jsonCallbackEnd);
     }
 
     private String render(Result r) throws InterruptedException,
