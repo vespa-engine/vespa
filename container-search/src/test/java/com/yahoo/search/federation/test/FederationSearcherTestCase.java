@@ -129,12 +129,12 @@ public class FederationSearcherTestCase {
 
     @Test
     public void testTraceTwoSources() {
-        final Chain<Searcher> mainChain = twoTracingSources(false);
+        Chain<Searcher> mainChain = twoTracingSources(false);
 
-        final Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1"));
+        Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1"));
 
-        final Execution execution = new Execution(mainChain, Execution.Context.createContextStub(chainRegistry, null));
-        final Result result = execution.search(q);
+        Execution execution = new Execution(mainChain, Execution.Context.createContextStub(chainRegistry, null));
+        Result result = execution.search(q);
         assertNull(result.hits().getError());
         TwoSourceChecker lookForTraces = new TwoSourceChecker();
         execution.trace().accept(lookForTraces);
@@ -199,7 +199,6 @@ public class FederationSearcherTestCase {
         assertFalse(lookForTraces.traceFromSource2);
 
     }
-
 
     @Test
     public void testPropertyPropagation() {
@@ -300,7 +299,7 @@ public class FederationSearcherTestCase {
         private static final String IS_THIS_PROPAGATED = "is this propagated?";
 
         @Override
-        public Result search(final Query query, final Execution execution) {
+        public Result search(Query query, Execution execution) {
             final Result result = new Result(query);
             result.hits().setField(PROPAGATION_KEY, IS_THIS_PROPAGATED);
             return result;
@@ -319,7 +318,7 @@ public class FederationSearcherTestCase {
 
     private void assertSelects(String providerName, SearchChainRegistry registry) {
         QueryProfile profile = new QueryProfile("test");
-        profile.set("source.news.provider", providerName, (QueryProfileRegistry)null);
+        profile.set("source.news.provider", providerName, null);
         Query query = new Query(QueryTestCase.httpEncode("?query=test&model.sources=news"), profile.compile(null));
         Result result = new Execution(registry.getComponent("default"), Execution.Context.createContextStub(registry, null)).search(query);
         assertEquals(1, result.hits().size());
@@ -345,12 +344,12 @@ public class FederationSearcherTestCase {
 
         private final String name;
 
-        public MockProvider(final String name) {
+        public MockProvider(String name) {
             this.name = name;
         }
 
         @Override
-        public Result search(final Query query, final Execution execution) {
+        public Result search(Query query, Execution execution) {
             Result result = new Result(query);
             result.hits().add(new Hit(name + ":1"));
             return result;
@@ -365,12 +364,12 @@ public class FederationSearcherTestCase {
         public static final String OK = "Got the correct query.";
         private final Query query;
 
-        QueryCheckSearcher(final Query query) {
+        QueryCheckSearcher(Query query) {
             this.query = query;
         }
 
         @Override
-        public Result search(final Query query, final Execution execution) {
+        public Result search(Query query, Execution execution) {
             Result result = new Result(query);
             if (query != this.query) {
                 result.hits().addError(ErrorMessage
