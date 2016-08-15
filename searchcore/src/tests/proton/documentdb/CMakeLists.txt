@@ -21,4 +21,4 @@ vespa_add_executable(searchcore_documentdb_test_app TEST
     searchcore_fconfig
     searchcore_util
 )
-vespa_add_test(NAME searchcore_documentdb_test_app COMMAND sh documentdb_test.sh)
+vespa_add_test(NAME searchcore_documentdb_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/documentdb_test.sh)

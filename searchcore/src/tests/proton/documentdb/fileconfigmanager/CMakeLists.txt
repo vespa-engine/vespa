@@ -7,5 +7,5 @@ vespa_add_executable(searchcore_fileconfigmanager_test_app TEST
     searchcore_pcommon
     searchcore_fconfig
 )
-vespa_add_test(NAME searchcore_fileconfigmanager_test_app COMMAND sh fileconfigmanager_test.sh)
+vespa_add_test(NAME searchcore_fileconfigmanager_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/fileconfigmanager_test.sh)
 vespa_generate_config(searchcore_fileconfigmanager_test_app mycfg.def)

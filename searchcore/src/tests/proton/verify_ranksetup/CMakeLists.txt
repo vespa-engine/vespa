@@ -4,4 +4,4 @@ vespa_add_executable(searchcore_verify_ranksetup_test_app TEST
     verify_ranksetup_test.cpp
     DEPENDS
 )
-vespa_add_test(NAME searchcore_verify_ranksetup_test_app COMMAND sh verify_ranksetup_test.sh)
+vespa_add_test(NAME searchcore_verify_ranksetup_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify_ranksetup_test.sh)
