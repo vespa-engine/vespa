@@ -16,6 +16,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author tonytv
  */
 public final class FederationTarget<T> {
+
     private final Chain<Searcher> chain;
     private final FederationOptions federationOptions;
     private final T customData;
@@ -65,4 +66,5 @@ public final class FederationTarget<T> {
         result = 31 * result + federationOptions.hashCode();
         return result;
     }
+
 }

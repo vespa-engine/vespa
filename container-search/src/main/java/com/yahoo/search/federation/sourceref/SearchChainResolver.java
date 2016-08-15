@@ -40,6 +40,7 @@ import java.util.TreeSet;
  * @author tonytv
  */
 public class SearchChainResolver {
+
     private final ComponentRegistry<Target> targets;
     private final SortedSet<Target> defaultTargets;
 

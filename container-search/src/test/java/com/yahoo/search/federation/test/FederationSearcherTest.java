@@ -40,9 +40,11 @@ import static org.junit.Assert.*;
  * @author tonytv
  */
 public class FederationSearcherTest {
+
     private static final String hasBeenFilled = "hasBeenFilled";
 
     private static class AddHitSearcher extends Searcher {
+
         protected Hit hit = createHit();
 
         private Hit createHit() {
@@ -65,9 +67,11 @@ public class FederationSearcherTest {
             }
             firstHit(result).setField(hasBeenFilled, true);
         }
+
     }
 
     private static class ModifyQueryAndAddHitSearcher extends AddHitSearcher {
+
         private final String marker;
 
         ModifyQueryAndAddHitSearcher(String marker) {
@@ -303,4 +307,5 @@ public class FederationSearcherTest {
         assertThat((String)hit1.getField("data"), is("modifyTargetQuery:custom-data:1"));
         assertThat((String)hit2.getField("data"), is("modifyTargetQuery:custom-data:2"));
     }
+
 }

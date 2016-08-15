@@ -60,9 +60,12 @@ import java.util.logging.Logger;
 @Provides(FederationSearcher.FEDERATION)
 @After("*")
 public class FederationSearcher extends ForkingSearcher {
+
     public static final String FEDERATION = "Federation";
 
+    /** A target for federation, containing a chain to which a federation query can be forwarded. */
     private static abstract class TargetHandler {
+
         abstract Chain<Searcher> getChain();
         abstract void modifyTargetQuery(Query query);
         abstract void modifyTargetResult(Result result);
@@ -74,13 +77,16 @@ public class FederationSearcher extends ForkingSearcher {
         public abstract FederationOptions federationOptions();
 
         @Override
-        public String toString() {
-            return getChain().getId().stringValue();
-        }
+        public String toString() { return getChain().getId().stringValue(); }
 
     }
 
+    /** 
+     * A handler representing a target created by the federation logic. 
+     * This is a value object, to ensure that identical target invocations are not invoked multiple times.
+     */
     private static class StandardTargetHandler extends TargetHandler {
+
         private final SearchChainInvocationSpec target;
         private final Chain<Searcher> chain;
 
@@ -90,9 +96,7 @@ public class FederationSearcher extends ForkingSearcher {
         }
 
         @Override
-        Chain<Searcher> getChain() {
-            return chain;
-        }
+        Chain<Searcher> getChain() { return chain; }
 
         @Override
         void modifyTargetQuery(Query query) {}
@@ -100,13 +104,27 @@ public class FederationSearcher extends ForkingSearcher {
         void modifyTargetResult(Result result) {}
 
         @Override
-        public FederationOptions federationOptions() {
-            return target.federationOptions;
+        public FederationOptions federationOptions() { return target.federationOptions; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! ( o instanceof StandardTargetHandler)) return false;
+
+            StandardTargetHandler other = (StandardTargetHandler)o;
+            if ( ! Objects.equals(other.chain.getId(), this.chain.getId())) return false;
+            if ( ! Objects.equals(other.target, this.target)) return false;
+            return true;
         }
+        
+        @Override
+        public int hashCode() { return Objects.hash(chain.getId(), target); }
+
     }
 
-
+    /** A target handler where the target generation logic is delegated to the application provided target selector */
     private static class CustomTargetHandler<T> extends TargetHandler {
+
         private final TargetSelector<T> selector;
         private final FederationTarget<T> target;
 
@@ -134,25 +152,28 @@ public class FederationSearcher extends ForkingSearcher {
         public FederationOptions federationOptions() {
             return target.getFederationOptions();
         }
+
     }
 
-
-
     private static class ExecutionInfo {
-        final TargetHandler targetHandler;
-        final FederationOptions federationOptions;
-        final FutureResult futureResult;
+
+        private final TargetHandler targetHandler;
+        private final FederationOptions federationOptions;
+        private final FutureResult futureResult;
 
         public ExecutionInfo(TargetHandler targetHandler, FederationOptions federationOptions, FutureResult futureResult) {
             this.targetHandler = targetHandler;
             this.federationOptions = federationOptions;
             this.futureResult = futureResult;
         }
+
     }
 
     private static class CompoundKey {
+
         private final String sourceName;
         private final String propertyName;
+
         CompoundKey(String sourceName, String propertyName) {
             this.sourceName = sourceName;
             this.propertyName = propertyName;
@@ -176,7 +197,9 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static class SourceKey extends CompoundKey {
+
         public static final String SOURCE = "source.";
+
         SourceKey(String sourceName, String propertyName) {
             super(sourceName, propertyName);
         }
@@ -196,8 +219,11 @@ public class FederationSearcher extends ForkingSearcher {
             return SOURCE + super.toString();
         }
     }
+
     private static class ProviderKey extends CompoundKey {
+
         public static final String PROVIDER = "provider.";
+
         ProviderKey(String sourceName, String propertyName) {
             super(sourceName, propertyName);
         }
@@ -216,6 +242,7 @@ public class FederationSearcher extends ForkingSearcher {
         public String toString() {
             return PROVIDER + super.toString();
         }
+
     }
 
     private static final Logger log = Logger.getLogger(FederationSearcher.class.getName());
@@ -241,19 +268,18 @@ public class FederationSearcher extends ForkingSearcher {
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
                               ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
-                resolveSelector(config.targetSelector(), targetSelectors));
+             resolveSelector(config.targetSelector(), targetSelectors));
     }
 
-    private static TargetSelector resolveSelector(String selectorId, ComponentRegistry<TargetSelector> targetSelectors) {
-        if (selectorId.isEmpty())
-            return null;
+    private static TargetSelector resolveSelector(String selectorId, 
+                                                  ComponentRegistry<TargetSelector> targetSelectors) {
+        if (selectorId.isEmpty()) return null;
 
-        return checkNotNull(
-                targetSelectors.getComponent(selectorId),
-                "Missing target selector with id" + quote(selectorId));
+        return checkNotNull(targetSelectors.getComponent(selectorId),
+                            "Missing target selector with id" + quote(selectorId));
     }
 
-    //for testing
+    // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
         this(searchChainResolver, false, PropagateSourceProperties.ALL, null);
     }
@@ -298,7 +324,7 @@ public class FederationSearcher extends ForkingSearcher {
             throw new RuntimeException("Invalid federation config, " + target.id() + " != " + searchChain.searchChainId());
 
         builder.addSearchChain(ComponentId.fromString(searchChain.searchChainId()),
-                federationOptions(searchChain), searchChain.documentTypes());
+                               federationOptions(searchChain), searchChain.documentTypes());
     }
 
     private static void addSourceForProvider(SearchChainResolver.Builder builder, FederationConfig.Target target,
@@ -319,13 +345,13 @@ public class FederationSearcher extends ForkingSearcher {
                 setRequestTimeoutInMilliseconds(searchChain.requestTimeoutMillis());
     }
 
-    private static long calculateTimeout(Query query, List<TargetHandler> targets) {
+    private static long calculateTimeout(Query query, Collection<TargetHandler> targets) {
 
         class PartitionByOptional {
             final List<TargetHandler> mandatoryTargets;
             final List<TargetHandler> optionalTargets;
 
-            PartitionByOptional(List<TargetHandler> targets) {
+            PartitionByOptional(Collection<TargetHandler> targets) {
                 List<TargetHandler> mandatoryTargets = new ArrayList<>();
                 List<TargetHandler> optionalTargets = new ArrayList<>();
 
@@ -858,10 +884,10 @@ public class FederationSearcher extends ForkingSearcher {
         Results<TargetHandler, ErrorMessage> regularTargetHandlers = resolveSearchChains(prunedTargets, execution.searchChainRegistry());
         query.errors().addAll(regularTargetHandlers.errors());
 
-        List<TargetHandler> targetHandlers = new ArrayList<>(regularTargetHandlers.data());
+        Set<TargetHandler> targetHandlers = new LinkedHashSet<>(regularTargetHandlers.data());
         targetHandlers.addAll(getAdditionalTargets(query, execution, targetSelector));
 
-        final long targetsTimeout = calculateTimeout(query, targetHandlers);
+        long targetsTimeout = calculateTimeout(query, targetHandlers);
         if (targetsTimeout < 0)
             return new Result(query, ErrorMessage.createTimeout("Timed out when about to federate"));
 
@@ -869,7 +895,8 @@ public class FederationSearcher extends ForkingSearcher {
 
         if (targetHandlers.size() == 0) {
             return mergedResults;
-        } else if (targetHandlers.size() == 1 &&  ! shouldExecuteTargetLongerThanThread(query, targetHandlers.get(0))) {
+        } else if (targetHandlers.size() == 1 &&  
+                   ! shouldExecuteTargetLongerThanThread(query, targetHandlers.iterator().next())) {
             TargetHandler chain = first(targetHandlers);
             searchSingleTarget(query, mergedResults, chain, targetsTimeout, execution);
         } else {
@@ -879,8 +906,8 @@ public class FederationSearcher extends ForkingSearcher {
         return mergedResults;
     }
 
-    private void traceTargets(Query query, List<TargetHandler> targetHandlers) {
-        final int traceFederationLevel = 2;
+    private void traceTargets(Query query, Collection<TargetHandler> targetHandlers) {
+        int traceFederationLevel = 2;
         if ( ! query.isTraceable(traceFederationLevel)) return;
         query.trace("Federating to " + targetHandlers, traceFederationLevel);
     }
@@ -902,8 +929,8 @@ public class FederationSearcher extends ForkingSearcher {
         for (SearchChainInvocationSpec target: prunedTargets) {
             Chain<Searcher> chain = registry.getChain(target.searchChainId);
             if (chain == null) {
-                targetHandlers.addError(ErrorMessage.createIllegalQuery(
-                        "Could not find search chain '" + target.searchChainId + "'"));
+                targetHandlers.addError(ErrorMessage.createIllegalQuery("Could not find search chain '" 
+                                                                        + target.searchChainId + "'"));
             } else {
                 targetHandlers.addData(new StandardTargetHandler(target, chain));
             }
@@ -913,8 +940,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static <T> List<TargetHandler> getAdditionalTargets(Query query, Execution execution, TargetSelector<T> targetSelector) {
-        if (targetSelector == null)
-            return Collections.emptyList();
+        if (targetSelector == null) return Collections.emptyList();
 
         ArrayList<TargetHandler> result = new ArrayList<>();
         for (FederationTarget<T> target: targetSelector.getTargets(query, execution.searchChainRegistry()))
@@ -924,8 +950,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private Collection<SearchChainInvocationSpec> pruneTargetsWithoutDocumentTypes(Set<String> restrict, List<SearchChainInvocationSpec> targets) {
-        if (restrict.isEmpty())
-            return targets;
+        if (restrict.isEmpty()) return targets;
 
         Collection<SearchChainInvocationSpec> prunedTargets = new ArrayList<>();
 
@@ -945,4 +970,5 @@ public class FederationSearcher extends ForkingSearcher {
 
         return false;
     }
+
 }
