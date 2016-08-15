@@ -41,7 +41,7 @@ struct UnaryOperation : Operation {
 struct BinaryOperation : Operation {
     const Value &perform(const Value &a, const Value &b, Stash &stash) const;
     virtual double eval(double a, double b) const = 0;
-    virtual const BinaryOperation &store(Stash &stash) const = 0;
+    virtual std::unique_ptr<BinaryOperation> clone() const = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ struct Op1 : UnaryOperation {
 template <typename T>
 struct Op2 : BinaryOperation {
     virtual void accept(OperationVisitor &visitor) const override;
-    virtual const BinaryOperation &store(Stash &stash) const override;
+    virtual std::unique_ptr<BinaryOperation> clone() const override;
 };
 
 //-----------------------------------------------------------------------------
