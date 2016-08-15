@@ -696,26 +696,18 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    private String getStringContents(
-            OperatorNode<ExpressionOperator> propertySniffer) {
-        String wordData;
-
+    private String getStringContents(OperatorNode<ExpressionOperator> propertySniffer) {
         switch (propertySniffer.getOperator()) {
-        case LITERAL:
-            wordData = propertySniffer.getArgument(0, String.class);
-            break;
-        case VARREF:
-            Preconditions
-                    .checkState(userQuery != null,
-                            "properties must be available when trying to fetch user input");
-            wordData = userQuery.properties().getString(
-                    propertySniffer.getArgument(0, String.class));
-            break;
-        default:
-            throw newUnexpectedArgumentException(propertySniffer.getOperator(),
-                    ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+            case LITERAL: 
+                return propertySniffer.getArgument(0, String.class);
+            case VARREF:
+                Preconditions.checkState(userQuery != null,
+                                         "properties must be available when trying to fetch user input");
+                return userQuery.properties().getString(propertySniffer.getArgument(0, String.class));
+            default:
+                throw newUnexpectedArgumentException(propertySniffer.getOperator(),
+                                                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
         }
-        return wordData;
     }
 
     private class AnnotationPropagator extends QueryVisitor {
@@ -826,19 +818,13 @@ public class YqlParser implements Parser {
     private OperatorNode<?> fetchPipe(OperatorNode<?> toScan) {
         OperatorNode<?> ast = toScan;
         while (ast.getOperator() == SequenceOperator.PIPE) {
-            OperatorNode<ExpressionOperator> groupingAst = ast
-                    .<List<OperatorNode<ExpressionOperator>>> getArgument(2)
-                    .get(0);
-            GroupingOperation groupingOperation = GroupingOperation
-                    .fromString(groupingAst.<String> getArgument(0));
-            VespaGroupingStep groupingStep = new VespaGroupingStep(
-                    groupingOperation);
-            List<String> continuations = getAnnotation(groupingAst,
-                    "continuations", List.class, Collections.emptyList(),
-                    "grouping continuations");
+            OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.<String> getArgument(0));
+            VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
+            List<String> continuations = getAnnotation(groupingAst, "continuations", List.class, 
+                                                       Collections.emptyList(), "grouping continuations");
             for (String continuation : continuations) {
-                groupingStep.continuations().add(
-                        Continuation.fromString(continuation));
+                groupingStep.continuations().add(Continuation.fromString(continuation));
             }
             groupingSteps.add(groupingStep);
             ast = ast.getArgument(0);
@@ -849,22 +835,19 @@ public class YqlParser implements Parser {
 
     @NonNull
     private OperatorNode<?> fetchSorting(OperatorNode<?> ast) {
-        if (ast.getOperator() != SequenceOperator.SORT) {
-            return ast;
-        }
+        if (ast.getOperator() != SequenceOperator.SORT) return ast;
+
         List<FieldOrder> sortingInit = new ArrayList<>();
         List<OperatorNode<?>> sortArguments = ast.getArgument(1);
         for (OperatorNode<?> op : sortArguments) {
-            final OperatorNode<ExpressionOperator> fieldNode = op
-                    .<OperatorNode<ExpressionOperator>> getArgument(0);
+            OperatorNode<ExpressionOperator> fieldNode = op.<OperatorNode<ExpressionOperator>> getArgument(0);
             String field = fetchFieldRead(fieldNode);
-            String locale = getAnnotation(fieldNode, SORTING_LOCALE,
-                    String.class, null, "locale used by sorting function");
-            String function = getAnnotation(fieldNode, SORTING_FUNCTION,
-                    String.class, null,
-                    "sorting function for the specified attribute");
-            String strength = getAnnotation(fieldNode, SORTING_STRENGTH,
-                    String.class, null, "strength for sorting function");
+            String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null, 
+                                          "locale used by sorting function");
+            String function = getAnnotation(fieldNode, SORTING_FUNCTION, String.class, null,
+                                            "sorting function for the specified attribute");
+            String strength = getAnnotation(fieldNode, SORTING_STRENGTH, String.class, null, 
+                                            "strength for sorting function");
             AttributeSorter sorter;
             if (function == null) {
                 sorter = new AttributeSorter(field);
@@ -906,19 +889,18 @@ public class YqlParser implements Parser {
                     sorter = new UcaSorter(field);
                 }
             } else {
-                throw newUnexpectedArgumentException(function, "lowercase",
-                        "raw", "uca");
+                throw newUnexpectedArgumentException(function, "lowercase", "raw", "uca");
             }
             switch ((SortOperator) op.getOperator()) {
-            case ASC:
-                sortingInit.add(new FieldOrder(sorter, Order.ASCENDING));
-                break;
-            case DESC:
-                sortingInit.add(new FieldOrder(sorter, Order.DESCENDING));
-                break;
-            default:
-                throw newUnexpectedArgumentException(op.getOperator(),
-                        SortOperator.ASC, SortOperator.DESC);
+                case ASC:
+                    sortingInit.add(new FieldOrder(sorter, Order.ASCENDING));
+                    break;
+                case DESC:
+                    sortingInit.add(new FieldOrder(sorter, Order.DESCENDING));
+                    break;
+                default:
+                    throw newUnexpectedArgumentException(op.getOperator(),
+                                                         SortOperator.ASC, SortOperator.DESC);
             }
         }
         sorting = new Sorting(sortingInit);
@@ -928,21 +910,17 @@ public class YqlParser implements Parser {
     @NonNull
     private OperatorNode<?> fetchOffsetAndHits(OperatorNode<?> ast) {
         if (ast.getOperator() == SequenceOperator.OFFSET) {
-            offset = ast.<OperatorNode<?>> getArgument(1)
-                    .<Integer> getArgument(0);
+            offset = ast.<OperatorNode<?>> getArgument(1).<Integer> getArgument(0);
             hits = DEFAULT_HITS;
             return ast.getArgument(0);
         }
         if (ast.getOperator() == SequenceOperator.SLICE) {
-            offset = ast.<OperatorNode<?>> getArgument(1)
-                    .<Integer> getArgument(0);
-            hits = ast.<OperatorNode<?>> getArgument(2)
-                    .<Integer> getArgument(0) - offset;
+            offset = ast.<OperatorNode<?>> getArgument(1).<Integer> getArgument(0);
+            hits = ast.<OperatorNode<?>> getArgument(2).<Integer> getArgument(0) - offset;
             return ast.getArgument(0);
         }
         if (ast.getOperator() == SequenceOperator.LIMIT) {
-            hits = ast.<OperatorNode<?>> getArgument(1)
-                    .<Integer> getArgument(0);
+            hits = ast.<OperatorNode<?>> getArgument(1).<Integer> getArgument(0);
             offset = DEFAULT_OFFSET;
             return ast.getArgument(0);
         }
@@ -951,21 +929,18 @@ public class YqlParser implements Parser {
 
     @NonNull
     private OperatorNode<?> fetchSummaryFields(OperatorNode<?> ast) {
-        if (ast.getOperator() != SequenceOperator.PROJECT) {
-            return ast;
-        }
+        if (ast.getOperator() != SequenceOperator.PROJECT) return ast;
+
         Preconditions.checkArgument(ast.getArguments().length == 2,
-                "Expected 2 arguments to PROJECT, got %s.",
-                ast.getArguments().length);
-        populateYqlSummaryFields(ast
-                .<List<OperatorNode<ProjectOperator>>> getArgument(1));
+                                   "Expected 2 arguments to PROJECT, got %s.",
+                                   ast.getArguments().length);
+        populateYqlSummaryFields(ast.<List<OperatorNode<ProjectOperator>>> getArgument(1));
         return ast.getArgument(0);
     }
 
     private OperatorNode<?> fetchTimeout(OperatorNode<?> ast) {
-        if (ast.getOperator() != SequenceOperator.TIMEOUT) {
-            return ast;
-        }
+        if (ast.getOperator() != SequenceOperator.TIMEOUT) return ast;
+
         timeout = ast.<OperatorNode<?>> getArgument(1).<Integer> getArgument(0);
         return ast.getArgument(0);
     }
@@ -977,19 +952,14 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private IntItem buildGreaterThanOrEquals(
-            OperatorNode<ExpressionOperator> ast) {
+    private IntItem buildGreaterThanOrEquals(OperatorNode<ExpressionOperator> ast) {
         IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("[" + fetchConditionWord(ast) + ";]",
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class),
-                    number);
+            number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("[;" + fetchConditionWord(ast) + "]",
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class),
-                    number);
+            number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
         return number;
     }
@@ -998,15 +968,11 @@ public class YqlParser implements Parser {
     private IntItem buildLessThanOrEquals(OperatorNode<ExpressionOperator> ast) {
         IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("[;" + fetchConditionWord(ast) + "]",
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class),
-                    number);
+            number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("[" + fetchConditionWord(ast) + ";]",
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class),
-                    number);
+            number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
         return number;
     }
@@ -1015,15 +981,11 @@ public class YqlParser implements Parser {
     private IntItem buildGreaterThan(OperatorNode<ExpressionOperator> ast) {
         IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem(">" + fetchConditionWord(ast),
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class),
-                    number);
+            number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("<" + fetchConditionWord(ast),
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class),
-                    number);
+            number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
         return number;
     }
