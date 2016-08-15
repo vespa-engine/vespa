@@ -86,7 +86,8 @@ getSchema(int step)
 DocumentDBConfig::SP
 makeBaseConfigSnapshot()
 {
-    config::DirSpec spec("cfg");
+    std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    config::DirSpec spec(srcDir + "/cfg");
     ConfigKeySet extraKeySet;
     extraKeySet.add<MycfgConfig>("");
     DBCM dbcm(spec, "test", extraKeySet);
