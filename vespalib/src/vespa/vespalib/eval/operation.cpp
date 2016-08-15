@@ -45,10 +45,6 @@ template <typename T> void Op2<T>::accept(OperationVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));
 }
 
-template <typename T> const BinaryOperation &Op2<T>::store(Stash &stash) const {
-    return stash.create<T>();
-}
-
 template <typename T> std::unique_ptr<BinaryOperation> Op2<T>::clone() const {
     return std::make_unique<T>();
 }
