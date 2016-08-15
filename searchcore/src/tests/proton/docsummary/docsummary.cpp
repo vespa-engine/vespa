@@ -155,7 +155,7 @@ public:
           _queryLimiter(),
           _clock(),
           _dummy(),
-          _spec("."),
+          _spec(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
           _configMgr(_spec, getDocTypeName()),
           _documenttypesConfig(new DocumenttypesConfig()),
           _repo(repo),
@@ -1246,11 +1246,13 @@ Test::Test()
       _resultCfg(),
       _markupFields()
 {
+    auto envSrcDir = getenv("SOURCE_DIRECTORY");
+    std::string srcDir = envSrcDir ? envSrcDir : ".";
     std::string cfgId("summary");
-    _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(cfgId, config::FileSpec("summary.cfg"));
+    _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(cfgId, config::FileSpec(srcDir + "/summary.cfg"));
     _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
     std::string mapCfgId("summarymap");
-    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(mapCfgId, config::FileSpec("summarymap.cfg"));
+    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(mapCfgId, config::FileSpec(srcDir + "/summarymap.cfg"));
     for (size_t i = 0; i < mapCfg->override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = mapCfg->override[i];
         if (o.command == "dynamicteaser") {

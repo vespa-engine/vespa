@@ -25,9 +25,21 @@ private:
     void testFunctionTableFactory();
     void testTableManager();
 
+    const std::string _srcDir;
+    const std::string _tables1Dir;
+    const std::string _tables2Dir;
 public:
+    TableTest();
     int Main();
 };
+
+TableTest::TableTest() :
+    vespalib::TestApp(),
+    _srcDir(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
+    _tables1Dir(_srcDir + "/tables1"),
+    _tables2Dir(_srcDir + "/tables2")
+{
+}
 
 bool
 TableTest::assertTable(const Table & act, const Table & exp)
@@ -72,12 +84,12 @@ void
 TableTest::testFileTableFactory()
 {
     {
-        FileTableFactory ftf("tables1");
+        FileTableFactory ftf(_tables1Dir);
         EXPECT_TRUE(assertCreateTable(ftf, "a", Table().add(1.5).add(2.25).add(3)));
         EXPECT_TRUE(ftf.createTable("b").get() == NULL);
     }
     {
-        FileTableFactory ftf("tables1/");
+        FileTableFactory ftf(_tables1Dir);
         EXPECT_TRUE(ftf.createTable("a").get() != NULL);
     }
 }
@@ -114,8 +126,8 @@ TableTest::testTableManager()
 {
     {
         TableManager tm;
-        tm.addFactory(ITableFactory::SP(new FileTableFactory("tables1")));
-        tm.addFactory(ITableFactory::SP(new FileTableFactory("tables2")));
+        tm.addFactory(ITableFactory::SP(new FileTableFactory(_tables1Dir)));
+        tm.addFactory(ITableFactory::SP(new FileTableFactory(_tables2Dir)));
 
         {
             const Table * t = tm.getTable("a"); // from tables1

@@ -72,7 +72,8 @@ Fixture::Fixture()
     DocumentType docType("typea", 0);
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(docType));
     TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
-    config::DirSpec spec("cfg");
+    std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    config::DirSpec spec(srcDir + "/cfg");
     DocumentDBConfigHelper mgr(spec, "typea");
     BootstrapConfig::SP
         b(new BootstrapConfig(1,

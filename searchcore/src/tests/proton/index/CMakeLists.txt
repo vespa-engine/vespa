@@ -30,4 +30,4 @@ vespa_add_executable(searchcore_indexcollection_test_app TEST
     DEPENDS
     searchcore_index
 )
-vespa_add_test(NAME searchcore_index_test COMMAND sh index_test.sh)
+vespa_add_test(NAME searchcore_index_test COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/index_test.sh)

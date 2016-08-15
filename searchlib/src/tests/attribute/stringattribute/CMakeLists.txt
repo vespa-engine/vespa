@@ -5,4 +5,4 @@ vespa_add_executable(searchlib_stringattribute_test_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_stringattribute_test_app COMMAND sh stringattribute_test.sh)
+vespa_add_test(NAME searchlib_stringattribute_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/stringattribute_test.sh)

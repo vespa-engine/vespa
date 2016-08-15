@@ -10,4 +10,4 @@ vespa_add_executable(searchcore_documentmetastore_test_app TEST
     searchcore_feedoperation
     searchcore_fconfig
 )
-vespa_add_test(NAME searchcore_documentmetastore_test_app COMMAND sh documentmetastore_test.sh)
+vespa_add_test(NAME searchcore_documentmetastore_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/documentmetastore_test.sh)
