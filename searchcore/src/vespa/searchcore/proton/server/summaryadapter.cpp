@@ -48,30 +48,6 @@ SummaryAdapter::remove(search::SerialNum serialNum,
 }
 
 void
-SummaryAdapter::update(search::SerialNum serialNum,
-                       const document::DocumentUpdate &upd,
-                       const search::DocumentIdT lid,
-                       const document::DocumentTypeRepo &repo)
-{
-    if ( ! ignore(serialNum) ) {
-        search::IDocumentStore &store = _mgr->getBackingStore();
-        document::Document::UP doc = store.read(lid, repo);
-        if (doc.get() == NULL) {
-            LOG(warning, "Did not find document '%s' to update.",
-                upd.getId().toString().c_str());
-            return;
-        }
-        upd.applyTo(*doc);
-
-        LOG(spam, "SummaryAdapter::update(docId = '%s', lid = %u, update = '%s')",
-            upd.getId().toString().c_str(), lid, upd.toString().c_str());
-        _mgr->putDocument(serialNum, *doc, lid);
-        _lastSerial = serialNum;
-    }
-}
-
-
-void
 SummaryAdapter::heartBeat(search::SerialNum serialNum)
 {
     if (serialNum > _lastSerial) {

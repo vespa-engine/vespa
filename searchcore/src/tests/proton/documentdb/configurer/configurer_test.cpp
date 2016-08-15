@@ -222,8 +222,6 @@ struct MySummaryAdapter : public ISummaryAdapter
 {
     virtual void put(search::SerialNum, const document::Document &, const search::DocumentIdT) {}
     virtual void remove(search::SerialNum, const search::DocumentIdT) {}
-    virtual void update(search::SerialNum, const document::DocumentUpdate &,
-            const search::DocumentIdT, const document::DocumentTypeRepo &) {}
     virtual void heartBeat(search::SerialNum) {}
     virtual const search::IDocumentStore &getDocumentStore() const {
         const search::IDocumentStore *store = NULL;

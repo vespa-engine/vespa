@@ -239,10 +239,6 @@ struct MySummaryAdapter : public ISummaryAdapter
         _store.remove(serialNum, lid);
         _removes.push_back(lid);
     }
-    virtual void update(SerialNum serialNum, const document::DocumentUpdate &upd,
-           const DocumentIdT lid, const document::DocumentTypeRepo &repo) {
-        (void) serialNum; (void) upd; (void) lid; (void) repo;
-    }
     virtual void heartBeat(SerialNum) {}
     virtual const search::IDocumentStore &getDocumentStore() const {
         return _store;
