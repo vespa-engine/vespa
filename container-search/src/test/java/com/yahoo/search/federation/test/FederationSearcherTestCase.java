@@ -204,15 +204,10 @@ public class FederationSearcherTestCase {
     public void testPropertyPropagation() {
         Result result = searchWithPropertyPropagation(PropagateSourceProperties.ALL);
 
-        assertEquals("source:mySource1", result.hits().get(0).getId()
-                .stringValue());
-        assertEquals("source:mySource2", result.hits().get(1).getId()
-                .stringValue());
-        assertEquals("nalle", result.hits().get(0).getQuery().getPresentation()
-                .getSummary());
-        assertNull(result.hits().get(1).getQuery().getPresentation()
-                .getSummary());
-
+        assertEquals("source:mySource1", result.hits().get(0).getId().stringValue());
+        assertEquals("source:mySource2", result.hits().get(1).getId().stringValue());
+        assertEquals("nalle", result.hits().get(0).getQuery().getPresentation().getSummary());
+        assertNull(result.hits().get(1).getQuery().getPresentation().getSummary());
     }
 
     private Result searchWithPropertyPropagation(PropagateSourceProperties.Enum propagateSourceProperties) {
@@ -233,7 +228,7 @@ public class FederationSearcherTestCase {
 
         assertNull(result.hits().get(0).getQuery().getPresentation().getSummary());
     }
-
+    
     @Test
     public void testNoCloning() {
         String sourceName = "cloningcheck";

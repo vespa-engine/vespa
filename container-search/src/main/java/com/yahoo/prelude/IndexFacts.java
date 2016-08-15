@@ -96,8 +96,7 @@ public class IndexFacts {
 
     // Assumes that document names are equal to the search definition that contain them.
     public List<String> clustersHavingSearchDefinition(String searchDefinitionName) {
-        if (clusterByDocument == null)
-            return Collections.emptyList();
+        if (clusterByDocument == null) return Collections.emptyList();
 
         List<String> clusters = clusterByDocument.get(searchDefinitionName);
         return clusters != null ? clusters : Collections.<String>emptyList();

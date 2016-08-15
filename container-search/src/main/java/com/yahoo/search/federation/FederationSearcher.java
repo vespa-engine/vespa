@@ -929,8 +929,8 @@ public class FederationSearcher extends ForkingSearcher {
         for (SearchChainInvocationSpec target: prunedTargets) {
             Chain<Searcher> chain = registry.getChain(target.searchChainId);
             if (chain == null) {
-                targetHandlers.addError(ErrorMessage.createIllegalQuery(
-                                        "Could not find search chain '" + target.searchChainId + "'"));
+                targetHandlers.addError(ErrorMessage.createIllegalQuery("Could not find search chain '" 
+                                                                        + target.searchChainId + "'"));
             } else {
                 targetHandlers.addData(new StandardTargetHandler(target, chain));
             }
@@ -940,8 +940,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static <T> List<TargetHandler> getAdditionalTargets(Query query, Execution execution, TargetSelector<T> targetSelector) {
-        if (targetSelector == null)
-            return Collections.emptyList();
+        if (targetSelector == null) return Collections.emptyList();
 
         ArrayList<TargetHandler> result = new ArrayList<>();
         for (FederationTarget<T> target: targetSelector.getTargets(query, execution.searchChainRegistry()))
@@ -951,8 +950,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private Collection<SearchChainInvocationSpec> pruneTargetsWithoutDocumentTypes(Set<String> restrict, List<SearchChainInvocationSpec> targets) {
-        if (restrict.isEmpty())
-            return targets;
+        if (restrict.isEmpty()) return targets;
 
         Collection<SearchChainInvocationSpec> prunedTargets = new ArrayList<>();
 
@@ -972,4 +970,5 @@ public class FederationSearcher extends ForkingSearcher {
 
         return false;
     }
+
 }
