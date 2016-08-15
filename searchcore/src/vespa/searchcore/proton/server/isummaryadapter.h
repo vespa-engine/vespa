@@ -25,10 +25,6 @@ public:
                      const search::DocumentIdT lid) = 0;
     virtual void remove(search::SerialNum serialNum,
                         const search::DocumentIdT lid) = 0;
-    virtual void update(search::SerialNum serialNum,
-                        const document::DocumentUpdate &upd,
-                        const search::DocumentIdT lid,
-                        const document::DocumentTypeRepo &repo) = 0;
 
     virtual void
     heartBeat(search::SerialNum serialNum) = 0;

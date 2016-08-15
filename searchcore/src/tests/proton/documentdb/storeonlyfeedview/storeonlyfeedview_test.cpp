@@ -51,9 +51,6 @@ public:
     virtual void put(SerialNum, const Document &, DocumentIdT)
     { ++ _put_count; }
     virtual void remove(SerialNum, DocumentIdT) { ++_rm_count; }
-    virtual void update(SerialNum, const DocumentUpdate &, DocumentIdT,
-                        const DocumentTypeRepo &) {}
-
     virtual void heartBeat(SerialNum) { ++_heartbeat_count; }
     virtual const search::IDocumentStore &getDocumentStore() const
     { return *reinterpret_cast<const search::IDocumentStore *>(0); }
