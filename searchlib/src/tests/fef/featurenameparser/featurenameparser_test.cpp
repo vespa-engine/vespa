@@ -144,7 +144,8 @@ Test::Main()
     EXPECT_TRUE(testParse("foo(  ,  ,  )", true, "foo", ParamList().add("").add("").add(""), ""));
     EXPECT_TRUE(testParse("foo( \t , \n , \r , \f )", true, "foo", ParamList().add("").add("").add("").add(""), ""));
 
-    testFile("parsetest.txt");
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    testFile(srcDir + "/parsetest.txt");
     TEST_DONE();
 }
 

@@ -6,4 +6,4 @@ vespa_add_executable(searchlib_fieldwriter_test_app TEST
     searchlib_test
     searchlib
 )
-vespa_add_test(NAME searchlib_fieldwriter_test_app COMMAND sh runtests.sh)
+vespa_add_test(NAME searchlib_fieldwriter_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/runtests.sh)

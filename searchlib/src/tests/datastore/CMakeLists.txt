@@ -5,4 +5,4 @@ vespa_add_executable(searchlib_logdatastore_test_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_logdatastore_test_app COMMAND sh logdatastore_test.sh)
+vespa_add_test(NAME searchlib_logdatastore_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/logdatastore_test.sh)
