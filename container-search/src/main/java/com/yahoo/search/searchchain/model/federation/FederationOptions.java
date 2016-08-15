@@ -5,6 +5,7 @@ import net.jcip.annotations.Immutable;
 
 /**
  * Options for controlling federation to a single source.
+ * This is a value object.
  *
  * @author tonytv
  */
@@ -103,13 +104,17 @@ public class FederationOptions implements Cloneable {
 
     @Override
     public boolean equals(Object other) {
-        return (other instanceof FederationOptions) &&
-                equals((FederationOptions) other);
+        return (other instanceof FederationOptions) && equals((FederationOptions) other);
     }
-
+    
     public boolean equals(FederationOptions other) {
         return getOptional() == other.getOptional() &&
-                getTimeoutInMilliseconds() == other.getTimeoutInMilliseconds();
+               getTimeoutInMilliseconds() == other.getTimeoutInMilliseconds();
+    }
+    
+    @Override
+    public int hashCode() {
+        return ( getOptional() ? 1 : 0 ) + 13 * getTimeoutInMilliseconds();
     }
 
     @Override

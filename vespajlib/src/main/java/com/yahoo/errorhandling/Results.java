@@ -12,6 +12,7 @@ import java.util.List;
  * @author tonytv
  */
 public class Results<DATA, ERROR> {
+
     private final List<DATA> data;
     private final List<ERROR> errors;
 
@@ -56,4 +57,5 @@ public class Results<DATA, ERROR> {
             return new Results<>(data, errors);
         }
     }
+
 }

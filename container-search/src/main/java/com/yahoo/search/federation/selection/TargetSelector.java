@@ -21,6 +21,7 @@ import java.util.Collection;
  * @author tonytv
  */
 public interface TargetSelector<T> {
+
     Collection<FederationTarget<T>> getTargets(Query query, ChainRegistry<Searcher> searcherChainRegistry);
 
     /**
@@ -32,4 +33,5 @@ public interface TargetSelector<T> {
      * For modifying the result produced by the target.
      */
     void modifyTargetResult(FederationTarget<T> target, Result result);
+
 }
