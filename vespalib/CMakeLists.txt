@@ -35,6 +35,7 @@ vespa_define_module(
     src/tests/eval/node_types
     src/tests/eval/simple_tensor
     src/tests/eval/tensor
+    src/tests/eval/tensor_function
     src/tests/eval/value_type
     src/tests/eventbarrier
     src/tests/exception_classes

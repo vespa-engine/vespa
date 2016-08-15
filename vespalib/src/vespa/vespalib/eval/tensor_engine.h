@@ -6,6 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
+#include "tensor_function.h"
 
 namespace vespalib {
 
@@ -39,6 +40,8 @@ struct TensorEngine
 
     virtual ValueType type_of(const Tensor &tensor) const = 0;
     virtual bool equal(const Tensor &a, const Tensor &b) const = 0;
+
+    virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
 
     virtual std::unique_ptr<Tensor> create(const TensorSpec &spec) const = 0;
     virtual const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;

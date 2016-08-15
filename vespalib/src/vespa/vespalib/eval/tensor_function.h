@@ -6,6 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
+#include "operation.h"
 
 namespace vespalib {
 
@@ -15,8 +16,6 @@ namespace eval {
 
 class Value;
 class Tensor;
-struct UnaryOperation;
-struct BinaryOperation;
 
 //-----------------------------------------------------------------------------
 
