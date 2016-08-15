@@ -49,6 +49,10 @@ template <typename T> const BinaryOperation &Op2<T>::store(Stash &stash) const {
     return stash.create<T>();
 }
 
+template <typename T> std::unique_ptr<BinaryOperation> Op2<T>::clone() const {
+    return std::make_unique<T>();
+}
+
 namespace operation {
 double Neg::eval(double a) const { return -a; }
 double Not::eval(double a) const { return (a != 0.0) ? 0.0 : 1.0; }
