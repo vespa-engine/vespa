@@ -112,13 +112,13 @@ public class FederationSearcher extends ForkingSearcher {
             if ( ! ( o instanceof StandardTargetHandler)) return false;
 
             StandardTargetHandler other = (StandardTargetHandler)o;
-            if ( ! other.chain.getId().equals(this.chain.getId())) return false;
-            if ( ! other.target.equals(this.target)) return false;
+            if ( ! Objects.equals(other.chain.getId(), this.chain.getId())) return false;
+            if ( ! Objects.equals(other.target, this.target)) return false;
             return true;
         }
         
         @Override
-        public int hashCode() { return chain.getId().hashCode() + 11 * target.hashCode(); }
+        public int hashCode() { return Objects.hash(chain.getId().hashCode(), target.hashCode()); }
 
     }
 

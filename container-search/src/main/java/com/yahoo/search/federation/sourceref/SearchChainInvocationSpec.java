@@ -57,11 +57,7 @@ public class SearchChainInvocationSpec implements Cloneable {
 
     @Override
     public int hashCode() { 
-        return searchChainId.hashCode() + 
-               (source != null ? 3 * source.hashCode() : 0) +
-               (provider != null ? 5 * provider.hashCode(): 0) +
-               federationOptions.hashCode() +
-               documentTypes.hashCode();
+        return Objects.hash(searchChainId, source, provider, federationOptions, documentTypes);
     }
 
 }

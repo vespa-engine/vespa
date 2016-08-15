@@ -16,6 +16,7 @@ import java.util.List;
  * @author tonytv
  */
 public class Chain<COMPONENT extends ChainedComponent> {
+
     final private List<COMPONENT> componentList;
     private final ComponentId id;
 

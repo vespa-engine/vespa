@@ -3,6 +3,8 @@ package com.yahoo.search.searchchain.model.federation;
 
 import net.jcip.annotations.Immutable;
 
+import java.util.Objects;
+
 /**
  * Options for controlling federation to a single source.
  * This is a value object.
@@ -114,7 +116,7 @@ public class FederationOptions implements Cloneable {
     
     @Override
     public int hashCode() {
-        return ( getOptional() ? 1 : 0 ) + 13 * getTimeoutInMilliseconds();
+        return Objects.hash(getOptional(), getTimeoutInMilliseconds());
     }
 
     @Override
