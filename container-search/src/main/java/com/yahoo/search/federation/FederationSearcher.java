@@ -60,6 +60,7 @@ import java.util.logging.Logger;
 @Provides(FederationSearcher.FEDERATION)
 @After("*")
 public class FederationSearcher extends ForkingSearcher {
+
     public static final String FEDERATION = "Federation";
 
     private static abstract class TargetHandler {
@@ -136,8 +137,6 @@ public class FederationSearcher extends ForkingSearcher {
         }
     }
 
-
-
     private static class ExecutionInfo {
         final TargetHandler targetHandler;
         final FederationOptions federationOptions;
@@ -151,8 +150,10 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static class CompoundKey {
+
         private final String sourceName;
         private final String propertyName;
+
         CompoundKey(String sourceName, String propertyName) {
             this.sourceName = sourceName;
             this.propertyName = propertyName;
@@ -176,7 +177,9 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static class SourceKey extends CompoundKey {
+
         public static final String SOURCE = "source.";
+
         SourceKey(String sourceName, String propertyName) {
             super(sourceName, propertyName);
         }
@@ -196,8 +199,11 @@ public class FederationSearcher extends ForkingSearcher {
             return SOURCE + super.toString();
         }
     }
+
     private static class ProviderKey extends CompoundKey {
+
         public static final String PROVIDER = "provider.";
+
         ProviderKey(String sourceName, String propertyName) {
             super(sourceName, propertyName);
         }
@@ -216,6 +222,7 @@ public class FederationSearcher extends ForkingSearcher {
         public String toString() {
             return PROVIDER + super.toString();
         }
+
     }
 
     private static final Logger log = Logger.getLogger(FederationSearcher.class.getName());
@@ -241,19 +248,18 @@ public class FederationSearcher extends ForkingSearcher {
     public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
                               ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
-                resolveSelector(config.targetSelector(), targetSelectors));
+             resolveSelector(config.targetSelector(), targetSelectors));
     }
 
-    private static TargetSelector resolveSelector(String selectorId, ComponentRegistry<TargetSelector> targetSelectors) {
-        if (selectorId.isEmpty())
-            return null;
+    private static TargetSelector resolveSelector(String selectorId, 
+                                                  ComponentRegistry<TargetSelector> targetSelectors) {
+        if (selectorId.isEmpty()) return null;
 
-        return checkNotNull(
-                targetSelectors.getComponent(selectorId),
-                "Missing target selector with id" + quote(selectorId));
+        return checkNotNull(targetSelectors.getComponent(selectorId),
+                            "Missing target selector with id" + quote(selectorId));
     }
 
-    //for testing
+    // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
         this(searchChainResolver, false, PropagateSourceProperties.ALL, null);
     }
