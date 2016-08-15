@@ -1000,14 +1000,9 @@ class LogDataStore::WrapVisitorProgress : public IFileChunkVisitorProgress
     const uint32_t _totalChunks;
     uint32_t _processedChunks;
 
-public:    
-    virtual
-    ~WrapVisitorProgress()
-    {
-    }
-    
-    virtual void
-    updateProgress()
+public:
+    void
+    updateProgress() override
     {
         ++_processedChunks;
         if (_totalChunks != 0) {
