@@ -8,12 +8,14 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
+import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
@@ -44,8 +46,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,7 +65,7 @@ public class DockerImpl implements Docker {
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
-    private static final Map<String,String> CONTAINER_LABELS = new HashMap<>();
+    private static final Map<String, String> CONTAINER_LABELS = new HashMap<>();
 
     private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
@@ -96,9 +96,7 @@ public class DockerImpl implements Docker {
             getDefaults().underVespaHome("var/ycore++"),
             getDefaults().underVespaHome("var/zookeeper"));
 
-    private final DockerClient docker;
-
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    final DockerClient docker;
 
     private final Object monitor = new Object();
 
@@ -118,39 +116,17 @@ public class DockerImpl implements Docker {
                 .withCustomSslConfig(new VespaSSLConfig(config))
                 .withApiVersion("1.23")
                 .build())
-            .withDockerCmdExecFactory(
-                    new JerseyDockerCmdExecFactory()
-                    .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                    .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                    .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                    .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
-            ));
+                .withDockerCmdExecFactory(
+                        new JerseyDockerCmdExecFactory()
+                                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
+                                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
+                                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
+                                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
+                ));
     }
 
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
-        // We define the task before we create the CompletableFuture, to ensure that the local future variable cannot
-        // be accessed by the task, forcing it to always go through removeScheduledPoll() before completing the task.
-        final Runnable task = () -> {
-            try {
-                docker.pullImageCmd(image.asString());
-                removeScheduledPoll(image).complete(image);
-            } catch (DockerException e) {
-                if (imageIsDownloaded(image)) {
-                    /* TODO: the docker client is not in sync with the server protocol causing it to throw
-                     * "java.io.IOException: Stream closed", even if the pull succeeded; thus ignoring here
-                     * MAY NO LONGER APPLY, was written when spotify/docker-client API was used.
-                     */
-                    removeScheduledPoll(image).complete(image);
-                } else {
-                    removeScheduledPoll(image).completeExceptionally(e);
-                }
-            } catch (RuntimeException e) {
-                removeScheduledPoll(image).completeExceptionally(e);
-                throw e;
-            }
-        };
-
         final CompletableFuture<DockerImage> completionListener;
         synchronized (monitor) {
             if (scheduledPulls.containsKey(image)) {
@@ -159,7 +135,7 @@ public class DockerImpl implements Docker {
             completionListener = new CompletableFuture<>();
             scheduledPulls.put(image, completionListener);
         }
-        executor.submit(task);
+        docker.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
         return completionListener;
     }
 
@@ -414,13 +390,12 @@ public class DockerImpl implements Docker {
         try {
             return docker.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
                     .filter(this::isManaged)
-                    .filter(container -> matchName(container, containerName.asString())).
-                    findFirst();
+                    .filter(container -> matchName(container, containerName.asString()))
+                    .findFirst();
         } catch (DockerException e) {
             throw new RuntimeException("Failed to get container from name", e);
         }
     }
-
 
 
     private boolean isManaged(final com.github.dockerjava.api.model.Container container) {
@@ -547,6 +522,30 @@ public class DockerImpl implements Docker {
                     + " inUse=" + isInUse()
                     + " dependees=" + dependees.stream().map(obj -> obj.id).collect(Collectors.toList())
                     + " }";
+        }
+    }
+
+    private class ImagePullCallback extends PullImageResultCallback {
+        private final DockerImage dockerImage;
+
+        ImagePullCallback(DockerImage dockerImage) {
+            this.dockerImage = dockerImage;
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            removeScheduledPoll(dockerImage).completeExceptionally(throwable);
+        }
+
+
+        @Override
+        public void onComplete() {
+            if (imageIsDownloaded(dockerImage)) {
+                removeScheduledPoll(dockerImage).complete(dockerImage);
+            } else {
+                removeScheduledPoll(dockerImage).completeExceptionally(
+                        new DockerClientException("Could not download image: " + dockerImage));
+            }
         }
     }
 }
