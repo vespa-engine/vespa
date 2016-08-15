@@ -31,6 +31,7 @@ import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAU
  * Vespa.
  */
 public class YqlFieldAndSourceTestCase {
+
     private static final String FIELD1 = "field1";
     private static final String FIELD2 = "field2";
     private static final String FIELD3 = "field3";
@@ -56,12 +57,10 @@ public class YqlFieldAndSourceTestCase {
         mockBackend.addSummaryClassByCopy(Execution.ATTRIBUTEPREFETCH, Arrays.asList(FIELD2));
         mockBackend.addSummaryClassByCopy(THIRD_OPTION, Arrays.asList(FIELD3));
 
-        DocumentdbInfoConfig config = new DocumentdbInfoConfig(
-                new DocumentdbInfoConfig.Builder()
-                        .documentdb(buildDocumentdbArray()));
+        DocumentdbInfoConfig config = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()
+                                                               .documentdb(buildDocumentdbArray()));
 
-        searchChain = new Chain<Searcher>(new FieldFiller(config),
-                mockBackend);
+        searchChain = new Chain<>(new FieldFiller(config), mockBackend);
         context = Execution.Context.createContextStub(null);
         execution = new Execution(searchChain, context);
     }
@@ -77,8 +76,7 @@ public class YqlFieldAndSourceTestCase {
     }
 
     private List<Documentdb.Builder> buildDocumentdbArray() {
-        List<Documentdb.Builder> configArray = new ArrayList<Documentdb.Builder>(
-                1);
+        List<Documentdb.Builder> configArray = new ArrayList<>(1);
         configArray.add(new Documentdb.Builder().summaryclass(
                 buildSummaryclassArray()).name("defaultsearchdefinition"));
 
@@ -90,21 +88,16 @@ public class YqlFieldAndSourceTestCase {
                 new Summaryclass.Builder()
                         .id(0)
                         .name(DEFAULT_SUMMARY_CLASS)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD1)
-                                .type("string"),
-                                new Fields.Builder().name(FIELD2)
-                                        .type("string"))),
+                        .fields(Arrays.asList(new Fields.Builder().name(FIELD1).type("string"),
+                                              new Fields.Builder().name(FIELD2).type("string"))),
                 new Summaryclass.Builder()
                         .id(1)
                         .name(Execution.ATTRIBUTEPREFETCH)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD2)
-                                .type("string"))),
+                        .fields(Arrays.asList(new Fields.Builder().name(FIELD2).type("string"))),
                 new Summaryclass.Builder()
                         .id(2)
                         .name(THIRD_OPTION)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD3)
-                                .type("string"))));
-
+                        .fields(Arrays.asList(new Fields.Builder().name(FIELD3).type("string"))));
     }
 
     @After

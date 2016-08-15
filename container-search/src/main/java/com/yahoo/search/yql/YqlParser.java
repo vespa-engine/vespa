@@ -271,11 +271,10 @@ public class YqlParser implements Parser {
     @NonNull
     private QueryTree buildTree(OperatorNode<?> filterPart) {
         Preconditions.checkArgument(filterPart.getArguments().length == 2,
-                "Expected 2 arguments to filter, got %s.",
-                filterPart.getArguments().length);
+                                    "Expected 2 arguments to filter, got %s.",
+                                    filterPart.getArguments().length);
         populateYqlSources(filterPart.<OperatorNode<?>> getArgument(0));
-        final OperatorNode<ExpressionOperator> filterExpression = filterPart
-                .getArgument(1);
+        OperatorNode<ExpressionOperator> filterExpression = filterPart.getArgument(1);
         populateLinguisticsAnnotations(filterExpression);
         Item root = convertExpression(filterExpression);
         connectItems();
@@ -776,46 +775,39 @@ public class YqlParser implements Parser {
         }
     }
 
-    private void propagateUserInputAnnotations(
-            OperatorNode<ExpressionOperator> ast, Item item) {
+    private void propagateUserInputAnnotations(OperatorNode<ExpressionOperator> ast, Item item) {
         ToolBox.visit(new AnnotationPropagator(ast), item);
-
     }
 
     @NonNull
     private Item parseUserInput(String grammar, String defaultIndex, String wordData,
-            Language language, boolean allowNullItem) {
-        Item item;
+                                Language language, boolean allowNullItem) {
         Query.Type parseAs = Query.Type.getType(grammar);
         Parser parser = ParserFactory.newInstance(parseAs, environment);
-        // perhaps not use already resolved doctypes, but respect source and
-        // restrict
-        item = parser.parse(
+        // perhaps not use already resolved doctypes, but respect source and restrict
+        Item item = parser.parse(
                 new Parsable().setQuery(wordData).addSources(docTypes)
                         .setLanguage(language)
                         .setDefaultIndexName(defaultIndex)).getRoot();
         // the null check should be unnecessary, but is there to avoid having to
         // suppress null warnings
-        if (!allowNullItem && (item == null || item instanceof NullItem)) {
-            throw new IllegalArgumentException("Parsing \"" + wordData
-                    + "\" only resulted in NullItem.");
-        }
+        if ( !allowNullItem && (item == null || item instanceof NullItem))
+            throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
         return item;
     }
 
     @NonNull
     private OperatorNode<?> fetchFilterPart() {
-        ProgramParser parser = new ProgramParser();
         OperatorNode<?> ast;
         try {
-            ast = parser.parse("query", currentlyParsing.getQuery());
+            ast = new ProgramParser().parse("query", currentlyParsing.getQuery());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
         assertHasOperator(ast, StatementOperator.PROGRAM);
         Preconditions.checkArgument(ast.getArguments().length == 1,
-                "Expected only a single argument to the root node, got %s.",
-                ast.getArguments().length);
+                                    "Expected only a single argument to the root node, got %s.",
+                                    ast.getArguments().length);
         // TODO: should we check size of first argument as well?
         ast = ast.<List<OperatorNode<?>>> getArgument(0).get(0);
         assertHasOperator(ast, StatementOperator.EXECUTE);

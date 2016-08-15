@@ -34,8 +34,7 @@ public class FieldFiller extends Searcher {
 
     private final Set<String> intersectionOfAttributes;
     private final SummaryIntersections summaryDb = new SummaryIntersections();
-    public static final CompoundName FIELD_FILLER_DISABLE = new CompoundName(
-            "FieldFiller.disable");
+    public static final CompoundName FIELD_FILLER_DISABLE = new CompoundName("FieldFiller.disable");
 
     private static class SummaryIntersections {
         private final Map<String, Map<String, Set<String>>> db = new HashMap<>();
@@ -88,8 +87,7 @@ public class FieldFiller extends Searcher {
                     intersection.retainAll(summary);
                 }
             }
-            return intersection == null ? false : intersection
-                    .containsAll(requested);
+            return intersection != null && intersection.containsAll(requested);
         }
     }
 
@@ -131,8 +129,7 @@ public class FieldFiller extends Searcher {
     public void fill(Result result, String summaryClass, Execution execution) {
         execution.fill(result, summaryClass);
 
-        final Set<String> summaryFields = result.getQuery().getPresentation()
-                .getSummaryFields();
+        Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
 
         if (summaryFields.isEmpty()
                 || summaryClass == null
@@ -147,10 +144,10 @@ public class FieldFiller extends Searcher {
             }
         } else {
             // Yes, summaryClass may be Execution.ATTRIBUTEPREFETCH here
-            if (!summaryDb.hasAll(summaryFields, summaryClass, result
-                    .getQuery().getModel().getRestrict())) {
+            if (!summaryDb.hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
                 execution.fill(result, null);
             }
         }
     }
+
 }
