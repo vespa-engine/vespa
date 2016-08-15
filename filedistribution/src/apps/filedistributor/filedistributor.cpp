@@ -328,6 +328,10 @@ FileDistributorApplication::Main() {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return 3;
+    } catch(const config::ConfigTimeoutException & e) {
+        std::string s = boost::diagnostic_information(e);
+        EV_STOPPING(programName, s.c_str());
+        return 4;
     } catch(const ZKGenericException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
