@@ -16,6 +16,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.yahoo.vespa.defaults.Defaults;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Matchers;
 
@@ -52,6 +53,7 @@ public class DockerImplTest {
         assertThat(binds, hasItem(Bind.parse(directoryOnHost + ":" + dataDirectory)));
     }
 
+    @Ignore
     @Test
     public void repeatedPollsOfSameImageAreNotScheduled() throws Exception {
         final DockerClient dockerClient = mock(DockerClient.class);
