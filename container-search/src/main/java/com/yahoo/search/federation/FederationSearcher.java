@@ -118,7 +118,7 @@ public class FederationSearcher extends ForkingSearcher {
         }
         
         @Override
-        public int hashCode() { return Objects.hash(chain.getId().hashCode(), target.hashCode()); }
+        public int hashCode() { return Objects.hash(chain.getId(), target); }
 
     }
 
