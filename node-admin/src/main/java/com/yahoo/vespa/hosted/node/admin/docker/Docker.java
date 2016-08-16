@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface Docker {
 
-    void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName, double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb);
+    void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName, InetAddress nodeInetAddress, double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb);
 
     void stopContainer(ContainerName containerName);
 
