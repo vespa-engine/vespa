@@ -3,7 +3,6 @@ package com.yahoo.search.cluster;
 
 import com.yahoo.search.result.ErrorMessage;
 
-
 /**
  * This node monitor is responsible for maintaining the state of a monitored node.
  * It has the following properties:
@@ -12,16 +11,15 @@ import com.yahoo.search.result.ErrorMessage;
  * <li>A node is put back in operation when it responds correctly again
  * </ul>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
-    /**
-     * Creates a new node monitor for a node
-     */
-    public TrafficNodeMonitor(T node,MonitorConfiguration configuration,boolean internal) {
+
+    /** Creates a new node monitor for a node */
+    public TrafficNodeMonitor(T node, MonitorConfiguration configuration, boolean internal) {
         super(internal);
-        this.node=node;
-        this.configuration=configuration;
+        this.node = node;
+        this.configuration = configuration;
     }
 
     /** Whether or not this has ever responded successfully */
@@ -32,11 +30,11 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     /**
      * Called when this node fails.
      *
-     * @param error A container which should contain a short description
+     * @param error a container which should contain a short description
      */
     @Override
     public void failed(ErrorMessage error) {
-        respondedAt=now();
+        respondedAt = now();
 
         switch (error.getCode()) {
             // TODO: Remove hard coded error messages.
@@ -63,9 +61,8 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         succeededAt=respondedAt;
         atStartUp = false;
 
-        if (!isWorking) {
+        if (!isWorking)
             setWorking(true,"Responds correctly");
-        }
     }
 
     /** Thread-safely changes the state of this node if required */

@@ -3,9 +3,11 @@ package com.yahoo.search.cluster;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.protect.Error;
+import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
+import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -31,12 +33,12 @@ import java.util.concurrent.*;
  * The connection objects should implement a good toString to ease diagnostics.
  *
  * @author bratseth
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public abstract class ClusterSearcher<T> extends PingableSearcher implements NodeManager<T> {
 
     private final Hasher<T> hasher;
-    private final ClusterMonitor<T> monitor = new ClusterMonitor<>(this, "dummy");
+    private final ClusterMonitor<T> monitor = new ClusterMonitor<>(this);
 
     /**
      * Creates a new cluster searcher
@@ -59,7 +61,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     }
 
     /**
-     * Pinging a node by sending a query NodeManager method, called from ClusterMonitor
+     * Pinging a node, called from ClusterMonitor
      */
     @Override
     public final void ping(T p, Executor executor) {
@@ -344,4 +346,5 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         }
 
     }
+
 }

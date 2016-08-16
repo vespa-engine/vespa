@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.Server;
@@ -29,20 +30,25 @@ import java.util.logging.Logger;
  * @since 5.4.0
  */
 public class FS4ResourcePool extends AbstractComponent {
+
     private static final Logger logger = Logger.getLogger(FS4ResourcePool.class.getName());
     private static final AtomicInteger instanceCounter = new AtomicInteger(0);
     private final int instanceId;
     private final ListenerPool listeners;
     private final Timer timer = new Timer();  // This is a timer for cleaning the closed connections
-    private Map<String, Backend> connectionPoolMap = new HashMap<>();
+    private final Map<String, Backend> connectionPoolMap = new HashMap<>();
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduledExecutor;
 
+    @Inject
     public FS4ResourcePool(Fs4Config fs4Config) {
+        this(fs4Config.numlistenerthreads());
+    }
+    
+    public FS4ResourcePool(int listenerThreads) {
         instanceId = instanceCounter.getAndIncrement();
-        logger.log(Level.INFO, "Constructing an FS4ResourcePool with id '" + instanceId + "' with config '" + fs4Config.toString() + "'");
         String name = "FS4-" + instanceId;
-        listeners = new ListenerPool(name, fs4Config.numlistenerthreads());
+        listeners = new ListenerPool(name, listenerThreads);
         executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(name));
         scheduledExecutor = Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory(name + ".scheduled"));
     }
@@ -53,8 +59,8 @@ public class FS4ResourcePool extends AbstractComponent {
     public ScheduledExecutorService getScheduledExecutor() {
         return scheduledExecutor;
     }
-    public Backend getBackend(String host, int port) {
 
+    public Backend getBackend(String host, int port) {
         String key = host + ":" + port;
         synchronized (connectionPoolMap) {
             Backend pool = connectionPoolMap.get(key);
@@ -85,4 +91,5 @@ public class FS4ResourcePool extends AbstractComponent {
             logger.warning("Executors failed terminating within timeout of 10 seconds : " + e);
         }
     }
+
 }

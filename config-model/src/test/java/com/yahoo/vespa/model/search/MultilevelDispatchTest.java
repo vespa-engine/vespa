@@ -120,7 +120,7 @@ public class MultilevelDispatchTest {
     }
 
     private void assertDispatchAndSearchNodes(int expRowId, int expPartId, int expDistributionKey, Dispatch dispatch, String[] connectSpecs, SearchNode[] searchNodes) {
-        assertEquals(expRowId, dispatch.getNodeSpec().rowId());
+        assertEquals(expRowId, dispatch.getNodeSpec().groupIndex());
         assertEquals(expPartId, dispatch.getNodeSpec().partitionId());
         assertEquals("mycluster/search/cluster.mycluster/dispatchers/dispatch." + expDistributionKey, dispatch.getConfigId());
         assertEquals(expPartId, getFdispatchrcConfig(dispatch).partition());

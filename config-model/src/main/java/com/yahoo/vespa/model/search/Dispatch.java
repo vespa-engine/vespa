@@ -45,7 +45,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
         portsMeta.on(2).tag("http").tag("json").tag("health").tag("state");
         setProp("clustertype", "search")
                 .setProp("clustername", dispatchGroup.getClusterName())
-                .setProp("index", nodeSpec.rowId());
+                .setProp("index", nodeSpec.groupIndex());
         monitorService();
     }
 
@@ -159,7 +159,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
         for (SearchInterface searchNode : dispatchGroup.getSearchersIterable()) {
             final PartitionsConfig.Dataset.Engine.Builder engineBuilder = new PartitionsConfig.Dataset.Engine.Builder().
                     name_and_port(searchNode.getDispatcherConnectSpec()).
-                    rowid(searchNode.getNodeSpec().rowId()).
+                    rowid(searchNode.getNodeSpec().groupIndex()).
                     partid(searchNode.getNodeSpec().partitionId());
             allEngines.add(engineBuilder);
             if (preferLocalRow) {

@@ -122,7 +122,7 @@ public class SearchNode extends AbstractService implements
     }
 
     public void updatePartition(int partitionId) {
-        nodeSpec = new NodeSpec(nodeSpec.rowId(), partitionId);
+        nodeSpec = new NodeSpec(nodeSpec.groupIndex(), partitionId);
     }
 
     @Override

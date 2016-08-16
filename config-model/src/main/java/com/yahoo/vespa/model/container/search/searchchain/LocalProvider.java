@@ -180,7 +180,7 @@ public class LocalProvider extends Provider implements
     public void getConfig(DispatchConfig.Builder builder) {
         if (!(searchCluster instanceof IndexedSearchCluster)) {
             log.warning("Could not build DispatchConfig: Only supported for IndexedSearchCluster, got "
-                    + searchCluster.getClass().getCanonicalName());
+                        + searchCluster.getClass().getCanonicalName());
             return;
         }
         ((IndexedSearchCluster) searchCluster).getConfig(builder);
