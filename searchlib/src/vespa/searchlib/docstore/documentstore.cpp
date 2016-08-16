@@ -114,17 +114,8 @@ DocumentStore::~DocumentStore()
 void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    if (useCache() && _config.allowVisitCaching()) {
-        LidVector nonCachedLids;
-        nonCachedLids.reserve(lids.size());
-        for (uint32_t lid : lids) {
-            if (_cache->hasKey(lid)) {
-                visitor.visit(lid, read(lid, repo));
-            } else {
-                nonCachedLids.emplace_back(lid);
-            }
-        }
-        _store.visit(nonCachedLids, repo, visitor);
+    if (useCache() && _config.allowVisitCaching() && visitor.allowVisitCaching()) {
+        _store.visit(lids, repo, visitor);
     } else {
         _store.visit(lids, repo, visitor);
     }
