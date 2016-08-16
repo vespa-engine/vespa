@@ -97,6 +97,7 @@ public:
     std::map<document::BucketId, TestBucketInfo> _bucketInfo;
     uint32_t _emptyBuckets;
     document::Document::SP _document;
+    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
     void setupTestEnvironment(bool fakePersistenceLayer = true,
                               bool noDelete = false);
@@ -158,6 +159,7 @@ public:
     static constexpr uint32_t DIR_SPREAD = 3;
     static constexpr uint32_t MESSAGE_WAIT_TIME = 60*2;
 
+
     void setUp() {
         _emptyBuckets = 0;
     }
@@ -193,7 +195,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
 
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(
                 *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes",
-                FileSpec("config-doctypes.cfg"))));
+                FileSpec(_srcDir + "/config-doctypes.cfg"))));
     _top.reset(new DummyStorageLink);
     _node.reset(new TestServiceLayerApp(
                 DiskCount(2), NodeIndex(0), config.getConfigId()));

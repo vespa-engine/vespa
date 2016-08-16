@@ -45,6 +45,7 @@ class GetOperationTest : public CppUnit::TestFixture, public DistributorTestUtil
     CPPUNIT_TEST_SUITE_END();
 
     document::DocumentTypeRepo::SP _repo;
+    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
 public:
     document::DocumentId docId;
@@ -54,7 +55,7 @@ public:
     void setUp() {
         _repo.reset(
                 new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
-                        getConfig("config-doctypes", FileSpec("config-doctypes.cfg"))));
+                        getConfig("config-doctypes", FileSpec(_srcDir + "/config-doctypes.cfg"))));
         createLinks();
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));

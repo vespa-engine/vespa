@@ -28,6 +28,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
     document::DocumentTypeRepo::SP _repo;
     const document::DocumentType* _html_type;
     std::unique_ptr<Operation> op;
+    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
     void testSimple();
     void testMultipleNodes();
@@ -49,7 +50,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
     void setUp() {
         _repo.reset(new document::DocumentTypeRepo(
                 *config::ConfigGetter<document::DocumenttypesConfig>::getConfig(
-                    "config-doctypes", config::FileSpec("config-doctypes.cfg"))));
+                    "config-doctypes", config::FileSpec(_srcDir + "/config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     };

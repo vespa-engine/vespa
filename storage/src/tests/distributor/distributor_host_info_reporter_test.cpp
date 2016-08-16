@@ -186,7 +186,8 @@ DistributorHostInfoReporterTest::generateExampleJson()
 
     std::string jsonString = json.str();
 
-    std::string path = "../../../protocols/getnodestate/distributor.json";
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::string path = srcDir + "/../../../protocols/getnodestate/distributor.json";
     std::string goldenString = File::readAll(path);
 
     vespalib::slime::Memory goldenMemory(goldenString);

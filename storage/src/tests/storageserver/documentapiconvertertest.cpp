@@ -28,12 +28,14 @@ namespace storage {
 struct DocumentApiConverterTest : public CppUnit::TestFixture
 {
     std::unique_ptr<DocumentApiConverter> _converter;
+    const std::string _src_dir;
     const DocumentTypeRepo::SP _repo;
     const DataType& _html_type;
 
     DocumentApiConverterTest()
-        : _repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                                "config-doctypes.cfg"))),
+        : _src_dir(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
+          _repo(new DocumentTypeRepo(readDocumenttypesConfig(
+                  (_src_dir + "/config-doctypes.cfg").c_str()))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }
