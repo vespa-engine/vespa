@@ -68,6 +68,9 @@ public class SearchCluster {
         
         /** Returns the nodes in this group as an immutable list */
         public ImmutableList<Node> nodes() { return nodes; }
+
+        @Override
+        public String toString() { return "search group " + id; }
         
     }
     
@@ -88,6 +91,9 @@ public class SearchCluster {
 
         /** Returns the id of this group this node belongs to */
         public int group() { return group; }
+        
+        @Override
+        public String toString() { return "search node " + hostname; }
         
     }
 

@@ -55,6 +55,9 @@ import static com.yahoo.container.util.Util.quote;
 // catch and unwrap into a results with an error in high level methods.  -Jon
 public class FastSearcher extends VespaBackEndSearcher {
 
+    /** If this is turned on this will make search queries directly to the local search node when possible */
+    private final static CompoundName dispatchDirect = new CompoundName("dispatch.direct");
+
     /** If this is turned on this will fill summaries by dispatching directly to search nodes over RPC */
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
@@ -219,7 +222,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         FS4Channel channel = null;
         try {
-            channel = chooseBackend().openChannel();
+            channel = chooseBackend(query).openChannel();
             channel.setQuery(query);
 
             Result result = searchTwoPhase(channel, query, queryPacket, cacheKey);
@@ -255,7 +258,10 @@ public class FastSearcher extends VespaBackEndSearcher {
      * (see below), we will instead return a backend instance which connects directly to the local search node
      * for efficiency.
      */
-    private Backend chooseBackend() {
+    private Backend chooseBackend(Query query) {
+        // TODO 2016-08-16: Turn this on by default (by changing the 'false' below to 'true')
+        if ( ! query.properties().getBoolean(dispatchDirect, false)) return dispatchBackend;
+        
         // A search node in the search cluster in question is configured on the same host as the currently running container.
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
@@ -271,7 +277,8 @@ public class FastSearcher extends VespaBackEndSearcher {
         // TODO: Only use direct dispatch if the local search node is up
         // TODO: Only use direct dispatch if the search cluster has at least as many nodes as this container cluster
         // (to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers)
-        
+
+        query.trace(false, 2, "Dispatching directly to ", localSearchNode);
         return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
     }
 
