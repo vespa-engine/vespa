@@ -53,7 +53,7 @@ public class DockerFailTest {
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
-        HostName hostName = new HostName("hostName");
+        HostName hostName = new HostName("host1");
         initialContainerNodeSpec = new ContainerNodeSpec(
                 hostName,
                 Optional.of(new DockerImage("dockerImage")),
@@ -74,7 +74,7 @@ public class DockerFailTest {
         }
 
         while (!DockerMock.getRequests().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
+                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
                 "minMainMemoryAvailableGb: 1.0\nexecuteInContainer with ContainerName: ContainerName { name=container }, " +
                 "args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\nexecuteInContainer with ContainerName: " +
                 "ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n")) {
@@ -92,21 +92,19 @@ public class DockerFailTest {
     public void dockerFailTest() throws InterruptedException {
         dockerMock.deleteContainer(initialContainerNodeSpec.containerName);
 
-        String goal = "startContainer with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, " +
-                "ContainerName: ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
+        String goal = "startContainer with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, " +
+                "ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n" +
                 "deleteContainer with ContainerName: ContainerName { name=container }\n" +
-                "startContainer with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: " +
-                "ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
+                "startContainer with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: " +
+                "ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n";
 
 
         while (!DockerMock.getRequests().equals(goal)) {
             Thread.sleep(1000);
-            assertThat(DockerMock.getRequests(), is(goal));
-
         }
 
         assertThat(DockerMock.getRequests(), is(goal));

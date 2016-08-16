@@ -71,7 +71,7 @@ public class DockerImpl implements Docker {
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
     private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
     private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
-    private static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
+    static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
@@ -166,11 +166,11 @@ public class DockerImpl implements Docker {
             final DockerImage dockerImage,
             final HostName hostName,
             final ContainerName containerName,
+            final InetAddress nodeInetAddress,
             double minCpuCores,
             double minDiskAvailableGb,
             double minMainMemoryAvailableGb) {
         try {
-            InetAddress nodeInetAddress = InetAddress.getByName(hostName.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
             final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
             final double GIGA = Math.pow(2.0, 30.0);

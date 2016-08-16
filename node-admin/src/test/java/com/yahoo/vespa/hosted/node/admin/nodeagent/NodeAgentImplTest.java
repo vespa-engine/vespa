@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -88,6 +89,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -134,12 +136,13 @@ public class NodeAgentImplTest {
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
 
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, wantedRestartGeneration, dockerImage, vespaVersion);
@@ -182,12 +185,13 @@ public class NodeAgentImplTest {
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, wantedDockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
@@ -259,12 +263,13 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -302,12 +307,13 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -349,6 +355,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -390,6 +397,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -431,6 +439,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -470,6 +479,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -512,6 +522,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -555,6 +566,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -597,6 +609,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -643,6 +656,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -688,6 +702,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -730,6 +745,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -773,6 +789,7 @@ public class NodeAgentImplTest {
                 any(DockerImage.class),
                 any(HostName.class),
                 any(ContainerName.class),
+                any(InetAddress.class),
                 anyDouble(),
                 anyDouble(),
                 anyDouble());
@@ -964,12 +981,13 @@ public class NodeAgentImplTest {
         } catch (Exception e) {
         }
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verifyNoMoreInteractions();
 
@@ -1070,12 +1088,13 @@ public class NodeAgentImplTest {
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(docker).startContainer(
-                nodeSpec.wantedDockerImage.get(),
-                nodeSpec.hostname,
-                nodeSpec.containerName,
-                nodeSpec.minCpuCores.get(),
-                nodeSpec.minDiskAvailableGb.get(),
-                nodeSpec.minMainMemoryAvailableGb.get());
+                eq(nodeSpec.wantedDockerImage.get()),
+                eq(nodeSpec.hostname),
+                eq(nodeSpec.containerName),
+                any(InetAddress.class),
+                eq(nodeSpec.minCpuCores.get()),
+                eq(nodeSpec.minDiskAvailableGb.get()),
+                eq(nodeSpec.minMainMemoryAvailableGb.get()));
 
         switch (scenario) {
             case EXCEPTION:
