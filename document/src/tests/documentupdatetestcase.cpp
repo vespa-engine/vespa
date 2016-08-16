@@ -19,8 +19,16 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/types.h>
+#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/vespalib/tensor/tensor_factory.h>
 
 using namespace document::config_builder;
+using vespalib::tensor::Tensor;
+using vespalib::tensor::TensorType;
+using vespalib::tensor::TensorCells;
+using vespalib::tensor::TensorDimensions;
 
 namespace document {
 
@@ -46,6 +54,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testUpdateArrayWrongSubtype();
   void testUpdateWeightedSetWrongSubtype();
   void testMapValueUpdate();
+  void testTensorAssignUpdate();
+  void testTensorClearUpdate();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -69,6 +79,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testUpdateArrayWrongSubtype);
   CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
   CPPUNIT_TEST(testMapValueUpdate);
+  CPPUNIT_TEST(testTensorAssignUpdate);
+  CPPUNIT_TEST(testTensorClearUpdate);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -137,6 +149,18 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     }
 }
 
+Tensor::UP
+createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
+    vespalib::tensor::DefaultTensor::builder builder;
+    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+}
+
+FieldValue::UP createTensorFieldValue() {
+    auto fv(std::make_unique<TensorFieldValue>());
+    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
+                       {"x", "y"});
+    return std::move(fv);
+}
 
 }  // namespace
 
@@ -950,6 +974,40 @@ DocumentUpdateTest::testMapValueUpdate()
     CPPUNIT_ASSERT(fv4->find(StringFieldValue("apple")) == fv4->end());
 }
 
+
+void
+DocumentUpdateTest::testTensorAssignUpdate()
+{
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    CPPUNIT_ASSERT(!doc->getValue("tensor"));
+    Document updated(*doc);
+    FieldValue::UP new_value(createTensorFieldValue());
+    DocumentUpdate upd(*doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
+                  addUpdate(AssignValueUpdate(*new_value)));
+    upd.applyTo(updated);
+    FieldValue::UP fval(updated.getValue("tensor"));
+    CPPUNIT_ASSERT(fval);
+    CPPUNIT_ASSERT(*fval == *new_value);
+    CPPUNIT_ASSERT(*doc != updated);
+}
+
+void
+DocumentUpdateTest::testTensorClearUpdate()
+{
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    Document updated(*doc);
+    updated.setValue(updated.getField("tensor"), *createTensorFieldValue());
+    CPPUNIT_ASSERT(*doc != updated);
+    DocumentUpdate upd(*doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
+                  addUpdate(ClearValueUpdate()));
+    upd.applyTo(updated);
+    CPPUNIT_ASSERT(!updated.getValue("tensor"));
+    CPPUNIT_ASSERT(*doc == updated);
+}
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
