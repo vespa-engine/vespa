@@ -100,7 +100,7 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
       _config(config),
       _backingStore(store),
-      _store(_backingStore, _config.getCompression()),
+      _store(_backingStore, config.getCompression()),
       _cache(new Cache(_store, config.getMaxCacheBytes())),
       _uncached_lookups(0)
 {
@@ -114,7 +114,20 @@ DocumentStore::~DocumentStore()
 void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    _store.visit(lids, repo, visitor);
+    if (useCache() && _config.allowVisitCaching()) {
+        LidVector nonCachedLids;
+        nonCachedLids.reserve(lids.size());
+        for (uint32_t lid : lids) {
+            if (_cache->hasKey(lid)) {
+                visitor.visit(lid, read(lid, repo));
+            } else {
+                nonCachedLids.emplace_back(lid);
+            }
+        }
+        _store.visit(nonCachedLids, repo, visitor);
+    } else {
+        _store.visit(lids, repo, visitor);
+    }
 }
 
 document::Document::UP
