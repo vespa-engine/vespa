@@ -19,8 +19,16 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/types.h>
+#include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/vespalib/tensor/tensor_factory.h>
 
 using namespace document::config_builder;
+using vespalib::tensor::Tensor;
+using vespalib::tensor::TensorType;
+using vespalib::tensor::TensorCells;
+using vespalib::tensor::TensorDimensions;
 
 namespace document {
 
@@ -46,6 +54,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testUpdateArrayWrongSubtype();
   void testUpdateWeightedSetWrongSubtype();
   void testMapValueUpdate();
+  void testTensorUpdate();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -69,6 +78,7 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testUpdateArrayWrongSubtype);
   CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
   CPPUNIT_TEST(testMapValueUpdate);
+  CPPUNIT_TEST(testTensorUpdate);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -137,6 +147,11 @@ void testValueUpdate(const UpdateType& update, const DataType &type) {
     }
 }
 
+Tensor::UP
+createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
+    vespalib::tensor::DefaultTensor::builder builder;
+    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+}
 
 }  // namespace
 
@@ -948,6 +963,37 @@ DocumentUpdateTest::testMapValueUpdate()
     std::unique_ptr<WeightedSetFieldValue> fv4 =
         doc->getAs<WeightedSetFieldValue>(field2);
     CPPUNIT_ASSERT(fv4->find(StringFieldValue("apple")) == fv4->end());
+}
+
+
+void
+DocumentUpdateTest::testTensorUpdate()
+{
+    // Create a test document
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    CPPUNIT_ASSERT(!doc->getValue("tensor"));
+    Document updated(*doc);
+    // Perform update that sets tensor field
+    auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
+                                   {"x", "y"});
+    TensorFieldValue new_value;
+    new_value = new_tensor->clone();
+    DocumentUpdate upd(*doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
+                  addUpdate(AssignValueUpdate(new_value)));
+    upd.applyTo(updated);
+    FieldValue::UP fval(updated.getValue("tensor"));
+    CPPUNIT_ASSERT(fval);
+    CPPUNIT_ASSERT(*fval == new_value);
+    CPPUNIT_ASSERT(*doc != updated);
+    // Perform update that clears tensor field
+    DocumentUpdate upd2(*doc->getDataType(), doc->getId());
+    upd2.addUpdate(FieldUpdate(upd2.getType().getField("tensor")).
+                   addUpdate(ClearValueUpdate()));
+    upd2.applyTo(updated);
+    CPPUNIT_ASSERT(!updated.getValue("tensor"));
+    CPPUNIT_ASSERT(*doc == updated);
 }
 
 
