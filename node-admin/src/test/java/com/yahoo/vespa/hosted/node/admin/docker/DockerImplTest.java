@@ -27,15 +27,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -54,34 +49,6 @@ public class DockerImplTest {
     }
 
     @Ignore
-    @Test
-    public void repeatedPollsOfSameImageAreNotScheduled() throws Exception {
-        final DockerClient dockerClient = mock(DockerClient.class);
-        final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocationOnMock -> {
-            latch.await();
-            return null;
-        }).when(dockerClient).pullImageCmd(any(String.class));
-        final Docker docker = new DockerImpl(dockerClient);
-        final DockerImage dockerImage = new DockerImage("test-image");
-
-        final CompletableFuture<DockerImage> asyncPollFuture1 = docker.pullImageAsync(dockerImage);
-
-        assertThat(asyncPollFuture1.isDone(), is(false));
-
-        final CompletableFuture<DockerImage> asyncPollFuture2 = docker.pullImageAsync(dockerImage);
-
-        assertThat(asyncPollFuture2, is(sameInstance(asyncPollFuture1)));
-
-        latch.countDown();  // This should make the future complete shortly.
-        asyncPollFuture1.get(5, TimeUnit.SECONDS);
-
-        // Now that the previous poll is completed, a new poll may be scheduled.
-        final CompletableFuture<DockerImage> asyncPollFuture3 = docker.pullImageAsync(dockerImage);
-
-        assertThat(asyncPollFuture3, is(not(sameInstance(asyncPollFuture1))));
-    }
-
     @Test
     public void vespaVersionIsParsed() {
         assertThat(DockerImpl.parseVespaVersion("5.119.53"), is(Optional.of("5.119.53")));
