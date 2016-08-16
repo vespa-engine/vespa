@@ -40,26 +40,37 @@ public class Dispatcher extends AbstractComponent {
     private final static Logger log = Logger.getLogger(Dispatcher.class.getName());
     private final Client client;
 
+    /** A model of the search cluster this dispatches to */
+    private final SearchCluster cluster;
+    
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
-    private final ImmutableMap<Integer, Client.NodeConnection> nodes;
+    private final ImmutableMap<Integer, Client.NodeConnection> nodeConnections;
 
     private final Compressor compressor = new Compressor();
 
     @Inject
     public Dispatcher(DispatchConfig dispatchConfig) {
         this.client = new RpcClient();
-        ImmutableMap.Builder<Integer, Client.NodeConnection> nodesBuilder = new ImmutableMap.Builder<>();
+        this.cluster = new SearchCluster(dispatchConfig);
+
+        // Create node rpc connections, indexed by the legacy "partid", which allows us to bridge
+        // between fs4 calls (for search) and rpc calls (for summary fetch)
+        ImmutableMap.Builder<Integer, Client.NodeConnection> nodeConnectionsBuilder = new ImmutableMap.Builder<>();
         for (DispatchConfig.Node node : dispatchConfig.node()) {
-            nodesBuilder.put(node.key(), client.createConnection(node.host(), node.port()));
+            nodeConnectionsBuilder.put(node.key(), client.createConnection(node.host(), node.port()));
         }
-        nodes = nodesBuilder.build();
+        nodeConnections = nodeConnectionsBuilder.build();
     }
 
     /** For testing */
     public Dispatcher(Map<Integer, Client.NodeConnection> nodeConnections, Client client) {
-        this.nodes = ImmutableMap.copyOf(nodeConnections);
+        this.cluster = null;
+        this.nodeConnections = ImmutableMap.copyOf(nodeConnections);
         this.client = client;
     }
+    
+    /** Returns the search cluster this dispatches to */
+    public SearchCluster cluster() { return cluster; }
 
     /** Fills the given summary class by sending RPC requests to the right search nodes */
     public void fill(Result result, String summaryClass, CompressionType compression) {
@@ -94,7 +105,7 @@ public class Dispatcher extends AbstractComponent {
     private void sendGetDocsumsRequest(int nodeId, List<FastHit> hits, String summaryClass,
                                        CompressionType compression,
                                        Result result, GetDocsumsResponseReceiver responseReceiver) {
-        Client.NodeConnection node = nodes.get(nodeId);
+        Client.NodeConnection node = nodeConnections.get(nodeId);
         if (node == null) {
             result.hits().addError(ErrorMessage.createEmptyDocsums("Could not fill hits from unknown node " + nodeId));
             log.warning("Got hits with partid " + nodeId + ", which is not included in the current dispatch config");
@@ -123,7 +134,7 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        for (Client.NodeConnection nodeConnection : nodes.values())
+        for (Client.NodeConnection nodeConnection : nodeConnections.values())
             nodeConnection.close();
     }
 

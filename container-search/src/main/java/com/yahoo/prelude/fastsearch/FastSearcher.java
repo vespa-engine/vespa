@@ -1,8 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import java.util.List;
 import java.util.Optional;
 
+import com.google.common.collect.ImmutableCollection;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
@@ -15,6 +17,7 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
+import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
@@ -22,6 +25,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -66,14 +70,16 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** Edition of the index */
     private int docstamp;
 
-    private final Backend backend;
+    private final Backend dispatchBackend;
     
     private final FS4ResourcePool fs4ResourcePool;
+    
+    private final String selfHostname;
 
     /**
      * Creates a Fastsearcher.
      *
-     * @param backend       The backend object containing the connection to the dispatch node this should talk to
+     * @param dispatchBackend       The backend object containing the connection to the dispatch node this should talk to
      *                      over the fs4 protocol
      * @param fs4ResourcePool the resource pool used to create direct connections to the local search nodes when
      *                        bypassing the dispatch node
@@ -86,13 +92,14 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param cacheParams   the size, lifetime, and controller of our cache
      * @param documentdbInfoConfig document database parameters
      */
-    public FastSearcher(Backend backend, FS4ResourcePool fs4ResourcePool,
+    public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool,
                         Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
                         CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
         init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
-        this.backend = backend;
+        this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
+        this.selfHostname = LinuxInetAddress.getLocalHost().getHostName();
     }
 
     /** Clears the packet cache if the received timestamp is older than our timestamp */
@@ -138,7 +145,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         // If you want to change this code, you need to understand
         // com.yahoo.prelude.cluster.ClusterSearcher.ping(Searcher) and
         // com.yahoo.prelude.cluster.TrafficNodeMonitor.failed(ErrorMessage)
-        FS4Channel channel = backend.openPingChannel();
+        FS4Channel channel = dispatchBackend.openPingChannel();
 
         try {
             PingPacket pingPacket = new PingPacket();
@@ -249,8 +256,23 @@ public class FastSearcher extends VespaBackEndSearcher {
      * for efficiency.
      */
     private Backend chooseBackend() {
-        // TODO: Implement
-        return backend;
+        // A search node in the search cluster in question is configured on the same host as the currently running container.
+        // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
+        //         That local search node responds.
+        // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
+        ImmutableCollection<SearchCluster.Node> localSearchNodes = dispatcher.cluster().nodesByHost().get(selfHostname);
+        // Only use direct dispatch if we have exactly 1 search node on the same machine:
+        if (localSearchNodes.size() != 1) return dispatchBackend;
+
+        SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
+        // Only use direct dispatch if the local search node has the entire corpus
+        if (dispatcher.cluster().groups().get(localSearchNode.group()).nodes().size() != 1) return dispatchBackend;
+
+        // TODO: Only use direct dispatch if the local search node is up
+        // TODO: Only use direct dispatch if the search cluster has at least as many nodes as this container cluster
+        // (to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers)
+        
+        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
     }
 
     /**
@@ -298,7 +320,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             packetWrapper = cacheLookupTwoPhase(cacheKey, result,summaryClass);
         }
 
-        FS4Channel channel = backend.openChannel();
+        FS4Channel channel = dispatchBackend.openChannel();
         channel.setQuery(query);
         Packet[] receivedPackets;
         try {
@@ -547,7 +569,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     public String toString() {
-        return "fast searcher (" + getName() + ") " + backend;
+        return "fast searcher (" + getName() + ") " + dispatchBackend;
     }
 
     /**
