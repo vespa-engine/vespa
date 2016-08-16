@@ -182,7 +182,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         private final int port;
         private final int group;
         
-        private final AtomicBoolean working = new AtomicBoolean();
+        private final AtomicBoolean working = new AtomicBoolean(true);
         
         public Node(String hostname, int port, int group) {
             this.hostname = hostname;

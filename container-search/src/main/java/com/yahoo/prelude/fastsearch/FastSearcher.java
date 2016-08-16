@@ -66,9 +66,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
 
-    /** Edition of the index */
-    private int docstamp;
-
     private final Backend dispatchBackend;
     
     private final FS4ResourcePool fs4ResourcePool;
