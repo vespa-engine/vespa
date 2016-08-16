@@ -275,7 +275,6 @@ public class JsonReader {
     }
 
     private void addFieldUpdates(DocumentUpdate update, Field field) {
-        validateFieldUpdates(update, field);
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 
@@ -298,13 +297,6 @@ public class JsonReader {
             buffer.next();
         }
         update.addFieldUpdate(fieldUpdate);
-    }
-
-    private static void validateFieldUpdates(DocumentUpdate update, Field field) {
-        if (field.getDataType() == DataType.TENSOR) {
-            throw new IllegalArgumentException("Updates to fields of type TENSOR is not yet supported ("
-                    + "id='" + update.getId().toString() + "', field='" + field.getName() + "')");
-        }
     }
 
     @SuppressWarnings("rawtypes")
