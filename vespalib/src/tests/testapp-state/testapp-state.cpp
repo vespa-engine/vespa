@@ -7,5 +7,9 @@ using namespace vespalib;
 TEST_MAIN() {
     system("./vespalib_state_test_app > out.txt 2>&1 out.txt");
     system("cat out.txt | grep STATE | sed 's/([^)].*\\//(/' > actual.txt");
-    EXPECT_EQUAL(system("diff -u expect.txt actual.txt"), 0);
+
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::string diff_cmd("diff -u actual.txt ");
+    diff_cmd += src_dir + "/expect.txt";
+    EXPECT_EQUAL(system(diff_cmd.c_str()), 0);
 }

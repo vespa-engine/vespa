@@ -20,7 +20,9 @@ Test::Main()
     EXPECT_EQUAL((int8_t)'a', LowerCase::convert((int8_t)'A'));
     EXPECT_EQUAL((uint8_t)'a', LowerCase::convert((uint8_t)'A'));
 
-    std::ifstream yellData("yell-want.dat");
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+
+    std::ifstream yellData(srcDir + "/yell-want.dat");
 
     EXPECT_TRUE(yellData.good());
 

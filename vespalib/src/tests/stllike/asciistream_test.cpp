@@ -342,7 +342,8 @@ AsciistreamTest::testCreateFromFile()
     asciistream is(asciistream::createFromFile("non-existing.txt"));
     EXPECT_TRUE(is.eof());
 
-    is = asciistream::createFromFile("test.txt");
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    is = asciistream::createFromFile(src_dir + "/test.txt");
     EXPECT_FALSE(is.eof());
     EXPECT_EQUAL(12u, is.size());
     string s;

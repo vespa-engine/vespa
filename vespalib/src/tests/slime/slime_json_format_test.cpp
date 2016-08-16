@@ -351,7 +351,8 @@ TEST("decode simplified form") {
 }
 
 TEST_F("decode bytes not null-terminated", Slime) {
-    std::ifstream file("large_json.txt");
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::ifstream file(src_dir + "/large_json.txt");
     ASSERT_TRUE(file.is_open());
     std::stringstream buf;
     buf << file.rdbuf();

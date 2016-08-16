@@ -15,7 +15,12 @@ bool runPrint(const char *cmd) {
 TEST("make fixture macros") {
     EXPECT_FALSE(runPrint("../../apps/make_fixture_macros/vespalib_make_fixture_macros_app"));
     EXPECT_TRUE(runPrint("../../apps/make_fixture_macros/vespalib_make_fixture_macros_app 9 > macros.tmp"));
-    EXPECT_TRUE(runPrint("diff -u ../../vespa/vespalib/testkit/generated_fixture_macros.h macros.tmp"));
+
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::string diffCmd("diff -u ");
+    diffCmd += srcDir;
+    diffCmd += "/../../vespa/vespalib/testkit/generated_fixture_macros.h macros.tmp";
+    EXPECT_TRUE(runPrint(diffCmd.c_str()));
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }

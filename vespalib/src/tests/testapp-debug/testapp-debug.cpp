@@ -7,5 +7,10 @@ using namespace vespalib;
 TEST_MAIN() {
     system("./vespalib_debug_test_app");
     system("diff lhs.out rhs.out > diff.out");
-    EXPECT_EQUAL(system("diff diff.out diff.ref"), 0);
+
+
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::string diff_cmd("diff diff.out ");
+    diff_cmd += src_dir + "/diff.ref";
+    EXPECT_EQUAL(system(diff_cmd.c_str()), 0);
 }

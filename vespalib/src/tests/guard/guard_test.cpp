@@ -132,7 +132,8 @@ Test::testDirPointer()
         EXPECT_TRUE(!dir.valid());
     }
     {
-        DirPointer dir(opendir("."));
+        const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+        DirPointer dir(opendir(srcDir.c_str()));
         EXPECT_TRUE(dir.valid());
 
         dirent *de;

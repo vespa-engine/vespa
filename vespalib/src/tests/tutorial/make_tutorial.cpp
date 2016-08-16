@@ -29,24 +29,26 @@ std::string runCommand(const std::string &cmd) {
     return out;
 }
 
-void insertExample(const std::string &name) {
-    std::string str = runCommand(make_string("./make_example.sh %s",
+void insertExample(const std::string &name, const std::string &src_dir) {
+    std::string str = runCommand(make_string("%s/make_example.sh %s", src_dir.c_str(),
                                              name.c_str()));
     fprintf(stdout, "%s", str.c_str());
 }
 
-void insertSource(const std::string &name) {
-    std::string str = runCommand(make_string("./make_source.sh %s",
+void insertSource(const std::string &name, const std::string &src_dir) {
+    std::string str = runCommand(make_string("%s/make_source.sh %s", src_dir.c_str(),
                                              name.c_str()));
     fprintf(stdout, "%s", str.c_str());
 }
 
-void insertFile(const std::string &name) {
-    std::string str = readFile(name);
+void insertFile(const std::string &name, const std::string &src_dir) {
+    std::string str = readFile(src_dir + "/" + name);
     fprintf(stdout, "%s", str.c_str());
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() {
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+
     std::string pre("[insert:");
     std::string example("example:");
     std::string source("source:");
@@ -56,7 +58,7 @@ TEST_MAIN_WITH_PROCESS_PROXY() {
     size_t pos = 0;
     size_t end = 0;
     size_t cursor = 0;
-    std::string input = readFile("tutorial_source.html");
+    std::string input = readFile(src_dir + "/tutorial_source.html");
     while ((pos = input.find(pre, cursor)) < input.size() &&
            (end = input.find(post, pos)) < input.size())
     {
@@ -64,13 +66,13 @@ TEST_MAIN_WITH_PROCESS_PROXY() {
         pos += pre.size();
         if (input.find(example, pos) == pos) {
             pos += example.size();
-            insertExample(std::string((input.data() + pos), (end - pos)));
+            insertExample(std::string((input.data() + pos), (end - pos)), src_dir);
         } else if (input.find(source, pos) == pos) {
             pos += source.size();
-            insertSource(std::string((input.data() + pos), (end - pos)));
+            insertSource(std::string((input.data() + pos), (end - pos)), src_dir);
         } else if (input.find(file, pos) == pos) {
             pos += file.size();
-            insertFile(std::string((input.data() + pos), (end - pos)));
+            insertFile(std::string((input.data() + pos), (end - pos)), src_dir);
         } else {
             std::string str((input.data() + pos), (end - pos));
             TEST_FATAL(make_string("invalid directive >%s<", str.c_str()).c_str());
