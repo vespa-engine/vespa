@@ -9,6 +9,7 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.tensor.MapTensor;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,6 +42,13 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     FieldUpdate addMultiList = null;
     FieldUpdate addMultiWset = null;
 
+    private final String documentId = "doc:something:foooo";
+    private final String tensorField = "tensorfield";
+
+    private Document createDocument() {
+        return new Document(docMan.getDocumentType("foobar"), new DocumentId(documentId));
+    }
+
     public void setUp() {
         docMan = new DocumentTypeManager();
 
@@ -52,6 +60,8 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
 
         DataType stringwset = DataType.getWeightedSet(DataType.STRING);
         docType.addField(new Field("strwset", stringwset));
+
+        docType.addField(new Field(tensorField, DataType.TENSOR));
         docMan.register(docType);
 
         docType2 = new DocumentType("otherdoctype");
@@ -101,7 +111,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyRemoveSingle() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strfoo"));
         doc.setFieldValue("strfoo", new StringFieldValue("cocacola"));
         assertEquals(new StringFieldValue("cocacola"), doc.getFieldValue("strfoo"));
@@ -111,7 +121,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyRemoveMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(DataType.getArray(DataType.STRING));
         strArray.add(new StringFieldValue("hello hello"));
@@ -126,7 +136,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyRemoveMultiWset() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
         strwset.put(new StringFieldValue("hello hello"), 10);
@@ -141,7 +151,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyAssignSingle() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strfoo"));
         docUp.addFieldUpdate(assignSingle);
         docUp.applyTo(doc);
@@ -149,7 +159,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyAssignMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(DataType.getArray(DataType.STRING));
         strArray.add(new StringFieldValue("hello hello"));
@@ -165,7 +175,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyAssignMultiWlist() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
         strwset.put(new StringFieldValue("hello hello"), 164);
@@ -185,7 +195,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyAddMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strarray"));
 
         docUp.addFieldUpdate(addMultiList);
@@ -198,7 +208,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     public void testApplyAddMultiWset() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = createDocument();
         assertNull(doc.getFieldValue("strwset"));
 
         WeightedSet<StringFieldValue> wset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
@@ -574,4 +584,34 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertEquals(docUp, deserialized);
         assertTrue(deserialized.getCreateIfNonExistent());
     }
+
+    private static TensorFieldValue createTensorFieldValue(String tensor) {
+        return new TensorFieldValue(MapTensor.from(tensor));
+    }
+
+    public void testThatAssignValueUpdateForTensorFieldCanBeApplied() {
+        Document doc = createDocument();
+        assertNull(doc.getFieldValue(tensorField));
+
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createAssign(docType.getField(tensorField),
+                createTensorFieldValue("{{x:0}:2.0}")));
+        update.applyTo(doc);
+
+        TensorFieldValue tensor = (TensorFieldValue) doc.getFieldValue(tensorField);
+        assertEquals(createTensorFieldValue("{{x:0}:2.0}"), tensor);
+    }
+
+    public void testThatClearValueUpdateForTensorFieldCanBeApplied() {
+        Document doc = createDocument();
+        doc.setFieldValue(docType.getField(tensorField), createTensorFieldValue("{{x:0}:2.0}"));
+        assertNotNull(doc.getFieldValue(tensorField));
+
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createClear(docType.getField(tensorField)));
+        update.applyTo(doc);
+
+        assertNull(doc.getFieldValue(tensorField));
+    }
+
 }

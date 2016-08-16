@@ -1131,6 +1131,31 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testAssignUpdateOfEmptyTensor() {
+        assertTensorAssignUpdate("{}", createAssignUpdateWithTensor("{}"));
+    }
+
+    @Test
+    public void testAssignUpdateOfNullTensor() {
+        ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithTensor(null)).getValueUpdate(0);
+        assertTrue(clearUpdate != null);
+        assertTrue(clearUpdate.getValue() == null);
+    }
+
+    @Test
+    public void testAssignUpdateOfTensorWithCells() {
+        assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c}:3.0}}",
+                createAssignUpdateWithTensor("{ "
+                        + "  \"cells\": [ "
+                        + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
+                        + "      \"value\": 2.0 }, "
+                        + "    { \"address\": { \"x\": \"c\" }, "
+                        + "      \"value\": 3.0 } "
+                        + "  ]"
+                        + "}"));
+    }
+
+    @Test
     public void require_that_parser_propagates_datatype_parser_errors_predicate() {
         assertParserErrorMatches(
                 "Error in document 'id:unittest:testpredicate::0' - could not parse field 'boolean' of type 'predicate': " +
@@ -1182,20 +1207,6 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void requireThatUpdatesForTensorFieldsAreNotSupported() {
-        try {
-            InputStream rawDoc = new ByteArrayInputStream(
-                    Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": {"
-                            + "\"assign\": {} } } } ]"));
-            new JsonReader(types, rawDoc, parserFactory).next();
-            assertTrue("Exception not thrown", false);
-        } catch (IllegalArgumentException e) {
-            assertEquals("Updates to fields of type TENSOR is not yet supported (id='id:unittest:testtensor::0', field='tensorfield')",
-                    e.getMessage());
-        }
-    }
-
-    @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage(new Contains("Document type walrus does not exist"));
@@ -1233,12 +1244,34 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
+    private DocumentUpdate createAssignUpdateWithTensor(String inputTensor) {
+        InputStream rawDoc = new ByteArrayInputStream(
+                Utf8.toBytes("[ { \"update\": \"" + TENSOR_DOC_ID + "\", \"fields\": { \"tensorfield\": {"
+                        + "\"assign\": " + (inputTensor != null ? inputTensor : "null") + " } } } ]"));
+        JsonReader reader = new JsonReader(types, rawDoc, parserFactory);
+        return (DocumentUpdate) reader.next();
+    }
+
     private static void assertTensorField(String expectedTensor, DocumentPut put) {
         final Document doc = put.getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
         TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
         assertEquals(MapTensor.from(expectedTensor), fieldValue.getTensor().get());
+    }
+
+    private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
+        assertEquals("testtensor", update.getId().getDocType());
+        assertEquals(TENSOR_DOC_ID, update.getId().toString());
+        AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update).getValueUpdate(0);
+        TensorFieldValue fieldValue = (TensorFieldValue) assignUpdate.getValue();
+        assertEquals(MapTensor.from(expectedTensor), fieldValue.getTensor().get());
+    }
+
+    private static FieldUpdate getTensorField(DocumentUpdate update) {
+        FieldUpdate fieldUpdate = update.getFieldUpdate("tensorfield");
+        assertEquals(1, fieldUpdate.size());
+        return fieldUpdate;
     }
 
     // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
