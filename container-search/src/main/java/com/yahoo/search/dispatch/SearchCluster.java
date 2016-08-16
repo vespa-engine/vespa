@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  */
 public class SearchCluster {
 
+    private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
 
@@ -24,6 +25,8 @@ public class SearchCluster {
     }
     
     public SearchCluster(List<Node> nodes) {
+        size = nodes.size();
+        
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet())
@@ -43,6 +46,9 @@ public class SearchCluster {
             nodesBuilder.add(new Node(node.host(), node.port(), node.group()));
         return nodesBuilder.build();
     }
+    
+    /** Returns the number of nodes in this cluster (across all groups) */
+    public int size() { return size; }
     
     /** Returns the groups of this cluster as an immutable map indexed by group id */
     public ImmutableMap<Integer, Group> groups() { return groups; }

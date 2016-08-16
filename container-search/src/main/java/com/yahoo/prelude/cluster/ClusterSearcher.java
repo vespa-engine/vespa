@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -100,6 +101,7 @@ public class ClusterSearcher extends Searcher {
                            LegacyEmulationConfig emulationConfig,
                            QrMonitorConfig monitorConfig,
                            DispatchConfig dispatchConfig,
+                           ClusterInfoConfig clusterInfoConfig,
                            Statistics manager,
                            FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
@@ -126,6 +128,8 @@ public class ClusterSearcher extends Searcher {
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
+        
+        int containerClusterSize = clusterInfoConfig.nodeCount();
 
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
@@ -144,13 +148,13 @@ public class ClusterSearcher extends Searcher {
             addBackendSearcher(searcher);
             gotExpectedBackend = true;
         } else {
-            for (int i = 0; i < searchClusterConfig.dispatcher().size(); i++) {
-                Backend b = createBackend(searchClusterConfig.dispatcher(i));
+            for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
+                Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                 FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                                       documentDbConfig, b, dispatcher, i);
+                                                       documentDbConfig, b, dispatcher, dispatcherIndex, containerClusterSize);
                 try {
-                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(i).host()));
+                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host()));
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
@@ -217,11 +221,14 @@ public class ClusterSearcher extends Searcher {
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
-                                               int i) {
+                                               int dispatcherIndex,
+                                               int containerClusterSize) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         searchClusterConfig,
-                                                        emulConfig, i);
-        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+                                                        emulConfig, 
+                                                        dispatcherIndex);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
+                                documentdbInfoConfig, containerClusterSize);
     }
 
     private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,

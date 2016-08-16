@@ -65,7 +65,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     1);
 
         MockFSChannel.setEmptyDocsums(false);
 
@@ -86,7 +87,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     1);
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher,new Query(query), 0, 10);
@@ -109,7 +111,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64), 
-                                                     documentdbConfigWithOneDb);
+                                                     documentdbConfigWithOneDb,
+                                                     1);
 
         Query query = new Query("?query=foo&model.restrict=testDb");
         query.prepare();
@@ -298,7 +301,9 @@ public class FastSearcherTestCase {
                                 new MockDispatcher(), 
                                 new SummaryParameters(null),
                                 new ClusterParams("testhittype"), 
-                                new CacheParams(100, 1e64), config);
+                                new CacheParams(100, 1e64), 
+                                config,
+                                1);
     }
 
     @Ignore
@@ -311,7 +316,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     1);
 
         CacheControl c = fastSearcher.getCacheControl();
 
@@ -354,7 +360,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     1);
 
         Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         result = doSearch(fastSearcher,new Query("?query=ignored"), 1, 1);
@@ -390,7 +397,8 @@ public class FastSearcherTestCase {
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(0, 0.0d),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     1);
         server.dispatch.packetData = BackendTestCase.PONG;
         Chain<Searcher> chain = new Chain<>(fastSearcher);
         Execution e = new Execution(chain, Execution.Context.createContextStub());

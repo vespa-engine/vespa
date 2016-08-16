@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.ImmutableCollection;
@@ -78,7 +77,8 @@ public class FastSearcher extends VespaBackEndSearcher {
     private final FS4ResourcePool fs4ResourcePool;
     
     private final String selfHostname;
-
+    private final int containerClusterSize;
+    
     /**
      * Creates a Fastsearcher.
      *
@@ -94,15 +94,18 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param clusterParams the cluster number, and other cluster backend parameters
      * @param cacheParams   the size, lifetime, and controller of our cache
      * @param documentdbInfoConfig document database parameters
+     * @param containerClusterSize the size of the cluster this is part of
      */
     public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool,
                         Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
-                        CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
+                        CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig,
+                        int containerClusterSize) {
         init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
         this.selfHostname = LinuxInetAddress.getLocalHost().getHostName();
+        this.containerClusterSize = containerClusterSize;
     }
 
     /** Clears the packet cache if the received timestamp is older than our timestamp */
@@ -266,17 +269,21 @@ public class FastSearcher extends VespaBackEndSearcher {
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
         // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
-        ImmutableCollection<SearchCluster.Node> localSearchNodes = dispatcher.cluster().nodesByHost().get(selfHostname);
+        ImmutableCollection<SearchCluster.Node> localSearchNodes = dispatcher.searchCluster().nodesByHost().get(selfHostname);
         // Only use direct dispatch if we have exactly 1 search node on the same machine:
         if (localSearchNodes.size() != 1) return dispatchBackend;
 
         SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
         // Only use direct dispatch if the local search node has the entire corpus
-        if (dispatcher.cluster().groups().get(localSearchNode.group()).nodes().size() != 1) return dispatchBackend;
+        if (dispatcher.searchCluster().groups().get(localSearchNode.group()).nodes().size() != 1) return dispatchBackend;
+
+        // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
+        // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
+        // This disregards the case where the search and container clusters are partially overlapping. 
+        // Such configurations produce skewed load in any case.
+        if (containerClusterSize < dispatcher.searchCluster().size()) return dispatchBackend;
 
         // TODO: Only use direct dispatch if the local search node is up
-        // TODO: Only use direct dispatch if the search cluster has at least as many nodes as this container cluster
-        // (to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers)
 
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
         return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());

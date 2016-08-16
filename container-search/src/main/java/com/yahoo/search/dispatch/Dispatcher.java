@@ -41,7 +41,7 @@ public class Dispatcher extends AbstractComponent {
     private final Client client;
 
     /** A model of the search cluster this dispatches to */
-    private final SearchCluster cluster;
+    private final SearchCluster searchCluster;
     
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, Client.NodeConnection> nodeConnections;
@@ -51,7 +51,7 @@ public class Dispatcher extends AbstractComponent {
     @Inject
     public Dispatcher(DispatchConfig dispatchConfig) {
         this.client = new RpcClient();
-        this.cluster = new SearchCluster(dispatchConfig);
+        this.searchCluster = new SearchCluster(dispatchConfig);
 
         // Create node rpc connections, indexed by the legacy "partid", which allows us to bridge
         // between fs4 calls (for search) and rpc calls (for summary fetch)
@@ -64,13 +64,13 @@ public class Dispatcher extends AbstractComponent {
 
     /** For testing */
     public Dispatcher(Map<Integer, Client.NodeConnection> nodeConnections, Client client) {
-        this.cluster = null;
+        this.searchCluster = null;
         this.nodeConnections = ImmutableMap.copyOf(nodeConnections);
         this.client = client;
     }
     
     /** Returns the search cluster this dispatches to */
-    public SearchCluster cluster() { return cluster; }
+    public SearchCluster searchCluster() { return searchCluster; }
 
     /** Fills the given summary class by sending RPC requests to the right search nodes */
     public void fill(Result result, String summaryClass, CompressionType compression) {
