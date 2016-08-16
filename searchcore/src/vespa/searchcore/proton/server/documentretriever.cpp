@@ -101,6 +101,11 @@ public:
             _visitor.visit(lid, std::move(doc));
         }
     }
+
+    virtual bool allowVisitCaching() const override {
+        return _visitor.allowVisitCaching();
+    }
+
 private:
     const DocumentRetriever  & _retriever;
     search::IDocumentVisitor & _visitor;

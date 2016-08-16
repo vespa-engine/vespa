@@ -207,8 +207,10 @@ public:
         _lidIndexMap(lidIndexMap),
         _fields(fields),
         _list(list),
-        _defaultSerializedSize(defaultSerializedSize)
+        _defaultSerializedSize(defaultSerializedSize),
+        _allowVisitCaching(false)
     { }
+    MatchVisitor & allowVisitCaching(bool allow) { return *this; }
     void visit(uint32_t lid, document::Document::UP doc) override {
         const search::DocumentMetaData & meta = _metaData[_lidIndexMap[lid]];
         assert(lid == meta.lid);
@@ -219,6 +221,11 @@ public:
             _list.emplace_back(createDocEntry(meta.timestamp, meta.removed, std::move(doc), _defaultSerializedSize));
         }
     }
+
+    virtual bool allowVisitCaching() const override {
+        return _allowVisitCaching;
+    }
+
 private:
     const Match                            & _matcher;
     const search::DocumentMetaData::Vector & _metaData;
@@ -226,6 +233,7 @@ private:
     const document::FieldSet               * _fields;
     IterateResult::List                    & _list;
     size_t                                   _defaultSerializedSize;
+    bool                                     _allowVisitCaching;
 };
 
 }
@@ -268,6 +276,7 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
+        visitor.allowVisitCaching(_readConsistency == ReadConsistency::WEAK);
         source.visitDocuments(lidsToFetch, visitor, _readConsistency);
     }
 
