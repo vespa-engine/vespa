@@ -47,6 +47,10 @@ public class DockerImplTest {
         assertThat(binds, hasItem(Bind.parse(directoryOnHost + ":" + dataDirectory)));
     }
 
+<<<<<<< HEAD
+=======
+    @Ignore
+>>>>>>> 4b6dceb... Removed a pull image test as this functionality is now covered by docker
     @Test
     public void vespaVersionIsParsed() {
         assertThat(DockerImpl.parseVespaVersion("5.119.53"), is(Optional.of("5.119.53")));
