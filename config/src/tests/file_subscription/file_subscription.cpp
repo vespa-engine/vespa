@@ -25,7 +25,10 @@ namespace {
         of << "myField \"" << myFieldVal << "\"\n";
         of.close();
     }
+
+    static const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 }
+
 
 TEST("requireThatFileSpecGivesCorrectKey") {
     std::string str("/home/my/config.cfg");
@@ -129,7 +132,7 @@ TEST("requireThatMultipleSubscribersCanSubscribeToSameFile") {
 }
 
 TEST("requireThatCanSubscribeToDirectory") {
-    DirSpec spec("cfgdir");
+    DirSpec spec(srcDir + "/cfgdir");
     ConfigSubscriber s(spec);
     ConfigHandle<FooConfig>::UP fooHandle = s.subscribe<FooConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -145,7 +148,7 @@ TEST("requireThatCanSubscribeToDirectory") {
 }
 
 TEST("requireThatCanSubscribeToDirectoryWithEmptyCfgFile") {
-    DirSpec spec("cfgemptyfile");
+    DirSpec spec(srcDir + "/cfgemptyfile");
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -161,7 +164,7 @@ TEST("requireThatCanSubscribeToDirectoryWithEmptyCfgFile") {
 }
 
 TEST("requireThatCanSubscribeToDirectoryWithNonExistingCfgFile") {
-    DirSpec spec("cfgnonexistingfile");
+    DirSpec spec(srcDir + "/cfgnonexistingfile");
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -176,7 +179,7 @@ TEST("requireThatCanSubscribeToDirectoryWithNonExistingCfgFile") {
     ASSERT_EQUAL("barbar", barCfg->barValue);
 }
 
-TEST_F("requireThatDirSpecDoesNotMixNames", DirSpec("cfgdir2")) {
+TEST_F("requireThatDirSpecDoesNotMixNames", DirSpec(srcDir + "/cfgdir2")) {
     ConfigSubscriber s(f);
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
     ConfigHandle<FoobarConfig>::UP foobarHandle = s.subscribe<FoobarConfig>("");
@@ -189,7 +192,7 @@ TEST_F("requireThatDirSpecDoesNotMixNames", DirSpec("cfgdir2")) {
     ASSERT_EQUAL("foobarlol", foobar->fooBarValue);
 }
 
-TEST_F("require that can subscribe multiple config ids of same config", DirSpec("cfgdir3")) {
+TEST_F("require that can subscribe multiple config ids of same config", DirSpec(srcDir + "/cfgdir3")) {
     ConfigSubscriber s(f1);
     ConfigHandle<BarConfig>::UP fooHandle = s.subscribe<BarConfig>("foo");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("bar");

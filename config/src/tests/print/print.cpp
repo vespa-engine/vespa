@@ -82,7 +82,8 @@ TEST_F("requireThatCanLoadWrittenWithConfigFormat", RawFixture<MyConfig>) {
 }
 
 TEST("requireThatAllFieldsArePrintedCorrectly") {
-    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec("motd.cfg"));
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec(src_dir + "/motd.cfg"));
     FileConfigWriter writer("motd2.cfg");
     ASSERT_TRUE(writer.write(*cfg, FileConfigFormatter()));
     std::unique_ptr<MotdConfig> cfg2 = ConfigGetter<MotdConfig>::getConfig("motd2", FileSpec("motd2.cfg"));
