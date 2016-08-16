@@ -238,16 +238,6 @@ private:
                                                    vespalib::zero<DocumentIdT>,
                                                    vespalib::size<Value> > > Cache;
 
-    class CachingVisitor : public IBufferVisitor {
-    public:
-        CachingVisitor(Cache & cache, IBufferVisitor & visitor) : _cache(cache), _visitor(visitor) { }
-
-        void visit(uint32_t lid, vespalib::ConstBufferRef buffer) override;
-    private:
-        Cache          & _cache;
-        IBufferVisitor & _visitor;
-    };
-
     Config                    _config;
     IDataStore &              _backingStore;
     BackingStore              _store;
