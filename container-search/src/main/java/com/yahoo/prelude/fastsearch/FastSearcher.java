@@ -66,9 +66,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
 
-    /** Time (in ms) at which the index of this searcher was last modified */
-    private volatile long editionTimeStamp = 0;
-
     /** Edition of the index */
     private int docstamp;
 
@@ -108,21 +105,6 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.containerClusterSize = containerClusterSize;
     }
 
-    /** Clears the packet cache if the received timestamp is older than our timestamp */
-    private void checkTimestamp(QueryResultPacket resultPacket) {
-        checkTimestamp(resultPacket.getDocstamp());
-    }
-
-    /** Clears the packet cache if the received timestamp is older than our timestamp */
-    private void checkTimestamp(int newDocstamp) {
-        if (docstamp < newDocstamp) {
-            long currentTimeMillis = System.currentTimeMillis();
-
-            docstamp = newDocstamp;
-            setEditionTimeStamp(currentTimeMillis);
-        }
-    }
-
     private static SimpleDateFormat isoDateFormat;
 
     static {
@@ -148,10 +130,15 @@ public class FastSearcher extends VespaBackEndSearcher {
      */
     @Override
     public Pong ping(Ping ping, Execution execution) {
+        return ping(ping, dispatchBackend, getName());
+    }
+    
+    public static Pong ping(Ping ping, Backend backend, String name) {
+        FS4Channel channel = backend.openPingChannel();
+
         // If you want to change this code, you need to understand
         // com.yahoo.prelude.cluster.ClusterSearcher.ping(Searcher) and
         // com.yahoo.prelude.cluster.TrafficNodeMonitor.failed(ErrorMessage)
-        FS4Channel channel = dispatchBackend.openPingChannel();
 
         try {
             PingPacket pingPacket = new PingPacket();
@@ -161,11 +148,11 @@ public class FastSearcher extends VespaBackEndSearcher {
             try {
                 boolean couldSend = channel.sendPacket(pingPacket);
                 if (!couldSend) {
-                    pong.addError(ErrorMessage.createBackendCommunicationError("Could not ping in " + getName()));
+                    pong.addError(ErrorMessage.createBackendCommunicationError("Could not ping in " + name));
                     return pong;
                 }
             } catch (InvalidChannelException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + getName()));
+                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + name));
                 return pong;
             } catch (IllegalStateException e) {
                 pong.addError(
@@ -181,25 +168,21 @@ public class FastSearcher extends VespaBackEndSearcher {
             try {
                 packets = channel.receivePackets(ping.getTimeout(), 1);
             } catch (ChannelTimeoutException e) {
-                pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("timeout while waiting for fdispatch for " + getName()));
+                pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("timeout while waiting for fdispatch for " + name));
                 return pong;
             } catch (InvalidChannelException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName()));
+                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel for " + name));
                 return pong;
 
             }
 
             if (packets.length == 0) {
-                pong.addError(ErrorMessage.createBackendCommunicationError(getName() + " got no packets back"));
+                pong.addError(ErrorMessage.createBackendCommunicationError(name + " got no packets back"));
                 return pong;
             }
 
-            if (isLoggingFine()) {
-                getLogger().finest("got packets " + packets.length + " packets");
-            }
-
             try {
-                ensureInstanceOf(PongPacket.class, packets[0]);
+                ensureInstanceOf(PongPacket.class, packets[0], name);
             } catch (TimeoutException e) {
                 pong.addError(ErrorMessage.createTimeout(e.getMessage()));
                 return pong;
@@ -208,7 +191,6 @@ public class FastSearcher extends VespaBackEndSearcher {
                 return pong;
             }
             pong.addPongPacket((PongPacket) packets[0]);
-            checkTimestamp(((PongPacket) packets[0]).getDocstamp());
             return pong;
         } finally {
             if (channel != null) {
@@ -283,8 +265,9 @@ public class FastSearcher extends VespaBackEndSearcher {
         // Such configurations produce skewed load in any case.
         if (containerClusterSize < dispatcher.searchCluster().size()) return dispatchBackend;
 
-        // TODO: Only use direct dispatch if the local search node is up
-
+        // Only use direct dispatch if the local search node is up
+        if ( ! localSearchNode.isWorking()) return dispatchBackend;
+        
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
         return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
     }
@@ -458,10 +441,8 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (isLoggingFine())
             getLogger().finest("got packets " + basicPackets.length + " packets");
 
-        ensureInstanceOf(QueryResultPacket.class, basicPackets[0]);
+        ensureInstanceOf(QueryResultPacket.class, basicPackets[0], getName());
         QueryResultPacket resultPacket = (QueryResultPacket) basicPackets[0];
-
-        checkTimestamp(resultPacket);
 
         if (isLoggingFine())
             getLogger().finest("got query packet. " + "docsumClass=" + query.getPresentation().getSummary());
@@ -561,27 +542,6 @@ public class FastSearcher extends VespaBackEndSearcher {
         return false;
     }
 
-    /**
-     * Whether to mask out the row id from the index uri.
-     * Masking out the row number is useful when it is necessary to deduplicate
-     * across rows. That is necessary with searchers which issues several queries
-     * to produce one result in the first phase, as the grouping searcher - when
-     * some of those searchers go to different rows, a mechanism is needed to detect
-     * duplicates returned from different rows before the summary is requested.
-     * Producing an index id which is the same across rows and using that as the
-     * hit uri provides this. Note that this only works if the document ids are the
-     * same for all the nodes (rows) in a column. This is usually the case for
-     * batch and incremental indexing, but not for realtime.
-     */
-
-    public long getEditionTimeStamp() {
-        return editionTimeStamp;
-    }
-
-    public void setEditionTimeStamp(long editionTime) {
-        this.editionTimeStamp = editionTime;
-    }
-
     public String toString() {
         return "fast searcher (" + getName() + ") " + dispatchBackend;
     }
@@ -619,4 +579,5 @@ public class FastSearcher extends VespaBackEndSearcher {
     protected boolean isLoggingFine() {
         return getLogger().isLoggable(Level.FINE);
     }
+
 }

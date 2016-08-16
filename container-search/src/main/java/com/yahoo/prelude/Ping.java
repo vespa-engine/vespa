@@ -7,6 +7,7 @@ package com.yahoo.prelude;
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class Ping {
+
     /** How long to wait for a pong */
     private long timeout;
 
@@ -26,4 +27,5 @@ public class Ping {
     public String toString() {
         return "Ping(timeout = " + timeout + ")";
     }
+
 }

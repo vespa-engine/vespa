@@ -446,7 +446,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             if (hit instanceof FastHit && !hit.isFilled(summaryClass)) {
                 FastHit fastHit = (FastHit) hit;
 
-                ensureInstanceOf(DocsumPacket.class, packets[packetIndex]);
+                ensureInstanceOf(DocsumPacket.class, packets[packetIndex], getName());
                 DocsumPacket docsum = (DocsumPacket) packets[packetIndex];
 
                 packetIndex++;
@@ -461,15 +461,15 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /**
      * Throws an IOException if the packet is not of the expected type
      */
-    protected final void ensureInstanceOf(Class<? extends BasicPacket> type, BasicPacket packet) throws IOException {
+    protected static void ensureInstanceOf(Class<? extends BasicPacket> type, BasicPacket packet, String name) throws IOException {
         if ((type.isAssignableFrom(packet.getClass()))) return;
 
         if (packet instanceof ErrorPacket) {
             ErrorPacket errorPacket=(ErrorPacket)packet;
             if (errorPacket.getErrorCode() == 8)
-                throw new TimeoutException("Query timed out in " + getName());
+                throw new TimeoutException("Query timed out in " + name);
             else
-                throw new IOException("Received error from backend in " + getName() + ": " + packet);
+                throw new IOException("Received error from backend in " + name + ": " + packet);
         } else {
             throw new IOException("Received " + packet + " when expecting " + type);
         }

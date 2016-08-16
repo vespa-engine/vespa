@@ -648,7 +648,7 @@ public class FastSearcherTestCase {
     private static class MockDispatcher extends Dispatcher {
 
         public MockDispatcher() {
-            super(new DispatchConfig(new DispatchConfig.Builder()));
+            super(new DispatchConfig(new DispatchConfig.Builder()), new FS4ResourcePool(1));
         }
 
         public void fill(Result result, String summaryClass) {

@@ -21,7 +21,7 @@ import com.yahoo.search.result.ErrorMessage;
  */
 public abstract class BaseNodeMonitor<T> {
 
-    protected static Logger log=Logger.getLogger(BaseNodeMonitor.class.getName());
+    protected static Logger log = Logger.getLogger(BaseNodeMonitor.class.getName());
 
     /** The object representing the monitored node */
     protected T node;
@@ -90,4 +90,5 @@ public abstract class BaseNodeMonitor<T> {
 
     /** Returns whether or not this is monitoring an internal node. Default is false. */
     public boolean isInternal() { return internal; }
+
 }

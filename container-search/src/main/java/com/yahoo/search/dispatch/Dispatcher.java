@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
@@ -8,6 +9,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
@@ -35,6 +37,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
+@Beta
 public class Dispatcher extends AbstractComponent {
 
     private final static Logger log = Logger.getLogger(Dispatcher.class.getName());
@@ -49,9 +52,9 @@ public class Dispatcher extends AbstractComponent {
     private final Compressor compressor = new Compressor();
 
     @Inject
-    public Dispatcher(DispatchConfig dispatchConfig) {
+    public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
         this.client = new RpcClient();
-        this.searchCluster = new SearchCluster(dispatchConfig);
+        this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool);
 
         // Create node rpc connections, indexed by the legacy "partid", which allows us to bridge
         // between fs4 calls (for search) and rpc calls (for summary fetch)
