@@ -111,10 +111,15 @@ DocumentStore::~DocumentStore()
 {
 }
 
+void DocumentStore::CachingVisitor::visit(uint32_t lid, vespalib::ConstBufferRef buffer)
+{
+    _visitor.visit(lid, buffer);
+}
+
 void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    if (useCache() && _config.allowVisitCaching()) {
+    if (useCache()) {
         LidVector nonCachedLids;
         nonCachedLids.reserve(lids.size());
         for (uint32_t lid : lids) {
@@ -124,7 +129,13 @@ DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &r
                 nonCachedLids.emplace_back(lid);
             }
         }
-        _store.visit(nonCachedLids, repo, visitor);
+        if (_config.allowVisitCaching()) {
+            DocumentVisitorAdapter documentAdapter(repo, visitor);
+            CachingVisitor cacheAdapter(*_cache, documentAdapter);
+            _backingStore.read(nonCachedLids, cacheAdapter);
+        } else {
+            _store.visit(nonCachedLids, repo, visitor);
+        }
     } else {
         _store.visit(lids, repo, visitor);
     }
