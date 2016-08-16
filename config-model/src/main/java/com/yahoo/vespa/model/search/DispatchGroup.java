@@ -32,13 +32,13 @@ public class DispatchGroup {
         Map<Integer, SearchInterface> rows = searchers.get(search.getNodeSpec().partitionId());
         if (rows == null) {
             rows = new TreeMap<>();
-            rows.put(search.getNodeSpec().rowId(), search);
+            rows.put(search.getNodeSpec().groupIndex(), search);
             searchers.put(search.getNodeSpec().partitionId(), rows);
         } else {
-            if (rows.containsKey(search.getNodeSpec().rowId())) {
-                throw new IllegalArgumentException("Already contains a search node with row id '" + search.getNodeSpec().rowId() + "'");
+            if (rows.containsKey(search.getNodeSpec().groupIndex())) {
+                throw new IllegalArgumentException("Already contains a search node with row id '" + search.getNodeSpec().groupIndex() + "'");
             }
-            rows.put(search.getNodeSpec().rowId(), search);
+            rows.put(search.getNodeSpec().groupIndex(), search);
         }
         return this;
     }

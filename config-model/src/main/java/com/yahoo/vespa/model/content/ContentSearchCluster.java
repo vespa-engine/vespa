@@ -6,7 +6,6 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.documentmodel.DocumentTypeRepo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -221,12 +220,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         return snode;
     }
 
+    /** Translates group ids to continuous 0-base "row" id integers */
     private NodeSpec getNextSearchNodeSpec(StorageGroup parentGroup) {
         NodeSpec spec = groupToSpecMap.get(parentGroup);
         if (spec == null) {
             spec = new NodeSpec(groupToSpecMap.size(), 0);
         } else {
-            spec = new NodeSpec(spec.rowId(), spec.partitionId() + 1);
+            spec = new NodeSpec(spec.groupIndex(), spec.partitionId() + 1);
         }
         groupToSpecMap.put(parentGroup, spec);
         return spec;

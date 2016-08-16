@@ -6,6 +6,9 @@ namespace=vespa.config.search
 # The unique key of a search node
 node[].key int
 
+# The index of the group this search node belongs to
+node[].group int default=0
+
 # The host name of this search node
 node[].host string
 

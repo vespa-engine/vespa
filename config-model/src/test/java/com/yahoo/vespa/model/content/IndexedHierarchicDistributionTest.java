@@ -74,7 +74,7 @@ public class IndexedHierarchicDistributionTest {
     }
 
     private void assertSearchNode(int expRowId, int expPartitionId, int expDistibutionKey, SearchNode node) {
-        assertEquals(expRowId, node.getNodeSpec().rowId());
+        assertEquals(expRowId, node.getNodeSpec().groupIndex());
         assertEquals(expPartitionId, node.getNodeSpec().partitionId());
         assertEquals(expDistibutionKey, ((ContentNode)node.getServiceLayerService()).getDistributionKey());
     }
@@ -244,15 +244,15 @@ public class IndexedHierarchicDistributionTest {
         }
         assertEquals(5, list.size());
         assertEquals(0, list.get(0).getNodeSpec().partitionId());
-        assertEquals(0, list.get(0).getNodeSpec().rowId());
+        assertEquals(0, list.get(0).getNodeSpec().groupIndex());
         assertEquals(0, list.get(1).getNodeSpec().partitionId());
-        assertEquals(1, list.get(1).getNodeSpec().rowId());
+        assertEquals(1, list.get(1).getNodeSpec().groupIndex());
         assertEquals(1, list.get(2).getNodeSpec().partitionId());
-        assertEquals(0, list.get(2).getNodeSpec().rowId());
+        assertEquals(0, list.get(2).getNodeSpec().groupIndex());
         assertEquals(1, list.get(3).getNodeSpec().partitionId());
-        assertEquals(1, list.get(3).getNodeSpec().rowId());
+        assertEquals(1, list.get(3).getNodeSpec().groupIndex());
         assertEquals(2, list.get(4).getNodeSpec().partitionId());
-        assertEquals(1, list.get(4).getNodeSpec().rowId());
+        assertEquals(1, list.get(4).getNodeSpec().groupIndex());
     }
 
     @Test
