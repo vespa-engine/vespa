@@ -6,13 +6,11 @@ import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.mplex.*;
 import com.yahoo.fs4.test.QueryTestCase;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.container.protect.Error;
-import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.*;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
@@ -20,11 +18,9 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.prelude.fastsearch.*;
 import com.yahoo.prelude.query.WordItem;
-import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 import org.junit.Ignore;
@@ -92,7 +88,7 @@ public class FastSearcherTestCase {
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher,new Query(query), 0, 10);
-        com.yahoo.search.result.ErrorMessage message = result.hits().getError();
+        ErrorMessage message = result.hits().getError();
 
         assertNotNull("Got error", message);
         assertEquals("Null query", message.getMessage());
@@ -279,7 +275,6 @@ public class FastSearcherTestCase {
                 // flags
                 0, 0, 0, 2
         };
-        //System.out.println(Arrays.toString(actual));
         assertEquals(expected.length, actual.length);
         for (int i = 0; i < expected.length; ++i) {
             if (expected[i] == IGNORE) {
@@ -384,8 +379,7 @@ public class FastSearcherTestCase {
 
     }
 
-    // TODO: Enable this - it fails when on vpn
-    @Ignore
+    @Test
     public void testPing() throws IOException, InterruptedException {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         BackendTestCase.MockServer server = new BackendTestCase.MockServer();
@@ -405,7 +399,6 @@ public class FastSearcherTestCase {
         Pong pong = e.ping(new Ping());
         assertEquals(127, pong.getPongPacket(0).getDocstamp());
         backend.shutdown();
-        listeners.deconstruct();
         server.dispatch.socket.close();
         server.dispatch.connection.close();
         server.worker.join();
@@ -418,10 +411,8 @@ public class FastSearcherTestCase {
         assertEquals(1, pong.getPongPackets().size());
         assertEquals("", other.getPingInfo());
         pong.setPingInfo("blbl");
-        assertEquals("Result of pinging using blbl error : Service is misconfigured (as usual)",
-                     pong.toString());
-        assertEquals("Result of pinging error : Service is misconfigured (as usual)",
-                     other.toString());
+        assertEquals("Result of pinging using blbl 9: Service is misconfigured: as usual", pong.toString());
+        assertEquals("Result of pinging 9: Service is misconfigured: as usual", other.toString());
     }
 
     private void clearCache(FastSearcher fastSearcher) {
@@ -444,166 +435,6 @@ public class FastSearcherTestCase {
         assertEquals("testhittype", hit.getSource());
     }
 
-    private static class MockBackend extends Backend {
-
-        private MockFSChannel channel;
-
-        public MockBackend() {
-            channel = new MockFSChannel(this, 1);
-        }
-
-        public FS4Channel openChannel() {
-            return channel;
-        }
-
-        public MockFSChannel getChannel() { return channel; }
-
-        public void shutdown() {}
-    }
-
-
-    /**
-     * A channel which returns hardcoded packets of the same type as fdispatch
-     */
-    private static class MockFSChannel extends FS4Channel {
-
-        public MockFSChannel(Backend backend, Integer channelId) {}
-
-        private Packet lastReceived = null;
-
-        private QueryPacket lastQueryPacket = null;
-
-        /** Initial value of docstamp */
-        private static int docstamp = 1088490666;
-
-        private static boolean emptyDocsums = false;
-
-        public synchronized boolean sendPacket(BasicPacket bPacket) {
-            Packet packet = (Packet) bPacket;
-
-            try {
-                packet.encode(ByteBuffer.allocate(65536), 0);
-            } catch (BufferTooSmallException e) {
-                throw new RuntimeException("Too small buffer to encode packet in mock backend.");
-            }
-            if (packet instanceof QueryPacket) {
-                lastQueryPacket = (QueryPacket) packet;
-            } else if (!(packet instanceof GetDocSumsPacket)) {
-                throw new RuntimeException(
-                        "Mock channel don't know what to reply to " + packet);
-            }
-            lastReceived = packet;
-            return true;
-        }
-
-        /** Change docstamp to invalidate cache */
-        public static void resetDocstamp() {
-            docstamp = 1088490666;
-        }
-
-        /** Flip sending (in)valid docsums */
-        public static void setEmptyDocsums(boolean d) {
-            emptyDocsums = d;
-        }
-
-        /** Returns the last query packet received or null if none */
-        public QueryPacket getLastQueryPacket() {
-            return lastQueryPacket;
-        }
-
-        public Packet getLastReceived() {
-            return lastReceived;
-        }
-
-        public BasicPacket[] receivePackets(long timeout, int packetCount) {
-            List packets = new java.util.ArrayList();
-
-            if (lastReceived instanceof QueryPacket) {
-                lastQueryPacket = (QueryPacket) lastReceived;
-                QueryResultPacket result = QueryResultPacket.create();
-
-                result.setDocstamp(docstamp);
-                result.setChannel(0);
-                result.setTotalDocumentCount(2);
-                result.setOffset(lastQueryPacket.getOffset());
-
-                if (lastQueryPacket.getOffset() == 0
-                        && lastQueryPacket.getLastOffset() >= 1) {
-                    result.addDocument(
-                            new DocumentInfo(DocsumDefinitionTestCase.createGlobalId(123),
-                                    2003, 234, 1000));
-                }
-                if (lastQueryPacket.getOffset() <= 1
-                        && lastQueryPacket.getLastOffset() >= 2) {
-                    result.addDocument(
-                            new DocumentInfo(DocsumDefinitionTestCase.createGlobalId(456),
-                                    1855, 234, 1001));
-                }
-                packets.add(result);
-            } else if (lastReceived instanceof GetDocSumsPacket) {
-                addDocsums(packets, lastQueryPacket);
-            }
-            while (packetCount >= 0 && packets.size() > packetCount) {
-                packets.remove(packets.size() - 1);
-            }
-
-            return (Packet[]) packets.toArray(new Packet[packets.size()]);
-        }
-
-        /** Adds the number of docsums requested in queryPacket.getHits() */
-        private void addDocsums(List packets, QueryPacket queryPacket) {
-            int numHits = queryPacket.getHits();
-
-            if (lastReceived instanceof GetDocSumsPacket) {
-                numHits = ((GetDocSumsPacket) lastReceived).getNumDocsums();
-            }
-            for (int i = 0; i < numHits; i++) {
-                ByteBuffer buffer;
-
-                if (emptyDocsums) {
-                    buffer = createEmptyDocsumPacketData();
-                } else {
-                    int[] docids = {
-                        123, 456, 789, 789, 789, 789, 789, 789, 789,
-                        789, 789, 789 };
-
-                    buffer = createDocsumPacketData(docids[i],
-                            DocsumDefinitionTestCase.docsum4);
-                }
-                buffer.position(0);
-                packets.add(PacketDecoder.decode(buffer));
-            }
-            packets.add(EolPacket.create());
-        }
-
-        private ByteBuffer createEmptyDocsumPacketData() {
-            ByteBuffer buffer = ByteBuffer.allocate(16);
-
-            buffer.limit(buffer.capacity());
-            buffer.position(0);
-            buffer.putInt(12); // length
-            buffer.putInt(205); // a code for docsumpacket
-            buffer.putInt(0); // channel
-            buffer.putInt(0); // dummy location
-            return buffer;
-        }
-
-        private ByteBuffer createDocsumPacketData(int docid, byte[] docsumData) {
-            ByteBuffer buffer = ByteBuffer.allocate(docsumData.length + 4 + 8 + GlobalId.LENGTH);
-
-            buffer.limit(buffer.capacity());
-            buffer.position(0);
-            buffer.putInt(docsumData.length + 8 + GlobalId.LENGTH);
-            buffer.putInt(205); // Docsum packet code
-            buffer.putInt(0);
-            byte[] rawGid = DocsumDefinitionTestCase.createGlobalId(docid).getRawId();
-            buffer.put(rawGid);
-            buffer.put(docsumData);
-            return buffer;
-        }
-
-        public void close() {}
-    }
 
     @Test
     public void null_summary_is_included_in_trace() {
@@ -642,18 +473,6 @@ public class FastSearcherTestCase {
         });
 
         return fillTraceString.get();
-    }
-
-    /** Just a stub for now */
-    private static class MockDispatcher extends Dispatcher {
-
-        public MockDispatcher() {
-            super(new DispatchConfig(new DispatchConfig.Builder()), new FS4ResourcePool(1));
-        }
-
-        public void fill(Result result, String summaryClass) {
-        }
-
     }
 
 }
