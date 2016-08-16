@@ -101,11 +101,11 @@ public class ClusterSearcher extends Searcher {
                            QrMonitorConfig monitorConfig,
                            DispatchConfig dispatchConfig,
                            Statistics manager,
-                           FS4ResourcePool listeners,
+                           FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
         super(id);
         this.hasher = new Hasher();
-        this.fs4ResourcePool = listeners;
+        this.fs4ResourcePool = fs4ResourcePool;
         monitor = new ClusterMonitor(this, monitorConfig, vipStatus);
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
@@ -146,7 +146,7 @@ public class ClusterSearcher extends Searcher {
         } else {
             for (int i = 0; i < searchClusterConfig.dispatcher().size(); i++) {
                 Backend b = createBackend(searchClusterConfig.dispatcher(i));
-                FastSearcher searcher = searchDispatch(searchClusterIndex,
+                FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
                                                        documentDbConfig, b, dispatcher, i);
                 try {
@@ -209,6 +209,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
+                                               FS4ResourcePool fs4ResourcePool,
                                                QrSearchersConfig.Searchcluster searchClusterConfig,
                                                CacheParams cacheParams,
                                                LegacyEmulationConfig emulConfig,
@@ -220,7 +221,7 @@ public class ClusterSearcher extends Searcher {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         searchClusterConfig,
                                                         emulConfig, i);
-        return new FastSearcher(backend, dispatcher, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,
@@ -259,13 +260,13 @@ public class ClusterSearcher extends Searcher {
 
     public Map<String, Backend.BackendStatistics> getBackendStatistics() {
         Map<String, Backend.BackendStatistics> backendStatistics = new TreeMap<>();
-        for (final Backend backend : backends) {
+        for (Backend backend : backends) {
             backendStatistics.put(backend.toString(), backend.getStatistics());
         }
         return backendStatistics;
     }
 
-    private Backend createBackend(final QrSearchersConfig.Searchcluster.Dispatcher disp) {
+    private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
         return fs4ResourcePool.getBackend(disp.host(), disp.port());
     }
 

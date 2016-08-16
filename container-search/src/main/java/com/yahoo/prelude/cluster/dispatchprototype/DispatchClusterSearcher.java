@@ -31,6 +31,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster;
  *
  * @author bakksjo
  */
+// 2016-08-16 (bratseth): We should probably just remove this now. It was a prototype that never went anywhere
 @Beta
 @After("*")
 public class DispatchClusterSearcher extends Searcher {

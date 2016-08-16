@@ -59,11 +59,13 @@ public class FastSearcherTestCase {
     @Test
     public void testNoNormalizing() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), new MockDispatcher(),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                new CacheParams(100, 1e64),
-                documentdbInfoConfig);
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
 
         MockFSChannel.setEmptyDocsums(false);
 
@@ -78,11 +80,13 @@ public class FastSearcherTestCase {
     @Test
     public void testNullQuery() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), new MockDispatcher(),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                new CacheParams(100, 1e64),
-                documentdbInfoConfig);
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), 
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher,new Query(query), 0, 10);
@@ -99,9 +103,13 @@ public class FastSearcherTestCase {
         mockBackend = new MockBackend();
         DocumentdbInfoConfig documentdbConfigWithOneDb =
             new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("testDb")));
-        FastSearcher fastSearcher = new FastSearcher(mockBackend, new MockDispatcher(), new SummaryParameters(null),
+        FastSearcher fastSearcher = new FastSearcher(mockBackend,
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(), 
+                                                     new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64), documentdbConfigWithOneDb);
+                                                     new CacheParams(100, 1e64), 
+                                                     documentdbConfigWithOneDb);
 
         Query query = new Query("?query=foo&model.restrict=testDb");
         query.prepare();
@@ -285,19 +293,25 @@ public class FastSearcherTestCase {
 
         MockFSChannel.resetDocstamp();
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        return new FastSearcher(mockBackend, new MockDispatcher(), new SummaryParameters(null),
-                                new ClusterParams("testhittype"), new CacheParams(100, 1e64), config);
+        return new FastSearcher(mockBackend,
+                                new FS4ResourcePool(1),
+                                new MockDispatcher(), 
+                                new SummaryParameters(null),
+                                new ClusterParams("testhittype"), 
+                                new CacheParams(100, 1e64), config);
     }
 
     @Ignore
     public void testSinglePhaseCachedSupersets() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         MockFSChannel.resetDocstamp();
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), new MockDispatcher(),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                new CacheParams(100, 1e64),
-                documentdbInfoConfig);
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
 
         CacheControl c = fastSearcher.getCacheControl();
 
@@ -334,11 +348,13 @@ public class FastSearcherTestCase {
     public void testMultiPhaseCachedSupersets() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         MockFSChannel.resetDocstamp();
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), new MockDispatcher(),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                new CacheParams(100, 1e64),
-                documentdbInfoConfig);
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(100, 1e64),
+                                                     documentdbInfoConfig);
 
         Result result = doSearch(fastSearcher,new Query("?query=ignored"), 0, 2);
         result = doSearch(fastSearcher,new Query("?query=ignored"), 1, 1);
@@ -368,13 +384,15 @@ public class FastSearcherTestCase {
         BackendTestCase.MockServer server = new BackendTestCase.MockServer();
         FS4ResourcePool listeners = new FS4ResourcePool(new Fs4Config());
         Backend backend = listeners.getBackend(server.host.getHostString(),server.host.getPort());
-        FastSearcher fastSearcher = new FastSearcher(backend, new MockDispatcher(),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                new CacheParams(0, 0.0d),
-                documentdbInfoConfig);
+        FastSearcher fastSearcher = new FastSearcher(backend,
+                                                     new FS4ResourcePool(1),
+                                                     new MockDispatcher(),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     new CacheParams(0, 0.0d),
+                                                     documentdbInfoConfig);
         server.dispatch.packetData = BackendTestCase.PONG;
-        Chain<Searcher> chain = new Chain<Searcher>(fastSearcher);
+        Chain<Searcher> chain = new Chain<>(fastSearcher);
         Execution e = new Execution(chain, Execution.Context.createContextStub());
         Pong pong = e.ping(new Ping());
         assertEquals(127, pong.getPongPacket(0).getDocstamp());
@@ -393,9 +411,9 @@ public class FastSearcherTestCase {
         assertEquals("", other.getPingInfo());
         pong.setPingInfo("blbl");
         assertEquals("Result of pinging using blbl error : Service is misconfigured (as usual)",
-                pong.toString());
+                     pong.toString());
         assertEquals("Result of pinging error : Service is misconfigured (as usual)",
-                other.toString());
+                     other.toString());
     }
 
     private void clearCache(FastSearcher fastSearcher) {

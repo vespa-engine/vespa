@@ -66,21 +66,32 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** Edition of the index */
     private int docstamp;
 
-    private Backend backend;
+    private final Backend backend;
+    
+    private final FS4ResourcePool fs4ResourcePool;
 
     /**
      * Creates a Fastsearcher.
      *
-     * @param backend       The backend object for this FastSearcher
-     * @param docSumParams  Document summary parameters
-     * @param clusterParams The cluster number, and other cluster backend parameters
-     * @param cacheParams   The size, lifetime, and controller of our cache
-     * @param documentdbInfoConfig Document database parameters
+     * @param backend       The backend object containing the connection to the dispatch node this should talk to
+     *                      over the fs4 protocol
+     * @param fs4ResourcePool the resource pool used to create direct connections to the local search nodes when
+     *                        bypassing the dispatch node
+     * @param dispatcher the dispatcher used (when enabled) to send summary requests over the rpc protocol.
+     *                   Eventually we will move everything to this protocol and never use dispatch nodes.
+     *                   At that point we won't need a cluster searcher above this to select and pass the right
+     *                   backend.
+     * @param docSumParams  document summary parameters
+     * @param clusterParams the cluster number, and other cluster backend parameters
+     * @param cacheParams   the size, lifetime, and controller of our cache
+     * @param documentdbInfoConfig document database parameters
      */
-    public FastSearcher(Backend backend, Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
+    public FastSearcher(Backend backend, FS4ResourcePool fs4ResourcePool,
+                        Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
                         CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
         init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         this.backend = backend;
+        this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
     }
 
@@ -201,11 +212,9 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         FS4Channel channel = null;
         try {
-            channel = backend.openChannel();
+            channel = chooseBackend().openChannel();
             channel.setQuery(query);
 
-            // If not found, then fetch from the source. The call to
-            // insert into cache will be made from within searchTwoPhase
             Result result = searchTwoPhase(channel, query, queryPacket, cacheKey);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
@@ -227,10 +236,21 @@ public class FastSearcher extends VespaBackEndSearcher {
             result.hits().addError(ErrorMessage.createBackendCommunicationError(getName() + " failed: "+ e.getMessage()));
             return result;
         } finally {
-            if (channel != null) {
+            if (channel != null)
                 channel.close();
-            }
         }
+    }
+
+    /**
+     * Returns the backend object to issue a search request over.
+     * Normally this is the backend field of this instance, which connects to the dispatch node this talk to
+     * (which is why this instance was chosen by the cluster controller). However, when certain conditions obtain
+     * (see below), we will instead return a backend instance which connects directly to the local search node
+     * for efficiency.
+     */
+    private Backend chooseBackend() {
+        // TODO: Implement
+        return backend;
     }
 
     /**

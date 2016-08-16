@@ -205,9 +205,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         QueryPacket queryPacket = QueryPacket.create(query);
         int compressionLimit = query.properties().getInteger(PACKET_COMPRESSION_LIMIT, 0);
         queryPacket.setCompressionLimit(compressionLimit);
-        if (compressionLimit != 0) {
+        if (compressionLimit != 0)
             queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
-        }
 
         if (isLoggingFine())
             getLogger().fine("made QueryPacket: " + queryPacket);
@@ -220,15 +219,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
 
         if (result == null) {
-            String next = null;
             result = doSearch2(query, queryPacket, cacheKey, execution);
-            if (isLoggingFine()) {
+            if (isLoggingFine())
                 getLogger().fine("Result NOT retrieved from cache");
-            }
 
-            if (query.getTraceLevel() >= 1) {
+            if (query.getTraceLevel() >= 1)
                 query.trace(getName() + " dispatch response: " + result, false, 1);
-            }
             result.trace(getName());
         }
         return result;
