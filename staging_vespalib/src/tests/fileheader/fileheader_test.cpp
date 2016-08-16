@@ -593,7 +593,9 @@ void
 Test::testLayout()
 {
     FastOS_File file;
-    ASSERT_TRUE(file.OpenReadOnly("fileheader.dat"));
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    const std::string fileName = srcDir + "/fileheader.dat";
+    ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
 
     FileHeader header;
     uint32_t len = header.readFile(file);
