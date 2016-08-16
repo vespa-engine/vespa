@@ -54,7 +54,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   void testUpdateArrayWrongSubtype();
   void testUpdateWeightedSetWrongSubtype();
   void testMapValueUpdate();
-  void testTensorUpdate();
+  void testTensorAssignUpdate();
+  void testTensorClearUpdate();
   void testThatDocumentUpdateFlagsIsWorking();
   void testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50();
   void testThatCreateIfNonExistentFlagIsSerializedAndDeserialized();
@@ -78,7 +79,8 @@ struct DocumentUpdateTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testUpdateArrayWrongSubtype);
   CPPUNIT_TEST(testUpdateWeightedSetWrongSubtype);
   CPPUNIT_TEST(testMapValueUpdate);
-  CPPUNIT_TEST(testTensorUpdate);
+  CPPUNIT_TEST(testTensorAssignUpdate);
+  CPPUNIT_TEST(testTensorClearUpdate);
   CPPUNIT_TEST(testThatDocumentUpdateFlagsIsWorking);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50);
   CPPUNIT_TEST(testThatCreateIfNonExistentFlagIsSerializedAndDeserialized);
@@ -151,6 +153,13 @@ Tensor::UP
 createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
     vespalib::tensor::DefaultTensor::builder builder;
     return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+}
+
+FieldValue::UP createTensorFieldValue() {
+    auto fv(std::make_unique<TensorFieldValue>());
+    *fv = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
+                       {"x", "y"});
+    return std::move(fv);
 }
 
 }  // namespace
@@ -967,35 +976,38 @@ DocumentUpdateTest::testMapValueUpdate()
 
 
 void
-DocumentUpdateTest::testTensorUpdate()
+DocumentUpdateTest::testTensorAssignUpdate()
 {
-    // Create a test document
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     CPPUNIT_ASSERT(!doc->getValue("tensor"));
     Document updated(*doc);
-    // Perform update that sets tensor field
-    auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
-                                   {"x", "y"});
-    TensorFieldValue new_value;
-    new_value = new_tensor->clone();
+    FieldValue::UP new_value(createTensorFieldValue());
     DocumentUpdate upd(*doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
-                  addUpdate(AssignValueUpdate(new_value)));
+                  addUpdate(AssignValueUpdate(*new_value)));
     upd.applyTo(updated);
     FieldValue::UP fval(updated.getValue("tensor"));
     CPPUNIT_ASSERT(fval);
-    CPPUNIT_ASSERT(*fval == new_value);
+    CPPUNIT_ASSERT(*fval == *new_value);
     CPPUNIT_ASSERT(*doc != updated);
-    // Perform update that clears tensor field
-    DocumentUpdate upd2(*doc->getDataType(), doc->getId());
-    upd2.addUpdate(FieldUpdate(upd2.getType().getField("tensor")).
-                   addUpdate(ClearValueUpdate()));
-    upd2.applyTo(updated);
+}
+
+void
+DocumentUpdateTest::testTensorClearUpdate()
+{
+    TestDocMan docMan;
+    Document::UP doc(docMan.createDocument());
+    Document updated(*doc);
+    updated.setValue(updated.getField("tensor"), *createTensorFieldValue());
+    CPPUNIT_ASSERT(*doc != updated);
+    DocumentUpdate upd(*doc->getDataType(), doc->getId());
+    upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
+                  addUpdate(ClearValueUpdate()));
+    upd.applyTo(updated);
     CPPUNIT_ASSERT(!updated.getValue("tensor"));
     CPPUNIT_ASSERT(*doc == updated);
 }
-
 
 void
 assertDocumentUpdateFlag(bool createIfNonExistent, int value)
