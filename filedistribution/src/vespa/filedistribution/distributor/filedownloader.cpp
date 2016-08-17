@@ -138,7 +138,7 @@ struct FileDownloader::EventHandler
     }
 
     void operator()(const libtorrent::listen_failed_alert& alert) const {
-        BOOST_THROW_EXCEPTION(FailedListeningException(alert.endpoint.address(), alert.endpoint.port(), alert.message()));
+        BOOST_THROW_EXCEPTION(FailedListeningException(alert.endpoint.address().to_string(), alert.endpoint.port(), alert.message()));
     }
     void operator()(const libtorrent::fastresume_rejected_alert& alert) const {
         LOG(debug, "alert %s: %s", alert.what(), alert.message().c_str());
