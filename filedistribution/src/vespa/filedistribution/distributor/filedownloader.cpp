@@ -253,8 +253,6 @@ FileDownloader::listen() {
     if (!ec && (_session.listen_port() == _port)) {
         return;
     }
-    perror("Listen failed");
-    LOG(debug, "Failed listening on '%d' message='%s'", _port, ec.message().c_str());
     BOOST_THROW_EXCEPTION(FailedListeningException(_hostName, _port));
 }
 
