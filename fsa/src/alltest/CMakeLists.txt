@@ -67,4 +67,4 @@ vespa_add_executable(fsa_vectorizer_perf_test_app TEST
     DEPENDS
     fsa
 )
-vespa_add_test(NAME fsa_vectorizer_perf_test_app NO_VALGRIND COMMAND sh alltest.sh)
+vespa_add_test(NAME fsa_vectorizer_perf_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/alltest.sh)

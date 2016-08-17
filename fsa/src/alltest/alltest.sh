@@ -1,18 +1,22 @@
 #!/bin/bash
 set -e
 
+if [ -z "$SOURCE_DIRECTORY" ]; then
+    SOURCE_DIRECTORY="."
+fi
+
 # first create the FSA
 ./fsa_fsa_create_test_app
 
 # simple tests
-./lookup_test.sh
-./fsa_test.sh
-./detector_test.sh
+$SOURCE_DIRECTORY/lookup_test.sh
+$SOURCE_DIRECTORY/fsa_test.sh
+$SOURCE_DIRECTORY/detector_test.sh
 
 # advanced tests
-./ngram_test.sh
-./segmenter_test.sh
-./vectorizer_test.sh
+$SOURCE_DIRECTORY/ngram_test.sh
+$SOURCE_DIRECTORY/segmenter_test.sh
+$SOURCE_DIRECTORY/vectorizer_test.sh
 
 # manager test
 ./fsa_fsamanager_test_app . __testfsa__.__fsa__
