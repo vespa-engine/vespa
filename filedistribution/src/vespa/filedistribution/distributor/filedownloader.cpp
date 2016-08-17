@@ -246,18 +246,15 @@ FileDownloader::~FileDownloader() {
 
 void
 FileDownloader::listen() {
-    for (int retries = 0; retries < 5; ++retries) {
-        boost::system::error_code ec;
-        _session.listen_on(std::make_pair(_port, _port), ec); // (min, max)
-        //If libtorrent fails listening on the specified port,
-        //it will automatically try to use port 0.
-        if (!ec && _session.listen_port() == _port)
-            return;
-        perror("Listen failed");
-        LOG(debug, "Failed listening on '%d' message='%s'", _port, ec.message().c_str());
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+    boost::system::error_code ec;
+    _session.listen_on(std::make_pair(_port, _port), // (min, max)
+                       ec, 0, // network interface (default value)
+                       libtorrent::session::listen_no_system_port); 
+    if (!ec && (_session.listen_port() == _port)) {
+        return;
     }
-
+    perror("Listen failed");
+    LOG(debug, "Failed listening on '%d' message='%s'", _port, ec.message().c_str());
     BOOST_THROW_EXCEPTION(FailedListeningException(_hostName, _port));
 }
 
