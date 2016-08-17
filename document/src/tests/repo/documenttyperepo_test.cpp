@@ -21,6 +21,7 @@ LOG_SETUP("documenttyperepo_test");
 #include <vespa/vespalib/util/exceptions.h>
 #include <set>
 #include <vespa/config/helper/configgetter.h>
+#include "../documenttestutils.h"
 
 using config::AsciiConfigWriter;
 using std::set;
@@ -441,7 +442,7 @@ TEST("requireThatDocumentLookupChecksName") {
 }
 
 TEST("requireThatBuildFromConfigWorks") {
-    DocumentTypeRepo repo(readDocumenttypesConfig("documenttypes.cfg"));
+    DocumentTypeRepo repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "documenttypes.cfg").c_str()));
     ASSERT_TRUE(repo.getDocumentType("document"));
     ASSERT_TRUE(repo.getDocumentType("types"));
     ASSERT_TRUE(repo.getDocumentType("types_search"));

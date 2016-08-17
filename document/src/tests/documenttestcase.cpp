@@ -16,6 +16,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <fstream>
+#include "documenttestutils.h"
 
 using vespalib::nbostream;
 
@@ -589,10 +590,10 @@ void verifyJavaDocument(Document& doc)
 void DocumentTest::testReadSerializedFile()
 {
     // Reads a file serialized from java
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string file_name = DocumentTestUtils::srcDir() + "data/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
 
-    int fd = open("data/serializejava.dat", O_RDONLY);
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializejava.dat").c_str(), O_RDONLY);
 
     size_t len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -623,10 +624,10 @@ void DocumentTest::testReadSerializedFile()
 void DocumentTest::testReadSerializedFileCompressed()
 {
     // Reads a file serialized from java
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string file_name = DocumentTestUtils::srcDir() + "data/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
 
-    int fd = open("data/serializejava-compressed.dat", O_RDONLY);
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializejava-compressed.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -743,7 +744,7 @@ void DocumentTest::testReadSerializedAllVersions()
             //doc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
             std::unique_ptr<ByteBuffer> buf = doc.serialize();
             CPPUNIT_ASSERT_EQUAL(buf->getLength(), buf->getPos());
-            int fd = open("data/document-cpp-currentversion-uncompressed.dat",
+            int fd = open((DocumentTestUtils::srcDir() + "data/document-cpp-currentversion-uncompressed.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
             CPPUNIT_ASSERT(fd > 0);
             size_t len = write(fd, buf->getBuffer(), buf->getPos());
@@ -756,7 +757,7 @@ void DocumentTest::testReadSerializedAllVersions()
             const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
             std::unique_ptr<ByteBuffer> buf = doc.serialize();
             CPPUNIT_ASSERT(buf->getPos() <= buf->getLength());
-            int fd = open("data/document-cpp-currentversion-lz4-9.dat",
+            int fd = open((DocumentTestUtils::srcDir() + "data/document-cpp-currentversion-lz4-9.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
             CPPUNIT_ASSERT(fd > 0);
             size_t len = write(fd, buf->getBuffer(), buf->getPos());
@@ -766,12 +767,12 @@ void DocumentTest::testReadSerializedAllVersions()
         }
     }
 
-    std::string jpath = "../test/serializeddocuments/";
+    std::string jpath = DocumentTestUtils::srcDir() + "../test/serializeddocuments/";
 
     std::vector<TestDoc> tests;
-    tests.push_back(TestDoc("data/document-cpp-v8-uncompressed.dat", 8));
-    tests.push_back(TestDoc("data/document-cpp-v7-uncompressed.dat", 7));
-    tests.push_back(TestDoc("data/serializev6.dat", 6));
+    tests.push_back(TestDoc(DocumentTestUtils::srcDir() + "data/document-cpp-v8-uncompressed.dat", 8));
+    tests.push_back(TestDoc(DocumentTestUtils::srcDir() + "data/document-cpp-v7-uncompressed.dat", 7));
+    tests.push_back(TestDoc(DocumentTestUtils::srcDir() + "data/serializev6.dat", 6));
     tests.push_back(TestDoc(jpath + "document-java-v8-uncompressed.dat", 8));
     for (uint32_t i=0; i<tests.size(); ++i) {
         int version = tests[i]._createdVersion;
@@ -867,8 +868,8 @@ size_t getSerializedSizeBody(const Document &doc) {
 
 void DocumentTest::testGenerateSerializedFile()
 {
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string file_name = DocumentTestUtils::srcDir() + "data/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
     Document doc(*repo.getDocumentType("serializetest"),
                  DocumentId(DocIdString("serializetest",
                                         "http://test.doc.id/")));
@@ -906,8 +907,8 @@ void DocumentTest::testGenerateSerializedFile()
 
     std::unique_ptr<ByteBuffer> buf = doc.serialize();
 
-#define SERIALIZED_DIR "../test/document/"
-    int fd = open(SERIALIZED_DIR "/serializecpp.dat",
+    const std::string serializedDir = DocumentTestUtils::srcDir() + "../test/document/";
+    int fd = open((serializedDir + "/serializecpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	throw vespalib::Exception("write failed");
@@ -916,7 +917,7 @@ void DocumentTest::testGenerateSerializedFile()
 
     ByteBuffer hBuf(getSerializedSizeHeader(doc));
     doc.serializeHeader(hBuf);
-    fd = open(SERIALIZED_DIR "/serializecppsplit_header.dat",
+    fd = open((serializedDir + "/serializecppsplit_header.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, hBuf.getBuffer(), hBuf.getPos()) != (ssize_t)hBuf.getPos()) {
 	throw vespalib::Exception("write failed");
@@ -925,13 +926,12 @@ void DocumentTest::testGenerateSerializedFile()
 
     ByteBuffer bBuf(getSerializedSizeBody(doc));
     doc.serializeBody(bBuf);
-    fd = open(SERIALIZED_DIR "/serializecppsplit_body.dat",
+    fd = open((DocumentTestUtils::srcDir() + "/serializecppsplit_body.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, bBuf.getBuffer(), bBuf.getPos()) != (ssize_t)bBuf.getPos()) {
 	throw vespalib::Exception("write failed");
     }
     close(fd);
-
 
     CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
     const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
@@ -941,7 +941,7 @@ void DocumentTest::testGenerateSerializedFile()
     doc.serialize(lz4buf);
     lz4buf.flip();
 
-    fd = open(SERIALIZED_DIR "/serializecpp-lz4-level9.dat",
+    fd = open((DocumentTestUtils::srcDir() + "/serializecpp-lz4-level9.dat").c_str(),
               O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, lz4buf.getBufferAtPos(), lz4buf.getRemaining()) != (ssize_t)lz4buf.getRemaining()) {
 	throw vespalib::Exception("write failed");
@@ -1308,7 +1308,7 @@ DocumentTest::testUnknownEntries()
         // Copy paste of above test to read an old version document and
         // deserialize it with some fields lacking to see that it doesn't
         // report failure. (Had a bug on this earlier)
-    int fd = open("data/serializev6.dat", O_RDONLY);
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializev6.dat").c_str(), O_RDONLY);
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
     lseek(fd,0,SEEK_SET);
@@ -1357,7 +1357,7 @@ void DocumentTest::testAnnotationDeserialization()
         .annotationType(1730712959, "apple", 0);
     DocumentTypeRepo repo(builder.config());
 
-    int fd = open("data/serializejavawithannotations.dat", O_RDONLY);
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializejavawithannotations.dat").c_str(), O_RDONLY);
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
     lseek(fd,0,SEEK_SET);

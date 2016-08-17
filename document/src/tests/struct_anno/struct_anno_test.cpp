@@ -21,6 +21,7 @@ LOG_SETUP("struct_anno_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <sstream>
 #include <vector>
+#include "../documenttestutils.h"
 
 using std::ostringstream;
 using std::string;
@@ -47,9 +48,9 @@ int Test::Main() {
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
 void Test::requireThatStructFieldsCanContainAnnotations() {
-    DocumentTypeRepo repo(readDocumenttypesConfig("documenttypes.cfg"));
+    DocumentTypeRepo repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "documenttypes.cfg").c_str()));
 
-    FastOS_File file("document.dat");
+    FastOS_File file((DocumentTestUtils::srcDir() + "document.dat").c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());
     char buffer[1024];
     ssize_t size = file.Read(buffer, arraysize(buffer));

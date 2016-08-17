@@ -19,6 +19,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include "documenttestutils.h"
 
 using namespace document::config_builder;
 
@@ -548,10 +549,10 @@ DocumentUpdateTest::testIncrementWithZeroResultWeightIsRemoved()
 void DocumentUpdateTest::testReadSerializedFile()
 {
     // Reads a file serialized from java
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string file_name = DocumentTestUtils::srcDir() + "data/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
 
-    int fd = open("data/serializeupdatejava.dat", O_RDONLY);
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializeupdatejava.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -625,8 +626,8 @@ void DocumentUpdateTest::testReadSerializedFile()
 void DocumentUpdateTest::testGenerateSerializedFile()
 {
     // Tests nothing, only generates a file for java test
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
+    const std::string file_name = DocumentTestUtils::srcDir() + "data/crossplatform-java-cpp-doctypes.cfg";
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
     DocumentUpdate upd(*type, DocumentId(DocIdString("update", "test")));
@@ -647,7 +648,7 @@ void DocumentUpdateTest::testGenerateSerializedFile()
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
 
-    int fd = open("data/serializeupdatecpp.dat",
+    int fd = open((DocumentTestUtils::srcDir() + "data/serializeupdatecpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	throw vespalib::Exception("read failed");

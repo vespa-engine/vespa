@@ -47,6 +47,7 @@ LOG_SETUP("vespadocumentserializer_test");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include "../documenttestutils.h"
 
 using document::DocumenttypesConfig;
 using vespalib::File;
@@ -682,7 +683,7 @@ void deserializeAndCheck(const string &file_name, PredicateFieldValue &value) {
 }
 
 void checkDeserialization(const string &name, std::unique_ptr<Slime> slime) {
-    const string data_dir = "../../test/resources/predicates/";
+    const string data_dir = DocumentTestUtils::srcDir() + "../../test/resources/predicates/";
 
     PredicateFieldValue value(std::move(slime));
     serializeToFile(value, data_dir + name + "__cpp");
@@ -801,7 +802,7 @@ void deserializeAndCheck(const string &file_name, TensorFieldValue &value) {
 }
 
 void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
-    const string data_dir = "../../test/resources/tensor/";
+    const string data_dir = DocumentTestUtils::srcDir() + "../../test/resources/tensor/";
 
     TensorFieldValue value;
     if (tensor) {
