@@ -24,7 +24,7 @@ struct NoSuchTorrentException : public Exception {};
 
 struct FailedListeningException : public Exception {
     FailedListeningException(const std::string& hostName, int port, const std::string & message) {
-        *this << errorinfo::HostName(hostName) << errorinfo::Port(port) << errorinfo::Message(message);
+        *this << errorinfo::HostName(hostName) << errorinfo::Port(port) << errorinfo::TorrentMessage(message);
     }
     FailedListeningException(const std::string& hostName, int port) {
         *this <<errorinfo::HostName(hostName) << errorinfo::Port(port);
