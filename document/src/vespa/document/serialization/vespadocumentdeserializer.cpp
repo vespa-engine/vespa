@@ -376,8 +376,8 @@ void
 VespaDocumentDeserializer::read(TensorFieldValue &value)
 {
     size_t length = _stream.getInt1_4Bytes();
-    if (length < _stream.size()) {
-        throw DeserializeException(vespalib::make_string("Stream failed size(%zu), needed(%zu)", _stream.size(), length),
+    if (length > _stream.size()) {
+        throw DeserializeException(vespalib::make_string("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
                                    VESPA_STRLOC);
     }
     std::unique_ptr<vespalib::tensor::Tensor> tensor;
