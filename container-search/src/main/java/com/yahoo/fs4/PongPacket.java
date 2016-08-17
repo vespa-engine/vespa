@@ -24,9 +24,14 @@ public class PongPacket extends BasicPacket {
     private int totalPartitions; // configured partitions
     private Optional<Integer> activePartitions = Optional.empty(); // number of partitions that are up
 
-    private Optional<Long> activeDocs = Optional.empty(); // how many documents are searchable (sum)
+    private Optional<Long> activeDocuments = Optional.empty(); // how many documents are searchable (sum)
 
     public PongPacket() {
+    }
+
+    /** For testing */
+    public PongPacket(long activeDocuments) {
+        this.activeDocuments = Optional.of(activeDocuments);      
     }
 
     private int code;
@@ -50,7 +55,7 @@ public class PongPacket extends BasicPacket {
             buffer.getInt(); // ignore rflags (historical field)
         }
         if ((features & MRF_ACTIVEDOCS) != 0) {
-            activeDocs = Optional.of(Long.valueOf(buffer.getLong()));
+            activeDocuments = Optional.of(Long.valueOf(buffer.getLong()));
         }
     }
 
@@ -71,7 +76,7 @@ public class PongPacket extends BasicPacket {
      * in the monitored backend.
      **/
     public Optional<Long> getActiveDocuments() {
-        return activeDocs;
+        return activeDocuments;
     }
 
     public Optional<Integer> getActiveNodes() {

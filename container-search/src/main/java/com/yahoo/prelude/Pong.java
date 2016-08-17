@@ -51,9 +51,9 @@ public class Pong {
     public Optional<PongPacket> getPongPacket() { return pongPacket; }
     
     /** Returns the number of active documents in the backend responding in this Pong, if available */
-    public Optional<Integer> activeDocuments() {
-        if (!pongPacket.isPresent()) return Optional.empty();
-        return pongPacket.get().getActiveNodes();
+    public Optional<Long> activeDocuments() {
+        if ( ! pongPacket.isPresent()) return Optional.empty();
+        return pongPacket.get().getActiveDocuments();
     }
 
     public List<ErrorMessage> getErrors() {

@@ -137,8 +137,11 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
                 if ( otherGroup != currentGroup)
                     sumOfAactiveDocumentsInOtherGroups += otherGroup.getActiveDocuments();
             long averageDocumentsInOtherGroups = sumOfAactiveDocumentsInOtherGroups / (groups.size() - 1);
-            currentGroup.setHasSufficientCoverage(
-                    100 * currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
+            if (averageDocumentsInOtherGroups == 0)
+                currentGroup.setHasSufficientCoverage(true); // no information about any group; assume coverage
+            else
+                currentGroup.setHasSufficientCoverage(
+                        100 * (double)currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
         }
         
     }
