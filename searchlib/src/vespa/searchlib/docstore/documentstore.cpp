@@ -102,6 +102,7 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
       _backingStore(store),
       _store(_backingStore, config.getCompression()),
       _cache(new Cache(_store, config.getMaxCacheBytes())),
+      _visitCache(new VisitCache(store, config.getMaxCacheBytes(), config.getCompression())),
       _uncached_lookups(0)
 {
     _cache->reserveElements(config.getInitialCacheEntries());
