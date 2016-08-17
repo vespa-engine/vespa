@@ -22,6 +22,16 @@
             <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>com.fasterxml.jackson.datatype</artifactId>
+                    <groupId>jackson-databind</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-datatype-joda</artifactId>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -39,7 +49,21 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                    <artifactId>jackson-jaxrs-json-provider</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>net.jpountz.lz4</groupId>
@@ -154,24 +178,37 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.6.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>2.6.4</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.6.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.6.4</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>com.fasterxml.jackson.core</artifactId>
-                    <groupId>jackson-core</groupId>
-                </exclusion>
-            </exclusions>
+
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.6.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-base</artifactId>
+            <version>2.6.4</version>
+        </dependency>
+
+        <dependency>
+            <artifactId>jackson-datatype-joda</artifactId>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <version>2.6.4</version>
         </dependency>
     </dependencies>
 
