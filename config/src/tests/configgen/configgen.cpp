@@ -9,7 +9,9 @@ LOG_SETUP("configgen");
 using namespace config;
 
 TEST("require that config type can be compiled") {
-    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec("motd.cfg"));
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+
+    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec(src_dir + "/motd.cfg"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

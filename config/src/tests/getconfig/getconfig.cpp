@@ -34,7 +34,9 @@ TEST("requireThatGetConfigReturnsCorrectConfig")
 
 TEST("requireThatGetConfigReturnsCorrectConfig")
 {
-    FileSpec spec("my.cfg");
+    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+
+    FileSpec spec(src_dir + "/my.cfg");
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("", spec);
     ASSERT_TRUE(cfg.get() != NULL);
     ASSERT_EQUAL("my", cfg->defName());

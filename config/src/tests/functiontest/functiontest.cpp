@@ -95,10 +95,16 @@ struct LazyTestFixture
     std::unique_ptr<FunctionTestConfig> _config;
 
     LazyTestFixture(const std::string & dirName)
-        : _spec(dirName),
+        : _spec(srcDir() + dirName),
           _subscriber(_spec),
           _handle(_subscriber.subscribe<FunctionTestConfig>(""))
     {
+    }
+
+    static std::string srcDir()
+    {
+        static const std::string src_dir(getenv("SOURCE_DIRECTORY") ? std::string(getenv("SOURCE_DIRECTORY")) + "/" : "./");
+        return src_dir;
     }
 };
 
@@ -130,7 +136,7 @@ struct ErrorFixture
 };
 
 void attemptLacking(const std::string& param, bool isArray) {
-    std::ifstream in("defaultvalues/function-test.cfg", std::ios_base::in);
+    std::ifstream in(LazyTestFixture::srcDir() + "defaultvalues/function-test.cfg", std::ios_base::in);
     std::ostringstream config;
     std::string s;
     while (std::getline(in, s)) {
@@ -172,7 +178,7 @@ TEST_F("testVariableAccess", TestFixture("variableaccess")) {
 
 TEST("test variable access from slime") {
     vespalib::Slime slime;
-    std::string json(readFile("slime-payload.json"));
+    std::string json(readFile(LazyTestFixture::srcDir() + "slime-payload.json"));
     vespalib::slime::JsonFormat::decode(json, slime);
     FunctionTestConfig config(config::ConfigPayload(slime.get()));
     checkVariableAccess(config);
