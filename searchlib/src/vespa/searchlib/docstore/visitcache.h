@@ -57,7 +57,7 @@ class VisitCache {
 public:
     using Keys=IDocumentStore::LidVector;
 
-    VisitCache();
+    VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression);
 
     CompressedBlobSet read(const Keys & keys) const;
     void remove(uint32_t key);
@@ -84,7 +84,8 @@ private:
         vespalib::size<BlobSet> > CacheParams;
     typedef vespalib::cache<CacheParams> Cache;
 
-    Cache _cache;
+    BackingStore _store;
+    Cache        _cache;
 };
 
 }

@@ -23,6 +23,23 @@ KeySet::contains(const KeySet &rhs) const {
     return b == rhs._keys.size();
 }
 
+VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :
+    _store(store, compression),
+    _cache(new Cache(_store, cacheSize))
+{
+}
+
+CompressedBlobSet
+VisitCache::read(const Keys & keys) const {
+    return _cache.read(keys);
+}
+
+void
+VisitCache::remove(uint32_t key) {
+    // shall modify the cached element
+    (void) key;
+}
+
 }
 }
 
