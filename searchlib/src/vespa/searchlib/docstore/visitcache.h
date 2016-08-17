@@ -81,7 +81,7 @@ public:
     BlobSet getBlobSet() const;
 
 private:
-    Positions _positions;
+    BlobSet::Positions   _positions;
     vespalib::DataBuffer _buffer;
 };
 
@@ -100,9 +100,9 @@ private:
 
         bool read(const KeySet &key, BlobSet &blobs) const;
 
-        void write(const KeySet &key, const BlobSet &) { }
+        void write(const KeySet &, const BlobSet &) { }
 
-        void erase(const KeySet &key) { }
+        void erase(const KeySet &) { }
 
         const document::CompressionConfig &getCompression(void) const { return _compression; }
 
