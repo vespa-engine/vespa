@@ -382,6 +382,8 @@ public abstract class IndexedSearchCluster extends SearchCluster
             nodeBuilder.group(node.getNodeSpec().groupIndex());
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
+            if (tuning.dispatch.minActiveDocsCoverage != null)
+                builder.min_activedocs_coverage(tuning.dispatch.minActiveDocsCoverage);
             builder.node(nodeBuilder);
         }
     }

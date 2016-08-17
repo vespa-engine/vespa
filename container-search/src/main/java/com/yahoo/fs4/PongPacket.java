@@ -8,10 +8,10 @@ import java.util.Optional;
  * A pong packet for FS4. It maps to PCODE_MLD_MONITORRESULT
  * and PCODE_MONITORRESULTX in the C++ implementation of the protocol.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-
 public class PongPacket extends BasicPacket {
+
     @SuppressWarnings("unused")
     private int lowPartitionId; // ignored (historical field)
 

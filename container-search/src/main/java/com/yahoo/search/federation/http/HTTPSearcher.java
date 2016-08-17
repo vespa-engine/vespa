@@ -483,11 +483,12 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
             }
         } catch (MalformedURLException | URISyntaxException e) {
             pong.addError(ErrorMessage.createIllegalQuery("Malformed ping uri '" + uri + "': " +
-                                                                              Exceptions.toMessageString(e)));
+                                                          Exceptions.toMessageString(e)));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING,"Unexpected exception while attempting to ping " + connection + " using uri '" + uri + "'",e);
+            log.log(Level.WARNING,"Unexpected exception while attempting to ping " + connection + 
+                                  " using uri '" + uri + "'",e);
             pong.addError(ErrorMessage.createIllegalQuery("Unexpected problem with ping uri '" + uri + "': " +
-                                                                              Exceptions.toMessageString(e)));
+                                                          Exceptions.toMessageString(e)));
         }
 
         if (uri == null) return pong;
@@ -497,16 +498,15 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
             response = getPingResponse(uri, ping);
             checkPing(response, pong);
         } catch (IOException e) {
-            //We do not have a valid ping
+            // We do not have a valid ping
             pong.addError(ErrorMessage.createBackendCommunicationError(
-                    "Exception thrown when pinging with url '" + uri + "': " + Exceptions.toMessageString(e)));
+                          "Exception thrown when pinging with url '" + uri + "': " + Exceptions.toMessageString(e)));
         } catch (TimeoutException e) {
-            pong.addError(ErrorMessage.createTimeout("Timeout for ping "
-                        + uri + " in " + this + ": " + e.getMessage()));
+            pong.addError(ErrorMessage.createTimeout("Timeout for ping " + uri + " in " + this + ": " + e.getMessage()));
         } catch (RuntimeException e) {
             log.log(Level.WARNING,"Unexpected exception while attempting to ping " + connection + " using uri '" + uri + "'",e);
             pong.addError(ErrorMessage.createIllegalQuery("Unexpected problem with ping uri '" + uri + "': " +
-                                                                              Exceptions.toMessageString(e)));
+                                                          Exceptions.toMessageString(e)));
         } finally {
             if (response != null) {
                 cleanupHttpEntity(response.getEntity());

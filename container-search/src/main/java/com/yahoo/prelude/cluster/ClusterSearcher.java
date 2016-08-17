@@ -590,21 +590,13 @@ public class ClusterSearcher extends Searcher {
     }
 
     private boolean backendCanServeDocuments(Pong pong) {
-        List<PongPacket> wireReply = pong.getPongPackets();
-        if (wireReply.size() == 0) {
-            return true; // streaming search does not add PongPacket instances
-        }
-        if (wireReply.size() > 1) {
-            log.log(LogLevel.ERROR, "ClusterSearcher ping got more than one pong packet (" + wireReply.size()
-                    + "), this means basic implementation assumptions now are out of sync.");
-        }
+        Optional<PongPacket> wireReply = pong.getPongPacket();
+        if ( ! wireReply.isPresent()) return true; // streaming search does not add PongPacket instances
 
-        PongPacket pongPacket = wireReply.get(0);
-        if (pongPacket.getActiveNodes().isPresent() && pongPacket.getActiveNodes().get() == 0) {
+        if (wireReply.get().getActiveNodes().isPresent() && wireReply.get().getActiveNodes().get() == 0)
             return false;
-        } else {
+        else
             return true;
-        }
     }
 
     public void dumpPackets(PacketDumper.PacketType packetType, boolean on) throws IOException {

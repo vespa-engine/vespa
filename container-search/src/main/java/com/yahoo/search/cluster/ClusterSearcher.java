@@ -76,20 +76,16 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         try {
             pong = future.get(monitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + p));
+            pong = new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + p));
             logThrowable = e;
         } catch (ExecutionException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + p));
+            pong = new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + p));
             logThrowable = e;
         } catch (LinkageError e) { // Typically Osgi woes
-            pong = new Pong();
-            pong.addError(ErrorMessage.createErrorInPluginSearcher("Class loading problem",e));
+            pong = new Pong(ErrorMessage.createErrorInPluginSearcher("Class loading problem",e));
             logThrowable = e;
         } catch (TimeoutException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out."));
+            pong = new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out."));
         }
         future.cancel(true);
 
@@ -331,18 +327,13 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         }
 
         public Pong call() {
-            Pong pong;
             try {
-                pong = ping(new Ping(monitor.getConfiguration().getRequestTimeout()), connection);
+                return ping(new Ping(monitor.getConfiguration().getRequestTimeout()), connection);
             } catch (RuntimeException e) {
-                pong = new Pong();
-                pong.addError(
-                        ErrorMessage.createBackendCommunicationError(
-                                "Exception when pinging "
-                                + connection + ": "
-                                + Exceptions.toMessageString(e)));
+                return new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging "
+                                                                             + connection + ": "
+                                                                             + Exceptions.toMessageString(e)));
             }
-            return pong;
         }
 
     }

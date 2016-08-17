@@ -26,6 +26,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -39,7 +40,9 @@ import java.util.stream.Collectors;
 public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
-    
+
+    /** The min active docs a group must have to be considered up, as a % of the average active docs of the other groups */
+    private double minActivedocsCoverage;
     private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
@@ -49,10 +52,11 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final FS4ResourcePool fs4ResourcePool;
 
     public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
-        this(toNodes(dispatchConfig), fs4ResourcePool);
+        this(dispatchConfig.min_activedocs_coverage(), toNodes(dispatchConfig), fs4ResourcePool);
     }
     
-    public SearchCluster(List<Node> nodes, FS4ResourcePool fs4ResourcePool) {
+    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool) {
+        this.minActivedocsCoverage = minActivedocsCoverage;
         size = nodes.size();
         this.fs4ResourcePool = fs4ResourcePool;
         
@@ -106,30 +110,29 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     @Override
     public void ping(Node node, Executor executor) {
         Pinger pinger = new Pinger(node);
-        FutureTask<Pong> future = new FutureTask<>(pinger);
-
-        executor.execute(future);
-        Pong pong;
-        try {
-            pong = future.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + node));
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-        } catch (ExecutionException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + node));
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-        } catch (TimeoutException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out"));
-        }
-        future.cancel(true);
+        FutureTask<Pong> futurePong = new FutureTask<>(pinger);
+        executor.execute(futurePong);
+        Pong pong = getPong(futurePong, node);
+        futurePong.cancel(true);
 
         if (pong.badResponse())
             clusterMonitor.failed(node, pong.getError(0));
         else
             clusterMonitor.responded(node);
+    }
+    
+    private Pong getPong(FutureTask<Pong> futurePong, Node node) {
+        try {
+            return futurePong.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.log(Level.WARNING, "Exception pinging " + node, e);
+            return new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + node));
+        } catch (ExecutionException e) {
+            log.log(Level.WARNING, "Exception pinging " + node, e);
+            return new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + node));
+        } catch (TimeoutException e) {
+            return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out"));
+        }
     }
 
     private class Pinger implements Callable<Pong> {
@@ -141,16 +144,15 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         }
 
         public Pong call() {
-            Pong pong;
             try {
-                pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()), 
-                                         fs4ResourcePool.getBackend(node.hostname(), node.port()), node.toString());
+                Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()), 
+                                              fs4ResourcePool.getBackend(node.hostname(), node.port()), node.toString());
+                // TODO: Update active docs
+                return pong;
             } catch (RuntimeException e) {
-                pong = new Pong();
-                pong.addError(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "
-                              + Exceptions.toMessageString(e)));
+                return new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "
+                                + Exceptions.toMessageString(e)));
             }
-            return pong;
         }
 
     }
@@ -159,6 +161,8 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         
         private final int id;
         private final ImmutableList<Node> nodes;
+        
+        private AtomicLong activeDocs = new AtomicLong(0);
         
         public Group(int id, List<Node> nodes) {
             this.id = id;
