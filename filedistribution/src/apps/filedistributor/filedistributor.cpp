@@ -332,6 +332,10 @@ FileDistributorApplication::Main() {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return 4;
+    } catch(const FailedListeningException & e) {
+        std::string s = boost::diagnostic_information(e);
+        EV_STOPPING(programName, s.c_str());
+        return 5;
     } catch(const ZKGenericException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
