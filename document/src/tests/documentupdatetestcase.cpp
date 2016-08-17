@@ -983,6 +983,7 @@ DocumentUpdateTest::testTensorAssignUpdate()
     CPPUNIT_ASSERT(!doc->getValue("tensor"));
     Document updated(*doc);
     FieldValue::UP new_value(createTensorFieldValue());
+    testValueUpdate(AssignValueUpdate(*new_value), *DataType::TENSOR);
     DocumentUpdate upd(*doc->getDataType(), doc->getId());
     upd.addUpdate(FieldUpdate(upd.getType().getField("tensor")).
                   addUpdate(AssignValueUpdate(*new_value)));
