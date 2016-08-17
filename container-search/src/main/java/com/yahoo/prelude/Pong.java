@@ -49,6 +49,12 @@ public class Pong {
 
     /** Returns the package causing this to exist, or empty if none */
     public Optional<PongPacket> getPongPacket() { return pongPacket; }
+    
+    /** Returns the number of active documents in the backend responding in this Pong, if available */
+    public Optional<Integer> activeDocuments() {
+        if (!pongPacket.isPresent()) return Optional.empty();
+        return pongPacket.get().getActiveNodes();
+    }
 
     public List<ErrorMessage> getErrors() {
         return Collections.unmodifiableList(errors);
@@ -76,7 +82,7 @@ public class Pong {
     /** Returns a string which included the ping info (if any) and any errors added to this */
     @Override
     public String toString() {
-        StringBuffer m = new StringBuffer("Result of pinging");
+        StringBuilder m = new StringBuilder("Result of pinging");
         if (pingInfo.length() > 0) {
             m.append(" using ");
             m.append(pingInfo);
