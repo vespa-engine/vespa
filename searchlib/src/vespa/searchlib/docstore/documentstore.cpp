@@ -111,6 +111,7 @@ DocumentStore::~DocumentStore()
 {
 }
 
+
 void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {

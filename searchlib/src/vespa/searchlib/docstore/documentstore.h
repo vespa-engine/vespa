@@ -217,7 +217,6 @@ private:
     };
     class BackingStore {
     public:
-        typedef vespalib::hash_map<DocumentIdT, Value::UP> LidValueMap;
         BackingStore(IDataStore & store, const document::CompressionConfig & compression) :
             _backingStore(store),
             _compression(compression)
