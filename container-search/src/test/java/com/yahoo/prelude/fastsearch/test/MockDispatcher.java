@@ -8,11 +8,14 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.List;
 
-/** Just a stub for now */
 class MockDispatcher extends Dispatcher {
 
     public MockDispatcher(List<SearchCluster.Node> nodes) {
         super(toDispatchConfig(nodes), new FS4ResourcePool(1));
+    }
+
+    public MockDispatcher(List<SearchCluster.Node> nodes, FS4ResourcePool fs4ResourcePool) {
+        super(toDispatchConfig(nodes), fs4ResourcePool);
     }
 
     private static DispatchConfig toDispatchConfig(List<SearchCluster.Node> nodes) {

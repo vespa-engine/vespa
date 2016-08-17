@@ -2,7 +2,7 @@
 // -*- mode: java; folded-file: t; c-basic-offset: 4 -*-
 //
 //
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch.test.fs4mock;
 
 
 import com.yahoo.prelude.ConfigurationException;

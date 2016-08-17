@@ -63,7 +63,7 @@ public abstract class Packet extends BasicPacket {
      * @return this for convenience
      * @throws UnsupportedOperationException if not implemented in the subclass
      */
-    public final Packet encode(ByteBuffer buffer,int channel) throws BufferTooSmallException {
+    public final Packet encode(ByteBuffer buffer, int channel) throws BufferTooSmallException {
         this.channel=channel;
         int oldLimit = buffer.limit();
         int startPosition = buffer.position();

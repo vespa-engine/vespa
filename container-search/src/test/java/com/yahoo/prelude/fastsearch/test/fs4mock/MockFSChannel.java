@@ -1,4 +1,4 @@
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch.test.fs4mock;
 
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.BasicPacket;
@@ -8,10 +8,13 @@ import com.yahoo.fs4.EolPacket;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.PacketDecoder;
+import com.yahoo.fs4.PingPacket;
+import com.yahoo.fs4.PongPacket;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
+import com.yahoo.prelude.fastsearch.test.DocsumDefinitionTestCase;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -19,11 +22,11 @@ import java.util.List;
 /**
  * A channel which returns hardcoded packets of the same type as fdispatch
  */
-class MockFSChannel extends FS4Channel {
+public class MockFSChannel extends FS4Channel {
 
-    public MockFSChannel(Backend backend, Integer channelId) {}
+    public MockFSChannel() {}
 
-    private Packet lastReceived = null;
+    private BasicPacket lastReceived = null;
 
     private QueryPacket lastQueryPacket = null;
 
@@ -32,20 +35,18 @@ class MockFSChannel extends FS4Channel {
 
     private static boolean emptyDocsums = false;
 
-    public synchronized boolean sendPacket(BasicPacket bPacket) {
-        Packet packet = (Packet) bPacket;
-
+    @Override
+    public synchronized boolean sendPacket(BasicPacket packet) {
         try {
-            packet.encode(ByteBuffer.allocate(65536), 0);
+            if (packet instanceof Packet)
+                packet.encode(ByteBuffer.allocate(65536), 0);
         } catch (BufferTooSmallException e) {
             throw new RuntimeException("Too small buffer to encode packet in mock backend.");
         }
-        if (packet instanceof QueryPacket) {
+
+        if (packet instanceof QueryPacket)
             lastQueryPacket = (QueryPacket) packet;
-        } else if (!(packet instanceof GetDocSumsPacket)) {
-            throw new RuntimeException(
-                    "Mock channel don't know what to reply to " + packet);
-        }
+
         lastReceived = packet;
         return true;
     }
@@ -65,12 +66,12 @@ class MockFSChannel extends FS4Channel {
         return lastQueryPacket;
     }
 
-    public Packet getLastReceived() {
+    public BasicPacket getLastReceived() {
         return lastReceived;
     }
 
     public BasicPacket[] receivePackets(long timeout, int packetCount) {
-        List packets = new java.util.ArrayList();
+        List<BasicPacket> packets = new java.util.ArrayList<>();
 
         if (lastReceived instanceof QueryPacket) {
             lastQueryPacket = (QueryPacket) lastReceived;
@@ -94,14 +95,18 @@ class MockFSChannel extends FS4Channel {
                                 1855, 234, 1001));
             }
             packets.add(result);
-        } else if (lastReceived instanceof GetDocSumsPacket) {
+        } 
+        else if (lastReceived instanceof GetDocSumsPacket) {
             addDocsums(packets, lastQueryPacket);
+        }
+        else if (lastReceived instanceof PingPacket) {
+            packets.add(new PongPacket());
         }
         while (packetCount >= 0 && packets.size() > packetCount) {
             packets.remove(packets.size() - 1);
         }
 
-        return (Packet[]) packets.toArray(new Packet[packets.size()]);
+        return packets.toArray(new BasicPacket[packets.size()]);
     }
 
     /** Adds the number of docsums requested in queryPacket.getHits() */

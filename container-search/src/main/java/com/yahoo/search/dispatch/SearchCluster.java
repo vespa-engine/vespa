@@ -217,7 +217,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         }
         
         @Override
-        public String toString() { return "search node " + hostname; }
+        public String toString() { return "search node " + hostname + ":" + port + " in group " + group; }
         
     }
 

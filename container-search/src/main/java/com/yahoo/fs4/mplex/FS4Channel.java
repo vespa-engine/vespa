@@ -29,7 +29,7 @@ import com.yahoo.search.Query;
  * <P>
  * Outbound packets are handed off to the FS4Connection.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class FS4Channel
 {
@@ -45,7 +45,7 @@ public class FS4Channel
     protected FS4Channel () {
     }
 
-    protected FS4Channel (Backend backend, Integer channelId) {
+    protected FS4Channel(Backend backend, Integer channelId) {
         this.channelId = channelId;
         this.backend = backend;
         this.responseQueue = new LinkedBlockingQueue<>();
@@ -124,9 +124,7 @@ public class FS4Channel
                 BasicPacket p = nextPacket(timeLeft);
                 if (p == null) throw new ChannelTimeoutException("Timed out");
 
-                if (!isPingChannel
-                    && ((Packet)p).getChannel() != getChannelId().intValue())
-                {
+                if (!isPingChannel && ((Packet)p).getChannel() != getChannelId().intValue()) {
                     log.warning("Ignoring received " + p + ", when excepting channel " + getChannelId());
                     continue;
                 }
