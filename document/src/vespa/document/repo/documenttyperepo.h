@@ -46,6 +46,7 @@ private:
 };
 
 DocumenttypesConfig readDocumenttypesConfig(const char *file_name);
+DocumenttypesConfig readDocumenttypesConfig(const std::string& file_name);
 
 }  // namespace document
 

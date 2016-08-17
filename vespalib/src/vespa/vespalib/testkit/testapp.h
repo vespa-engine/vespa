@@ -164,6 +164,7 @@ class TestApp : public FastOS_Application
 {
 private:
     std::string _name;
+    std::string _src_dir;
 
 public:
     static TestMaster &master;
@@ -177,6 +178,13 @@ public:
      * @return test name
      **/
     const char *GetName() { return _name.c_str(); }
+
+    /**
+     * @brief Obtain the source directory for the current test
+     *
+     * @return Path to source directory with trailing /
+     */
+    const std::string& GetSourceDirectory() const { return _src_dir; }
 
     /**
      * @brief Report test initialization
