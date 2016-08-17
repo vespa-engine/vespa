@@ -118,7 +118,6 @@ public class FastSearcherTestCase {
 
         Packet receivedPacket = mockBackend.getChannel().getLastQueryPacket();
         byte[] encoded = QueryTestCase.packetToBytes(receivedPacket);
-        System.out.println(Arrays.toString(encoded));
         byte[] correct = new byte[] {
             0, 0, 0, 100, 0, 0, 0, -38, 0, 0, 0, 0, 0, 16, 0, 6, 0, 10,
             QueryTestCase.ignored, QueryTestCase.ignored, QueryTestCase.ignored, QueryTestCase.ignored, // time left
@@ -252,7 +251,7 @@ public class FastSearcherTestCase {
         assertEquals(2, result.getHitCount());
         execution.fill(result);
 
-        Packet receivedPacket = mockBackend.getChannel().getLastReceived();
+        BasicPacket receivedPacket = mockBackend.getChannel().getLastReceived();
         ByteBuffer buf = ByteBuffer.allocate(1000);
         receivedPacket.encode(buf);
         buf.flip();
@@ -447,7 +446,6 @@ public class FastSearcherTestCase {
     @Test
     public void non_null_summary_is_included_in_trace() {
         String summary = "all";
-        System.out.println(getTraceString(summary));
         assertThat(getTraceString(summary), containsString("summary='all'"));
     }
 

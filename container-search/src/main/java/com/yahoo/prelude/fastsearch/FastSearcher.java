@@ -145,7 +145,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             try {
                 boolean couldSend = channel.sendPacket(pingPacket);
                 if (!couldSend) {
-                    pong.addError(ErrorMessage.createBackendCommunicationError("Could not ping in " + name));
+                    pong.addError(ErrorMessage.createBackendCommunicationError("Could not ping " + name));
                     return pong;
                 }
             } catch (InvalidChannelException e) {
@@ -264,6 +264,10 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         // Only use direct dispatch if the local search node is up
         if ( ! localSearchNode.isWorking()) return dispatchBackend;
+
+        // Only use direct dispatch if the upstream ClusterSearcher chose the local dispatch
+        // (otherwise, we may be in this method due to a failover situation)
+        if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
         
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
         return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());

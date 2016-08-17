@@ -14,6 +14,10 @@ class MockDispatcher extends Dispatcher {
         super(toDispatchConfig(nodes), new FS4ResourcePool(1));
     }
 
+    public MockDispatcher(List<SearchCluster.Node> nodes, FS4ResourcePool fs4ResourcePool) {
+        super(toDispatchConfig(nodes), fs4ResourcePool);
+    }
+
     private static DispatchConfig toDispatchConfig(List<SearchCluster.Node> nodes) {
         DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
         int key = 0;

@@ -214,8 +214,7 @@ public abstract class BasicPacket {
      * Just a place holder to make the APIs simpler.
      */
     public Packet encode(ByteBuffer buffer, int channel) throws BufferTooSmallException {
-        throw new UnsupportedOperationException(
-                "This class does not support a channel ID");
+        throw new UnsupportedOperationException("This class does not support a channel ID");
     }
 
     /**

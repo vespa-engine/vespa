@@ -171,15 +171,10 @@ public class Backend implements ConnectionFactory {
         }
 
         // did we get a connection?
-        if(!connected)
-
-        {
+        if ( !connected)
             throw new IllegalArgumentException("Could not create connection to dispatcher on "
                                                + address.getHostName() + ":" + address.getPort());
-        }
-
         socket.socket().
-
         setTcpNoDelay(true);
     }
 
@@ -362,9 +357,8 @@ public class Backend implements ConnectionFactory {
      */
     public void shutdown() {
         log.info("shutting down");
-        if (shutdownInitiated) {
+        if (shutdownInitiated)
             throw new IllegalStateException("Shutdown already in progress");
-        }
         shutdownInitiated = true;
     }
 
