@@ -13,6 +13,7 @@ vespa_add_library(searchlib_docstore OBJECT
     idocumentstore.cpp
     logdatastore.cpp
     logdocumentstore.cpp
+    visitcache.cpp
     writeablefilechunk.cpp
     DEPENDS
 )
