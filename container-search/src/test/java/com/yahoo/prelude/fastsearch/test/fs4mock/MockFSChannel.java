@@ -1,4 +1,4 @@
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch.test.fs4mock;
 
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.BasicPacket;
@@ -12,6 +12,7 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
+import com.yahoo.prelude.fastsearch.test.DocsumDefinitionTestCase;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.List;
 /**
  * A channel which returns hardcoded packets of the same type as fdispatch
  */
-class MockFSChannel extends FS4Channel {
+public class MockFSChannel extends FS4Channel {
 
     public MockFSChannel(Backend backend, Integer channelId) {}
 
@@ -32,6 +33,7 @@ class MockFSChannel extends FS4Channel {
 
     private static boolean emptyDocsums = false;
 
+    @Override
     public synchronized boolean sendPacket(BasicPacket bPacket) {
         Packet packet = (Packet) bPacket;
 

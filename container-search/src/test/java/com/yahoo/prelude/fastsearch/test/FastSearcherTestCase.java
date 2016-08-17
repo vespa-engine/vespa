@@ -12,6 +12,8 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.container.protect.Error;
 import com.yahoo.fs4.*;
+import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
+import com.yahoo.prelude.fastsearch.test.fs4mock.MockFSChannel;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;

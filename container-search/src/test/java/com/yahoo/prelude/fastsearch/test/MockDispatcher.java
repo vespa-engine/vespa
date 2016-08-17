@@ -8,7 +8,6 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.List;
 
-/** Just a stub for now */
 class MockDispatcher extends Dispatcher {
 
     public MockDispatcher(List<SearchCluster.Node> nodes) {

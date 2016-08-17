@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch.test.fs4mock;
 
 
 import java.io.IOException;
@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.yahoo.prelude.ConfigurationException;
+import com.yahoo.prelude.fastsearch.test.DocsumDefinitionTestCase;
 
 
 /**

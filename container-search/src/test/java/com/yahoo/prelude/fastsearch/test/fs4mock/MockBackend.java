@@ -1,4 +1,4 @@
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch.test.fs4mock;
 
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
@@ -6,14 +6,22 @@ import com.yahoo.fs4.mplex.FS4Channel;
 /**
  * @author bratseth
  */
-class MockBackend extends Backend {
+public class MockBackend extends Backend {
 
     private MockFSChannel channel;
 
     public MockBackend() {
-        channel = new MockFSChannel(this, 1);
+        this(true);
+    }
+    
+    public MockBackend(boolean working) {
+        if (working)
+            channel = new MockFSChannel(this, 1);
+        else
+            channel = new NonWorkingMockFSChannel();
     }
 
+    @Override
     public FS4Channel openChannel() {
         return channel;
     }
