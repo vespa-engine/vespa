@@ -236,8 +236,10 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (localSearchNodes.size() != 1) return dispatchBackend;
 
         SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
+        SearchCluster.Group localSearchGroup = dispatcher.searchCluster().groups().get(localSearchNode.group());
+
         // Only use direct dispatch if the local search node has the entire corpus
-        if (dispatcher.searchCluster().groups().get(localSearchNode.group()).nodes().size() != 1) return dispatchBackend;
+        if (localSearchGroup.nodes().size() != 1) return dispatchBackend;
 
         // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
         // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
@@ -245,13 +247,16 @@ public class FastSearcher extends VespaBackEndSearcher {
         // Such configurations produce skewed load in any case.
         if (containerClusterSize < dispatcher.searchCluster().size()) return dispatchBackend;
 
-        // Only use direct dispatch if the local search node is up
-        if ( ! localSearchNode.isWorking()) return dispatchBackend;
-
         // Only use direct dispatch if the upstream ClusterSearcher chose the local dispatch
         // (otherwise, we may be in this method due to a failover situation)
         if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
-        
+
+        // Only use direct dispatch if the local grouop has sufficient coverage
+        if ( ! localSearchGroup.hasSufficientCoverage()) return dispatchBackend;
+
+        // Only use direct dispatch if the local search node is up
+        if ( ! localSearchNode.isWorking()) return dispatchBackend;
+
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
         return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
     }
