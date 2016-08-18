@@ -31,7 +31,7 @@ static constexpr uint64_t gibi = UINT64_C(1024) * UINT64_C(1024) * UINT64_C(1024
 
 uint64_t
 estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats,
-                                    uint32_t flushedSerialNum)
+                                    SerialNum flushedSerialNum)
 {
     if (flushedSerialNum < tlsStats.getFirstSerial()) {
         return tlsStats.getNumBytes();
