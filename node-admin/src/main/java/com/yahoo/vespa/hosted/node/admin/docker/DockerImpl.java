@@ -244,15 +244,16 @@ public class DockerImpl implements Docker {
                     .exec();
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream errors = new ByteArrayOutputStream();
             ExecStartCmd execStartCmd = docker.execStartCmd(response.getId());
-            execStartCmd.exec(new ExecStartResultCallback(output, output)).awaitCompletion();
+            execStartCmd.exec(new ExecStartResultCallback(output, errors)).awaitCompletion();
 
             final InspectExecResponse state = docker.inspectExecCmd(execStartCmd.getExecId()).exec();
             assert !state.isRunning();
             Integer exitCode = state.getExitCode();
             assert exitCode != null;
 
-            return new ProcessResult(exitCode, new String(output.toByteArray()));
+            return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (DockerException | InterruptedException e) {
             throw new RuntimeException("Container " + containerName.asString()
                     + " failed to execute " + Arrays.toString(args), e);
