@@ -59,12 +59,14 @@ addNewFile(const fs::path& dbPath, const fs::path& newFile) {
     LOG(debug, "Adding new file: '%s'.", newFile.string().c_str());
     const fs::path destination = dbPath / newFile.stem();
 
-    if ( fs::exists(destination) )
+    if ( fs::exists(destination) ) {
         fs::remove_all(destination);
+    }
 
     fs::path resumeData = destination.string() + resumeDataSuffix;
-    if ( fs::exists(resumeData) )
+    if ( fs::exists(resumeData) ) {
         fs::remove(resumeData);
+    }
 
     fs::rename(newFile, destination);
 }
@@ -72,9 +74,10 @@ addNewFile(const fs::path& dbPath, const fs::path& newFile) {
 void
 addNewDbFiles(const fs::path& dbPath) {
     for (fs::directory_iterator i(dbPath), end; i != end; ++i) {
-        if (newFileSuffix == fs::extension(*i))
+        if (newFileSuffix == fs::extension(*i)) {
             addNewFile(dbPath, *i);
         }
+    }
 }
 
 fs::path
