@@ -45,7 +45,7 @@ public class NodeAgentImplTest {
 
     private static final Optional<Container> NO_CONTAINER = Optional.empty();
 
-    private static final ProcessResult NODE_PROGRAM_DOESNT_EXIST = new ProcessResult(1, "");
+    private static final ProcessResult NODE_PROGRAM_DOESNT_EXIST = new ProcessResult(1, "", "");
 
     private final HostName hostName = new HostName("hostname");
     private final Docker docker = mock(Docker.class);
@@ -960,12 +960,12 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(wantedDockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg()))
-                .thenReturn(new ProcessResult(0, "node program exists"))
-                .thenReturn(new ProcessResult(1, "node program fails 1st time"))
-                .thenReturn(new ProcessResult(0, "node program exists"))
-                .thenReturn(new ProcessResult(1, "node program fails 2nd time"))
-                .thenReturn(new ProcessResult(0, "node program exists"))
-                .thenReturn(new ProcessResult(0, "node program succeeds 3rd time"));
+                .thenReturn(new ProcessResult(0, "node program exists", ""))
+                .thenReturn(new ProcessResult(1, "node program fails 1st time", ""))
+                .thenReturn(new ProcessResult(0, "node program exists", ""))
+                .thenReturn(new ProcessResult(1, "node program fails 2nd time", ""))
+                .thenReturn(new ProcessResult(0, "node program exists", ""))
+                .thenReturn(new ProcessResult(0, "node program succeeds 3rd time", ""));
 
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
 
@@ -1054,14 +1054,14 @@ public class NodeAgentImplTest {
             case EXCEPTION:
                 when(docker.executeInContainer(eq(containerName), anyVararg()))
                         .thenThrow(new RuntimeException()) // suspending node
-                        .thenReturn(new ProcessResult(1, "")); // resuming node, node program doesn't exist
+                        .thenReturn(new ProcessResult(1, "", "")); // resuming node, node program doesn't exist
                 break;
             case NODE_PROGRAM_FAILURE:
                 when(docker.executeInContainer(eq(containerName), anyVararg()))
-                        .thenReturn(new ProcessResult(0, "")) // program exists
-                        .thenReturn(new ProcessResult(1, "error")) // and program fails to suspend
-                        .thenReturn(new ProcessResult(0, "")) // program exists
-                        .thenReturn(new ProcessResult(0, "output")); // resuming succeeds
+                        .thenReturn(new ProcessResult(0, "", "")) // program exists
+                        .thenReturn(new ProcessResult(1, "", "error")) // and program fails to suspend
+                        .thenReturn(new ProcessResult(0, "", "")) // program exists
+                        .thenReturn(new ProcessResult(0, "output", "")); // resuming succeeds
                 break;
         }
         when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
