@@ -10,6 +10,7 @@ namespace docstore {
 
 class KeySet {
 public:
+    KeySet() : _keys() { }
     KeySet(const IDocumentStore::LidVector &keys);
     uint32_t hash() const { return _keys.empty() ? 0 : _keys[0]; }
     bool operator==(const KeySet &rhs) const { return _keys == rhs._keys; }
@@ -46,11 +47,17 @@ private:
 
 class CompressedBlobSet {
 public:
-    CompressedBlobSet(BlobSet &&uncompressed);
+    CompressedBlobSet();
+    CompressedBlobSet(const BlobSet & uncompressed);
+    CompressedBlobSet(CompressedBlobSet && rhs);
+    CompressedBlobSet & operator=(CompressedBlobSet && rhs);
+    CompressedBlobSet(const CompressedBlobSet &) = default;
+    CompressedBlobSet & operator=(const CompressedBlobSet &) = default;
+    size_t size() const { return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer.size(); }
     BlobSet getBlobSet() const;
 private:
-    BlobSet::Positions   _positions;
-    vespalib::DataBuffer _buffer;
+    BlobSet::Positions  _positions;
+    vespalib::MallocPtr _buffer;
 };
 
 class VisitCache {
@@ -78,14 +85,14 @@ private:
         const document::CompressionConfig &_compression;
     };
 
-    typedef vespalib::CacheParam<vespalib::LruParam<KeySet, BlobSet>,
+    typedef vespalib::CacheParam<vespalib::LruParam<KeySet, CompressedBlobSet>,
         BackingStore,
         vespalib::zero<KeySet>,
-        vespalib::size<BlobSet> > CacheParams;
+        vespalib::size<CompressedBlobSet> > CacheParams;
     typedef vespalib::cache<CacheParams> Cache;
 
-    BackingStore _store;
-    Cache        _cache;
+    BackingStore            _store;
+    std::unique_ptr<Cache>  _cache;
 };
 
 }
