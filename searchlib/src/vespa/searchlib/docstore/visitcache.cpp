@@ -5,6 +5,12 @@
 namespace search {
 namespace docstore {
 
+KeySet::KeySet(const IDocumentStore::LidVector &keys) :
+    _keys(keys)
+{
+    std::sort(_keys.begin(), _keys.end());
+}
+
 bool
 KeySet::contains(const KeySet &rhs) const {
     if (rhs._keys.size() > _keys.size()) { return false; }
@@ -21,6 +27,32 @@ KeySet::contains(const KeySet &rhs) const {
         }
     }
     return b == rhs._keys.size();
+}
+
+CompressedBlobSet::CompressedBlobSet() :
+    _positions(),
+    _buffer()
+{
+}
+
+CompressedBlobSet::CompressedBlobSet(CompressedBlobSet && rhs) :
+    _positions(std::move(rhs._positions)),
+    _buffer(std::move(rhs._buffer))
+{
+}
+
+CompressedBlobSet & CompressedBlobSet::operator=(CompressedBlobSet && rhs) {
+    _positions = std::move(rhs._positions);
+    _buffer = std::move(rhs._buffer);
+    return *this;
+}
+
+bool
+VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
+    (void) key;
+    (void) blobs;
+    bool retval(false);
+    return retval;
 }
 
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :
