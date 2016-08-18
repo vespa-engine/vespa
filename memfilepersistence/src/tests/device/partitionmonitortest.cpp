@@ -3,6 +3,9 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/device/partitionmonitor.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vdstestlib/cppunit/sourcedir.h>
+
+using namespace vdstestlib;
 
 namespace storage {
 
@@ -62,15 +65,16 @@ struct FakeStatter : public PartitionMonitor::Statter {
 
 void PartitionMonitorTest::testNormalUsage()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    const std::string file_name = SourceDir::get() + "testrunner.cpp";
+    PartitionMonitor monitor(file_name);
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     std::string expected(
-            "PartitionMonitor(testrunner.cpp, STAT_PERIOD(100), "
+            "PartitionMonitor(" + file_name + ", STAT_PERIOD(100), "
             "2048000/3686400 used - 55.5556 % full)");
     CPPUNIT_ASSERT_EQUAL(expected, monitor.toString(false));
     expected =
-            "PartitionMonitor(testrunner.cpp) {\n"
+            "PartitionMonitor(" + file_name + ") {\n"
             "  Fill rate: 55.5556 %\n"
             "  Inode fill rate: 51.6129 %\n"
             "  Detected block size: 4096\n"
@@ -88,16 +92,17 @@ void PartitionMonitorTest::testNormalUsage()
 
 void PartitionMonitorTest::testHighInodeFillrate()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    const std::string file_name = SourceDir::get() + "testrunner.cpp";
+    PartitionMonitor monitor(file_name);
     FakeStatter* statter = new FakeStatter();
     statter->_info.f_favail = 2;
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     std::string expected(
-            "PartitionMonitor(testrunner.cpp, STAT_PERIOD(100), "
+            "PartitionMonitor(" + file_name + ", STAT_PERIOD(100), "
             "2048000/3686400 used - 94.1176 % full (inodes))");
     CPPUNIT_ASSERT_EQUAL(expected, monitor.toString(false));
     expected =
-            "PartitionMonitor(testrunner.cpp) {\n"
+            "PartitionMonitor(" + file_name + ") {\n"
             "  Fill rate: 55.5556 %\n"
             "  Inode fill rate: 94.1176 %\n"
             "  Detected block size: 4096\n"
@@ -115,7 +120,7 @@ void PartitionMonitorTest::testHighInodeFillrate()
 
 void PartitionMonitorTest::testAlwaysStatPolicy()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    PartitionMonitor monitor(SourceDir::get() + "testrunner.cpp");
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setAlwaysStatPolicy();
@@ -127,7 +132,7 @@ void PartitionMonitorTest::testAlwaysStatPolicy()
 
 void PartitionMonitorTest::testPeriodPolicy()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    PartitionMonitor monitor(SourceDir::get() + "testrunner.cpp");
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatPeriodPolicy(4);
@@ -139,7 +144,7 @@ void PartitionMonitorTest::testPeriodPolicy()
 
 void PartitionMonitorTest::testStatOncePolicy()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    PartitionMonitor monitor(SourceDir::get() + "testrunner.cpp");
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatOncePolicy();
@@ -151,7 +156,7 @@ void PartitionMonitorTest::testStatOncePolicy()
 
 void PartitionMonitorTest::testDynamicPolicy()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    PartitionMonitor monitor(SourceDir::get() + "testrunner.cpp");
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatDynamicPolicy(2);
@@ -177,7 +182,7 @@ void PartitionMonitorTest::testDynamicPolicy()
 
 void PartitionMonitorTest::testIsFull()
 {
-    PartitionMonitor monitor("testrunner.cpp");
+    PartitionMonitor monitor(SourceDir::get() + "testrunner.cpp");
     monitor.setMaxFillness(0.85);
     FakeStatter* statter = new FakeStatter();
     monitor.setStatOncePolicy();
