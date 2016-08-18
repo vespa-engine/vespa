@@ -136,63 +136,46 @@ public class FastSearcher extends VespaBackEndSearcher {
         // If you want to change this code, you need to understand
         // com.yahoo.prelude.cluster.ClusterSearcher.ping(Searcher) and
         // com.yahoo.prelude.cluster.TrafficNodeMonitor.failed(ErrorMessage)
-
         try {
             PingPacket pingPacket = new PingPacket();
             pingPacket.enableActivedocsReporting();
-            Pong pong = new Pong();
-
             try {
                 boolean couldSend = channel.sendPacket(pingPacket);
-                if (!couldSend) {
-                    pong.addError(ErrorMessage.createBackendCommunicationError("Could not ping " + name));
-                    return pong;
-                }
+                if ( ! couldSend)
+                    return new Pong(ErrorMessage.createBackendCommunicationError("Could not ping " + name));
             } catch (InvalidChannelException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + name));
-                return pong;
+                return new Pong(ErrorMessage.createBackendCommunicationError("Invalid channel " + name));
             } catch (IllegalStateException e) {
-                pong.addError(
-                        ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage()));
-                return pong;
+                return new Pong(ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage()));
             } catch (IOException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("IO error while sending ping: " + e.getMessage()));
-                return pong;
+                return new Pong(ErrorMessage.createBackendCommunicationError("IO error while sending ping: " + e.getMessage()));
             }
+
             // We should only get a single packet
             BasicPacket[] packets;
 
             try {
                 packets = channel.receivePackets(ping.getTimeout(), 1);
             } catch (ChannelTimeoutException e) {
-                pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("timeout while waiting for fdispatch for " + name));
-                return pong;
+                return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("timeout while waiting for fdispatch for " + name));
             } catch (InvalidChannelException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("Invalid channel for " + name));
-                return pong;
-
+                return new Pong(ErrorMessage.createBackendCommunicationError("Invalid channel for " + name));
             }
 
-            if (packets.length == 0) {
-                pong.addError(ErrorMessage.createBackendCommunicationError(name + " got no packets back"));
-                return pong;
-            }
+            if (packets.length == 0)
+                return new Pong(ErrorMessage.createBackendCommunicationError(name + " got no packets back"));
 
             try {
                 ensureInstanceOf(PongPacket.class, packets[0], name);
             } catch (TimeoutException e) {
-                pong.addError(ErrorMessage.createTimeout(e.getMessage()));
-                return pong;
+                return new Pong(ErrorMessage.createTimeout(e.getMessage()));
             } catch (IOException e) {
-                pong.addError(ErrorMessage.createBackendCommunicationError("Unexpected packet class returned after ping: " + e.getMessage()));
-                return pong;
+                return new Pong(ErrorMessage.createBackendCommunicationError("Unexpected packet class returned after ping: " + e.getMessage()));
             }
-            pong.addPongPacket((PongPacket) packets[0]);
-            return pong;
+            return new Pong((PongPacket)packets[0]);
         } finally {
-            if (channel != null) {
+            if (channel != null)
                 channel.close();
-            }
         }
     }
 
@@ -253,8 +236,10 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (localSearchNodes.size() != 1) return dispatchBackend;
 
         SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
+        SearchCluster.Group localSearchGroup = dispatcher.searchCluster().groups().get(localSearchNode.group());
+
         // Only use direct dispatch if the local search node has the entire corpus
-        if (dispatcher.searchCluster().groups().get(localSearchNode.group()).nodes().size() != 1) return dispatchBackend;
+        if (localSearchGroup.nodes().size() != 1) return dispatchBackend;
 
         // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
         // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
@@ -262,15 +247,18 @@ public class FastSearcher extends VespaBackEndSearcher {
         // Such configurations produce skewed load in any case.
         if (containerClusterSize < dispatcher.searchCluster().size()) return dispatchBackend;
 
-        // Only use direct dispatch if the local search node is up
-        if ( ! localSearchNode.isWorking()) return dispatchBackend;
-
         // Only use direct dispatch if the upstream ClusterSearcher chose the local dispatch
         // (otherwise, we may be in this method due to a failover situation)
         if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
-        
+
+        // Only use direct dispatch if the local grouop has sufficient coverage
+        if ( ! localSearchGroup.hasSufficientCoverage()) return dispatchBackend;
+
+        // Only use direct dispatch if the local search node is up
+        if ( ! localSearchNode.isWorking()) return dispatchBackend;
+
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
-        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
+        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.fs4port());
     }
 
     /**

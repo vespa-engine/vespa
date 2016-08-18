@@ -4,6 +4,7 @@ package com.yahoo.prelude;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.yahoo.fs4.PongPacket;
 import com.yahoo.search.result.ErrorMessage;
@@ -12,51 +13,56 @@ import com.yahoo.search.statistics.ElapsedTime;
 /**
  * An answer from Ping.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Pong {
 
     private String pingInfo="";
-    private List<ErrorMessage> errors = new ArrayList<>(1);
-    private List<PongPacket> pongPackets = new ArrayList<>(1);
+    private final List<ErrorMessage> errors = new ArrayList<>(1);
+    private final Optional<PongPacket> pongPacket;
     private ElapsedTime elapsed = new ElapsedTime();
 
     public Pong() {
+        this.pongPacket = Optional.empty();
     }
+    
+    public Pong(ErrorMessage error) {
+        errors.add(error);
+        this.pongPacket = Optional.empty();
+    }
+    
+    public Pong(PongPacket pongPacket) {
+        this.pongPacket = Optional.of(pongPacket);
+    }
+    
     public void addError(ErrorMessage error) {
         errors.add(error);
     }
+
     public ErrorMessage getError(int i) {
         return errors.get(i);
     }
+
     public int getErrorSize() {
         return errors.size();
     }
-    public void addPongPacket(PongPacket pongPacket) {
-        pongPackets.add(pongPacket);
+
+    /** Returns the package causing this to exist, or empty if none */
+    public Optional<PongPacket> getPongPacket() { return pongPacket; }
+    
+    /** Returns the number of active documents in the backend responding in this Pong, if available */
+    public Optional<Long> activeDocuments() {
+        if ( ! pongPacket.isPresent()) return Optional.empty();
+        return pongPacket.get().getActiveDocuments();
     }
-    public PongPacket getPongPacket(int i) {
-        return pongPackets.get(i);
-    }
-    public int getPongPacketsSize() {
-        return pongPackets.size();
-    }
-    /** Merge all information from another pong into this */
-    public void merge(Pong pong) {
-        if (pong.badResponse()) {
-            errors.addAll(pong.getErrors());
-        }
-        pongPackets.addAll(pong.getPongPackets());
-    }
+
     public List<ErrorMessage> getErrors() {
         return Collections.unmodifiableList(errors);
     }
-    public List<PongPacket> getPongPackets() {
-        return Collections.unmodifiableList(pongPackets);
-    }
-    /** @return whether there is an error or not */
+
+    /** Returns whether there is an error or not */
     public boolean badResponse() {
-        return !errors.isEmpty();
+        return ! errors.isEmpty();
     }
 
     /** Sets information about the ping used to produce this. This is included when returning the tostring of this. */
@@ -74,16 +80,18 @@ public class Pong {
     }
 
     /** Returns a string which included the ping info (if any) and any errors added to this */
-    public @Override String toString() {
-        StringBuffer m=new StringBuffer("Result of pinging");
+    @Override
+    public String toString() {
+        StringBuilder m = new StringBuilder("Result of pinging");
         if (pingInfo.length() > 0) {
             m.append(" using ");
             m.append(pingInfo);
         }
-        m.append(" ");
-        for (int i=0; i<errors.size(); i++) {
+        if (errors.size() > 0)
+            m.append(" ");
+        for (int i = 0; i < errors.size(); i++) {
             m.append(errors.get(i).toString());
-            if (i<errors.size()-1)
+            if ( i <errors.size()-1)
                 m.append(", ");
         }
         return m.toString();

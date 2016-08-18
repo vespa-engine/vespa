@@ -7,10 +7,10 @@ import java.nio.ByteBuffer;
  * A ping packet for FS4. This packet has no data. It maps to
  * PCODE_MONITORQUERY the C++ implementation of the protocol.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-
 public class PingPacket extends BasicPacket {
+
     private int flags = 0;
 
     public int getCode() { return (flags == 0) ? 206 : 220; }
@@ -32,4 +32,5 @@ public class PingPacket extends BasicPacket {
     public void enableActivedocsReporting() {
         flags |= MQFLAG_REPORT_ACTIVEDOCS;
     }
+
 }

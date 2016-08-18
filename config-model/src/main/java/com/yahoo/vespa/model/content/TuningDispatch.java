@@ -7,14 +7,13 @@ package com.yahoo.vespa.model.content;
 public class TuningDispatch {
 
     private final Integer maxHitsPerPartition;
-    public static enum DispatchPolicy { ROUNDROBIN, RANDOM};
+    public enum DispatchPolicy { ROUNDROBIN, RANDOM};
     private final DispatchPolicy dispatchPolicy;
     private final Boolean useLocalNode;
     private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
-    private TuningDispatch(Builder builder)
-    {
+    private TuningDispatch(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
         useLocalNode = builder.useLocalNode;
@@ -25,6 +24,7 @@ public class TuningDispatch {
     public Integer getMaxHitsPerPartition() {
         return maxHitsPerPartition;
     }
+
     public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
     public Boolean getUseLocalNode() { return useLocalNode; }
     public Double getMinGroupCoverage() { return minGroupCoverage; }

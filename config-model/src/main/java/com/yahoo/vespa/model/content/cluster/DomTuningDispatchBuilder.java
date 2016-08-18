@@ -5,7 +5,7 @@ import com.yahoo.vespa.model.content.TuningDispatch;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class DomTuningDispatchBuilder {
 
@@ -27,4 +27,5 @@ public class DomTuningDispatchBuilder {
 
         return builder.build();
     }
+
 }

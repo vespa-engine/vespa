@@ -24,7 +24,16 @@ import java.util.List;
  */
 public class MockFSChannel extends FS4Channel {
 
-    public MockFSChannel() {}
+    /** The number of active documents this should report in ping reponses */
+    private final long activeDocuments;
+    
+    public MockFSChannel() { 
+        this(0); 
+    }
+
+    public MockFSChannel(long activeDocuments) {
+        this.activeDocuments = activeDocuments;
+    }
 
     private BasicPacket lastReceived = null;
 
@@ -100,7 +109,7 @@ public class MockFSChannel extends FS4Channel {
             addDocsums(packets, lastQueryPacket);
         }
         else if (lastReceived instanceof PingPacket) {
-            packets.add(new PongPacket());
+            packets.add(new PongPacket(activeDocuments));
         }
         while (packetCount >= 0 && packets.size() > packetCount) {
             packets.remove(packets.size() - 1);

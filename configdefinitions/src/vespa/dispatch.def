@@ -3,6 +3,10 @@
 
 namespace=vespa.config.search
 
+# The active docs a group must have as a % of the average active docs of all other groups,
+# for that group to be included in queries
+min_activedocs_coverage double default=97.0
+
 # The unique key of a search node
 node[].key int
 
@@ -12,6 +16,8 @@ node[].group int default=0
 # The host name of this search node
 node[].host string
 
-# The port of this search node
+# The rpc port of this search node
 node[].port int
 
+# The legacy fs4 port of this search node
+node[].fs4port int default=0

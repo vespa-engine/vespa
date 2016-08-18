@@ -26,6 +26,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -39,7 +40,9 @@ import java.util.stream.Collectors;
 public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
-    
+
+    /** The min active docs a group must have to be considered up, as a % of the average active docs of the other groups */
+    private double minActivedocsCoveragePercentage;
     private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
@@ -49,10 +52,11 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final FS4ResourcePool fs4ResourcePool;
 
     public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
-        this(toNodes(dispatchConfig), fs4ResourcePool);
+        this(dispatchConfig.min_activedocs_coverage(), toNodes(dispatchConfig), fs4ResourcePool);
     }
     
-    public SearchCluster(List<Node> nodes, FS4ResourcePool fs4ResourcePool) {
+    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool) {
+        this.minActivedocsCoveragePercentage = minActivedocsCoverage;
         size = nodes.size();
         this.fs4ResourcePool = fs4ResourcePool;
         
@@ -78,7 +82,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private static ImmutableList<Node> toNodes(DispatchConfig dispatchConfig) {
         ImmutableList.Builder<Node> nodesBuilder = new ImmutableList.Builder<>();
         for (DispatchConfig.Node node : dispatchConfig.node())
-            nodesBuilder.add(new Node(node.host(), node.port(), node.group()));
+            nodesBuilder.add(new Node(node.host(), node.fs4port(), node.group()));
         return nodesBuilder.build();
     }
     
@@ -106,30 +110,54 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     @Override
     public void ping(Node node, Executor executor) {
         Pinger pinger = new Pinger(node);
-        FutureTask<Pong> future = new FutureTask<>(pinger);
-
-        executor.execute(future);
-        Pong pong;
-        try {
-            pong = future.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + node));
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-        } catch (ExecutionException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + node));
-            log.log(Level.WARNING, "Exception pinging " + node, e);
-        } catch (TimeoutException e) {
-            pong = new Pong();
-            pong.addError(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out"));
-        }
-        future.cancel(true);
+        FutureTask<Pong> futurePong = new FutureTask<>(pinger);
+        executor.execute(futurePong);
+        Pong pong = getPong(futurePong, node);
+        futurePong.cancel(true);
 
         if (pong.badResponse())
             clusterMonitor.failed(node, pong.getError(0));
         else
             clusterMonitor.responded(node);
+    }
+
+    /**
+     * Update statistics after a round of issuing pings.
+     * Note that this doesn't wait for pings to return, so it will typically accumulate data from
+     * last rounds pinging, or potentially (although unlikely) some combination of new and old data.
+     */
+    @Override
+    public void pingIterationCompleted() {
+        // Update active documents per group and use it to decide if the group should be active
+        for (Group group : groups.values())
+            group.aggregateActiveDocuments();
+        for (Group currentGroup : groups.values()) {
+            long sumOfAactiveDocumentsInOtherGroups = 0;
+            for (Group otherGroup : groups.values())
+                if ( otherGroup != currentGroup)
+                    sumOfAactiveDocumentsInOtherGroups += otherGroup.getActiveDocuments();
+            long averageDocumentsInOtherGroups = sumOfAactiveDocumentsInOtherGroups / (groups.size() - 1);
+            if (averageDocumentsInOtherGroups == 0)
+                currentGroup.setHasSufficientCoverage(true); // no information about any group; assume coverage
+            else
+                currentGroup.setHasSufficientCoverage(
+                        100 * (double)currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
+        }
+        
+    }
+    
+    private Pong getPong(FutureTask<Pong> futurePong, Node node) {
+        try {
+            return futurePong.get(clusterMonitor.getConfiguration().getFailLimit(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.log(Level.WARNING, "Exception pinging " + node, e);
+            return new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + node));
+        } catch (ExecutionException e) {
+            log.log(Level.WARNING, "Exception pinging " + node, e);
+            return new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + node));
+        } catch (TimeoutException e) {
+            return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out"));
+        }
     }
 
     private class Pinger implements Callable<Pong> {
@@ -141,24 +169,28 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         }
 
         public Pong call() {
-            Pong pong;
             try {
-                pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()), 
-                                         fs4ResourcePool.getBackend(node.hostname(), node.port()), node.toString());
+                Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()),
+                                              fs4ResourcePool.getBackend(node.hostname(), node.fs4port()), node.toString());
+                if (pong.activeDocuments().isPresent())
+                    node.setActiveDocuments(pong.activeDocuments().get());
+                return pong;
             } catch (RuntimeException e) {
-                pong = new Pong();
-                pong.addError(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "
-                              + Exceptions.toMessageString(e)));
+                return new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "
+                                + Exceptions.toMessageString(e)));
             }
-            return pong;
         }
 
     }
 
+    /** A group in a search cluster. This class is multithread safe. */
     public static class Group {
         
         private final int id;
         private final ImmutableList<Node> nodes;
+        
+        private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
+        private final AtomicLong activeDocuments = new AtomicLong(0);
         
         public Group(int id, List<Node> nodes) {
             this.id = id;
@@ -171,40 +203,79 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         /** Returns the nodes in this group as an immutable list */
         public ImmutableList<Node> nodes() { return nodes; }
 
+        /** 
+         * Returns whether this group has sufficient active documents 
+         * (compared to other groups) that is should receive traffic 
+         */
+        public boolean hasSufficientCoverage() {
+            return hasSufficientCoverage.get();
+        }
+        
+        void setHasSufficientCoverage(boolean sufficientCoverage) {
+            hasSufficientCoverage.lazySet(sufficientCoverage);
+        }
+        
+        
+        void aggregateActiveDocuments() {
+            long activeDocumentsInGroup = 0;
+            for (Node node : nodes)
+                activeDocumentsInGroup += node.getActiveDocuments();
+            activeDocuments.set(activeDocumentsInGroup);
+            
+        }
+
+        /** Returns the active documents on this node. If unknown, 0 is returned. */
+        long getActiveDocuments() {
+            return this.activeDocuments.get();
+        }
+
         @Override
         public String toString() { return "search group " + id; }
         
     }
     
+    /** A node in a search cluster. This class is multithread safe. */
     public static class Node {
         
         private final String hostname;
-        private final int port;
+        private final int fs4port;
         private final int group;
         
         private final AtomicBoolean working = new AtomicBoolean(true);
-        
-        public Node(String hostname, int port, int group) {
+        private final AtomicLong activeDocuments = new AtomicLong(0);
+
+        public Node(String hostname, int fs4port, int group) {
             this.hostname = hostname;
-            this.port = port;
+            this.fs4port = fs4port;
             this.group = group;
         }
         
         public String hostname() { return hostname; }
-        public int port() { return port; }
+
+        public int fs4port() { return fs4port; }
 
         /** Returns the id of this group this node belongs to */
         public int group() { return group; }
         
-        private void setWorking(boolean working) {
+        void setWorking(boolean working) {
             this.working.lazySet(working);
         }
         
         /** Returns whether this node is currently responding to requests */
         public boolean isWorking() { return working.get(); }
         
+        /** Updates the active documents on this node */
+        void setActiveDocuments(long activeDocuments) {
+            this.activeDocuments.set(activeDocuments);
+        }
+
+        /** Returns the active documents on this node. If unknown, 0 is returned. */
+        public long getActiveDocuments() {
+            return this.activeDocuments.get();
+        }
+
         @Override
-        public int hashCode() { return Objects.hash(hostname, port); }
+        public int hashCode() { return Objects.hash(hostname, fs4port); }
         
         @Override
         public boolean equals(Object o) {
@@ -212,12 +283,12 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             if ( ! (o instanceof Node)) return false;
             Node other = (Node)o;
             if ( ! Objects.equals(this.hostname, other.hostname)) return false;
-            if ( ! Objects.equals(this.port, other.port)) return false;
+            if ( ! Objects.equals(this.fs4port, other.fs4port)) return false;
             return true;
         }
         
         @Override
-        public String toString() { return "search node " + hostname + ":" + port + " in group " + group; }
+        public String toString() { return "search node " + hostname + ":" + fs4port + " in group " + group; }
         
     }
 

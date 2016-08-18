@@ -73,6 +73,7 @@ class FastSearcherTester {
         return mockFS4ResourcePool.requestCount(hostname, port);
     }
 
+    /** Sets the response status of a node and ping it to update the monitor status */
     public void setResponding(String hostname, boolean responding) {
         // Start/stop returning a failing backend
         mockFS4ResourcePool.setResponding(hostname, responding);
@@ -80,6 +81,16 @@ class FastSearcherTester {
         // Make the search cluster monitor notice right now in this thread
         SearchCluster.Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
         mockDispatcher.searchCluster().ping(node, MoreExecutors.directExecutor());
+    }
+
+    /** Sets the response status of a node and ping it to update the monitor status */
+    public void setActiveDocuments(String hostname, long activeDocuments) {
+        mockFS4ResourcePool.setActiveDocuments(hostname, activeDocuments);
+
+        // Make the search cluster monitor notice right now in this thread
+        SearchCluster.Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
+        mockDispatcher.searchCluster().ping(node, MoreExecutors.directExecutor());
+        mockDispatcher.searchCluster().pingIterationCompleted();
     }
 
 }

@@ -8,10 +8,10 @@ import java.util.Optional;
  * A pong packet for FS4. It maps to PCODE_MLD_MONITORRESULT
  * and PCODE_MONITORRESULTX in the C++ implementation of the protocol.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-
 public class PongPacket extends BasicPacket {
+
     @SuppressWarnings("unused")
     private int lowPartitionId; // ignored (historical field)
 
@@ -24,9 +24,14 @@ public class PongPacket extends BasicPacket {
     private int totalPartitions; // configured partitions
     private Optional<Integer> activePartitions = Optional.empty(); // number of partitions that are up
 
-    private Optional<Long> activeDocs = Optional.empty(); // how many documents are searchable (sum)
+    private Optional<Long> activeDocuments = Optional.empty(); // how many documents are searchable (sum)
 
     public PongPacket() {
+    }
+
+    /** For testing */
+    public PongPacket(long activeDocuments) {
+        this.activeDocuments = Optional.of(activeDocuments);      
     }
 
     private int code;
@@ -50,7 +55,7 @@ public class PongPacket extends BasicPacket {
             buffer.getInt(); // ignore rflags (historical field)
         }
         if ((features & MRF_ACTIVEDOCS) != 0) {
-            activeDocs = Optional.of(Long.valueOf(buffer.getLong()));
+            activeDocuments = Optional.of(Long.valueOf(buffer.getLong()));
         }
     }
 
@@ -71,7 +76,7 @@ public class PongPacket extends BasicPacket {
      * in the monitored backend.
      **/
     public Optional<Long> getActiveDocuments() {
-        return activeDocs;
+        return activeDocuments;
     }
 
     public Optional<Integer> getActiveNodes() {

@@ -24,7 +24,8 @@ class MockDispatcher extends Dispatcher {
         for (SearchCluster.Node node : nodes) {
             DispatchConfig.Node.Builder dispatchConfigNodeBuilder = new DispatchConfig.Node.Builder();
             dispatchConfigNodeBuilder.host(node.hostname());
-            dispatchConfigNodeBuilder.port(node.port());
+            dispatchConfigNodeBuilder.fs4port(node.fs4port());
+            dispatchConfigNodeBuilder.port(0); // Mandatory, but currently not used here
             dispatchConfigNodeBuilder.group(node.group());
             dispatchConfigNodeBuilder.key(key++); // not used
             dispatchConfigBuilder.node(dispatchConfigNodeBuilder);

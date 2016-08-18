@@ -35,7 +35,7 @@ public class ClusterMonitor<T> {
     private volatile boolean shutdown = false;
 
     /** A map from Node to corresponding MonitoredNode */
-    private Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
+    private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     /** @deprecated use the constructor with just the first argument instead */
     @Deprecated
@@ -103,6 +103,7 @@ public class ClusterMonitor<T> {
             BaseNodeMonitor<T> monitor= i.next();
             nodeManager.ping(monitor.getNode(), executor); // Cause call to failed or responded
         }
+        nodeManager.pingIterationCompleted();
     }
 
     /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */

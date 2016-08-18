@@ -22,5 +22,8 @@ public interface NodeManager<T> {
      * This *must* lead to either a call to NodeMonitor.failed or NodeMonitor.responded 
      */
     void ping(T node, Executor executor);
+    
+    /** Called right after a ping has been issued to each node. This default implementation does nothing. */
+    default void pingIterationCompleted() {}
 
 }

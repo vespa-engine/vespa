@@ -398,22 +398,14 @@ public class FastSearcherTestCase {
         Chain<Searcher> chain = new Chain<>(fastSearcher);
         Execution e = new Execution(chain, Execution.Context.createContextStub());
         Pong pong = e.ping(new Ping());
-        assertEquals(127, pong.getPongPacket(0).getDocstamp());
+        assertTrue(pong.getPongPacket().isPresent());
+        assertEquals(127, pong.getPongPacket().get().getDocstamp());
         backend.shutdown();
         server.dispatch.socket.close();
         server.dispatch.connection.close();
         server.worker.join();
-        assertEquals(1, pong.getPongPacketsSize());
-        Pong other = new Pong();
-        other.setPingInfo(null);
-        other.addError(ErrorMessage.createServerIsMisconfigured("as usual"));
-        pong.merge(other);
-        assertEquals(1, pong.getErrors().size());
-        assertEquals(1, pong.getPongPackets().size());
-        assertEquals("", other.getPingInfo());
         pong.setPingInfo("blbl");
-        assertEquals("Result of pinging using blbl 9: Service is misconfigured: as usual", pong.toString());
-        assertEquals("Result of pinging 9: Service is misconfigured: as usual", other.toString());
+        assertEquals("Result of pinging using blbl", pong.toString());
     }
 
     private void clearCache(FastSearcher fastSearcher) {
