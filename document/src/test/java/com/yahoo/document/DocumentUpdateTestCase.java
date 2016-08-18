@@ -585,21 +585,26 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         assertTrue(deserialized.getCreateIfNonExistent());
     }
 
-    private static TensorFieldValue createTensorFieldValue(String tensor) {
-        return new TensorFieldValue(MapTensor.from(tensor));
-    }
-
     public void testThatAssignValueUpdateForTensorFieldCanBeApplied() {
         Document doc = createDocument();
         assertNull(doc.getFieldValue(tensorField));
 
-        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
-        update.addFieldUpdate(FieldUpdate.createAssign(docType.getField(tensorField),
-                createTensorFieldValue("{{x:0}:2.0}")));
+        DocumentUpdate update = createTensorAssignUpdate();
         update.applyTo(doc);
 
         TensorFieldValue tensor = (TensorFieldValue) doc.getFieldValue(tensorField);
         assertEquals(createTensorFieldValue("{{x:0}:2.0}"), tensor);
+    }
+
+    public void testThatAssignValueUpdateForTensorFieldCanBeSerializedAndDeserialized() {
+        DocumentUpdate serializedUpdate = createTensorAssignUpdate();
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
+        serializedUpdate.serialize(serializer);
+        serializer.getBuf().flip();
+
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, serializer.getBuf());
+        DocumentUpdate deserializedUpdate = new DocumentUpdate(deserializer);
+        assertEquals(serializedUpdate, deserializedUpdate);
     }
 
     public void testThatClearValueUpdateForTensorFieldCanBeApplied() {
@@ -612,6 +617,17 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
         update.applyTo(doc);
 
         assertNull(doc.getFieldValue(tensorField));
+    }
+
+    private static TensorFieldValue createTensorFieldValue(String tensor) {
+        return new TensorFieldValue(MapTensor.from(tensor));
+    }
+
+    private DocumentUpdate createTensorAssignUpdate() {
+        DocumentUpdate result = new DocumentUpdate(docType, new DocumentId(documentId));
+        result.addFieldUpdate(FieldUpdate.createAssign(docType.getField(tensorField),
+                createTensorFieldValue("{{x:0}:2.0}")));
+        return result;
     }
 
 }
