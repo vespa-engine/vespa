@@ -122,7 +122,7 @@ public class DockerMock implements Docker {
             requests.append("executeInContainer with ContainerName: ").append(containerName)
                     .append(", args: ").append(Arrays.toString(args)).append("\n");
         }
-        return new ProcessResult(0, "OK");
+        return new ProcessResult(0, "OK", "");
     }
 
     public static String getRequests() {
