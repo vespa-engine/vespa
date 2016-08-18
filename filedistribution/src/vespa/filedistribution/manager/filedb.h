@@ -3,7 +3,7 @@
 
 #include <string>
 #include <boost/filesystem/path.hpp>
-#include "filedbmodel.h"
+#include <vespa/filedistribution/model/filedbmodel.h>
 
 namespace filedistribution {
 

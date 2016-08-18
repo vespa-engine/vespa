@@ -12,6 +12,7 @@
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
+#include <sys/file.h>
 
 namespace fs = boost::filesystem;
 
@@ -300,7 +301,7 @@ FileDBModel::~FileDBModel() {}
 DirectoryGuard::DirectoryGuard(boost::filesystem::path path) :
     _fd(-1)
 {
-    _fd = open(path, O_RDONLY);
+    _fd = open(path.c_str(), O_RDONLY);
     assert(_fd != -1);
     int retval = flock(_fd, LOCK_EX);
     assert(retval == 0);

@@ -17,6 +17,7 @@
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/common/exception.h>
+#include <vespa/filedistribution/model/filedbmodel.h>
 
 namespace filedistribution {
 
