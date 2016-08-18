@@ -34,6 +34,10 @@ FileDB::FileDB(fs::path dbPath)
 
 void
 FileDB::add(fs::path original, const std::string &name) {
+    fs::path finalPath = _dbPath / name;
+    if (fs::exists(finalPath)) {
+        return;
+    }
     fs::path targetPathTemp = _dbPath / (name + ".tmp");
     fs::path targetPath = _dbPath / (name + ".new");
     if (fs::exists(targetPath)) {
