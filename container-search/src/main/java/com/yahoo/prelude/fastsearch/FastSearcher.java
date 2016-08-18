@@ -258,7 +258,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         if ( ! localSearchNode.isWorking()) return dispatchBackend;
 
         query.trace(false, 2, "Dispatching directly to ", localSearchNode);
-        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.port());
+        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.fs4port());
     }
 
     /**

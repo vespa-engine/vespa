@@ -82,7 +82,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private static ImmutableList<Node> toNodes(DispatchConfig dispatchConfig) {
         ImmutableList.Builder<Node> nodesBuilder = new ImmutableList.Builder<>();
         for (DispatchConfig.Node node : dispatchConfig.node())
-            nodesBuilder.add(new Node(node.host(), node.port(), node.group()));
+            nodesBuilder.add(new Node(node.host(), node.fs4port(), node.group()));
         return nodesBuilder.build();
     }
     
@@ -170,8 +170,8 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
         public Pong call() {
             try {
-                Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()), 
-                                              fs4ResourcePool.getBackend(node.hostname(), node.port()), node.toString());
+                Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()),
+                                              fs4ResourcePool.getBackend(node.hostname(), node.fs4port()), node.toString());
                 if (pong.activeDocuments().isPresent())
                     node.setActiveDocuments(pong.activeDocuments().get());
                 return pong;
@@ -238,20 +238,21 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     public static class Node {
         
         private final String hostname;
-        private final int port;
+        private final int fs4port;
         private final int group;
         
         private final AtomicBoolean working = new AtomicBoolean(true);
         private final AtomicLong activeDocuments = new AtomicLong(0);
 
-        public Node(String hostname, int port, int group) {
+        public Node(String hostname, int fs4port, int group) {
             this.hostname = hostname;
-            this.port = port;
+            this.fs4port = fs4port;
             this.group = group;
         }
         
         public String hostname() { return hostname; }
-        public int port() { return port; }
+
+        public int fs4port() { return fs4port; }
 
         /** Returns the id of this group this node belongs to */
         public int group() { return group; }
@@ -274,7 +275,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         }
 
         @Override
-        public int hashCode() { return Objects.hash(hostname, port); }
+        public int hashCode() { return Objects.hash(hostname, fs4port); }
         
         @Override
         public boolean equals(Object o) {
@@ -282,12 +283,12 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             if ( ! (o instanceof Node)) return false;
             Node other = (Node)o;
             if ( ! Objects.equals(this.hostname, other.hostname)) return false;
-            if ( ! Objects.equals(this.port, other.port)) return false;
+            if ( ! Objects.equals(this.fs4port, other.fs4port)) return false;
             return true;
         }
         
         @Override
-        public String toString() { return "search node " + hostname + ":" + port + " in group " + group; }
+        public String toString() { return "search node " + hostname + ":" + fs4port + " in group " + group; }
         
     }
 

@@ -16,6 +16,8 @@ node[].group int default=0
 # The host name of this search node
 node[].host string
 
-# The port of this search node
+# The rpc port of this search node
 node[].port int
 
+# The legacy fs4 port of this search node
+node[].fs4port int default=0
