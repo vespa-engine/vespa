@@ -69,6 +69,7 @@ public:
                    const boost::filesystem::path& dbPath,
                    const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower);
     ~FileDownloader();
+    DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
     void runEventLoop();
     void addTorrent(const std::string& fileReference, const Buffer& buffer);

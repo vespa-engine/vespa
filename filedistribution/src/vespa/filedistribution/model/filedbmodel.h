@@ -8,6 +8,15 @@
 
 namespace filedistribution {
 
+class DirectoryGuard {
+public:
+    typedef std::unique_ptr<DirectoryGuard> UP;
+    DirectoryGuard(boost::filesystem::path path);
+    ~DirectoryGuard();
+private:
+    int _fd;
+};
+
 struct InvalidProgressException : public Exception {
     const char* what() const throw() {
         return "Invalid progress information reported by one of the filedistributors";

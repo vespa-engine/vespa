@@ -15,17 +15,17 @@
 
 namespace fs = boost::filesystem;
 
-using filedistribution::ZKFileDBModel;
+namespace filedistribution {
 
 namespace {
 
 fs::path
 createPath(const std::string& fileReference) {
-    return filedistribution::ZKFileDBModel::_fileDBPath / fileReference;
+    return ZKFileDBModel::_fileDBPath / fileReference;
 }
 
 void
-createNode(const fs::path & path, filedistribution::ZKFacade& zk) {
+createNode(const fs::path & path, ZKFacade& zk) {
     if (!zk.hasNode(path))
         zk.setData(path, "", 0);
 }
@@ -38,7 +38,7 @@ isEntryForHost(const std::string& host, const std::string& peerEntry) {
 }
 
 std::vector<std::string>
-getSortedChildren(filedistribution::ZKFacade& zk, const ZKFileDBModel::Path& path) {
+getSortedChildren(ZKFacade& zk, const ZKFileDBModel::Path& path) {
     std::vector<std::string> children = zk.getChildren(path);
     std::sort(children.begin(), children.end());
     return children;
@@ -60,7 +60,7 @@ ZKFileDBModel::addFile(const std::string& fileReference, const Buffer& buffer) {
     return _zk->setData(createPath(fileReference), buffer);
 }
 
-filedistribution::Move<filedistribution::Buffer>
+Move<Buffer>
 ZKFileDBModel::getFile(const std::string& fileReference) {
     try {
         return _zk->getData(createPath(fileReference));
@@ -295,4 +295,24 @@ ZKFileDBModel::getProgress(const std::string& fileReference,
     return progress;
 }
 
-filedistribution::FileDBModel::~FileDBModel() {}
+FileDBModel::~FileDBModel() {}
+
+DirectoryGuard::DirectoryGuard(boost::filesystem::path path) :
+    _fd(-1)
+{
+    _fd = open(path, O_RDONLY);
+    assert(_fd != -1);
+    int retval = flock(_fd, LOCK_EX);
+    assert(retval == 0);
+}
+
+DirectoryGuard::~DirectoryGuard() {
+    if (_fd != -1) {
+        int retval = flock(_fd, LOCK_UN);
+        assert(retval == 0);
+        retval = close(_fd);
+        assert(retval ==0);
+    }
+}
+
+}
