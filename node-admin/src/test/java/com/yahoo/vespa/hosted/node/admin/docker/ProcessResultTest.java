@@ -11,7 +11,7 @@ import static org.junit.Assert.assertThat;
 public class ProcessResultTest {
     @Test
     public void testBasicProperties() throws Exception {
-        ProcessResult processResult = new ProcessResult(0, "foo");
+        ProcessResult processResult = new ProcessResult(0, "foo", "bar");
         assertThat(processResult.getExitStatus(), is(0));
         assertThat(processResult.getOutput(), is("foo"));
         assertThat(processResult.isSuccess(), is(true));
@@ -19,7 +19,7 @@ public class ProcessResultTest {
 
     @Test
     public void testSuccessFails() throws Exception {
-        ProcessResult processResult = new ProcessResult(1, "foo");
+        ProcessResult processResult = new ProcessResult(1, "foo", "bar");
         assertThat(processResult.isSuccess(), is(false));
     }
 }
