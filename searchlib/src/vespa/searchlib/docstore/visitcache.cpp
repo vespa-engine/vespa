@@ -25,13 +25,13 @@ KeySet::contains(const KeySet &rhs) const {
 
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :
     _store(store, compression),
-    _cache(new Cache(_store, cacheSize))
+    _cache(std::make_unique<Cache>(_store, cacheSize))
 {
 }
 
 CompressedBlobSet
 VisitCache::read(const Keys & keys) const {
-    return _cache.read(keys);
+    return _cache->read(keys);
 }
 
 void

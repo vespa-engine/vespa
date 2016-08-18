@@ -4,7 +4,7 @@
 
 #include "idocumentstore.h"
 #include "idatastore.h"
-#include <vespa/vespalib/stllike/cache.h>
+#include "visitcache.h"
 
 namespace search {
 
@@ -237,15 +237,14 @@ private:
                                   vespalib::zero<DocumentIdT>,
                                   vespalib::size<Value> > CacheParams;
     typedef vespalib::cache<CacheParams> Cache;
-    using shared_ptr=std::shared_ptr;
-    using namespace docstore;
+    using VisitCache=docstore::VisitCache;
 
-    Config                    _config;
-    IDataStore &              _backingStore;
-    BackingStore              _store;
-    shared_ptr<Cache>         _cache;
-    shared_ptr<VisitCache>    _visitCache;
-    mutable volatile uint64_t _uncached_lookups;
+    Config                         _config;
+    IDataStore &                   _backingStore;
+    BackingStore                   _store;
+    std::shared_ptr<Cache>         _cache;
+    std::shared_ptr<VisitCache>    _visitCache;
+    mutable volatile uint64_t      _uncached_lookups;
 };
 
 } // namespace search
