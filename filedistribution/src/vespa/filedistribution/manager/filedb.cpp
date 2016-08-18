@@ -32,13 +32,15 @@ FileDB::FileDB(fs::path dbPath)
     : _dbPath(dbPath) {}
 
 
-void
-FileDB::add(fs::path original, const std::string &name) {
-    fs::path targetPathTemp = _dbPath / (name + ".tmp");
+bool
+FileDB::add(const DirectoryGuard & directoryGuard, fs::path original, const std::string &name) {
+    (void) directoryGuard;
+    fs::path finalPath = _dbPath / name;
     fs::path targetPath = _dbPath / (name + ".new");
-    if (fs::exists(targetPath)) {
-        return;
+    if (fs::exists(finalPath) || fs::exists(targetPath)) {
+        return false;
     }
+    fs::path targetPathTemp = _dbPath / (name + ".tmp");
 
     if (fs::exists(targetPathTemp)) {
         fs::remove_all(targetPathTemp);
@@ -53,6 +55,7 @@ FileDB::add(fs::path original, const std::string &name) {
 
     assert(!fs::exists(targetPath));
     fs::rename(targetPathTemp, targetPath);
+    return true;
 }
 
 }

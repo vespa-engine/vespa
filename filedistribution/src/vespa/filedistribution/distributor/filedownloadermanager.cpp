@@ -89,8 +89,7 @@ FileDownloaderManager::removePeerStatus(const std::string& fileReference) {
 void
 FileDownloaderManager::StartDownloads::downloadFile(const std::string& fileReference) {
     if (!_parent._fileDownloader->hasTorrent(fileReference)) {
-        Buffer torrent(
-                _parent._fileDistributionModel->getFileDBModel().getFile(fileReference));
+        Buffer torrent(_parent._fileDistributionModel->getFileDBModel().getFile(fileReference));
 
         _parent._fileDistributionModel->addPeer(fileReference);
         _parent._fileDownloader->addTorrent(fileReference, torrent);
@@ -102,10 +101,10 @@ void
 FileDownloaderManager::StartDownloads::operator()() {
     namespace ll = boost::lambda;
 
+    DirectoryGuard::UP guard = _parent._fileDownloader->getGuard();
     LockGuard updateFilesToDownloadGuard(_parent._updateFilesToDownloadMutex);
 
-    std::set<std::string> filesToDownload =
-            _parent._fileDistributionModel->getFilesToDownload();
+    std::set<std::string> filesToDownload = _parent._fileDistributionModel->getFilesToDownload();
     logStartDownload(filesToDownload);
 
     std::for_each(filesToDownload.begin(), filesToDownload.end(),

@@ -130,11 +130,17 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_addFileImpl(
         std::string fileReference = createTorrent.fileReference();
         NativeFileDistributionManager& manager = *nativeFileDistributionManagerField.get(self, env);
 
-        manager._fileDB->add(completePath._value, fileReference);
+        DirectoryGuard::UP guard = manager._fileDB->getGuard();// This prevents the filedistributor from working in an inconsistent state.
+        bool freshlyAdded = manager._fileDB->add(*guard, completePath._value, fileReference);
 
         FileDBModel& model = *manager._fileDBModel;
-        if (! model.hasFile(fileReference) ) {
+        bool hasRegisteredFile = model.hasFile(fileReference);
+        if (! hasRegisteredFile ) {
             model.addFile(fileReference, createTorrent.bencode());
+        }
+        if (freshlyAdded == hasRegisteredFile) {
+            std::cerr << "freshlyAdded(" << freshlyAdded << ") == hasRegisteredFile(" << hasRegisteredFile
+                      << "), which is very odd. File is '" << fileReference << std::endl;
         }
 
         //contains string with the characters 0-9 a-f

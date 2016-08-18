@@ -17,6 +17,7 @@
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/common/exception.h>
+#include <vespa/filedistribution/model/filedbmodel.h>
 
 namespace filedistribution {
 
@@ -69,6 +70,7 @@ public:
                    const boost::filesystem::path& dbPath,
                    const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower);
     ~FileDownloader();
+    DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
     void runEventLoop();
     void addTorrent(const std::string& fileReference, const Buffer& buffer);
