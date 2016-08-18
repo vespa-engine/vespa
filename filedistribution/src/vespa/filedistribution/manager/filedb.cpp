@@ -33,7 +33,8 @@ FileDB::FileDB(fs::path dbPath)
 
 
 bool
-FileDB::add(fs::path original, const std::string &name) {
+FileDB::add(const DirectoryGuard & directoryGuard, fs::path original, const std::string &name) {
+    (void) directoryGuard;
     fs::path finalPath = _dbPath / name;
     fs::path targetPath = _dbPath / (name + ".new");
     if (fs::exists(finalPath) || fs::exists(targetPath)) {

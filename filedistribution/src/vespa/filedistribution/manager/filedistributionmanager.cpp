@@ -131,7 +131,7 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_addFileImpl(
         NativeFileDistributionManager& manager = *nativeFileDistributionManagerField.get(self, env);
 
         DirectoryGuard::UP guard = manager._fileDB->getGuard();// This prevents the filedistributor from working in an inconsistent state.
-        bool freshlyAdded = manager._fileDB->add(completePath._value, fileReference);
+        bool freshlyAdded = manager._fileDB->add(*guard, completePath._value, fileReference);
 
         FileDBModel& model = *manager._fileDBModel;
         bool hasRegisteredFile = model.hasFile(fileReference);
