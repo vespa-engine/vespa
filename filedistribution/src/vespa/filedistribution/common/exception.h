@@ -24,6 +24,7 @@ std::ostream& operator<<(std::ostream& stream, const Backtrace& backtrace);
 namespace errorinfo {
 typedef boost::error_info<struct tag_Backtrace, Backtrace> Backtrace;
 typedef boost::error_info<struct tag_UserMessage, Backtrace> ExplanationForUser;
+typedef boost::error_info<struct tag_TorrentMessage, std::string> TorrentMessage;
 }
 
 //Exceptions should inherit virtually from boost and std exception,

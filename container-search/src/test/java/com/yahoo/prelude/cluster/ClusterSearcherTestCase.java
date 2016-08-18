@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
@@ -523,14 +524,23 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
                 documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1")));
         LegacyEmulationConfig emulationCfg = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder());
         QrMonitorConfig monitorCfg = new QrMonitorConfig(new QrMonitorConfig.Builder());
-        Statistics statMgr = Statistics.nullImplementation;
+        Statistics statistics = Statistics.nullImplementation;
         Fs4Config fs4Cfg = new Fs4Config(new Fs4Config.Builder());
-        FS4ResourcePool listeners = new FS4ResourcePool(fs4Cfg);
-        ClusterSearcher searcher = new ClusterSearcher(id,
-                qrsCfg, clusterCfg, documentDbCfg, emulationCfg, monitorCfg, new DispatchConfig(new DispatchConfig.Builder()), statMgr, listeners, new VipStatus());
+        FS4ResourcePool fs4ResourcePool = new FS4ResourcePool(fs4Cfg);
+        ClusterSearcher searcher = new ClusterSearcher(id, qrsCfg, clusterCfg, documentDbCfg, emulationCfg, monitorCfg, 
+                                                       new DispatchConfig(new DispatchConfig.Builder()), 
+                                                       createClusterInfoConfig(),
+                                                       statistics, fs4ResourcePool, new VipStatus());
         return searcher;
     }
 
+    private static ClusterInfoConfig createClusterInfoConfig() {
+        ClusterInfoConfig.Builder clusterInfoConfigBuilder = new ClusterInfoConfig.Builder();
+        clusterInfoConfigBuilder.clusterId("containerCluster1");
+        clusterInfoConfigBuilder.nodeCount(1);
+        return new ClusterInfoConfig(clusterInfoConfigBuilder);
+    }
+    
     private static class QueryTimeoutFixture {
         ClusterSearcher searcher;
         Execution exec;

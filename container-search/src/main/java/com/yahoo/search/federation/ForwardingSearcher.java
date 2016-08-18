@@ -25,65 +25,55 @@ import com.yahoo.search.searchchain.Execution;
  */
 @After("*")
 public class ForwardingSearcher extends PingableSearcher {
+
     private final ComponentSpecification target;
 
-    public ForwardingSearcher(final SearchchainForwardConfig config) {
+    public ForwardingSearcher(SearchchainForwardConfig config) {
         if (config.target() == null) {
-            throw new RuntimeException(
-                    "Configuration value searchchain-forward.target was null.");
+            throw new RuntimeException("Configuration value searchchain-forward.target was null.");
         }
         try {
             target = new ComponentSpecification(config.target());
         } catch (RuntimeException e) {
-            throw new RuntimeException(
-                    "Failed constructing the component specification from searchchain-forward.target: "
-                            + config.target(), e);
+            throw new RuntimeException("Failed constructing the component specification from searchchain-forward.target: "
+                                       + config.target(), e);
         }
     }
 
     @Override
-    public Result search(final Query query, final Execution execution) {
+    public Result search(Query query, Execution execution) {
         Execution next = createForward(execution);
 
-        if (next == null) {
+        if (next == null)
             return badResult(query);
-        } else {
+        else
             return next.search(query);
-        }
     }
 
-    private Result badResult(final Query query) {
-        final ErrorMessage error = noSearchchain();
-        return new Result(query, error);
+    private Result badResult(Query query) {
+        return new Result(query, noSearchchain());
     }
 
     @Override
-    public Pong ping(final Ping ping, final Execution execution) {
+    public Pong ping(Ping ping, Execution execution) {
         Execution next = createForward(execution);
-
-        if (next == null) {
+        if (next == null)
             return badPong();
-        } else {
+        else
             return next.ping(ping);
-        }
     }
 
     private Pong badPong() {
-        final Pong pong = new Pong();
-        pong.addError(noSearchchain());
-        return pong;
+        return new Pong(noSearchchain());
     }
 
     @Override
-    public void fill(final Result result, final String summaryClass,
-            final Execution execution) {
+    public void fill(Result result, String summaryClass, Execution execution) {
         Execution next = createForward(execution);
-        if (next == null) {
+        if (next == null)
             badFill(result.hits());
-            return;
-        } else {
+        else
             next.fill(result, summaryClass);
-        }
     }
 
     private void badFill(HitGroup hits) {
@@ -91,11 +81,8 @@ public class ForwardingSearcher extends PingableSearcher {
     }
 
     private Execution createForward(Execution execution) {
-        Chain<Searcher> targetChain = execution.context().searchChainRegistry()
-                .getComponent(target);
-        if (targetChain == null) {
-            return null;
-        }
+        Chain<Searcher> targetChain = execution.context().searchChainRegistry().getComponent(target);
+        if (targetChain == null) return null;
         return new Execution(targetChain, execution.context());
     }
 

@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  */
 public class ClusterMonitor<T> {
 
-    private MonitorConfiguration configuration=new MonitorConfiguration();
+    private MonitorConfiguration configuration = new MonitorConfiguration();
 
     private static Logger log=Logger.getLogger(ClusterMonitor.class.getName());
 
@@ -35,14 +35,18 @@ public class ClusterMonitor<T> {
     private volatile boolean shutdown = false;
 
     /** A map from Node to corresponding MonitoredNode */
-    private Map<T,BaseNodeMonitor<T>> nodeMonitors=
-        Collections.synchronizedMap(new java.util.LinkedHashMap<T, BaseNodeMonitor<T>>());
+    private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
-    public ClusterMonitor(NodeManager<T> manager, String monitorConfigID) {
-        nodeManager=manager;
-        monitorThread=new MonitorThread("search.clustermonitor");
+    /** @deprecated use the constructor with just the first argument instead */
+    @Deprecated
+    public ClusterMonitor(NodeManager<T> manager, String ignored) {
+        this(manager);
+    }
+    
+    public ClusterMonitor(NodeManager<T> manager) {
+        nodeManager = manager;
+        monitorThread = new MonitorThread("search.clustermonitor");
         monitorThread.start();
-        log.fine("checkInterval is " + configuration.getCheckInterval()+" ms");
     }
 
     /** Returns the configuration of this cluster monitor */
@@ -59,10 +63,9 @@ public class ClusterMonitor<T> {
      * @param node the object representing the node
      * @param internal whether or not this node is internal to this cluster
      */
-    public void add(T node,boolean internal) {
-        BaseNodeMonitor<T> monitor=new TrafficNodeMonitor<>(node,configuration,internal);
-        // BaseNodeMonitor monitor=new NodeMonitor(node,configuration);
-        nodeMonitors.put(node,monitor);
+    public void add(T node, boolean internal) {
+        BaseNodeMonitor<T> monitor = new TrafficNodeMonitor<>(node, configuration, internal);
+        nodeMonitors.put(node, monitor);
     }
 
     /**
@@ -74,8 +77,8 @@ public class ClusterMonitor<T> {
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
     public synchronized void failed(T node, ErrorMessage error) {
-        BaseNodeMonitor<T> monitor=nodeMonitors.get(node);
-        boolean wasWorking=monitor.isWorking();
+        BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
+        boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
         if (wasWorking && !monitor.isWorking()) {
             nodeManager.failed(node);
@@ -85,7 +88,7 @@ public class ClusterMonitor<T> {
     /** Called when a node responded */
     public synchronized void responded(T node) {
         BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
-        boolean wasFailing=!monitor.isWorking();
+        boolean wasFailing =! monitor.isWorking();
         monitor.responded();
         if (wasFailing && monitor.isWorking()) {
             nodeManager.working(monitor.getNode());
@@ -96,12 +99,11 @@ public class ClusterMonitor<T> {
      * Ping all nodes which needs pinging to discover state changes
      */
     public void ping(Executor executor) {
-        for (Iterator<BaseNodeMonitor<T>> i=nodeMonitorIterator(); i.hasNext(); ) {
+        for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext(); ) {
             BaseNodeMonitor<T> monitor= i.next();
-            // always ping
-            // if (monitor.isIdle())
-            nodeManager.ping(monitor.getNode(),executor); // Cause call to failed or responded
+            nodeManager.ping(monitor.getNode(), executor); // Cause call to failed or responded
         }
+        nodeManager.pingIterationCompleted();
     }
 
     /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */

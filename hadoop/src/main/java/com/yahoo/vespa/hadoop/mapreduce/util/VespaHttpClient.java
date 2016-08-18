@@ -30,10 +30,6 @@ public class VespaHttpClient {
     public String get(String url) throws IOException {
         HttpGet httpGet = new HttpGet(url);
         HttpResponse httpResponse = httpClient.execute(httpGet);
-        if (httpResponse.getStatusLine().getStatusCode() != 200) {
-            return null;
-        }
-
         HttpEntity entity = httpResponse.getEntity();
         InputStream is = entity.getContent();
 
@@ -43,6 +39,10 @@ public class VespaHttpClient {
             result = scanner.next();
         }
         EntityUtils.consume(entity);
+
+        if (httpResponse.getStatusLine().getStatusCode() != 200) {
+            return null;
+        }
 
         return result;
     }

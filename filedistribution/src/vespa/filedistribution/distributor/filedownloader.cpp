@@ -59,12 +59,14 @@ addNewFile(const fs::path& dbPath, const fs::path& newFile) {
     LOG(debug, "Adding new file: '%s'.", newFile.string().c_str());
     const fs::path destination = dbPath / newFile.stem();
 
-    if ( fs::exists(destination) )
+    if ( fs::exists(destination) ) {
         fs::remove_all(destination);
+    }
 
     fs::path resumeData = destination.string() + resumeDataSuffix;
-    if ( fs::exists(resumeData) )
+    if ( fs::exists(resumeData) ) {
         fs::remove(resumeData);
+    }
 
     fs::rename(newFile, destination);
 }
@@ -72,9 +74,10 @@ addNewFile(const fs::path& dbPath, const fs::path& newFile) {
 void
 addNewDbFiles(const fs::path& dbPath) {
     for (fs::directory_iterator i(dbPath), end; i != end; ++i) {
-        if (newFileSuffix == fs::extension(*i))
+        if (newFileSuffix == fs::extension(*i)) {
             addNewFile(dbPath, *i);
         }
+    }
 }
 
 fs::path
@@ -138,7 +141,7 @@ struct FileDownloader::EventHandler
     }
 
     void operator()(const libtorrent::listen_failed_alert& alert) const {
-        BOOST_THROW_EXCEPTION(std::runtime_error(alert.message()));
+        BOOST_THROW_EXCEPTION(FailedListeningException(alert.endpoint.address().to_string(), alert.endpoint.port(), alert.message()));
     }
     void operator()(const libtorrent::fastresume_rejected_alert& alert) const {
         LOG(debug, "alert %s: %s", alert.what(), alert.message().c_str());
@@ -246,18 +249,13 @@ FileDownloader::~FileDownloader() {
 
 void
 FileDownloader::listen() {
-    for (int retries = 0; retries < 5; ++retries) {
-        boost::system::error_code ec;
-        _session.listen_on(std::make_pair(_port, _port), ec); // (min, max)
-        //If libtorrent fails listening on the specified port,
-        //it will automatically try to use port 0.
-        if (!ec && _session.listen_port() == _port)
-            return;
-        perror("Listen failed");
-        LOG(debug, "Failed listening on '%d' message='%s'", _port, ec.message().c_str());
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+    boost::system::error_code ec;
+    _session.listen_on(std::make_pair(_port, _port), // (min, max)
+                       ec, 0, // network interface (default value)
+                       libtorrent::session::listen_no_system_port); 
+    if (!ec && (_session.listen_port() == _port)) {
+        return;
     }
-
     BOOST_THROW_EXCEPTION(FailedListeningException(_hostName, _port));
 }
 

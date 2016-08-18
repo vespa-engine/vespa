@@ -194,6 +194,25 @@ void AttrUpdate::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Value
     }
 }
 
+template <>
+void AttrUpdate::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUpdate &upd) {
+    LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
+    ValueUpdate::ValueUpdateType op = upd.getType();
+    assert(!vec.hasMultiValue());
+    if (op == ValueUpdate::Assign) {
+        const AssignValueUpdate &assign(static_cast<const AssignValueUpdate &>(upd));
+        if (assign.hasValue()) {
+            vec.clearDoc(lid);
+            updateValue(vec, lid, assign.getValue());
+        }
+    } else if (op == ValueUpdate::Clear) {
+        vec.clearDoc(lid);
+    } else {
+        LOG(warning, "Unsupported value update operation %s on singlevalue tensor attribute %s",
+                     upd.getClass().name(), vec.getName().c_str());
+    }
+}
+
 void
 AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
 {
@@ -222,6 +241,8 @@ AttrUpdate::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate 
             handleUpdateT(static_cast<StringAttribute &>(vec), GetString(), lid, vUp);
         } else if (info.inherits(PredicateAttribute::classId)) {
             handleUpdate(static_cast<PredicateAttribute &>(vec), lid, vUp);
+        } else if (info.inherits(TensorAttribute::classId)) {
+            handleUpdate(static_cast<TensorAttribute &>(vec), lid, vUp);
         } else {
             LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), info.name());
             return;

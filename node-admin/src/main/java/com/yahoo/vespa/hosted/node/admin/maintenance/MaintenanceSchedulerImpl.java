@@ -52,6 +52,10 @@ public class MaintenanceSchedulerImpl implements MaintenanceScheduler {
     public void cleanNodeAdmin() {
         execute(NODE_ADMIN_LOGGER, Maintainer.JOB_DELETE_OLD_APP_DATA);
         execute(NODE_ADMIN_LOGGER, Maintainer.JOB_CLEAN_HOME);
+
+        File nodeAdminJDiskLogsPath = Maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
+                "/home/y/logs/jdisc_core/").toFile();
+        DeleteOldAppData.deleteFiles(nodeAdminJDiskLogsPath.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
     }
 
     @Override

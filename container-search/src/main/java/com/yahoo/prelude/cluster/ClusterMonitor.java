@@ -31,11 +31,11 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     /** A map from Node to corresponding MonitoredNode */
     private final Map<VespaBackEndSearcher, NodeMonitor> nodeMonitors = new java.util.IdentityHashMap<>();
-    ScheduledFuture<?>  future;
+    private ScheduledFuture<?>  future;
 
     private boolean isFrozen = false;
 
-    ClusterMonitor(final ClusterSearcher manager, final QrMonitorConfig monitorConfig, VipStatus vipStatus) {
+    ClusterMonitor(ClusterSearcher manager, QrMonitorConfig monitorConfig, VipStatus vipStatus) {
         configuration = new MonitorConfiguration(monitorConfig);
         nodeManager = manager;
         this.vipStatus = vipStatus;
@@ -59,7 +59,7 @@ public class ClusterMonitor implements Runnable, Freezable {
     /**
      * Adds a new node for monitoring.
      */
-    void add(final VespaBackEndSearcher node) {
+    void add(VespaBackEndSearcher node) {
         if (isFrozen()) {
             throw new IllegalStateException(
                     "Can not add new nodes after ClusterMonitor has been frozen.");
@@ -69,9 +69,9 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
-    void failed(final VespaBackEndSearcher node, final ErrorMessage error) {
-        final NodeMonitor monitor = nodeMonitors.get(node);
-        final boolean wasWorking = monitor.isWorking();
+    void failed(VespaBackEndSearcher node, ErrorMessage error) {
+        NodeMonitor monitor = nodeMonitors.get(node);
+        boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
         if (wasWorking && !monitor.isWorking()) {
             // was warning, see VESPA-1922            
@@ -82,9 +82,9 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     /** Called when a node responded */
-    void responded(final VespaBackEndSearcher node, boolean hasDocumentsOnline) {
-        final NodeMonitor monitor = nodeMonitors.get(node);
-        final boolean wasFailing = !monitor.isWorking();
+    void responded(VespaBackEndSearcher node, boolean hasDocumentsOnline) {
+        NodeMonitor monitor = nodeMonitors.get(node);
+        boolean wasFailing = !monitor.isWorking();
         monitor.responded(hasDocumentsOnline);
         if (wasFailing && monitor.isWorking()) {
             log.info("Failed node '" + node + "' started working again.");
@@ -122,7 +122,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         log.finest("Activating ping");
         try {
             ping();
-        } catch (final Exception e) {
+        } catch (Exception e) {
             log.log(Level.WARNING, "Error in monitor thread", e);
         }
     }
@@ -143,4 +143,5 @@ public class ClusterMonitor implements Runnable, Freezable {
     public boolean isFrozen() {
         return isFrozen;
     }
+
 }

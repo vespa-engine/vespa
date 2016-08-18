@@ -26,32 +26,33 @@ void copyDirectory(fs::path original, fs::path destination)
 
 } //anonymous namespace
 
-filedistribution::
-FileDB::
-FileDB(fs::path dbPath)
-    :_dbPath(dbPath)
-{}
+namespace filedistribution {
+
+FileDB::FileDB(fs::path dbPath)
+    : _dbPath(dbPath) {}
 
 
 void
-filedistribution::
-FileDB::
-add(fs::path original, const std::string& name)
-{
-  fs::path targetPathTemp = _dbPath / (name + ".tmp");
-  if ( fs::exists(targetPathTemp) )
-    fs::remove_all(targetPathTemp);
+FileDB::add(fs::path original, const std::string &name) {
+    fs::path targetPathTemp = _dbPath / (name + ".tmp");
+    fs::path targetPath = _dbPath / (name + ".new");
+    if (fs::exists(targetPath)) {
+        return;
+    }
 
+    if (fs::exists(targetPathTemp)) {
+        fs::remove_all(targetPathTemp);
+    }
 
-  fs::create_directory(targetPathTemp);
-  if ( !fs::is_directory(original) ) {
-    fs::copy_file(original, targetPathTemp / original.filename());
-  } else {
-    copyDirectory(original, targetPathTemp / original.filename());
-  }
+    fs::create_directory(targetPathTemp);
+    if (!fs::is_directory(original)) {
+        fs::copy_file(original, targetPathTemp / original.filename());
+    } else {
+        copyDirectory(original, targetPathTemp / original.filename());
+    }
 
-  fs::path targetPath = _dbPath / (name + ".new");
-  if ( fs::exists(targetPath) )
-    fs::remove_all(targetPath);
-  fs::rename(targetPathTemp, targetPath);
+    assert(!fs::exists(targetPath));
+    fs::rename(targetPathTemp, targetPath);
+}
+
 }

@@ -569,27 +569,41 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
     return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
 }
 
+
+AttributeVector::SP
+createTensorAttribute(Fixture &f) {
+    AVConfig cfg(AVBasicType::TENSOR);
+    cfg.setTensorType(TensorType::fromSpec("tensor(x{},y{})"));
+    return f._m->addAttribute("a1", cfg, createSerialNum);
+}
+
+Schema
+createTensorSchema() {
+    Schema schema;
+    schema.addAttributeField(Schema::AttributeField("a1", Schema::TENSOR,
+                                               Schema::SINGLE));
+    return schema;
+}
+
+Document::UP
+createTensorPutDoc(DocBuilder &builder, const Tensor &tensor) {
+    return builder.startDocument("doc::1").
+        startAttributeField("a1").
+        addTensor(tensor.clone()).endField().endDocument();
+}
+
 }
 
 
 TEST_F("Test that we can use attribute writer to write to tensor attribute",
        Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AVConfig cfg(AVBasicType::TENSOR);
-    cfg.setTensorType(TensorType::fromSpec("tensor(x{},y{})"));
-    AttributeVector::SP a1 = am.addAttribute("a1",
-                                             cfg,
-                                             createSerialNum);
-    Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", Schema::TENSOR,
-                                               Schema::SINGLE));
+    AttributeVector::SP a1 = createTensorAttribute(f);
+    Schema s = createTensorSchema();
     DocBuilder builder(s);
     auto tensor = createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
                                {"x", "y"});
-    Document::UP doc = builder.startDocument("doc::1").
-                       startAttributeField("a1").
-                       addTensor(tensor->clone()).endField().endDocument();
+    Document::UP doc = createTensorPutDoc(builder, *tensor);
     f.put(1, *doc, 1);
     EXPECT_EQUAL(2u, a1->getNumDocs());
     TensorAttribute *tensorAttribute =
@@ -598,6 +612,42 @@ TEST_F("Test that we can use attribute writer to write to tensor attribute",
     auto tensor2 = tensorAttribute->getTensor(1);
     EXPECT_TRUE(static_cast<bool>(tensor2));
     EXPECT_TRUE(tensor->equals(*tensor2));
+}
+
+TEST_F("require that attribute writer handles tensor assign update", Fixture)
+{
+    AttributeVector::SP a1 = createTensorAttribute(f);
+    Schema s = createTensorSchema();
+    DocBuilder builder(s);
+    auto tensor = createTensor({ {{{"x", "6"}, {"y", "7"}}, 9} },
+                               {"x", "y"});
+    Document::UP doc = createTensorPutDoc(builder, *tensor);
+    f.put(1, *doc, 1);
+    EXPECT_EQUAL(2u, a1->getNumDocs());
+    TensorAttribute *tensorAttribute =
+        dynamic_cast<TensorAttribute *>(a1.get());
+    EXPECT_TRUE(tensorAttribute != nullptr);
+    auto tensor2 = tensorAttribute->getTensor(1);
+    EXPECT_TRUE(static_cast<bool>(tensor2));
+    EXPECT_TRUE(tensor->equals(*tensor2));
+
+    const document::DocumentType &dt(builder.getDocumentType());
+    DocumentUpdate upd(dt, DocumentId("doc::1"));
+    auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
+                                   {"x", "y"});
+    TensorFieldValue new_value;
+    new_value = new_tensor->clone();
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
+                  .addUpdate(AssignValueUpdate(new_value)));
+    bool immediateCommit = true;
+    f.update(2, upd, 1, immediateCommit);
+    EXPECT_EQUAL(2u, a1->getNumDocs());
+    EXPECT_TRUE(tensorAttribute != nullptr);
+    tensor2 = tensorAttribute->getTensor(1);
+    EXPECT_TRUE(static_cast<bool>(tensor2));
+    EXPECT_TRUE(!tensor->equals(*tensor2));
+    EXPECT_TRUE(new_tensor->equals(*tensor2));
+
 }
 
 TEST_MAIN()

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
@@ -100,19 +101,20 @@ public class ClusterSearcher extends Searcher {
                            LegacyEmulationConfig emulationConfig,
                            QrMonitorConfig monitorConfig,
                            DispatchConfig dispatchConfig,
+                           ClusterInfoConfig clusterInfoConfig,
                            Statistics manager,
-                           FS4ResourcePool listeners,
+                           FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
         super(id);
         this.hasher = new Hasher();
-        this.fs4ResourcePool = listeners;
+        this.fs4ResourcePool = fs4ResourcePool;
         monitor = new ClusterMonitor(this, monitorConfig, vipStatus);
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig);
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool);
 
         String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters()
@@ -126,6 +128,8 @@ public class ClusterSearcher extends Searcher {
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
+        
+        int containerClusterSize = clusterInfoConfig.nodeCount();
 
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
@@ -144,13 +148,13 @@ public class ClusterSearcher extends Searcher {
             addBackendSearcher(searcher);
             gotExpectedBackend = true;
         } else {
-            for (int i = 0; i < searchClusterConfig.dispatcher().size(); i++) {
-                Backend b = createBackend(searchClusterConfig.dispatcher(i));
-                FastSearcher searcher = searchDispatch(searchClusterIndex,
+            for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
+                Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
+                FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                                       documentDbConfig, b, dispatcher, i);
+                                                       documentDbConfig, b, dispatcher, dispatcherIndex, containerClusterSize);
                 try {
-                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(i).host()));
+                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host()));
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
@@ -209,6 +213,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
+                                               FS4ResourcePool fs4ResourcePool,
                                                QrSearchersConfig.Searchcluster searchClusterConfig,
                                                CacheParams cacheParams,
                                                LegacyEmulationConfig emulConfig,
@@ -216,11 +221,14 @@ public class ClusterSearcher extends Searcher {
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
-                                               int i) {
+                                               int dispatcherIndex,
+                                               int containerClusterSize) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         searchClusterConfig,
-                                                        emulConfig, i);
-        return new FastSearcher(backend, dispatcher, docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
+                                                        emulConfig, 
+                                                        dispatcherIndex);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
+                                documentdbInfoConfig, containerClusterSize);
     }
 
     private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,
@@ -259,13 +267,13 @@ public class ClusterSearcher extends Searcher {
 
     public Map<String, Backend.BackendStatistics> getBackendStatistics() {
         Map<String, Backend.BackendStatistics> backendStatistics = new TreeMap<>();
-        for (final Backend backend : backends) {
+        for (Backend backend : backends) {
             backendStatistics.put(backend.toString(), backend.getStatistics());
         }
         return backendStatistics;
     }
 
-    private Backend createBackend(final QrSearchersConfig.Searchcluster.Dispatcher disp) {
+    private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
         return fs4ResourcePool.getBackend(disp.host(), disp.port());
     }
 
@@ -582,21 +590,8 @@ public class ClusterSearcher extends Searcher {
     }
 
     private boolean backendCanServeDocuments(Pong pong) {
-        List<PongPacket> wireReply = pong.getPongPackets();
-        if (wireReply.size() == 0) {
-            return true; // streaming search does not add PongPacket instances
-        }
-        if (wireReply.size() > 1) {
-            log.log(LogLevel.ERROR, "ClusterSearcher ping got more than one pong packet (" + wireReply.size()
-                    + "), this means basic implementation assumptions now are out of sync.");
-        }
-
-        PongPacket pongPacket = wireReply.get(0);
-        if (pongPacket.getActiveNodes().isPresent() && pongPacket.getActiveNodes().get() == 0) {
-            return false;
-        } else {
-            return true;
-        }
+        if ( ! pong.activeDocuments().isPresent()) return true; // no information; assume true
+        return pong.activeDocuments().get() > 0;
     }
 
     public void dumpPackets(PacketDumper.PacketType packetType, boolean on) throws IOException {

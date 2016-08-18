@@ -2,6 +2,7 @@
 package com.yahoo.prelude.cluster.dispatchprototype;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -31,6 +32,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster;
  *
  * @author bakksjo
  */
+// 2016-08-16 (bratseth): We should probably just remove this now. It was a prototype that never went anywhere
 @Beta
 @After("*")
 public class DispatchClusterSearcher extends Searcher {
@@ -45,6 +47,7 @@ public class DispatchClusterSearcher extends Searcher {
             final LegacyEmulationConfig emulationConfig,
             final QrMonitorConfig monitorConfig,
             final DispatchConfig dispatchConfig,
+            final ClusterInfoConfig clusterInfoConfig,
             final Statistics manager,
             final FS4ResourcePool listeners,
             final ComponentRegistry<ClusterSearcher> otherClusterSearchers,
@@ -61,12 +64,13 @@ public class DispatchClusterSearcher extends Searcher {
                 emulationConfig,
                 monitorConfig,
                 dispatchConfig,
+                clusterInfoConfig,
                 manager,
                 listeners,
                 vipStatus);
 
-        //Prevent the ClusterSearcher(s) implicitly set up by the model from warning that it can't contact
-        //the c++ TLD when we disable it in the system test.
+        // Prevent the ClusterSearcher(s) implicitly set up by the model from warning that it can't contact
+        // the c++ TLD when we disable it in the system test.
         otherClusterSearchers.allComponents().stream()
                 .forEach(ClusterSearcher::deconstruct);
     }

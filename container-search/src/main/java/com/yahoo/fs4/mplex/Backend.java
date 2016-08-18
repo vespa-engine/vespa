@@ -76,7 +76,7 @@ public class Backend implements ConnectionFactory {
     }
 
     public Backend(String host, int port, String serverDiscriminator, ListenerPool listenerPool, ConnectionPool connectionPool) {
-        final String fileNamePattern = "qrs." + serverDiscriminator + '.' + host + ":" + port + ".%s" + ".dump";
+        String fileNamePattern = "qrs." + serverDiscriminator + '.' + host + ":" + port + ".%s" + ".dump";
         packetDumper = new PacketDumper(new File(Defaults.getDefaults().vespaHome() + "logs/vespa/qrs/"), fileNamePattern);
         packetListener = new PacketNotificationsBroadcaster(packetDumper, new PacketQueryTracer());
         this.listeners = listenerPool;
@@ -171,15 +171,10 @@ public class Backend implements ConnectionFactory {
         }
 
         // did we get a connection?
-        if(!connected)
-
-        {
+        if ( !connected)
             throw new IllegalArgumentException("Could not create connection to dispatcher on "
                                                + address.getHostName() + ":" + address.getPort());
-        }
-
         socket.socket().
-
         setTcpNoDelay(true);
     }
 
@@ -362,9 +357,8 @@ public class Backend implements ConnectionFactory {
      */
     public void shutdown() {
         log.info("shutting down");
-        if (shutdownInitiated) {
+        if (shutdownInitiated)
             throw new IllegalStateException("Shutdown already in progress");
-        }
         shutdownInitiated = true;
     }
 

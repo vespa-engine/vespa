@@ -60,10 +60,9 @@ public class NodeMonitor {
     /**
      * Called when this node fails.
      *
-     * @param error
-     *            A container which should contain a short description
+     * @param error a container which should contain a short description
      */
-    public void failed(final ErrorMessage error) {
+    public void failed(ErrorMessage error) {
         long respondedAt = System.currentTimeMillis();
 
         if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code

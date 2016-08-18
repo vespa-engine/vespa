@@ -3,9 +3,6 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 /**
  * @author baldersheim
  */
@@ -32,7 +29,7 @@ public class IndexedElasticSearchCluster extends IndexedSearchCluster {
     @Override
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
-            if (node.getNodeSpec().rowId() > 0) {
+            if (node.getNodeSpec().groupIndex() > 0) {
                 return true;
             }
         }

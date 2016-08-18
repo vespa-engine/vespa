@@ -6,7 +6,6 @@ import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -14,7 +13,6 @@ import com.yahoo.searchdefinition.UnproperSearch;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -381,8 +379,12 @@ public abstract class IndexedSearchCluster extends SearchCluster
         for (SearchNode node : getSearchNodes()) {
             DispatchConfig.Node.Builder nodeBuilder = new DispatchConfig.Node.Builder();
             nodeBuilder.key(node.getDistributionKey());
+            nodeBuilder.group(node.getNodeSpec().groupIndex());
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
+            nodeBuilder.fs4port(node.getDispatchPort());
+            if (tuning.dispatch.minActiveDocsCoverage != null)
+                builder.min_activedocs_coverage(tuning.dispatch.minActiveDocsCoverage);
             builder.node(nodeBuilder);
         }
     }

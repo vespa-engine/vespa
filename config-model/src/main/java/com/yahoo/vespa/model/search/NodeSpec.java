@@ -8,22 +8,27 @@ package com.yahoo.vespa.model.search;
  */
 public class NodeSpec {
 
-    private final int rowId;
+    private final int groupIndex;
     private final int partitionId;
 
-    public NodeSpec(int rowId, int partitionId) {
-        if (rowId < 0) {
-            throw new IllegalArgumentException("RowId(" + rowId + ") can not be below 0");
+    public NodeSpec(int groupIndex, int partitionId) {
+        if (groupIndex < 0) {
+            throw new IllegalArgumentException("GroupId(" + groupIndex + ") can not be below 0");
         }
         if (partitionId < 0) {
             throw new IllegalArgumentException("PartId(" + partitionId + ") can not be below 0");
         }
-        this.rowId = rowId;
+        this.groupIndex = groupIndex;
         this.partitionId = partitionId;
     }
 
-    public int rowId() {
-        return rowId;
+    /** 
+     * Returns an index of the group of this node. 
+     * This is a 0-base continuous integer id, not necessarily the same as the group id assigned by the user.
+     * This group index is called a "row id" in some legacy components in Vespa for historical reasons.
+     */
+    public int groupIndex() {
+        return groupIndex;
     }
 
     public int partitionId() {

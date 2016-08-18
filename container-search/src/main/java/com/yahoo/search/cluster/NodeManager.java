@@ -12,12 +12,18 @@ import java.util.concurrent.Executor;
 public interface NodeManager<T> {
 
     /** Called when a failed node is working (ready for production) again */
-    public void working(T node);
+    void working(T node);
 
     /** Called when a working node fails */
-    public void failed(T node);
+    void failed(T node);
 
-    /** Called when a node should be pinged */
-    public void ping(T node, Executor executor);
+    /** 
+     * Called when a node should be pinged. 
+     * This *must* lead to either a call to NodeMonitor.failed or NodeMonitor.responded 
+     */
+    void ping(T node, Executor executor);
+    
+    /** Called right after a ping has been issued to each node. This default implementation does nothing. */
+    default void pingIterationCompleted() {}
 
 }
