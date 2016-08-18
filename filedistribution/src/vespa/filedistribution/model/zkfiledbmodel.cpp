@@ -304,6 +304,10 @@ DirectoryGuard::DirectoryGuard(boost::filesystem::path path) :
     _fd = open(path.c_str(), O_RDONLY);
     assert(_fd != -1);
     int retval = flock(_fd, LOCK_EX);
+    while ((retval != 0) && (errno == EINTR)) {
+        std::cout << "Got interupted while flock'ing ' " << path << std::endl;
+        retval = flock(_fd, LOCK_EX);
+    }
     assert(retval == 0);
 }
 
