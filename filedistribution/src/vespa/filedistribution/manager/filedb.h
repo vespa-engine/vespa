@@ -12,7 +12,13 @@ class FileDB {
 public:
     FileDB(boost::filesystem::path dbPath);
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
-    void add(boost::filesystem::path original, const std::string& name);
+    /**
+     *
+     * @param original The file top copy
+     * @param name The name the file shall have.
+     * @return true if it was added, false if it was already present.
+     */
+    bool add(boost::filesystem::path original, const std::string& name);
 };
 
 } //namespace filedistribution
