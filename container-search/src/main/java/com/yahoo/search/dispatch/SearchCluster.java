@@ -131,19 +131,22 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         // Update active documents per group and use it to decide if the group should be active
         for (Group group : groups.values())
             group.aggregateActiveDocuments();
-        for (Group currentGroup : groups.values()) {
-            long sumOfAactiveDocumentsInOtherGroups = 0;
-            for (Group otherGroup : groups.values())
-                if ( otherGroup != currentGroup)
-                    sumOfAactiveDocumentsInOtherGroups += otherGroup.getActiveDocuments();
-            long averageDocumentsInOtherGroups = sumOfAactiveDocumentsInOtherGroups / (groups.size() - 1);
-            if (averageDocumentsInOtherGroups == 0)
-                currentGroup.setHasSufficientCoverage(true); // no information about any group; assume coverage
-            else
-                currentGroup.setHasSufficientCoverage(
-                        100 * (double)currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
+        if (groups.size() == 1) {
+            groups.values().iterator().next().setHasSufficientCoverage(true); // by definition
+        } else {
+            for (Group currentGroup : groups.values()) {
+                long sumOfAactiveDocumentsInOtherGroups = 0;
+                for (Group otherGroup : groups.values())
+                    if (otherGroup != currentGroup)
+                        sumOfAactiveDocumentsInOtherGroups += otherGroup.getActiveDocuments();
+                long averageDocumentsInOtherGroups = sumOfAactiveDocumentsInOtherGroups / (groups.size() - 1);
+                if (averageDocumentsInOtherGroups == 0)
+                    currentGroup.setHasSufficientCoverage(true); // no information about any group; assume coverage
+                else
+                    currentGroup.setHasSufficientCoverage(
+                            100 * (double) currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
+            }
         }
-        
     }
     
     private Pong getPong(FutureTask<Pong> futurePong, Node node) {
