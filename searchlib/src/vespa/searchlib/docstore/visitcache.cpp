@@ -29,6 +29,19 @@ KeySet::contains(const KeySet &rhs) const {
     return b == rhs._keys.size();
 }
 
+vespalib::ConstBufferRef
+BlobSet::get(uint32_t lid) const
+{
+    vespalib::ConstBufferRef buf;
+    for (LidPosition pos : _positions) {
+        if (pos.lid() == lid) {
+            buf = vespalib::ConstBufferRef(_buffer.c_str() + pos.offset(), pos.size());
+            break;
+        }
+    }
+    return buf;
+}
+
 CompressedBlobSet::CompressedBlobSet() :
     _positions(),
     _buffer()
@@ -45,6 +58,13 @@ CompressedBlobSet & CompressedBlobSet::operator=(CompressedBlobSet && rhs) {
     _positions = std::move(rhs._positions);
     _buffer = std::move(rhs._buffer);
     return *this;
+}
+
+BlobSet
+CompressedBlobSet::getBlobSet() const
+{
+    BlobSet blobSet;
+    return blobSet;
 }
 
 bool

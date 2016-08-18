@@ -117,7 +117,11 @@ void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
     if (useCache() && _config.allowVisitCaching() && visitor.allowVisitCaching()) {
-        _store.visit(lids, repo, visitor);
+        docstore::BlobSet blobSet = _visitCache->read(lids).getBlobSet();
+        DocumentVisitorAdapter adapter(repo, visitor);
+        for (DocumentIdT lid : lids) {
+            adapter.visit(lid, blobSet.get(lid));
+        }
     } else {
         _store.visit(lids, repo, visitor);
     }

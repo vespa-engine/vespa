@@ -24,25 +24,24 @@ class BlobSet {
 public:
     class LidPosition {
     public:
-        LidPosition(uint32_t lid, uint32_t position, uint32_t size) : _lid(lid), _position(position), _size(size) { }
-        uint32_t lid() const { return _lid; }
-        uint32_t position() const { return _position; }
-        uint32_t size() const { return _size; }
+        LidPosition(uint32_t lid, uint32_t offset, uint32_t size) : _lid(lid), _offset(offset), _size(size) { }
+        uint32_t    lid() const { return _lid; }
+        uint32_t offset() const { return _offset; }
+        uint32_t   size() const { return _size; }
     private:
         uint32_t _lid;
-        uint32_t _position;
+        uint32_t _offset;
         uint32_t _size;
     };
 
     typedef std::vector<LidPosition> Positions;
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
     void remove(uint32_t lid);
-    vespalib::ConstBufferRef get(uint32_t lid);
-    const vespalib::DataBuffer &getBuffer() const { return _buffer; }
-    static Positions getPositions(BlobSet &&blobs) { return std::move(blobs._positions); }
+    vespalib::ConstBufferRef get(uint32_t lid) const;
+    vespalib::ConstBufferRef getBuffer(uint32_t lid) const;
 private:
-    Positions _positions;
-    vespalib::DataBuffer _buffer;
+    Positions           _positions;
+    vespalib::nbostream _buffer;
 };
 
 class CompressedBlobSet {
