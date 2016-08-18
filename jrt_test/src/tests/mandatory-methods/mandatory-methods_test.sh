@@ -1,14 +1,18 @@
 #!/bin/bash
 
+if [ -z "$SOURCE_DIRECTORY" ]; then
+    SOURCE_DIRECTORY="."
+fi
+
 fail=0
 
 . ../../binref/env.sh
 export PORT_1
 
-$BINREF/compilejava RPCServer.java || fail=1
+$BINREF/compilejava -d . $SOURCE_DIRECTORY/RPCServer.java || fail=1
 
-bash ./dotest.sh || fail=1
+bash $SOURCE_DIRECTORY/dotest.sh || fail=1
 
-$BINREF/progctl.sh progdefs.sh stop all
+$SOURCE_DIRECTORY/../../binref/progctl.sh $SOURCE_DIRECTORY/progdefs.sh stop all
 
 exit $fail
