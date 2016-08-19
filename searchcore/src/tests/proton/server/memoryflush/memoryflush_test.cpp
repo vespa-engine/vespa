@@ -272,7 +272,6 @@ requireThatWeCanOrderByTlsSize()
 {
     TimeStamp now(fastos::ClockSystem::now());
     TimeStamp start(now.val() - 20 * TimeStamp::SEC);
-    flushengine::TlsStatsMap::Map tlsMap;
     ContextBuilder cb;
     IFlushHandler::SP handler1(std::make_shared<MyFlushHandler>("handler1"));
     IFlushHandler::SP handler2(std::make_shared<MyFlushHandler>("handler2"));
@@ -307,6 +306,22 @@ requireThatWeCanOrderByTlsSize()
         MemoryFlush flush({1000, 30 * gibi, 1.0, 1000, 1.0, 2000, TimeStamp(30 * TimeStamp::SEC)}, start);
         EXPECT_TRUE(assertOrder(StringList(), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
+}
+
+void
+requireThatWeHandleLargeSerialNumbersWhenOrderingByTlsSize()
+{
+    uint64_t uint32_max = std::numeric_limits<uint32_t>::max();
+    ContextBuilder builder;
+    SerialNum firstSerial = 10;
+    SerialNum lastSerial = uint32_max + 10;
+    builder.addTls("myhandler", {uint32_max, firstSerial, lastSerial});
+    builder.add(createTargetT("t1", TimeStamp(), uint32_max + 5), lastSerial);
+    builder.add(createTargetT("t2", TimeStamp(), uint32_max - 5), lastSerial);
+    uint64_t maxMemoryGain = 10;
+    MemoryFlush flush({maxMemoryGain, 1000, 0, maxMemoryGain, 0, 0, TimeStamp()}, TimeStamp());
+    EXPECT_TRUE(assertOrder(StringList().add("t2").add("t1"),
+                            flush.getFlushTargets(builder.list(), builder.tlsStats())));
 }
 
 void
@@ -355,6 +370,7 @@ TEST_MAIN()
     TEST_DO(requireThatWeCanOrderBySerialNum());
     TEST_DO(requireThatWeCanOrderByAge());
     TEST_DO(requireThatWeCanOrderByTlsSize());
+    TEST_DO(requireThatWeHandleLargeSerialNumbersWhenOrderingByTlsSize());
     TEST_DO(requireThatOrderTypeIsPreserved());
 }
 
