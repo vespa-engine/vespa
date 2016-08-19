@@ -13,13 +13,13 @@
   "canonicalFlavor": "default",
   "environment":"env",
   "owner": {
-    "tenant": "tenant2",
-    "application": "application2",
-    "instance": "instance2"
+    "tenant": "tenant3",
+    "application": "application3",
+    "instance": "instance3"
   },
   "membership": {
     "clustertype": "content",
-    "clusterid": "id2",
+    "clusterid": "id3",
     "group": "0",
     "index": 0,
     "retired": false
