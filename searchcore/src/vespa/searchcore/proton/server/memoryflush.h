@@ -41,6 +41,8 @@ public:
                fastos::TimeStamp maxTimeGain_in);
     };
 
+    enum OrderType { DEFAULT, MAXAGE, MAXSERIAL, DISKBLOAT, TLSSIZE, MEMORY };
+
 private:
     /// Needed as flushDone is called in different context from the rest
     vespalib::Lock     _lock;
@@ -48,7 +50,6 @@ private:
     /// The time when the strategy was started.
     fastos::TimeStamp  _startTime;
 
-    enum OrderType { DEFAULT, MAXAGE, MAXSERIAL, DISKBLOAT, TLSSIZE, MEMORY };
     class CompareTarget
     {
     public:

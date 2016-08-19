@@ -107,6 +107,24 @@ void MemoryFlush::setConfig(const Config &config)
     _config = config;
 }
 
+namespace {
+
+vespalib::string
+getOrderName(MemoryFlush::OrderType &orderType)
+{
+    switch (orderType) {
+        case MemoryFlush::OrderType::MEMORY: return "MEMORY";
+        case MemoryFlush::OrderType::TLSSIZE: return "TLSSIZE";
+        case MemoryFlush::OrderType::DISKBLOAT: return "DISKBLOAT";
+        case MemoryFlush::OrderType::MAXSERIAL: return "MAXSERIAL";
+        case MemoryFlush::OrderType::MAXAGE: return "MAXAGE";
+        case MemoryFlush::OrderType::DEFAULT: return "DEFAULT";
+    }
+    return "DEFAULT";
+}
+
+}
+
 FlushContext::List
 MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
                              const flushengine::TlsStatsMap &
@@ -120,9 +138,9 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
     vespalib::hash_set<const void *> visitedHandlers;
     fastos::TimeStamp now(fastos::ClockSystem::now());
     LOG(debug,
-        "getFlushTargets(): globalMaxMemory(%" PRIu64 "), globalDiskBloatFactor(%f), "
+        "getFlushTargets(): globalMaxMemory(%" PRIu64 "), maxGlobalTlsSize(%" PRIu64 "), globalDiskBloatFactor(%f), "
         "maxMemoryGain(%" PRIu64 "), diskBloatFactor(%f), maxSerialGain(%" PRIu64 "), maxTimeGain(%f), startTime(%f)",
-        config.maxGlobalMemory, config.globalDiskBloatFactor,
+        config.maxGlobalMemory, config.maxGlobalTlsSize, config.globalDiskBloatFactor,
         config.maxMemoryGain, config.diskBloatFactor,
         config.maxSerialGain, config.maxTimeGain.sec(),
         _startTime.sec());
@@ -184,10 +202,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             lastFlushTime.sec(),
             now.sec(),
             timeDiff.sec(),
-            (order == DEFAULT ? "DEFAULT" :
-             (order == MEMORY ? "MEMORY" :
-              (order == MAXAGE ? "MAXAGE" :
-               (order == MAXSERIAL ? "MAXSERIAL" : "DISKBLOAT")))));
+            getOrderName(order).c_str());
     }
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget(order, tlsStatsMap));
