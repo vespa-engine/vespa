@@ -89,7 +89,7 @@ public:
   virtual void Run() = 0;
 
   const char *get_name() const;
-  const std::string& GetSourceDirectory() const;
+  static const std::string& GetSourceDirectory();
   long GetNumPassed() const;
   long GetNumFailed() const;
   const std::ostream* GetStream() const;
@@ -120,7 +120,6 @@ private:
   long m_nFail;
   int m_index;
   char m_pchar[4];
-  std::string m_srcDir;
 
   std::vector<std::string> m_description;
 
@@ -138,13 +137,8 @@ Test::Test(std::ostream* osptr, const char*name) :
   m_nPass(0),
   m_nFail(0),
   m_index(0),
-  m_srcDir("."),
   m_description()
 {
-  const char* srcDir = getenv("SOURCE_DIRECTORY");
-  if (srcDir) {
-    m_srcDir = std::string(srcDir) + "/";
-  }
   m_pchar[0]= '|';
   m_pchar[1]= '-';
 }
@@ -161,9 +155,20 @@ const char *Test::get_name() const {
 }
 
 inline
-const std::string& Test::GetSourceDirectory() const
+const std::string& Test::GetSourceDirectory()
 {
-  return m_srcDir;
+  static const std::string srcDir = [] () {
+      std::string dir(".");
+      const char* env = getenv("SOURCE_DIRECTORY");
+      if (env) {
+        dir = env;
+      }
+      if (*dir.rbegin() != '/') {
+        dir += "/";
+      }
+      return dir;
+  } ();
+  return srcDir;
 }
 
 inline

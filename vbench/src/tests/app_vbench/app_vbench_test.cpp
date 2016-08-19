@@ -48,7 +48,6 @@ TEST_MT_F("run vbench", 2, ServerSocket()) {
         }
     } else {
         std::string out;
-        EXPECT_TRUE(SlaveProc::run("cp vbench.cfg.template vbench.cfg"));
         EXPECT_TRUE(SlaveProc::run(strfmt("sed -i 's/_LOCAL_PORT_/%d/' vbench.cfg", f1.port()).c_str()));
         EXPECT_TRUE(SlaveProc::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
         fprintf(stderr, "%s\n", out.c_str());

@@ -12,6 +12,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <iostream>
 
@@ -307,10 +308,10 @@ void WritableDocumentListTest::testSizeOf()
 void WritableDocumentListTest::testReadJavaFile()
 {
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                            "../test/files/documenttypes.cfg")));
+            vespalib::TestApp::GetSourceDirectory() + "../test/files/documenttypes.cfg")));
 
     //read file
-    int file = open("../test/files/documentlist-java.dat", O_RDONLY);
+    int file = open((vespalib::TestApp::GetSourceDirectory() + "../test/files/documentlist-java.dat").c_str(), O_RDONLY);
     if (file == -1) {
         CPPUNIT_ASSERT(0);
     }
@@ -407,10 +408,10 @@ void WritableDocumentListTest::testGetSerializedSize() {
 
 void WritableDocumentListTest::testCopyEntry() {
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                            "../test/files/documenttypes.cfg")));
+            vespalib::TestApp::GetSourceDirectory() + "../test/files/documenttypes.cfg")));
 
     //read file
-    int file = open("../test/files/documentlist-java.dat", O_RDONLY);
+    int file = open((vespalib::TestApp::GetSourceDirectory() + "../test/files/documentlist-java.dat").c_str(), O_RDONLY);
     if (file == -1) {
         CPPUNIT_ASSERT(0);
     }

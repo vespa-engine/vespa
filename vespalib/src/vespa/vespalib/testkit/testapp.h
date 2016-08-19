@@ -164,7 +164,6 @@ class TestApp : public FastOS_Application
 {
 private:
     std::string _name;
-    std::string _src_dir;
 
 public:
     static TestMaster &master;
@@ -184,7 +183,7 @@ public:
      *
      * @return Path to source directory with trailing /
      */
-    const std::string& GetSourceDirectory() const { return _src_dir; }
+    static const std::string& GetSourceDirectory();
 
     /**
      * @brief Report test initialization

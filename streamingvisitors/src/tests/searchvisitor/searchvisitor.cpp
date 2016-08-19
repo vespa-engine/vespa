@@ -39,7 +39,7 @@ SearchVisitorTest::SearchVisitorTest() :
 {
     _componentRegister.setNodeInfo("mycluster", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
-    StorageComponent::DocumentTypeRepoSP repo(new DocumentTypeRepo(readDocumenttypesConfig("cfg/documenttypes.cfg")));
+    StorageComponent::DocumentTypeRepoSP repo(new DocumentTypeRepo(readDocumenttypesConfig(GetSourceDirectory() + "cfg/documenttypes.cfg")));
     _componentRegister.setDocumentTypeRepo(repo);
     _component.reset(new StorageComponent(_componentRegister, "storage"));
 };

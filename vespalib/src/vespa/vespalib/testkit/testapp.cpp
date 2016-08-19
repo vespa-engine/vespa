@@ -9,17 +9,29 @@ TestMaster &TestApp::master(TestMaster::master);
 
 TestApp::TestApp()
     : FastOS_Application(),
-      _name("<unnamed>"),
-      _src_dir("./")
+      _name("<unnamed>")
 {
-    const char* dir = getenv("SOURCE_DIRECTORY");
-    if (dir) {
-        _src_dir = std::string(dir) + "/";
-    }
 }
 
 TestApp::~TestApp()
 {
+}
+
+const std::string&
+TestApp::GetSourceDirectory()
+{
+    static const std::string srcDir = [] () {
+        std::string dir(".");
+        const char* env = getenv("SOURCE_DIRECTORY");
+        if (env) {
+            dir = env;
+        }
+        if (*dir.rbegin() != '/') {
+            dir += "/";
+        }
+        return dir;
+    } ();
+    return srcDir;
 }
 
 void

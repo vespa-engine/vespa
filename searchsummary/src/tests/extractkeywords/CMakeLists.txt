@@ -5,4 +5,4 @@ vespa_add_executable(searchsummary_extractkeywordstest_app TEST
     DEPENDS
     searchsummary
 )
-vespa_add_test(NAME searchsummary_extractkeywordstest_app COMMAND sh runtests.sh)
+vespa_add_test(NAME searchsummary_extractkeywordstest_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/runtests.sh)

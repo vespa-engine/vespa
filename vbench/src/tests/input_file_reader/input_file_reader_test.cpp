@@ -10,7 +10,7 @@ TEST("input file reader") {
         EXPECT_TRUE(reader.tainted());
     }
     {
-        InputFileReader reader("simple_test_input.txt");
+        InputFileReader reader(vespalib::TestApp::GetSourceDirectory() + "simple_test_input.txt");
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));
@@ -23,7 +23,7 @@ TEST("input file reader") {
         TEST_FLUSH();
     }
     {
-        InputFileReader reader("hard_test_input.txt");
+        InputFileReader reader(vespalib::TestApp::GetSourceDirectory() + "hard_test_input.txt");
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));
