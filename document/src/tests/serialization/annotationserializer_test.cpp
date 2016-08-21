@@ -23,7 +23,6 @@ LOG_SETUP("annotationserializer_test");
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include "../documenttestutils.h"
 
 using document::DocumenttypesConfig;
 using std::fstream;
@@ -82,10 +81,10 @@ Test::readSpanTree(const string &file_name, const FixedTypeRepo &repo) {
 
 void Test::requireThatSimpleSpanTreeIsDeserialized() {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(
-            (DocumentTestUtils::srcDir() + "annotation.serialize.test.repo.cfg").c_str()));
+            (vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
     FixedTypeRepo repo(type_repo);
     SpanTree::UP span_tree = std::move(readSpanTree(
-            DocumentTestUtils::srcDir() + "test_data_serialized_simple", repo).front());
+            vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_simple", repo).front());
 
     EXPECT_EQUAL("html", span_tree->getName());
     const SimpleSpanList *root = dynamic_cast<const SimpleSpanList *>(&span_tree->getRoot());
@@ -129,10 +128,10 @@ struct AnnotationComparator {
 
 void Test::requireThatAdvancedSpanTreeIsDeserialized() {
     DocumentTypeRepo type_repo(
-            readDocumenttypesConfig((DocumentTestUtils::srcDir() + "annotation.serialize.test.repo.cfg").c_str()));
+            readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
     FixedTypeRepo repo(type_repo, "my_document");
     SpanTree::UP span_tree = std::move(readSpanTree(
-            DocumentTestUtils::srcDir() + "test_data_serialized_advanced", repo).front());
+            vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_advanced", repo).front());
 
     EXPECT_EQUAL("html", span_tree->getName());
     const SpanList *root = dynamic_cast<const SpanList *>(&span_tree->getRoot());
@@ -224,9 +223,9 @@ void Test::requireThatAdvancedSpanTreeIsDeserialized() {
 
 void Test::requireThatSpanTreeCanBeSerialized() {
     DocumentTypeRepo type_repo(
-            readDocumenttypesConfig((DocumentTestUtils::srcDir() + "annotation.serialize.test.repo.cfg").c_str()));
+            readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
     FixedTypeRepo repo(type_repo, "my_document");
-    string file_name = DocumentTestUtils::srcDir() + "test_data_serialized_advanced";
+    string file_name = vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_advanced";
 
     FastOS_File file(file_name.c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());

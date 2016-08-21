@@ -54,8 +54,7 @@ Test::Main()
 
     {
         // read data produced from Java program
-        const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-        int fd = ::open((srcDir + "/regular-utf8.dat").c_str(), O_RDONLY);
+        int fd = ::open((vespalib::TestApp::GetSourceDirectory() + "regular-utf8.dat").c_str(), O_RDONLY);
         ASSERT_TRUE(fd > 0);
         vespalib::string data;
         data.clear();

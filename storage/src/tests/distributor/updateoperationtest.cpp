@@ -13,6 +13,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 using std::shared_ptr;
 using namespace document;
@@ -37,7 +38,6 @@ class UpdateOperation_Test : public CppUnit::TestFixture,
 
     DocumentTypeRepo::SP _repo;
     const DocumentType *_html_type;
-    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
 protected:
     void testSimple();
@@ -49,7 +49,8 @@ public:
     void setUp() {
         _repo.reset(
                 new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
-                                     getConfig("config-doctypes", FileSpec(_srcDir + "/config-doctypes.cfg"))));
+                                     getConfig("config-doctypes",
+                                               FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     }

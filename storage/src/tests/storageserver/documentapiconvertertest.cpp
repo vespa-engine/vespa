@@ -15,6 +15,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 using document::DataType;
 using document::DocIdString;
@@ -28,14 +29,12 @@ namespace storage {
 struct DocumentApiConverterTest : public CppUnit::TestFixture
 {
     std::unique_ptr<DocumentApiConverter> _converter;
-    const std::string _src_dir;
     const DocumentTypeRepo::SP _repo;
     const DataType& _html_type;
 
     DocumentApiConverterTest()
-        : _src_dir(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
-          _repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                  (_src_dir + "/config-doctypes.cfg").c_str()))),
+        : _repo(new DocumentTypeRepo(readDocumenttypesConfig(
+                    (vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg").c_str()))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }

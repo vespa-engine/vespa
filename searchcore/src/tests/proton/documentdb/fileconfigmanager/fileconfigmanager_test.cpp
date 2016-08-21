@@ -86,8 +86,7 @@ getSchema(int step)
 DocumentDBConfig::SP
 makeBaseConfigSnapshot()
 {
-    std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-    config::DirSpec spec(srcDir + "/cfg");
+    config::DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfg");
     ConfigKeySet extraKeySet;
     extraKeySet.add<MycfgConfig>("");
     DBCM dbcm(spec, "test", extraKeySet);

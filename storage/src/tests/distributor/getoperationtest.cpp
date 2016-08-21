@@ -10,6 +10,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -45,7 +46,6 @@ class GetOperationTest : public CppUnit::TestFixture, public DistributorTestUtil
     CPPUNIT_TEST_SUITE_END();
 
     document::DocumentTypeRepo::SP _repo;
-    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
 public:
     document::DocumentId docId;
@@ -55,7 +55,8 @@ public:
     void setUp() {
         _repo.reset(
                 new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
-                        getConfig("config-doctypes", FileSpec(_srcDir + "/config-doctypes.cfg"))));
+                        getConfig("config-doctypes",
+                                  FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
         createLinks();
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));

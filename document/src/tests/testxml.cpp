@@ -16,7 +16,8 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include "documenttestutils.h"
+#include <vespa/vespalib/testkit/testapp.h>
+
 using vespalib::StringTokenizer;
 
 namespace document {
@@ -97,7 +98,8 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
 
 void TestXml::testSimpleUsage()
 {
-    DocumentTypeRepo repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "data/defaultdoctypes.cfg").c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(
+            (vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg").c_str()));
     Document::UP doc1(createTestDocument(repo));
     doc1->setValue(doc1->getField("stringattr"), StringFieldValue("tjohei���"));
 
@@ -126,7 +128,8 @@ void TestXml::testSimpleUsage()
 
 void TestXml::testDocumentUpdate()
 {
-    DocumentTypeRepo repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "data/defaultdoctypes.cfg").c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(
+            (vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg").c_str()));
     DocumentUpdate::UP up1(createTestDocumentUpdate(repo));
 
     std::string expected =

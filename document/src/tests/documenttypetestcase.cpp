@@ -7,9 +7,10 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/testkit/testapp.h>
+
 #include <sstream>
 #include <string>
-#include "documenttestutils.h"
 
 using document::config_builder::Struct;
 using document::config_builder::Wset;
@@ -93,8 +94,8 @@ void
 DocumentTypeTest::testInheritanceConfig()
 {
     DocumentTypeRepo
-        repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "data/inheritancetest.cfg").c_str()));
-
+        repo(readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() +
+            "data/inheritancetest.cfg").c_str()));
     {
         const DocumentType* type(repo.getDocumentType("music"));
         CPPUNIT_ASSERT(type != NULL);
@@ -110,7 +111,8 @@ void
 DocumentTypeTest::testHeaderContent()
 {
     DocumentTypeRepo
-        repo(readDocumenttypesConfig((DocumentTestUtils::srcDir() + "data/doctypesconfigtest.cfg").c_str()));
+        repo(readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() +
+            "data/doctypesconfigtest.cfg").c_str()));
 
     const DocumentType* type(repo.getDocumentType("derived"));
 

@@ -125,8 +125,8 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("maxconcurrentvisitors_fixed", "4");
     config->set("maxconcurrentvisitors_variable", "0");
     config = &dc.addConfig("stor-visitordispatcher");
-    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-    addFileConfig(dc, "documenttypes", srcDir + "/config-doctypes.cfg");
+    addFileConfig(dc, "documenttypes",
+                  vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg");
     addStorageDistributionConfig(dc);
     return dc;
 }

@@ -72,8 +72,7 @@ Fixture::Fixture()
     DocumentType docType("typea", 0);
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(docType));
     TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
-    std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-    config::DirSpec spec(srcDir + "/cfg");
+    config::DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfg");
     DocumentDBConfigHelper mgr(spec, "typea");
     BootstrapConfig::SP
         b(new BootstrapConfig(1,

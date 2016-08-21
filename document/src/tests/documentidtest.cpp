@@ -5,13 +5,13 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <sstream>
 #include <string>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
-#include "documenttestutils.h"
 
 using document::VespaDocumentDeserializer;
 using document::VespaDocumentSerializer;
@@ -82,7 +82,7 @@ void DocumentIdTest::generateJavaComplianceFile()
         writeGlobalIdBucketId(ost, "id:np:type:g=agroup:another");
         writeGlobalIdBucketId(ost, "id:ns:type:g=another:specific");
         FastOS_File file;
-        CPPUNIT_ASSERT(file.OpenWriteOnlyTruncate((DocumentTestUtils::srcDir() + "cpp-globalidbucketids.txt").c_str()));
+        CPPUNIT_ASSERT(file.OpenWriteOnlyTruncate((vespalib::TestApp::GetSourceDirectory() + "cpp-globalidbucketids.txt").c_str()));
         std::string content(ost.str());
         CPPUNIT_ASSERT(file.CheckedWrite(content.c_str(), content.size()));
         CPPUNIT_ASSERT(file.Close());

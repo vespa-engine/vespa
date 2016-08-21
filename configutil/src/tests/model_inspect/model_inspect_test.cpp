@@ -33,8 +33,8 @@ public:
 
     static config::ConfigUri configUri(const std::string &type, const std::string &name)
     {
-        static const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-        return config::ConfigUri(type + ":" + src_dir + "/" + name);
+        return config::ConfigUri(type + ":" +
+                                 vespalib::TestApp::GetSourceDirectory() + "/" + name);
     }
 };
 

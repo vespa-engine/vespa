@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/config.h>
 #include <vespa/config/raw/rawsource.h>
 #include "config-my.h"
@@ -34,9 +35,7 @@ TEST("requireThatGetConfigReturnsCorrectConfig")
 
 TEST("requireThatGetConfigReturnsCorrectConfig")
 {
-    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-
-    FileSpec spec(src_dir + "/my.cfg");
+    FileSpec spec(vespalib::TestApp::GetSourceDirectory() + "/my.cfg");
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("", spec);
     ASSERT_TRUE(cfg.get() != NULL);
     ASSERT_EQUAL("my", cfg->defName());

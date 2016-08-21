@@ -24,6 +24,7 @@ LOG_SETUP(".test.bucketdb.bucketmanager");
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <thread>
 #include <future>
@@ -97,7 +98,6 @@ public:
     std::map<document::BucketId, TestBucketInfo> _bucketInfo;
     uint32_t _emptyBuckets;
     document::Document::SP _document;
-    const std::string _srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
 
     void setupTestEnvironment(bool fakePersistenceLayer = true,
                               bool noDelete = false);
@@ -194,8 +194,8 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     vdstestlib::DirConfig config(getStandardConfig(true));
 
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(
-                *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes",
-                FileSpec(_srcDir + "/config-doctypes.cfg"))));
+                *ConfigGetter<DocumenttypesConfig>::getConfig(
+                    "config-doctypes", FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
     _top.reset(new DummyStorageLink);
     _node.reset(new TestServiceLayerApp(
                 DiskCount(2), NodeIndex(0), config.getConfigId()));

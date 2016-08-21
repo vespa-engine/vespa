@@ -24,6 +24,7 @@ LOG_SETUP("docsummary_test");
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/searchlib/attribute/tensorattribute.h>
+#include "../../../../../vespalib/src/vespa/vespalib/testkit/testapp.h"
 
 using namespace document;
 using namespace search;
@@ -155,7 +156,7 @@ public:
           _queryLimiter(),
           _clock(),
           _dummy(),
-          _spec(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
+          _spec(vespalib::TestApp::GetSourceDirectory()),
           _configMgr(_spec, getDocTypeName()),
           _documenttypesConfig(new DocumenttypesConfig()),
           _repo(repo),
@@ -1246,13 +1247,13 @@ Test::Test()
       _resultCfg(),
       _markupFields()
 {
-    auto envSrcDir = getenv("SOURCE_DIRECTORY");
-    std::string srcDir = envSrcDir ? envSrcDir : ".";
     std::string cfgId("summary");
-    _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(cfgId, config::FileSpec(srcDir + "/summary.cfg"));
+    _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
+        cfgId, config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "summary.cfg"));
     _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
     std::string mapCfgId("summarymap");
-    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(mapCfgId, config::FileSpec(srcDir + "/summarymap.cfg"));
+    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(
+            mapCfgId, config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "summarymap.cfg"));
     for (size_t i = 0; i < mapCfg->override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = mapCfg->override[i];
         if (o.command == "dynamicteaser") {

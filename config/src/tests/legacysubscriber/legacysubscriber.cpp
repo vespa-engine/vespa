@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/helper/legacysubscriber.h>
 #include <fstream>
 #include <config-my.h>
@@ -27,8 +28,8 @@ struct ConfigIdGenerator
 {
     static std::string id(const std::string &type, const std::string &name)
     {
-        static const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-        return std::string(type + ":" + src_dir + "/" + name);
+        return std::string(type + ":" +
+                           vespalib::TestApp::GetSourceDirectory() + name);
     }
 };
 

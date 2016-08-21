@@ -132,8 +132,7 @@ Test::testDirPointer()
         EXPECT_TRUE(!dir.valid());
     }
     {
-        const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-        DirPointer dir(opendir(srcDir.c_str()));
+        DirPointer dir(opendir(vespalib::TestApp::GetSourceDirectory().c_str()));
         EXPECT_TRUE(dir.valid());
 
         dirent *de;
