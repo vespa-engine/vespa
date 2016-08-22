@@ -5,8 +5,7 @@
 using namespace search;
 using namespace search::docstore;
 
-TEST("require that KeySet compares well")
-{
+TEST("require that KeySet compares well") {
     KeySet a({2,1,4,3,9,6});
     EXPECT_TRUE(a.contains(1));
     EXPECT_TRUE(a.contains(2));
@@ -38,6 +37,32 @@ TEST("require that KeySet compares well")
     EXPECT_EQUAL(4, a.getKeys()[3]);
     EXPECT_EQUAL(6, a.getKeys()[4]);
     EXPECT_EQUAL(9, a.getKeys()[5]);
+}
+
+namespace {
+
+void verifyAB(const BlobSet & a) {
+    EXPECT_EQUAL(0, a.get(8).size());
+    EXPECT_EQUAL(6, a.get(7).size());
+    EXPECT_EQUAL(5, a.get(9).size());
+    EXPECT_EQUAL(0, strncmp(a.get(7).c_str(), "aaaaaa", 6));
+    EXPECT_EQUAL(0, strncmp(a.get(9).c_str(), "bbbbb", 5));
+    EXPECT_EQUAL(11, a.getBuffer().size());
+    EXPECT_EQUAL(0, strncmp(a.getBuffer().c_str(), "aaaaaabbbbb", 11));
+}
+
+}
+
+using B=vespalib::ConstBufferRef;
+TEST("require that BlobSet can be built") {
+    BlobSet a;
+    a.append(7, B("aaaaaa",6));
+    a.append(9, B("bbbbbb",5));
+    verifyAB(a);
+    document::CompressionConfig cfg(document::CompressionConfig::LZ4);
+    CompressedBlobSet ca(cfg, a);
+    BlobSet b = ca.getBlobSet();
+    verifyAB(b);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

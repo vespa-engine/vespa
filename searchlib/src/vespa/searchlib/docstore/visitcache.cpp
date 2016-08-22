@@ -102,7 +102,7 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     if ( ! _positions.empty() ) {
         vespalib::DataBuffer compressed;
         vespalib::ConstBufferRef org = uncompressed.getBuffer();
-        document::compress(_compression, org, compressed, false);
+        _compression = document::compress(compression, org, compressed, false);
         _buffer.resize(compressed.getDataLen());
         memcpy(_buffer, compressed.getData(), compressed.getDataLen());
     }

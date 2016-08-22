@@ -44,7 +44,6 @@ public:
     void remove(uint32_t lid);
     const Positions & getPositions() const { return _positions; }
     vespalib::ConstBufferRef get(uint32_t lid) const;
-    vespalib::ConstBufferRef getBuffer(uint32_t lid) const;
     vespalib::ConstBufferRef getBuffer() const { return vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()); }
 private:
     Positions           _positions;
