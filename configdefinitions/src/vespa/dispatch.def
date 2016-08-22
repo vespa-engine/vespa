@@ -5,7 +5,7 @@ namespace=vespa.config.search
 
 # The active docs a group must have as a % of the average active docs of all other groups,
 # for that group to be included in queries
-min_activedocs_coverage double default=97.0
+minActivedocsPercentage double default=97.0
 
 # The unique key of a search node
 node[].key int
