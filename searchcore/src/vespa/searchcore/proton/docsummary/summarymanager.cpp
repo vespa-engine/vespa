@@ -118,7 +118,7 @@ search::DocumentStore::Config getStoreConfig(const ProtonConfig::Summary::Cache 
         compression.type = document::CompressionConfig::LZ4;
     }
     compression.compressionLevel = cache.compression.level;
-    return search::DocumentStore::Config(compression, cache.maxbytes, cache.initialentries);
+    return search::DocumentStore::Config(compression, cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
 }
