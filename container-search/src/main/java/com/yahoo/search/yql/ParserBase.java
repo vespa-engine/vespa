@@ -15,6 +15,7 @@ import java.util.Set;
 abstract class ParserBase extends Parser {
 
     private static String arrayRuleName = "array";
+
     public ParserBase(TokenStream input) {
         super(input);
     }
