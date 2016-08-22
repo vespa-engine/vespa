@@ -384,7 +384,7 @@ public abstract class IndexedSearchCluster extends SearchCluster
             nodeBuilder.port(node.getRpcPort());
             nodeBuilder.fs4port(node.getDispatchPort());
             if (tuning.dispatch.minActiveDocsCoverage != null)
-                builder.min_activedocs_coverage(tuning.dispatch.minActiveDocsCoverage);
+                builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
             builder.node(nodeBuilder);
         }
     }

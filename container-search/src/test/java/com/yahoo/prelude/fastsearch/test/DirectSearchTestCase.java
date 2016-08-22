@@ -109,9 +109,7 @@ public class DirectSearchTestCase {
         tester.setActiveDocuments(FastSearcherTester.selfHostname, 100);
         assertEquals("1 ping request, 0 search requests", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
-        assertEquals("1 ping request, 0 search requests",
-                     2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-
+        assertEquals("1 ping request, 1 search requests", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
 }
