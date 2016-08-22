@@ -210,7 +210,7 @@ public:
         _defaultSerializedSize(defaultSerializedSize),
         _allowVisitCaching(false)
     { }
-    MatchVisitor & allowVisitCaching(bool allow) { return *this; }
+    MatchVisitor & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     void visit(uint32_t lid, document::Document::UP doc) override {
         const search::DocumentMetaData & meta = _metaData[_lidIndexMap[lid]];
         assert(lid == meta.lid);

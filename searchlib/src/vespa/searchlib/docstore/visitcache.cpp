@@ -29,6 +29,31 @@ KeySet::contains(const KeySet &rhs) const {
     return b == rhs._keys.size();
 }
 
+BlobSet::BlobSet() :
+    _positions(),
+    _buffer()
+{ }
+
+namespace {
+
+size_t getTotalSize(const BlobSet::Positions & p) {
+    return p.empty() ? 0 : p.back().offset() + p.back().size();
+}
+
+}
+
+BlobSet::BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer) :
+    _positions(positions),
+    _buffer(std::move(buffer), getTotalSize(_positions))
+{
+}
+
+void
+BlobSet::append(uint32_t lid, vespalib::ConstBufferRef blob) {
+    _positions.emplace_back(lid, getTotalSize(_positions), blob.size());
+    _buffer.write(blob.c_str(), blob.size());
+}
+
 vespalib::ConstBufferRef
 BlobSet::get(uint32_t lid) const
 {
@@ -43,36 +68,80 @@ BlobSet::get(uint32_t lid) const
 }
 
 CompressedBlobSet::CompressedBlobSet() :
+    _compression(),
     _positions(),
     _buffer()
 {
 }
 
 CompressedBlobSet::CompressedBlobSet(CompressedBlobSet && rhs) :
+    _compression(std::move(rhs._compression)),
     _positions(std::move(rhs._positions)),
     _buffer(std::move(rhs._buffer))
 {
 }
 
 CompressedBlobSet & CompressedBlobSet::operator=(CompressedBlobSet && rhs) {
+    _compression = std::move(rhs._compression);
     _positions = std::move(rhs._positions);
     _buffer = std::move(rhs._buffer);
     return *this;
 }
 
+CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed) :
+    _compression(compression.type),
+    _positions(uncompressed.getPositions()),
+    _buffer()
+{
+    if ( ! _positions.empty() ) {
+    }
+}
+
+void CompressedBlobSet::swap(CompressedBlobSet & rhs) {
+    std::swap(_compression, rhs._compression);
+    _positions.swap(rhs._positions);
+    _buffer.swap(rhs._buffer);
+}
+
 BlobSet
 CompressedBlobSet::getBlobSet() const
 {
-    BlobSet blobSet;
-    return blobSet;
+    vespalib::DataBuffer uncompressed;
+    if ( ! _positions.empty() ) {
+        document::decompress(_compression, getTotalSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, true);
+    }
+    return BlobSet(_positions, uncompressed.stealBuffer());
+}
+
+namespace {
+
+class VisitCollector : public IBufferVisitor
+{
+public:
+    VisitCollector() :
+        _blobSet()
+    { }
+    void visit(uint32_t lid, vespalib::ConstBufferRef buf) override;
+    const BlobSet & getBlobSet() const { return _blobSet; }
+private:
+    BlobSet _blobSet;
+};
+
+void
+VisitCollector::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
+    if (buf.size() > 0) {
+        _blobSet.append(lid, buf);
+    }
+}
+
 }
 
 bool
 VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
-    (void) key;
-    (void) blobs;
-    bool retval(false);
-    return retval;
+    VisitCollector collector;
+    _backingStore.read(key.getKeys(), collector);
+    CompressedBlobSet(_compression, collector.getBlobSet()).swap(blobs);
+    return true;
 }
 
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :

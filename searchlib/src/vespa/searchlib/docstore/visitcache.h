@@ -4,6 +4,7 @@
 
 #include "idocumentstore.h"
 #include <vespa/vespalib/stllike/cache.h>
+#include <vespa/vespalib/util/alloc.h>
 
 namespace search {
 namespace docstore {
@@ -16,6 +17,7 @@ public:
     bool operator==(const KeySet &rhs) const { return _keys == rhs._keys; }
     bool operator<(const KeySet &rhs) const { return _keys < rhs._keys; }
     bool contains(const KeySet &rhs) const;
+    const IDocumentStore::LidVector & getKeys() const { return _keys; }
 private:
     IDocumentStore::LidVector _keys;
 };
@@ -35,8 +37,11 @@ public:
     };
 
     typedef std::vector<LidPosition> Positions;
+    BlobSet();
+    BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer);
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
     void remove(uint32_t lid);
+    const Positions & getPositions() const { return _positions; }
     vespalib::ConstBufferRef get(uint32_t lid) const;
     vespalib::ConstBufferRef getBuffer(uint32_t lid) const;
 private:
@@ -47,16 +52,18 @@ private:
 class CompressedBlobSet {
 public:
     CompressedBlobSet();
-    CompressedBlobSet(const BlobSet & uncompressed);
+    CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed);
     CompressedBlobSet(CompressedBlobSet && rhs);
     CompressedBlobSet & operator=(CompressedBlobSet && rhs);
-    CompressedBlobSet(const CompressedBlobSet &) = default;
-    CompressedBlobSet & operator=(const CompressedBlobSet &) = default;
+    CompressedBlobSet(const CompressedBlobSet & rhs) = default;
+    CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
+    void swap(CompressedBlobSet & rhs);
     size_t size() const { return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer.size(); }
     BlobSet getBlobSet() const;
 private:
-    BlobSet::Positions  _positions;
-    vespalib::MallocPtr _buffer;
+    document::CompressionConfig::Type _compression;
+    BlobSet::Positions                _positions;
+    vespalib::MallocPtr               _buffer;
 };
 
 class VisitCache {
