@@ -134,7 +134,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +
-                               ( hostProvisioner.isPresent() ? hostProvisioner.get() : " no host provisioner" ) +
+                               ( hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner" ) +
                                ". Config generation " + session.getMetaData().getGeneration());
     }
 
