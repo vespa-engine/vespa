@@ -35,7 +35,7 @@ TEST("requireThatGetConfigReturnsCorrectConfig")
 
 TEST("requireThatGetConfigReturnsCorrectConfig")
 {
-    FileSpec spec(vespalib::TestApp::GetSourceDirectory() + "/my.cfg");
+    FileSpec spec(vespalib::TestApp::GetSourceDirectory() + "my.cfg");
     std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("", spec);
     ASSERT_TRUE(cfg.get() != NULL);
     ASSERT_EQUAL("my", cfg->defName());
