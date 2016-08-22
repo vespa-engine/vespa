@@ -34,7 +34,7 @@ public:
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         bool allowVisitCaching() const { return _allowVisitCaching; }
-        Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow;return *this; }
+        Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     private:
         document::CompressionConfig _compression;
         size_t _maxCacheBytes;
