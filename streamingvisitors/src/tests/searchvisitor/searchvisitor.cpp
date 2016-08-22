@@ -35,7 +35,7 @@ public:
 SearchVisitorTest::SearchVisitorTest() :
     vespalib::TestApp(),
     _componentRegister(),
-    _env("dir:cfg")
+    _env("dir:" + GetSourceDirectory() + "cfg")
 {
     _componentRegister.setNodeInfo("mycluster", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
@@ -92,13 +92,13 @@ SearchVisitorTest::testSearchVisitor()
     vespalib::string stackDump = StackDumpCreator::create(*node);
 
     params.set("query", stackDump);
-    testCreateSearchVisitor("dir:cfg", params);
+    testCreateSearchVisitor("dir:" + GetSourceDirectory() + "cfg", params);
 }
 
 void
 SearchVisitorTest::testOnlyRequireWeakReadConsistency()
 {
-    SearchVisitorFactory factory("dir:cfg");
+    SearchVisitorFactory factory("dir:" + GetSourceDirectory() + "cfg");
     VisitorFactory& factoryBase(factory);
     vdslib::Parameters params;
     std::unique_ptr<Visitor> sv(
