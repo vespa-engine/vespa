@@ -5,6 +5,12 @@
 namespace search {
 namespace docstore {
 
+KeySet::KeySet(uint32_t key) :
+    _keys()
+{
+    _keys.push_back(key);
+}
+
 KeySet::KeySet(const IDocumentStore::LidVector &keys) :
     _keys(keys)
 {
