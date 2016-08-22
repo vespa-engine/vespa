@@ -87,8 +87,8 @@ private:
         void erase(const KeySet &) { }
         const document::CompressionConfig &getCompression(void) const { return _compression; }
     private:
-        IDataStore &_backingStore;
-        const document::CompressionConfig &_compression;
+        IDataStore                        &_backingStore;
+        const document::CompressionConfig  _compression;
     };
 
     typedef vespalib::CacheParam<vespalib::LruParam<KeySet, CompressedBlobSet>,
