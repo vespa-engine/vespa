@@ -24,7 +24,6 @@ LOG_SETUP("docsummary_test");
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/searchlib/attribute/tensorattribute.h>
-#include "../../../../../vespalib/src/vespa/vespalib/testkit/testapp.h"
 
 using namespace document;
 using namespace search;

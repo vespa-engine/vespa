@@ -81,7 +81,7 @@ Test::readSpanTree(const string &file_name, const FixedTypeRepo &repo) {
 
 void Test::requireThatSimpleSpanTreeIsDeserialized() {
     DocumentTypeRepo type_repo(readDocumenttypesConfig(
-            (vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
+            vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg"));
     FixedTypeRepo repo(type_repo);
     SpanTree::UP span_tree = std::move(readSpanTree(
             vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_simple", repo).front());
@@ -128,7 +128,7 @@ struct AnnotationComparator {
 
 void Test::requireThatAdvancedSpanTreeIsDeserialized() {
     DocumentTypeRepo type_repo(
-            readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
+            readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg"));
     FixedTypeRepo repo(type_repo, "my_document");
     SpanTree::UP span_tree = std::move(readSpanTree(
             vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_advanced", repo).front());
@@ -223,7 +223,7 @@ void Test::requireThatAdvancedSpanTreeIsDeserialized() {
 
 void Test::requireThatSpanTreeCanBeSerialized() {
     DocumentTypeRepo type_repo(
-            readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg").c_str()));
+            readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() + "annotation.serialize.test.repo.cfg"));
     FixedTypeRepo repo(type_repo, "my_document");
     string file_name = vespalib::TestApp::GetSourceDirectory() + "test_data_serialized_advanced";
 

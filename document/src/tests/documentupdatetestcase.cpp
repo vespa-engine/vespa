@@ -574,7 +574,7 @@ void DocumentUpdateTest::testReadSerializedFile()
 {
     // Reads a file serialized from java
     const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serializeupdatejava.dat").c_str(), O_RDONLY);
 
@@ -651,7 +651,7 @@ void DocumentUpdateTest::testGenerateSerializedFile()
 {
     // Tests nothing, only generates a file for java test
     const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
     DocumentUpdate upd(*type, DocumentId(DocIdString("update", "test")));

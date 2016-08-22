@@ -99,7 +99,7 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
 void TestXml::testSimpleUsage()
 {
     DocumentTypeRepo repo(readDocumenttypesConfig(
-            (vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg").c_str()));
+            vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg"));
     Document::UP doc1(createTestDocument(repo));
     doc1->setValue(doc1->getField("stringattr"), StringFieldValue("tjohei���"));
 
@@ -129,7 +129,7 @@ void TestXml::testSimpleUsage()
 void TestXml::testDocumentUpdate()
 {
     DocumentTypeRepo repo(readDocumenttypesConfig(
-            (vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg").c_str()));
+            vespalib::TestApp::GetSourceDirectory() + "data/defaultdoctypes.cfg"));
     DocumentUpdate::UP up1(createTestDocumentUpdate(repo));
 
     std::string expected =

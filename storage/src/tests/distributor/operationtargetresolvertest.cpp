@@ -51,7 +51,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
         _repo.reset(new document::DocumentTypeRepo(
                 *config::ConfigGetter<document::DocumenttypesConfig>::getConfig(
                     "config-doctypes",
-                    config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "/config-doctypes.cfg"))));
+                    config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     };

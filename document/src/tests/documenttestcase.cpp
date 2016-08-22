@@ -591,7 +591,7 @@ void DocumentTest::testReadSerializedFile()
 {
     // Reads a file serialized from java
     const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serializejava.dat").c_str(), O_RDONLY);
 
@@ -626,7 +626,7 @@ void DocumentTest::testReadSerializedFileCompressed()
     // Reads a file serialized from java
     const std::string file_name = vespalib::TestApp::GetSourceDirectory() +
             "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serializejava-compressed.dat").c_str(), O_RDONLY);
 
@@ -870,7 +870,7 @@ size_t getSerializedSizeBody(const Document &doc) {
 void DocumentTest::testGenerateSerializedFile()
 {
     const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
     Document doc(*repo.getDocumentType("serializetest"),
                  DocumentId(DocIdString("serializetest",
                                         "http://test.doc.id/")));

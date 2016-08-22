@@ -1272,7 +1272,7 @@ FieldPathUpdateTestCase::testReadSerializedFile()
 {
     // Reads a file serialized from java
     const std::string cfg_file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
 
     int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serialize-fieldpathupdate-java.dat").c_str(), O_RDONLY);
 
@@ -1296,7 +1296,7 @@ void
 FieldPathUpdateTestCase::testGenerateSerializedFile()
 {
     const std::string cfg_file_name = vespalib::TestApp::GetSourceDirectory()+ "data/crossplatform-java-cpp-doctypes.cfg";
-    DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name.c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
     // Tests nothing, only generates a file for java test
     DocumentUpdate::UP upd(
             createDocumentUpdateForSerialization(repo));

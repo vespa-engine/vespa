@@ -34,7 +34,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 
     DocumentApiConverterTest()
         : _repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                    (vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg").c_str()))),
+                    vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }

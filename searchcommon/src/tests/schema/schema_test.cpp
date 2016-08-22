@@ -57,15 +57,8 @@ void assertSchema(const Schema & exp, const Schema & act) {
     }
 }
 
-const std::string& configDirSpec() {
-    static const std::string dir = "dir:" + vespalib::TestApp::GetSourceDirectory();
-    return dir;
-}
-
-
 TEST("testBasic") {
     Schema s;
-
     EXPECT_EQUAL(0u, s.getNumIndexFields());
     EXPECT_EQUAL(0u, s.getNumAttributeFields());
     EXPECT_EQUAL(0u, s.getNumSummaryFields());
@@ -168,7 +161,7 @@ TEST("testLoadAndSave") {
 
     { // load from config -> save to file -> load from file
         Schema s;
-        SchemaConfigurer configurer(s, configDirSpec());
+        SchemaConfigurer configurer(s, "dir:" + vespalib::TestApp::GetSourceDirectory());
         EXPECT_EQUAL(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));

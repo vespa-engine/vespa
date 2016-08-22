@@ -47,8 +47,8 @@ int Test::Main() {
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
 void Test::requireThatStructFieldsCanContainAnnotations() {
-    DocumentTypeRepo repo(readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory()
-                                                   + "documenttypes.cfg").c_str()));
+    DocumentTypeRepo repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory()
+                                                   + "documenttypes.cfg"));
 
     FastOS_File file((vespalib::TestApp::GetSourceDirectory() + "document.dat").c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());

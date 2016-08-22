@@ -94,8 +94,8 @@ void
 DocumentTypeTest::testInheritanceConfig()
 {
     DocumentTypeRepo
-        repo(readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() +
-            "data/inheritancetest.cfg").c_str()));
+        repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() +
+            "data/inheritancetest.cfg"));
     {
         const DocumentType* type(repo.getDocumentType("music"));
         CPPUNIT_ASSERT(type != NULL);
@@ -111,8 +111,8 @@ void
 DocumentTypeTest::testHeaderContent()
 {
     DocumentTypeRepo
-        repo(readDocumenttypesConfig((vespalib::TestApp::GetSourceDirectory() +
-            "data/doctypesconfigtest.cfg").c_str()));
+        repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() +
+            "data/doctypesconfigtest.cfg"));
 
     const DocumentType* type(repo.getDocumentType("derived"));
 
