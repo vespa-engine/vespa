@@ -68,7 +68,7 @@ BlobSet::get(uint32_t lid) const
 }
 
 CompressedBlobSet::CompressedBlobSet() :
-    _compression(),
+    _compression(document::CompressionConfig::Type::LZ4),
     _positions(),
     _buffer()
 {
