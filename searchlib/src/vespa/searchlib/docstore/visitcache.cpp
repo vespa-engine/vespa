@@ -94,6 +94,11 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     _buffer()
 {
     if ( ! _positions.empty() ) {
+        vespalib::DataBuffer compressed;
+        vespalib::ConstBufferRef org = uncompressed.getBuffer();
+        document::compress(_compression, org, compressed, false);
+        _buffer.resize(compressed.getDataLen());
+        memcpy(_buffer, compressed.getData(), compressed.getDataLen());
     }
 }
 
@@ -108,7 +113,7 @@ CompressedBlobSet::getBlobSet() const
 {
     vespalib::DataBuffer uncompressed;
     if ( ! _positions.empty() ) {
-        document::decompress(_compression, getTotalSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, true);
+        document::decompress(_compression, getTotalSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
     }
     return BlobSet(_positions, uncompressed.stealBuffer());
 }
