@@ -12,7 +12,7 @@ import java.util.Map;
  * A context implementation whose identity is the key and values such that this can be used as
  * a key in metrics lookups.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class StateMetricContext implements MetricDimensions, Metric.Context {
 
@@ -53,4 +53,5 @@ public final class StateMetricContext implements MetricDimensions, Metric.Contex
         }
         return new StateMetricContext(data);
     }
+
 }

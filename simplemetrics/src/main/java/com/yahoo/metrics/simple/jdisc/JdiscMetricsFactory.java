@@ -17,6 +17,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class JdiscMetricsFactory implements MetricConsumerFactory, SnapshotProvider {
+
     private static final Logger log = Logger.getLogger(JdiscMetricsFactory.class.getName());
     private final SimpleMetricConsumer metricInstance;
     private final MetricReceiver metricReceiver;
@@ -50,11 +51,9 @@ public class JdiscMetricsFactory implements MetricConsumerFactory, SnapshotProvi
         Bucket curr = metricReceiver.getSnapshot();
         if (curr == null) {
             log.warning("no snapshot from instance of " + metricInstance.getClass());
-            return;
         } else {
             SnapshotConverter converter = new SnapshotConverter(curr);
             converter.outputHistograms(output);
-            return;
         }
     }
 

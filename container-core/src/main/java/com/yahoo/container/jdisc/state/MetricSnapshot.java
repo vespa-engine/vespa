@@ -92,4 +92,5 @@ public final class MetricSnapshot implements Iterable<Map.Entry<MetricDimensions
         }
         return createWithMetrics(newData);
     }
+
 }

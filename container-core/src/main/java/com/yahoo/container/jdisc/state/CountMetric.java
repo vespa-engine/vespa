@@ -38,4 +38,5 @@ public final class CountMetric extends MetricValue {
     public static CountMetric newInstance(long val) {
         return new CountMetric(val);
     }
+
 }

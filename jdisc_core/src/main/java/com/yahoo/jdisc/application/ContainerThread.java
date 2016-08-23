@@ -12,15 +12,15 @@ import java.util.concurrent.ThreadFactory;
  * application should use this class instead of Thread. The {@link ContainerThread.Factory} class is a helper-class for
  * working with the {@link Executors} framework.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class ContainerThread extends Thread {
 
     private final MetricConsumer consumer;
 
     /**
-     * <p>Allocates a new ContainerThread object. This constructor calls the parent {@link Thread#Thread(Runnable)}
-     * constructor.</p>
+     * Allocates a new ContainerThread object. This constructor calls the parent {@link Thread#Thread(Runnable)}
+     * constructor.
      *
      * @param target   The object whose <code>run</code> method is called.
      * @param consumer The MetricConsumer of this thread.
@@ -40,8 +40,8 @@ public class ContainerThread extends Thread {
     }
 
     /**
-     * <p>This class implements the {@link ThreadFactory} interface on top of a {@link Provider} for {@link
-     * MetricConsumer} instances.</p>
+     * This class implements the {@link ThreadFactory} interface on top of a {@link Provider} for {@link
+     * MetricConsumer} instances.
      */
     public static class Factory implements ThreadFactory {
 
@@ -57,4 +57,5 @@ public class ContainerThread extends Thread {
             return new ContainerThread(target, provider.get());
         }
     }
+
 }
