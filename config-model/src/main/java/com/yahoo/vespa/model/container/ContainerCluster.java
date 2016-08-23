@@ -619,8 +619,9 @@ public final class ContainerCluster
     @Override
     public void getConfig(BundlesConfig.Builder builder) {
         Stream.concat(applicationBundles.stream().map(FileReference::value),
-                      platformBundles.stream().map(ContainerCluster::toFileReferenceString))
-                .forEach(builder::bundle);
+                      platformBundles.stream()
+                                     .map(ContainerCluster::toFileReferenceString))
+                                     .forEach(builder::bundle);
     }
 
     private static String toFileReferenceString(Path path) {
@@ -792,18 +793,12 @@ public final class ContainerCluster
         return concreteDocumentTypes;
     }
 
-    /**
-     * The configured service aliases for the service in this cluster
-     * @return alias list
-     */
+    /** The configured service aliases for the service in this cluster */
     public List<String> serviceAliases() {
         return serviceAliases;
     }
 
-    /**
-     * The configured endpoint aliases (fqdn) for the service in this cluster
-     * @return alias list
-     */
+    /** The configured endpoint aliases (fqdn) for the service in this cluster */
     public List<String> endpointAliases() {
         return endpointAliases;
     }

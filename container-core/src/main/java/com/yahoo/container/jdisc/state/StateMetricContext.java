@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public final class StateMetricContext implements MetricDimensions, Metric.Context {
 
-    private final Map<String, String> data;
+    private final Map<String, String> data; // effectively immutable
     private final int hashCode;
 
     private StateMetricContext(Map<String, String> data) {

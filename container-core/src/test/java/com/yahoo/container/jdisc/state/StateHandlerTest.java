@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -103,9 +104,15 @@ public class StateHandlerTest {
         metric.add("foo", 1, null);
         metric.set("bar", 4, null);
         incrementCurrentTime(SNAPSHOT_INTERVAL);
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        assertEquals(json.toString(), "up", json.get("status").get("code").asText());
-        assertEquals(json.toString(), 2, json.get("metrics").get("values").size());
+        JsonNode json1 = requestAsJson("http://localhost/state/v1/metrics");
+        assertEquals(json1.toString(), "up", json1.get("status").get("code").asText());
+        assertEquals(json1.toString(), 2, json1.get("metrics").get("values").size());
+
+        metric.add("fuz", 1, metric.createContext(new HashMap<>(0)));
+        incrementCurrentTime(SNAPSHOT_INTERVAL);
+        JsonNode json2 = requestAsJson("http://localhost/state/v1/metrics");
+        assertEquals(json2.toString(), "up", json2.get("status").get("code").asText());
+        assertEquals(json2.toString(), 3, json2.get("metrics").get("values").size());
     }
 
     /**
