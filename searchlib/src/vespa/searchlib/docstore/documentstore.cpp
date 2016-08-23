@@ -394,8 +394,11 @@ DocumentStore::getFileChunkStats() const
 }
 
 CacheStats DocumentStore::getCacheStats() const {
-    return CacheStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
-                      _cache->size(), _cache->sizeBytes());
+    CacheStats visitStats = _visitCache->getCacheStats();
+    CacheStats singleStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
+                           _cache->size(), _cache->sizeBytes());
+    singleStats += visitStats;
+    return singleStats;
 }
 
 } // namespace search

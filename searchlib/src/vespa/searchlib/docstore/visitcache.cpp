@@ -171,6 +171,11 @@ VisitCache::remove(uint32_t key) {
     _cache->removeKey(key);
 }
 
+CacheStats
+VisitCache::getCacheStats() const {
+    return CacheStats(_cache->getHit(), _cache->getMiss(), _cache->size(), _cache->sizeBytes());
+}
+
 VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
     Parent(b, maxBytes)
 { }

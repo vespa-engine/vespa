@@ -3,6 +3,7 @@
 #pragma once
 
 #include "idocumentstore.h"
+#include "cachestats.h"
 #include <vespa/vespalib/stllike/cache.h>
 #include <vespa/vespalib/util/alloc.h>
 
@@ -77,6 +78,7 @@ public:
     CompressedBlobSet read(const Keys & keys) const;
     void remove(uint32_t key);
 
+    CacheStats getCacheStats() const;
 private:
     class BackingStore {
     public:
