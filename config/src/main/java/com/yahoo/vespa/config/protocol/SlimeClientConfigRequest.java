@@ -5,7 +5,6 @@ import com.yahoo.jrt.*;
 import com.yahoo.slime.*;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -185,12 +184,6 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
             return false;
         } else if (!checkReturnTypes(request)) {
             log.warning("Invalid return types for config response: " + errorMessage());
-            return false;
-        }
-        if (hasUpdatedConfig() && ! hasUpdatedGeneration()) {
-            request.setError(ErrorCode.OUTDATED_CONFIG, "Config payload has changed (old config md5:" +
-                    getRequestConfigMd5() + ", new config md5: " + getNewConfigMd5() +"), but new generation " +
-                    getNewGeneration() + " is not newer than current generation " + getRequestGeneration()  + ".");
             return false;
         }
         return true;
