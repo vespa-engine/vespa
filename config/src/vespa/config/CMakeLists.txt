@@ -6,6 +6,7 @@ vespa_add_library(config_cloudconfig
     $<TARGET_OBJECTS:config_configgen>
     $<TARGET_OBJECTS:config_raw>
     $<TARGET_OBJECTS:config_file>
+    $<TARGET_OBJECTS:config_file_acquirer>
     $<TARGET_OBJECTS:config_frt>
     $<TARGET_OBJECTS:config_helper>
     $<TARGET_OBJECTS:config_print>
