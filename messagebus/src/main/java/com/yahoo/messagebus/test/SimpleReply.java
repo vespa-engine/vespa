@@ -5,7 +5,7 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.text.Utf8String;
 
 /**
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class SimpleReply extends Reply {
 
