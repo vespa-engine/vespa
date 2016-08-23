@@ -120,7 +120,11 @@ public:
      * Object is then put at head of LRU list.
      */
     insert_result insert(const K & key, const V & value) {
-        return insert(value_type(key, LV(value)));
+        insert_result res = insert(value_type(key, LV(value)));
+        if (res.second) {
+            onInsert(key);
+        }
+        return res;
     }
 
     /**
@@ -154,6 +158,12 @@ public:
     virtual bool removeOldest(const value_type & v) {
         (void) v;
         return (size() > capacity());
+    }
+    virtual void onRemove(const K & key) {
+        (void) key;
+    }
+    virtual void onInsert(const K & key) {
+        (void) key;
     }
 
     /**
@@ -255,6 +265,7 @@ void
 lrucache_map<P>::erase(const K & key) {
     internal_iterator it = HashTable::find(key);
     if (it != HashTable::end()) {
+        onRemove(key);
         LV & v = it->second;
         if (v._prev != LinkedValueBase::npos) {
             HashTable::getByInternalIndex(v._prev).second._next = v._next;
