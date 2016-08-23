@@ -99,9 +99,11 @@ LogDataStore::read(const LidVector & lids, IBufferVisitor & visitor) const
     LidInfoWithLidV orderedLids;
     GenerationHandler::Guard guard(_genHandler.takeGuard());
     for (uint32_t lid : lids) {
-        LidInfo li = _lidInfo[lid];
-        if (!li.empty() && li.valid()) {
-            orderedLids.emplace_back(li, lid);
+        if (lid < _lidInfo.size()) {
+            LidInfo li = _lidInfo[lid];
+            if (!li.empty() && li.valid()) {
+                orderedLids.emplace_back(li, lid);
+            }
         }
     }
     if (orderedLids.empty()) { return; }
