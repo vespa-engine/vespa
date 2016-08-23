@@ -5,4 +5,3 @@ vespa_add_executable(searchlib_attributebenchmark_app
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_attributebenchmark_app COMMAND searchlib_attributebenchmark_app BENCHMARK)

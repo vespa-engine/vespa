@@ -9,4 +9,4 @@ vespa_add_executable(logd_dummylogger_app
     dummylogger.cpp
     DEPENDS
 )
-vespa_add_test(NAME logd_rotate_test NO_VALGRIND COMMAND sh rotate_test.sh BENCHMARK)
+vespa_add_test(NAME logd_rotate_test NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/rotate_test.sh BENCHMARK)
