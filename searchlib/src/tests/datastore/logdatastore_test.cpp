@@ -375,9 +375,14 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
     datastore.write(2,2, A7, 7);
     datastore.write(3,3, A7, 7);
-    datastore.write(3,4, A7, 7);
+    datastore.write(4,4, A7, 7);
+    visitCache.remove(1);
     EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
-    EXPECT_EQUAL(4u, visitCache.read({1,2,3,4,5}).getBlobSet().getPositions().size());
+    EXPECT_EQUAL(2u, visitCache.read({2,4,5}).getBlobSet().getPositions().size());
+    datastore.remove(5, 3);
+    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    visitCache.remove(3);
+    EXPECT_EQUAL(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
 }
 
 TEST("testWriteRead") {

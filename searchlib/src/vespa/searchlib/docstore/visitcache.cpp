@@ -168,8 +168,40 @@ VisitCache::read(const Keys & keys) const {
 
 void
 VisitCache::remove(uint32_t key) {
-    // shall modify the cached element
-    (void) key;
+    _cache->removeKey(key);
+}
+
+VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
+    Parent(b, maxBytes)
+{ }
+
+void
+VisitCache::Cache::removeKey(uint32_t subKey) {
+    // Need to take hashLock
+    auto cacheGuard = getGuard();
+    const auto foundLid = _lid2Id.find(subKey);
+    if (foundLid != _lid2Id.end()) {
+        K keySet = _id2KeySet[foundLid->second];
+        cacheGuard.unlock();
+        invalidate(keySet);
+    }
+}
+
+void
+VisitCache::Cache::onInsert(const K & key) {
+    uint32_t first(key.getKeys().front());
+    _id2KeySet[first] = key;
+    for(uint32_t subKey : key.getKeys()) {
+        _lid2Id[subKey] = first;
+    }
+}
+
+void
+VisitCache::Cache::onRemove(const K & key) {
+    for (uint32_t subKey : key.getKeys()) {
+        _lid2Id.erase(subKey);
+    }
+    _id2KeySet.erase(key.getKeys().front());
 }
 
 }

@@ -97,7 +97,20 @@ private:
         BackingStore,
         vespalib::zero<KeySet>,
         vespalib::size<CompressedBlobSet> > CacheParams;
-    typedef vespalib::cache<CacheParams> Cache;
+
+    class Cache : public vespalib::cache<CacheParams> {
+    public:
+        Cache(BackingStore & b, size_t maxBytes);
+        void removeKey(uint32_t);
+    private:
+        typedef vespalib::cache<CacheParams> Parent;
+        typedef vespalib::hash_map<uint32_t, uint64_t> LidUniqueKeySetId;
+        typedef vespalib::hash_map<uint64_t, KeySet> IdKeySetMap;
+        void onInsert(const K & key) override;
+        void onRemove(const K & key) override;
+        LidUniqueKeySetId _lid2Id;
+        IdKeySetMap       _id2KeySet;
+    };
 
     BackingStore            _store;
     std::unique_ptr<Cache>  _cache;
