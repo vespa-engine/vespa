@@ -35,6 +35,7 @@ vespa_define_module(
     src/tests/configholder
     src/tests/unittest
     src/tests/frtconnectionpool
+    src/tests/file_acquirer
     src/tests/file_subscription
     src/tests/legacysubscriber
     src/tests/subscriber
