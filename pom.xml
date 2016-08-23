@@ -1160,6 +1160,7 @@
         <module>container-search</module>
         <module>container-test-jars</module>
         <module>defaults</module>
+        <module>docker-api</module>
         <module>docproc</module>
         <module>docprocs</module>
         <module>documentapi</module>
