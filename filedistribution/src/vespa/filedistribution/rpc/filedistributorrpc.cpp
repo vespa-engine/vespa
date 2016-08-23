@@ -240,7 +240,7 @@ Server::waitFor(FRT_RPCRequest* request) {
             queueRequest(fileReference, request);
         }
     } catch (const FileDoesNotExistException&) {
-        LOG(warning, "Recieved a request for a file reference that does not exist in zookeeper.");
+        LOG(warning, "Received a request for a file reference that does not exist in zookeeper.");
         request->SetError(RPCErrorCodes::baseFileProviderErrorCode + FileProvider::FileReferenceDoesNotExist,
                           "No such file reference");
         request->Return();
