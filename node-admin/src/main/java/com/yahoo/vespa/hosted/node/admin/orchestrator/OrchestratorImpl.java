@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 
@@ -16,16 +17,15 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
+
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +48,7 @@ public class OrchestratorImpl implements Orchestrator {
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
 
     private final ObjectMapper mapper = new ObjectMapper();
+    private final HttpClient client = HttpClientBuilder.create().build();
 
     final Set<HostName> configServerHosts;
 
@@ -55,126 +56,84 @@ public class OrchestratorImpl implements Orchestrator {
         this.configServerHosts = configServerHosts;
     }
 
+    interface CreateRequest {
+        HttpUriRequest createRequest(HostName configserver);
+    }
 
+    // return value null means not found on server.
+    private <T extends  Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType)  {
+        for (HostName configServer : configServerHosts) {
+            final HttpResponse response;
+            try {
+                response = client.execute(requestFactory.createRequest(configServer));
+            } catch (Exception e) {
+                NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + "(will try all config servers)", e);
+                continue;
+            }
+            if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
+                // Orchestrator doesn't care about this node, so don't let that stop us.
+                return null;
+            }
+            try {
+                return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
+            } catch (IOException e) {
+                throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
+            }
+        }
+        throw new RuntimeException("Did not get any positive answer");
+    }
 
     @Override
     public boolean suspend(final HostName hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
 
+        final UpdateHostResponse updateHostResponse = tryAllConfigServers(configserver -> {
+            String url = "http://" + configserver + ":" + HARDCODED_ORCHESTRATOR_PORT
+                    + ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended";
+            return new HttpPut(url);
+        }, UpdateHostResponse.class);
 
-        for (HostName configServer : configServerHosts) {
-            final HttpResponse response;
-            try {
-                String url = "http://" + configServer + ":" + HARDCODED_ORCHESTRATOR_PORT
-                        + ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended";
-                HttpClient client = HttpClientBuilder.create().build();
-                HttpPut request = new HttpPut(url);
-                response = client.execute(request);
-            } catch (Exception e) {
-                logger.info("Orchestrator communication exception  " + hostName, e);
-                continue;
-            }
-            System.out.println("Response Code : "
-                    + response.getStatusLine().getStatusCode());
-
-            if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return true;
-            }
-
-            if (response.getStatusLine().getStatusCode() != 200) {
-                logger.info("Orchestrator not 200  " + hostName);
-                continue;
-            }
-            final UpdateHostResponse nodesForHost;
-            try {
-                nodesForHost = mapper.readValue(response.getEntity().getContent(), UpdateHostResponse.class);
-            } catch (IOException e) {
-                logger.info("Orchestrator rejected suspend request for host " + hostName, e);
-                return false;
-            }
-            return nodesForHost.reason() == null;
+        if (updateHostResponse == null) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            return true;
         }
-        logger.info("Orchestrator rejected suspend request for host " + hostName);
-        return false;
+        return updateHostResponse.reason() == null;
     }
 
     @Override
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
-
-        BatchHostSuspendRequest body = new BatchHostSuspendRequest(parentHostName, hostNames);
-        Exception lastException = null;
-        for (HostName configServer : configServerHosts) {
-            final HttpResponse response;
+        final BatchOperationResult batchOperationResult = tryAllConfigServers(configserver -> {
+            BatchHostSuspendRequest body = new BatchHostSuspendRequest(parentHostName, hostNames);
+            String url = "http://" + configserver + ":" + HARDCODED_ORCHESTRATOR_PORT
+                    + ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API;
+            HttpPut request = new HttpPut(url);
             try {
-                String url = "http://" + configServer + ":" + HARDCODED_ORCHESTRATOR_PORT
-                        + ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API;
-                HttpClient client = HttpClientBuilder.create().build();
-                HttpPut request = new HttpPut(url);
                 request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
-                response = client.execute(request);
-            } catch (Exception e) {
-                NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
-                lastException = e;
-                continue;
+            } catch (UnsupportedEncodingException|JsonProcessingException e) {
+                throw new RuntimeException("Failed creating request", e);
             }
-            final BatchOperationResult result;
-            try {
-                result = mapper.readValue(response.getEntity().getContent(), BatchOperationResult.class);
-            } catch (IOException e) {
-                lastException = e;
-                continue;
-            }
-            return result.getFailureReason();
-
-        }
-        if (lastException == null) {
-            throw new RuntimeException("Did not get exception, but still does not manage to suspend call, strange.");
-        }
-        NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, lastException);
-        return Optional.of(lastException.getLocalizedMessage());
+            return request;
+        }, BatchOperationResult.class);
+        return batchOperationResult.getFailureReason();
     }
 
     @Override
     public boolean resume(final HostName hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
-        for (HostName configServer : configServerHosts) {
-            final HttpResponse response;
-            try {
-                String url = "http://" + configServer + ":" + HARDCODED_ORCHESTRATOR_PORT
-                        + ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended";
-                HttpClient client = HttpClientBuilder.create().build();
-                HttpDelete request = new HttpDelete(url);
-                response = client.execute(request);
-            } catch (Exception e) {
-                logger.info("Orchestrator communication exception delete " + hostName, e);
-                continue;
-            }
-            System.out.println("Response Code : "
-                    + response.getStatusLine().getStatusCode());
 
-            if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return true;
-            }
+        final UpdateHostResponse batchOperationResult = tryAllConfigServers(configserver -> {
+            String url = "http://" + configserver + ":" + HARDCODED_ORCHESTRATOR_PORT
+                    + ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended";
+            return new HttpDelete(url);
+        }, UpdateHostResponse.class);
 
-            if (response.getStatusLine().getStatusCode() != 200) {
-                logger.info("Orchestrator not 200  " + hostName);
-                continue;
-            }
-            final UpdateHostResponse nodesForHost;
-            try {
-                nodesForHost = mapper.readValue(response.getEntity().getContent(), UpdateHostResponse.class);
-            } catch (IOException e) {
-                logger.info("Orchestrator rejected suspend request for host " + hostName, e);
-                return false;
-            }
-            return nodesForHost.reason() == null;
+        if (batchOperationResult == null) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            return true;
         }
-        logger.info("Orchestrator rejected suspend request for host " + hostName);
-        return false;
+        return batchOperationResult.reason() == null;
     }
 
     public static OrchestratorImpl createOrchestratorFromSettings() {
@@ -182,8 +141,6 @@ public class OrchestratorImpl implements Orchestrator {
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
-       // JaxRsStrategy<HostApi> hostApi = jaxRsStrategyFactory.apiWithRetries(HostApi.class, ORCHESTRATOR_PATH_PREFIX_HOST_API);
-       // JaxRsStrategy<HostSuspensionApi> suspendApi = jaxRsStrategyFactory.apiWithRetries(HostSuspensionApi.class, ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API);
         return new OrchestratorImpl(configServerHosts);
     }
 }
