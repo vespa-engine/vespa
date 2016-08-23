@@ -60,6 +60,7 @@ public:
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
     void swap(CompressedBlobSet & rhs);
     size_t size() const { return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer.size(); }
+    bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;
 private:
     document::CompressionConfig::Type _compression;

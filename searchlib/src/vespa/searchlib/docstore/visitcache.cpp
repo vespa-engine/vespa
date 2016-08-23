@@ -152,7 +152,7 @@ VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) cons
     VisitCollector collector;
     _backingStore.read(key.getKeys(), collector);
     CompressedBlobSet(_compression, collector.getBlobSet()).swap(blobs);
-    return true;
+    return ! blobs.empty();
 }
 
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :
