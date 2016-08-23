@@ -349,7 +349,7 @@ private:
     LogDataStore                  _datastore;
 };
 
-TEST("test visit cache does not cache empty ones and is able to access some the backing store.") {
+TEST("test visit cache does not cache empty ones and is able to access some backing store.") {
     const char * A7 = "aAaAaAa";
     VisitStore store;
     IDataStore & datastore = store.getStore();
@@ -365,6 +365,11 @@ TEST("test visit cache does not cache empty ones and is able to access some the 
     BlobSet bs(cbs.getBlobSet());
     EXPECT_EQUAL(7u, bs.get(1).size());
     EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
+    datastore.write(2,2, A7, 7);
+    datastore.write(3,3, A7, 7);
+    datastore.write(3,4, A7, 7);
+    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    EXPECT_EQUAL(4u, visitCache.read({1,2,3,4,5}).getBlobSet().getPositions().size());
 }
 
 TEST("testWriteRead") {
