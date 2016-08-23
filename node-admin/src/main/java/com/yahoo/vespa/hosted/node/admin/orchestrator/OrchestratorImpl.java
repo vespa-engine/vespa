@@ -3,14 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
+
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
-import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
+
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
@@ -100,7 +96,7 @@ public class OrchestratorImpl implements Orchestrator {
             }
             return nodesForHost.reason() == null;
         }
-        logger.info("Orchestrator rejected suspend request for host " + hostName, e);
+        logger.info("Orchestrator rejected suspend request for host " + hostName);
         return false;
     }
 
@@ -108,6 +104,7 @@ public class OrchestratorImpl implements Orchestrator {
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
 
         BatchHostSuspendRequest body = new BatchHostSuspendRequest(parentHostName, hostNames);
+        Exception lastException = null;
         for (HostName configServer : configServerHosts) {
             final HttpResponse response;
             try {
@@ -118,26 +115,25 @@ public class OrchestratorImpl implements Orchestrator {
                 request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
                 response = client.execute(request);
             } catch (Exception e) {
+                NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
+                lastException = e;
                 continue;
             }
-            final BatchOperationResult result =
-        try {
-            return hostSuspensionClient.apply(hostSuspensionClient -> {
-                BatchHostSuspendRequest request = new BatchHostSuspendRequest(parentHostName, hostNames);
-                final BatchOperationResult result = hostSuspensionClient.suspendAll(request);
-                return result.getFailureReason();
-            });
-        } catch (ClientErrorException e) {
-            if (e instanceof NotFoundException || e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return Optional.empty();
+            final BatchOperationResult result;
+            try {
+                result = mapper.readValue(response.getEntity().getContent(), BatchOperationResult.class);
+            } catch (IOException e) {
+                lastException = e;
+                continue;
             }
-            NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, e);
-            return Optional.of(e.getLocalizedMessage());
-        } catch (IOException e) {
-            NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
-            return Optional.of("Unable to communicate with orchestrator" + e.getMessage());
+            return result.getFailureReason();
+
         }
+        if (lastException == null) {
+            throw new RuntimeException("Did not get exception, but still does not manage to suspend call, strange.");
+        }
+        NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, lastException);
+        return Optional.of(lastException.getLocalizedMessage());
     }
 
     @Override
@@ -177,7 +173,7 @@ public class OrchestratorImpl implements Orchestrator {
             }
             return nodesForHost.reason() == null;
         }
-        logger.info("Orchestrator rejected suspend request for host " + hostName, e);
+        logger.info("Orchestrator rejected suspend request for host " + hostName);
         return false;
     }
 
