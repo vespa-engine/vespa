@@ -31,7 +31,7 @@ public class CapacityPolicies {
 
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(requestedCapacity.nodeCount(), 3);
+            case perf : return Math.min(requestedCapacity.nodeCount(), 10); // TODO: Decrease to 3 when isRequired is implemented
             case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
             case prod : return ensureRedundancy(requestedCapacity.nodeCount());
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
