@@ -97,8 +97,7 @@ public class StateMonitor extends AbstractComponent {
     private void updateNames(MetricSnapshot current) {
         TreeSet<String> seen = new TreeSet<>();
         for (Map.Entry<MetricDimensions, MetricSet> dimensionAndMetric : current) {
-            for (Map.Entry<String, MetricValue> nameAndMetric : dimensionAndMetric
-                    .getValue()) {
+            for (Map.Entry<String, MetricValue> nameAndMetric : dimensionAndMetric.getValue()) {
                 seen.add(nameAndMetric.getKey());
             }
         }

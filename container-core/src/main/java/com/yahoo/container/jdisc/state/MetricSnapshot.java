@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * A snapshot of the metrics of this system in a particular time interval.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public final class MetricSnapshot implements Iterable<Map.Entry<MetricDimensions, MetricSet>> {
 
@@ -86,7 +86,7 @@ public final class MetricSnapshot implements Iterable<Map.Entry<MetricDimensions
         Map<MetricDimensions, MetricSet> newData = new HashMap<>();
         for (Map.Entry<MetricDimensions, MetricSet> entry : data.entrySet()) {
             MetricSet newSet = entry.getValue().partialClone();
-            if (!newSet.isEmpty()) {
+            if ( ! newSet.isEmpty()) {
                 newData.put(entry.getKey(), newSet);
             }
         }

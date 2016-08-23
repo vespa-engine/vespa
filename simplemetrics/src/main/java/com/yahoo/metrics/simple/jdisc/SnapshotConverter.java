@@ -22,13 +22,14 @@ import com.yahoo.text.JSON;
  * @author arnej27959
  */
 class SnapshotConverter {
+
     final Bucket snapshot;
     final Map<Point, Map<String, MetricValue>> perPointData = new HashMap<>();
     private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     private Map<String, MetricValue> getMap(Point point) {
         if (! perPointData.containsKey(point)) {
-            perPointData.put(point, new HashMap<String, MetricValue>());
+            perPointData.put(point, new HashMap<>());
         }
         return perPointData.get(point);
     }
@@ -53,14 +54,14 @@ class SnapshotConverter {
     // TODO: just a compatibility wrapper, should be removed ASAP
     private static Object valueAsString(Value value) {
         switch (value.getType()) {
-        case STRING:
-            return value.stringValue();
-        case LONG:
-            return Long.valueOf(value.longValue());
-        case DOUBLE:
-            return Double.valueOf(value.doubleValue());
-        default:
-            throw new IllegalStateException("simplemetrics impl is out of sync with itself, please file a ticket.");
+            case STRING:
+                return value.stringValue();
+            case LONG:
+                return value.longValue();
+            case DOUBLE:
+                return value.doubleValue();
+            default:
+                throw new IllegalStateException("simplemetrics impl is out of sync with itself, please file a ticket.");
         }
     }
 
