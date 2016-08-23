@@ -6,6 +6,7 @@ LOG_SETUP("datastore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <iostream>
 
@@ -22,6 +23,7 @@ public:
 };
 
 using namespace search;
+using namespace search::docstore;
 using search::index::DummyFileHeaderContext;
 
 namespace {
@@ -262,6 +264,21 @@ TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
 }
 
+class GuardDirectory {
+public:
+    GuardDirectory(const vespalib::string & dir) : _dir(dir)
+    {
+        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
+        ASSERT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
+    }
+    ~GuardDirectory() {
+        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
+    }
+    const vespalib::string & getDir() const { return _dir; }
+private:
+    vespalib::string _dir;
+};
+
 void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz)
 {
     vespalib::DataBuffer buf;
@@ -308,6 +325,46 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     EXPECT_EQUAL(4096u + 480u, datastore.getDiskHeaderFootprint());
     EXPECT_EQUAL(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
+}
+
+class VisitStore {
+public:
+    VisitStore() :
+        _myDir("visitcache"),
+        _config(),
+        _fileHeaderContext(),
+        _executor(_config.getNumThreads(), 128*1024),
+        _tlSyncer(),
+        _datastore(_executor, _myDir.getDir(), _config,
+                           GrowStrategy(), TuneFileSummary(),
+                           _fileHeaderContext, _tlSyncer, NULL)
+    { }
+    IDataStore & getStore() { return _datastore; }
+private:
+    GuardDirectory                _myDir;    
+    LogDataStore::Config          _config;
+    DummyFileHeaderContext        _fileHeaderContext;
+    vespalib::ThreadStackExecutor _executor;
+    MyTlSyncer                    _tlSyncer;
+    LogDataStore                  _datastore;
+};
+
+TEST("test visit cache does not cache empty ones and is able to access some the backing store.") {
+    const char * A7 = "aAaAaAa";
+    VisitStore store;
+    IDataStore & datastore = store.getStore();
+
+    VisitCache visitCache(datastore, 100000, document::CompressionConfig::Type::LZ4);
+    EXPECT_EQUAL(0u, visitCache.read({1}).size());
+    EXPECT_TRUE(visitCache.read({1}).empty());
+    datastore.write(1,1, A7, 7);
+    EXPECT_EQUAL(0u, visitCache.read({2}).size());
+    CompressedBlobSet cbs = visitCache.read({1});
+    EXPECT_FALSE(cbs.empty());
+    EXPECT_EQUAL(19u, cbs.size());
+    BlobSet bs(cbs.getBlobSet());
+    EXPECT_EQUAL(7u, bs.get(1).size());
+    EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
 }
 
 TEST("testWriteRead") {
@@ -401,21 +458,6 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
     FastOS_File::Delete(file.c_str());
 #endif
 }
-
-class GuardDirectory {
-public:
-    GuardDirectory(const vespalib::string & dir) : _dir(dir)
-    {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-        EXPECT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
-    }
-    ~GuardDirectory() {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-    }
-    const vespalib::string & getDir() const { return _dir; }
-private:
-    vespalib::string _dir;
-};
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     GuardDirectory testDir("flushtime");
