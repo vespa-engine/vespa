@@ -42,8 +42,8 @@ struct CacheParam : public P
 template< typename P >
 class cache : private lrucache_map<P>
 {
-private:
     typedef lrucache_map<P>   Lru;
+protected:
     typedef typename P::BackingStore   BackingStore;
     typedef typename P::Hash  Hash;
     typedef typename P::Key   K;
@@ -123,6 +123,8 @@ public:
     size_t   getInvalidate() const { return _invalidate; }
     size_t       getlookup() const { return _lookup; }
 
+protected:
+    vespalib::LockGuard getGuard();
 private:
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -130,7 +132,7 @@ private:
      * The obvious extension is when you are storing pointers and want to cap
      * on the real size of the object pointed to.
      */
-    virtual bool removeOldest(const value_type & v);
+    bool removeOldest(const value_type & v) override;
     size_t calcSize(const K & k, const V & v) const { return sizeof(value_type) + _sizeK(k) + _sizeV(v); }
     vespalib::Lock & getLock(const K & k) {
         size_t h(_hasher(k));
@@ -181,6 +183,12 @@ cache<P>::removeOldest(const value_type & v) {
         _sizeBytes -= calcSize(v.first, v.second._value);
     }
     return remove;
+}
+
+template< typename P >
+vespalib::LockGuard
+cache<P>::getGuard() {
+    return vespalib::LockGuard(_hashLock);
 }
 
 template< typename P >
