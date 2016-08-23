@@ -25,7 +25,6 @@ private:
     void testFunctionTableFactory();
     void testTableManager();
 
-    const std::string _srcDir;
     const std::string _tables1Dir;
     const std::string _tables2Dir;
 public:
@@ -35,9 +34,8 @@ public:
 
 TableTest::TableTest() :
     vespalib::TestApp(),
-    _srcDir(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
-    _tables1Dir(_srcDir + "/tables1"),
-    _tables2Dir(_srcDir + "/tables2")
+    _tables1Dir(vespalib::TestApp::GetSourceDirectory() + "tables1"),
+    _tables2Dir(vespalib::TestApp::GetSourceDirectory() + "tables2")
 {
 }
 

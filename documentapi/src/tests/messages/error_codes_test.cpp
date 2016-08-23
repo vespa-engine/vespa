@@ -16,6 +16,7 @@ class ErrorCodesTest : public vespalib::TestApp {
     int Main() override;
     void error_codes_match_java_definitions();
     NamedErrorCodes all_document_protocol_error_codes();
+    std::string path_prefixed(const std::string& file_name) const;
 };
 
 TEST_APPHOOK(ErrorCodesTest);
@@ -94,11 +95,12 @@ std::string to_sorted_key_value_string(const NamedErrorCodes& codes) {
     return os.str();
 }
 
-std::string path_prefixed(const std::string& file_name) {
-    return "../../../test/crosslanguagefiles/" + file_name;
-}
-
 } // anon ns
+
+std::string
+ErrorCodesTest::path_prefixed(const std::string& file_name) const {
+    return GetSourceDirectory() + "../../../test/crosslanguagefiles/" + file_name;
+}
 
 void
 ErrorCodesTest::error_codes_match_java_definitions()

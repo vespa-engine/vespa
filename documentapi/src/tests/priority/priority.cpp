@@ -35,7 +35,7 @@ Test::Main()
     expected.push_back(Priority::PRI_LOWEST);
 
     std::ifstream in;
-    in.open("../../../test/crosslanguagefiles/5.1-Priority.txt");
+    in.open((GetSourceDirectory() + "../../../test/crosslanguagefiles/5.1-Priority.txt").c_str());
     ASSERT_TRUE(in.good());
     while (in) {
         std::string str;

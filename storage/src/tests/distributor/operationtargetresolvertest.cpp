@@ -14,6 +14,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
 
 using document::BucketId;
@@ -49,7 +50,8 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
     void setUp() {
         _repo.reset(new document::DocumentTypeRepo(
                 *config::ConfigGetter<document::DocumenttypesConfig>::getConfig(
-                    "config-doctypes", config::FileSpec("config-doctypes.cfg"))));
+                    "config-doctypes",
+                    config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     };

@@ -41,9 +41,10 @@ class FileTest : public BaseTest
 private:
     virtual bool useProcessStarter() const { return true; }
 public:
-    static const char * roFilename;
-    static const char * woFilename;
-    static const char * rwFilename;
+    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
+    const std::string roFilename = srcDir + "/hello.txt";
+    const std::string woFilename = "generated/writeonlytest.txt";
+    const std::string rwFilename = "generated/readwritetest.txt";
 
     void DirectoryTest()
     {
@@ -435,7 +436,7 @@ public:
     {
         TestHeader("Read-Only Test");
 
-        FastOS_File *myFile = new FastOS_File(roFilename);
+        FastOS_File *myFile = new FastOS_File(roFilename.c_str());
 
         if (myFile->OpenReadOnly()) {
             int64_t filesize;
@@ -472,7 +473,7 @@ public:
                 }
             }
         } else {
-            Progress(false, "Unable to open file '%s'.", roFilename);
+            Progress(false, "Unable to open file '%s'.", roFilename.c_str());
         }
         delete(myFile);
         PrintSeparator();
@@ -483,7 +484,7 @@ public:
         TestHeader("Write-Only Test");
         FastOS_File::MakeDirectory("generated");
 
-        FastOS_File *myFile = new FastOS_File(woFilename);
+        FastOS_File *myFile = new FastOS_File(woFilename.c_str());
 
         if (myFile->OpenWriteOnly()) {
             int64_t filesize;
@@ -531,12 +532,12 @@ public:
             bool closeResult = myFile->Close();
             Progress(closeResult, "Close file.");
         } else {
-            Progress(false, "Unable to open file '%s'.", woFilename);
+            Progress(false, "Unable to open file '%s'.", woFilename.c_str());
         }
 
 
         bool deleteResult = myFile->Delete();
-        Progress(deleteResult, "Delete file '%s'.", woFilename);
+        Progress(deleteResult, "Delete file '%s'.", woFilename.c_str());
 
         delete(myFile);
         FastOS_File::EmptyAndRemoveDirectory("generated");
@@ -548,13 +549,13 @@ public:
         TestHeader("Read/Write Test");
         FastOS_File::MakeDirectory("generated");
 
-        FastOS_File *myFile = new FastOS_File(rwFilename);
+        FastOS_File *myFile = new FastOS_File(rwFilename.c_str());
 
         if (myFile->OpenExisting()) {
-            Progress(false, "OpenExisting() should not work when '%s' does not exist.", rwFilename);
+            Progress(false, "OpenExisting() should not work when '%s' does not exist.", rwFilename.c_str());
             myFile->Close();
         } else {
-            Progress(true, "OpenExisting() should fail when '%s' does not exist, and it did.", rwFilename);
+            Progress(true, "OpenExisting() should fail when '%s' does not exist, and it did.", rwFilename.c_str());
         }
 
         if (myFile->OpenReadWrite()) {
@@ -628,10 +629,10 @@ public:
             bool closeResult = myFile->Close();
             Progress(closeResult, "Close file.");
         } else {
-            Progress(false, "Unable to open file '%s'.", rwFilename);
+            Progress(false, "Unable to open file '%s'.", rwFilename.c_str());
         }
         bool deleteResult = myFile->Delete();
-        Progress(deleteResult, "Delete file '%s'.", rwFilename);
+        Progress(deleteResult, "Delete file '%s'.", rwFilename.c_str());
 
         delete(myFile);
         FastOS_File::EmptyAndRemoveDirectory("generated");
@@ -661,7 +662,7 @@ public:
     {
         TestHeader("ReadBuf Test");
 
-        FastOS_File file(roFilename);
+        FastOS_File file(roFilename.c_str());
 
         char buffer[20];
 
@@ -691,7 +692,7 @@ public:
     {
         TestHeader("DiskFreeSpace Test");
 
-        int64_t freeSpace = FastOS_File::GetFreeDiskSpace(roFilename);
+        int64_t freeSpace = FastOS_File::GetFreeDiskSpace(roFilename.c_str());
         ProgressI64(freeSpace != -1, "DiskFreeSpace using file ('hello.txt'): %ld MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
         freeSpace = FastOS_File::GetFreeDiskSpace(".");
         ProgressI64(freeSpace != -1, "DiskFreeSpace using dir (.): %ld MB.", freeSpace == -1 ? -1 : freeSpace/(1024*1024));
@@ -816,11 +817,6 @@ public:
         return allWasOk() ? 0 : 1;
     }
 };
-
-const char *FileTest::roFilename = "hello.txt";
-const char *FileTest::woFilename = "generated/writeonlytest.txt";
-const char *FileTest::rwFilename = "generated/readwritetest.txt";
-
 
 int main (int argc, char **argv)
 {

@@ -10,6 +10,7 @@
 
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/vespalib/objects/identifiable.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <fstream>
 #include <sstream>
@@ -1270,10 +1271,10 @@ void
 FieldPathUpdateTestCase::testReadSerializedFile()
 {
     // Reads a file serialized from java
-    const char cfg_file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
+    const std::string cfg_file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
 
-    int fd = open("data/serialize-fieldpathupdate-java.dat", O_RDONLY);
+    int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serialize-fieldpathupdate-java.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -1294,7 +1295,7 @@ FieldPathUpdateTestCase::testReadSerializedFile()
 void
 FieldPathUpdateTestCase::testGenerateSerializedFile()
 {
-    const char cfg_file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
+    const std::string cfg_file_name = vespalib::TestApp::GetSourceDirectory()+ "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
     // Tests nothing, only generates a file for java test
     DocumentUpdate::UP upd(
@@ -1302,7 +1303,7 @@ FieldPathUpdateTestCase::testGenerateSerializedFile()
 
     ByteBuffer::UP buf(serializeHEAD(*upd));
 
-    int fd = open("data/serialize-fieldpathupdate-cpp.dat",
+    int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serialize-fieldpathupdate-cpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
     	throw vespalib::Exception("write failed");

@@ -20,11 +20,11 @@ vespa_add_executable(searchlib_weak_and_bench_app
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_weak_and_test_expensive_app COMMAND searchlib_weak_and_bench_app BENCHMARK)
+vespa_add_test(NAME searchlib_weak_and_bench_app COMMAND searchlib_weak_and_bench_app BENCHMARK)
 vespa_add_executable(searchlib_parallel_weak_and_bench_app
     SOURCES
     parallel_weak_and_bench.cpp
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_weak_and_test_expensive_app COMMAND searchlib_parallel_weak_and_bench_app BENCHMARK)
+vespa_add_test(NAME searchlib_parallel_weak_and_bench_app COMMAND searchlib_parallel_weak_and_bench_app BENCHMARK)

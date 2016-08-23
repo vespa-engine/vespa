@@ -342,7 +342,7 @@ AsciistreamTest::testCreateFromFile()
     asciistream is(asciistream::createFromFile("non-existing.txt"));
     EXPECT_TRUE(is.eof());
 
-    is = asciistream::createFromFile("test.txt");
+    is = asciistream::createFromFile(vespalib::TestApp::GetSourceDirectory() + "test.txt");
     EXPECT_FALSE(is.eof());
     EXPECT_EQUAL(12u, is.size());
     string s;

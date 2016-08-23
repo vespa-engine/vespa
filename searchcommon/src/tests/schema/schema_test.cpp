@@ -161,7 +161,7 @@ TEST("testLoadAndSave") {
 
     { // load from config -> save to file -> load from file
         Schema s;
-        SchemaConfigurer configurer(s, "dir:.");
+        SchemaConfigurer configurer(s, "dir:" + vespalib::TestApp::GetSourceDirectory());
         EXPECT_EQUAL(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));

@@ -134,7 +134,6 @@ private:
     void requireThatArrayAttributesAreUpdated();
     void requireThatWeightedSetAttributesAreUpdated();
 
-    std::string _srcdir;
     DocumentTypeRepo _repo;
     const DocumentType* _docType;
 
@@ -318,8 +317,7 @@ Test::requireThatWeightedSetAttributesAreUpdated()
 }
 
 Test::Test()
-    : _srcdir(getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : "."),
-      _repo(readDocumenttypesConfig((_srcdir + "/doctypes.cfg").c_str())),
+    : _repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() + "doctypes.cfg")),
       _docType(_repo.getDocumentType("testdoc"))
 {
 }

@@ -271,14 +271,14 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
 }
 
 TEST("testTruncatedIdxFile"){
-    std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
     MyTlSyncer tlSyncer;
     {
         // Files comes from the 'growing test'.
-        LogDataStore datastore(executor, srcDir + "/bug-7257706", config,
+        LogDataStore datastore(executor,
+                               vespalib::TestApp::GetSourceDirectory() + "bug-7257706", config,
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(354ul, datastore.lastSyncToken());

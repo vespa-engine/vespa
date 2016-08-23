@@ -6,4 +6,4 @@ vespa_add_executable(vespalib_testkit-subset_test_app TEST
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_testkit-subset_test_app COMMAND sh testkit-subset_test.sh)
+vespa_add_test(NAME vespalib_testkit-subset_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/testkit-subset_test.sh)

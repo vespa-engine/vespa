@@ -5,4 +5,4 @@ vespa_add_executable(staging_vespalib_process_memory_stats_test_app TEST
     DEPENDS
     staging_vespalib
 )
-vespa_add_test(NAME staging_vespalib_process_memory_stats_test_app COMMAND sh process_memory_stats_test.sh)
+vespa_add_test(NAME staging_vespalib_process_memory_stats_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/process_memory_stats_test.sh)

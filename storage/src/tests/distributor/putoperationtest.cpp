@@ -12,6 +12,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -93,7 +94,8 @@ public:
     void setUp() {
         _repo.reset(
                 new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>
-                                     ::getConfig("config-doctypes", FileSpec("config-doctypes.cfg"))));
+                                     ::getConfig("config-doctypes",
+                                                 FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     };

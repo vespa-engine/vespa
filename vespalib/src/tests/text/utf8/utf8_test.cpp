@@ -54,7 +54,7 @@ Test::Main()
 
     {
         // read data produced from Java program
-        int fd = ::open("regular-utf8.dat", O_RDONLY);
+        int fd = ::open((vespalib::TestApp::GetSourceDirectory() + "regular-utf8.dat").c_str(), O_RDONLY);
         ASSERT_TRUE(fd > 0);
         vespalib::string data;
         data.clear();

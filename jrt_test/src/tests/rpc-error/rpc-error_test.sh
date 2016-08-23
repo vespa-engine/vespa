@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -z "$SOURCE_DIRECTORY" ]; then
+    SOURCE_DIRECTORY="."
+fi
+
 fail=0
 
 . ../../binref/env.sh
@@ -11,10 +15,10 @@ CPP_PORT=$PORT_4
 export JAVA_PORT
 export CPP_PORT
 
-$BINREF/compilejava TestErrors.java || fail=1
+$BINREF/compilejava -d . $SOURCE_DIRECTORY/TestErrors.java || fail=1
 
-bash ./dotest.sh || fail=1
+bash $SOURCE_DIRECTORY/dotest.sh || fail=1
 
-$BINREF/progctl.sh progdefs.sh stop all
+$SOURCE_DIRECTORY/../../binref/progctl.sh $SOURCE_DIRECTORY/progdefs.sh stop all
 
 exit $fail
