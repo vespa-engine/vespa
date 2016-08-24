@@ -21,6 +21,7 @@ import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
+import com.yahoo.vespa.hosted.docker.api.docker.DockerApi;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -99,28 +100,9 @@ public class DockerImpl implements Docker {
     }
 
     @Inject
-<<<<<<< HEAD
+
     public DockerImpl(final DockerConfig config, final DockerApi dockerApi) {
         this(dockerApi.getDockerClient());
-=======
-    public DockerImpl(final DockerConfig config) {
-        this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                //.withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
-                .withDockerHost(config.uri().replace("https", "tcp"))
-                //.withDockerTlsVerify(false)
-                //.withCustomSslConfig(new VespaSSLConfig(config))
-                // We can specify which version of the docker remote API to use, otherwise, use latest
-                // e.g. .withApiVersion("1.23")
-                .build())
-                .withDockerCmdExecFactory(
-                        new JerseyDockerCmdExecFactory()
-                                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
-                ));
->>>>>>> master
     }
 
     @Override
