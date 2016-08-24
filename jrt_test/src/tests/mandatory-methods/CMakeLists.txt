@@ -4,4 +4,5 @@ vespa_add_executable(jrt_test_extract-reflection_app TEST
     extract-reflection.cpp
     DEPENDS
 )
-vespa_add_test(NAME jrt_test_extract-reflection_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/mandatory-methods_test.sh)
+vespa_add_test(NAME jrt_test_extract-reflection_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/mandatory-methods_test.sh
+               DEPENDS jrt_test_extract-reflection_app)

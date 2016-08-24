@@ -4,4 +4,5 @@ vespa_add_executable(jrt_test_mockup-server_app TEST
     mockup-server.cpp
     DEPENDS
 )
-vespa_add_test(NAME jrt_test_mockup-server_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/mockup-invoke_test.sh)
+vespa_add_test(NAME jrt_test_mockup-server_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/mockup-invoke_test.sh
+               DEPENDS jrt_test_mockup-server_app)

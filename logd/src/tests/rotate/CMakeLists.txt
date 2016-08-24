@@ -9,4 +9,5 @@ vespa_add_executable(logd_dummylogger_app
     dummylogger.cpp
     DEPENDS
 )
-vespa_add_test(NAME logd_rotate_test NO_VALGRIND COMMAND sh rotate_test.sh BENCHMARK)
+vespa_add_test(NAME logd_rotate_test NO_VALGRIND COMMAND sh rotate_test.sh BENCHMARK
+               DEPENDS logd_dummyserver_app logd_dummylogger_app)
