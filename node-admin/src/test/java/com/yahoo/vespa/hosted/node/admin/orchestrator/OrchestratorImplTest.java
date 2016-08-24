@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-
+import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
+import com.yahoo.vespa.jaxrs.client.LocalPassThroughJaxRsStrategy;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
@@ -40,14 +41,14 @@ public class OrchestratorImplTest {
     @Before
     public void before() {
         hostApi = mock(HostApi.class);
-     //   final JaxRsStrategy<HostApi> hostApiClient = new LocalPassThroughJaxRsStrategy<>(hostApi);
+        final JaxRsStrategy<HostApi> hostApiClient = new LocalPassThroughJaxRsStrategy<>(hostApi);
 
         hostSuspensionApi = mock(HostSuspensionApi.class);
-       // final JaxRsStrategy<HostSuspensionApi> hostSuspendClient = new LocalPassThroughJaxRsStrategy<>(hostSuspensionApi);
+        final JaxRsStrategy<HostSuspensionApi> hostSuspendClient = new LocalPassThroughJaxRsStrategy<>(hostSuspensionApi);
 
-      //  orchestrator = new OrchestratorImpl(hostApiClient, hostSuspendClient);
+        orchestrator = new OrchestratorImpl(hostApiClient, hostSuspendClient);
     }
-/*
+
     @Test
     public void testSingleOperations() throws Exception {
         // Make resume and suspend always succeed.
@@ -75,5 +76,5 @@ public class OrchestratorImplTest {
         hosts.add(hostNameString);
         when(hostSuspensionApi.suspendAll(Mockito.any())).thenReturn(new BatchOperationResult("no no"));
         assertThat(orchestrator.suspend("parent", hosts), is(Optional.of("no no")));
-    }*/
+    }
 }
