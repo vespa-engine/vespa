@@ -108,11 +108,6 @@ public class DockerImpl implements Docker {
     }
 
     @Inject
-<<<<<<< HEAD
-<<<<<<< HEAD
-    public DockerImpl(final DockerConfig config, final DockerApi dockerApi) {
-        this(dockerApi.getDockerClient());
-=======
     public DockerImpl(final DockerConfig config) {
         this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
                 // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
@@ -120,15 +115,6 @@ public class DockerImpl implements Docker {
                 .withDockerHost(config.uri().replace("https", "tcp"))
                 //.withDockerTlsVerify(false)
                 //.withCustomSslConfig(new VespaSSLConfig(config))
-=======
-    public DockerImpl(final DockerConfig config) {
-        this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                .withDockerHost("unix:///host/var/run/docker.sock") // Alternatively, but
-                // does not work due to certificate issues as if Aug 18th 2016: config.uri().replace("https", "tcp"))
-                .withDockerTlsVerify(false)
-                .withCustomSslConfig(new VespaSSLConfig(config))
->>>>>>> parent of e8390df... DO NOT MERGE THIS, just to show impact.
                 // We can specify which version of the docker remote API to use, otherwise, use latest
                 // e.g. .withApiVersion("1.23")
                 .build())
@@ -139,10 +125,6 @@ public class DockerImpl implements Docker {
                                 .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
                                 .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
                 ));
-<<<<<<< HEAD
->>>>>>> master
-=======
->>>>>>> parent of e8390df... DO NOT MERGE THIS, just to show impact.
     }
 
     @Override
