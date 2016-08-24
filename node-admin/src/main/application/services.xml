@@ -7,8 +7,11 @@
     </handler>
     <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
     <component id="docker" class="com.yahoo.vespa.hosted.node.admin.docker.DockerImpl" bundle="node-admin"/>
+<<<<<<< HEAD
     <component id="docker-api" class="com.yahoo.vespa.hosted.docker.api.docker.DockerApi" bundle="node-admin"/>
 
+=======
+>>>>>>> parent of e8390df... DO NOT MERGE THIS, just to show impact.
 
     <config name='nodeadmin.docker.docker'>
       <caCertPath>/host/docker/certs/ca_cert.pem</caCertPath>
