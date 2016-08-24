@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.noderepository.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Automagically handles (de)serialization based on 1:1 message fields and identifier names.
@@ -17,8 +16,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateNodeAttributesResponse {
-    @JsonProperty("message")
     public String message;
-    @JsonProperty("error-code")
-    public String errorCode;
 }
