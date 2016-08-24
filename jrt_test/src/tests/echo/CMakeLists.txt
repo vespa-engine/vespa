@@ -4,4 +4,5 @@ vespa_add_executable(jrt_test_echo-client_app TEST
     echo-client.cpp
     DEPENDS
 )
-vespa_add_test(NAME jrt_test_echo-client_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/echo_test.sh)
+vespa_add_test(NAME jrt_test_echo-client_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/echo_test.sh
+               DEPENDS jrt_test_echo-client_app)

@@ -7,4 +7,5 @@ vespa_add_executable(searchlib_fusion_test_app TEST
     AFTER
     searchlib_vespa-index-inspect_app
 )
-vespa_add_test(NAME searchlib_fusion_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/fusion_test.sh)
+vespa_add_test(NAME searchlib_fusion_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/fusion_test.sh
+               DEPENDS searchlib_fusion_test_app)

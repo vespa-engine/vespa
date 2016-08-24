@@ -8,8 +8,6 @@ vespa_add_executable(vespamalloc_allocfree_shared_test_app
     allocfree.cpp
     producerconsumer.cpp
 )
-vespa_add_test(NAME vespamalloc_allocfree_shared_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/allocfree_test.sh BENCHMARK
-               DEPENDS vespamalloc_allocfree_shared_test_app)
 vespa_add_executable(vespamalloc_realloc_test_app
     SOURCES
     realloc.cpp
@@ -24,3 +22,5 @@ vespa_add_executable(vespamalloc_linklist_test_app
     DEPENDS
     dl
 )
+vespa_add_test(NAME vespamalloc_allocfree_shared_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/allocfree_test.sh BENCHMARK
+               DEPENDS vespamalloc_realloc_test_app vespamalloc_allocfree_shared_test_app vespamalloc_linklist_test_app)
