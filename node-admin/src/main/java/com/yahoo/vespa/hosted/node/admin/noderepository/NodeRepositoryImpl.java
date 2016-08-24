@@ -10,13 +10,11 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
+import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -34,72 +32,55 @@ import java.util.Set;
 public class NodeRepositoryImpl implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
     private final String baseHostName;
-    private final Set<HostName> configservers;
     private final int port;
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient client = HttpClientBuilder.create().build();
+    private final ConfigServerHttpRequestExecutor requestExecutor;
 
     public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
         this.baseHostName = baseHostName;
-        this.configservers = configServerHosts;
         this.port = configPort;
+        this.requestExecutor = new ConfigServerHttpRequestExecutor(configServerHosts);
     }
 
-    interface CreateRequest {
-        HttpUriRequest createRequest(HostName configserver);
-    }
-
-    private <T extends  Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType)  {
-        for (HostName configServer : configservers) {
-            final HttpResponse response;
-            try {
-
-                response = client.execute(requestFactory.createRequest(configServer));
-            } catch (Exception e) {
-                NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + "(will try all config servers)", e);
-                continue;
-            }
-            try {
-                return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
-            } catch (IOException e) {
-                throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
-            }
-        }
-        throw new RuntimeException("Did not get any positive answer");
-    }
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
 
-        final GetNodesResponse nodesForHost = tryAllConfigServers(configserver -> {
-            String url = "http://" + configserver + ":" + port + "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true";
-            return new HttpGet(url);
-        }, GetNodesResponse.class);
+        try {
+            final GetNodesResponse nodesForHost = requestExecutor.get(
+                    "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
+                    port,
+                    GetNodesResponse.class);
 
-        if (nodesForHost.nodes == null) {
-            throw new IOException("Response didn't contain nodes element");
-        }
-        List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
-        for (GetNodesResponse.Node node : nodesForHost.nodes) {
-            ContainerNodeSpec nodeSpec;
-            try {
-                nodeSpec = createContainerNodeSpec(node);
-            } catch (IllegalArgumentException | NullPointerException e) {
-                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
-                        + baseHostName + " host: " + node, e);
-                continue;
+            if (nodesForHost.nodes == null) {
+                throw new IOException("Response didn't contain nodes element");
             }
-            nodes.add(nodeSpec);
+            List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
+            for (GetNodesResponse.Node node : nodesForHost.nodes) {
+                ContainerNodeSpec nodeSpec;
+                try {
+                    nodeSpec = createContainerNodeSpec(node);
+                } catch (IllegalArgumentException | NullPointerException e) {
+                    NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
+                            + baseHostName + " host: " + node, e);
+                    continue;
+                }
+                nodes.add(nodeSpec);
+            }
+            return nodes;
+        } catch (Exception e) {
+            throw new IOException(e);
         }
-        return nodes;
     }
 
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
-        final GetNodesResponse nodeResponse = tryAllConfigServers(configserver -> {
-            String url = "http://" + configserver + ":" + port + "/nodes/v2/node/?hostname=" + hostName + "&recursive=true";
-            return new HttpGet(url);
-        }, GetNodesResponse.class);
+        final GetNodesResponse nodeResponse = requestExecutor.get(
+                "/nodes/v2/node/?hostname=" + hostName + "&recursive=true",
+                port,
+                GetNodesResponse.class);
+
 
         if (nodeResponse.nodes.size() == 0) {
             return Optional.empty();
@@ -146,20 +127,15 @@ public class NodeRepositoryImpl implements NodeRepository {
             final String currentVespaVersion)
             throws IOException {
 
-        UpdateNodeAttributesResponse response = tryAllConfigServers(configserver -> {
-            String url = "http://" + configserver + ":" + port  + "/nodes/v2/node/" + hostName;
-            HttpPatch request = new HttpPatch(url);
-            UpdateNodeAttributesRequestBody body = new UpdateNodeAttributesRequestBody(
-                    restartGeneration,
-                    dockerImage.asString(),
-                    currentVespaVersion);
-            try {
-                request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
-            } catch (UnsupportedEncodingException|JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-            return request;
-        }, UpdateNodeAttributesResponse.class);
+        UpdateNodeAttributesResponse response = requestExecutor.patch(
+                "/nodes/v2/node/" + hostName,
+                port,
+                new UpdateNodeAttributesRequestBody(
+                        restartGeneration,
+                        dockerImage.asString(),
+                        currentVespaVersion),
+                UpdateNodeAttributesResponse.class);
+
         if (response.errorCode == null || response.errorCode.isEmpty()) {
             return;
         }
@@ -169,9 +145,10 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public void markAsReady(final HostName hostName) throws IOException {
-        tryAllConfigServers(configserver -> {
-            String url = "http://" + configserver + ":" + port + "/nodes/v2/ready/" + hostName;
-            return new HttpPut(url);
-        }, String.class);
+        requestExecutor.put(
+                "/nodes/v2/ready/" + hostName,
+                port,
+                Optional.empty(), /* body */
+                String.class);
     }
 }
