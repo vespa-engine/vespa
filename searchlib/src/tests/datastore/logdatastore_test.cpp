@@ -4,10 +4,11 @@
 LOG_SETUP("datastore_test");
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/docstore/logdatastore.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <iostream>
 
 #include <vespa/vespalib/util/exceptions.h>
@@ -375,6 +376,160 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
     visitCache.remove(3);
     EXPECT_EQUAL(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+}
+
+using vespalib::string;
+using document::DataType;
+using document::Document;
+using document::DocumentId;
+using document::DocumentType;
+using document::DocumentTypeRepo;
+using vespalib::asciistream;
+using index::DummyFileHeaderContext;
+
+namespace {
+const string doc_type_name = "test";
+const string header_name = doc_type_name + ".header";
+const string body_name = doc_type_name + ".body";
+
+document::DocumenttypesConfig
+makeDocTypeRepoConfig()
+{
+    const int32_t doc_type_id = 787121340;
+    document::config_builder::DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id,
+                     doc_type_name,
+                     document::config_builder::Struct(header_name),
+                     document::config_builder::Struct(body_name).
+                     addField("main", DataType::T_STRING).
+                     addField("extra", DataType::T_STRING));
+    return builder.config();
+}
+
+
+Document::UP
+makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
+{
+    asciistream idstr;
+    idstr << "id:test:test:: " << i;
+    DocumentId id(idstr.str());
+    const DocumentType *docType = repo.getDocumentType(doc_type_name);
+    Document::UP doc(new Document(*docType, id));
+    ASSERT_TRUE(doc.get());
+    asciistream mainstr;
+    mainstr << "static text" << i << " body something";
+    for (uint32_t j = 0; j < 10; ++j) {
+        mainstr << (j + i * 1000) << " ";
+    }
+    mainstr << " and end field";
+    doc->set("main", mainstr.c_str());
+    if (!before) {
+        doc->set("extra", "foo");
+    }
+
+    return doc;
+}
+
+}
+
+class VisitCacheStore {
+public:
+    VisitCacheStore() :
+        _myDir("visitcache"),
+        _repo(makeDocTypeRepoConfig()),
+        _config(DocumentStore::Config(document::CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
+                LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,
+                    WriteableFileChunk::Config(document::CompressionConfig(), 16384, 64))),
+        _fileHeaderContext(),
+        _executor(_config.getLogConfig().getNumThreads(), 128*1024),
+        _tlSyncer(),
+        _datastore(_executor, _myDir.getDir(), _config,
+                           GrowStrategy(), TuneFileSummary(),
+                           _fileHeaderContext, _tlSyncer, NULL),
+        _inserted(),
+        _serial(1)
+    { }
+    IDocumentStore & getStore() { return _datastore; }
+    void write(uint32_t id) {
+        Document::UP doc = makeDoc(_repo, id, false);
+        getStore().write(_serial++, *doc, id);
+        _inserted[id] = std::move(doc);
+    }
+    void verifyRead(uint32_t id) {
+        verifyDoc(*_datastore.read(id, _repo), id);
+        
+    }
+    void verifyDoc(const Document & doc, uint32_t id) {
+        EXPECT_TRUE(doc == *_inserted[id]);
+    }
+    void verifyVisit(const std::vector<uint32_t> & lids, bool allowCaching) {
+        verifyVisit(lids, lids, allowCaching);
+    }
+    void verifyVisit(const std::vector<uint32_t> & lids, const std::vector<uint32_t> & expected, bool allowCaching) {
+        VerifyVisitor vv(*this, expected, allowCaching);
+        _datastore.visit(lids, _repo, vv);
+    }
+private:
+    class VerifyVisitor : public IDocumentVisitor {
+    public:
+        VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching) :
+            _vcs(vcs),
+            _expected(),
+            _actual(),
+            _allowVisitCaching(allowCaching)
+        {
+            for (uint32_t lid : lids) {
+                _expected.insert(lid);
+            }
+        }
+        ~VerifyVisitor() {
+            EXPECT_EQUAL(_expected.size(), _actual.size());
+        }
+        void visit(uint32_t lid, Document::UP doc) override {
+            EXPECT_TRUE(_expected.find(lid) != _expected.end()); 
+            EXPECT_TRUE(_actual.find(lid) == _actual.end()); 
+            _actual.insert(lid);
+            _vcs.verifyDoc(*doc, lid);
+        }
+        bool allowVisitCaching() const { return _allowVisitCaching; }
+    private:
+        VisitCacheStore              &_vcs;
+        vespalib::hash_set<uint32_t>  _expected;
+        vespalib::hash_set<uint32_t>  _actual;
+        bool                          _allowVisitCaching;
+    };
+    GuardDirectory                _myDir;    
+    document::DocumentTypeRepo    _repo;
+    LogDocumentStore::Config      _config;
+    DummyFileHeaderContext        _fileHeaderContext;
+    vespalib::ThreadStackExecutor _executor;
+    MyTlSyncer                    _tlSyncer;
+    LogDocumentStore              _datastore;
+    std::map<uint32_t, Document::UP> _inserted;
+    SerialNum                        _serial;
+};
+
+void
+verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {
+    EXPECT_EQUAL(hits, cs.hits);
+    EXPECT_EQUAL(misses, cs.misses);
+    EXPECT_EQUAL(elements, cs.elements);
+    EXPECT_EQUAL(memory_used, cs.memory_used);
+}
+
+TEST("test that the integrated visit cache works.") {
+    VisitCacheStore vcs;
+    IDocumentStore & ds = vcs.getStore();
+    for (size_t i(1); i <= 100; i++) {
+        vcs.write(i);
+    }
+    CacheStats cs1 = ds.getCacheStats();
+    verifyCacheStats(cs1, 0, 0, 0, 0);
+    for (size_t i(1); i <= 100; i++) {
+        vcs.verifyRead(i);
+    }
+    vcs.verifyVisit({7,9,17,19,67,88}, false);
+    
 }
 
 TEST("testWriteRead") {
