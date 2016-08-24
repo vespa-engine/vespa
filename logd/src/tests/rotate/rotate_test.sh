@@ -2,6 +2,10 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
 
+if [ -z "$SOURCE_DIRECTORY" ]; then
+    SOURCE_DIRECTORY="."
+fi
+
 export VESPA_LOG_TARGET=file:vespa.log
 
 rm -rf vespa.log*
@@ -11,8 +15,7 @@ echo $! > dummyserver.pid
 
 sleep 5
 
-./create_configfile.sh
-
+$SOURCE_DIRECTORY/create_configfile.sh
 
 export VESPA_CONFIG_ID=file:logd.cfg
 ../../apps/logd/logd &
