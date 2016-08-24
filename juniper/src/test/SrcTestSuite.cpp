@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
+#include <vespa/vespalib/testkit/testapp.h>
 LOG_SETUP("SrcTestSuite");
 #include <vespa/fastlib/testsuite/suite.h>
 #include "testenv.h"
@@ -52,13 +53,13 @@ SrcTestSuite::SrcTestSuite() :
  *
  * @author Knut Omang
  */
-class SrcTestSuiteApp : public FastOS_Application {
+class SrcTestSuiteApp : public vespalib::TestApp {
 public:
     virtual int Main();
 };
 
 int SrcTestSuiteApp::Main() {
-    juniper::TestEnv te(this, "../rpclient/testclient.rc");
+    juniper::TestEnv te(this, (GetSourceDirectory() + "../rpclient/testclient.rc").c_str());
     SrcTestSuite suite;
     suite.Run();
     long failures = suite.Report();

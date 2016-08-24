@@ -15,6 +15,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 using document::DataType;
 using document::DocIdString;
@@ -33,7 +34,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 
     DocumentApiConverterTest()
         : _repo(new DocumentTypeRepo(readDocumenttypesConfig(
-                                "config-doctypes.cfg"))),
+                    vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))),
           _html_type(*_repo->getDocumentType("text/html"))
     {
     }

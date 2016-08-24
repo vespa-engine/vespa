@@ -132,7 +132,7 @@ Test::testDirPointer()
         EXPECT_TRUE(!dir.valid());
     }
     {
-        DirPointer dir(opendir("."));
+        DirPointer dir(opendir(vespalib::TestApp::GetSourceDirectory().c_str()));
         EXPECT_TRUE(dir.valid());
 
         dirent *de;

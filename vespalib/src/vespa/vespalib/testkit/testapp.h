@@ -179,6 +179,13 @@ public:
     const char *GetName() { return _name.c_str(); }
 
     /**
+     * @brief Obtain the source directory for the current test
+     *
+     * @return Path to source directory with trailing /
+     */
+    static const std::string& GetSourceDirectory();
+
+    /**
      * @brief Report test initialization
      *
      * @param name the name of this test

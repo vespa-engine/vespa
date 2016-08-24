@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/config.h>
 #include <vespa/config/print.h>
 #include <vespa/config/print/fileconfigreader.h>
@@ -82,10 +83,12 @@ TEST_F("requireThatCanLoadWrittenWithConfigFormat", RawFixture<MyConfig>) {
 }
 
 TEST("requireThatAllFieldsArePrintedCorrectly") {
-    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig("motd", FileSpec("motd.cfg"));
+    std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig(
+        "motd", FileSpec(vespalib::TestApp::GetSourceDirectory() + "motd.cfg"));
     FileConfigWriter writer("motd2.cfg");
     ASSERT_TRUE(writer.write(*cfg, FileConfigFormatter()));
-    std::unique_ptr<MotdConfig> cfg2 = ConfigGetter<MotdConfig>::getConfig("motd2", FileSpec("motd2.cfg"));
+    std::unique_ptr<MotdConfig> cfg2 = ConfigGetter<MotdConfig>::getConfig(
+        "motd2", FileSpec("motd2.cfg"));
     ASSERT_TRUE(*cfg2 == *cfg);
 }
 

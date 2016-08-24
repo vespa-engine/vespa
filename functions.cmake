@@ -328,20 +328,48 @@ function(__is_command_a_script COMMAND RESULT_VAR)
     list(GET COMMAND 0 FIRST)
     __is_script_extension(${FIRST} IS_SCRIPT_EXT)
 
+    if (IS_SCRIPT_EXT)
+        set(THE_SCRIPT ${FIRST})
+    endif()
     list(LENGTH COMMAND COMMAND_LENGTH)
     if(COMMAND_LENGTH GREATER 1 AND NOT IS_SCRIPT_EXT)
         list(GET COMMAND 1 SECOND)
         __is_script_extension(${SECOND} IS_SCRIPT_EXT)
+        if (IS_SCRIPT_EXT)
+            set(THE_SCRIPT ${SECOND})
+        endif()
     endif()
 
     set(${RESULT_VAR} ${IS_SCRIPT_EXT} PARENT_SCOPE)
+
+    if(THE_SCRIPT AND ARGV2)
+        set(${ARGV2} ${THE_SCRIPT} PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT" "COMMAND" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;ENVIRONMENT" "COMMAND;DEPENDS" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
+    endif()
+
+    __is_command_a_script("${ARG_COMMAND}" IS_SCRIPT THE_SCRIPT)
+    if(IS_SCRIPT)
+        list(APPEND TEST_DEPENDENCIES ${THE_SCRIPT})
+    else()
+        list(GET ARG_COMMAND 0 COMMAND_FIRST)
+        if(TARGET ${COMMAND_FIRST})
+            list(APPEND TEST_DEPENDENCIES ${COMMAND_FIRST})
+        endif()
+    endif()
+    if(ARG_DEPENDS)
+        list(APPEND TEST_DEPENDENCIES ${ARG_DEPENDS})
+    endif()
+
+    list(LENGTH TEST_DEPENDENCIES TEST_DEPENDENCIES_LENGTH)
+    if(${TEST_DEPENDENCIES_LENGTH} EQUAL 0)
+        message(FATAL_ERROR "Test does not have any dependencies. This is not allowed.")
     endif()
 
     if(VALGRIND_UNIT_TESTS AND NOT ARG_NO_VALGRIND)
@@ -349,7 +377,6 @@ function(vespa_add_test)
             message(FATAL_ERROR "Requested valgrind tests, but could not find valgrind executable.")
         endif()
 
-        __is_command_a_script("${ARG_COMMAND}" IS_SCRIPT)
         if(IS_SCRIPT)
             # For shell scripts, export a VALGRIND environment variable
             list(APPEND ARG_ENVIRONMENT "VALGRIND=${VALGRIND_COMMAND}")
@@ -365,20 +392,25 @@ function(vespa_add_test)
             endif()
             set(ARG_COMMAND "${VALGRIND_COMMAND} ${COMMAND_FIRST} ${COMMAND_REST}")
         endif()
-
-        separate_arguments(ARG_COMMAND)
     endif()
 
+    separate_arguments(ARG_COMMAND)
     add_test(NAME ${ARG_NAME} COMMAND ${ARG_COMMAND} WORKING_DIRECTORY ${ARG_WORKING_DIRECTORY})
 
-    if(ARG_ENVIRONMENT)
-        set_tests_properties(${ARG_NAME} PROPERTIES ENVIRONMENT "SOURCE_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR};${ARG_ENVIRONMENT}")
-    else()
-        set_tests_properties(${ARG_NAME} PROPERTIES ENVIRONMENT "SOURCE_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}")
-    endif()
-
+    list(APPEND ARG_ENVIRONMENT "SOURCE_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}")
+    set_tests_properties(${ARG_NAME} PROPERTIES ENVIRONMENT "${ARG_ENVIRONMENT}")
     if(ARG_RUN_SERIAL)
         set_tests_properties(${TEST_NAME} PROPERTIES RUN_SERIAL TRUE)
+    endif()
+
+    if (AUTORUN_UNIT_TESTS)
+        set(CONTROL_FILE "${ARG_NAME}.run")
+        add_custom_target("${CONTROL_FILE}_target" ALL DEPENDS ${CONTROL_FILE})
+        add_custom_command(OUTPUT ${CONTROL_FILE}
+                COMMAND ctest --output-on-failure -R ${ARG_NAME} || (rm -f ${CONTROL_FILE} && false)
+                COMMAND touch ${CONTROL_FILE}
+                DEPENDS ${TEST_DEPENDENCIES}
+                COMMENT "Executing ${ARG_COMMAND}")
     endif()
 endfunction()
 

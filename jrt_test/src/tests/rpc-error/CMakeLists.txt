@@ -4,4 +4,4 @@ vespa_add_executable(jrt_test_test-errors_app TEST
     test-errors.cpp
     DEPENDS
 )
-vespa_add_test(NAME jrt_test_test-errors_app NO_VALGRIND COMMAND sh rpc-error_test.sh)
+vespa_add_test(NAME jrt_test_test-errors_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/rpc-error_test.sh)

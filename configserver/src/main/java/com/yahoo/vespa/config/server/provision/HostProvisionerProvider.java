@@ -23,7 +23,8 @@ public class HostProvisionerProvider {
     private final Optional<Provisioner> hostProvisioner;
 
     public HostProvisionerProvider(ComponentRegistry<Provisioner> hostProvisionerRegistry, ConfigserverConfig configserverConfig) {
-        if (hostProvisionerRegistry.allComponents().isEmpty() || !configserverConfig.hostedVespa()) {
+        if (hostProvisionerRegistry.allComponents().isEmpty() || ! configserverConfig.hostedVespa()) {
+            log.info("Host provisioner is missing, provisioner component count: " + hostProvisionerRegistry.allComponents().size() + ", is hosted Vespa: " + configserverConfig.hostedVespa());
             hostProvisioner = Optional.empty();
         } else {
             log.log(LogLevel.DEBUG, "Host provisioner injected. Will be used for all deployments");

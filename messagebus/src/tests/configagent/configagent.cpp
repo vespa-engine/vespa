@@ -109,13 +109,13 @@ Test::Main()
     ConfigAgent agent(*this);
     EXPECT_TRUE(!checkHalf());
     EXPECT_TRUE(!checkFull());
-    agent.configure(FileConfigReader<MessagebusConfig>("full.cfg").read());
+    agent.configure(FileConfigReader<MessagebusConfig>(GetSourceDirectory() + "full.cfg").read());
     EXPECT_TRUE(!checkHalf());
     EXPECT_TRUE(checkFull());
-    agent.configure(FileConfigReader<MessagebusConfig>("half.cfg").read());
+    agent.configure(FileConfigReader<MessagebusConfig>(GetSourceDirectory() + "half.cfg").read());
     EXPECT_TRUE(checkHalf());
     EXPECT_TRUE(!checkFull());
-    agent.configure(FileConfigReader<MessagebusConfig>("full.cfg").read());
+    agent.configure(FileConfigReader<MessagebusConfig>(GetSourceDirectory() + "full.cfg").read());
     EXPECT_TRUE(checkFull());
     EXPECT_TRUE(!checkHalf());
     TEST_DONE();

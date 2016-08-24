@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/jsonstream.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <tests/common/hostreporter/util.h>
 
 namespace storage {
@@ -186,7 +187,7 @@ DistributorHostInfoReporterTest::generateExampleJson()
 
     std::string jsonString = json.str();
 
-    std::string path = "../../../protocols/getnodestate/distributor.json";
+    std::string path = vespalib::TestApp::GetSourceDirectory() + "../../../protocols/getnodestate/distributor.json";
     std::string goldenString = File::readAll(path);
 
     vespalib::slime::Memory goldenMemory(goldenString);

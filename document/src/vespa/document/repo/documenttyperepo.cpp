@@ -586,4 +586,8 @@ DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
     return DocumenttypesConfig(*reader.read());
 }
 
+DocumenttypesConfig readDocumenttypesConfig(const std::string &file_name ) {
+    return readDocumenttypesConfig(file_name.c_str());
+}
+
 }  // namespace document

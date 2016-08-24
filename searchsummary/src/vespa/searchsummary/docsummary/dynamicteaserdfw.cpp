@@ -216,10 +216,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_WEAK_AND:
         case search::ParseItem::ITEM_EQUIV:
         case search::ParseItem::ITEM_WORD_ALTERNATIVES:
-     // XXX unhandled
-     // case search::ParseItem::ITEM_WAND:
-     // case search::ParseItem::ITEM_WEIGHTED_SET:
-     // case search::ParseItem::ITEM_DOT_PRODUCT:
             if (!v->VisitOR(&item, iterator.getArity()))
                 rc = SkipItem(&iterator);
             break;
@@ -238,8 +234,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_TERM:
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
-     // XXX unhandled
-     // case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
             iterator.getTerm(&buf, &buflen);
             v->VisitKeyword(&item, buf, buflen, false, isSpecialToken);
             break;
@@ -275,8 +269,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_PREFIXTERM:
         case search::ParseItem::ITEM_SUBSTRINGTERM:
-     // XXX unhandled
-     // case search::ParseItem::ITEM_SUFFIXTERM:
             iterator.getTerm(&buf, &buflen);
             v->VisitKeyword(&item, buf, buflen, true, isSpecialToken);
             break;
@@ -296,9 +288,18 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             if (!v->VisitWITHIN(&item, iterator.getArity(),iterator.getArg1()))
                 rc = SkipItem(&iterator);
             break;
-     // XXX unhandled
-     // case search::ParseItem::ITEM_REGEXP:
-     // case search::ParseItem::ITEM_PREDICATE_QUERY:
+        // Unhandled items are just ignored by juniper
+        case search::ParseItem::ITEM_WAND:
+        case search::ParseItem::ITEM_WEIGHTED_SET:
+        case search::ParseItem::ITEM_DOT_PRODUCT:
+        case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
+        case search::ParseItem::ITEM_SUFFIXTERM:
+        case search::ParseItem::ITEM_REGEXP:
+        case search::ParseItem::ITEM_PREDICATE_QUERY:
+            if (!v->VisitOther(&item, iterator.getArity())) {
+                rc = SkipItem(&iterator);
+            }
+            break;
         default:
             rc = false;
         }

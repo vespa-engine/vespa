@@ -56,8 +56,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
-               Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-               Duration timeout, Clock clock, boolean prepared) {
+                       Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
+                       Duration timeout, Clock clock, boolean prepared) {
         this.session = session;
         this.localSessionRepo = localSessionRepo;
         this.tenantPath = tenantPath;
@@ -133,7 +133,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             activateLock.release();
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
-                               " activated successfully. Config generation " + session.getMetaData().getGeneration());
+                               " activated successfully using " +
+                               ( hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner" ) +
+                               ". Config generation " + session.getMetaData().getGeneration());
     }
 
     /**

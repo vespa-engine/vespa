@@ -4,7 +4,7 @@ vespa_add_executable(slobrok_tstdst_app TEST
     tstdst.cpp
     DEPENDS
 )
-vespa_add_test(NAME slobrok_tstdst_app NO_VALGRIND COMMAND sh startsome.sh)
+vespa_add_test(NAME slobrok_tstdst_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/startsome.sh)
 vespa_add_executable(slobrok_rpc_info_app
     SOURCES
     rpc_info.cpp

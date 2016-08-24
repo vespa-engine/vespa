@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/helper/legacysubscriber.h>
 #include <fstream>
 #include <config-my.h>
@@ -23,10 +24,19 @@ public:
     bool _configured;
 };
 
+struct ConfigIdGenerator
+{
+    static std::string id(const std::string &type, const std::string &name)
+    {
+        return std::string(type + ":" +
+                           vespalib::TestApp::GetSourceDirectory() + name);
+    }
+};
+
 TEST("requireThatFileLegacyWorks") {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
-    s.subscribe<MyConfig>("file:test1.cfg", &cb);
+    s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
     ASSERT_EQUAL("bar", cb._config->myField);
@@ -35,7 +45,7 @@ TEST("requireThatFileLegacyWorks") {
 TEST("requireThatDirLegacyWorks") {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
-    s.subscribe<MyConfig>("dir:testdir", &cb);
+    s.subscribe<MyConfig>(ConfigIdGenerator::id("dir","testdir"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
     ASSERT_EQUAL("bar", cb._config->myField);
@@ -47,8 +57,8 @@ TEST("requireThatDirMultiFileLegacyWorks") {
     MyCallback<BarConfig> cb2;
 
     LegacySubscriber s1, s2;
-    s1.subscribe<FooConfig>("dir:testdir/foobar", &cb1);
-    s2.subscribe<BarConfig>("dir:testdir/foobar", &cb2);
+    s1.subscribe<FooConfig>(ConfigIdGenerator::id("dir", "testdir/foobar"), &cb1);
+    s2.subscribe<BarConfig>(ConfigIdGenerator::id("dir", "testdir/foobar"), &cb2);
 
     ASSERT_TRUE(cb1._configured);
     ASSERT_TRUE(cb1._config.get() != NULL);
@@ -62,13 +72,13 @@ TEST("requireThatDirMultiFileLegacyWorks") {
 TEST("requireThatFileLegacyWorksMultipleTimes") {
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
-    s.subscribe<MyConfig>("file:test1.cfg", &cb);
+    s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
     ASSERT_EQUAL("bar", cb._config->myField);
     cb._configured = false;
     LegacySubscriber s2;
-    s2.subscribe<MyConfig>("file:test1.cfg", &cb);
+    s2.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
     ASSERT_EQUAL("bar", cb._config->myField);

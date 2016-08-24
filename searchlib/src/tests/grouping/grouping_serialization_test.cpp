@@ -43,8 +43,7 @@ document::GlobalId getGlobalId(uint32_t docId) {
 struct Fixture {
     // Set WRITE_FILES to true to generate new expected serialization files.
     const bool WRITE_FILES = false;
-    const std::string src_dir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-    const std::string file_path = src_dir + "/../../test/files/";
+    const std::string file_path = vespalib::TestApp::GetSourceDirectory() + "../../test/files/";
     std::string file_name;
     std::ifstream file_stream;
 

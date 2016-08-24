@@ -146,7 +146,7 @@ class FileAcquirerImpl implements FileAcquirer {
             Request request = new Request("waitFor");
             request.parameters().add(new StringValue(fileReference.value()));
 
-            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + fileReference + " with waiting time " + timeout + timeUnit);
+            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + fileReference + " with waiting time " + timeout + " " + timeUnit.name().toLowerCase());
             target.invokeSync(request, timer.timeLeft(TimeUnit.SECONDS));
 
             if (request.checkReturnTypes("s")) {

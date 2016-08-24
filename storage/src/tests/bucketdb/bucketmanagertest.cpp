@@ -24,6 +24,7 @@ LOG_SETUP(".test.bucketdb.bucketmanager");
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <thread>
 #include <future>
@@ -158,6 +159,7 @@ public:
     static constexpr uint32_t DIR_SPREAD = 3;
     static constexpr uint32_t MESSAGE_WAIT_TIME = 60*2;
 
+
     void setUp() {
         _emptyBuckets = 0;
     }
@@ -192,8 +194,8 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     vdstestlib::DirConfig config(getStandardConfig(true));
 
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(
-                *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes",
-                FileSpec("config-doctypes.cfg"))));
+                *ConfigGetter<DocumenttypesConfig>::getConfig(
+                    "config-doctypes", FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
     _top.reset(new DummyStorageLink);
     _node.reset(new TestServiceLayerApp(
                 DiskCount(2), NodeIndex(0), config.getConfigId()));

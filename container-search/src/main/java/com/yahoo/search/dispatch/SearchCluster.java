@@ -52,7 +52,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final FS4ResourcePool fs4ResourcePool;
 
     public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
-        this(dispatchConfig.min_activedocs_coverage(), toNodes(dispatchConfig), fs4ResourcePool);
+        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool);
     }
     
     public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool) {

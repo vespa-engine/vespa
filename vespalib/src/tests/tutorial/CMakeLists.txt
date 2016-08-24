@@ -5,7 +5,7 @@ vespa_add_executable(vespalib_make_tutorial_app TEST
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_make_tutorial_app COMMAND sh ./compare-tutorials.sh)
+vespa_add_test(NAME vespalib_make_tutorial_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/compare-tutorials.sh)
 vespa_add_executable(vespalib_xml_escape_app
     SOURCES
     xml_escape.cpp

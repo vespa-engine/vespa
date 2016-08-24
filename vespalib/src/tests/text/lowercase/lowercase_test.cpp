@@ -20,7 +20,7 @@ Test::Main()
     EXPECT_EQUAL((int8_t)'a', LowerCase::convert((int8_t)'A'));
     EXPECT_EQUAL((uint8_t)'a', LowerCase::convert((uint8_t)'A'));
 
-    std::ifstream yellData("yell-want.dat");
+    std::ifstream yellData(vespalib::TestApp::GetSourceDirectory() + "yell-want.dat");
 
     EXPECT_TRUE(yellData.good());
 

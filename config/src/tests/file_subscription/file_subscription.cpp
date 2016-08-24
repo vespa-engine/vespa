@@ -5,6 +5,7 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/file/filesource.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <fstream>
 #include <config-my.h>
 #include <config-foo.h>
@@ -26,6 +27,7 @@ namespace {
         of.close();
     }
 }
+
 
 TEST("requireThatFileSpecGivesCorrectKey") {
     std::string str("/home/my/config.cfg");
@@ -129,7 +131,7 @@ TEST("requireThatMultipleSubscribersCanSubscribeToSameFile") {
 }
 
 TEST("requireThatCanSubscribeToDirectory") {
-    DirSpec spec("cfgdir");
+    DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfgdir");
     ConfigSubscriber s(spec);
     ConfigHandle<FooConfig>::UP fooHandle = s.subscribe<FooConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -145,7 +147,7 @@ TEST("requireThatCanSubscribeToDirectory") {
 }
 
 TEST("requireThatCanSubscribeToDirectoryWithEmptyCfgFile") {
-    DirSpec spec("cfgemptyfile");
+    DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfgemptyfile");
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -161,7 +163,7 @@ TEST("requireThatCanSubscribeToDirectoryWithEmptyCfgFile") {
 }
 
 TEST("requireThatCanSubscribeToDirectoryWithNonExistingCfgFile") {
-    DirSpec spec("cfgnonexistingfile");
+    DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfgnonexistingfile");
     ConfigSubscriber s(spec);
     ConfigHandle<FoodefaultConfig>::UP fooHandle = s.subscribe<FoodefaultConfig>("");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
@@ -176,7 +178,8 @@ TEST("requireThatCanSubscribeToDirectoryWithNonExistingCfgFile") {
     ASSERT_EQUAL("barbar", barCfg->barValue);
 }
 
-TEST_F("requireThatDirSpecDoesNotMixNames", DirSpec("cfgdir2")) {
+TEST_F("requireThatDirSpecDoesNotMixNames",
+       DirSpec(vespalib::TestApp::GetSourceDirectory() + "cfgdir2")) {
     ConfigSubscriber s(f);
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("");
     ConfigHandle<FoobarConfig>::UP foobarHandle = s.subscribe<FoobarConfig>("");
@@ -189,7 +192,8 @@ TEST_F("requireThatDirSpecDoesNotMixNames", DirSpec("cfgdir2")) {
     ASSERT_EQUAL("foobarlol", foobar->fooBarValue);
 }
 
-TEST_F("require that can subscribe multiple config ids of same config", DirSpec("cfgdir3")) {
+TEST_F("require that can subscribe multiple config ids of same config",
+       DirSpec(vespalib::TestApp::GetSourceDirectory() + "cfgdir3")) {
     ConfigSubscriber s(f1);
     ConfigHandle<BarConfig>::UP fooHandle = s.subscribe<BarConfig>("foo");
     ConfigHandle<BarConfig>::UP barHandle = s.subscribe<BarConfig>("bar");

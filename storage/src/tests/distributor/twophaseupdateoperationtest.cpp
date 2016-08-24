@@ -25,7 +25,6 @@ namespace distributor {
 using std::shared_ptr;
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
-using config::FileSpec;
 using namespace document;
 using namespace storage;
 using namespace storage::distributor;

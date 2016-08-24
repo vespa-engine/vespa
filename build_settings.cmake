@@ -10,6 +10,12 @@ set(EXCLUDE_TESTS_FROM_ALL FALSE CACHE BOOL "If TRUE, do not build tests as part
 # Whether to run unit tests via valgrind
 set(VALGRIND_UNIT_TESTS FALSE CACHE BOOL "If TRUE, run unit tests via valgrind")
 
+# Whether to run tests marked as benchmark as part of the test runs
+set(RUN_BENCHMARKS FALSE CACHE BOOL "If TRUE, benchmars are run togheter with the other tests")
+
+# Whether to run tests marked as benchmark as part of the test runs
+set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately after linking the test")
+
 # Warnings
 set(WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
 

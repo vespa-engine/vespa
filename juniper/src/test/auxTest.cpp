@@ -154,7 +154,7 @@ AuxTest::TestPartialUTF8()
 {
     const int inputSize = 5769; // NB: update this if input is changed
     char input[inputSize];
-    FastOS_File file("partialutf8.input.utf8");
+    FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
     _test(file.OpenReadOnly());
     _test(file.GetSize() == inputSize);
     _test(file.Read(input, inputSize));
@@ -191,7 +191,7 @@ void AuxTest::TestLargeBlockChinese()
 {
     const int inputSize = 10410; // NB: update this if input is changed
     char input[inputSize];
-    FastOS_File file("largeblockchinese.input.utf8");
+    FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
     _test(file.OpenReadOnly());
     _test(file.GetSize() == inputSize);
     _test(file.Read(input, inputSize));

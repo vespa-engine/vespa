@@ -11,12 +11,12 @@ public:
     std::stringstream stream;
     ModelInspect model;
 
-    Model() : uri("file:model.cfg"), flags(), stream(),
+    Model() : uri(configUri("file", "model.cfg")), flags(), stream(),
               model(flags, uri, stream) {
     };
 
     Model(ModelInspect::Flags _flags)
-        : uri("file:model.cfg"), flags(_flags), stream(),
+        : uri(configUri("file", "model.cfg")), flags(_flags), stream(),
           model(flags, uri, stream) {
     };
 
@@ -30,6 +30,12 @@ public:
 
     ~Model() {
     };
+
+    static config::ConfigUri configUri(const std::string &type, const std::string &name)
+    {
+        return config::ConfigUri(type + ":" +
+                                 vespalib::TestApp::GetSourceDirectory() + "/" + name);
+    }
 };
 
 class MakeUriFlags : public ModelInspect::Flags {
@@ -63,7 +69,7 @@ public:
         _getIndexOf;
     ModelDummy(std::stringstream &stream) 
         : ModelInspect(ModelInspect::Flags(),
-                       config::ConfigUri("file:model.cfg"),
+                       config::ConfigUri(Model::configUri("file", "model.cfg")),
                        stream) {
         _yamlDump = 
             _listHosts =

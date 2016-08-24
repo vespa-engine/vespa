@@ -10,7 +10,7 @@ TEST("mapped file input") {
         EXPECT_TRUE(file.tainted());
     }
     {
-        MappedFileInput file("file.txt");
+        MappedFileInput file(vespalib::TestApp::GetSourceDirectory() + "file.txt");
         EXPECT_TRUE(!file.tainted());
         LineReader reader(file, 3);
         string line;

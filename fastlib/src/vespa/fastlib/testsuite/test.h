@@ -89,6 +89,7 @@ public:
   virtual void Run() = 0;
 
   const char *get_name() const;
+  static const std::string& GetSourceDirectory();
   long GetNumPassed() const;
   long GetNumFailed() const;
   const std::ostream* GetStream() const;
@@ -144,20 +145,30 @@ Test::Test(std::ostream* osptr, const char*name) :
 
 inline
 Test::Test(const char*name) :
-  m_osptr(NULL),
-  name_(name),
-  m_nPass(0),
-  m_nFail(0),
-  m_index(0),
-  m_description()
+  Test(nullptr, name)
 {
-  m_pchar[0]= '|';
-  m_pchar[1]= '-';
 }
 
 inline
 const char *Test::get_name() const {
   return (name_ == NULL) ? "Test " : name_;
+}
+
+inline
+const std::string& Test::GetSourceDirectory()
+{
+  static const std::string srcDir = [] () {
+      std::string dir(".");
+      const char* env = getenv("SOURCE_DIRECTORY");
+      if (env) {
+        dir = env;
+      }
+      if (*dir.rbegin() != '/') {
+        dir += "/";
+      }
+      return dir;
+  } ();
+  return srcDir;
 }
 
 inline

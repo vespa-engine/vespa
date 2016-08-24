@@ -4,6 +4,7 @@
 LOG_SETUP("indexmetainfo_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
+#include "../../../../vespalib/src/vespa/vespalib/testkit/testapp.h"
 
 using search::IndexMetaInfo;
 
@@ -14,11 +15,9 @@ TEST_SETUP(Test)
 int
 Test::Main()
 {
-    const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
-
     TEST_INIT("indexmetainfo_test");
     { // load pregenerated file
-        IndexMetaInfo info(srcDir);
+        IndexMetaInfo info(vespalib::TestApp::GetSourceDirectory());
         EXPECT_TRUE(info.load());
         ASSERT_TRUE(info.snapshots().size() == 4);
         EXPECT_TRUE(info.snapshots()[0].valid);
@@ -90,7 +89,7 @@ Test::Main()
         EXPECT_TRUE(!info.load("file-not-present.txt"));
     }
     { // load files with errors should fail
-        IndexMetaInfo info(srcDir);
+        IndexMetaInfo info(vespalib::TestApp::GetSourceDirectory());
         EXPECT_TRUE(!info.load("bogus1.txt"));
         EXPECT_TRUE(!info.load("bogus2.txt"));
         EXPECT_TRUE(!info.load("bogus3.txt"));

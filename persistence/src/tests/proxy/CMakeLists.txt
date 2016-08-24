@@ -27,4 +27,4 @@ vespa_add_executable(persistence_external_providerproxy_conformancetest_app
     persistence
     persistence_persistence_conformancetest
 )
-vespa_add_test(NAME persistence_providerproxy_conformance_test_app COMMAND sh proxy_test.sh)
+vespa_add_test(NAME persistence_providerproxy_conformance_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/proxy_test.sh)

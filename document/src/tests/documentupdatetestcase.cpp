@@ -23,6 +23,7 @@
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document::config_builder;
 using vespalib::tensor::Tensor;
@@ -572,10 +573,10 @@ DocumentUpdateTest::testIncrementWithZeroResultWeightIsRemoved()
 void DocumentUpdateTest::testReadSerializedFile()
 {
     // Reads a file serialized from java
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
+    const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    int fd = open("data/serializeupdatejava.dat", O_RDONLY);
+    int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serializeupdatejava.dat").c_str(), O_RDONLY);
 
     int len = lseek(fd,0,SEEK_END);
     ByteBuffer buf(len);
@@ -649,7 +650,7 @@ void DocumentUpdateTest::testReadSerializedFile()
 void DocumentUpdateTest::testGenerateSerializedFile()
 {
     // Tests nothing, only generates a file for java test
-    const char file_name[] = "data/crossplatform-java-cpp-doctypes.cfg";
+    const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "data/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
@@ -671,7 +672,7 @@ void DocumentUpdateTest::testGenerateSerializedFile()
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
     ByteBuffer::UP buf(serialize42(upd));
 
-    int fd = open("data/serializeupdatecpp.dat",
+    int fd = open((vespalib::TestApp::GetSourceDirectory() + "data/serializeupdatecpp.dat").c_str(),
                   O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if (write(fd, buf->getBuffer(), buf->getPos()) != (ssize_t)buf->getPos()) {
 	throw vespalib::Exception("read failed");

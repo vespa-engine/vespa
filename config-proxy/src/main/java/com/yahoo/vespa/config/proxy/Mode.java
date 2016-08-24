@@ -6,11 +6,11 @@ import java.util.Set;
 
 /**
  *
- * Different modes the config proxy can be running in.
+ * The mode the config proxy can be running with.
  *
  * 'default' mode is requesting config from server, serving from cache only when known config
  * and no new config having been sent from server. When in 'memorycache' mode, there is no connection
- * to another config source, the proxy only serves from (memory) cache.
+ * to a config source, the proxy serves from memory cache only.
  *
  * @author hmusum
  */

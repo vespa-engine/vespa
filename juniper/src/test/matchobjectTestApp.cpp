@@ -18,6 +18,7 @@
  ****************************************************************************/
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
+#include <vespa/vespalib/testkit/testapp.h>
 LOG_SETUP("matchobjectTest");
 #include "matchobjectTest.h"
 #include "testenv.h"
@@ -28,10 +29,10 @@ LOG_SETUP("matchobjectTest");
  *
  * @sa MatchObject @author Knut Omang
  */
-class MatchObjectTestApp : public FastOS_Application {
+class MatchObjectTestApp : public vespalib::TestApp {
 public:
     virtual int Main() {
-        juniper::TestEnv te(this, "../rpclient/testclient.rc");
+        juniper::TestEnv te(this, (GetSourceDirectory() + "../rpclient/testclient.rc").c_str());
         MatchObjectTest test;
         test.SetStream(&std::cout);
         test.Run(_argc, _argv);
