@@ -162,6 +162,7 @@ DocumentStore::remove(uint64_t syncToken, DocumentIdT lid)
     _backingStore.remove(syncToken, lid);
     if (useCache()) {
         _cache->invalidate(lid);
+        _visitCache->invalidate(lid);
     }
 }
 
