@@ -152,6 +152,7 @@ DocumentStore::write(uint64_t syncToken, const document::Document& doc, Document
     _backingStore.write(syncToken, lid, stream.peek(), stream.size());
     if (useCache()) {
         _cache->invalidate(lid);
+        _visitCache->invalidate(lid);
     }
 }
 

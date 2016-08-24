@@ -77,6 +77,7 @@ public:
 
     CompressedBlobSet read(const Keys & keys) const;
     void remove(uint32_t key);
+    void invalidate(uint32_t key) { remove(key); }
 
     CacheStats getCacheStats() const;
 private:
