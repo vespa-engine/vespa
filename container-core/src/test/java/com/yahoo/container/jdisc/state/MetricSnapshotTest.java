@@ -20,7 +20,7 @@ public class MetricSnapshotTest {
      */
     @Test
     public void emptyMetricSetNotAddedToClonedSnapshot() {
-        final StateMetricContext ctx = StateMetricContext.newInstance(null);
+        StateMetricContext ctx = StateMetricContext.newInstance(null);
         MetricSnapshot snapshot = new MetricSnapshot();
         snapshot.add(ctx, "foo", 1234);
         MetricSnapshot newSnapshot = snapshot.createSnapshot();
@@ -33,30 +33,4 @@ public class MetricSnapshotTest {
         assertEquals(Collections.unmodifiableMap(new HashMap(0)), Collections.emptyMap());
     }
 
-    @Test
-    public void testLookup() {
-        Map<Key, String> map = new HashMap<>();
-        map.put(new Key(), "a");
-        System.out.println("Lookup value after putting a: " + map.get(new Key()));
-        map.put(new Key(), "b");
-        System.out.println("Map content after putting b: ");
-        for (Map.Entry<Key, String> entry : map.entrySet())
-            System.out.println("    " + entry);
-    }
-
-    public static class Key {
-        
-        @Override
-        public int hashCode() {
-            return 1;
-        }
-        
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            return false;
-        }
-        
-    }
-    
 }

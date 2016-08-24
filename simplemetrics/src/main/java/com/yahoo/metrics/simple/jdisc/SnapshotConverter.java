@@ -27,13 +27,6 @@ class SnapshotConverter {
     final Map<Point, Map<String, MetricValue>> perPointData = new HashMap<>();
     private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-    private Map<String, MetricValue> getMap(Point point) {
-        if (! perPointData.containsKey(point)) {
-            perPointData.put(point, new HashMap<>());
-        }
-        return perPointData.get(point);
-    }
-
     public SnapshotConverter(Bucket snapshot) {
         this.snapshot = snapshot;
     }
@@ -65,7 +58,6 @@ class SnapshotConverter {
         }
     }
 
-
     static MetricValue convert(UntypedMetric val) {
         if (val.isCounter()) {
             return CountMetric.newInstance(val.getCount());
@@ -80,7 +72,7 @@ class SnapshotConverter {
     }
 
     private static List<Tuple2<String, Double>> buildPercentileList(DoubleHistogram histogram) {
-        final List<Tuple2<String, Double>> prefixAndValues = new ArrayList<>(2);
+        List<Tuple2<String, Double>> prefixAndValues = new ArrayList<>(2);
         prefixAndValues.add(new Tuple2<>("95", histogram.getValueAtPercentile(95.0d)));
         prefixAndValues.add(new Tuple2<>("99", histogram.getValueAtPercentile(99.0d)));
         return prefixAndValues;
@@ -99,6 +91,13 @@ class SnapshotConverter {
                                   snapshot.getToMillis(),
                                   TimeUnit.MILLISECONDS,
                                   data);
+    }
+
+    private Map<String, MetricValue> getMap(Point point) {
+        if (! perPointData.containsKey(point)) {
+            perPointData.put(point, new HashMap<>());
+        }
+        return perPointData.get(point);
     }
 
     void outputHistograms(PrintStream output) {

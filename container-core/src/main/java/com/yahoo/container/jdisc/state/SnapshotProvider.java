@@ -10,6 +10,8 @@ import java.io.PrintStream;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public interface SnapshotProvider {
-    public MetricSnapshot latestSnapshot();
-    public void histogram(PrintStream output);
+
+    MetricSnapshot latestSnapshot();
+    void histogram(PrintStream output);
+
 }

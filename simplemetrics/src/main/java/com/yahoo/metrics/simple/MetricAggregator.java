@@ -10,11 +10,12 @@ import com.yahoo.metrics.ManagerConfig;
 /**
  * Worker thread to collect the data stored in worker threads and build
  * snapshots for external consumption. Using the correct executor gives the
- * necessary guarantuess for this being invoked from only a single thread.
+ * necessary guarantuees for this being invoked from only a single thread.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 class MetricAggregator implements Runnable {
+
     private final ThreadLocalDirectory<Bucket, Sample> metricsCollection;
     private final AtomicReference<Bucket> currentSnapshot;
     private int generation = 0;

@@ -6,9 +6,10 @@ package com.yahoo.metrics.simple;
  * Point and a metric name. Written to be robust against null input as the API
  * gives very little guidance.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Identifier {
+
     private final String name;
     private final Point location;
 
@@ -28,15 +29,10 @@ public class Identifier {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+
         Identifier other = (Identifier) obj;
         if (location == null) {
             if (other.location != null) {
@@ -69,4 +65,5 @@ public class Identifier {
     public Point getLocation() {
         return location;
     }
+
 }

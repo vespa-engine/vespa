@@ -10,12 +10,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * Basically the persistence layer for metrics. Both CPU and memory hungry, but
+ * The persistence layer for metrics. Both CPU and memory hungry, but
  * it runs in its own little world.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 class DimensionCache {
+
     private final Map<String, LinkedHashMap<Point, UntypedMetric>> persistentData = new HashMap<>();
     private final int pointsToKeep;
 

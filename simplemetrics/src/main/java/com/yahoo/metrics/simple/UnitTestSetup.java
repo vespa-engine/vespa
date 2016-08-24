@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
  * @author ean
  */
 public class UnitTestSetup {
+
     MetricManager metricManager;
     MetricReceiver receiver;
     ObservableUpdater updater;
