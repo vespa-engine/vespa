@@ -50,12 +50,11 @@ public class OrchestratorImpl implements Orchestrator {
                     HARDCODED_ORCHESTRATOR_PORT,
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
-
-            if (updateHostResponse == null) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return true;
-            }
             return updateHostResponse.reason() == null;
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            logger.info("Got not found on delete, resuming");
+            return true;
         } catch (Exception e) {
             logger.info("Got error on suspend " + hostName, e);
             return false;
@@ -85,13 +84,13 @@ public class OrchestratorImpl implements Orchestrator {
                     ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
                     HARDCODED_ORCHESTRATOR_PORT,
                     UpdateHostResponse.class);
-            if (batchOperationResult == null) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                logger.info("Got not found on delete, resuming");
-                return true;
-            }
             return batchOperationResult.reason() == null;
-        } catch (Exception e) {
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            logger.info("Got not found on delete, resuming");
+            return true;
+        }
+        catch (Exception e) {
             return false;
         }
     }

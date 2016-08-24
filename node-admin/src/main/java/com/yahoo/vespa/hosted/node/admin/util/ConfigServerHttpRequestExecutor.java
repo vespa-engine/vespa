@@ -45,7 +45,13 @@ public class ConfigServerHttpRequestExecutor {
         HttpUriRequest createRequest(HostName configserver) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
-    // return value null means "not found" on server.
+    public class NotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 4791511887L;
+        public NotFoundException(String message) {
+            super(message);
+        }
+    }
+
     public <T extends Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
@@ -59,7 +65,7 @@ public class ConfigServerHttpRequestExecutor {
                     continue;
                 }
                 if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
-                    return null;
+                    throw new NotFoundException("Not found returned from " + configServer);
                 }
                 if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
                     NODE_ADMIN_LOGGER.info("Non 200 received:\n" + read(response.getEntity()));
@@ -75,7 +81,6 @@ public class ConfigServerHttpRequestExecutor {
         throw new RuntimeException("Failed executing request, last exception:", lastException);
     }
 
-    // return value null means "not found" on a config server.
     public <T extends Object> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut("http://" + configServer + ":" + port + path);
@@ -86,7 +91,6 @@ public class ConfigServerHttpRequestExecutor {
         }, wantedReturnType);
     }
 
-    // return value null means "not found" on a config server.
     public <T extends Object> T patch(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch("http://" + configServer + ":" + port + path);
@@ -95,14 +99,12 @@ public class ConfigServerHttpRequestExecutor {
         }, wantedReturnType);
     }
 
-    // return value null means "not found" on a config server.
     public <T extends Object> T delete(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             return new HttpDelete("http://" + configServer + ":" + port + path);
         }, wantedReturnType);
     }
 
-    // return value null means "not found" on a config server.
     public <T extends Object> T get(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             return new HttpGet("http://" + configServer + ":" + port + path);
