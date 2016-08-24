@@ -4,9 +4,10 @@ vespa_add_executable(messagebus_test_trace_test_app TEST
     trace.cpp
     DEPENDS
 )
-vespa_add_test(NAME messagebus_test_trace_test_app NO_VALGRIND COMMAND sh trace_test.sh)
 vespa_add_executable(messagebus_test_cpp-server-trace_app
     SOURCES
     cpp-server.cpp
     DEPENDS
 )
+vespa_add_test(NAME messagebus_test_trace_test_app NO_VALGRIND COMMAND sh trace_test.sh
+               DEPENDS messagebus_test_trace_test_app messagebus_test_cpp-server-trace_app)

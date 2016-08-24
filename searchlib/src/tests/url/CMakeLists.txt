@@ -5,4 +5,5 @@ vespa_add_executable(searchlib_testurl_app TEST
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_testurl_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/dotest.sh)
+vespa_add_test(NAME searchlib_testurl_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/dotest.sh
+               DEPENDS searchlib_testurl_app)

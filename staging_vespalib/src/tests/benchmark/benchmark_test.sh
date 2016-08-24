@@ -12,7 +12,7 @@ $TIME ./staging_vespalib_benchmark_test_app vespalib::ReturnByValueMultiVectorSt
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockSystem 1000 1
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockGToD 1000 1
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockGToD 20000 1
-$TIME./staging_vespalib_benchmark_test_app vespalib::ClockREALTIME 1000 1
+$TIME ./staging_vespalib_benchmark_test_app vespalib::ClockREALTIME 1000 1
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockMONOTONIC 1000 1
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockMONOTONIC_RAW 1000 1
 $TIME ./staging_vespalib_benchmark_test_app vespalib::ClockPROCESS_CPUTIME_ID 2500 1
