@@ -49,7 +49,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         HttpUriRequest createRequest(HostName configserver);
     }
 
-    private <T extends  Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType)  {
+    private <T extends  Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) throws IOException {
         for (HostName configServer : configservers) {
             final HttpResponse response;
             try {
@@ -169,9 +169,15 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public void markAsReady(final HostName hostName) throws IOException {
-        tryAllConfigServers(configserver -> {
+        final HttpResponse nodeResponse = tryAllConfigServers(configserver -> {
             String url = "http://" + configserver + ":" + port + "/nodes/v2/ready/" + hostName;
             return new HttpPut(url);
-        }, String.class);
+        }, HttpResponse.class);
+
+
+        if (nodeResponse.getStatusLine().getStatusCode() == 200) {
+            return;
+        }
+        throw new RuntimeException("Could not mark as ready" + hostName);
     }
 }
