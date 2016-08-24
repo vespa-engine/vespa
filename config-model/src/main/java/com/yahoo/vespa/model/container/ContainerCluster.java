@@ -302,6 +302,7 @@ public final class ContainerCluster
     }
 
     public void prepare() {
+        if (1==1) throw new RuntimeException();
         addAndSendApplicationBundles();
         sendUserConfiguredFiles();
         setApplicationMetaData();

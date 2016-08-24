@@ -68,22 +68,24 @@ public abstract class Item implements Cloneable {
 
     public static final int DEFAULT_WEIGHT = 100;
 
-    /** The relative importancy of this term in the query. Default is 100 */
+    /** The relative importance of this term in the query. Default is 100 */
     private int weight = DEFAULT_WEIGHT;
 
     /**
      * The definitions in Item.ItemCreator must match the ones in
      * searchlib/src/searchlib/parsequery/parse.h
      */
-    public static enum ItemCreator {
+    public enum ItemCreator {
+
         ORIG(0),
         FILTER(1);
 
         public final int code;
 
-        private ItemCreator(int code) {
+        ItemCreator(int code) {
             this.code = code;
         }
+
     }
 
     private boolean fromSpecialToken = false;

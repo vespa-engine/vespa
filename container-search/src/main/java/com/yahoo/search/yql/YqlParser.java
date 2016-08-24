@@ -1454,25 +1454,20 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast,
-            @NonNull
-            T out) {
+    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, @NonNull T out) {
         {
-            Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY,
-                    Map.class, null, "connectivity settings");
+            Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
             if (connectivity != null) {
                 connectedItems.add(new ConnectedItem(out, getMapValue(
                         CONNECTIVITY, connectivity, CONNECTION_ID,
                         Integer.class), getMapValue(CONNECTIVITY, connectivity,
                         CONNECTION_WEIGHT, Number.class).doubleValue()));
             }
-            Number significance = getAnnotation(ast, SIGNIFICANCE,
-                    Number.class, null, "term significance");
+            Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
             if (significance != null) {
                 out.setSignificance(significance.doubleValue());
             }
-            Integer uniqueId = getAnnotation(ast, UNIQUE_ID, Integer.class,
-                    null, "term ID", false);
+            Integer uniqueId = getAnnotation(ast, UNIQUE_ID, Integer.class, null, "term ID", false);
             if (uniqueId != null) {
                 out.setUniqueID(uniqueId);
                 identifiedItems.put(uniqueId, out);
@@ -1480,8 +1475,8 @@ public class YqlParser implements Parser {
         }
         {
             Item leaf = (Item) out;
-            Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS,
-                    Map.class, Collections.emptyMap(), "item annotation map");
+            Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS, 
+                                                      Map.class, Collections.emptyMap(), "item annotation map");
             for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
                 Preconditions.checkArgument(entry.getKey() instanceof String,
                         "Expected String annotation key, got %s.", entry
