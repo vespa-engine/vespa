@@ -369,7 +369,7 @@ function(vespa_add_test)
 
     list(LENGTH TEST_DEPENDENCIES TEST_DEPENDENCIES_LENGTH)
     if(${TEST_DEPENDENCIES_LENGTH} EQUAL 0)
-        message(FATAL_ERROR "Test does not have any dependencies. This is not allowed.")
+        message(FATAL_ERROR "Test does not have any dependencies. It's not allowed if the command is neither a target nor a script.")
     endif()
 
     if(VALGRIND_UNIT_TESTS AND NOT ARG_NO_VALGRIND)
