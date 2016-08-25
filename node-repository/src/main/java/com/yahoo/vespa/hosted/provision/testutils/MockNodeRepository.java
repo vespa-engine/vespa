@@ -78,6 +78,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(6);
         setReady(nodes);
         fail("host5.yahoo.com");
+        deallocate("host5.yahoo.com");
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty(), Optional.of("image-123"));

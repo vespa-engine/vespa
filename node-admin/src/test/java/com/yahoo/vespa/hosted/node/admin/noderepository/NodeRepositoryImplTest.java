@@ -24,6 +24,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the NodeRepository class used for talking to the node repository. It uses a mock from the node repository
@@ -45,9 +46,9 @@ public class NodeRepositoryImplTest {
 
     /**
      * Starts NodeRepository with
-     *   com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavor
-     *   com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository
-     *   com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler
+     *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors}
+     *   {@link com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository}
+     *   {@link com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler}
      * These classes define some test data that is used in these tests.
      */
     @Before
@@ -123,4 +124,25 @@ public class NodeRepositoryImplTest {
         nodeRepositoryApi.updateNodeAttributes(hostname, 1L, new DockerImage("image-1"), "6.2.3\n");
     }
 
+    @Test
+    public void testMarkAsReady() throws InterruptedException, IOException {
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
+        waitForJdiscContainerToServe();
+
+        nodeRepositoryApi.markAsReady(new HostName("host5.yahoo.com"));
+
+        try {
+            nodeRepositoryApi.markAsReady(new HostName("host1.yahoo.com"));
+            fail("Expected failure because host1 is not registered as provisioned, dirty, failed or parked");
+        } catch (RuntimeException ignored) {
+            // expected
+        }
+
+        try {
+            nodeRepositoryApi.markAsReady(new HostName("host101.yahoo.com"));
+            fail("Expected failure because host101 does not exist");
+        } catch (RuntimeException ignored) {
+            // expected
+        }
+    }
 }
