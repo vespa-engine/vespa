@@ -22,6 +22,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -147,8 +149,11 @@ public class ProvisionTest {
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
         state4.assertExtends(state2);
         assertEquals("New and inactive nodes are reserved", 4 + 3, tester.getNodes(application1, Node.State.reserved).size());
-        HostSpec removed = tester.removeOne(state4.allHosts);
+        // Remove a retired host from one of the content clusters (which one is random depending on host names)
+        HostSpec removed = state4.removeHost(tester.getNodes(application1, Node.State.active).retired().asList().get(0).hostname());
         tester.activate(application1, state4.allHosts);
+        assertEquals("Retired active removed when activating became inactive",
+                     1, tester.getNodes(application1, Node.State.inactive).asList().size());
         assertEquals(removed.hostname(), tester.getNodes(application1, Node.State.inactive).asList().get(0).hostname());
         assertEquals("Earlier retired nodes are unretired on activate",
                      0, tester.getNodes(application1, Node.State.active).retired().size());
@@ -156,16 +161,16 @@ public class ProvisionTest {
         // decrease again
         SystemState state5 = prepare(application1, 2, 2, 3, 3, "default", tester);
         tester.activate(application1, state5.allHosts);
-        assertEquals("Superfluous container nodes are deactivated",
-                     4-2 + 5-2, tester.getNodes(application1, Node.State.inactive).size());
+        assertEquals("Superfluous container nodes are also deactivated",
+                     4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); // 
         assertEquals("Superfluous content nodes are retired",
-                     5-3 + 6-3, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // increase content slightly
         SystemState state6 = prepare(application1, 2, 2, 4, 3, "default", tester);
         tester.activate(application1, state6.allHosts);
         assertEquals("One content node is unretired",
-                     5-4 + 6-3, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-4 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // Then reserve more
         SystemState state7 = prepare(application1, 8, 2, 2, 2, "default", tester);
@@ -460,6 +465,28 @@ public class ProvisionTest {
         assertTrue( state2.hostByMembership("test", 1, 2).membership().get().retired());
     }
 
+    @Test
+    public void application_deployment_allocates_cheapest_available() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        tester.makeReadyNodes(6, "large"); //cost = 10
+        tester.makeReadyNodes(6, "large-variant"); //cost = 9
+        tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
+
+        ApplicationId applicationId = tester.makeApplicationId();
+        ClusterSpec contentClusterSpec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"));
+        ClusterSpec containerClusterSpec = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"));
+
+
+        List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large"); //should be replaced by 5 large-variant
+        List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large"); // should give 1 large-variant, 6 large and 3 large-variant-variant
+
+        tester.assertNumberOfNodesWithFlavor(containerNodes, "large-variant", 5);
+        tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 1);
+        tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 6);
+        tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant-variant", 3);
+    }
+
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int group0Size, int group1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
@@ -540,6 +567,17 @@ public class ProvisionTest {
 
         public Set<String> hostNames() {
             return allHosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
+        }
+
+        public HostSpec removeHost(String hostname) {
+            for (Iterator<HostSpec> i = allHosts.iterator(); i.hasNext();) {
+                HostSpec host = i.next();
+                if (host.hostname().equals(hostname)) {
+                    i.remove();
+                    return host;
+                }
+            }
+            return null;
         }
 
         public void assertExtends(SystemState other) {
