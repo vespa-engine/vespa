@@ -30,7 +30,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
         this.baseHostName = baseHostName;
         this.port = configPort;
-        this.requestExecutor = new ConfigServerHttpRequestExecutor(configServerHosts);
+        this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
     }
 
 
@@ -136,7 +136,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     @Override
     public void markAsReady(final HostName hostName) throws IOException {
         requestExecutor.put(
-                "/nodes/v2/ready/" + hostName,
+                "/nodes/v2/state/ready/" + hostName,
                 port,
                 Optional.empty(), /* body */
                 String.class);
