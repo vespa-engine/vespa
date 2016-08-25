@@ -124,6 +124,10 @@ CompressedBlobSet::getBlobSet() const
     return BlobSet(_positions, uncompressed.stealBuffer());
 }
 
+size_t CompressedBlobSet::size() const {
+    return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer.size();
+}
+
 namespace {
 
 class VisitCollector : public IBufferVisitor

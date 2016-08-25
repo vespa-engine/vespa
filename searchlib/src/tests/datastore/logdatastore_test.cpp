@@ -511,13 +511,13 @@ private:
         vespalib::hash_set<uint32_t>  _actual;
         bool                          _allowVisitCaching;
     };
-    GuardDirectory                _myDir;    
-    document::DocumentTypeRepo    _repo;
-    LogDocumentStore::Config      _config;
-    DummyFileHeaderContext        _fileHeaderContext;
-    vespalib::ThreadStackExecutor _executor;
-    MyTlSyncer                    _tlSyncer;
-    LogDocumentStore              _datastore;
+    GuardDirectory                   _myDir;    
+    document::DocumentTypeRepo       _repo;
+    LogDocumentStore::Config         _config;
+    DummyFileHeaderContext           _fileHeaderContext;
+    vespalib::ThreadStackExecutor    _executor;
+    MyTlSyncer                       _tlSyncer;
+    LogDocumentStore                 _datastore;
     std::map<uint32_t, Document::UP> _inserted;
     SerialNum                        _serial;
 };
@@ -527,7 +527,8 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_EQUAL(hits, cs.hits);
     EXPECT_EQUAL(misses, cs.misses);
     EXPECT_EQUAL(elements, cs.elements);
-    EXPECT_EQUAL(memory_used, cs.memory_used);
+    EXPECT_TRUE(memory_used <= cs.memory_used + 10);  // We allow +- 10 as visitorder and hence compressability is non-deterministic.
+    EXPECT_TRUE(memory_used+10 >= cs.memory_used);
 }
 
 TEST("test that the integrated visit cache works.") {
