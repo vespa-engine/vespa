@@ -20,6 +20,7 @@ public:
     bool operator<(const KeySet &rhs) const { return _keys < rhs._keys; }
     bool contains(const KeySet &rhs) const;
     const IDocumentStore::LidVector & getKeys() const { return _keys; }
+    bool empty() const { return _keys.empty(); }
 private:
     IDocumentStore::LidVector _keys;
 };
@@ -71,11 +72,9 @@ private:
 
 class VisitCache {
 public:
-    using Keys=IDocumentStore::LidVector;
-
     VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression);
 
-    CompressedBlobSet read(const Keys & keys) const;
+    CompressedBlobSet read(const IDocumentStore::LidVector & keys) const;
     void remove(uint32_t key);
     void invalidate(uint32_t key) { remove(key); }
 
@@ -105,10 +104,13 @@ private:
     public:
         Cache(BackingStore & b, size_t maxBytes);
         void removeKey(uint32_t);
+        void locateAndInvalidateOtherSubsets(const KeySet & keys);
     private:
+        typedef vespalib::hash_set<uint64_t> IdSet;
         typedef vespalib::cache<CacheParams> Parent;
         typedef vespalib::hash_map<uint32_t, uint64_t> LidUniqueKeySetId;
         typedef vespalib::hash_map<uint64_t, KeySet> IdKeySetMap;
+        IdSet findSetsContaining(const vespalib::LockGuard &, const KeySet & keys) const;
         void onInsert(const K & key) override;
         void onRemove(const K & key) override;
         LidUniqueKeySetId _lid2Id;
