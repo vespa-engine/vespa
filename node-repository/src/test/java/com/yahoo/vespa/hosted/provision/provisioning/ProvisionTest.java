@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -148,8 +149,11 @@ public class ProvisionTest {
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
         state4.assertExtends(state2);
         assertEquals("New and inactive nodes are reserved", 4 + 3, tester.getNodes(application1, Node.State.reserved).size());
-        HostSpec removed = tester.removeOne(state4.allHosts);
+        // Remove a retired host from one of the content clusters (which one is random depending on host names)
+        HostSpec removed = state4.removeHost(tester.getNodes(application1, Node.State.active).retired().asList().get(0).hostname());
         tester.activate(application1, state4.allHosts);
+        assertEquals("Retired active removed when activating became inactive",
+                     1, tester.getNodes(application1, Node.State.inactive).asList().size());
         assertEquals(removed.hostname(), tester.getNodes(application1, Node.State.inactive).asList().get(0).hostname());
         assertEquals("Earlier retired nodes are unretired on activate",
                      0, tester.getNodes(application1, Node.State.active).retired().size());
@@ -157,16 +161,16 @@ public class ProvisionTest {
         // decrease again
         SystemState state5 = prepare(application1, 2, 2, 3, 3, "default", tester);
         tester.activate(application1, state5.allHosts);
-        assertEquals("Superfluous container nodes are deactivated",
-                     4-2 + 5-2, tester.getNodes(application1, Node.State.inactive).size());
+        assertEquals("Superfluous container nodes are also deactivated",
+                     4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); // 
         assertEquals("Superfluous content nodes are retired",
-                     5-3 + 6-3, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // increase content slightly
         SystemState state6 = prepare(application1, 2, 2, 4, 3, "default", tester);
         tester.activate(application1, state6.allHosts);
         assertEquals("One content node is unretired",
-                     5-4 + 6-3, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-4 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // Then reserve more
         SystemState state7 = prepare(application1, 8, 2, 2, 2, "default", tester);
@@ -563,6 +567,17 @@ public class ProvisionTest {
 
         public Set<String> hostNames() {
             return allHosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
+        }
+
+        public HostSpec removeHost(String hostname) {
+            for (Iterator<HostSpec> i = allHosts.iterator(); i.hasNext();) {
+                HostSpec host = i.next();
+                if (host.hostname().equals(hostname)) {
+                    i.remove();
+                    return host;
+                }
+            }
+            return null;
         }
 
         public void assertExtends(SystemState other) {
