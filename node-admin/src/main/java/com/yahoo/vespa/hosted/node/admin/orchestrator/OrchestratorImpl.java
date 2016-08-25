@@ -100,6 +100,6 @@ public class OrchestratorImpl implements Orchestrator {
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
-        return new OrchestratorImpl(new ConfigServerHttpRequestExecutor(configServerHosts));
+        return new OrchestratorImpl(ConfigServerHttpRequestExecutor.create(configServerHosts));
     }
 }

@@ -13,6 +13,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
@@ -33,12 +34,21 @@ public class ConfigServerHttpRequestExecutor {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient client = HttpClientBuilder.create().build();
+    private final HttpClient client;
     private final Set<HostName> configServerHosts;
     private final static int MAX_LOOPS = 2;
 
-    public ConfigServerHttpRequestExecutor(Set<HostName> configServerHosts) {
+    public static ConfigServerHttpRequestExecutor create(Set<HostName> configServerHosts) {
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        // Increase max total connection to 200 which should be enough
+        cm.setMaxTotal(200);
+        return new ConfigServerHttpRequestExecutor(configServerHosts, HttpClientBuilder.create()
+                .setConnectionManager(cm).build());
+    }
+
+    public ConfigServerHttpRequestExecutor(Set<HostName> configServerHosts, HttpClient client) {
         this.configServerHosts = configServerHosts;
+        this.client = client;
     }
 
     public interface CreateRequest {

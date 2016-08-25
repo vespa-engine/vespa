@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeReadyResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
@@ -30,9 +31,8 @@ public class NodeRepositoryImpl implements NodeRepository {
     public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
         this.baseHostName = baseHostName;
         this.port = configPort;
-        this.requestExecutor = new ConfigServerHttpRequestExecutor(configServerHosts);
+        this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
     }
-
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
@@ -131,14 +131,14 @@ public class NodeRepositoryImpl implements NodeRepository {
         }
         throw new RuntimeException("Unexcpected message " + response.message + " " + response.errorCode);
     }
-
-
+    
     @Override
     public void markAsReady(final HostName hostName) throws IOException {
-        requestExecutor.put(
-                "/nodes/v2/ready/" + hostName,
+        NodeReadyResponse response = requestExecutor.put(
+                "/nodes/v2/state/ready/" + hostName,
                 port,
                 Optional.empty(), /* body */
-                String.class);
+                NodeReadyResponse.class);
+        NODE_ADMIN_LOGGER.info(response.message);
     }
 }
