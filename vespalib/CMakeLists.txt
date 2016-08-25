@@ -36,6 +36,7 @@ vespa_define_module(
     src/tests/eval/simple_tensor
     src/tests/eval/tensor
     src/tests/eval/tensor_function
+    src/tests/eval/value_cache
     src/tests/eval/value_type
     src/tests/eventbarrier
     src/tests/exception_classes
@@ -124,6 +125,7 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/eval
+    src/vespa/vespalib/eval/value_cache
     src/vespa/vespalib/geo
     src/vespa/vespalib/io
     src/vespa/vespalib/net
