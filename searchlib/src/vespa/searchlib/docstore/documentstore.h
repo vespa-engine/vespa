@@ -229,7 +229,7 @@ private:
         const document::CompressionConfig & getCompression(void) const { return _compression; }
     private:
         IDataStore & _backingStore;
-        const document::CompressionConfig & _compression;
+        const document::CompressionConfig _compression;
     };
     bool useCache() const { return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0); }
     typedef vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
