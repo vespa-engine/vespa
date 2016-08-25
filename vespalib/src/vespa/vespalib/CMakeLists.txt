@@ -5,6 +5,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_data>
     $<TARGET_OBJECTS:vespalib_vespalib_data_slime>
     $<TARGET_OBJECTS:vespalib_vespalib_eval>
+    $<TARGET_OBJECTS:vespalib_vespalib_eval_value_cache>
     $<TARGET_OBJECTS:vespalib_vespalib_geo>
     $<TARGET_OBJECTS:vespalib_vespalib_io>
     $<TARGET_OBJECTS:vespalib_vespalib_net>
