@@ -239,6 +239,17 @@ public:
         }
         return *this;
     }
+    MallocPtr & operator = (MallocPtr && rhs) {
+        if (this != &rhs) {
+            cleanup();
+            _sz = rhs._sz;
+            _p = rhs._p;
+            rhs._sz = 0;
+            rhs._p = 0;
+        }
+        return *this;
+    }
+
     /**
      * @brief swap contents with another container
      *
