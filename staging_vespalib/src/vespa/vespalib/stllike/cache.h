@@ -91,7 +91,10 @@ public:
     /**
      * This simply erases the object from the cache.
      */
-    void invalidate(const K & key);
+    void invalidate(const K & key) {
+        vespalib::LockGuard guard(_hashLock);
+        invalidate(guard, key);
+    }
 
     /**
      * Return the object with the given key. If it does not exist, the backing store will be consulted.
@@ -125,6 +128,7 @@ public:
 
 protected:
     vespalib::LockGuard getGuard();
+    void invalidate(const vespalib::LockGuard & guard, const K & key);
 private:
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -251,9 +255,9 @@ cache<P>::erase(const K & key)
 
 template< typename P >
 void
-cache<P>::invalidate(const K & key)
+cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
 {
-    vespalib::LockGuard guard(_hashLock);
+    assert(guard.locks(_hashLock));
     if (Lru::hasKey(key)) {
         _sizeBytes -= calcSize(key, (*this)[key]);
         _invalidate++;
