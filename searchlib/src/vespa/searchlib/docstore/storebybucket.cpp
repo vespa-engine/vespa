@@ -22,7 +22,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
         closeCurrent();
         createCurrent();
     }
-    Index idx(BucketId::reverse(bucketId.withoutCountBits()), _chunks.size(), chunkId, lid);
+    Index idx(bucketId, _chunks.size(), chunkId, lid);
     _current->append(lid, buffer, sz);
     _where[bucketId.getId()].push_back(idx);
 }
@@ -57,7 +57,7 @@ StoreByBucket::drain(IWrite & drainer)
         std::sort(it.second.begin(), it.second.end());
         for (Index idx : it.second) {
             vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
-            drainer.write(it.first, idx._chunkId, idx._lid, data.c_str(), data.size());
+            drainer.write(idx._bucketId, idx._chunkId, idx._lid, data.c_str(), data.size());
         }
     }
 }

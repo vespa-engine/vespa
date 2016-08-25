@@ -6,25 +6,29 @@ LOG_SETUP("datastore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/searchlib/docstore/storebybucket.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/document/base/documentid.h>
 #include <iostream>
 
 #include <vespa/vespalib/util/exceptions.h>
 
 using document::BucketId;
+using namespace search::docstore;
+using namespace search;
+using search::index::DummyFileHeaderContext;
 
-class MyTlSyncer : public search::transactionlog::SyncProxy {
-    search::SerialNum _syncedTo;
+class MyTlSyncer : public transactionlog::SyncProxy {
+    SerialNum _syncedTo;
 public:
     MyTlSyncer(void) : _syncedTo(0) { }
 
-    void sync(search::SerialNum syncTo) {
+    void sync(SerialNum syncTo) {
         _syncedTo = syncTo;
     }
 };
 
-using namespace search;
-using search::index::DummyFileHeaderContext;
 
 namespace {
 
@@ -532,6 +536,67 @@ TEST("testBucketDensityComputer") {
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
     nonRecording.recordLid(guard, 1, 1);
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
+}
+
+vespalib::string
+createPayload(BucketId b) {
+    constexpr const char * BUF = "Buffer for testing Bucket drain order.";
+    vespalib::asciistream os;
+    os << BUF << " " << b;
+    return os.str();
+}
+uint32_t userId(size_t i) { return i%100; }
+
+void
+add(StoreByBucket & sbb, size_t i) {
+    constexpr size_t USED_BITS=5;
+    vespalib::asciistream os;
+    os << "id:a:b:n=" << userId(i) << ":" << i;
+    document::DocumentId docId(os.str());
+    BucketId b = docId.getGlobalId().convertToBucketId();
+    EXPECT_EQUAL(userId(i), docId.getGlobalId().getLocationSpecificBits());
+    b.setUsedBits(USED_BITS);
+    vespalib::string s = createPayload(b);
+    sbb.add(b, i%10, i, s.c_str(), s.size());
+}
+
+class VerifyBucketOrder : public StoreByBucket::IWrite {
+public:
+    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
+        (void) sz;
+        if (_lastBucketId != bucketId) {
+            EXPECT_TRUE(_uniqueBucket.find(bucketId.getRawId()) == _uniqueBucket.end());
+            _uniqueBucket.insert(bucketId.getRawId());
+        }
+        if (userId(_lastLid) != userId(lid)) {
+            EXPECT_TRUE(_uniqueUser.find(userId(lid)) == _uniqueUser.end());
+            _uniqueUser.insert(userId(lid));
+        }
+        _lastLid = lid;
+        _lastBucketId = bucketId;
+    }
+private:
+    uint32_t _lastLid;
+    BucketId _lastBucketId;
+    uint32_t _lastUser;
+    vespalib::hash_set<uint32_t> _uniqueUser;
+    vespalib::hash_set<uint64_t> _uniqueBucket;
+};
+
+TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
+    StoreByBucket sbb;
+    for (size_t i(1); i <=500; i++) {
+        add(sbb, i);
+    }
+    for (size_t i(1000); i > 500; i--) {
+        add(sbb, i);
+    }
+    EXPECT_EQUAL(1u, sbb.getChunkCount());
+    EXPECT_EQUAL(32u, sbb.getBucketCount());
+    EXPECT_EQUAL(1000u, sbb.getLidCount());
+    VerifyBucketOrder vbo;
+    sbb.drain(vbo);
 }
 
 TEST_MAIN() {

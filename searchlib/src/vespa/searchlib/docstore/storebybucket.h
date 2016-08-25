@@ -20,8 +20,9 @@ public:
     StoreByBucket();
     class IWrite {
     public:
+        using BucketId=document::BucketId;
         virtual ~IWrite() { }
-        virtual void write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
+        virtual void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
     };
     void add(document::BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
     void drain(IWrite & drain);
@@ -39,11 +40,14 @@ private:
     void closeCurrent();
     void createCurrent();
     struct Index {
-        Index(uint64_t bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) :
+        using BucketId=document::BucketId;
+        Index(BucketId bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) :
             _bucketId(bucketId), _id(id), _chunkId(chunkId), _lid(entry)
         { }
-        bool operator < (const Index & b) const { return _bucketId < b._bucketId; }
-        uint64_t _bucketId;
+        bool operator < (const Index & b) const {
+            return BucketId::reverse(_bucketId.getRawId()) < BucketId::reverse(b._bucketId.getRawId());
+        }
+        BucketId _bucketId;
         uint32_t _id;
         uint32_t _chunkId;
         uint32_t _lid;

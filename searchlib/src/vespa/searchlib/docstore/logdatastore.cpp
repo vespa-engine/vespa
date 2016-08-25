@@ -346,7 +346,7 @@ public:
     using FileId = FileChunk::FileId;
     BucketCompacter(LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination);
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
-    void write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
     void close() override;
 private:
     FileId getDestinationId(const LockGuard & guard) const {
@@ -410,9 +410,9 @@ BucketCompacter::close()
 }
 
 void
-BucketCompacter::write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
-    _stat[bucketId]++;
+    _stat[bucketId.getId()]++;
     LockGuard guard(_ds.getLidGuard(lid));
     LidInfo lidInfo(_sourceFileId.getId(), chunkId, sz);
     if (_ds.getLid(_lidGuard, lid) == lidInfo) {
