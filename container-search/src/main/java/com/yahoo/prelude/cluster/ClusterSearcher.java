@@ -57,7 +57,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
  * A searcher which forwards to a cluster of monitored native Vespa backends.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author geirst
  */
 @After("*")
@@ -590,8 +590,8 @@ public class ClusterSearcher extends Searcher {
     }
 
     private boolean backendCanServeDocuments(Pong pong) {
-        if ( ! pong.activeDocuments().isPresent()) return true; // no information; assume true
-        return pong.activeDocuments().get() > 0;
+        if ( ! pong.activeNodes().isPresent()) return true; // no information; assume true
+        return pong.activeNodes().get() > 0;
     }
 
     public void dumpPackets(PacketDumper.PacketType packetType, boolean on) throws IOException {

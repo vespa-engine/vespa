@@ -91,12 +91,10 @@ public class NodeMonitor {
     }
 
     /** Changes the state of this node if required */
-    private void setWorking(final boolean working, String explanation) {
-        String explanationToLog;
-        if (isWorking == working) {
-            return; // Old news
-        }
+    private void setWorking(boolean working, String explanation) {
+        if (isWorking == working) return; // Old news
 
+        String explanationToLog;
         if (explanation == null) {
             explanationToLog = "";
         } else {

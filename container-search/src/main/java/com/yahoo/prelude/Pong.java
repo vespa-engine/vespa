@@ -47,13 +47,24 @@ public class Pong {
         return errors.size();
     }
 
-    /** Returns the package causing this to exist, or empty if none */
+    /** 
+     * Returns the package causing this to exist, or empty if none 
+     * 
+     * @deprecated do not use
+     */
+    @Deprecated
     public Optional<PongPacket> getPongPacket() { return pongPacket; }
     
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() {
         if ( ! pongPacket.isPresent()) return Optional.empty();
         return pongPacket.get().getActiveDocuments();
+    }
+
+    /** Returns the number of nodes which responded to this Pong, if available */
+    public Optional<Integer> activeNodes() {
+        if ( ! pongPacket.isPresent()) return Optional.empty();
+        return pongPacket.get().getActiveNodes();
     }
 
     public List<ErrorMessage> getErrors() {
