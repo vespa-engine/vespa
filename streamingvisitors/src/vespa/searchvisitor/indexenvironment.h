@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <set>
@@ -33,13 +34,13 @@ public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
 
     // inherit documentation
-    virtual const search::fef::Properties & getProperties() const { return _properties; }
+    virtual const search::fef::Properties & getProperties() const override { return _properties; }
 
     // inherit documentation
-    virtual uint32_t getNumFields() const { return _fields.size(); }
+    virtual uint32_t getNumFields() const override { return _fields.size(); }
 
     // inherit documentation
-    virtual const search::fef::FieldInfo * getField(uint32_t id) const {
+    virtual const search::fef::FieldInfo * getField(uint32_t id) const override {
         if (id >= _fields.size()) {
             return NULL;
         }
@@ -47,7 +48,7 @@ public:
     }
 
     // inherit documentation
-    virtual const search::fef::FieldInfo * getFieldByName(const string & name) const {
+    virtual const search::fef::FieldInfo * getFieldByName(const string & name) const override {
         StringInt32Map::const_iterator itr = _fieldNames.find(name);
         if (itr == _fieldNames.end()) {
             return NULL;
@@ -56,22 +57,22 @@ public:
     }
 
     // inherit documentation
-    virtual const search::fef::ITableManager & getTableManager() const { return *_tableManager; }
+    virtual const search::fef::ITableManager & getTableManager() const override { return *_tableManager; }
 
     virtual FeatureMotivation getFeatureMotivation() const override {
         return _motivation;
     }
 
     // inherit documentation
-    virtual void hintFeatureMotivation(FeatureMotivation motivation) const {
+    virtual void hintFeatureMotivation(FeatureMotivation motivation) const override {
         _motivation = motivation;
     }
 
     // inherit documentation
-    virtual void hintFieldAccess(uint32_t) const {}
+    virtual void hintFieldAccess(uint32_t) const override {}
 
     // inherit documentation
-    virtual void hintAttributeAccess(const string & name) const {
+    virtual void hintAttributeAccess(const string & name) const override {
         if (name.empty()) {
             return;
         }
@@ -82,6 +83,10 @@ public:
         }
     }
 
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
+        return vespalib::eval::ConstantValue::UP();
+    }
+
     bool addField(const vespalib::string & name, bool isAttribute);
 
     search::fef::Properties & getProperties() { return _properties; }
@@ -89,6 +94,7 @@ public:
     const std::set<vespalib::string> & getHintedRankAttributes() const { return _rankAttributes; }
 
     const std::set<vespalib::string> & getHintedDumpAttributes() const { return _dumpAttributes; }
+
 };
 
 } // namespace storage

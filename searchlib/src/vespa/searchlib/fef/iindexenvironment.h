@@ -4,6 +4,14 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
+namespace vespalib {
+namespace eval {
+
+class ConstantValue;
+
+}
+}
+
 namespace search {
 namespace fef {
 
@@ -113,6 +121,11 @@ public:
      * @param name attribute name
      **/
     virtual void hintAttributeAccess(const string &name) const = 0;
+
+    /**
+     * Returns a constant rank value with the given name or null ptr if no such value exists.
+     */
+    virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.

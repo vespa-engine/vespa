@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/tablemanager.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
 #include <string>
 #include <vector>
 
@@ -25,31 +26,31 @@ public:
     IndexEnvironment();
 
     // Inherit doc from IIndexEnvironment.
-    virtual const Properties &getProperties() const { return _properties; }
+    virtual const Properties &getProperties() const override { return _properties; }
 
     // Inherit doc from IIndexEnvironment.
-    virtual uint32_t getNumFields() const { return _fields.size(); }
+    virtual uint32_t getNumFields() const override { return _fields.size(); }
 
     // Inherit doc from IIndexEnvironment.
-    virtual const FieldInfo *getField(uint32_t id) const;
+    virtual const FieldInfo *getField(uint32_t id) const override;
 
     // Inherit doc from IIndexEnvironment.
-    virtual const FieldInfo *getFieldByName(const string &name) const;
+    virtual const FieldInfo *getFieldByName(const string &name) const override;
 
     // Inherit doc from IIndexEnvironment.
-    virtual const ITableManager &getTableManager() const { return _tableMan; }
+    virtual const ITableManager &getTableManager() const override { return _tableMan; }
 
     // Inherit doc from IIndexEnvironment.
     virtual FeatureMotivation getFeatureMotivation() const override { return UNKNOWN; }
 
     // Inherit doc from IIndexEnvironment.
-    virtual void hintFeatureMotivation(FeatureMotivation) const {}
+    virtual void hintFeatureMotivation(FeatureMotivation) const override {}
 
     // Inherit doc from IIndexEnvironment.
-    virtual void hintFieldAccess(uint32_t) const {}
+    virtual void hintFieldAccess(uint32_t) const override {}
 
     // Inherit doc from IIndexEnvironment.
-    virtual void hintAttributeAccess(const string &) const {}
+    virtual void hintAttributeAccess(const string &) const override {}
 
     /** Returns a reference to the properties map of this. */
     Properties &getProperties() { return _properties; }
@@ -65,6 +66,10 @@ public:
 
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
+
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
+        return vespalib::eval::ConstantValue::UP();
+    }
 
 private:
     IndexEnvironment(const IndexEnvironment &);             // hide
