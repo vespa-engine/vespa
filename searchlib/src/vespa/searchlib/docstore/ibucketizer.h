@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/document/bucket/bucketid.h>
 
 namespace search {
 
@@ -12,7 +13,7 @@ class IBucketizer
 public:
     typedef std::shared_ptr<IBucketizer> SP;
     virtual ~IBucketizer() { }
-    virtual uint64_t getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const = 0;
+    virtual document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const = 0;
     virtual vespalib::GenerationHandler::Guard getGuard() const = 0;
 };
 

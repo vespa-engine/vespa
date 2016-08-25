@@ -22,6 +22,7 @@ using vespalib::GenerationHandler;
 using vespalib::make_string;
 using common::FileHeaderContext;
 using std::runtime_error;
+using document::BucketId;
 
 LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
                            const vespalib::string &dirName,
@@ -348,7 +349,7 @@ public:
         virtual ~IWrite() { }
         virtual void write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
     };
-    void add(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
+    void add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
     void drain(IWrite & drain);
     size_t getChunkCount() const { return _chunks.size(); }
     size_t getBucketCount() const { return _where.size(); }
@@ -363,7 +364,11 @@ private:
     void closeCurrent();
     void createCurrent();
     struct Index {
-        Index(uint32_t id, uint32_t chunkId, uint32_t entry) : _id(id), _chunkId(chunkId), _lid(entry) { }
+        Index(uint64_t bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) :
+            _bucketId(bucketId), _id(id), _chunkId(chunkId), _lid(entry)
+        { }
+        bool operator < (const Index & b) const { return _bucketId < b._bucketId; }
+        uint64_t _bucketId;
         uint32_t _id;
         uint32_t _chunkId;
         uint32_t _lid;
@@ -382,15 +387,15 @@ StoreByBucket::StoreByBucket() :
 }
 
 void
-StoreByBucket::add(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
     if ( ! _current->hasRoom(sz)) {
         closeCurrent();
         createCurrent();
     }
-    Index idx(_chunks.size(), chunkId, lid);
+    Index idx(BucketId::reverse(bucketId.withoutCountBits()), _chunks.size(), chunkId, lid);
     _current->append(lid, buffer, sz);
-    _where[bucketId].push_back(idx);
+    _where[bucketId.getId()].push_back(idx);
 }
 
 void StoreByBucket::createCurrent()
@@ -419,7 +424,8 @@ StoreByBucket::drain(IWrite & drainer)
         buffer.reset();
     }
     _chunks.clear();
-    for (const auto & it : _where) {
+    for (auto & it : _where) {
+        std::sort(it.second.begin(), it.second.end());
         for (Index idx : it.second) {
             vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
             drainer.write(it.first, idx._chunkId, idx._lid, data.c_str(), data.size());
@@ -466,8 +472,9 @@ void
 BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
     guard.unlock();
-    uint64_t bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : 0;
-    uint32_t hash = XXH32(&bucketId, sizeof(bucketId), 0);
+    BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
+    uint64_t bucketIdAsLong = bucketId.getId();
+    uint32_t hash = XXH32(&bucketIdAsLong, sizeof(bucketIdAsLong), 0);
     _tmpStore[hash%_tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
 }
 

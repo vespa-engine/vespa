@@ -11,6 +11,8 @@ LOG_SETUP("datastore_test");
 
 #include <vespa/vespalib/util/exceptions.h>
 
+using document::BucketId;
+
 class MyTlSyncer : public search::transactionlog::SyncProxy {
     search::SerialNum _syncedTo;
 public:
@@ -497,8 +499,8 @@ class DummyBucketizer : public IBucketizer
 {
 public:
     DummyBucketizer(uint32_t mod) : _mod(mod) { }
-    uint64_t getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const override {
-        return lid%_mod;
+    BucketId getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const override {
+        return BucketId(58, lid%_mod);
     }
     vespalib::GenerationHandler::Guard getGuard() const override {
         return vespalib::GenerationHandler::Guard();
