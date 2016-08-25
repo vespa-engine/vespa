@@ -182,7 +182,7 @@ summary.cache.maxbytes long default=0 restart
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
-summary.cache.allowvisitcaching bool default=true restart
+summary.cache.allowvisitcaching bool default=false restart
 
 ## Control number of cache entries preallocated.
 ## Default is no preallocation
