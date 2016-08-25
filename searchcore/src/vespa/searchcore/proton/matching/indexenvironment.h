@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
 
 namespace proton {
 namespace matching {
@@ -42,31 +43,35 @@ public:
                      const search::fef::Properties &props);
 
     // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::Properties &getProperties() const;
+    virtual const search::fef::Properties &getProperties() const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual uint32_t getNumFields() const;
+    virtual uint32_t getNumFields() const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::FieldInfo *getField(uint32_t id) const;
+    virtual const search::fef::FieldInfo *getField(uint32_t id) const override;
 
     // inherited from search::fef::IIndexEnvironment
     virtual const search::fef::FieldInfo *
-    getFieldByName(const string &name) const;
+    getFieldByName(const string &name) const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::ITableManager &getTableManager() const;
+    virtual const search::fef::ITableManager &getTableManager() const override;
 
     virtual FeatureMotivation getFeatureMotivation() const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual void hintFeatureMotivation(FeatureMotivation motivation) const;
+    virtual void hintFeatureMotivation(FeatureMotivation motivation) const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual void hintFieldAccess(uint32_t fieldId) const;
+    virtual void hintFieldAccess(uint32_t fieldId) const override;
 
     // inherited from search::fef::IIndexEnvironment
-    virtual void hintAttributeAccess(const string &name) const;
+    virtual void hintAttributeAccess(const string &name) const override;
+
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
+        return vespalib::eval::ConstantValue::UP();
+    }
 
     virtual ~IndexEnvironment();
 };
