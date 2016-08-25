@@ -78,8 +78,10 @@ public class ConfigServerHttpRequestExecutor {
                     throw new NotFoundException("Not found returned from " + configServer);
                 }
                 if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
-                    NODE_ADMIN_LOGGER.info("Non 200 received:\n" + read(response.getEntity()));
-                    throw new RuntimeException("Did not get 200, but " + response.getStatusLine().getStatusCode());
+                    String entity = read(response.getEntity());
+                    NODE_ADMIN_LOGGER.info("Non 200 received:\n" + entity);
+                    throw new RuntimeException("Did not get 200, but " + response.getStatusLine().getStatusCode() +
+                            entity);
                 }
                 try {
                     return mapper.readValue(response.getEntity().getContent(), wantedReturnType);

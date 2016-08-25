@@ -25,15 +25,15 @@ import java.util.Set;
 public class OrchestratorImpl implements Orchestrator {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class);
     // TODO: Figure out the port dynamically.
-    private static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
+    static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
-    private static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
+    static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
             = ORCHESTRATOR_PATH_PREFIX + HostApi.PATH_PREFIX;
-    private final ConfigServerHttpRequestExecutor requestExecutor;
-
-    private static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
+    static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
+
+    private final ConfigServerHttpRequestExecutor requestExecutor;
 
     public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
@@ -53,7 +53,7 @@ public class OrchestratorImpl implements Orchestrator {
             return updateHostResponse.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
             // Orchestrator doesn't care about this node, so don't let that stop us.
-            logger.info("Got not found on delete, resuming");
+            logger.info("Got not found on delete, suspending");
             return true;
         } catch (Exception e) {
             logger.info("Got error on suspend " + hostName, e);
@@ -71,6 +71,7 @@ public class OrchestratorImpl implements Orchestrator {
                     BatchOperationResult.class);
             return batchOperationResult.getFailureReason();
         } catch (Exception e) {
+            NODE_ADMIN_LOGGER.info("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
             return Optional.of(e.getMessage());
         }
     }
@@ -89,8 +90,8 @@ public class OrchestratorImpl implements Orchestrator {
             // Orchestrator doesn't care about this node, so don't let that stop us.
             logger.info("Got not found on delete, resuming");
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
+            logger.info("Got error on resume " + hostName, e);
             return false;
         }
     }

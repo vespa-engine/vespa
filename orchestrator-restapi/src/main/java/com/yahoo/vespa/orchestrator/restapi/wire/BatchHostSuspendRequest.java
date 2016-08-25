@@ -38,6 +38,26 @@ public class BatchHostSuspendRequest {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BatchHostSuspendRequest that = (BatchHostSuspendRequest) o;
+
+        if (parentHostname != null ? !parentHostname.equals(that.parentHostname) : that.parentHostname != null)
+            return false;
+        return hostnames != null ? hostnames.equals(that.hostnames) : that.hostnames == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = parentHostname != null ? parentHostname.hashCode() : 0;
+        result = 31 * result + (hostnames != null ? hostnames.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "BatchHostSuspendRequest{" +
                 "parentHostname=" + parentHostname +
