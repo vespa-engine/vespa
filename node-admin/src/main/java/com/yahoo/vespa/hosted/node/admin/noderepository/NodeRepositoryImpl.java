@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
@@ -12,14 +10,8 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttri
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -33,8 +25,6 @@ public class NodeRepositoryImpl implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
     private final String baseHostName;
     private final int port;
-    private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient client = HttpClientBuilder.create().build();
     private final ConfigServerHttpRequestExecutor requestExecutor;
 
     public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
