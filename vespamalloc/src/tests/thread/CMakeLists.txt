@@ -8,4 +8,5 @@ vespa_add_executable(vespamalloc_racemanythreads_test_app
     racemanythreads.cpp
 )
 vespa_add_test(NAME vespamalloc_thread_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/thread_test.sh
-               DEPENDS vespamalloc_thread_test_app vespamalloc_racemanythreads_test_app)
+               DEPENDS vespamalloc_thread_test_app vespamalloc_racemanythreads_test_app
+                       vespamalloc vespamalloc_vespamallocd)
