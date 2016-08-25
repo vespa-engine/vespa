@@ -1,14 +1,14 @@
 package com.yahoo.vespa.hosted.docker.api.docker;
 
+import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 
-import com.github.dockerjava.api.DockerClient;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.nodeadmin.dockerapi.DockerConfig;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,31 +16,17 @@ import java.util.concurrent.TimeUnit;
  * @author dybdahl
  */
 public class DockerApi  extends AbstractComponent {
-    private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
-    private static final Map<String, String> CONTAINER_LABELS = new HashMap<>();
-
     private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
     private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
     private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
 
-    static {
-        CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
-    }
-
     private final DockerClient dockerClient;
 
-    public DockerApi() {
-        dockerClient = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                .withDockerHost("unix:///host/var/run/docker.sock") // Alternatively, but
-                // does not work due to certificate issues as if Aug 18th 2016: config.uri().replace("https", "tcp"))
-                .withDockerTlsVerify(false)
-                //.withCustomSslConfig(new VespaSSLConfig(config))
-                // We can specify which version of the docker remote API to use, otherwise, use latest
-                // e.g. .withApiVersion("1.23")
-                .build())
+    public DockerApi(DockerConfig config) {
+        DefaultDockerClientConfig dockerClientConfig = buildDockerClientConfig(config);
+
+        dockerClient = DockerClientImpl.getInstance(dockerClientConfig)
                 .withDockerCmdExecFactory(
                         new JerseyDockerCmdExecFactory()
                                 .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
@@ -52,5 +38,21 @@ public class DockerApi  extends AbstractComponent {
 
     public DockerClient getDockerClient() {
         return dockerClient;
+    }
+
+    static DefaultDockerClientConfig buildDockerClientConfig(DockerConfig config) {
+        DefaultDockerClientConfig.Builder dockerConfigBuilder = new DefaultDockerClientConfig.Builder()
+                .withDockerHost(config.uri());
+
+        if (URI.create(config.uri()).getScheme().equals("tcp") && !config.caCertPath().isEmpty()) {
+            // In current version of docker-java (3.0.2), withDockerTlsVerify() only effect is when using it together
+            // with withDockerCertPath(), where setting withDockerTlsVerify() must be set to true, otherwise the
+            // cert path parameter will be ignored.
+            // withDockerTlsVerify() has no effect when used with withCustomSslConfig()
+            dockerConfigBuilder
+                    .withCustomSslConfig(new VespaSSLConfig(config));
+        }
+
+        return dockerConfigBuilder.build();
     }
 }
