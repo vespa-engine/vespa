@@ -2,6 +2,8 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
+#include <cstddef>
 
 namespace document {
 
