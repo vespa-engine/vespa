@@ -6,16 +6,11 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeRepositoryApi;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
+import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
-import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,60 +19,66 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * @author stiankri
+ * @author stiankri, dybis
  */
 public class NodeRepositoryImpl implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
-    private static final String NODEREPOSITORY_PATH_PREFIX_NODES_API = "/";
-
-    private JaxRsStrategy<NodeRepositoryApi> nodeRepositoryClient;
     private final String baseHostName;
+    private final int port;
+    private final ConfigServerHttpRequestExecutor requestExecutor;
 
     public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
-        final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
-        final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
-                configServerHosts, configPort, jaxRsClientFactory);
-        this.nodeRepositoryClient = jaxRsStrategyFactory.apiWithRetries(
-                NodeRepositoryApi.class, NODEREPOSITORY_PATH_PREFIX_NODES_API);
         this.baseHostName = baseHostName;
+        this.port = configPort;
+        this.requestExecutor = new ConfigServerHttpRequestExecutor(configServerHosts);
     }
+
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
-        final GetNodesResponse nodesForHost = nodeRepositoryClient.apply(nodeRepositoryApi ->
-                nodeRepositoryApi.getNodesWithParentHost(baseHostName, true));
 
-        if (nodesForHost.nodes == null) {
-            throw new IOException("Response didn't contain nodes element");
-        }
+        try {
+            final GetNodesResponse nodesForHost = requestExecutor.get(
+                    "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
+                    port,
+                    GetNodesResponse.class);
 
-        List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
-        for (GetNodesResponse.Node node : nodesForHost.nodes) {
-            ContainerNodeSpec nodeSpec;
-            try {
-                nodeSpec = createContainerNodeSpec(node);
-            } catch (IllegalArgumentException | NullPointerException e) {
-                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
-                        + baseHostName + " host: " + node, e);
-                continue;
+            if (nodesForHost.nodes == null) {
+                throw new IOException("Response didn't contain nodes element");
             }
-
-            nodes.add(nodeSpec);
+            List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
+            for (GetNodesResponse.Node node : nodesForHost.nodes) {
+                ContainerNodeSpec nodeSpec;
+                try {
+                    nodeSpec = createContainerNodeSpec(node);
+                } catch (IllegalArgumentException | NullPointerException e) {
+                    NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
+                            + baseHostName + " host: " + node, e);
+                    continue;
+                }
+                nodes.add(nodeSpec);
+            }
+            return nodes;
+        } catch (Exception e) {
+            throw new IOException(e);
         }
-
-        return nodes;
     }
 
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
-        final GetNodesResponse response = nodeRepositoryClient.apply(nodeRepositoryApi -> nodeRepositoryApi.getNode(hostName.toString(), true));
-        if (response.nodes.size() == 0) {
+        final GetNodesResponse nodeResponse = requestExecutor.get(
+                "/nodes/v2/node/?hostname=" + hostName + "&recursive=true",
+                port,
+                GetNodesResponse.class);
+
+
+        if (nodeResponse.nodes.size() == 0) {
             return Optional.empty();
         }
-        if (response.nodes.size() != 1) {
-            throw new RuntimeException("Did not get data for one node using hostname=" + hostName.toString() + "\n" + response.toString());
+        if (nodeResponse.nodes.size() != 1) {
+            throw new RuntimeException("Did not get data for one node using hostname=" + hostName.toString() + "\n" + nodeResponse.toString());
         }
-        return Optional.of(createContainerNodeSpec(response.nodes.get(0)));
+        return Optional.of(createContainerNodeSpec(nodeResponse.nodes.get(0)));
     }
 
     private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)
@@ -115,27 +116,29 @@ public class NodeRepositoryImpl implements NodeRepository {
             final DockerImage dockerImage,
             final String currentVespaVersion)
             throws IOException {
-        // TODO: Filter out redundant (repeated) invocations with the same values.
-        try {
-            nodeRepositoryClient.apply(nodeRepositoryApi ->
-                                               nodeRepositoryApi.updateNodeAttributes(
-                                                       hostName.s(),
-                                                       new UpdateNodeAttributesRequestBody(
-                                                               restartGeneration,
-                                                               dockerImage.asString(),
-                                                               currentVespaVersion)));
-        } catch (javax.ws.rs.WebApplicationException e) {
-            final Response response = e.getResponse();
-            UpdateNodeAttributesResponse updateResponse = response.readEntity(UpdateNodeAttributesResponse.class);
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(NodeRepositoryImpl.class,
-                    containerNameFromHostName(hostName.toString()));
-            logger.error("Response code " + response.getStatus() + ": " + updateResponse.message);
-            throw new RuntimeException("Failed to update node attributes for " + hostName.s() + ":" + updateResponse.message);
+
+        UpdateNodeAttributesResponse response = requestExecutor.patch(
+                "/nodes/v2/node/" + hostName,
+                port,
+                new UpdateNodeAttributesRequestBody(
+                        restartGeneration,
+                        dockerImage.asString(),
+                        currentVespaVersion),
+                UpdateNodeAttributesResponse.class);
+
+        if (response.errorCode == null || response.errorCode.isEmpty()) {
+            return;
         }
+        throw new RuntimeException("Unexcpected message " + response.message + " " + response.errorCode);
     }
+
 
     @Override
     public void markAsReady(final HostName hostName) throws IOException {
-        nodeRepositoryClient.apply(nodeRepositoryApi -> nodeRepositoryApi.setReady(hostName.s(), ""));
+        requestExecutor.put(
+                "/nodes/v2/ready/" + hostName,
+                port,
+                Optional.empty(), /* body */
+                String.class);
     }
 }

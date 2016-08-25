@@ -2,23 +2,17 @@
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
+
+import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
-import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
-import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
+
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.applicationmodel.HostName;
-
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,18 +30,13 @@ public class OrchestratorImpl implements Orchestrator {
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     private static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
             = ORCHESTRATOR_PATH_PREFIX + HostApi.PATH_PREFIX;
+    private final ConfigServerHttpRequestExecutor requestExecutor;
 
     private static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
 
-
-    private final JaxRsStrategy<HostApi> hostApiClient;
-    private final JaxRsStrategy<HostSuspensionApi> hostSuspensionClient;
-
-
-    public OrchestratorImpl(JaxRsStrategy<HostApi> hostApiClient, JaxRsStrategy<HostSuspensionApi> hostSuspensionClient) {
-        this.hostApiClient = hostApiClient;
-        this.hostSuspensionClient = hostSuspensionClient;
+    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
+        this.requestExecutor = requestExecutor;
     }
 
     @Override
@@ -56,19 +45,18 @@ public class OrchestratorImpl implements Orchestrator {
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
 
         try {
-            return hostApiClient.apply(api -> {
-                final UpdateHostResponse response = api.suspend(hostName.s());
-                return response.reason() == null;
-            });
-        } catch (ClientErrorException e) {
-            if (e instanceof NotFoundException || e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return true;
-            }
-            logger.info("Orchestrator rejected suspend request for host " + hostName, e);
-            return false;
-        } catch (IOException e) {
-            logger.warning("Unable to communicate with orchestrator", e);
+            final UpdateHostResponse updateHostResponse = requestExecutor.put(
+                    ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
+                    HARDCODED_ORCHESTRATOR_PORT,
+                    Optional.empty(), /* body */
+                    UpdateHostResponse.class);
+            return updateHostResponse.reason() == null;
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            logger.info("Got not found on delete, resuming");
+            return true;
+        } catch (Exception e) {
+            logger.info("Got error on suspend " + hostName, e);
             return false;
         }
     }
@@ -76,21 +64,14 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
         try {
-            return hostSuspensionClient.apply(hostSuspensionClient -> {
-                BatchHostSuspendRequest request = new BatchHostSuspendRequest(parentHostName, hostNames);
-                final BatchOperationResult result = hostSuspensionClient.suspendAll(request);
-                return result.getFailureReason();
-            });
-        } catch (ClientErrorException e) {
-            if (e instanceof NotFoundException || e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                // Orchestrator doesn't care about this node, so don't let that stop us.
-                return Optional.empty();
-            }
-            NODE_ADMIN_LOGGER.info("Orchestrator rejected suspend request for host " + parentHostName, e);
-            return Optional.of(e.getLocalizedMessage());
-        } catch (IOException e) {
-            NODE_ADMIN_LOGGER.warning("Unable to communicate with orchestrator", e);
-            return Optional.of("Unable to communicate with orchestrator" + e.getMessage());
+            final BatchOperationResult batchOperationResult = requestExecutor.put(
+                    ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
+                    HARDCODED_ORCHESTRATOR_PORT,
+                    Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
+                    BatchOperationResult.class);
+            return batchOperationResult.getFailureReason();
+        } catch (Exception e) {
+            return Optional.of(e.getMessage());
         }
     }
 
@@ -98,18 +79,18 @@ public class OrchestratorImpl implements Orchestrator {
     public boolean resume(final HostName hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
-
         try {
-            final boolean resumeSucceeded = hostApiClient.apply(api -> {
-                final UpdateHostResponse response = api.resume(hostName.s());
-                return response.reason() == null;
-            });
-            return resumeSucceeded;
-        } catch (ClientErrorException e) {
-            logger.info("Orchestrator rejected resume request for host " + hostName, e);
-            return false;
-        } catch (IOException e) {
-            logger.warning("Unable to communicate with orchestrator", e);
+            final UpdateHostResponse batchOperationResult = requestExecutor.delete(
+                    ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
+                    HARDCODED_ORCHESTRATOR_PORT,
+                    UpdateHostResponse.class);
+            return batchOperationResult.reason() == null;
+        } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
+            // Orchestrator doesn't care about this node, so don't let that stop us.
+            logger.info("Got not found on delete, resuming");
+            return true;
+        }
+        catch (Exception e) {
             return false;
         }
     }
@@ -119,11 +100,6 @@ public class OrchestratorImpl implements Orchestrator {
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
-        final JaxRsClientFactory jaxRsClientFactory = new JerseyJaxRsClientFactory();
-        final JaxRsStrategyFactory jaxRsStrategyFactory = new JaxRsStrategyFactory(
-                configServerHosts, HARDCODED_ORCHESTRATOR_PORT, jaxRsClientFactory);
-        JaxRsStrategy<HostApi> hostApi = jaxRsStrategyFactory.apiWithRetries(HostApi.class, ORCHESTRATOR_PATH_PREFIX_HOST_API);
-        JaxRsStrategy<HostSuspensionApi> suspendApi = jaxRsStrategyFactory.apiWithRetries(HostSuspensionApi.class, ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API);
-        return new OrchestratorImpl(hostApi, suspendApi);
+        return new OrchestratorImpl(new ConfigServerHttpRequestExecutor(configServerHosts));
     }
 }
