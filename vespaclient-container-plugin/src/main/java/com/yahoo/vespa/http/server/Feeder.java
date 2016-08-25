@@ -73,7 +73,6 @@ public class Feeder implements Runnable {
     private final CountDownLatch requestReceived = new CountDownLatch(1);
     private final FeedReaderFactory feedReaderFactory;
 
-    // TODO refactor this perverse pile of constructor arguments
     public Feeder(InputStream requestInputStream,
                   FeedReaderFactory feedReaderFactory,
                   DocumentTypeManager docTypeManager,
@@ -274,17 +273,14 @@ public class Feeder implements Runnable {
                 ++numPending;
                 updateMetrics(msg.second);
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ",
-                        msg.first);
+                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.first);
             } else if (!result.getError().isFatal()) {
-                enqueue(msg.first, result.getError().getMessage(),
-                        ErrorCode.TRANSIENT_ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, msg.second);
                 break;
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
-                enqueue(msg.first, result.getError().getMessage(),
-                        ErrorCode.ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.ERROR, msg.second);
                 break;
             }
         }

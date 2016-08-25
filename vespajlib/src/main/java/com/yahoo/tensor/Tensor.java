@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 /**
-/**
  * A multidimensional array which can be used in computations.
  * <p>
  * A tensor consists of a set of <i>dimension</i> names and a set of <i>cells</i> containing scalar <i>values</i>.

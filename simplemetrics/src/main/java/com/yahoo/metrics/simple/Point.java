@@ -17,6 +17,7 @@ import com.yahoo.jdisc.Metric.Context;
  */
 @Beta
 public final class Point implements Context {
+
     private final Value[] location;
     private final String[] dimensions;
 

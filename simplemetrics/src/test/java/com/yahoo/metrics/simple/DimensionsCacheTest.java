@@ -20,6 +20,7 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class DimensionsCacheTest {
+
     private static final int POINTS_TO_KEEP = 3;
     DimensionCache cache;
 
@@ -52,7 +53,7 @@ public class DimensionsCacheTest {
                 newestFound = true;
             }
         }
-        assertTrue("Did not keep newest measurement when padding points.", newestFound);
+        assertTrue("Kept newest measurement when padding points.", newestFound);
     }
 
     @Test

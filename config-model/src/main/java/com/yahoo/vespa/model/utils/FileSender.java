@@ -33,7 +33,7 @@ public class FileSender implements Serializable {
                                                    Collection<? extends AbstractService> services) {
         if (services.isEmpty()) {
             throw new IllegalStateException("'sendFileToServices called for empty services!" +
-                    " - This should never happen!");
+                                            " - This should never happen!");
         }
         FileReference fileref = null;
         for (AbstractService service : services) {

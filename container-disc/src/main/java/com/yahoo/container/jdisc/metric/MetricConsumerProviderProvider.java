@@ -9,7 +9,7 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.metrics.MetricsPresentationConfig;
 
 /**
- * A dependency injection-provider which providers the default metrics provider
+ * A dependency injection provider which provides the default metrics provider
  * if no provider is set up explicitly in the application package.
  * The purpose of this is to be a fallback if nothing is set up explicitly.
  *

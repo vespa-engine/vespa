@@ -130,14 +130,14 @@ final class ProgramParser {
     private yqlplusParser prepareParser(final String programName, CharStream input) {
         yqlplusLexer lex = new yqlplusLexer(input);
         lex.addErrorListener(new BaseErrorListener() {
+
           @Override
           public void syntaxError(@NotNull Recognizer<?, ?> recognizer,
-                      @Nullable Object offendingSymbol,
-                      int line,
-                      int charPositionInLine,
-                      @NotNull String msg,
-                      @Nullable RecognitionException e)
-          {
+                                  @Nullable Object offendingSymbol,
+                                  int line,
+                                  int charPositionInLine,
+                                  @NotNull String msg,
+                                  @Nullable RecognitionException e) {
             throw new ProgramCompileException(new Location(programName, line, charPositionInLine), msg);
           }
 
@@ -145,14 +145,14 @@ final class ProgramParser {
         TokenStream tokens = new CommonTokenStream(lex);
         yqlplusParser parser = new yqlplusParser(tokens);
         parser.addErrorListener(new BaseErrorListener() {
+
           @Override
           public void syntaxError(@NotNull Recognizer<?, ?> recognizer,
-                      @Nullable Object offendingSymbol,
-                      int line,
-                      int charPositionInLine,
-                      @NotNull String msg,
-                      @Nullable RecognitionException e)
-          {
+                                  @Nullable Object offendingSymbol,
+                                  int line,
+                                  int charPositionInLine,
+                                  @NotNull String msg,
+                                  @Nullable RecognitionException e) {
             throw new ProgramCompileException(new Location(programName, line, charPositionInLine), msg);
           }
 

@@ -99,12 +99,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         try {
             return clientFeederV3.handleRequest(request);
         } catch (UnknownClientException uce) {
-            final String msg = Exceptions.toMessageString(uce);
+            String msg = Exceptions.toMessageString(uce);
             log.log(LogLevel.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST, msg);
         } catch (Exception e) {
-            final String msg = "Could not initialize document parsing: "
-                    + Exceptions.toMessageString(e);
+            String msg = "Could not initialize document parsing: " + Exceptions.toMessageString(e);
             log.log(LogLevel.WARNING, msg);
             return new ErrorHttpResponse(com.yahoo.jdisc.http.HttpResponse.Status.INTERNAL_SERVER_ERROR, msg);
         }

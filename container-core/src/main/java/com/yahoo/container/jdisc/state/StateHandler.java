@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
-import com.google.common.base.Splitter;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -31,7 +30,7 @@ import java.io.ByteArrayOutputStream;
 /**
  * A handler which returns state (health) information from this container instance: Status and metrics.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class StateHandler extends AbstractRequestHandler {
 
@@ -45,7 +44,6 @@ public class StateHandler extends AbstractRequestHandler {
     private final Timer timer;
     private final byte[] config;
     private final SnapshotProvider snapshotPreprocessor;
-    private static final Splitter onSlash = Splitter.on('/');
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
@@ -91,18 +89,18 @@ public class StateHandler extends AbstractRequestHandler {
     private ByteBuffer buildContent(URI requestUri) {
         String suffix = resolvePath(requestUri);
         switch (suffix) {
-        case "":
-            return ByteBuffer.wrap(apiLinks(requestUri));
-        case CONFIG_GENERATION_API_NAME:
-            return ByteBuffer.wrap(config);
-        case HISTOGRAMS_API_NAME:
-            return ByteBuffer.wrap(buildHistogramsOutput());
-        case HEALTH_API_NAME:
-        case METRICS_API_NAME:
-            return ByteBuffer.wrap(buildMetricOutput(suffix));
-        default:
-            // XXX should possibly do something else here
-            return ByteBuffer.wrap(buildMetricOutput(suffix));
+            case "":
+                return ByteBuffer.wrap(apiLinks(requestUri));
+            case CONFIG_GENERATION_API_NAME:
+                return ByteBuffer.wrap(config);
+            case HISTOGRAMS_API_NAME:
+                return ByteBuffer.wrap(buildHistogramsOutput());
+            case HEALTH_API_NAME:
+            case METRICS_API_NAME:
+                return ByteBuffer.wrap(buildMetricOutput(suffix));
+            default:
+                // XXX should possibly do something else here
+                return ByteBuffer.wrap(buildMetricOutput(suffix));
         }
     }
 
@@ -244,13 +242,13 @@ public class StateHandler extends AbstractRequestHandler {
 
     private static List<Tuple> collapseMetrics(MetricSnapshot snapshot, String consumer) {
         switch (consumer) {
-        case HEALTH_API_NAME:
-            return collapseHealthMetrics(snapshot);
-        case "all": // deprecated name
-        case METRICS_API_NAME:
-            return collapseAllMetrics(snapshot);
-        default:
-            throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
+            case HEALTH_API_NAME:
+                return collapseHealthMetrics(snapshot);
+            case "all": // deprecated name
+            case METRICS_API_NAME:
+                return flattenAllMetrics(snapshot);
+            default:
+                throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");
         }
     }
 
@@ -280,14 +278,15 @@ public class StateHandler extends AbstractRequestHandler {
         return lst;
     }
 
-    private static List<Tuple> collapseAllMetrics(MetricSnapshot snapshot) {
-        List<Tuple> lst = new ArrayList<>();
+    /** Produces a flat list of metric entries from a snapshot (which organizes metrics by dimensions) */
+    private static List<Tuple> flattenAllMetrics(MetricSnapshot snapshot) {
+        List<Tuple> metrics = new ArrayList<>();
         for (Map.Entry<MetricDimensions, MetricSet> snapshotEntry : snapshot) {
             for (Map.Entry<String, MetricValue> metricSetEntry : snapshotEntry.getValue()) {
-                lst.add(new Tuple(snapshotEntry.getKey(), metricSetEntry.getKey(), metricSetEntry.getValue()));
+                metrics.add(new Tuple(snapshotEntry.getKey(), metricSetEntry.getKey(), metricSetEntry.getValue()));
             }
         }
-        return lst;
+        return metrics;
     }
 
     private static class Tuple {

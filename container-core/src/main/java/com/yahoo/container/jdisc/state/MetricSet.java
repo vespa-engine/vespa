@@ -86,4 +86,5 @@ public final class MetricSet implements Iterable<Map.Entry<String, MetricValue>>
                         kv -> kv.getKey(),
                         kv -> ((GaugeMetric)kv.getValue()).newWithPreservedLastValue())));
     }
+
 }

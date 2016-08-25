@@ -184,22 +184,20 @@ public class FeedHandler extends LoggingRequestHandler {
             }
         }
 
-        final Feeder feeder;
+        Feeder feeder;
         try {
-            feeder = createFeeder(
-                    request, request.getData(), operations, clientId.first, clientId.second, protocolVersion.second);
-            // the synchronous FeedResponse blocks draining the InputStream, letting
-            // the Feeder read it
+            feeder = createFeeder(request, request.getData(), operations, clientId.first, 
+                                  clientId.second, protocolVersion.second);
+            // the synchronous FeedResponse blocks draining the InputStream, letting the Feeder read it
             workers.submit(feeder);
         } catch (UnknownClientException uce) {
-            final String msg = Exceptions.toMessageString(uce);
+            String msg = Exceptions.toMessageString(uce);
             log.log(LogLevel.WARNING, msg);
             return new ErrorHttpResponse(Status.BAD_REQUEST, msg);
         } catch (Exception e) {
-            final String msg = "Could not initialize document parsing: "
-                               + Exceptions.toMessageString(e);
-            log.log(LogLevel.WARNING, msg);
-            return new ErrorHttpResponse(Status.INTERNAL_SERVER_ERROR, msg);
+            String msg = "Could not initialize document parsing";
+            log.log(LogLevel.WARNING, "Could not initialize document parsing", e);
+            return new ErrorHttpResponse(Status.INTERNAL_SERVER_ERROR, msg + ": " + Exceptions.toMessageString(e));
         }
 
         try {
@@ -208,15 +206,13 @@ public class FeedHandler extends LoggingRequestHandler {
             return new ErrorHttpResponse(Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
-        return new FeedResponse(200, operations,
-                protocolVersion.second.intValue(),
-                clientId.first);
+        return new FeedResponse(200, operations, protocolVersion.second, clientId.first);
     }
 
     // Protected for testing
-    protected static InputStream unzipStreamIfNeeded(final InputStream inputStream, final HttpRequest httpRequest)
+    protected static InputStream unzipStreamIfNeeded(InputStream inputStream, HttpRequest httpRequest)
             throws IOException {
-        final String contentEncodingHeader = httpRequest.getHeader("content-encoding");
+        String contentEncodingHeader = httpRequest.getHeader("content-encoding");
         if ("gzip".equals(contentEncodingHeader)) {
             return new GZIPInputStream(inputStream);
         } else {
@@ -230,30 +226,28 @@ public class FeedHandler extends LoggingRequestHandler {
     protected Feeder createFeeder(
             HttpRequest request,
             InputStream requestInputStream,
-            final BlockingQueue<OperationStatus> operations,
+            BlockingQueue<OperationStatus> operations,
             String clientId,
             boolean sessionIdWasGeneratedJustNow,
             int protocolVersion) throws Exception {
-        switch (protocolVersion) {
-        case 2:
-            return new Feeder(
-                    unzipStreamIfNeeded(requestInputStream, request),
-                    new FeedReaderFactory(),
-                    docTypeManager,
-                    operations,
-                    popClient(clientId),
-                    new FeederSettings(request),
-                    clientId,
-                    sessionIdWasGeneratedJustNow,
-                    sourceSessionParams(request),
-                    sessionCache,
-                    this,
-                    metric,
-                    feedReplyHandler,
-                    localHostname);
-        default:
-            throw new IllegalStateException("BUG! Protocol version " + protocolVersion + " not supported.");
-        }
+        if (protocolVersion != 2) 
+            throw new IllegalStateException("Protocol version " + protocolVersion + " not supported.");
+
+        return new Feeder(
+                unzipStreamIfNeeded(requestInputStream, request),
+                new FeedReaderFactory(),
+                docTypeManager,
+                operations,
+                popClient(clientId),
+                new FeederSettings(request),
+                clientId,
+                sessionIdWasGeneratedJustNow,
+                sourceSessionParams(request),
+                sessionCache,
+                this,
+                metric,
+                feedReplyHandler,
+                localHostname);
     }
 
     private Tuple2<String, Boolean> sessionId(HttpRequest request) {

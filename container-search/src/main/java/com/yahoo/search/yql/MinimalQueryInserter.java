@@ -51,21 +51,23 @@ public class MinimalQueryInserter extends Searcher {
         QueryTree newTree;
         try {
             newTree = parser.parse(Parsable.fromQueryModel(query.getModel())
-                    .setQuery(query.properties().getString(YQL)));
+                                           .setQuery(query.properties().getString(YQL)));
         } catch (RuntimeException e) {
             return new Result(query, ErrorMessage.createInvalidQueryParameter(
-                    "Could not instantiate query from YQL+", e));
+                              "Could not instantiate query from YQL", e));
         }
         if (parser.getOffset() != null) {
-            final int maxHits = query.properties().getInteger(MAX_HITS);
-            final int maxOffset = query.properties().getInteger(MAX_OFFSET);
+            int maxHits = query.properties().getInteger(MAX_HITS);
+            int maxOffset = query.properties().getInteger(MAX_OFFSET);
             if (parser.getOffset() > maxOffset) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested offset " + parser.getOffset()
-                        + ", but the max offset allowed is " + maxOffset + "."));
+                                                                                  + ", but the max offset allowed is " + 
+                                                                                  maxOffset + "."));
             }
             if (parser.getHits() > maxHits) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested " + parser.getHits()
-                        + " hits returned, but max hits allowed is " + maxHits + "."));
+                                                                                  + " hits returned, but max hits allowed is " 
+                                                                                  + maxHits + "."));
 
             }
         }

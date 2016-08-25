@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.statistics;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.Server;
 import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Metric;
@@ -100,11 +98,11 @@ public class StatisticsSearcher extends Searcher {
     private class ActivitySampler implements Callback {
         public void run(Handle h, boolean firstRun) {
             if (firstRun) {
-                metric.set(ACTIVE_QUERIES_METRIC, Integer.valueOf(0), null);
+                metric.set(ACTIVE_QUERIES_METRIC, 0, null);
                 return;
             }
             // TODO Server.get() is to be removed
-            final int searchQueriesInFlight = Server.get().searchQueriesInFlight();
+            int searchQueriesInFlight = Server.get().searchQueriesInFlight();
             ((Value) h).put(searchQueriesInFlight);
             metric.set(ACTIVE_QUERIES_METRIC, searchQueriesInFlight, null);
         }
@@ -256,12 +254,11 @@ public class StatisticsSearcher extends Searcher {
      * @param result The result to check for errors
      */
     private void incrementYamasOnlyErrors(Result result, Execution execution) {
-        if(result == null)
-            return;
+        if (result == null) return;
 
         ErrorHit error = result.hits().getErrorHit();
-        if (error == null)
-            return;
+        if (error == null) return;
+
         for (ErrorMessage m : error.errors()) {
             int code = m.getCode();
             Metric.Context c = getDimensions(m.getSource(), result, execution);
@@ -293,7 +290,6 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-
     private Metric.Context getDimensions(String source, Result r, Execution execution) {
         Metric.Context context = yamasOnlyContexts.get(source == null ? "" : source);
         if (context == null) {
@@ -304,9 +300,9 @@ public class StatisticsSearcher extends Searcher {
             context = this.metric.createContext(dims);
             yamasOnlyContexts.put(source == null ? "" : source, context);
         }
-        //TODO add other relevant metric dimensions
-        //Would be nice to have chain as a dimension as
-        //we can separate errors from different chains
+        // TODO add other relevant metric dimensions
+        // Would be nice to have chain as a dimension as
+        // we can separate errors from different chains
         return context;
     }
 

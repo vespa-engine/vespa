@@ -14,7 +14,7 @@ import com.yahoo.text.Utf8String;
  * invoking the {@link #swapState(Routable)} method. That method is used to transfer the state from a message to the
  * corresponding reply, or to a different message if the application decides to replace it.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class Routable {
 

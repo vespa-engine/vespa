@@ -15,6 +15,7 @@ import java.util.Map;
  * @author tonytv
  */
 public class ItemInitializer {
+
     private static final String indexProperty = "index";
     private static final String idProperty = "id";
     private static final String significanceProperty = "significance";

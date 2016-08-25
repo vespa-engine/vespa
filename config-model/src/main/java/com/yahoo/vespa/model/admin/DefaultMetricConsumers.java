@@ -145,7 +145,6 @@ public class DefaultMetricConsumers {
         metrics.add(new Metric("vds.visitor.sum.failed.rate"));
 
         // Cluster Controller
-
         metrics.add(new Metric("cluster-controller.down.count.last"));
         metrics.add(new Metric("cluster-controller.initializing.count.last"));
         metrics.add(new Metric("cluster-controller.maintenance.count.last"));
@@ -159,7 +158,7 @@ public class DefaultMetricConsumers {
         // DO NOT RELY ON THIS METRIC YET.
         metrics.add(new Metric("cluster-controller.node-event.count"));
 
-        //Errors from qrserver
+        // Errors from qrserver
         metrics.add(new Metric("error.timeout.rate","error.timeout"));
         metrics.add(new Metric("error.backends_oos.rate","error.backends_oos"));
         metrics.add(new Metric("error.plugin_failure.rate","error.plugin_failure"));

@@ -20,6 +20,7 @@ import com.yahoo.log.LogLevel;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class MetricManager extends AbstractComponent implements Provider<MetricReceiver> {
+
     private static Logger log = Logger.getLogger(MetricManager.class.getName());
 
     private final ScheduledThreadPoolExecutor executor;

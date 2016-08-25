@@ -313,7 +313,7 @@ class ClientFeederV3 {
         synchronized (monitor) {
             if (now.plusSeconds(1).isAfter(prevOpsPerSecTime)) {
                 Duration duration = Duration.between(now, prevOpsPerSecTime);
-                final double opsPerSec = operationsForOpsPerSec / (duration.toMillis() / 1000.);
+                double opsPerSec = operationsForOpsPerSec / (duration.toMillis() / 1000.);
                 metric.set(MetricNames.OPERATIONS_PER_SEC, opsPerSec, null /*metricContext*/);
                 operationsForOpsPerSec = 1.0d;
                 prevOpsPerSecTime = now;

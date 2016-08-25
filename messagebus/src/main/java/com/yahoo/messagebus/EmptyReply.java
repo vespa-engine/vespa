@@ -8,9 +8,10 @@ import com.yahoo.text.Utf8String;
  * generate replies to events that occur within the messagebus, and since the messagebus by design knows nothing about
  * the messages that have been implemented by the users it requires a class such as this.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class EmptyReply extends Reply {
+
     private final Utf8String PROTOCOL = new Utf8String("");
 
     /**
@@ -31,4 +32,5 @@ public final class EmptyReply extends Reply {
     public Utf8String getProtocol() {
         return PROTOCOL;
     }
+
 }

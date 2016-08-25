@@ -46,4 +46,5 @@ final class StateMetricConsumer implements MetricConsumer {
         }
         return metricSnapshot;
     }
+
 }

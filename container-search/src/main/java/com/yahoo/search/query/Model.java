@@ -25,7 +25,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 /**
  * The parameters defining the recall of a query.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  * @author bratseth
  */
 public class Model implements Cloneable {
@@ -502,7 +502,7 @@ public class Model implements Cloneable {
      * search backend (of some kind).
      *
      * @param next string representation of header value
-     * @deprecated Not use, ytrace is done
+     * @deprecated not used, ytrace has been discontinued
      */
     @Deprecated
     public void setYTraceHeaderToNext(String next) { }
@@ -511,7 +511,8 @@ public class Model implements Cloneable {
      * Get the YTrace header value to use when transmitting this model to a
      * search backend (of some kind). Returns null if no ytrace data is not
      * turned on.
-     * @deprecated Not use, ytrace is done
+     * 
+     * @deprecated not used, ytrace has been discontinued
      */
     @Deprecated
     public String getYTraceHeaderToNext() {

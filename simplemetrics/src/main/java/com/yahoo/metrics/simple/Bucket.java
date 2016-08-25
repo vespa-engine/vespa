@@ -24,6 +24,10 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class Bucket {
+
+    private static final Logger log = Logger.getLogger(Bucket.class.getName());
+    private final Map<Identifier, UntypedMetric> values = LazyMap.newHashMap();
+
     boolean gotTimeStamps;
     long fromMillis;
     long toMillis;
@@ -40,9 +44,6 @@ public class Bucket {
         this.toMillis = toMillis;
     }
 
-    private static final Logger log = Logger.getLogger(Bucket.class.getName());
-    private final Map<Identifier, UntypedMetric> values = LazyMap.newHashMap();
-
     public Set<Map.Entry<Identifier, UntypedMetric>> entrySet() {
         return values.entrySet();
     }
@@ -51,14 +52,14 @@ public class Bucket {
         UntypedMetric value = get(x);
         Measurement m = x.getMeasurement();
         switch (x.getMetricType()) {
-        case GAUGE:
-            value.put(m.getMagnitude());
-            break;
-        case COUNTER:
-            value.add(m.getMagnitude());
-            break;
-        default:
-            throw new IllegalArgumentException("Unsupported metric type: " + x.getMetricType());
+            case GAUGE:
+                value.put(m.getMagnitude());
+                break;
+            case COUNTER:
+                value.add(m.getMagnitude());
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported metric type: " + x.getMetricType());
         }
     }
 
@@ -71,7 +72,7 @@ public class Bucket {
     }
 
     void merge(Bucket other, boolean otherIsNewer) {
-        final LazySet<String> malformedMetrics = LazySet.newHashSet();
+        LazySet<String> malformedMetrics = LazySet.newHashSet();
         for (Map.Entry<Identifier, UntypedMetric> entry : other.values.entrySet()) {
             String metricName = entry.getKey().getName();
             try {
@@ -166,10 +167,7 @@ public class Bucket {
 
     @Override
     public String toString() {
-        final int maxLen = 3;
-        StringBuilder builder = new StringBuilder();
-        builder.append("Bucket [values=").append(values != null ? toString(values.entrySet(), maxLen) : null).append("]");
-        return builder.toString();
+        return "Bucket [values=" + (values != null ? toString(values.entrySet(), 3) : null) + "]";
     }
 
     private String toString(Collection<?> collection, int maxLen) {
@@ -199,4 +197,5 @@ public class Bucket {
     public long getToMillis() {
         return toMillis;
     }
+
 }

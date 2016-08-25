@@ -12,7 +12,7 @@ public class StateMetricConsumerFactory implements MetricConsumerFactory {
 
     private final StateMonitor stateMonitor;
 
-    public StateMetricConsumerFactory(final StateMonitor stateMonitor) {
+    public StateMetricConsumerFactory(StateMonitor stateMonitor) {
         this.stateMonitor = stateMonitor;
     }
 
@@ -20,4 +20,5 @@ public class StateMetricConsumerFactory implements MetricConsumerFactory {
     public MetricConsumer newInstance() {
         return stateMonitor.newMetricConsumer();
     }
+
 }

@@ -8,7 +8,7 @@ import com.yahoo.search.yql.YqlParser;
 /**
  * <p>Implements a factory for {@link Parser}.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @since 5.1.4
  */
 public final class ParserFactory {
@@ -27,22 +27,22 @@ public final class ParserFactory {
      */
     public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
         switch (type) {
-        case ALL:
-            return new AllParser(environment);
-        case ANY:
-            return new AnyParser(environment);
-        case PHRASE:
-            return new PhraseParser(environment);
-        case ADVANCED:
-            return new AdvancedParser(environment);
-        case WEB:
-            return new WebParser(environment);
-        case PROGRAMMATIC:
-            return new ProgrammaticParser();
-        case YQL:
-            return new YqlParser(environment);
-        default:
-            throw new UnsupportedOperationException(type.toString());
+            case ALL:
+                return new AllParser(environment);
+            case ANY:
+                return new AnyParser(environment);
+            case PHRASE:
+                return new PhraseParser(environment);
+            case ADVANCED:
+                return new AdvancedParser(environment);
+            case WEB:
+                return new WebParser(environment);
+            case PROGRAMMATIC:
+                return new ProgrammaticParser();
+            case YQL:
+                return new YqlParser(environment);
+            default:
+                throw new UnsupportedOperationException(type.toString());
         }
     }
 }

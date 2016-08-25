@@ -14,7 +14,7 @@ import com.yahoo.vespa.http.client.core.OperationStatus;
 /**
  * Catch message bus replies and make the available to a given session.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class FeedReplyReader implements ReplyHandler {
 
@@ -48,12 +48,10 @@ public class FeedReplyReader implements ReplyHandler {
     private void enqueue(ReplyContext context, String message, ErrorCode status, Trace trace) {
         try {
             String traceMessage = (trace != null && trace.getLevel() > 0) ? trace.toString() : "";
-            context.feedReplies.put(new OperationStatus(message,
-                    context.docId.toString(), status, traceMessage));
+            context.feedReplies.put(new OperationStatus(message, context.docId, status, traceMessage));
         } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING,
-                    "Interrupted while enqueueing result from putting document with id: "
-                            + context.docId.toString());
+            log.log(LogLevel.WARNING, 
+                    "Interrupted while enqueueing result from putting document with id: " + context.docId);
             Thread.currentThread().interrupt();
         }
     }

@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  * corresponding message. There are no error-replies defined, as errors can instead piggyback any reply by the {@link
  * #errors} member variable.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class Reply extends Routable {
 

@@ -6,6 +6,7 @@ import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.query.parser.AnyParser;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.QueryTree;
@@ -39,22 +40,18 @@ public class RecallSearcher extends Searcher {
     @Override
     public com.yahoo.search.Result search(Query query, Execution execution) {
         String recall = query.properties().getString(recallName);
-        if (recall == null) {
-            return execution.search(query);
-        }
+        if (recall == null) return execution.search(query);
+
         AnyParser parser = new AnyParser(
                 ParserEnvironment.fromExecutionContext(execution.context()));
-        QueryTree root = parser.parse(Parsable.fromQueryModel(query.getModel())
-                .setQuery("foo").setFilter(recall));
+        QueryTree root = parser.parse(Parsable.fromQueryModel(query.getModel()).setQuery("foo").setFilter(recall));
         String err;
         if (root.getRoot() instanceof NullItem) {
             err = "Failed to parse recall parameter.";
         } else if (!(root.getRoot() instanceof CompositeItem)) {
-            err = "Expected CompositeItem root node, got "
-                    + root.getClass().getSimpleName() + ".";
+            err = "Expected CompositeItem root node, got " + root.getClass().getSimpleName() + ".";
         } else if (hasRankItem(root.getRoot())) {
             query.getModel().getQueryTree().setRoot(root.getRoot());
-
             err = "Recall contains at least one rank item.";
         } else {
             WordItem placeholder = findOrigWordItem(root.getRoot(), "foo");
@@ -63,18 +60,14 @@ public class RecallSearcher extends Searcher {
             } else {
                 updateFilterTerms(root);
                 CompositeItem parent = placeholder.getParent();
-                parent.setItem(parent.getItemIndex(placeholder), query
-                        .getModel().getQueryTree().getRoot());
+                parent.setItem(parent.getItemIndex(placeholder), query.getModel().getQueryTree().getRoot());
                 query.getModel().getQueryTree().setRoot(root.getRoot());
 
-                query.trace("ANDed recall tree with root workQuery node.",
-                        true, 3);
+                query.trace("ANDed recall tree with root workQuery node.", true, 3);
                 return execution.search(query);
             }
         }
-        com.yahoo.search.Result ret = new com.yahoo.search.Result(query);
-        ret.hits().addError(ErrorMessage.createInvalidQueryParameter(err));
-        return ret;
+        return new Result(query, ErrorMessage.createInvalidQueryParameter(err));
     }
 
     /**
