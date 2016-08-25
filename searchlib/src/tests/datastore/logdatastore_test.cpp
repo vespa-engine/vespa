@@ -459,7 +459,12 @@ public:
     { }
     IDocumentStore & getStore() { return _datastore; }
     void write(uint32_t id) {
-        Document::UP doc = makeDoc(_repo, id, false);
+        write(id, makeDoc(_repo, id, false));
+    }
+    void rewrite(uint32_t id) {
+        write(id, makeDoc(_repo, id, true));
+    }
+    void write(uint32_t id, Document::UP doc) {
         getStore().write(_serial++, *doc, id);
         _inserted[id] = std::move(doc);
     }
@@ -531,13 +536,33 @@ TEST("test that the integrated visit cache works.") {
     for (size_t i(1); i <= 100; i++) {
         vcs.write(i);
     }
-    CacheStats cs1 = ds.getCacheStats();
-    verifyCacheStats(cs1, 0, 0, 0, 0);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 0));
+
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, 19774));
+    for (size_t i(1); i <= 100; i++) {
+        vcs.verifyRead(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
+
     vcs.verifyVisit({7,9,17,19,67,88}, false);
-    
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, 20335));
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 20335));
+    vcs.rewrite(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20130));
+    vcs.rewrite(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 19364));
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 19948));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 19999));
+    vcs.rewrite(17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19167));
 }
 
 TEST("testWriteRead") {
