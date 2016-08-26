@@ -24,7 +24,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
     }
     Index idx(bucketId, _chunks.size(), chunkId, lid);
     _current->append(lid, buffer, sz);
-    _where[BucketId::reverse(bucketId.getId())].push_back(idx);
+    _where[bucketId.toKey()].push_back(idx);
 }
 
 void StoreByBucket::createCurrent()
