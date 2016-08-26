@@ -272,14 +272,14 @@ TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
 }
 
-class GuardDirectory {
+class TmpDirectory {
 public:
-    GuardDirectory(const vespalib::string & dir) : _dir(dir)
+    TmpDirectory(const vespalib::string & dir) : _dir(dir)
     {
         FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
         ASSERT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
     }
-    ~GuardDirectory() {
+    ~TmpDirectory() {
         FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
     }
     const vespalib::string & getDir() const { return _dir; }
@@ -349,7 +349,7 @@ public:
     { }
     IDataStore & getStore() { return _datastore; }
 private:
-    GuardDirectory                _myDir;
+    TmpDirectory                  _myDir;
     LogDataStore::Config          _config;
     DummyFileHeaderContext        _fileHeaderContext;
     vespalib::ThreadStackExecutor _executor;
@@ -509,7 +509,7 @@ private:
         vespalib::hash_set<uint32_t>  _actual;
         bool                          _allowVisitCaching;
     };
-    GuardDirectory                   _myDir;    
+    TmpDirectory                     _myDir;    
     document::DocumentTypeRepo       _repo;
     LogDocumentStore::Config         _config;
     DummyFileHeaderContext           _fileHeaderContext;
@@ -657,7 +657,7 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
 }
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
-    GuardDirectory testDir("flushtime");
+    TmpDirectory testDir("flushtime");
     fastos::TimeStamp before(fastos::ClockSystem::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
