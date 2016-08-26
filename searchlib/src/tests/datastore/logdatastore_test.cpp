@@ -126,7 +126,6 @@ checkStats(IDataStore &store,
     EXPECT_EQUAL(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
 
-
 }
 
 TEST("testThatLidInfoOrdersFileChunkSize") {
@@ -350,7 +349,7 @@ public:
     { }
     IDataStore & getStore() { return _datastore; }
 private:
-    GuardDirectory                _myDir;    
+    GuardDirectory                _myDir;
     LogDataStore::Config          _config;
     DummyFileHeaderContext        _fileHeaderContext;
     vespalib::ThreadStackExecutor _executor;
@@ -470,7 +469,6 @@ public:
     }
     void verifyRead(uint32_t id) {
         verifyDoc(*_datastore.read(id, _repo), id);
-        
     }
     void verifyDoc(const Document & doc, uint32_t id) {
         EXPECT_TRUE(doc == *_inserted[id]);
@@ -499,8 +497,8 @@ private:
             EXPECT_EQUAL(_expected.size(), _actual.size());
         }
         void visit(uint32_t lid, Document::UP doc) override {
-            EXPECT_TRUE(_expected.find(lid) != _expected.end()); 
-            EXPECT_TRUE(_actual.find(lid) == _actual.end()); 
+            EXPECT_TRUE(_expected.find(lid) != _expected.end());
+            EXPECT_TRUE(_actual.find(lid) == _actual.end());
             _actual.insert(lid);
             _vcs.verifyDoc(*doc, lid);
         }
