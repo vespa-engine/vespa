@@ -23,6 +23,7 @@ TEST("require that KeySet compares well") {
     EXPECT_FALSE(KeySet({1,5,7}) == KeySet({7,1,5,4}));
     EXPECT_FALSE(KeySet({1,5,7}) == KeySet({7,1,5,9}));
     EXPECT_FALSE(KeySet({1,5,7,9}) == KeySet({7,1,5}));
+    EXPECT_FALSE(KeySet({1,5,7,9}) == KeySet({7,1,5,8}));
 
     EXPECT_FALSE(KeySet({1,3,5}) < KeySet({1,3,5}));
     EXPECT_TRUE(KeySet({1,3}) < KeySet({1,3,5}));
