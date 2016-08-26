@@ -13,6 +13,7 @@ import com.yahoo.container.QrSearchersConfig;
  * @author steinar
  */
 public class VipStatus {
+
     private final Map<Object, Boolean> clusters = new IdentityHashMap<>();
 
     public VipStatus() {

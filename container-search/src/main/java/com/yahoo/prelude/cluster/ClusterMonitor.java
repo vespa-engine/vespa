@@ -17,7 +17,7 @@ import com.yahoo.search.result.ErrorMessage;
  * for node monitoring.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
 
@@ -61,11 +61,9 @@ public class ClusterMonitor implements Runnable, Freezable {
      */
     void add(VespaBackEndSearcher node) {
         if (isFrozen()) {
-            throw new IllegalStateException(
-                    "Can not add new nodes after ClusterMonitor has been frozen.");
+            throw new IllegalStateException("Can not add new nodes after ClusterMonitor has been frozen.");
         }
-        final NodeMonitor monitor = new NodeMonitor(node);
-        nodeMonitors.put(node, monitor);
+        nodeMonitors.put(node, new NodeMonitor(node));
     }
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
@@ -112,7 +110,7 @@ public class ClusterMonitor implements Runnable, Freezable {
      * Ping all nodes which needs pinging to discover state changes
      */
     private void ping() throws InterruptedException {
-        for (final NodeMonitor monitor : nodeMonitors.values()) {
+        for (NodeMonitor monitor : nodeMonitors.values()) {
             nodeManager.ping(monitor.getNode());
         }
     }

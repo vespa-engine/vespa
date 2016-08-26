@@ -44,7 +44,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
                 // Only count not being able to talk to backend at all
                 // as errors we care about
                 if ((respondedAt-succeededAt) > 10000) {
-                    setWorking(false,"Not working for 10 s: " + error.toString());
+                    setWorking(false, "Not working for 10 s: " + error.toString());
                 }
                 break;
             default:
