@@ -326,6 +326,7 @@ public class Container extends AbstractService implements
         }
     }
 
+    /** Returns the jvm arguments this should start with */
     @Override
     public String getJvmArgs() {
         String jvmArgs = super.getJvmArgs();
@@ -333,6 +334,10 @@ public class Container extends AbstractService implements
                 ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
                 : jvmArgs;
     }
+
+    /** Returns the jvm args set explicitly for this node */
+    public String getAssignedJvmArgs() { return super.getJvmArgs(); }
+    
     private String serviceSlobrokId() {
         return "vespa/service/" + getConfigId();
     }

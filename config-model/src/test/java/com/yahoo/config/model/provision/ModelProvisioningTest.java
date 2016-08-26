@@ -53,6 +53,7 @@ public class ModelProvisioningTest {
                         "  <nodes count=\"3\"/>" +
                         "</jdisc>" +
                         "<jdisc id='mydisc2' version='1.0'>" +
+                        "  <document-processing/>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
@@ -107,7 +108,7 @@ public class ModelProvisioningTest {
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
 
-        final HostSystem hostSystem = model.getHostSystem();
+        HostSystem hostSystem = model.getHostSystem();
         assertNotNull(hostSystem.getHostByHostname("myhost0"));
         assertNotNull(hostSystem.getHostByHostname("myhost1"));
         assertNotNull(hostSystem.getHostByHostname("myhost2"));
@@ -168,6 +169,33 @@ public class ModelProvisioningTest {
 
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+    }
+
+    @Test
+    public void testCombinedClusterWithJvmArgs() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <document-processing/>" +
+                "     <nodes of='content1' jvmargs='testarg'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content1'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        for (Container container : model.getContainerClusters().get("container1").getContainers())
+            assertTrue(container.getJvmArgs().contains("testarg"));
     }
 
     @Test
