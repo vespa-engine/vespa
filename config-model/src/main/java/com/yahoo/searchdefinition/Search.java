@@ -66,6 +66,9 @@ public class Search implements Serializable {
     private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
     // _Must_ preserve order
 
+    // Ranking constants defined inside this s.d.
+    private Map<String, RankingConstant> rankingConstants = new HashMap<>();
+
     private ApplicationPackage sourceApplication;
 
     /**
@@ -135,6 +138,18 @@ public class Search implements Serializable {
             throw new IllegalArgumentException("Searchdefinition cannot have more than one document");
         }
         docType = document;
+    }
+
+    public void addRankingConstant(RankingConstant rConstant) {
+        String name = rConstant.getName();
+        if (rankingConstants.get(name) != null) {
+            throw new IllegalArgumentException("Ranking constant '"+name+"' defined twice");
+        }
+        rankingConstants.put(name, rConstant);
+    }
+
+    public Iterable<RankingConstant> getRankingConstants() {
+        return rankingConstants.values();
     }
 
     /**
