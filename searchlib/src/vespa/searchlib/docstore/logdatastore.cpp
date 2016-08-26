@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
+#include "storebybucket.h"
 #include "logdatastore.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -9,7 +10,6 @@
 LOG_SETUP(".searchlib.docstore.logdatastore");
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/xxhash/xxhash.h>
 #include <thread>
 
 namespace search
@@ -22,6 +22,8 @@ using vespalib::GenerationHandler;
 using vespalib::make_string;
 using common::FileHeaderContext;
 using std::runtime_error;
+using document::BucketId;
+using docstore::StoreByBucket;
 
 LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
                            const vespalib::string &dirName,
@@ -325,8 +327,7 @@ class Compacter : public IWriteData
 public:
     Compacter(LogDataStore & ds)
         : _ds(ds)
-    {
-    }
+    { }
     void
     write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
         (void) chunkId;
@@ -338,103 +339,13 @@ private:
     LogDataStore & _ds;
 };
 
-typedef std::unique_ptr<vespalib::DataBuffer> BufferUP;
-class StoreByBucket
-{
-public:
-    StoreByBucket();
-    class IWrite {
-    public:
-        virtual ~IWrite() { }
-        virtual void write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
-    };
-    void add(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
-    void drain(IWrite & drain);
-    size_t getChunkCount() const { return _chunks.size(); }
-    size_t getBucketCount() const { return _where.size(); }
-    size_t getLidCount() const {
-        size_t lidCount(0);
-        for (const auto & it : _where) {
-            lidCount += it.second.size();
-        }
-        return lidCount;
-    }
-private:
-    void closeCurrent();
-    void createCurrent();
-    struct Index {
-        Index(uint32_t id, uint32_t chunkId, uint32_t entry) : _id(id), _chunkId(chunkId), _lid(entry) { }
-        uint32_t _id;
-        uint32_t _chunkId;
-        uint32_t _lid;
-    };
-    std::vector<BufferUP> _chunks;
-    Chunk::UP _current;
-    std::map<uint64_t, std::vector<Index>> _where;
-};
-
-StoreByBucket::StoreByBucket() :
-    _chunks(),
-    _current(),
-    _where()
-{
-    createCurrent();
-}
-
-void
-StoreByBucket::add(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
-{
-    if ( ! _current->hasRoom(sz)) {
-        closeCurrent();
-        createCurrent();
-    }
-    Index idx(_chunks.size(), chunkId, lid);
-    _current->append(lid, buffer, sz);
-    _where[bucketId].push_back(idx);
-}
-
-void StoreByBucket::createCurrent()
-{
-    _current.reset(new Chunk(_chunks.size(), Chunk::Config(0x10000, 1000)));
-}
-
-void
-StoreByBucket::closeCurrent()
-{
-    BufferUP buffer(new vespalib::DataBuffer());
-    document::CompressionConfig lz4(document::CompressionConfig::LZ4);
-    _current->pack(1, *buffer, lz4);
-    buffer->shrink(buffer->getDataLen());
-    _chunks.push_back(std::move(buffer));
-    _current.reset();
-}
-
-void
-StoreByBucket::drain(IWrite & drainer)
-{
-    closeCurrent();
-    std::vector<Chunk::UP> chunks;
-    for (BufferUP & buffer : _chunks) {
-        chunks.push_back(Chunk::UP(new Chunk(chunks.size(), buffer->getData(), buffer->getDataLen())));
-        buffer.reset();
-    }
-    _chunks.clear();
-    for (const auto & it : _where) {
-        for (Index idx : it.second) {
-            vespalib::ConstBufferRef data(chunks[idx._id]->getLid(idx._lid));
-            drainer.write(it.first, idx._chunkId, idx._lid, data.c_str(), data.size());
-        }
-    }
-}
-
-
 class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
 {
 public:
     using FileId = FileChunk::FileId;
     BucketCompacter(LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination);
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
-    void write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
+    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
     void close() override;
 private:
     FileId getDestinationId(const LockGuard & guard) const {
@@ -466,9 +377,9 @@ void
 BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
     guard.unlock();
-    uint64_t bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : 0;
-    uint32_t hash = XXH32(&bucketId, sizeof(bucketId), 0);
-    _tmpStore[hash%_tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
+    BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
+    uint64_t sortableBucketId = bucketId.toKey();
+    _tmpStore[(sortableBucketId >> 56) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
 }
 
 void
@@ -497,9 +408,9 @@ BucketCompacter::close()
 }
 
 void
-BucketCompacter::write(uint64_t bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
+BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
-    _stat[bucketId]++;
+    _stat[bucketId.getId()]++;
     LockGuard guard(_ds.getLidGuard(lid));
     LidInfo lidInfo(_sourceFileId.getId(), chunkId, sz);
     if (_ds.getLid(_lidGuard, lid) == lidInfo) {
