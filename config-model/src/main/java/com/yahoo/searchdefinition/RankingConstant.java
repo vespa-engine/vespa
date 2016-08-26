@@ -10,8 +10,7 @@ import com.yahoo.tensor.TensorType;
  */
 public class RankingConstant {
     /** The search definition-unique name of this constant */
-    final String name;
-
+    private final String name;
     private TensorType tensorType = null;
     private String fileName = "";
     private String fileRef = "";
