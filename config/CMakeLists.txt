@@ -18,6 +18,7 @@ vespa_define_module(
     src/vespa/config/common
     src/vespa/config/configgen
     src/vespa/config/file
+    src/vespa/config/file_acquirer
     src/vespa/config/frt
     src/vespa/config/helper
     src/vespa/config/print
@@ -34,6 +35,7 @@ vespa_define_module(
     src/tests/configholder
     src/tests/unittest
     src/tests/frtconnectionpool
+    src/tests/file_acquirer
     src/tests/file_subscription
     src/tests/legacysubscriber
     src/tests/subscriber
