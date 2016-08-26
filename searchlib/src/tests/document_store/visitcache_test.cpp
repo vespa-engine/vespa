@@ -58,7 +58,7 @@ using B=vespalib::ConstBufferRef;
 TEST("require that BlobSet can be built") {
     BlobSet a;
     a.append(7, B("aaaaaa",6));
-    a.append(9, B("bbbbbb",5));
+    a.append(9, B("bbbbb",5));
     verifyAB(a);
     document::CompressionConfig cfg(document::CompressionConfig::LZ4);
     CompressedBlobSet ca(cfg, a);
