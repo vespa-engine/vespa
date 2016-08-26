@@ -40,9 +40,9 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     @Override
     protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
         String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
-        if ( ! zooKeeperServerHostnames.contains(remoteHost)) {
+        if ( ! remoteHost.equals("localhost") && ! zooKeeperServerHostnames.contains(remoteHost)) {
             String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
-                                  ": This cluster only allow connection from nodes in this cluster. " +
+                                  ": This cluster only allow connection among its own hosts. " +
                                   "Hosts in this cluster: " + zooKeeperServerHostnames;
             log.warning(errorMessage);
             throw new IllegalArgumentException(errorMessage);
