@@ -232,10 +232,12 @@ private:
         const document::CompressionConfig _compression;
     };
     bool useCache() const { return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0); }
-    using CacheParams = vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
-                                              BackingStore,
-                                              vespalib::zero<DocumentIdT>,
-                                              vespalib::size<Value> >;
+    using CacheParams = vespalib::CacheParam<
+                            vespalib::LruParam<DocumentIdT, Value>,
+                            BackingStore,
+                            vespalib::zero<DocumentIdT>,
+                            vespalib::size<Value>
+                        >;
     using Cache = vespalib::cache<CacheParams>;
     using VisitCache = docstore::VisitCache;
 

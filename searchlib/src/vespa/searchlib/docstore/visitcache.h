@@ -45,7 +45,7 @@ public:
         uint32_t _size;
     };
 
-    typedef std::vector<LidPosition> Positions;
+    using Positions = std::vector<LidPosition>;
     BlobSet();
     BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer);
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
@@ -118,10 +118,12 @@ private:
         const document::CompressionConfig  _compression;
     };
 
-    typedef vespalib::CacheParam<vespalib::LruParam<KeySet, CompressedBlobSet>,
-        BackingStore,
-        vespalib::zero<KeySet>,
-        vespalib::size<CompressedBlobSet> > CacheParams;
+    using CacheParams = vespalib::CacheParam<
+                            vespalib::LruParam<KeySet, CompressedBlobSet>,
+                            BackingStore,
+                            vespalib::zero<KeySet>,
+                            vespalib::size<CompressedBlobSet>
+                        >;
 
     /**
      * This extends the default thread safe cache implementation so that
@@ -135,10 +137,10 @@ private:
         void removeKey(uint32_t);
         void locateAndInvalidateOtherSubsets(const KeySet & keys);
     private:
-        typedef vespalib::hash_set<uint64_t> IdSet;
-        typedef vespalib::cache<CacheParams> Parent;
-        typedef vespalib::hash_map<uint32_t, uint64_t> LidUniqueKeySetId;
-        typedef vespalib::hash_map<uint64_t, KeySet> IdKeySetMap;
+        using IdSet = vespalib::hash_set<uint64_t>;
+        using Parent = vespalib::cache<CacheParams>;
+        using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
+        using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
         IdSet findSetsContaining(const vespalib::LockGuard &, const KeySet & keys) const;
         void onInsert(const K & key) override;
         void onRemove(const K & key) override;
