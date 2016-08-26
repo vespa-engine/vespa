@@ -565,6 +565,7 @@ public:
     VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
         (void) chunkId;
+        EXPECT_LESS_EQUAL(_lastBucketId.toKey(), bucketId.toKey());
         if (_lastBucketId != bucketId) {
             EXPECT_TRUE(_uniqueBucket.find(bucketId.getRawId()) == _uniqueBucket.end());
             _uniqueBucket.insert(bucketId.getRawId());
