@@ -232,19 +232,18 @@ private:
         const document::CompressionConfig _compression;
     };
     bool useCache() const { return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0); }
-    typedef vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
-                                  BackingStore,
-                                  vespalib::zero<DocumentIdT>,
-                                  vespalib::size<Value> > CacheParams;
-    typedef vespalib::cache<CacheParams> Cache;
-    using VisitCache=docstore::VisitCache;
+    using CacheParams = vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
+                                              BackingStore,
+                                              vespalib::zero<DocumentIdT>,
+                                              vespalib::size<Value> >;
+    using Cache = vespalib::cache<CacheParams>;
+    using VisitCache = docstore::VisitCache;
 
     Config                         _config;
     IDataStore &                   _backingStore;
     BackingStore                   _store;
     std::shared_ptr<Cache>         _cache;
     std::shared_ptr<VisitCache>    _visitCache;
-    mutable volatile uint64_t      _uncached_lookups;
 };
 
 } // namespace search
