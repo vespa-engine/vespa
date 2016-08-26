@@ -5,11 +5,14 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.model.utils.FileSender;
+import com.yahoo.config.FileReference;
 import java.util.*;
 
 /**
@@ -30,6 +33,15 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     private List<String> documentNames = new ArrayList<>();
 
     protected List<SearchDefinitionSpec> localSDS = new LinkedList<>();
+
+    public void prepareToDistributeFiles(List<SearchNode> backends) {
+        for (SearchDefinitionSpec sds : localSDS) {
+            for (RankingConstant rc : sds.getSearchDefinition().getSearch().getRankingConstants()) {
+                FileReference reference = FileSender.sendFileToServices(rc.getFileName(), backends);
+                rc.setFileReference(reference.value());
+            }
+        }
+    }
 
     public static final class IndexingMode {
 
