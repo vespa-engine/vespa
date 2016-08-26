@@ -10,7 +10,6 @@
 LOG_SETUP(".searchlib.docstore.logdatastore");
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/xxhash/xxhash.h>
 #include <thread>
 
 namespace search
