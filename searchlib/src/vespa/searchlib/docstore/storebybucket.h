@@ -45,7 +45,7 @@ private:
             _bucketId(bucketId), _id(id), _chunkId(chunkId), _lid(entry)
         { }
         bool operator < (const Index & b) const {
-            return BucketId::reverse(_bucketId.getRawId()) < BucketId::reverse(b._bucketId.getRawId());
+            return BucketId::bucketIdToKey(_bucketId.getRawId()) < BucketId::bucketIdToKey(b._bucketId.getRawId());
         }
         BucketId _bucketId;
         uint32_t _id;
