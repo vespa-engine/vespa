@@ -1,9 +1,12 @@
 package com.yahoo.vespa.zookeeper;
 
+import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ServerCnxn;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -35,8 +38,8 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     }
 
     @Override
-    public void registerConnection(ServerCnxn connection) {
-        String remoteHost = connection.getRemoteSocketAddress().getHostName();
+    protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
+        String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
         if ( ! zooKeeperServerHostnames.contains(remoteHost)) {
             String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
                                   ": This cluster only allow connection from nodes in this cluster. " +
@@ -44,7 +47,7 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
             log.warning(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
-        super.registerConnection(connection);
+        return super.createConnection(socket, selection);
     }
 
 }
