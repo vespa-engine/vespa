@@ -564,7 +564,6 @@ class VerifyBucketOrder : public StoreByBucket::IWrite {
 public:
     VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
-        (void) sz;
         (void) chunkId;
         if (_lastBucketId != bucketId) {
             EXPECT_TRUE(_uniqueBucket.find(bucketId.getRawId()) == _uniqueBucket.end());
@@ -576,6 +575,7 @@ public:
         }
         _lastLid = lid;
         _lastBucketId = bucketId;
+        EXPECT_EQUAL(0, memcmp(buffer, createPayload(bucketId).c_str(), sz));
     }
 private:
     uint32_t _lastLid;
