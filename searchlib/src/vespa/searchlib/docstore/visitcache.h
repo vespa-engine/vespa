@@ -10,6 +10,9 @@
 namespace search {
 namespace docstore {
 
+/**
+ * Represents a unique set of keys that together acts as a key in a map.
+ **/
 class KeySet {
 public:
     KeySet() : _keys() { }
@@ -25,6 +28,9 @@ private:
     IDocumentStore::LidVector _keys;
 };
 
+/**
+ * Stores blobs compact. These blobs can be retrieved by a numeric key.
+ **/
 class BlobSet {
 public:
     class LidPosition {
@@ -52,6 +58,12 @@ private:
     vespalib::nbostream _buffer;
 };
 
+/**
+ * This is a compressed representation of the above BlobSet.
+ * It carries everything necessary to regenerate a BlobSet.
+ * It has efficient move constructor/operator since they will be stored
+ * in stl containers.
+ **/
 class CompressedBlobSet {
 public:
     CompressedBlobSet();
@@ -70,6 +82,11 @@ private:
     vespalib::MallocPtr               _buffer;
 };
 
+/**
+ * Caches a set of objects as a set.
+ * The objects are compressed together as a set.
+ * The whole set is invalidated when one object of its objects are removed.
+ **/
 class VisitCache {
 public:
     VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression);
@@ -80,6 +97,12 @@ public:
 
     CacheStats getCacheStats() const;
 private:
+    /**
+     * This implments the interface the cache uses when it has a cache miss.
+     * It wraps an IDataStore. Given a set of lids it will visit all objects
+     * and compress them as a complete set to maximize compression rate.
+     * As this is a readonly cache the write/erase methods are noops.
+     */
     class BackingStore {
     public:
         BackingStore(IDataStore &store, const document::CompressionConfig &compression) :
@@ -100,6 +123,12 @@ private:
         vespalib::zero<KeySet>,
         vespalib::size<CompressedBlobSet> > CacheParams;
 
+    /**
+     * This extends the default thread safe cache implementation so that
+     * it will correctly invalidate the cached sets when objects are removed/updated.
+     * It will also detect the addition of new objects to any of the sets upon first
+     * usage of the set and then invalidate and perform fresh visit of the backing store.
+     */
     class Cache : public vespalib::cache<CacheParams> {
     public:
         Cache(BackingStore & b, size_t maxBytes);
