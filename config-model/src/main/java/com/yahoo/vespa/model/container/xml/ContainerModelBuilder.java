@@ -445,6 +445,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (referencedNodesElement == null)
             throw new IllegalArgumentException(cluster + " references service '" + referenceId + "' to supply nodes, " + 
                                                "but that service has no <nodes> element");
+        
+        cluster.setHostClusterId(referenceId);
+
         Map<HostResource, ClusterMembership> hosts = 
                 StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
                                             referenceId, 
