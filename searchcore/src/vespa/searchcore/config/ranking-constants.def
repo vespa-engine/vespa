@@ -2,5 +2,5 @@
 namespace=vespa.config.search.core
 
 constant[].name string
-constant[].ref file
+constant[].fileref file
 constant[].type string
