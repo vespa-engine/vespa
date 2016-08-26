@@ -355,6 +355,7 @@ private:
     FileId                     _destinationFileId;
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
+    uint64_t                   _writeCount;
     std::vector<StoreByBucket> _tmpStore;
     GenerationHandler::Guard   _lidGuard;
     GenerationHandler::Guard   _bucketizerGuard;
@@ -366,6 +367,7 @@ BucketCompacter::BucketCompacter(LogDataStore & ds, const IBucketizer & bucketiz
     _destinationFileId(destination),
     _ds(ds),
     _bucketizer(bucketizer),
+    _writeCount(0),
     _tmpStore(256),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),
@@ -376,15 +378,20 @@ BucketCompacter::BucketCompacter(LogDataStore & ds, const IBucketizer & bucketiz
 void
 BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
+    _writeCount++;
     guard.unlock();
     BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
     uint64_t sortableBucketId = bucketId.toKey();
     _tmpStore[(sortableBucketId >> 56) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
+    if ((_writeCount % 1000) == 0) {
+        _bucketizerGuard = _bucketizer.getGuard();
+    }
 }
 
 void
 BucketCompacter::close()
 {
+    _bucketizerGuard = GenerationHandler::Guard();
     size_t lidCount1(0);
     size_t bucketCount(0);
     size_t chunkCount(0);
