@@ -4,13 +4,17 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.config.FileReference;
+import com.yahoo.vespa.model.utils.FileSender;
 
 /**
  * Represents a document database and the backend configuration needed for this database.
@@ -22,6 +26,7 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     IlscriptsConfig.Producer,
     AttributesConfig.Producer,
     RankProfilesConfig.Producer,
+    RankingConstantsConfig.Producer,
     IndexschemaConfig.Producer,
     JuniperrcConfig.Producer,
     SummarymapConfig.Producer,
@@ -67,7 +72,21 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     public void getConfig(RankProfilesConfig.Builder builder) {
         derivedCfg.getRankProfileList().getConfig(builder);
     }
-    
+
+    @Override
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        for (RankingConstant rConstant : derivedCfg.getSearch().getRankingConstants()) {
+            if ("".equals(rConstant.getFileReference())) {
+                System.err.println("INVALID rank constant "+rConstant.getName()+" [missing file reference]");
+                continue;
+            }
+            builder.constant(new RankingConstantsConfig.Constant.Builder()
+                             .name(rConstant.getName())
+                             .fileref(rConstant.getFileReference())
+                             .type(rConstant.getType()));
+        }
+    }
+
     @Override
     public void getConfig(IndexschemaConfig.Builder builder) {
         derivedCfg.getIndexSchema().getConfig(builder);
