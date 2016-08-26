@@ -129,7 +129,7 @@ public class NodeRepositoryImplTest {
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markAsReady(new HostName("host5.yahoo.com"));
+        nodeRepositoryApi.markAsReady(new HostName("host55.yahoo.com"));
 
         try {
             nodeRepositoryApi.markAsReady(new HostName("host1.yahoo.com"));

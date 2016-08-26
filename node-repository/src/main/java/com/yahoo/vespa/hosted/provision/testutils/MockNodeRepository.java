@@ -72,13 +72,15 @@ public class MockNodeRepository extends NodeRepository {
         node10 = node10.setStatus(node10newStatus);
         nodes.add(node10);
 
+        nodes.add(createNode("node55", "host55.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
+
         nodes.add(createNode("parent1", "parent1.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.host));
 
         nodes = addNodes(nodes);
         nodes.remove(6);
         setReady(nodes);
         fail("host5.yahoo.com");
-        deallocate("host5.yahoo.com");
+        move("host55.yahoo.com", Node.State.dirty);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty(), Optional.of("image-123"));
