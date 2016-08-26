@@ -378,8 +378,8 @@ BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const vo
 {
     guard.unlock();
     BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
-    uint64_t sortableBucketId = BucketId::reverse(bucketId.getId());
-    _tmpStore[sortableBucketId%_tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
+    uint64_t sortableBucketId = bucketId.toKey();
+    _tmpStore[(sortableBucketId >> 56) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
 }
 
 void
