@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
@@ -18,6 +19,8 @@ import com.yahoo.vespa.model.admin.MonitoringSystem;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
+import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
+import com.yahoo.vespa.model.filedistribution.FileDistributorService;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
@@ -41,6 +44,7 @@ import java.util.Optional;
 public class SearchNode extends AbstractService implements
         SearchInterface,
         ProtonConfig.Producer,
+        FiledistributorrpcConfig.Producer,
         MetricsmanagerConfig.Producer,
         TranslogserverConfig.Producer {
 
@@ -232,6 +236,17 @@ public class SearchNode extends AbstractService implements
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }
         return startup;
+    }
+
+    @Override
+    public void getConfig(FiledistributorrpcConfig.Builder builder) {
+        FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
+        if (fileDistribution != null) {
+            FileDistributorService fds = fileDistribution.getFileDistributorService(getHost());
+            if (fds != null) {
+                fds.getConfig(builder);
+            }
+        }
     }
 
     @Override

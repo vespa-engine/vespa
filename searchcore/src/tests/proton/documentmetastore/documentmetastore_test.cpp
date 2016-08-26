@@ -287,14 +287,14 @@ TEST("require that removed documents are bucketized to bucket 0")
     EXPECT_EQUAL(0u, dms.getNumUsedLids());
 
     vespalib::GenerationHandler::Guard guard = dms.getGuard();
-    EXPECT_EQUAL(0ul, dms.getBucketOf(guard, 1));
+    EXPECT_EQUAL(BucketId(), dms.getBucketOf(guard, 1));
     EXPECT_TRUE(assertPut(bucketId1, time1, 1, gid1, dms));
-    EXPECT_EQUAL(bucketId1.getId(), dms.getBucketOf(guard, 1));
+    EXPECT_EQUAL(bucketId1, dms.getBucketOf(guard, 1));
     EXPECT_TRUE(assertPut(bucketId2, time2, 2, gid2, dms));
-    EXPECT_EQUAL(bucketId2.getId(), dms.getBucketOf(guard, 2));
+    EXPECT_EQUAL(bucketId2, dms.getBucketOf(guard, 2));
     EXPECT_TRUE(dms.remove(1));
-    EXPECT_EQUAL(0ul, dms.getBucketOf(guard, 1));
-    EXPECT_EQUAL(bucketId2.getId(), dms.getBucketOf(guard, 2));
+    EXPECT_EQUAL(BucketId(), dms.getBucketOf(guard, 1));
+    EXPECT_EQUAL(bucketId2, dms.getBucketOf(guard, 2));
 }
 
 TEST("requireThatGidsCanBeInsertedAndRetrieved")

@@ -180,7 +180,7 @@ public:
                                 const Timestamp &timestamp) override;
     virtual bool remove(DocId lid) override;
 
-    virtual uint64_t getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
+    virtual BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
     virtual vespalib::GenerationHandler::Guard getGuard() const override;
 
     /**

@@ -162,7 +162,7 @@ public:
     void recordLid(const vespalib::GenerationHandler::Guard & guard, uint32_t lid, uint32_t dataSize) {
         if (_bucketizer && (dataSize > 0)) {
             _count++;
-            _bucketSet[_bucketizer->getBucketOf(guard, lid)]++;
+            _bucketSet[_bucketizer->getBucketOf(guard, lid).getId()]++;
         }
     }
     size_t getNumBuckets() const { return _bucketSet.size(); }

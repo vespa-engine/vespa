@@ -990,15 +990,15 @@ DocumentMetaStore::onShrinkLidSpace()
     setNumDocs(committedDocIdLimit);
 }
 
-uint64_t
+BucketId
 DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const
 {
     if (__builtin_expect(lid < getCommittedDocIdLimit(), true)) {
         if (__builtin_expect(validLidFast(lid), true)) {
-            return getRawMetaData(lid).getBucketId().getId();
+            return getRawMetaData(lid).getBucketId();
         }
     }
-    return 0;
+    return BucketId();
 }
 
 vespalib::GenerationHandler::Guard
