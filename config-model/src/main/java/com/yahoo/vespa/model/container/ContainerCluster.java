@@ -171,6 +171,8 @@ public final class ContainerCluster
 
     /** The zone this is deployed in, or the default zone if not on hosted Vespa */
     private Zone zone;
+    
+    private Optional<String> hostClusterId = Optional.empty();
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
         super(parent, subId);
@@ -772,6 +774,28 @@ public final class ContainerCluster
         builder.enabled(isHostedVespa());
     }
 
+    public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
+
+    /** The configured service aliases for the service in this cluster */
+    public List<String> serviceAliases() { return serviceAliases; }
+
+    /** The configured endpoint aliases (fqdn) for the service in this cluster */
+    public List<String> endpointAliases() { return endpointAliases; }
+    
+    public void setHostClusterId(String clusterId) { hostClusterId = Optional.ofNullable(clusterId); }
+
+    /** 
+     * Returns the id of the content cluster which hosts this container cluster, if any.
+     * This is only set with hosted clusters where this container cluster is set up to run on the nodes
+     * of a content cluster.
+     */
+    public Optional<String> getHostClusterId() { return hostClusterId; }
+
+    @Override
+    public String toString() {
+        return "container cluster '" + getName() + "'";
+    }
+
     public static class MbusParams {
         //the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
         public final Double maxConcurrentFactor;
@@ -787,25 +811,6 @@ public final class ContainerCluster
             this.documentExpansionFactor = documentExpansionFactor;
             this.containerCoreMemory = containerCoreMemory;
         }
-    }
-
-    public Map<String, String> concreteDocumentTypes() {
-        return concreteDocumentTypes;
-    }
-
-    /** The configured service aliases for the service in this cluster */
-    public List<String> serviceAliases() {
-        return serviceAliases;
-    }
-
-    /** The configured endpoint aliases (fqdn) for the service in this cluster */
-    public List<String> endpointAliases() {
-        return endpointAliases;
-    }
-
-    @Override
-    public String toString() {
-        return "container cluster '" + getName() + "'";
     }
 
 }

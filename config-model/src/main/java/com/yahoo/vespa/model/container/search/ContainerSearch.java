@@ -47,12 +47,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
-    private boolean hostedVespa = false;
+    private final boolean hostedVespa;
+    private final boolean isCombinedCluster;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
         this.hostedVespa  = cluster.isHostedVespa();
+        this.isCombinedCluster = cluster.getHostClusterId().isPresent();
         cluster.addComponent(getFS4ResourcePool());
     }
 
@@ -119,9 +121,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     @Override
     public void getConfig(QrStartConfig.Builder qsB) {
-    	final QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
+    	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
     	if (hostedVespa) {
-    	    internalBuilder.heapSizeAsPercentageOfPhysicalMemory(33);
+            if (isCombinedCluster)
+                internalBuilder.heapSizeAsPercentageOfPhysicalMemory(17);
+            else
+        	    internalBuilder.heapSizeAsPercentageOfPhysicalMemory(33);
     	}
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
     }

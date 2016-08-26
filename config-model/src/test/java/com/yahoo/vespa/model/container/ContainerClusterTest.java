@@ -81,16 +81,17 @@ public class ContainerClusterTest {
         assertEquals("some-region", config.region());
     }
 
-    private ContainerCluster createContainerCluster(boolean isHosted) {
+    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
+        if (isCombinedCluster)
+            cluster.setHostClusterId("test-content-cluster");
         cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
         return cluster;
     }
-    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, int percentage) {
-        ContainerCluster cluster = createContainerCluster(isHosted);
-
+    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, int percentage) {
+        ContainerCluster cluster = createContainerCluster(isHosted, isCombinedCluster);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getSearch().getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -99,8 +100,11 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
-        verifyHeapSizeAsPercentageOfPhysicalMemory(true, 33);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(false, 0);
+        boolean hosted = true;
+        boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, 33);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, 17);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined,  0);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {
@@ -115,7 +119,7 @@ public class ContainerClusterTest {
         }
     }
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
-        ContainerCluster cluster = createContainerCluster(isHosted);
+        ContainerCluster cluster = createContainerCluster(isHosted, false);
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
@@ -136,7 +140,7 @@ public class ContainerClusterTest {
     @Test
     public void testClusterControllerResourceUsage() {
         boolean isHosted = false;
-        ContainerCluster cluster = createContainerCluster(isHosted);
+        ContainerCluster cluster = createContainerCluster(isHosted, false);
         addClusterController(cluster, "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ClusterControllerContainer container = (ClusterControllerContainer) cluster.getContainers().get(0);
@@ -161,7 +165,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatWeCanhandleNull() {
-        ContainerCluster cluster = createContainerCluster(false);
+        ContainerCluster cluster = createContainerCluster(false, false);
         addContainer(cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmArgs("");

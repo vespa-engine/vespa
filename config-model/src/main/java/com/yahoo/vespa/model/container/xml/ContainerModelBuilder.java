@@ -384,7 +384,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         else {
             List<Container> nodes = createNodes(cluster, nodesElement, context);
-            applyDefaultJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
+            applyNodesTagJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             if (useCpuSocketAffinity(nodesElement))
@@ -445,6 +445,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (referencedNodesElement == null)
             throw new IllegalArgumentException(cluster + " references service '" + referenceId + "' to supply nodes, " + 
                                                "but that service has no <nodes> element");
+        
+        cluster.setHostClusterId(referenceId);
+
         Map<HostResource, ClusterMembership> hosts = 
                 StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
                                             referenceId, 
@@ -505,10 +508,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return false;
     }
 
-    private void applyDefaultJvmArgs(List<Container> containers, String defaultJvmArgs) {
+    private void applyNodesTagJvmArgs(List<Container> containers, String nodesTagJvnArgs) {
         for (Container container: containers) {
-            if (container.getJvmArgs().isEmpty())
-                container.prependJvmArgs(defaultJvmArgs);
+            if (container.getAssignedJvmArgs().isEmpty())
+                container.prependJvmArgs(nodesTagJvnArgs);
         }
     }
 
