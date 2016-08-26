@@ -341,9 +341,9 @@ public class Container extends AbstractService implements
         Filedistributor.Builder builder = new Filedistributor.Builder();
 
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
-        if (fileDistribution != null)
-            builder.configid(fileDistribution.getFileDistributionServiceConfigId(getHost()));
-
+        if (fileDistribution != null) {
+            builder.configid(fileDistribution.getFileDistributorService(getHost()).getConfigId());
+        }
         return builder;
     }
 

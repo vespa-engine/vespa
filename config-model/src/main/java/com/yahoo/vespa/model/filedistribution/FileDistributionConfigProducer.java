@@ -23,12 +23,12 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
         this.options = options;
     }
 
-    public String getFileDistributionServiceConfigId(Host host) {
+    public FileDistributorService getFileDistributorService(Host host) {
         FileDistributorService service = fileDistributorServices.get(host);
         if (service == null) {
             throw new IllegalStateException("No file distribution service for host " + host);
         }
-        return service.getConfigId();
+        return service;
     }
 
     public FileDistributor getFileDistributor() {
