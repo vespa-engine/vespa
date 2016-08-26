@@ -24,6 +24,7 @@ getConfig(int64_t generation, const Schema::SP &schema)
             new DocumentDBConfig(
                     generation,
                     DocumentDBConfig::RankProfilesConfigSP(),
+                    DocumentDBConfig::RankingConstantsConfigSP(),
                     DocumentDBConfig::IndexschemaConfigSP(),
                     DocumentDBConfig::AttributesConfigSP(),
                     DocumentDBConfig::SummaryConfigSP(),

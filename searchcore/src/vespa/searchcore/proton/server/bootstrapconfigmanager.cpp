@@ -4,12 +4,14 @@
 #include "bootstrapconfigmanager.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 
 using namespace vespa::config::search;
 using namespace config;
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using vespa::config::search::core::ProtonConfig;
+using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumenttypesConfig;
 using config::SourceSpec;
 
@@ -28,7 +30,9 @@ BootstrapConfigManager(const vespalib::string & configId)
 const ConfigKeySet
 BootstrapConfigManager::createConfigKeySet() const
 {
-    return ConfigKeySet().add<ProtonConfig, DocumenttypesConfig>(_configId);
+    return ConfigKeySet().add<ProtonConfig>(_configId)
+                         .add<DocumenttypesConfig>(_configId)
+                         .add<FiledistributorrpcConfig>(_configId);
 }
 
 void
@@ -38,6 +42,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     typedef BootstrapConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
 
     ProtonConfigSP newProtonConfig;
+    BootstrapConfig::FiledistributorrpcConfigSP newFiledistRpcConfSP;
     TuneFileDocumentDB::SP newTuneFileDocumentDB;
     DocumenttypesConfigSP newDocumenttypesConfig;
     DocumentTypeRepo::SP newRepo;
@@ -46,6 +51,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     BootstrapConfig::SP current = _pendingConfigSnapshot;
     if (current.get() != NULL) {
         newProtonConfig = current->getProtonConfigSP();
+        newFiledistRpcConfSP = current->getFiledistributorrpcConfigSP();
         newTuneFileDocumentDB = current->getTuneFileDocumentDBSP();
         newDocumenttypesConfig = current->getDocumenttypesConfigSP();
         newRepo = current->getDocumentTypeRepoSP();
@@ -80,6 +86,12 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         newTuneFileDocumentDB = tuneFileDocumentDB;
     }
 
+    if (snapshot.isChanged<FiledistributorrpcConfig>(_configId, currentGen)) {
+        LOG(info, "Filedistributorrpc config is changed");
+        auto p = snapshot.getConfig<FiledistributorrpcConfig>(_configId);
+        newFiledistRpcConfSP = BootstrapConfig::FiledistributorrpcConfigSP(p.release());
+    }
+
     if (snapshot.isChanged<DocumenttypesConfig>(_configId, currentGen)) {
         LOG(spam, "Documenttypes config is changed");
         std::unique_ptr<DocumenttypesConfig> documenttypesConfig =
@@ -90,6 +102,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         newRepo = repo;
     }
     assert(newProtonConfig.get() != NULL);
+    assert(newFiledistRpcConfSP.get() != NULL);
     assert(newTuneFileDocumentDB.get() != NULL);
     assert(newDocumenttypesConfig.get() != NULL);
     assert(newRepo.get() != NULL);
@@ -99,6 +112,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
                                 newDocumenttypesConfig,
                                 newRepo,
                                 newProtonConfig,
+                                newFiledistRpcConfSP,
                                 newTuneFileDocumentDB));
 
     assert(newSnapshot->valid());

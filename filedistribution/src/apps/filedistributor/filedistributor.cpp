@@ -17,7 +17,7 @@
 #include <vespa/fastos/app.h>
 #include <vespa/config-zookeepers.h>
 
-#include <vespa/filedistribution/rpcconfig/config-filedistributorrpc.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/filedistribution/distributor/config-filedistributor.h>
 #include <vespa/filedistribution/model/config-filereferences.h>
 

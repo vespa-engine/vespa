@@ -27,10 +27,12 @@ BootstrapConfig::BootstrapConfig(
                const DocumenttypesConfigSP &documenttypes,
                const DocumentTypeRepo::SP &repo,
                const ProtonConfigSP &protonConfig,
+               const FiledistributorrpcConfigSP &filedistRpcConfSP,
                const search::TuneFileDocumentDB::SP &tuneFileDocumentDB)
     : _documenttypes(documenttypes),
       _repo(repo),
       _proton(protonConfig),
+      _fileDistributorRpc(filedistRpcConfSP),
       _tuneFileDocumentDB(tuneFileDocumentDB),
       _generation(generation)
 {

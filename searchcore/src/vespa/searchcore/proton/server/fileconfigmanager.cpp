@@ -20,6 +20,7 @@ using document::DocumenttypesConfig;
 using search::IndexMetaInfo;
 using search::SerialNum;
 using search::index::Schema;
+using cloud::config::filedistribution::FiledistributorrpcConfig;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
@@ -336,6 +337,25 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     (void) saveValidSnap;
 }
 
+namespace {
+
+// add an empty file if it's not already present
+void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
+{
+    vespalib::string path = snapDir + "/" + fileName;
+    if (access(path.c_str(), R_OK) == 0) {
+        // exists OK
+        return;
+    }
+    int fd = creat(path.c_str(), 0444);
+    if (fd < 0) {
+        LOG(error, "Could not create empty file '%s': %s", path.c_str(), strerror(errno));
+        return;
+    }
+    close(fd);
+}
+
+}
 
 void
 FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
@@ -346,6 +366,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
     config::DirSpec spec(snapDir);
+
+    addEmptyFile(snapDir, "ranking-constants.cfg");
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
@@ -362,6 +384,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
         repo.reset(new DocumentTypeRepo(*docTypesCfg));
     }
 
+    auto filedistRpcConf = BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig());
+
     /*
      * XXX: If non-default maintenance config is used then an extra config
      * snapshot is saved after replaying transaction log due to the use
@@ -373,6 +397,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
                                 docTypesCfg,
                                 repo,
                                 _protonConfig,
+                                filedistRpcConf,
                                 currentSnapshot.getTuneFileDocumentDBSP()));
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);

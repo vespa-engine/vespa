@@ -29,7 +29,6 @@ LOG_SETUP(".proton.server.storeonlydocsubdb");
 #include <vespa/vespalib/util/closuretask.h>
 
 using vespa::config::search::AttributesConfig;
-using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::ProtonConfig;
 using search::GrowStrategy;
 using search::AttributeGuard;

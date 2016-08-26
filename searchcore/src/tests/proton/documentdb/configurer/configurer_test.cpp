@@ -320,8 +320,8 @@ createConfig()
     DocumentDBConfig::SP config
         (new DocumentDBConfig(
                 0,
-                DocumentDBConfig::RankProfilesConfigSP(
-                        new RankProfilesConfig()),
+                DocumentDBConfig::RankProfilesConfigSP(new RankProfilesConfig()),
+                DocumentDBConfig::RankingConstantsConfigSP(new RankingConstantsConfig()),
                 DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
                 DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
                 DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),
@@ -344,6 +344,7 @@ createConfig(const Schema::SP &schema)
         (new DocumentDBConfig(
                 0,
                 DocumentDBConfig::RankProfilesConfigSP(new RankProfilesConfig()),
+                DocumentDBConfig::RankingConstantsConfigSP(new RankingConstantsConfig()),
                 DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
                 DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
                 DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),

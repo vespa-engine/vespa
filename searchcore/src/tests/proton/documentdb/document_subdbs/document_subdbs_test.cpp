@@ -31,6 +31,7 @@ using namespace search;
 using namespace search::common;
 using namespace search::index;
 using namespace search::transactionlog;
+using namespace cloud::config::filedistribution;
 using namespace searchcorespi;
 using namespace vespalib;
 using proton::bucketdb::BucketDBHandler;
@@ -262,6 +263,7 @@ struct MyConfigSnapshot
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),
                                  BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
+                                 BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                                  tuneFileDocumentDB));
 		config::DirSpec spec(cfgDir);
 		DocumentDBConfigHelper mgr(spec, "searchdocument");

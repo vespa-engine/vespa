@@ -7,7 +7,6 @@ vespa_add_executable(filedistribution_filedistributor_app
     DEPENDS
     filedistribution_distributor
     filedistribution_filedistributionmodel
-    filedistribution_filedistributorrpcconfig
     filedistribution_filedistributorrpc
     filedistribution_common
 )
