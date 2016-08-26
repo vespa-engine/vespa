@@ -100,8 +100,9 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
       _config(config),
       _backingStore(store),
-      _store(_backingStore, _config.getCompression()),
+      _store(_backingStore, config.getCompression()),
       _cache(new Cache(_store, config.getMaxCacheBytes())),
+      _visitCache(new VisitCache(store, config.getMaxCacheBytes(), config.getCompression())),
       _uncached_lookups(0)
 {
     _cache->reserveElements(config.getInitialCacheEntries());
@@ -111,10 +112,19 @@ DocumentStore::~DocumentStore()
 {
 }
 
+
 void
 DocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    _store.visit(lids, repo, visitor);
+    if (useCache() && _config.allowVisitCaching() && visitor.allowVisitCaching()) {
+        docstore::BlobSet blobSet = _visitCache->read(lids).getBlobSet();
+        DocumentVisitorAdapter adapter(repo, visitor);
+        for (DocumentIdT lid : lids) {
+            adapter.visit(lid, blobSet.get(lid));
+        }
+    } else {
+        _store.visit(lids, repo, visitor);
+    }
 }
 
 document::Document::UP
@@ -142,6 +152,7 @@ DocumentStore::write(uint64_t syncToken, const document::Document& doc, Document
     _backingStore.write(syncToken, lid, stream.peek(), stream.size());
     if (useCache()) {
         _cache->invalidate(lid);
+        _visitCache->invalidate(lid);
     }
 }
 
@@ -151,6 +162,7 @@ DocumentStore::remove(uint64_t syncToken, DocumentIdT lid)
     _backingStore.remove(syncToken, lid);
     if (useCache()) {
         _cache->invalidate(lid);
+        _visitCache->invalidate(lid);
     }
 }
 
@@ -384,8 +396,11 @@ DocumentStore::getFileChunkStats() const
 }
 
 CacheStats DocumentStore::getCacheStats() const {
-    return CacheStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
-                      _cache->size(), _cache->sizeBytes());
+    CacheStats visitStats = _visitCache->getCacheStats();
+    CacheStats singleStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
+                           _cache->size(), _cache->sizeBytes());
+    singleStats += visitStats;
+    return singleStats;
 }
 
 } // namespace search

@@ -4,7 +4,7 @@
 
 #include "idocumentstore.h"
 #include "idatastore.h"
-#include <vespa/vespalib/stllike/cache.h>
+#include "visitcache.h"
 
 namespace search {
 
@@ -21,20 +21,25 @@ public:
         Config() :
             _compression(document::CompressionConfig::LZ4, 9, 70),
             _maxCacheBytes(1000000000),
-            _initialCacheEntries(0)
+            _initialCacheEntries(0),
+            _allowVisitCaching(false)
         { }
         Config(const document::CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
             _compression((maxCacheBytes != 0) ? compression : document::CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
-            _initialCacheEntries(initialCacheEntries)
+            _initialCacheEntries(initialCacheEntries),
+            _allowVisitCaching(false)
         { }
         const document::CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
+        bool allowVisitCaching() const { return _allowVisitCaching; }
+        Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     private:
         document::CompressionConfig _compression;
         size_t _maxCacheBytes;
         size_t _initialCacheEntries;
+        bool   _allowVisitCaching;
     };
 
     /**
@@ -212,7 +217,6 @@ private:
     };
     class BackingStore {
     public:
-        typedef vespalib::hash_map<DocumentIdT, Value::UP> LidValueMap;
         BackingStore(IDataStore & store, const document::CompressionConfig & compression) :
             _backingStore(store),
             _compression(compression)
@@ -225,19 +229,22 @@ private:
         const document::CompressionConfig & getCompression(void) const { return _compression; }
     private:
         IDataStore & _backingStore;
-        const document::CompressionConfig & _compression;
+        const document::CompressionConfig _compression;
     };
     bool useCache() const { return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0); }
-    typedef vespalib::cache< vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
-                                                   BackingStore,
-                                                   vespalib::zero<DocumentIdT>,
-                                                   vespalib::size<Value> > > Cache;
+    typedef vespalib::CacheParam< vespalib::LruParam<DocumentIdT, Value>,
+                                  BackingStore,
+                                  vespalib::zero<DocumentIdT>,
+                                  vespalib::size<Value> > CacheParams;
+    typedef vespalib::cache<CacheParams> Cache;
+    using VisitCache=docstore::VisitCache;
 
-    Config                    _config;
-    IDataStore &              _backingStore;
-    BackingStore              _store;
-    std::shared_ptr<Cache>    _cache;
-    mutable volatile uint64_t _uncached_lookups;
+    Config                         _config;
+    IDataStore &                   _backingStore;
+    BackingStore                   _store;
+    std::shared_ptr<Cache>         _cache;
+    std::shared_ptr<VisitCache>    _visitCache;
+    mutable volatile uint64_t      _uncached_lookups;
 };
 
 } // namespace search

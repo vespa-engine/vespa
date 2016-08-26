@@ -38,6 +38,7 @@ class IDocumentVisitor
 public:
     virtual ~IDocumentVisitor() { }
     virtual void visit(uint32_t lid, document::Document::UP doc) = 0;
+    virtual bool allowVisitCaching() const = 0;
 private:
 };
 
