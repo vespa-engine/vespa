@@ -18,7 +18,6 @@ vespa_define_module(
     src/vespa/filedistribution/rpc
     src/vespa/filedistribution/common
     src/vespa/filedistribution/manager
-    src/vespa/filedistribution/rpcconfig
     src/vespa/filedistribution/distributor
     src/vespa/filedistribution/model
 
