@@ -12,11 +12,13 @@ using document::DocumenttypesConfig;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using vespa::config::search::SummarymapConfig;
+using vespa::config::search::core::RankingConstantsConfig;
 
 namespace proton {
 
 DocumentDBConfig::ComparisonResult::ComparisonResult()
     : rankProfilesChanged(false),
+      rankingConstantsChanged(false),
       indexschemaChanged(false),
       attributesChanged(false),
       summaryChanged(false),
@@ -33,6 +35,7 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
 DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
                const RankProfilesConfigSP &rankProfiles,
+               const RankingConstantsConfigSP &rankingConstants,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
                const SummaryConfigSP &summary,
@@ -50,6 +53,7 @@ DocumentDBConfig::DocumentDBConfig(
       _docTypeName(docTypeName),
       _generation(generation),
       _rankProfiles(rankProfiles),
+      _rankingConstants(rankingConstants),
       _indexschema(indexschema),
       _attributes(attributes),
       _summary(summary),
@@ -72,6 +76,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _docTypeName(cfg._docTypeName),
       _generation(cfg._generation),
       _rankProfiles(cfg._rankProfiles),
+      _rankingConstants(cfg._rankingConstants),
       _indexschema(cfg._indexschema),
       _attributes(cfg._attributes),
       _summary(cfg._summary),
@@ -92,6 +97,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
 {
     return equals<RankProfilesConfig>(_rankProfiles.get(),
                                       rhs._rankProfiles.get()) &&
+           equals<RankingConstantsConfig>(_rankingConstants.get(),
+                                          rhs._rankingConstants.get()) &&
            equals<IndexschemaConfig>(_indexschema.get(),
                                      rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(),
@@ -119,8 +126,9 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
 {
     ComparisonResult retval;
     retval.rankProfilesChanged =
-        !equals<RankProfilesConfig>(_rankProfiles.get(),
-                                    rhs._rankProfiles.get());
+        !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
+    retval.rankingConstantsChanged =
+        !equals<RankingConstantsConfig>(_rankingConstants.get(), rhs._rankingConstants.get());
     retval.indexschemaChanged =
         !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged =
@@ -151,6 +159,7 @@ bool
 DocumentDBConfig::valid(void) const
 {
     return _rankProfiles.get() != NULL &&
+       _rankingConstants.get() != NULL &&
             _indexschema.get() != NULL &&
              _attributes.get() != NULL &&
                 _summary.get() != NULL &&
@@ -189,6 +198,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
     SP ret = std::make_shared<DocumentDBConfig>(
                 o._generation,
                 emptyConfig(o._rankProfiles),
+                emptyConfig(o._rankingConstants),
                 o._indexschema,
                 o._attributes,
                 o._summary,
@@ -227,6 +237,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
     return std::make_shared<DocumentDBConfig>(
             _generation,
             _rankProfiles,
+            _rankingConstants,
             _indexschema,
             attributes,
             _summary,

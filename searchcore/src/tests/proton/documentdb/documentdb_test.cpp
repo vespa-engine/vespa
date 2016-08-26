@@ -28,6 +28,7 @@ using search::index::Schema;
 using search::transactionlog::TransLogServer;
 using namespace proton;
 using namespace vespalib::slime;
+using namespace cloud::config::filedistribution;
 using search::TuneFileDocumentDB;
 using document::DocumenttypesConfig;
 using search::index::DummyFileHeaderContext;
@@ -79,6 +80,7 @@ Fixture::Fixture()
                               documenttypesConfig,
                               repo,
                               BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
+                              BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                               tuneFileDocumentDB));
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);

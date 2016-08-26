@@ -25,6 +25,7 @@ using namespace proton;
 using namespace vespa::config::search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
+using namespace cloud::config::filedistribution;
 
 using std::shared_ptr;
 using document::DocumentType;
@@ -100,6 +101,7 @@ public:
         }
         typedef DocumentDBConfig CS;
         CS::RankProfilesConfigSP rankProfiles(new RankProfilesConfig());
+        CS::RankingConstantsConfigSP rankingConstants(new RankingConstantsConfig());
         CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
         CS::AttributesConfigSP attributes = _schemaFactory->createAttributes(*docType);
         CS::SummaryConfigSP summary = _schemaFactory->createSummary(*docType);
@@ -114,6 +116,7 @@ public:
         return DocumentDBConfig::SP(new DocumentDBConfig(
                         1,
                         rankProfiles,
+                        rankingConstants,
                         indexschema,
                         attributes,
                         summary,
@@ -170,6 +173,7 @@ public:
                                                   factory.getTypeCfg(),
                                                   factory.getTypeRepo(),
                                                   BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
+                                                  BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                                                   tuneFileDocDB));
         mgr.forwardConfig(b);
         mgr.nextGeneration(0);

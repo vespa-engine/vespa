@@ -10,12 +10,14 @@ LOG_SETUP("config_test");
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/protonconfigurer.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/config-filedistributorrpc.h>
 
 using namespace config;
 using namespace proton;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
+using namespace cloud::config::filedistribution;
 
 using config::ConfigUri;
 using document::DocumentTypeRepo;
@@ -30,6 +32,7 @@ struct DoctypeFixture {
     typedef vespalib::LinkedPtr<DoctypeFixture> LP;
     AttributesConfigBuilder attributesBuilder;
     RankProfilesConfigBuilder rankProfilesBuilder;
+    RankingConstantsConfigBuilder rankingConstantsBuilder;
     IndexschemaConfigBuilder indexschemaBuilder;
     SummaryConfigBuilder summaryBuilder;
     SummarymapConfigBuilder summarymapBuilder;
@@ -40,6 +43,7 @@ struct ConfigTestFixture {
     const std::string configId;
     ProtonConfigBuilder protonBuilder;
     DocumenttypesConfigBuilder documenttypesBuilder;
+    FiledistributorrpcConfigBuilder filedistBuilder;
     map<std::string, DoctypeFixture::LP> dbConfig;
     ConfigSet set;
     IConfigContext::SP context;
@@ -49,6 +53,7 @@ struct ConfigTestFixture {
         : configId(id),
           protonBuilder(),
           documenttypesBuilder(),
+          filedistBuilder(),
           dbConfig(),
           set(),
           context(new ConfigContext(set)),
@@ -56,6 +61,7 @@ struct ConfigTestFixture {
     {
         set.addBuilder(configId, &protonBuilder);
         set.addBuilder(configId, &documenttypesBuilder);
+        set.addBuilder(configId, &filedistBuilder);
         addDocType("_alwaysthere_");
     }
 
@@ -77,6 +83,7 @@ struct ConfigTestFixture {
         DoctypeFixture::LP fixture(new DoctypeFixture());
         set.addBuilder(db.configid, &fixture->attributesBuilder);
         set.addBuilder(db.configid, &fixture->rankProfilesBuilder);
+        set.addBuilder(db.configid, &fixture->rankingConstantsBuilder);
         set.addBuilder(db.configid, &fixture->indexschemaBuilder);
         set.addBuilder(db.configid, &fixture->summaryBuilder);
         set.addBuilder(db.configid, &fixture->summarymapBuilder);
@@ -111,6 +118,7 @@ struct ConfigTestFixture {
         DoctypeFixture::LP fixture(dbConfig[name]);
         return (fixture->attributesBuilder == dbc->getAttributesConfig() &&
                 fixture->rankProfilesBuilder == dbc->getRankProfilesConfig() &&
+                fixture->rankingConstantsBuilder == dbc->getRankingConstantsConfig() &&
                 fixture->indexschemaBuilder == dbc->getIndexschemaConfig() &&
                 fixture->summaryBuilder == dbc->getSummaryConfig() &&
                 fixture->summarymapBuilder == dbc->getSummarymapConfig() &&
@@ -127,6 +135,7 @@ struct ConfigTestFixture {
                                                        BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(documenttypesBuilder)),
                                                        DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
+                                                       BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                                                        TuneFileDocumentDB::SP(new TuneFileDocumentDB())));
     }
 
@@ -166,7 +175,7 @@ typedef OwnerFixture<DocumentDBConfig::SP, IDocumentDBConfigOwner> DBOwner;
 
 TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
     const ConfigKeySet set(f1.createConfigKeySet());
-    ASSERT_EQUAL(2u, set.size());
+    ASSERT_EQUAL(3u, set.size());
     ConfigKey protonKey(ConfigKey::create<ProtonConfig>("foo"));
     ConfigKey dtKey(ConfigKey::create<DocumenttypesConfig>("foo"));
     ASSERT_TRUE(set.find(protonKey) != set.end());
@@ -196,7 +205,7 @@ TEST_FF("require_that_documentdb_config_manager_subscribes_for_config",
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
-    ASSERT_EQUAL(6u, keySet.size());
+    ASSERT_EQUAL(7u, keySet.size());
     ConfigRetriever retriever(keySet, f1.context);
     f2.forwardConfig(f1.getBootstrapConfig(1));
     f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs

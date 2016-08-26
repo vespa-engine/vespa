@@ -20,6 +20,7 @@ using document::DocumenttypesConfig;
 using search::IndexMetaInfo;
 using search::SerialNum;
 using search::index::Schema;
+using cloud::config::filedistribution::FiledistributorrpcConfig;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
@@ -362,6 +363,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
         repo.reset(new DocumentTypeRepo(*docTypesCfg));
     }
 
+    auto filedistRpcConf = BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig());
+
     /*
      * XXX: If non-default maintenance config is used then an extra config
      * snapshot is saved after replaying transaction log due to the use
@@ -373,6 +376,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
                                 docTypesCfg,
                                 repo,
                                 _protonConfig,
+                                filedistRpcConf,
                                 currentSnapshot.getTuneFileDocumentDBSP()));
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);

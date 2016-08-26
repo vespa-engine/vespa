@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
+#include <vespa/config-filedistributorrpc.h>
 
 namespace proton {
 
@@ -20,12 +21,15 @@ class BootstrapConfig
 public:
     typedef std::shared_ptr<BootstrapConfig> SP;
     typedef std::shared_ptr<vespa::config::search::core::ProtonConfig> ProtonConfigSP;
+    typedef std::shared_ptr<cloud::config::filedistribution::FiledistributorrpcConfig> FiledistributorrpcConfigSP;
+
     typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
 
 private:
     DocumenttypesConfigSP _documenttypes;
     document::DocumentTypeRepo::SP _repo;
     ProtonConfigSP _proton;
+    FiledistributorrpcConfigSP _fileDistributorRpc;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
     int64_t _generation;
 
@@ -34,6 +38,7 @@ public:
                     const DocumenttypesConfigSP & documenttypes,
                     const document::DocumentTypeRepo::SP &repo,
                     const ProtonConfigSP &protonConfig,
+                    const FiledistributorrpcConfigSP &filedistRpcConfSP,
                     const search::TuneFileDocumentDB::SP &
                     _tuneFileDocumentDB);
 
@@ -42,6 +47,12 @@ public:
     {
         return *_documenttypes;
     }
+
+    const cloud::config::filedistribution::FiledistributorrpcConfig &
+    getFiledistributorrpcConfig() const { return *_fileDistributorRpc; }
+
+    const FiledistributorrpcConfigSP &
+    getFiledistributorrpcConfigSP() const { return _fileDistributorRpc; }
 
     const DocumenttypesConfigSP &
     getDocumenttypesConfigSP(void) const

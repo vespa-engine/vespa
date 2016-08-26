@@ -261,8 +261,11 @@ tlsconfigid   string default="" restart
 ## Slobrok configid
 slobrokconfigid         string default="" restart
 
-## Slobrok configid
+## Routing configid
 routingconfigid         string default="" restart
+
+## filedistributor rpc configuration
+filedistributor.configid reference default="" restart
 
 ## Interval between pruning of old removed documents.
 ##
