@@ -337,6 +337,23 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     (void) saveValidSnap;
 }
 
+namespace {
+
+// add an empty file if it's not already present
+void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
+{
+    vespalib::string path = snapDir + "/" + fileName;
+    if (access(path.c_str(), R_OK) == 0) {
+        int fd = creat(path.c_str(), 0444);
+        if (fd < 0) {
+            LOG(error, "Could not create empty file '%s'", path.c_str());
+            return;
+        }
+        close(fd);
+    }
+}
+
+}
 
 void
 FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
@@ -347,6 +364,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
     config::DirSpec spec(snapDir);
+
+    addEmptyFile(snapDir, "ranking-constants.cfg");
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
