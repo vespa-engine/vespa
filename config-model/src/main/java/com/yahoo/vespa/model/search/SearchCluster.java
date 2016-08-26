@@ -42,7 +42,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         super.writeFiles(directory);
     }
 
-	/**
+   /**
      * Must be called after cluster is built, to derive SD configs
      * Derives the search definitions from the application package..
      * Also stores the document names contained in the search
@@ -73,7 +73,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
     }
 
     /**
-     * Converst summary and summary map config to the appropriate information in documentdb
+     * Converts summary and summary map config to the appropriate information in documentdb
      *
      * @param summaryConfigProducer the summary config
      * @param summarymapConfigProducer the summary map config, or null if none is available
