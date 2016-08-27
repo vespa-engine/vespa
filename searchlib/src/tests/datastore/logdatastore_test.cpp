@@ -830,7 +830,8 @@ private:
 
 TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
     vespalib::MemoryDataStore backing;
-    StoreByBucket sbb(backing, CompressionConfig::LZ4);
+    vespalib::ThreadStackExecutor executor(8, 128*1024);
+    StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);
     }

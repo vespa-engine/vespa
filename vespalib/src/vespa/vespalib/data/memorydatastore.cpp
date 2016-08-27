@@ -3,9 +3,10 @@
 
 namespace vespalib {
 
-MemoryDataStore::MemoryDataStore(size_t initialSize) :
+MemoryDataStore::MemoryDataStore(size_t initialSize, Lock * lock) :
     _buffers(),
-    _writePos(0)
+    _writePos(0),
+    _lock(lock)
 {
     _buffers.reserve(24);
     _buffers.emplace_back(initialSize);
@@ -18,6 +19,10 @@ MemoryDataStore::~MemoryDataStore()
 MemoryDataStore::Reference
 MemoryDataStore::push_back(const void * data, const size_t sz)
 {
+    std::unique_ptr<LockGuard> guard;
+    if  (_lock != nullptr) {
+        guard.reset(new LockGuard(*_lock));
+    }
     const Alloc & b = _buffers.back();
     if ((sz + _writePos) > b.size()) {
         size_t newSize(std::max(sz, _buffers.back().size()*2));
@@ -26,8 +31,9 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     }
     Alloc & buf = _buffers.back();
     Reference ref(static_cast<char *>(buf.get()) + _writePos);
-    memcpy(ref.data(), data, sz);
     _writePos += sz;
+    guard.reset();
+    memcpy(ref.data(), data, sz);
     return ref;
 }
 

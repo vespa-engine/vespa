@@ -447,7 +447,7 @@ void LogDataStore::compactFile(FileId fileId)
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
-        compacter.reset(new BucketCompacter(numSignificantBucketBits, _config.compactCompression(), *this,
+        compacter.reset(new BucketCompacter(numSignificantBucketBits, _config.compactCompression(), *this, _executor,
                                             *_bucketizer, fc->getFileId(), destinationFileId));
     } else {
         compacter.reset(new docstore::Compacter(*this));

@@ -5,6 +5,9 @@
 #include "chunk.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/data/memorydatastore.h>
+#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
 
 namespace search {
@@ -17,8 +20,13 @@ namespace docstore {
  */
 class StoreByBucket
 {
+    using MemoryDataStore = vespalib::MemoryDataStore;
+    using ThreadExecutor = vespalib::ThreadExecutor;
+    using ConstBufferRef = vespalib::ConstBufferRef;
+    using CompressionConfig = document::CompressionConfig;
 public:
     StoreByBucket(vespalib::MemoryDataStore & backingMemory, const document::CompressionConfig & compression);
+    StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & executor, const CompressionConfig & compression);
     class IWrite {
     public:
         using BucketId=document::BucketId;
@@ -27,7 +35,7 @@ public:
     };
     void add(document::BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz);
     void drain(IWrite & drain);
-    size_t getChunkCount() const { return _chunks.size(); }
+    size_t getChunkCount() const;
     size_t getBucketCount() const { return _where.size(); }
     size_t getLidCount() const {
         size_t lidCount(0);
@@ -37,8 +45,8 @@ public:
         return lidCount;
     }
 private:
-    void closeCurrent();
-    void createCurrent();
+    Chunk::UP createChunk();
+    void closeChunk(Chunk::UP chunk);
     struct Index {
         using BucketId=document::BucketId;
         Index(BucketId bucketId, uint32_t id, uint32_t chunkId, uint32_t entry) :
@@ -52,11 +60,14 @@ private:
         uint32_t _chunkId;
         uint32_t _lid;
     };
-    std::vector<vespalib::ConstBufferRef>    _chunks;
-    Chunk::UP                                _current;
-    std::map<uint64_t, std::vector<Index>>   _where;
-    vespalib::MemoryDataStore              & _backingMemory;
-    document::CompressionConfig              _compression;
+    uint64_t                                     _chunkSerial;
+    Chunk::UP                                    _current;
+    std::map<uint64_t, std::vector<Index>>       _where;
+    MemoryDataStore                            & _backingMemory;
+    ThreadExecutor                             & _executor;
+    vespalib::Lock                               _lock;
+    vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
+    CompressionConfig                            _compression;
 };
 
 }
