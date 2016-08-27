@@ -4,6 +4,7 @@
 
 #include "filechunk.h"
 #include "storebybucket.h"
+#include <vespa/vespalib/data/memorydatastore.h>
 
 namespace search {
 
@@ -37,6 +38,7 @@ private:
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
     uint64_t                   _writeCount;
+    vespalib::MemoryDataStore  _backingMemory;
     std::vector<StoreByBucket> _tmpStore;
     GenerationHandler::Guard   _lidGuard;
     GenerationHandler::Guard   _bucketizerGuard;

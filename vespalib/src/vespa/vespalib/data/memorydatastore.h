@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 
 namespace vespalib {
 
@@ -12,7 +12,7 @@ namespace vespalib {
  * It will start of by allocating one backing buffer and items stored will be appended here.
  * When limit is exceeded a new buffer is allocated with twice the size of the previous and so it goes.
  **/
-class MemoryDataStore : public noncopyable {
+class MemoryDataStore {
 public:
     class Reference {
     public:
@@ -23,6 +23,8 @@ public:
         void   * _data;
     };
     MemoryDataStore(size_t initialSize=256);
+    MemoryDataStore(const MemoryDataStore &) = delete;
+    MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
     /**
      * Will allocate space and copy the data in. The returned pointer will be valid
@@ -35,8 +37,8 @@ public:
         _buffers.clear();
     }
 private:
-    typedef Array<char> Buffer;
-    std::vector<Buffer> _buffers;
+    std::vector<DefaultAlloc> _buffers;
+    size_t _writePos;
 };
 
 class VariableSizeVector : public noncopyable

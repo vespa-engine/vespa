@@ -22,11 +22,17 @@ BucketCompacter::BucketCompacter(LogDataStore & ds, const IBucketizer & bucketiz
     _ds(ds),
     _bucketizer(bucketizer),
     _writeCount(0),
-    _tmpStore(256),
+    _backingMemory(0x40000000),
+    _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),
     _stat()
-{ }
+{
+    _tmpStore.reserve(256);
+    for (size_t i(0); i < 256; i++) {
+        _tmpStore.emplace_back(_backingMemory);
+    }
+}
 
 FileChunk::FileId
 BucketCompacter::getDestinationId(const LockGuard & guard) const {
@@ -64,6 +70,7 @@ BucketCompacter::close()
     for (StoreByBucket & store : _tmpStore) {
         store.drain(*this);
     }
+    _backingMemory.clear();
 
     size_t lidCount(0);
     for (const auto & it : _stat) {

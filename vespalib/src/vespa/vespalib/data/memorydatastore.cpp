@@ -4,12 +4,11 @@
 namespace vespalib {
 
 MemoryDataStore::MemoryDataStore(size_t initialSize) :
-    _buffers()
+    _buffers(),
+    _writePos(0)
 {
     _buffers.reserve(24);
-    Buffer buf;
-    _buffers.push_back(buf);
-    _buffers.back().reserve(initialSize);
+    _buffers.emplace_back(initialSize);
 }
 
 MemoryDataStore::~MemoryDataStore()
@@ -19,20 +18,17 @@ MemoryDataStore::~MemoryDataStore()
 MemoryDataStore::Reference
 MemoryDataStore::push_back(const void * data, const size_t sz)
 {
-    const Buffer & b = _buffers.back();
-    if (sz > (b.capacity() - b.size())) {
+    const Alloc & b = _buffers.back();
+    if ((sz + _writePos) > b.size()) {
         size_t newSize(std::max(sz, _buffers.back().size()*2));
-        Buffer buf;
-        assert(_buffers.capacity() >= (_buffers.size() + 1));
-        _buffers.push_back(buf);
-        _buffers.back().reserve(newSize);
+        _buffers.emplace_back(newSize);
+        _writePos = 0;
     }
-    Buffer & buf = _buffers.back();
-    const char * start = static_cast<const char *>(data);
-    for (uint32_t i(0); i < sz; i++) {
-        buf.push_back_fast(start[i]);
-    }
-    return Reference(&buf[buf.size() - sz]);
+    Alloc & buf = _buffers.back();
+    Reference ref(static_cast<char *>(buf.get()) + _writePos);
+    memcpy(ref.data(), data, sz);
+    _writePos += sz;
+    return ref;
 }
 
 VariableSizeVector::VariableSizeVector(size_t initialSize) :
