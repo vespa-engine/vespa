@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.curator.Curator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -72,7 +74,6 @@ public class ZooKeeperServerTest {
         File idFile = folder.newFile();
         File cfgFile = folder.newFile();
 
-        builder.server(new ZookeeperServerConfig.Server.Builder().id(0).hostname("testhost"));
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
 
