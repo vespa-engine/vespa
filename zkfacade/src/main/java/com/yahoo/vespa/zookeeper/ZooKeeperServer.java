@@ -22,7 +22,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
-    static final String ZOOKEEPER_VESPA_SERVERS_PROPERTY = "zookeeper.vespa.servers";
     private final Thread zkServerThread;
     private final ZookeeperServerConfig config;
 
@@ -30,10 +29,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         this.config = config;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + config.juteMaxBuffer());
-
-        System.setProperty(ZOOKEEPER_VESPA_SERVERS_PROPERTY, toHostnameString(config.server()));
-        System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
-
         writeConfigToDisk(config);
         zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
@@ -44,14 +39,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     @Inject
     public ZooKeeperServer(ZookeeperServerConfig config) {
         this(config, true);
-    }
-    
-    private String toHostnameString(List<ZookeeperServerConfig.Server> servers) {
-        StringBuilder b = new StringBuilder();
-        for (ZookeeperServerConfig.Server server : servers)
-            b.append(server.hostname()).append(", ");
-        b.setLength(b.length()-1); // remove the last ", "
-        return b.toString();
     }
 
     private void writeConfigToDisk(ZookeeperServerConfig config) {
