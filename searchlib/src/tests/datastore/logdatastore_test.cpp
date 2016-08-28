@@ -838,7 +838,6 @@ TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
     for (size_t i(1000); i > 500; i--) {
         add(sbb, i);
     }
-    EXPECT_EQUAL(1u, sbb.getChunkCount());
     EXPECT_EQUAL(32u, sbb.getBucketCount());
     EXPECT_EQUAL(1000u, sbb.getLidCount());
     VerifyBucketOrder vbo;
