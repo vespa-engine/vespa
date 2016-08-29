@@ -144,13 +144,13 @@ public class MultigroupProvisioningTest {
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
         deploy(application, Capacity.fromNodeCount(nodeCount, "default"), groupCount, tester);
     }
-    private void deploy(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
+    private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
         int nodeCount = capacity.nodeCount();
         String flavor = capacity.flavor().get();
 
         int previousActiveNodeCount = tester.getNodes(application, Node.State.active).flavor(flavor).size();
 
-        tester.activate(application, prepare(application, capacity, groupCount, tester));
+        tester.activate(application, prepare(application, capacity, wantedGroups, tester));
 
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
                      Math.max(0, previousActiveNodeCount - capacity.nodeCount()),
@@ -171,20 +171,27 @@ public class MultigroupProvisioningTest {
 
         // Count unretired nodes and groups of the requested flavor
         Set<Integer> indexes = new HashSet<>();
-        Map<ClusterSpec.Group, Integer> groups = new HashMap<>();
+        Map<ClusterSpec.Group, Integer> nonretiredGroups = new HashMap<>();
         for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor).asList()) {
             indexes.add(node.allocation().get().membership().index());
 
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
-            groups.put(group, groups.getOrDefault(group, 0) + 1);
+            nonretiredGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
 
-            if (groupCount > 1)
-                assertTrue(Integer.parseInt(group.value()) < groupCount);
+            if (wantedGroups > 1)
+                assertTrue("Group ids are always in [0, wantedGroups>", Integer.parseInt(group.value()) < wantedGroups);
         }
         assertEquals("Total nonretired nodes", nodeCount, indexes.size());
-        assertEquals("Total nonretired groups", groupCount, groups.size());
-        for (Integer groupSize : groups.values())
-            assertEquals("Group size", (long)nodeCount / groupCount, (long)groupSize);
+        assertEquals("Total nonretired groups", wantedGroups, nonretiredGroups.size());
+        for (Integer groupSize : nonretiredGroups.values())
+            assertEquals("Group size", (long)nodeCount / wantedGroups, (long)groupSize);
+
+        Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
+        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor).asList()) {
+            ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
+            allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
+        }
+        assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
     private ClusterSpec cluster() { return ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test")); }
