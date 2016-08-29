@@ -29,7 +29,7 @@ BlobSet::BlobSet() :
 
 namespace {
 
-size_t getTotalSize(const BlobSet::Positions & p) {
+size_t getBufferSize(const BlobSet::Positions & p) {
     return p.empty() ? 0 : p.back().offset() + p.back().size();
 }
 
@@ -37,13 +37,13 @@ size_t getTotalSize(const BlobSet::Positions & p) {
 
 BlobSet::BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer) :
     _positions(positions),
-    _buffer(std::move(buffer), getTotalSize(_positions))
+    _buffer(std::move(buffer), getBufferSize(_positions))
 {
 }
 
 void
 BlobSet::append(uint32_t lid, vespalib::ConstBufferRef blob) {
-    _positions.emplace_back(lid, getTotalSize(_positions), blob.size());
+    _positions.emplace_back(lid, getBufferSize(_positions), blob.size());
     _buffer.write(blob.c_str(), blob.size());
 }
 
@@ -106,7 +106,7 @@ CompressedBlobSet::getBlobSet() const
 {
     vespalib::DataBuffer uncompressed;
     if ( ! _positions.empty() ) {
-        document::decompress(_compression, getTotalSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
+        document::decompress(_compression, getBufferSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
     }
     return BlobSet(_positions, uncompressed.stealBuffer());
 }
