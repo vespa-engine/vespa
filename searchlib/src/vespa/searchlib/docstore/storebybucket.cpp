@@ -51,7 +51,7 @@ StoreByBucket::drain(IWrite & drainer)
     std::vector<Chunk::UP> chunks;
     chunks.reserve(_chunks.size());
     for (const vespalib::ConstBufferRef buffer : _chunks) {
-        chunks.push_back(Chunk::UP(new Chunk(chunks.size(), buffer.data(), buffer.size())));
+        chunks.push_back(std::make_unique<Chunk>(chunks.size(), buffer.data(), buffer.size()));
     }
     _chunks.clear();
     for (auto & it : _where) {
