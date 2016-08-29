@@ -1,0 +1,101 @@
+package com.yahoo.searchdefinition;
+
+import com.yahoo.tensor.TensorType;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author gjoranv
+ */
+public class RankingConstantTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    public void tensor_constant_properties_are_set() throws Exception {
+        final String TENSOR_NAME = "my_global_tensor";
+        final String TENSOR_FILE = "path/my-tensor-file.json";
+        final String TENSOR_TYPE = "tensor(x{})";
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: sum(constant(my_global_tensor))",
+                "    }",
+                "  }",
+                "  constant " + TENSOR_NAME + " {",
+                "    file: " + TENSOR_FILE,
+                "    type: " + TENSOR_TYPE,
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search s = searchBuilder.getSearch();
+        RankingConstant constant = s.getRankingConstants().iterator().next();
+        assertEquals(TENSOR_NAME, constant.getName());
+        assertEquals(TENSOR_FILE, constant.getFileName());
+        assertEquals(TENSOR_TYPE, constant.getType());
+    }
+
+    @Test
+    public void tensor_constant_must_have_a_type() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("must have a type");
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    file: bar.baz",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void tensor_constant_must_have_a_file() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("must have a file");
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x[])",
+                "  }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void constant_file_does_not_need_path_or_ending() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    file: simplename",
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search s = searchBuilder.getSearch();
+        RankingConstant constant = s.getRankingConstants().iterator().next();
+        assertEquals("simplename", constant.getFileName());
+    }
+
+    private static String joinLines(String... lines) {
+        return String.join("\n", lines);
+    }
+}
