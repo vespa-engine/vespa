@@ -467,6 +467,10 @@ public:
         getStore().write(_serial++, *doc, id);
         _inserted[id] = std::move(doc);
     }
+    void remove(uint32_t id) {
+        getStore().remove(_serial++, id);
+        _inserted.erase(id);
+    }
     void verifyRead(uint32_t id) {
         verifyDoc(*_datastore.read(id, _repo), id);
     }
@@ -525,8 +529,8 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_EQUAL(hits, cs.hits);
     EXPECT_EQUAL(misses, cs.misses);
     EXPECT_EQUAL(elements, cs.elements);
-    EXPECT_TRUE(memory_used <= cs.memory_used + 10);  // We allow +- 10 as visitorder and hence compressability is non-deterministic.
-    EXPECT_TRUE(memory_used+10 >= cs.memory_used);
+    EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 10);  // We allow +- 10 as visitorder and hence compressability is non-deterministic.
+    EXPECT_GREATER_EQUAL(memory_used+10,  cs.memory_used);
 }
 
 TEST("test that the integrated visit cache works.") {
@@ -562,6 +566,12 @@ TEST("test that the integrated visit cache works.") {
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 19999));
     vcs.rewrite(17);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19167));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, 19821));
+    vcs.remove(17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19167));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 19750));
 }
 
 TEST("testWriteRead") {
