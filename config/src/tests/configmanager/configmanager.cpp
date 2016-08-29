@@ -169,18 +169,4 @@ TEST("require that new sources are given the correct generation") {
     }
 }
 
-void waitForGet(TestContext & data, int preferred, double timeout)
-{
-    FastOS_Time timer;
-    timer.SetNow();
-    int numGet = -1;
-    while (timer.MilliSecsToNow() < timeout) {
-        numGet = data.numGetConfig;
-        if (numGet == preferred)
-            break;
-        FastOS_Thread::Sleep(50);
-    }
-    ASSERT_EQUAL(preferred, numGet);
-}
-
 TEST_MAIN() { TEST_RUN_ALL(); }
