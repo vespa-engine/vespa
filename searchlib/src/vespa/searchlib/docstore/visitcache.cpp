@@ -144,10 +144,24 @@ VisitCache::Cache::findSetsContaining(const vespalib::LockGuard &, const KeySet 
     return found;
 }
 
-void
-VisitCache::Cache::locateAndInvalidateOtherSubsets(const KeySet & keys)
+CompressedBlobSet
+VisitCache::Cache::readSet(const KeySet & key)
 {
-    auto cacheGuard = getGuard();
+    if (!key.empty()) {
+        {
+            auto cacheGuard = getGuard();
+            if (!hasKey(cacheGuard, key)) {
+                locateAndInvalidateOtherSubsets(cacheGuard, key);
+            }
+        }
+        return read(key);
+    }
+    return CompressedBlobSet();
+}
+
+void
+VisitCache::Cache::locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys)
+{
     IdSet otherSubSets = findSetsContaining(cacheGuard, keys);
     assert(otherSubSets.size() <= 1);
     if (! otherSubSets.empty()) {
@@ -160,13 +174,7 @@ VisitCache::Cache::locateAndInvalidateOtherSubsets(const KeySet & keys)
 CompressedBlobSet
 VisitCache::read(const IDocumentStore::LidVector & lids) const {
     KeySet key(lids);
-    if (!key.empty()) {
-        if (!_cache->hasKey(key)) {
-            _cache->locateAndInvalidateOtherSubsets(key);
-        }
-        return _cache->read(key);
-    }
-    return CompressedBlobSet();
+    return _cache->readSet(lids);
 }
 
 void
@@ -190,8 +198,7 @@ VisitCache::Cache::removeKey(uint32_t subKey) {
     const auto foundLid = _lid2Id.find(subKey);
     if (foundLid != _lid2Id.end()) {
         K keySet = _id2KeySet[foundLid->second];
-        cacheGuard.unlock();
-        invalidate(keySet);
+        invalidate(cacheGuard, keySet);
     }
 }
 

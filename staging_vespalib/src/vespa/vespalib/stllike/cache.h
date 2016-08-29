@@ -114,7 +114,10 @@ public:
      * Tell if an object with given key exists in the cache.
      * Does not alter the LRU list.
      */
-    bool hasKey(const K & key) const;
+    bool hasKey(const K & key) const {
+        vespalib::LockGuard guard(_hashLock);
+        return hasKey(guard, key);
+    }
 
     size_t          getHit() const { return _hit; }
     size_t         getMiss() const { return _miss; }
@@ -129,6 +132,8 @@ public:
 protected:
     vespalib::LockGuard getGuard();
     void invalidate(const vespalib::LockGuard & guard, const K & key);
+    bool hasKey(const vespalib::LockGuard & guard, const K & key) const;
+    bool hasLock()                     const { return TryLock(_hashLock).hasLock(); }
 private:
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -267,9 +272,9 @@ cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
 
 template< typename P >
 bool
-cache<P>::hasKey(const K & key) const
+cache<P>::hasKey(const vespalib::LockGuard & guard, const K & key) const
 {
-    vespalib::LockGuard guard(_hashLock);
+    assert(guard.locks(_hashLock));
     _lookup++;
     return Lru::hasKey(key);
 }

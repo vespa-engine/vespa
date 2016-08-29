@@ -133,9 +133,10 @@ private:
     class Cache : public vespalib::cache<CacheParams> {
     public:
         Cache(BackingStore & b, size_t maxBytes);
+        CompressedBlobSet readSet(const KeySet & keys);
         void removeKey(uint32_t key);
-        void locateAndInvalidateOtherSubsets(const KeySet & keys);
     private:
+        void locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys);
         using IdSet = vespalib::hash_set<uint64_t>;
         using Parent = vespalib::cache<CacheParams>;
         using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
