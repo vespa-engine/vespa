@@ -12,10 +12,9 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.fs4.PacketDumper;
-import com.yahoo.fs4.PongPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.container.search.LegacyEmulationConfig;
-import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.IndexFacts;
@@ -190,14 +189,7 @@ public class ClusterSearcher extends Searcher {
         if (dispatchHost.isLoopbackAddress()) {
             return false;
         } else {
-            String localName;
-            try {
-                localName = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException e) {
-                // Macs unfortunately can tell their own name but does not know
-                // it, so if we run this model on a mac we'll end up here.
-                return false;
-            }
+            String localName = HostName.getLocalhost();
             return !localName.equals(dispatchHost.getCanonicalHostName());
         }
     }

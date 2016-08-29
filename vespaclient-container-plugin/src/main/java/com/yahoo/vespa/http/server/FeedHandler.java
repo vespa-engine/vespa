@@ -16,17 +16,15 @@ import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
-import com.yahoo.net.LinuxInetAddress;
+import com.yahoo.net.HostName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -272,8 +270,7 @@ public class FeedHandler extends LoggingRequestHandler {
     }
 
     private static String resolveLocalHostname() {
-        InetAddress inetAddress = LinuxInetAddress.getLocalHost();
-        String hostname = inetAddress.getCanonicalHostName();
+        String hostname = HostName.getLocalhost();
         if (hostname.equals("localhost")) {
             return "";
         }

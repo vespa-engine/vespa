@@ -7,10 +7,10 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.QueryPacket;
+import com.yahoo.net.HostName;
 import com.yahoo.prelude.*;
 import com.yahoo.prelude.fastsearch.*;
 import com.yahoo.search.Query;
-import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -400,7 +400,6 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
 
     public void testLocalConnect() throws UnknownHostException {
         ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
-        boolean canGetLocalName;
         boolean canFindYahoo;
         final String yahoo = "www.yahoo.com";
 
@@ -414,20 +413,9 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
             canFindYahoo = false;
         }
 
-        try {
-            InetAddress.getLocalHost().getCanonicalHostName();
-            canGetLocalName = true;
-        } catch (Exception e) {
-            canGetLocalName = false;
-        }
-
         assertFalse(cluster.isRemote("127.0.0.1"));
         assertFalse(cluster.isRemote("localhost"));
-
-        if (canGetLocalName) {
-            assertFalse(cluster.isRemote(InetAddress.getLocalHost()
-                    .getCanonicalHostName()));
-        }
+        assertFalse(cluster.isRemote(HostName.getLocalhost()));
 
         if (canFindYahoo) {
             assertTrue(cluster.isRemote(yahoo));
