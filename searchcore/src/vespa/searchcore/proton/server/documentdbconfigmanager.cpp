@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config/file_acquirer/file_acquirer.h>
 
 using namespace config;
 using namespace vespa::config::search::core;
@@ -188,6 +189,15 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
             RankingConstantsConfigSP(
                     snapshot.getConfig<RankingConstantsConfig>(_configId)
                     .release());
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
+                vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
+                fprintf(stderr, "GOT file-acq PATH is: %s (ref %s for name %s type %s)\n",
+                        filePath.c_str(), rc.fileref.c_str(), rc.name.c_str(), rc.type.c_str());
+            }
+        }
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         std::unique_ptr<IndexschemaConfig> indexschemaConfig =
