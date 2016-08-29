@@ -12,13 +12,12 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.net.LinuxInetAddress;
+import com.yahoo.net.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.Osgi;
 import com.yahoo.yolean.Exceptions;
 import org.osgi.framework.Bundle;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -44,7 +43,7 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
         this.supervisor = new Supervisor(new Transport());
-        this.hostname = LinuxInetAddress.getLocalHost().getCanonicalHostName();
+        this.hostname = HostName.getLocalhost();
 
         bindCommands(supervisor);
     }

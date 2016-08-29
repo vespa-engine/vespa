@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
-import com.yahoo.log.LogLevel;
-import com.yahoo.net.LinuxInetAddress;
-
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.logging.Logger;
+import com.yahoo.net.HostName;
 
 /**
  * This class encapsulates the identity of the application that uses this instance of message bus. This identity
@@ -17,8 +11,6 @@ import java.util.logging.Logger;
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class Identity {
-
-    private static final Logger log = Logger.getLogger(Identity.class.getName());
     private final String hostname;
     private final String servicePrefix;
 
@@ -30,12 +22,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        InetAddress addr = LinuxInetAddress.getLocalHost();
-        if (addr instanceof Inet6Address) {
-            log.log(LogLevel.WARNING, "Local host resolved to IPv6 address '" + addr.getHostAddress() +
-                                      "', this might be problematic.");
-        }
-        hostname = addr.getCanonicalHostName();
+        hostname = HostName.getLocalhost();
         servicePrefix = configId;
     }
 
@@ -51,7 +38,7 @@ public class Identity {
 
     /**
      * Returns the hostname for this. This is the network name of the host on which this identity exists. It is
-     * retrieved on creation by InetAddress.getLocalHost().getCanonicalHostName().
+     * retrieved on creation by running shell command "hostname".
      *
      * @return The canonical host name.
      */
