@@ -11,6 +11,12 @@
 namespace vespalib {
 namespace eval {
 
+/**
+ * A cache enabling clients to share the constant values created by an
+ * underlying factory. The returned wrappers are used to ensure
+ * appropriate lifetime of created values. Used values are kept in the
+ * cache and unused values are evicted from the cache.
+ **/
 class ConstantValueCache : public ConstantValueFactory
 {
 private:
