@@ -415,7 +415,7 @@ makeDocTypeRepoConfig()
 
 
 Document::UP
-makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
+makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
 {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
@@ -430,7 +430,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     }
     mainstr << " and end field";
     doc->set("main", mainstr.c_str());
-    if (!before) {
+    if (extra_field) {
         doc->set("extra", "foo");
     }
 
@@ -458,10 +458,10 @@ public:
     { }
     IDocumentStore & getStore() { return _datastore; }
     void write(uint32_t id) {
-        write(id, makeDoc(_repo, id, false));
+        write(id, makeDoc(_repo, id, true));
     }
     void rewrite(uint32_t id) {
-        write(id, makeDoc(_repo, id, true));
+        write(id, makeDoc(_repo, id, false));
     }
     void write(uint32_t id, Document::UP doc) {
         getStore().write(_serial++, *doc, id);
