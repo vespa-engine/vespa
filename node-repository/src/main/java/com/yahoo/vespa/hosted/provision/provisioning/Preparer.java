@@ -11,7 +11,9 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 /**
@@ -39,28 +41,32 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, int nodes, Flavor flavor, int groups) {
-        if (cluster.group().isPresent() && groups > 1)
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, int nodes, Flavor flavor, int wantedGroups) {
+        // TODO: Encode actual assumptions as we have logic that depends on them:
+        // - Don't allow a cluster spec specifying an explicit group (and then remove the "targetgroup" parameter to moveToActiveGroup
+        // - Change group ids to be a 0-based integer index
+        if (cluster.group().isPresent() && wantedGroups > 1)
             throw new IllegalArgumentException("Cannot specify both a particular group and request multiple groups");
-        if (nodes > 0 && nodes % groups != 0)
-            throw new IllegalArgumentException("Requested " + nodes + " nodes in " + groups + " groups, " +
+        if (nodes > 0 && nodes % wantedGroups != 0)
+            throw new IllegalArgumentException("Requested " + nodes + " nodes in " + wantedGroups + " groups, " +
                                                "which doesn't allow the nodes to be divided evenly into groups");
 
         // no group -> this asks for the entire cluster -> we are free to remove groups we won't need
-        List<Node> surplusActiveNodes =
-            cluster.group().isPresent() ? new ArrayList<>() : findNodesInRemovableGroups(application, cluster, groups);
+        List<Node> surplusNodes =
+            cluster.group().isPresent() ? new ArrayList<>() : findNodesInRemovableGroups(application, cluster, wantedGroups);
 
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
         List<Node> acceptedNodes = new ArrayList<>();
-        for (int groupIndex = 0; groupIndex < groups; groupIndex++) {
+        for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             // Generated groups always have contiguous indexes starting from 0
             ClusterSpec clusterGroup =
                 cluster.group().isPresent() ? cluster : cluster.changeGroup(Optional.of(ClusterSpec.Group.from(String.valueOf(groupIndex))));
 
-            List<Node> accepted = groupPreparer.prepare(application, clusterGroup, nodes/groups, flavor, surplusActiveNodes, highestIndex);
+            List<Node> accepted = groupPreparer.prepare(application, clusterGroup, nodes/wantedGroups, flavor, surplusNodes, highestIndex);
             replace(acceptedNodes, accepted);
         }
-        replace(acceptedNodes, retire(surplusActiveNodes));
+        moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
+        replace(acceptedNodes, retire(surplusNodes));
         return acceptedNodes;
     }
 
@@ -68,18 +74,32 @@ class Preparer {
      * Returns a list of the nodes which are
      * in groups with index number above or equal the group count
      */
-    private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int groups) {
+    private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
         List<Node> surplusActiveNodes = new ArrayList<>(0);
         for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
-            if (Integer.parseInt(nodeCluster.group().get().value()) >= groups)
+            if (Integer.parseInt(nodeCluster.group().get().value()) >= wantedGroups)
                 surplusActiveNodes.add(node);
         }
         return surplusActiveNodes;
     }
-
+    
+    /** Move nodes from unwanted groups to wanted groups to avoid lingering groups consisting of retired nodes */
+    private void moveToActiveGroup(List<Node> surplusNodes, int wantedGroups, Optional<ClusterSpec.Group> targetGroup) {
+        for (ListIterator<Node> i = surplusNodes.listIterator(); i.hasNext(); ) {
+            Node node = i.next();
+            ClusterMembership membership = node.allocation().get().membership();
+            ClusterSpec cluster = membership.cluster();
+            if (Integer.parseInt(cluster.group().get().value()) >= wantedGroups) {
+                ClusterSpec.Group newGroup = targetGroup.orElse(ClusterSpec.Group.from(String.valueOf(0)));
+                ClusterMembership newGroupMembership = membership.changeCluster(cluster.changeGroup(Optional.of(newGroup)));
+                i.set(node.setAllocation(node.allocation().get().changeMembership(newGroupMembership)));
+            }
+        }
+    }
+    
     private List<Node> replace(List<Node> list, List<Node> changed) {
         list.removeAll(changed);
         list.addAll(changed);
