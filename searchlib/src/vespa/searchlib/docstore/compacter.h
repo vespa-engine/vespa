@@ -13,7 +13,7 @@ class LogDataStore;
 namespace docstore {
 
 /**
- * Implements a simple write through implmentation of the IWriteData interface.
+ * A simple write through implementation of the IWriteData interface.
  */
 class Compacter : public IWriteData
 {
@@ -26,9 +26,9 @@ private:
 };
 
 /**
- * This will splitt the incomming data into buckets.
+ * This will split the incoming data into buckets.
  * The buckets data will then be written out in bucket order.
- * The buckets will be ordered and the objects inside the buckets will be further ordered.
+ * The buckets will be ordered, and the objects inside the buckets will be further ordered.
  * All data are kept compressed to minimize memory usage.
  **/
 class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
