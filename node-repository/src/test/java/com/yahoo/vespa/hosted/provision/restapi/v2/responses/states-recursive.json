@@ -36,6 +36,7 @@
     "dirty": {
       "url": "http://localhost:8080/nodes/v2/state/dirty",
       "nodes": [
+        @include(node55.json)
       ]
     },
     "failed": {

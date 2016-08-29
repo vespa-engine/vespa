@@ -36,7 +36,6 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
-
         try {
             final GetNodesResponse nodesForHost = requestExecutor.get(
                     "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
@@ -129,7 +128,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         if (response.errorCode == null || response.errorCode.isEmpty()) {
             return;
         }
-        throw new RuntimeException("Unexcpected message " + response.message + " " + response.errorCode);
+        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
     }
     
     @Override

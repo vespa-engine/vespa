@@ -8,6 +8,7 @@
     @include(node3.json),
     @include(node2.json),
     @include(node1.json),
+    @include(node55.json),
     @include(node5.json)
   ]
 }
