@@ -129,7 +129,7 @@ public class DockerImpl implements Docker {
         this.docker = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
                 // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
                 .withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
-//                .withDockerHost(config.uri().replace("https", "tcp"))
+                //.withDockerHost(config.uri().replace("https", "tcp"))
                 //.withDockerTlsVerify(false)
                 //.withCustomSslConfig(new VespaSSLConfig(config))
                 .withApiVersion(remoteApiVersion)
