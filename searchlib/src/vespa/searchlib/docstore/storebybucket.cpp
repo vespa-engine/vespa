@@ -7,10 +7,11 @@ namespace docstore {
 
 using document::BucketId;
 
-StoreByBucket::StoreByBucket() :
+StoreByBucket::StoreByBucket(vespalib::MemoryDataStore & backingMemory) :
     _chunks(),
     _current(),
-    _where()
+    _where(),
+    _backingMemory(backingMemory)
 {
     createCurrent();
 }
@@ -35,11 +36,11 @@ void StoreByBucket::createCurrent()
 void
 StoreByBucket::closeCurrent()
 {
-    BufferUP buffer(new vespalib::DataBuffer());
+    vespalib::DataBuffer buffer;
     document::CompressionConfig lz4(document::CompressionConfig::LZ4);
-    _current->pack(1, *buffer, lz4);
-    buffer->shrink(buffer->getDataLen());
-    _chunks.push_back(std::move(buffer));
+    _current->pack(1, buffer, lz4);
+    buffer.shrink(buffer.getDataLen());
+    _chunks.emplace_back(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
     _current.reset();
 }
 
@@ -48,9 +49,9 @@ StoreByBucket::drain(IWrite & drainer)
 {
     closeCurrent();
     std::vector<Chunk::UP> chunks;
-    for (BufferUP & buffer : _chunks) {
-        chunks.push_back(Chunk::UP(new Chunk(chunks.size(), buffer->getData(), buffer->getDataLen())));
-        buffer.reset();
+    chunks.reserve(_chunks.size());
+    for (const vespalib::ConstBufferRef buffer : _chunks) {
+        chunks.push_back(Chunk::UP(new Chunk(chunks.size(), buffer.data(), buffer.size())));
     }
     _chunks.clear();
     for (auto & it : _where) {

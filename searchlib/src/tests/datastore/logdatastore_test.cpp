@@ -587,7 +587,8 @@ private:
 };
 
 TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
-    StoreByBucket sbb;
+    vespalib::MemoryDataStore backing;
+    StoreByBucket sbb(backing);;
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);
     }

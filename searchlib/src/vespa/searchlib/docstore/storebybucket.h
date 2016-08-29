@@ -4,6 +4,7 @@
 
 #include "chunk.h"
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/data/memorydatastore.h>
 #include <map>
 
 namespace search {
@@ -17,7 +18,7 @@ namespace docstore {
 class StoreByBucket
 {
 public:
-    StoreByBucket();
+    StoreByBucket(vespalib::MemoryDataStore & backingMemory);
     class IWrite {
     public:
         using BucketId=document::BucketId;
@@ -36,7 +37,6 @@ public:
         return lidCount;
     }
 private:
-    typedef std::unique_ptr<vespalib::DataBuffer> BufferUP;
     void closeCurrent();
     void createCurrent();
     struct Index {
@@ -52,9 +52,10 @@ private:
         uint32_t _chunkId;
         uint32_t _lid;
     };
-    std::vector<BufferUP> _chunks;
-    Chunk::UP _current;
-    std::map<uint64_t, std::vector<Index>> _where;
+    std::vector<vespalib::ConstBufferRef>    _chunks;
+    Chunk::UP                                _current;
+    std::map<uint64_t, std::vector<Index>>   _where;
+    vespalib::MemoryDataStore              & _backingMemory;
 };
 
 }

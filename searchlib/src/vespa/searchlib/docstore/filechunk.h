@@ -85,9 +85,11 @@ class IWriteData
 {
 public:
     typedef std::unique_ptr<IWriteData> UP;
+    using LockGuard = vespalib::LockGuard;
+
     virtual ~IWriteData() { }
 
-    virtual void write(vespalib::LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
+    virtual void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) = 0;
     virtual void close() = 0;
 };
 

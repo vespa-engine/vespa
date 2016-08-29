@@ -11,6 +11,7 @@ LOG_SETUP(".searchlib.docstore.logdatastore");
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <thread>
+#include "compacter.h"
 
 namespace search
 {
@@ -77,7 +78,6 @@ LogDataStore::~LogDataStore()
 {
     // Must be called before ending threads as there are sanity checks.
     _fileChunks.clear();
-    //_executor.shutdown();
     _executor.sync();
     _genHandler.updateFirstUsedGeneration();
     _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
@@ -322,110 +322,6 @@ LogDataStore::initFlush(uint64_t syncToken)
     return syncToken;
 }
 
-class Compacter : public IWriteData
-{
-public:
-    Compacter(LogDataStore & ds)
-        : _ds(ds)
-    { }
-    void
-    write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
-        (void) chunkId;
-        FileChunk::FileId fileId= _ds.getActiveFileId(guard);
-        _ds.write(guard, fileId, lid, buffer, sz);
-    }
-    void close() override { }
-private:
-    LogDataStore & _ds;
-};
-
-class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
-{
-public:
-    using FileId = FileChunk::FileId;
-    BucketCompacter(LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination);
-    void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
-    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
-    void close() override;
-private:
-    FileId getDestinationId(const LockGuard & guard) const {
-        return (_destinationFileId.isActive()) ? _ds.getActiveFileId(guard) : _destinationFileId;
-    }
-    FileId                     _sourceFileId;
-    FileId                     _destinationFileId;
-    LogDataStore             & _ds;
-    const IBucketizer        & _bucketizer;
-    uint64_t                   _writeCount;
-    std::vector<StoreByBucket> _tmpStore;
-    GenerationHandler::Guard   _lidGuard;
-    GenerationHandler::Guard   _bucketizerGuard;
-    vespalib::hash_map<uint64_t, uint32_t> _stat;
-};
-
-BucketCompacter::BucketCompacter(LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination) :
-    _sourceFileId(source),
-    _destinationFileId(destination),
-    _ds(ds),
-    _bucketizer(bucketizer),
-    _writeCount(0),
-    _tmpStore(256),
-    _lidGuard(ds.getLidReadGuard()),
-    _bucketizerGuard(bucketizer.getGuard()),
-    _stat()
-{
-}
-
-void
-BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
-{
-    _writeCount++;
-    guard.unlock();
-    BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
-    uint64_t sortableBucketId = bucketId.toKey();
-    _tmpStore[(sortableBucketId >> 56) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
-    if ((_writeCount % 1000) == 0) {
-        _bucketizerGuard = _bucketizer.getGuard();
-    }
-}
-
-void
-BucketCompacter::close()
-{
-    _bucketizerGuard = GenerationHandler::Guard();
-    size_t lidCount1(0);
-    size_t bucketCount(0);
-    size_t chunkCount(0);
-    for (const StoreByBucket & store : _tmpStore) {
-        lidCount1 += store.getLidCount();
-        bucketCount += store.getBucketCount();
-        chunkCount += store.getChunkCount();
-    }
-    LOG(info, "Have read %ld lids and placed them in %ld buckets. Temporary compressed in %ld chunks.",
-              lidCount1, bucketCount, chunkCount);
-
-    for (StoreByBucket & store : _tmpStore) {
-        store.drain(*this);
-    }
-
-    size_t lidCount(0);
-    for (const auto & it : _stat) {
-        lidCount += it.second;
-    }
-    LOG(info, "Compacted %ld lids into %ld buckets", lidCount, _stat.size());
-}
-
-void
-BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
-{
-    _stat[bucketId.getId()]++;
-    LockGuard guard(_ds.getLidGuard(lid));
-    LidInfo lidInfo(_sourceFileId.getId(), chunkId, sz);
-    if (_ds.getLid(_lidGuard, lid) == lidInfo) {
-        FileId fileId = getDestinationId(guard);
-        _ds.write(guard, fileId, lid, buffer, sz);
-    }
-}
-
 double
 LogDataStore::getMaxBucketSpread() const
 {
@@ -547,9 +443,9 @@ void LogDataStore::compactFile(FileId fileId)
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
 
-        compacter.reset(new BucketCompacter(*this, *_bucketizer, fc->getFileId(), destinationFileId));
+        compacter.reset(new docstore::BucketCompacter(*this, *_bucketizer, fc->getFileId(), destinationFileId));
     } else {
-        compacter.reset(new Compacter(*this));
+        compacter.reset(new docstore::Compacter(*this));
     }
 
     fc->appendTo(*this, *compacter, fc->getNumChunks(), nullptr);
@@ -674,25 +570,21 @@ LogDataStore::getDiskBloat() const
 }
 
 vespalib::string
-LogDataStore::createFileName(NameId id) const
-{
+LogDataStore::createFileName(NameId id) const {
     return id.createName(getBaseDir());
 }
 vespalib::string
-LogDataStore::createDatFileName(NameId id) const
-{
+LogDataStore::createDatFileName(NameId id) const {
     return FileChunk::createDatFileName(id.createName(getBaseDir()));
 }
 
 vespalib::string
-LogDataStore::createIdxFileName(NameId id) const
-{
+LogDataStore::createIdxFileName(NameId id) const {
     return FileChunk::createIdxFileName(id.createName(getBaseDir()));
 }
 
 FileChunk::UP
-LogDataStore::createReadOnlyFile(FileId fileId, NameId nameId)
-{
+LogDataStore::createReadOnlyFile(FileId fileId, NameId nameId) {
     FileChunk::UP file(new FileChunk(fileId, nameId, getBaseDir(), _tune,
                                      _bucketizer.get(), _config.crcOnReadDisabled()));
     file->enableRead();
@@ -750,7 +642,6 @@ vespalib::string LogDataStore::ls(const NameIdSet & partList)
     return s;
 }
 
-
 static bool
 hasNonHeaderData(const vespalib::string &name)
 {
@@ -779,7 +670,6 @@ hasNonHeaderData(const vespalib::string &name)
     }
     return fSize > headerLen;
 }
-
 
 void
 LogDataStore::verifyModificationTime(const NameIdSet & partList)
@@ -855,7 +745,6 @@ LogDataStore::preload()
     _active = FileId(_fileChunks.size() - 1);
     _prevActive = _active.prev();
 }
-
 
 LogDataStore::NameIdSet
 LogDataStore::eraseEmptyIdxFiles(const NameIdSet &partList)
@@ -993,7 +882,6 @@ public:
     void close() override { }
 };
 
-
 class LogDataStore::WrapVisitorProgress : public IFileChunkVisitorProgress
 {
     IDataStoreVisitorProgress &_progress;
@@ -1030,7 +918,6 @@ public:
     }
 };
 
-
 void
 LogDataStore::internalFlushAll()
 {
@@ -1038,7 +925,6 @@ LogDataStore::internalFlushAll()
     _tlSyncer.sync(flushToken);
     flush(flushToken);
 }
-
 
 void
 LogDataStore::accept(IDataStoreVisitor &visitor,
@@ -1082,7 +968,6 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
     }
 }
 
-
 double
 LogDataStore::getVisitCost() const
 {
@@ -1092,7 +977,6 @@ LogDataStore::getVisitCost() const
     }
     return totalChunks;
 }
-
 
 class LogDataStore::FileChunkHolder
 {
@@ -1113,7 +997,6 @@ LogDataStore::holdFileChunk(FileId fileId)
     return std::unique_ptr<FileChunkHolder>(new FileChunkHolder(*this, fileId));
 }
 
-
 void
 LogDataStore::unholdFileChunk(FileId fileId)
 {
@@ -1123,7 +1006,6 @@ LogDataStore::unholdFileChunk(FileId fileId)
     --_holdFileChunks[fileId.getId()];
     // No signalling, compactWorst() sleeps and retries
 }
-
 
 DataStoreStorageStats
 LogDataStore::getStorageStats() const
@@ -1137,7 +1019,6 @@ LogDataStore::getStorageStats() const
     return DataStoreStorageStats(diskFootprint, diskBloat, maxBucketSpread,
                                  lastSerialNum, lastFlushedSerialNum);
 }
-
 
 std::vector<DataStoreFileChunkStats>
 LogDataStore::getFileChunkStats() const
@@ -1154,7 +1035,5 @@ LogDataStore::getFileChunkStats() const
     std::sort(result.begin(), result.end());
     return std::move(result);
 }
-
-
 
 } // namespace search
