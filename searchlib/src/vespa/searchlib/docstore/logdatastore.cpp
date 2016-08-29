@@ -994,7 +994,7 @@ LogDataStore::holdFileChunk(FileId fileId)
     assert(fileId.getId() < _holdFileChunks.size());
     assert(_holdFileChunks[fileId.getId()] < 2000u);
     ++_holdFileChunks[fileId.getId()];
-    return std::unique_ptr<FileChunkHolder>(new FileChunkHolder(*this, fileId));
+    return std::make_unique<FileChunkHolder>(*this, fileId);
 }
 
 void
