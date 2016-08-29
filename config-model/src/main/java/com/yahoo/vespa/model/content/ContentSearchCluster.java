@@ -44,6 +44,10 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     public void prepare() {
         repo = getRoot().getDeployState().getDocumentModel().getDocumentManager();
+        List<SearchNode> allBackends = getSearchNodes();
+        for (AbstractSearchCluster cluster : clusters.values()) {
+            cluster.prepareToDistributeFiles(allBackends);
+        }
     }
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
