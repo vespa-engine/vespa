@@ -19,20 +19,7 @@ KeySet::KeySet(const IDocumentStore::LidVector &keys) :
 
 bool
 KeySet::contains(const KeySet &rhs) const {
-    if (rhs._keys.size() > _keys.size()) { return false; }
-
-    uint32_t b(0);
-    for (uint32_t a(0); a < _keys.size() && b < rhs._keys.size();) {
-        if (_keys[a] < rhs._keys[b]) {
-            a++;
-        } else if (_keys[a] == rhs._keys[b]) {
-            a++;
-            b++;
-        } else {
-            return false;
-        }
-    }
-    return b == rhs._keys.size();
+    return std::includes(_keys.begin(), _keys.end(), rhs._keys.begin(), rhs._keys.end());
 }
 
 BlobSet::BlobSet() :
