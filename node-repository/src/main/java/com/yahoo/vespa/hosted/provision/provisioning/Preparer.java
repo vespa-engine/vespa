@@ -75,15 +75,15 @@ class Preparer {
      * in groups with index number above or equal the group count
      */
     private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
-        List<Node> surplusActiveNodes = new ArrayList<>(0);
+        List<Node> surplusNodes = new ArrayList<>(0);
         for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
             if (Integer.parseInt(nodeCluster.group().get().value()) >= wantedGroups)
-                surplusActiveNodes.add(node);
+                surplusNodes.add(node);
         }
-        return surplusActiveNodes;
+        return surplusNodes;
     }
     
     /** Move nodes from unwanted groups to wanted groups to avoid lingering groups consisting of retired nodes */
