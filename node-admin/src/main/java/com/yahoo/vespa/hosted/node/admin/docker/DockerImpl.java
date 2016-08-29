@@ -14,6 +14,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.core.RemoteApiVersion;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
@@ -109,14 +110,29 @@ public class DockerImpl implements Docker {
 
     @Inject
     public DockerImpl(final DockerConfig config) {
-        this(DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
+        RemoteApiVersion remoteApiVersion;
+        try {
+             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance().versionCmd().exec().getApiVersion());
+            NODE_ADMIN_LOGGER.info("Found version of remote docker API: "+ remoteApiVersion);
+            // From version 1.24 a field was removed which causes trouble with the current docker java code.
+            // When this is fixed, we can remove this and do not specify version.
+            if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
+                remoteApiVersion = RemoteApiVersion.VERSION_1_23;
+                NODE_ADMIN_LOGGER.info("Found version 1.24 or newer of remote API, using 1.23.");
+            }
+        } catch (Exception e) {
+            NODE_ADMIN_LOGGER.error("Failed when trying to figure out remote API version of docker, using 1.23", e);
+            remoteApiVersion = RemoteApiVersion.VERSION_1_23;
+        }
+
+       // DockerClientImpl.getInstance().infoCmd().exec().getServerVersion();
+        this.docker = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
                 // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                //.withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
-                .withDockerHost(config.uri().replace("https", "tcp"))
+                .withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
+                //.withDockerHost(config.uri().replace("https", "tcp"))
                 //.withDockerTlsVerify(false)
                 //.withCustomSslConfig(new VespaSSLConfig(config))
-                // We can specify which version of the docker remote API to use, otherwise, use latest
-                // e.g. .withApiVersion("1.23")
+                .withApiVersion(remoteApiVersion)
                 .build())
                 .withDockerCmdExecFactory(
                         new JerseyDockerCmdExecFactory()
@@ -124,7 +140,7 @@ public class DockerImpl implements Docker {
                                 .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
                                 .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
                                 .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
-                ));
+                );
     }
 
     @Override
