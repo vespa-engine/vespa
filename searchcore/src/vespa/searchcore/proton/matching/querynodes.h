@@ -67,13 +67,12 @@ public:
     const FieldEntry *lookupField(uint32_t fieldId) const override final;
 };
 
-namespace {
-template <typename NodeType> uint32_t numTerms(const NodeType &) { return 1; }
+template <typename NodeType> inline uint32_t numTerms(const NodeType &) { return 1; }
+
 template <>
-uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) {
+inline uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) {
     return n.getChildren().size();
 }
-} // namespace proton::matching::<unnamed>
 
 template <typename Base>
 struct ProtonTermBase : public Base,
