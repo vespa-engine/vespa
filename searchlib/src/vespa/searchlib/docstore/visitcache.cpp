@@ -81,12 +81,6 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     }
 }
 
-void CompressedBlobSet::swap(CompressedBlobSet & rhs) {
-    std::swap(_compression, rhs._compression);
-    _positions.swap(rhs._positions);
-    _buffer.swap(rhs._buffer);
-}
-
 BlobSet
 CompressedBlobSet::getBlobSet() const
 {
@@ -128,7 +122,7 @@ bool
 VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
     VisitCollector collector;
     _backingStore.read(key.getKeys(), collector);
-    CompressedBlobSet(_compression, collector.getBlobSet()).swap(blobs);
+    blobs = CompressedBlobSet(_compression, collector.getBlobSet());
     return ! blobs.empty();
 }
 
