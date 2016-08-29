@@ -134,7 +134,7 @@ private:
     class Cache : public vespalib::cache<CacheParams> {
     public:
         Cache(BackingStore & b, size_t maxBytes);
-        void removeKey(uint32_t);
+        void removeKey(uint32_t key);
         void locateAndInvalidateOtherSubsets(const KeySet & keys);
     private:
         using IdSet = vespalib::hash_set<uint64_t>;
