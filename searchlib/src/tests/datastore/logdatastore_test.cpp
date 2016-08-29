@@ -544,7 +544,7 @@ TEST("test that the integrated visit cache works.") {
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774)); // From the individual cache.
 
     vcs.verifyVisit({7,9,17,19,67,88}, false);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
@@ -553,9 +553,9 @@ TEST("test that the integrated visit cache works.") {
     vcs.verifyVisit({7,9,17,19,67,88}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 20335));
     vcs.rewrite(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20130));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20130)); // From the individual cache.
     vcs.rewrite(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 19364));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 19364)); // From the both caches.
     vcs.verifyVisit({7,9,17,19,67,88}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 19948));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
