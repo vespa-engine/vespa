@@ -180,6 +180,10 @@ grow.numdocs int default=10000 restart
 ## Control cache size in bytes.
 summary.cache.maxbytes long default=0 restart
 
+## Include visits in the cache, if the visitoperation allows it.
+## This will enable another separate cache of summary.cache.maxbytes size.
+summary.cache.allowvisitcaching bool default=false restart
+
 ## Control number of cache entries preallocated.
 ## Default is no preallocation
 ## Can be set to a higher number to avoid resizing.

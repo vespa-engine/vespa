@@ -4,12 +4,14 @@
 LOG_SETUP("datastore_test");
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/docstore/logdatastore.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
+#include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/repo/configbuilder.h>
 #include <iostream>
 
 #include <vespa/vespalib/util/exceptions.h>
@@ -29,6 +31,9 @@ public:
     }
 };
 
+using namespace search;
+using namespace search::docstore;
+using search::index::DummyFileHeaderContext;
 
 namespace {
 
@@ -120,7 +125,6 @@ checkStats(IDataStore &store,
                  calcDiskUsage(chunkStats));
     EXPECT_EQUAL(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
-
 
 }
 
@@ -268,6 +272,21 @@ TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
 }
 
+class TmpDirectory {
+public:
+    TmpDirectory(const vespalib::string & dir) : _dir(dir)
+    {
+        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
+        ASSERT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
+    }
+    ~TmpDirectory() {
+        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
+    }
+    const vespalib::string & getDir() const { return _dir; }
+private:
+    vespalib::string _dir;
+};
+
 void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz)
 {
     vespalib::DataBuffer buf;
@@ -314,6 +333,245 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     EXPECT_EQUAL(4096u + 480u, datastore.getDiskHeaderFootprint());
     EXPECT_EQUAL(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
+}
+
+class VisitStore {
+public:
+    VisitStore() :
+        _myDir("visitcache"),
+        _config(),
+        _fileHeaderContext(),
+        _executor(_config.getNumThreads(), 128*1024),
+        _tlSyncer(),
+        _datastore(_executor, _myDir.getDir(), _config,
+                           GrowStrategy(), TuneFileSummary(),
+                           _fileHeaderContext, _tlSyncer, NULL)
+    { }
+    IDataStore & getStore() { return _datastore; }
+private:
+    TmpDirectory                  _myDir;
+    LogDataStore::Config          _config;
+    DummyFileHeaderContext        _fileHeaderContext;
+    vespalib::ThreadStackExecutor _executor;
+    MyTlSyncer                    _tlSyncer;
+    LogDataStore                  _datastore;
+};
+
+TEST("test visit cache does not cache empty ones and is able to access some backing store.") {
+    const char * A7 = "aAaAaAa";
+    VisitStore store;
+    IDataStore & datastore = store.getStore();
+
+    VisitCache visitCache(datastore, 100000, document::CompressionConfig::Type::LZ4);
+    EXPECT_EQUAL(0u, visitCache.read({1}).size());
+    EXPECT_TRUE(visitCache.read({1}).empty());
+    datastore.write(1,1, A7, 7);
+    EXPECT_EQUAL(0u, visitCache.read({2}).size());
+    CompressedBlobSet cbs = visitCache.read({1});
+    EXPECT_FALSE(cbs.empty());
+    EXPECT_EQUAL(19u, cbs.size());
+    BlobSet bs(cbs.getBlobSet());
+    EXPECT_EQUAL(7u, bs.get(1).size());
+    EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
+    datastore.write(2,2, A7, 7);
+    datastore.write(3,3, A7, 7);
+    datastore.write(4,4, A7, 7);
+    visitCache.remove(1);
+    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    EXPECT_EQUAL(2u, visitCache.read({2,4,5}).getBlobSet().getPositions().size());
+    datastore.remove(5, 3);
+    EXPECT_EQUAL(2u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+    visitCache.remove(3);
+    EXPECT_EQUAL(1u, visitCache.read({1,3}).getBlobSet().getPositions().size());
+}
+
+using vespalib::string;
+using document::DataType;
+using document::Document;
+using document::DocumentId;
+using document::DocumentType;
+using document::DocumentTypeRepo;
+using vespalib::asciistream;
+using index::DummyFileHeaderContext;
+
+namespace {
+const string doc_type_name = "test";
+const string header_name = doc_type_name + ".header";
+const string body_name = doc_type_name + ".body";
+
+document::DocumenttypesConfig
+makeDocTypeRepoConfig()
+{
+    const int32_t doc_type_id = 787121340;
+    document::config_builder::DocumenttypesConfigBuilderHelper builder;
+    builder.document(doc_type_id,
+                     doc_type_name,
+                     document::config_builder::Struct(header_name),
+                     document::config_builder::Struct(body_name).
+                     addField("main", DataType::T_STRING).
+                     addField("extra", DataType::T_STRING));
+    return builder.config();
+}
+
+
+Document::UP
+makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
+{
+    asciistream idstr;
+    idstr << "id:test:test:: " << i;
+    DocumentId id(idstr.str());
+    const DocumentType *docType = repo.getDocumentType(doc_type_name);
+    Document::UP doc(new Document(*docType, id));
+    ASSERT_TRUE(doc.get());
+    asciistream mainstr;
+    mainstr << "static text" << i << " body something";
+    for (uint32_t j = 0; j < 10; ++j) {
+        mainstr << (j + i * 1000) << " ";
+    }
+    mainstr << " and end field";
+    doc->set("main", mainstr.c_str());
+    if (extra_field) {
+        doc->set("extra", "foo");
+    }
+
+    return doc;
+}
+
+}
+
+class VisitCacheStore {
+public:
+    VisitCacheStore() :
+        _myDir("visitcache"),
+        _repo(makeDocTypeRepoConfig()),
+        _config(DocumentStore::Config(document::CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
+                LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,
+                    WriteableFileChunk::Config(document::CompressionConfig(), 16384, 64))),
+        _fileHeaderContext(),
+        _executor(_config.getLogConfig().getNumThreads(), 128*1024),
+        _tlSyncer(),
+        _datastore(_executor, _myDir.getDir(), _config,
+                           GrowStrategy(), TuneFileSummary(),
+                           _fileHeaderContext, _tlSyncer, NULL),
+        _inserted(),
+        _serial(1)
+    { }
+    IDocumentStore & getStore() { return _datastore; }
+    void write(uint32_t id) {
+        write(id, makeDoc(_repo, id, true));
+    }
+    void rewrite(uint32_t id) {
+        write(id, makeDoc(_repo, id, false));
+    }
+    void write(uint32_t id, Document::UP doc) {
+        getStore().write(_serial++, *doc, id);
+        _inserted[id] = std::move(doc);
+    }
+    void remove(uint32_t id) {
+        getStore().remove(_serial++, id);
+        _inserted.erase(id);
+    }
+    void verifyRead(uint32_t id) {
+        verifyDoc(*_datastore.read(id, _repo), id);
+    }
+    void verifyDoc(const Document & doc, uint32_t id) {
+        EXPECT_TRUE(doc == *_inserted[id]);
+    }
+    void verifyVisit(const std::vector<uint32_t> & lids, bool allowCaching) {
+        verifyVisit(lids, lids, allowCaching);
+    }
+    void verifyVisit(const std::vector<uint32_t> & lids, const std::vector<uint32_t> & expected, bool allowCaching) {
+        VerifyVisitor vv(*this, expected, allowCaching);
+        _datastore.visit(lids, _repo, vv);
+    }
+private:
+    class VerifyVisitor : public IDocumentVisitor {
+    public:
+        VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching) :
+            _vcs(vcs),
+            _expected(),
+            _actual(),
+            _allowVisitCaching(allowCaching)
+        {
+            for (uint32_t lid : lids) {
+                _expected.insert(lid);
+            }
+        }
+        ~VerifyVisitor() {
+            EXPECT_EQUAL(_expected.size(), _actual.size());
+        }
+        void visit(uint32_t lid, Document::UP doc) override {
+            EXPECT_TRUE(_expected.find(lid) != _expected.end());
+            EXPECT_TRUE(_actual.find(lid) == _actual.end());
+            _actual.insert(lid);
+            _vcs.verifyDoc(*doc, lid);
+        }
+        bool allowVisitCaching() const { return _allowVisitCaching; }
+    private:
+        VisitCacheStore              &_vcs;
+        vespalib::hash_set<uint32_t>  _expected;
+        vespalib::hash_set<uint32_t>  _actual;
+        bool                          _allowVisitCaching;
+    };
+    TmpDirectory                     _myDir;    
+    document::DocumentTypeRepo       _repo;
+    LogDocumentStore::Config         _config;
+    DummyFileHeaderContext           _fileHeaderContext;
+    vespalib::ThreadStackExecutor    _executor;
+    MyTlSyncer                       _tlSyncer;
+    LogDocumentStore                 _datastore;
+    std::map<uint32_t, Document::UP> _inserted;
+    SerialNum                        _serial;
+};
+
+void
+verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, size_t memory_used) {
+    EXPECT_EQUAL(hits, cs.hits);
+    EXPECT_EQUAL(misses, cs.misses);
+    EXPECT_EQUAL(elements, cs.elements);
+    EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 10);  // We allow +- 10 as visitorder and hence compressability is non-deterministic.
+    EXPECT_GREATER_EQUAL(memory_used+10,  cs.memory_used);
+}
+
+TEST("test that the integrated visit cache works.") {
+    VisitCacheStore vcs;
+    IDocumentStore & ds = vcs.getStore();
+    for (size_t i(1); i <= 100; i++) {
+        vcs.write(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 0, 0, 0));
+
+    for (size_t i(1); i <= 100; i++) {
+        vcs.verifyRead(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, 19774));
+    for (size_t i(1); i <= 100; i++) {
+        vcs.verifyRead(i);
+    }
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774)); // From the individual cache.
+
+    vcs.verifyVisit({7,9,17,19,67,88}, false);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, 20335));
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 20335));
+    vcs.rewrite(8);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20130)); // From the individual cache.
+    vcs.rewrite(7);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 19364)); // From the both caches.
+    vcs.verifyVisit({7,9,17,19,67,88}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 19948));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 19999));
+    vcs.rewrite(17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19167));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, 19821));
+    vcs.remove(17);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19167));
+    vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 19750));
 }
 
 TEST("testWriteRead") {
@@ -408,23 +666,8 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
 #endif
 }
 
-class GuardDirectory {
-public:
-    GuardDirectory(const vespalib::string & dir) : _dir(dir)
-    {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-        EXPECT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
-    }
-    ~GuardDirectory() {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
-    }
-    const vespalib::string & getDir() const { return _dir; }
-private:
-    vespalib::string _dir;
-};
-
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
-    GuardDirectory testDir("flushtime");
+    TmpDirectory testDir("flushtime");
     fastos::TimeStamp before(fastos::ClockSystem::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
