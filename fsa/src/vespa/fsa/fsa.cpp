@@ -299,7 +299,7 @@ std::string FSA::revLookup(hash_t hash) const
 
   if(!hasPerfectHash())
     return std::string();
-    last_symbol=current_symbol=0;
+  last_symbol=current_symbol=0;
 
   while(current<hash){
     last_symbol=current_symbol=0;

@@ -153,11 +153,8 @@ class Test : public vespalib::TestApp {
 
     void checkString(const string &str, const FieldValue *value);
     void checkData(const search::RawBuf &data, const FieldValue *value);
-    void checkArray(const string &str, const FieldValue *value);
     template <unsigned int N>
     void checkArray(const char *(&str)[N], const FieldValue *value);
-    Document getDoc(const string &name, const Document *doc);
-    void setIndexField(const string &name);
     void setSummaryField(const string &name);
     void setAttributeField(const string &name);
 
@@ -436,14 +433,6 @@ void Test::checkData(const search::RawBuf &buf, const FieldValue *value) {
     EXPECT_TRUE(memcmp(buf.GetDrainPos(), got.first, got.second) == 0);
 }
 
-void Test::checkArray(const string &str, const FieldValue *value) {
-    ASSERT_TRUE(value);
-    const ArrayFieldValue *a = dynamic_cast<const ArrayFieldValue *>(value);
-    ASSERT_TRUE(a);
-    EXPECT_EQUAL(1u, a->size());
-    checkString(str, &(*a)[0]);
-}
-
 template <unsigned int N>
 void Test::checkArray(const char *(&str)[N], const FieldValue *value) {
     ASSERT_TRUE(value);
@@ -453,16 +442,6 @@ void Test::checkArray(const char *(&str)[N], const FieldValue *value) {
     for (size_t i = 0; i < a->size() && i < N; ++i) {
         checkString(str[i], &(*a)[i]);
     }
-}
-
-Document Test::getDoc(const string &name, const Document *doc) {
-    ASSERT_TRUE(doc);
-    return getValueAs<Document>(name, *doc);
-}
-
-void Test::setIndexField(const string &field) {
-    _schema->addIndexField(
-            Schema::IndexField(field, Schema::STRING));
 }
 
 void Test::setSummaryField(const string &field) {

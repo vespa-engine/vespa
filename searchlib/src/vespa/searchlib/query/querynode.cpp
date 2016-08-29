@@ -9,21 +9,6 @@ namespace search
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS(search, QueryNode, vespalib::Identifiable);
 
-void TestClose(QueryNode::LP & qn, QueryNodeList & currentNodeList)
-{
-    if (&qn != NULL) {
-        QueryConnector * qc = dynamic_cast<QueryConnector *> (qn.get());
-        if (qc) {
-            // qc->QueryNodeList = currentNodeList;
-            for (size_t i=0; i < currentNodeList.size(); i++) {
-                qc->push_back(currentNodeList[i]);
-            }
-            currentNodeList.clear();
-            currentNodeList.push_back(qn);
-        }
-    }
-}
-
 void NewNode(QueryNode::LP & qn, QueryNodeList & currentNodeList, size_t count=0)
 {
     if ( ! currentNodeList.empty() ) {

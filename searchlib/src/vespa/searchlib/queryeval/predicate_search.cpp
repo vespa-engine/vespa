@@ -29,13 +29,13 @@ public:
     SkipMinFeatureSSE2(const uint8_t * min_feature, const uint8_t * kv, size_t sz);
 private:
     typedef char v16u8 __attribute__((vector_size(16)));
-    VESPA_DLL_LOCAL uint32_t next() override;
+    uint32_t next() override;
     uint32_t cmp32(size_t j) {
         v16u8 r0 = _kv[j*2] >= _min_feature[j*2];
         v16u8 r1 = _kv[j*2+1] >= _min_feature[j*2+1];
         return __builtin_ia32_pmovmskb128(r0) | (__builtin_ia32_pmovmskb128(r1) << 16);
     }
-    VESPA_DLL_LOCAL void advance();
+    void advance();
     const v16u8 * _min_feature;
     const v16u8 * _kv;
     uint32_t _sz;

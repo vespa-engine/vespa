@@ -98,7 +98,7 @@ private:
    int ReceiveBufferSpace ()
    {
       return static_cast<int>
-          (reinterpret_cast<unsigned char *>(&_receiveBuffer[BUFFER_SIZE]) -
+          (reinterpret_cast<unsigned char *>(_receiveBuffer + BUFFER_SIZE) -
            _receivePtr);
    }
 

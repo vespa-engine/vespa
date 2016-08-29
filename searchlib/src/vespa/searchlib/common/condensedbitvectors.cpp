@@ -55,10 +55,10 @@ private:
     }
 
     template <typename F>
-    VESPA_DLL_LOCAL void computeCountVector(T mask, CountVector & cv, F func) const __attribute__((noinline));
+    void computeCountVector(T mask, CountVector & cv, F func) const __attribute__((noinline));
 
     template <typename F>
-    VESPA_DLL_LOCAL void computeTail(T mask, CountVector & cv, F func, size_t i) const __attribute__((noinline));
+    void computeTail(T mask, CountVector & cv, F func, size_t i) const __attribute__((noinline));
 
     void set(Key key, uint32_t index, bool v) override {
         assert(key < getKeyCapacity());
@@ -82,7 +82,7 @@ private:
 
 template <typename T>
 template <typename F>
-VESPA_DLL_LOCAL void
+void
 CondensedBitVectorT<T>::computeCountVector(T mask, CountVector & cv, F func) const
 {
     size_t i(0);
@@ -99,7 +99,7 @@ CondensedBitVectorT<T>::computeCountVector(T mask, CountVector & cv, F func) con
 
 template <typename T>
 template <typename F>
-VESPA_DLL_LOCAL void
+void
 CondensedBitVectorT<T>::computeTail(T mask, CountVector & cv, F func, size_t i) const
 {
     for (; i < cv.size(); i++) {

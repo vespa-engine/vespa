@@ -26,7 +26,7 @@ public:
         union { float f; UIntType u; } val;
         val.f=value;
         return (static_cast<IntType>(val.u) >= 0)
-                ? (val.u ^ (std::numeric_limits<IntType>::max() + 1))
+                ? (val.u ^ (UIntType(std::numeric_limits<IntType>::max()) + 1))
                 : (val.u ^ std::numeric_limits<UIntType>::max());
     }
 };
@@ -63,7 +63,7 @@ public:
         union { double f; UIntType u; } val;
         val.f=value;
         return (static_cast<IntType>(val.u) >= 0)
-                ? (val.u ^ (std::numeric_limits<IntType>::max() + 1))
+                ? (val.u ^ (UIntType(std::numeric_limits<IntType>::max()) + 1))
                 : (val.u ^ std::numeric_limits<UIntType>::max());
     }
 };
@@ -216,7 +216,7 @@ public:
     typedef int32_t  IntType;
     typedef uint32_t UIntType;
     typedef std::less<InputType> Compare;
-    static inline UIntType convert(IntType value)  { return value ^ (std::numeric_limits<IntType>::max() + 1); }
+    static inline UIntType convert(IntType value)  { return value ^ (UIntType(std::numeric_limits<IntType>::max()) + 1); }
 };
 template<>
 class convertForSort<int32_t, false>
@@ -236,7 +236,7 @@ public:
     typedef int64_t  IntType;
     typedef uint64_t UIntType;
     typedef std::less<InputType> Compare;
-    static inline UIntType convert(IntType value)  { return value ^ (std::numeric_limits<IntType>::max() + 1); }
+    static inline UIntType convert(IntType value)  { return value ^ (UIntType(std::numeric_limits<IntType>::max()) + 1); }
 };
 template<>
 class convertForSort<int64_t, false>

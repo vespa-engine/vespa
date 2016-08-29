@@ -5,12 +5,4 @@
 
 namespace vbench {
 
-namespace {
-
-struct DummyItem {};
-
-} // namespace vbench::<unnamed>
-
-template class HandlerThread<DummyItem>;
-
 } // namespace vbench
