@@ -162,6 +162,13 @@ VisitCache::Cache::readSet(const KeySet & key)
 void
 VisitCache::Cache::locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys)
 {
+    // Due to the implementation of insert where the global lock is released and the fact
+    // that 2 overlapping keysets kan have different keys and use different ValueLock
+    // We do have a theoretical issue.
+    // The reason it is theoretical is that for all practical purpose this inconsitency
+    // is prevented by the storage layer above alloing only one visit/mutating operation to a single bucket.
+    // So for that reason we will just merge this one to get testing started. 
+    // The final fix will come in 2 days.
     IdSet otherSubSets = findSetsContaining(cacheGuard, keys);
     assert(otherSubSets.size() <= 1);
     if (! otherSubSets.empty()) {
