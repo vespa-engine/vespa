@@ -58,8 +58,8 @@ TestMaster::checkFailed(const vespalib::LockGuard &guard,
     ThreadState &thread = threadState(guard);
     ++thread.failCnt;
     ++_state.failCnt;
-    fprintf(stderr, "%s: ERROR: check failure #%zu: '%s' in thread '%s' (%s:%d)\n",
-            _name.c_str(), _state.failCnt, str, thread.name.c_str(), skip_path(file), line);
+    fprintf(stderr, "%s:%d: error: check failure #%zu: '%s' in thread '%s' (%s)\n",
+            skip_path(file), line, _state.failCnt, str, thread.name.c_str(), _name.c_str());
     if (!thread.traceStack.empty()) {
         for (size_t i = thread.traceStack.size(); i-- > 0; ) {
             const TraceItem &item = thread.traceStack[i];
