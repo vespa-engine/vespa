@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public class ModelProvisioningTest {
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
-                        "  <nodes count='2' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
+                        "  <nodes count='2' allocated-memory='45%' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
                         "</jdisc>" +
                         "</services>";
         String hosts ="<hosts>"
@@ -102,12 +103,14 @@ public class ModelProvisioningTest {
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
+        assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage(), is(Optional.empty()));
 
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getJvmArgs(), is("-verbosegc"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getJvmArgs(), is("-verbosegc"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
-
+        assertThat(model.getContainerClusters().get("mydisc2").getMemoryPercentage(), is(Optional.of(45)));
+        
         HostSystem hostSystem = model.getHostSystem();
         assertNotNull(hostSystem.getHostByHostname("myhost0"));
         assertNotNull(hostSystem.getHostByHostname("myhost1"));
