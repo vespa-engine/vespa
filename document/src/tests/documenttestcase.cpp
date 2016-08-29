@@ -1420,8 +1420,9 @@ DocumentTest::testDeserializeMultiple()
 {
     TestDocRepo testDocRepo;
     const DocumentTypeRepo& repo(testDocRepo.getTypeRepo());
-    const DocumentType& docType(*repo.getDocumentType("testdoctype1"));
-    CPPUNIT_ASSERT(&docType != 0);
+    const DocumentType* docTypePtr(repo.getDocumentType("testdoctype1"));
+    CPPUNIT_ASSERT(docTypePtr != 0);
+    const DocumentType & docType = *docTypePtr;
 
     StructFieldValue sv1(docType.getField("mystruct").getDataType());
 
