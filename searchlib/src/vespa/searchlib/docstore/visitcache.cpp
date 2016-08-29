@@ -67,20 +67,6 @@ CompressedBlobSet::CompressedBlobSet() :
 {
 }
 
-CompressedBlobSet::CompressedBlobSet(CompressedBlobSet && rhs) :
-    _compression(std::move(rhs._compression)),
-    _positions(std::move(rhs._positions)),
-    _buffer(std::move(rhs._buffer))
-{
-}
-
-CompressedBlobSet & CompressedBlobSet::operator=(CompressedBlobSet && rhs) {
-    _compression = std::move(rhs._compression);
-    _positions = std::move(rhs._positions);
-    _buffer = std::move(rhs._buffer);
-    return *this;
-}
-
 CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed) :
     _compression(compression.type),
     _positions(uncompressed.getPositions()),

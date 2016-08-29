@@ -68,8 +68,8 @@ class CompressedBlobSet {
 public:
     CompressedBlobSet();
     CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed);
-    CompressedBlobSet(CompressedBlobSet && rhs);
-    CompressedBlobSet & operator=(CompressedBlobSet && rhs);
+    CompressedBlobSet(CompressedBlobSet && rhs) = default;
+    CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
     void swap(CompressedBlobSet & rhs);
