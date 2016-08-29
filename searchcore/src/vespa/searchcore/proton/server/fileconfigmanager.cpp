@@ -344,13 +344,15 @@ void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
 {
     vespalib::string path = snapDir + "/" + fileName;
     if (access(path.c_str(), R_OK) == 0) {
-        int fd = creat(path.c_str(), 0444);
-        if (fd < 0) {
-            LOG(error, "Could not create empty file '%s'", path.c_str());
-            return;
-        }
-        close(fd);
+        // exists OK
+        return;
     }
+    int fd = creat(path.c_str(), 0444);
+    if (fd < 0) {
+        LOG(error, "Could not create empty file '%s': %s", path.c_str(), strerror(errno));
+        return;
+    }
+    close(fd);
 }
 
 }
