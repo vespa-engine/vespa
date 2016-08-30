@@ -10,6 +10,7 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -504,6 +505,7 @@ public abstract class Item implements Cloneable {
      * This cannot be set to null but can be set to Language.UNKNOWN 
      */
     public void setLanguage(Language language) {
+        Objects.requireNonNull(language, "Language cannot be null");
         this.language = language;
     }
     

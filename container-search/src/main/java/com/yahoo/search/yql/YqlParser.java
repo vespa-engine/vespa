@@ -676,7 +676,6 @@ public class YqlParser implements Parser {
         Language language = Language.fromLanguageTag(languageTag);
         if (language != Language.UNKNOWN) return language;
         language = detector.detect(wordData, null).getLanguage();
-        System.out.println("Detected language using " + detector + " Result: " + language);
         if (language != Language.UNKNOWN) return language;
         return Language.ENGLISH;
     }
