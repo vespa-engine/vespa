@@ -29,8 +29,13 @@ public class DockerTest {
     /**
      * To run these tests:
      *  1. Remove Ignore annotations
-     *  2. (Temporary) Manually create the docker network used by DockerImpl by running:
+     *  2. Change ownership of docker.sock
+     *      $ sudo chown <your username> /var/run/docker.sock
+     *  3. (Temporary) Manually create the docker network used by DockerImpl by running:
      *      $ sudo docker network create --ipv6 --gateway=<your local IPv6 address> --subnet=fe80::1/16 habla
+     *  4. (Temporary) Manually build docker test image. Inside src/test/resources/simple-ipv6-server run:
+     *      $ sudo docker build -t "simple-ipv6-server:Dockerfile" .
+     *  5. (Temporary) Comment out setup() and shutdown()
      */
     private static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
             .caCertPath("")     // Temporary setting it to empty as this field is required, in the future
@@ -59,6 +64,7 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
+    @Ignore
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         HostName hostName1 = new HostName("docker10.test.yahoo.com");
