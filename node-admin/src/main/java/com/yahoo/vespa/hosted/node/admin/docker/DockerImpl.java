@@ -28,7 +28,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.admin.util.VespaSSLConfig;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -110,9 +109,16 @@ public class DockerImpl implements Docker {
 
     @Inject
     public DockerImpl(final DockerConfig config) {
+        JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
+                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
+                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
+                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
+                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+
         RemoteApiVersion remoteApiVersion;
         try {
-             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance().versionCmd().exec().getApiVersion());
+             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance()
+                     .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
             NODE_ADMIN_LOGGER.info("Found version of remote docker API: "+ remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
             // When this is fixed, we can remove this and do not specify version.
@@ -127,20 +133,10 @@ public class DockerImpl implements Docker {
 
        // DockerClientImpl.getInstance().infoCmd().exec().getServerVersion();
         this.docker = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                //.withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
-                .withDockerHost(config.uri().replace("https", "tcp"))
-                //.withDockerTlsVerify(false)
-                //.withCustomSslConfig(new VespaSSLConfig(config))
+                .withDockerHost(config.uri())
                 .withApiVersion(remoteApiVersion)
                 .build())
-                .withDockerCmdExecFactory(
-                        new JerseyDockerCmdExecFactory()
-                                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
-                );
+                .withDockerCmdExecFactory(dockerFactory);
     }
 
     @Override
