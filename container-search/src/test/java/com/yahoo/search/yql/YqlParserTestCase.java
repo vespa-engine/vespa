@@ -3,6 +3,7 @@ package com.yahoo.search.yql;
 
 import com.yahoo.component.Version;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.language.Language;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.AndItem;
@@ -61,6 +62,13 @@ public class YqlParserTestCase {
     public void requireThatDefaultsAreSane() {
         assertTrue(parser.isQueryParser());
         assertNull(parser.getDocTypes());
+    }
+    
+    @Test
+    public void testLanguageDetection() {
+        // SimpleDetector used here can detect japanese and will set that as language at the root of the user input
+        QueryTree tree = parse("select * from sources * where userInput(\"\u30ab\u30bf\u30ab\u30ca\");");
+        assertEquals(Language.JAPANESE, tree.getRoot().getLanguage());
     }
 
     @Test
