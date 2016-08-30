@@ -33,21 +33,30 @@ public:
 
 private:
     struct TaggedTask {
-        Task     *task;
-        uint32_t  token;
-        TaggedTask() : task(0), token(0) {}
-        TaggedTask(Task *task_in, uint32_t token_in)
-            : task(task_in), token(token_in) {}
+        Task::UP task;
+        uint32_t token;
+        TaggedTask() : task(nullptr), token(0) {}
+        TaggedTask(Task::UP task_in, uint32_t token_in)
+            : task(std::move(task_in)), token(token_in) {}
+        TaggedTask(TaggedTask &&rhs) = default;
+        TaggedTask(const TaggedTask &rhs) = delete;
+        TaggedTask &operator=(const TaggedTask &rhs) = delete;
+        TaggedTask &operator=(TaggedTask &&rhs) {
+            assert(task.get() == nullptr); // no overwrites
+            task = std::move(rhs.task);
+            token = rhs.token;
+            return *this;
+        }
     };
 
     struct Worker {
         Monitor    monitor;
-        bool       idle;
         uint32_t   pre_guard;
-        TaggedTask task;
+        bool       idle;
         uint32_t   post_guard;
-        Worker() : monitor(), idle(false), pre_guard(0xaaaaaaaa), task(), post_guard(0x44444444) {}
-        void verify() { assert((pre_guard == 0xaaaaaaaa) && (post_guard == 0x44444444)); }
+        TaggedTask task;
+        Worker() : monitor(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
+        void verify() { assert((pre_guard == 0xaaaaaaaa) && (post_guard == 0x55555555)); }
     };
 
     struct BarrierCompletion {
@@ -87,7 +96,7 @@ private:
      * @param task the task to assign
      * @param worker an idle worker
      **/
-    void assignTask(const TaggedTask &task, Worker &worker);
+    void assignTask(TaggedTask task, Worker &worker);
 
     /**
      * Obtain a new task to be run by the given worker.  This function

@@ -47,14 +47,14 @@ ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
 }
 
 void
-ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
+ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
 {
     worker.verify();
     MonitorGuard monitor(worker.monitor);
     assert(worker.idle);
-    assert(worker.task.task == 0);
+    assert(worker.task.task.get() == 0);
     worker.idle = false;
-    worker.task = task;
+    worker.task = std::move(task);
     monitor.signal();
 }
 
@@ -64,15 +64,15 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
     worker.verify();
     {
         MonitorGuard monitor(_monitor);
-        if (worker.task.task != 0) {
+        if (!worker.idle) {
             assert(_taskCount != 0);
-            worker.task.task = 0;
             --_taskCount;
             _barrier.completeEvent(worker.task.token);
         }
         unblock_threads(monitor);
         if (!_tasks.empty()) {
-            worker.task = _tasks.front();
+            worker.task = std::move(_tasks.access(0));
+            worker.idle = false;
             _tasks.pop();
             wakeup(monitor);
             return true;
@@ -89,16 +89,20 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             monitor.wait();
         }
     }
-    return (worker.task.task != 0);
+    return (worker.task.task.get() != nullptr);
 }
 
 void
 ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
 {
     Worker worker;
+    worker.verify();
+    assert(worker.idle);
+    assert(worker.task.task.get() == nullptr);
     while (obtainTask(worker)) {
         worker.task.task->run();
-        delete worker.task.task;
+        worker.task.task.reset();
+        assert(!worker.idle);
     }
     _executorCompletion.await(); // to allow unsafe signaling
     worker.verify();
@@ -158,7 +162,7 @@ ThreadStackExecutorBase::execute(Task::UP task)
 {
     MonitorGuard monitor(_monitor);
     if (acceptNewTask(monitor)) {
-        TaggedTask taggedTask(task.release(), _barrier.startEvent());
+        TaggedTask taggedTask(std::move(task), _barrier.startEvent());
         ++_taskCount;
         ++_stats.acceptedTasks;
         _stats.maxPendingTasks = (_taskCount > _stats.maxPendingTasks)
@@ -167,9 +171,9 @@ ThreadStackExecutorBase::execute(Task::UP task)
             Worker *worker = _workers.back();
             _workers.popBack();
             monitor.unlock(); // <- UNLOCK
-            assignTask(taggedTask, *worker);
+            assignTask(std::move(taggedTask), *worker);
         } else {
-            _tasks.push(taggedTask);
+            _tasks.push(std::move(taggedTask));
         }
     } else {
         ++_stats.rejectedTasks;
