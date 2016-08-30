@@ -7,7 +7,6 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.net.HostName;
 import com.yahoo.prelude.*;
 import com.yahoo.prelude.fastsearch.*;
 import com.yahoo.search.Query;
@@ -415,7 +414,6 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
 
         assertFalse(cluster.isRemote("127.0.0.1"));
         assertFalse(cluster.isRemote("localhost"));
-        assertFalse(cluster.isRemote(HostName.getLocalhost()));
 
         if (canFindYahoo) {
             assertTrue(cluster.isRemote(yahoo));
