@@ -7,7 +7,7 @@ namespace initializer {
 
 /*
  * Class representign an initializer task, used to load a data
- * structure from disk durign proton startup.
+ * structure from disk during proton startup.
  */
 class InitializerTask {
 public:

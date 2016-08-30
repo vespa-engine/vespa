@@ -3,6 +3,7 @@ vespa_add_library(searchcore_matching STATIC
     SOURCES
     attribute_limiter.cpp
     blueprintbuilder.cpp
+    constant_value_repo.cpp
     docid_range_scheduler.cpp
     document_scorer.cpp
     fakesearchcontext.cpp
@@ -23,6 +24,7 @@ vespa_add_library(searchcore_matching STATIC
     queryenvironment.cpp
     querylimiter.cpp
     querynodes.cpp
+    ranking_constants.cpp
     requestcontext.cpp
     result_processor.cpp
     session_manager_explorer.cpp
