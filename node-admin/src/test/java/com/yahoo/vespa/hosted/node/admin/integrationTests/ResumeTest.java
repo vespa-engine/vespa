@@ -63,7 +63,7 @@ public class ResumeTest {
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
         NodeRepoMock.addContainerNodeSpec(new ContainerNodeSpec(
-                new HostName("hostName"),
+                new HostName("host1"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
                 NodeState.ACTIVE,
@@ -81,23 +81,23 @@ public class ResumeTest {
         }
 
         while (!DockerMock.getRequests().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
+                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n")) {
             Thread.sleep(10);
         }
 
         assertThat(DockerMock.getRequests(), startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, " +
+                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, " +
                 "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n"));
 
 
         // Check that NodeRepo has received the PATCH update
-        while (!NodeRepoMock.getRequests().startsWith("updateNodeAttributes with HostName: hostName, " +
+        while (!NodeRepoMock.getRequests().startsWith("updateNodeAttributes with HostName: host1, " +
                 "restartGeneration: 1, DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n")) {
             Thread.sleep(10);
         }
 
-        assertThat(NodeRepoMock.getRequests(), startsWith("updateNodeAttributes with HostName: hostName, restartGeneration: 1," +
+        assertThat(NodeRepoMock.getRequests(), startsWith("updateNodeAttributes with HostName: host1, restartGeneration: 1," +
                 " DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n"));
 
         // Force orchestrator to reject the suspend
@@ -137,9 +137,9 @@ public class ResumeTest {
             }
         }
 
-        List<String> expectedRequests = Arrays.asList("Resume for hostName",
-                "Suspend with parent: basehostname and hostnames: [hostName] - Forced response: Optional[Orchestrator reject suspend]",
-                "Suspend with parent: basehostname and hostnames: [hostName] - Forced response: Optional.empty");
+        List<String> expectedRequests = Arrays.asList("Resume for host1",
+                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
+                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty");
 
         // Check that the orchestrator did receive and properly responded to the previous requests
         assertThat(noRepeatingRequests, is(expectedRequests));

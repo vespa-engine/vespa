@@ -69,7 +69,6 @@ public class MultiDockerTest {
         ContainerNodeSpec containerNodeSpec2 =
                 addAndWaitForNode(new HostName("host2"), new ContainerName("container2"), Optional.of(new DockerImage("image2")));
 
-
         NodeRepoMock.updateContainerNodeSpec(
                 containerNodeSpec2.hostname,
                 containerNodeSpec2.wantedDockerImage,
@@ -88,16 +87,15 @@ public class MultiDockerTest {
             Thread.sleep(10);
         }
 
-
         addAndWaitForNode(new HostName("host3"), new ContainerName("container3"), Optional.of(new DockerImage("image1")));
 
         assertThat(DockerMock.getRequests(), is(
-                "startContainer with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }, " +
+                "startContainer with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }, InetAddress: null, " +
                 "minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n" +
 
-                "startContainer with DockerImage: DockerImage { imageId=image2 }, HostName: host2, ContainerName: ContainerName { name=container2 }, " +
+                "startContainer with DockerImage: DockerImage { imageId=image2 }, HostName: host2, ContainerName: ContainerName { name=container2 }, InetAddress: null, " +
                 "minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n" +
@@ -105,7 +103,7 @@ public class MultiDockerTest {
                 "stopContainer with ContainerName: ContainerName { name=container2 }\n" +
                 "deleteContainer with ContainerName: ContainerName { name=container2 }\n" +
 
-                "startContainer with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }, " +
+                "startContainer with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }, InetAddress: null, " +
                 "minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n"));
@@ -144,7 +142,7 @@ public class MultiDockerTest {
         }
 
         while (!DockerMock.getRequests().endsWith("startContainer with DockerImage: " + dockerImage.get() + ", " +
-                "HostName: " + hostName + ", ContainerName: " + containerName + ", minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
+                "HostName: " + hostName + ", ContainerName: " + containerName + ", InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
                 "minMainMemoryAvailableGb: 1.0\nexecuteInContainer with ContainerName: " + containerName + ", " +
                 "args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\nexecuteInContainer with ContainerName: " +
                 containerName + ", args: [/opt/vespa/bin/vespa-nodectl, resume]\n")) {

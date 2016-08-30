@@ -25,7 +25,7 @@ public class DockerOperationsTest {
         final ContainerName containerName = new ContainerName("container-name");
         final String programPath = "/bin/command";
 
-        when(docker.executeInContainer(any(), anyVararg())).thenReturn(new ProcessResult(3, "output"));
+        when(docker.executeInContainer(any(), anyVararg())).thenReturn(new ProcessResult(3, "output", "errors"));
 
         Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(
                 containerName,
@@ -49,12 +49,12 @@ public class DockerOperationsTest {
     @Test
     public void processResultFromNodeProgramWhenPresent() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
-        final ProcessResult actualResult = new ProcessResult(3, "output");
+        final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
         final String programPath = "/bin/command";
         final String[] command = new String[] {programPath, "arg"};
 
         when(docker.executeInContainer(any(), anyVararg()))
-                .thenReturn(new ProcessResult(0, "")) // node program exists
+                .thenReturn(new ProcessResult(0, "", "")) // node program exists
                 .thenReturn(actualResult); // output from node program
 
         Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(

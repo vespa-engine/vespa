@@ -28,7 +28,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.admin.util.VespaSSLConfig;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -72,7 +71,7 @@ public class DockerImpl implements Docker {
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
     private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
     private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
-    private static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
+    static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
     static {
         CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
@@ -110,9 +109,16 @@ public class DockerImpl implements Docker {
 
     @Inject
     public DockerImpl(final DockerConfig config) {
+        JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
+                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
+                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
+                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
+                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+
         RemoteApiVersion remoteApiVersion;
         try {
-             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance().versionCmd().exec().getApiVersion());
+             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance()
+                     .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
             NODE_ADMIN_LOGGER.info("Found version of remote docker API: "+ remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
             // When this is fixed, we can remove this and do not specify version.
@@ -127,20 +133,10 @@ public class DockerImpl implements Docker {
 
        // DockerClientImpl.getInstance().infoCmd().exec().getServerVersion();
         this.docker = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                // Talks HTTP(S) over a TCP port. The docker client library does only support tcp:// and unix://
-                //.withDockerHost("unix:///host/var/run/docker.sock") // Alternatively
-                .withDockerHost(config.uri().replace("https", "tcp"))
-                //.withDockerTlsVerify(false)
-                //.withCustomSslConfig(new VespaSSLConfig(config))
+                .withDockerHost(config.uri())
                 .withApiVersion(remoteApiVersion)
                 .build())
-                .withDockerCmdExecFactory(
-                        new JerseyDockerCmdExecFactory()
-                                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS)
-                );
+                .withDockerCmdExecFactory(dockerFactory);
     }
 
     @Override
@@ -183,11 +179,11 @@ public class DockerImpl implements Docker {
             final DockerImage dockerImage,
             final HostName hostName,
             final ContainerName containerName,
+            final InetAddress nodeInetAddress,
             double minCpuCores,
             double minDiskAvailableGb,
             double minMainMemoryAvailableGb) {
         try {
-            InetAddress nodeInetAddress = InetAddress.getByName(hostName.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
             final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
             final double GIGA = Math.pow(2.0, 30.0);
@@ -261,15 +257,16 @@ public class DockerImpl implements Docker {
                     .exec();
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream errors = new ByteArrayOutputStream();
             ExecStartCmd execStartCmd = docker.execStartCmd(response.getId());
-            execStartCmd.exec(new ExecStartResultCallback(output, output)).awaitCompletion();
+            execStartCmd.exec(new ExecStartResultCallback(output, errors)).awaitCompletion();
 
             final InspectExecResponse state = docker.inspectExecCmd(execStartCmd.getExecId()).exec();
             assert !state.isRunning();
             Integer exitCode = state.getExitCode();
             assert exitCode != null;
 
-            return new ProcessResult(exitCode, new String(output.toByteArray()));
+            return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (DockerException | InterruptedException e) {
             throw new RuntimeException("Container " + containerName.asString()
                     + " failed to execute " + Arrays.toString(args), e);

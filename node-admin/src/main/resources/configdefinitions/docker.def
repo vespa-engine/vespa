@@ -4,4 +4,4 @@ namespace=nodeadmin.docker
 caCertPath string
 clientCertPath string
 clientKeyPath string
-uri string default = "https://127.0.0.1:2376"
+uri string default = "tcp://127.0.0.1:2376"
