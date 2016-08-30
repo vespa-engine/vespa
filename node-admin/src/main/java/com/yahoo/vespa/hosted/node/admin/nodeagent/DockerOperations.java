@@ -14,6 +14,8 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -146,11 +148,19 @@ public class DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
 
         logger.info("Starting container " + nodeSpec.containerName);
+        InetAddress nodeInetAddress = null;
+        try {
+            nodeInetAddress = InetAddress.getByName(nodeSpec.hostname.s());
+        } catch (UnknownHostException e) {
+            logger.error("Failed to get IP address to " + nodeSpec.hostname);
+        }
+
         // TODO: Properly handle absent min* values
         docker.startContainer(
                 nodeSpec.wantedDockerImage.get(),
                 nodeSpec.hostname,
                 nodeSpec.containerName,
+                nodeInetAddress,
                 nodeSpec.minCpuCores.get(),
                 nodeSpec.minDiskAvailableGb.get(),
                 nodeSpec.minMainMemoryAvailableGb.get());

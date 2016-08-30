@@ -60,7 +60,7 @@ public class NodeStateTest {
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
-        hostName = new HostName("hostName");
+        hostName = new HostName("host1");
         initialContainerNodeSpec = new ContainerNodeSpec(
                 hostName,
                 Optional.of(new DockerImage("dockerImage")),
@@ -81,7 +81,7 @@ public class NodeStateTest {
         }
 
         while (!DockerMock.getRequests().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: hostName, ContainerName: ContainerName { name=container }, minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
+                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, " +
                 "minMainMemoryAvailableGb: 1.0\nexecuteInContainer with ContainerName: ContainerName { name=container }, " +
                 "args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\nexecuteInContainer with ContainerName: " +
                 "ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n")) {
