@@ -49,6 +49,7 @@ ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
 void
 ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
 {
+    worker.verify();
     MonitorGuard monitor(worker.monitor);
     assert(worker.idle);
     assert(worker.task.task == 0);
@@ -60,6 +61,7 @@ ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
 bool
 ThreadStackExecutorBase::obtainTask(Worker &worker)
 {
+    worker.verify();
     {
         MonitorGuard monitor(_monitor);
         if (worker.task.task != 0) {
@@ -99,6 +101,7 @@ ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
         delete worker.task.task;
     }
     _executorCompletion.await(); // to allow unsafe signaling
+    worker.verify();
 }
 
 //-----------------------------------------------------------------------------
