@@ -9,6 +9,7 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
@@ -26,11 +27,13 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 using namespace config;
 using namespace document;
 using namespace proton;
+using namespace proton::matching;
 using namespace search::grouping;
 using namespace search::index;
 using namespace search::queryeval;
@@ -121,16 +124,26 @@ struct ViewSet
     }
 };
 
+struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
+    virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
+        return std::make_unique<ErrorConstantValue>();
+    }
+};
+
 struct Fixture
 {
     vespalib::Clock _clock;
     matching::QueryLimiter _queryLimiter;
+    EmptyConstantValueFactory _constantValueFactory;
+    ConstantValueRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
     ViewSet _views;
     ConfigurerUP _configurer;
     Fixture()
         : _clock(),
           _queryLimiter(),
+          _constantValueFactory(),
+          _constantValueRepo(_constantValueFactory),
           _summaryExecutor(8, 128*1024),
           _views(),
           _configurer()
@@ -142,6 +155,7 @@ struct Fixture
                                          _views.searchView,
                                          _views.feedView,
                                          _queryLimiter,
+                                         _constantValueRepo,
                                          _clock,
                                          "test",
                                          0));
@@ -154,7 +168,7 @@ struct Fixture
 void
 Fixture::initViewSet(ViewSet &views)
 {
-    Matchers::SP matchers(new Matchers(_clock, _queryLimiter));
+    Matchers::SP matchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
     IndexManager::SP indexMgr(new IndexManager(BASE_DIR,
                                       0.0, 2, 0, Schema(), Schema(), views._reconfigurer,
                                       views._writeService, _summaryExecutor, TuneFileIndexManager(),

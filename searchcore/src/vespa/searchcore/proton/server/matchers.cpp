@@ -7,10 +7,13 @@ LOG_SETUP(".proton.server.matchers");
 
 namespace proton {
 
-Matchers::Matchers(const vespalib::Clock & clock, matching::QueryLimiter & queryLimiter) :
-    _rpmap(),
-    _fallback(new matching::Matcher(search::index::Schema(), search::fef::Properties(), clock, queryLimiter, -1)),
-    _default()
+Matchers::Matchers(const vespalib::Clock &clock,
+                   matching::QueryLimiter &queryLimiter,
+                   const matching::IConstantValueRepo &constantValueRepo)
+    : _rpmap(),
+      _fallback(new matching::Matcher(search::index::Schema(), search::fef::Properties(),
+                                      clock, queryLimiter, constantValueRepo, -1)),
+      _default()
 {
 }
 

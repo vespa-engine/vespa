@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
+#include <vespa/searchcore/proton/matching/constant_value_repo.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -33,13 +34,14 @@ class SearchableDocSubDBConfigurer : public boost::noncopyable
 private:
     typedef vespalib::VarHolder<SearchView::SP> SearchViewHolder;
     typedef vespalib::VarHolder<SearchableFeedView::SP> FeedViewHolder;
-    const ISummaryManager::SP & _summaryMgr;
-    SearchViewHolder          & _searchView;
-    FeedViewHolder            & _feedView;
-    matching::QueryLimiter    & _queryLimiter;
-    const vespalib::Clock     & _clock;
-    vespalib::string            _subDbName;
-    uint32_t                    _distributionKey;
+    const ISummaryManager::SP   &_summaryMgr;
+    SearchViewHolder            &_searchView;
+    FeedViewHolder              &_feedView;
+    matching::QueryLimiter      &_queryLimiter;
+    matching::ConstantValueRepo &_constantValueRepo;
+    const vespalib::Clock       &_clock;
+    vespalib::string             _subDbName;
+    uint32_t                     _distributionKey;
 
     void
     reconfigureFeedView(const SearchView::SP &searchView);
@@ -68,11 +70,12 @@ private:
                            const MatchView::SP &matchView);
 
 public:
-    SearchableDocSubDBConfigurer(const ISummaryManager::SP & summaryMgr,
-                                 SearchViewHolder & searchView,
-                                 FeedViewHolder & feedView,
-                                 matching::QueryLimiter & queryLimiter,
-                                 const vespalib::Clock & clock,
+    SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
+                                 SearchViewHolder &searchView,
+                                 FeedViewHolder &feedView,
+                                 matching::QueryLimiter &queryLimiter,
+                                 matching::ConstantValueRepo &constantValueRepo,
+                                 const vespalib::Clock &clock,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);
 

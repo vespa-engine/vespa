@@ -81,12 +81,14 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
 }
 
 IndexEnvironment::IndexEnvironment(const search::index::Schema &schema,
-                                   const search::fef::Properties &props)
+                                   const search::fef::Properties &props,
+                                   const IConstantValueRepo &constantValueRepo)
     : _tableManager(),
       _properties(props),
       _fieldNames(),
       _fields(),
-      _motivation(UNKNOWN)
+      _motivation(UNKNOWN),
+      _constantValueRepo(constantValueRepo)
 {
     _tableManager.addFactory(
             search::fef::ITableFactory::SP(

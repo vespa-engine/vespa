@@ -9,7 +9,9 @@ LOG_SETUP("matching_test");
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
+#include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
 #include <vespa/searchcore/proton/matching/isearchcontext.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
@@ -101,6 +103,12 @@ public:
     }
 };
 
+struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
+    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
+        return std::make_unique<proton::matching::ErrorConstantValue>();
+    }
+};
+
 //-----------------------------------------------------------------------------
 
 struct MyWorld {
@@ -113,6 +121,7 @@ struct MyWorld {
     MatchingStats           matchingStats;
     vespalib::Clock         clock;
     QueryLimiter            queryLimiter;
+    EmptyConstantValueRepo  constantValueRepo;
 
     MyWorld()
         : schema(),
@@ -260,6 +269,10 @@ struct MyWorld {
         return request;
     }
 
+    Matcher::SP createMatcher() {
+        return std::make_shared<Matcher>(schema, config, clock, queryLimiter, constantValueRepo, 0);
+    }
+
     struct MySearchHandler : ISearchHandler {
         Matcher::SP _matcher;
 
@@ -274,10 +287,10 @@ struct MyWorld {
     };
 
     double get_first_phase_termwise_limit() {
-        Matcher matcher(schema, config, clock, queryLimiter, 0);
+        Matcher::SP matcher = createMatcher();
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
         search::fef::Properties overrides;
-        MatchToolsFactory::UP match_tools_factory = matcher.create_match_tools_factory(
+        MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
                 *request, searchContext, attributeContext, metaStore, overrides);
         MatchTools::UP match_tools = match_tools_factory->createMatchTools();
         RankProgram::UP rank_program = match_tools->first_phase_program();
@@ -285,7 +298,7 @@ struct MyWorld {
     }
 
     SearchReply::UP performSearch(SearchRequest::SP req, size_t threads) {
-        Matcher::SP matcher(new Matcher(schema, config, clock, queryLimiter, 0));
+        Matcher::SP matcher = createMatcher();
         SearchSession::OwnershipBundle owned_objects;
         owned_objects.search_handler.reset(new MySearchHandler(matcher));
         owned_objects.context.reset(new MatchContext(
@@ -318,7 +331,7 @@ struct MyWorld {
     }
 
     std::unique_ptr<FieldInfo> get_field_info(const vespalib::string &field_name) {
-        Matcher::SP matcher(new Matcher(schema, config, clock, queryLimiter, 0));
+        Matcher::SP matcher = createMatcher();
         const FieldInfo *field = matcher->get_index_env().getFieldByName(field_name);
         if (field == nullptr) {
             return std::unique_ptr<FieldInfo>(nullptr);
@@ -327,14 +340,14 @@ struct MyWorld {
     }
 
     FeatureSet::SP getSummaryFeatures(DocsumRequest::SP req) {
-        Matcher matcher(schema, config, clock, queryLimiter, 0);
-        return matcher.getSummaryFeatures(*req, searchContext,
+        Matcher::SP matcher = createMatcher();
+        return matcher->getSummaryFeatures(*req, searchContext,
                                           attributeContext, *sessionManager);
     }
 
     FeatureSet::SP getRankFeatures(DocsumRequest::SP req) {
-        Matcher matcher(schema, config, clock, queryLimiter, 0);
-        return matcher.getRankFeatures(*req, searchContext, attributeContext,
+        Matcher::SP matcher = createMatcher();
+        return matcher->getRankFeatures(*req, searchContext, attributeContext,
                                        *sessionManager);
     }
 
