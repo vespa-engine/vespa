@@ -146,19 +146,6 @@ ThreadStackExecutorBase::getStats()
     return stats;
 }
 
-bool
-ThreadStackExecutorBase::acceptNewTask(MonitorGuard & guard)
-{
-    (void) guard;
-    return (_taskCount < _taskLimit);
-}
-
-void
-ThreadStackExecutorBase::wakeup(MonitorGuard & monitor)
-{
-    (void) monitor;
-}
-
 ThreadStackExecutorBase::Task::UP
 ThreadStackExecutorBase::execute(Task::UP task)
 {
