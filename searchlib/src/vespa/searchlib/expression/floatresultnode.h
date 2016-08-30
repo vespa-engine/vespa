@@ -26,6 +26,8 @@ public:
     virtual void set(const ResultNode & rhs);
     double get() const { return _value; }
     void set(double value) { _value = value; }
+    virtual const BucketResultNode& getNullBucket() const override;
+
 private:
     virtual int cmpMem(const void * a, const void *b) const {
         const double & ai(*static_cast<const double *>(a));

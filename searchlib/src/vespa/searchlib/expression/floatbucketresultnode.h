@@ -45,6 +45,7 @@ public:
         _to = to;
         return *this;
     }
+    virtual const FloatBucketResultNode& getNullBucket() const override { return getNull(); }
     static const FloatBucketResultNode & getNull() { return _nullResult; }
 };
 

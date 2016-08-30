@@ -28,5 +28,9 @@ vespa_add_library(searchlib_expression OBJECT
     arrayatlookupfunctionnode.cpp
     arrayoperationnode.cpp
     aggregationrefnode.cpp
+    stringresultnode.cpp
+    rawresultnode.cpp
+    floatresultnode.cpp
+    integerresultnode.cpp
     DEPENDS
 )

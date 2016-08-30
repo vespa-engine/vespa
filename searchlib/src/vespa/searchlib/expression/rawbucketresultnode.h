@@ -29,6 +29,7 @@ public:
     int contains(const RawBucketResultNode & b) const;
     int contains(const ConstBufferRef & v) const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual const RawBucketResultNode& getNullBucket() const override { return getNull(); }
     static const RawBucketResultNode & getNull() { return _nullResult; }
 };
 
