@@ -63,9 +63,10 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
     {
         MonitorGuard monitor(_monitor);
         if (worker.task.task != 0) {
+            assert(_taskCount != 0);
+            worker.task.task = 0;
             --_taskCount;
             _barrier.completeEvent(worker.task.token);
-            worker.task.task = 0;
         }
         unblock_threads(monitor);
         if (!_tasks.empty()) {
