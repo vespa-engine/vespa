@@ -9,9 +9,6 @@ LOG_SETUP(".searchlib.docstore.compacter");
 namespace search {
 namespace docstore {
 
-using document::CompressionConfig;
-using vespalib::ThreadExecutor;
-
 void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
