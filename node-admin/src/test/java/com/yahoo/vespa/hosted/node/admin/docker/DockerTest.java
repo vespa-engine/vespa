@@ -59,7 +59,6 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
-    @Ignore
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         HostName hostName1 = new HostName("docker10.test.yahoo.com");
