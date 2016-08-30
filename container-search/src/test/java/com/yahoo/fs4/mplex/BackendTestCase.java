@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import com.yahoo.container.search.Fs4Config;
+import com.yahoo.net.HostName;
 import com.yahoo.net.LinuxInetAddress;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import org.junit.After;
@@ -111,7 +113,8 @@ public class BackendTestCase {
         public MockDispatch dispatch;
 
         public MockServer() throws IOException {
-            ServerSocket socket = new ServerSocket(0, 50, LinuxInetAddress.getLocalHost());
+            ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+            //ServerSocket socket = new ServerSocket(0, 50, LinuxInetAddress.getLocalHost());
             host = (InetSocketAddress) socket.getLocalSocketAddress();
             dispatch = new MockDispatch(socket);
             worker = new Thread(dispatch);

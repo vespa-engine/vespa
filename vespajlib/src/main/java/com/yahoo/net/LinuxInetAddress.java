@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
+// TODO: Remove on vespa 7
 public class LinuxInetAddress {
 
     /**
@@ -27,10 +28,12 @@ public class LinuxInetAddress {
      * IPv4 is preferred over IPv6 among resolving addresses.
      *
      * @return a localhost address
+     * @deprecated use {@link HostName} instead
      */
     // Note: Checking resolvability of ipV6 addresses takes a long time on some systems (over 5 seconds 
     // for some addresses on my mac). This method is written to minimize the number of resolution checks done
     // and to defer ip6 checks until necessary.
+    @Deprecated
     public static InetAddress getLocalHost() {
         InetAddress fallback = InetAddress.getLoopbackAddress();
         try {
@@ -67,7 +70,9 @@ public class LinuxInetAddress {
      *
      * @return an array of the addresses of this
      * @throws UnknownHostException if we cannot access the network
+     * @deprecated do not use
      */
+    @Deprecated
     public static InetAddress[] getAllLocal() throws UnknownHostException {
         InetAddress[] localInetAddresses = InetAddress.getAllByName("127.0.0.1");
         if ( ! localInetAddresses[0].isLoopbackAddress()) return localInetAddresses;
