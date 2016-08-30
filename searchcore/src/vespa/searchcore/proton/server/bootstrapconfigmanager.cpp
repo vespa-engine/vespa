@@ -4,7 +4,7 @@
 #include "bootstrapconfigmanager.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
-#include <vespa/config-filedistributorrpc.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 
 using namespace vespa::config::search;
 using namespace config;

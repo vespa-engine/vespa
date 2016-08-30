@@ -10,6 +10,7 @@ vespa_define_module(
     staging_vespalib
     vespadefaults
     vespalib
+    fileacquirer
 
     EXTERNAL_DEPENDS
     torrent-rasterbar

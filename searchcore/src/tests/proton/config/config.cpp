@@ -10,7 +10,7 @@ LOG_SETUP("config_test");
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/protonconfigurer.h>
 #include <vespa/vespalib/util/varholder.h>
-#include <vespa/config-filedistributorrpc.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 
 using namespace config;
 using namespace proton;

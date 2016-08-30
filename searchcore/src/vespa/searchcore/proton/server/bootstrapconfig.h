@@ -9,7 +9,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
-#include <vespa/config-filedistributorrpc.h>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
 
 namespace proton {
 
