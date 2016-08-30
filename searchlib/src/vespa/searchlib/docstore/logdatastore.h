@@ -36,7 +36,8 @@ private:
     using NameId = FileChunk::NameId;
     using FileId = FileChunk::FileId;
 public:
-    typedef vespalib::LockGuard LockGuard;
+    using LockGuard = vespalib::LockGuard;
+    using CompressionConfig = document::CompressionConfig;
     class Config {
     public:
         Config()
@@ -46,7 +47,8 @@ public:
               _minFileSizeFactor(0.2),
               _numThreads(8),
               _skipCrcOnRead(false),
-              _compactToActiveFile(true)
+              _compactToActiveFile(true),
+              _compression(CompressionConfig::LZ4)
         { }
 
         Config(size_t maxFileSize,
@@ -55,6 +57,7 @@ public:
                double minFileSizeFactor,
                size_t numThreads,
                bool compactToActiveFile,
+               const CompressionConfig & compression,
                const WriteableFileChunk::Config & fileConfig)
             : _maxFileSize(maxFileSize),
               _maxDiskBloatFactor(maxDiskBloatFactor),
@@ -63,6 +66,7 @@ public:
               _numThreads(numThreads),
               _skipCrcOnRead(false),
               _compactToActiveFile(compactToActiveFile),
+              _compression(compression),
               _fileConfig(fileConfig)
         { }
 
@@ -75,17 +79,19 @@ public:
         bool crcOnReadDisabled() const { return _skipCrcOnRead; }
         void disableCrcOnRead(bool v) { _skipCrcOnRead = v; }
         bool compact2ActiveFile() const { return _compactToActiveFile; }
+        const CompressionConfig & compression() const { return _compression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
     private:
-        size_t                     _maxFileSize;
-        double                     _maxDiskBloatFactor;
-        double                     _maxBucketSpread;
-        double                     _minFileSizeFactor;
-        size_t                     _numThreads;
-        bool                       _skipCrcOnRead;
-        bool                       _compactToActiveFile;
-        WriteableFileChunk::Config _fileConfig;
+        size_t                      _maxFileSize;
+        double                      _maxDiskBloatFactor;
+        double                      _maxBucketSpread;
+        double                      _minFileSizeFactor;
+        size_t                      _numThreads;
+        bool                        _skipCrcOnRead;
+        bool                        _compactToActiveFile;
+        CompressionConfig           _compression;
+        WriteableFileChunk::Config  _fileConfig;
     };
 public:
     /**

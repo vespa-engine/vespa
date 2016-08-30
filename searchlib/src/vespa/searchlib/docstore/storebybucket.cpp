@@ -6,12 +6,14 @@ namespace search {
 namespace docstore {
 
 using document::BucketId;
+using document::CompressionConfig;
 
-StoreByBucket::StoreByBucket(vespalib::MemoryDataStore & backingMemory) :
+StoreByBucket::StoreByBucket(vespalib::MemoryDataStore & backingMemory, const CompressionConfig & compression) :
     _chunks(),
     _current(),
     _where(),
-    _backingMemory(backingMemory)
+    _backingMemory(backingMemory),
+    _compression(compression)
 {
     createCurrent();
 }
@@ -37,8 +39,7 @@ void
 StoreByBucket::closeCurrent()
 {
     vespalib::DataBuffer buffer;
-    document::CompressionConfig lz4(document::CompressionConfig::LZ4);
-    _current->pack(1, buffer, lz4);
+    _current->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
     _chunks.emplace_back(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
     _current.reset();

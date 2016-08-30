@@ -34,6 +34,7 @@ public:
 using namespace search;
 using namespace search::docstore;
 using search::index::DummyFileHeaderContext;
+using document::CompressionConfig;
 
 namespace {
 
@@ -210,11 +211,9 @@ TEST("test that DirectIOPadding works accordng to spec") {
 TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
     EXPECT_TRUE(FastOS_File::MakeDirectory("growing"));
-    LogDataStore::Config config(100000, 0.1, 3.0, 0.2, 8, true,
+    LogDataStore::Config config(100000, 0.1, 3.0, 0.2, 8, true, CompressionConfig::LZ4,
                                 WriteableFileChunk::Config(
-                                        document::CompressionConfig(
-                                                document::CompressionConfig::
-                                                LZ4, 9, 60),
+                                        CompressionConfig(CompressionConfig::LZ4, 9, 60),
                                         1000,
                                         20));
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
@@ -362,7 +361,7 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     VisitStore store;
     IDataStore & datastore = store.getStore();
 
-    VisitCache visitCache(datastore, 100000, document::CompressionConfig::Type::LZ4);
+    VisitCache visitCache(datastore, 100000, CompressionConfig::Type::LZ4);
     EXPECT_EQUAL(0u, visitCache.read({1}).size());
     EXPECT_TRUE(visitCache.read({1}).empty());
     datastore.write(1,1, A7, 7);
@@ -444,9 +443,9 @@ public:
     VisitCacheStore() :
         _myDir("visitcache"),
         _repo(makeDocTypeRepoConfig()),
-        _config(DocumentStore::Config(document::CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
-                LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,
-                    WriteableFileChunk::Config(document::CompressionConfig(), 16384, 64))),
+        _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).allowVisitCaching(true),
+                LogDataStore::Config(50000, 0.2, 3.0, 0.2, 1, true,CompressionConfig::LZ4,
+                    WriteableFileChunk::Config(CompressionConfig(), 16384, 64))),
         _fileHeaderContext(),
         _executor(_config.getLogConfig().getNumThreads(), 128*1024),
         _tlSyncer(),
@@ -724,7 +723,7 @@ TEST("requireThatChunkCanProduceUniqueList") {
 
 void testChunkFormat(ChunkFormat & cf, size_t expectedLen, const vespalib::string & expectedContent)
 {
-    document::CompressionConfig cfg;
+    CompressionConfig cfg;
     uint64_t MAGIC_CONTENT(0xabcdef9876543210);
     cf.getBuffer() << MAGIC_CONTENT;
     vespalib::DataBuffer buffer;
@@ -831,7 +830,7 @@ private:
 
 TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
     vespalib::MemoryDataStore backing;
-    StoreByBucket sbb(backing);;
+    StoreByBucket sbb(backing, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);
     }
