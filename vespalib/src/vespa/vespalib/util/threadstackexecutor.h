@@ -13,18 +13,8 @@ namespace vespalib {
 class ThreadStackExecutor : public ThreadStackExecutorBase
 {
 public:
-    /**
-     * This will tell if a task will be accepted or not.
-     * An implementation might decide to block.
-     */
-    virtual bool acceptNewTask(MonitorGuard & monitor);
-
-    /**
-     * If blocking implementation, this might wake up any waiters.
-     *
-     * @param monitor to use for signaling.
-     */
-    virtual void wakeup(MonitorGuard & monitor);
+    bool acceptNewTask(MonitorGuard &) override;
+    void wakeup(MonitorGuard &) override;
 
 public:
     /**

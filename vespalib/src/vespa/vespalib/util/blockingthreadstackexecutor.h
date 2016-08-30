@@ -13,8 +13,9 @@ namespace vespalib {
 class BlockingThreadStackExecutor : public ThreadStackExecutorBase
 {
 private:
-    virtual bool acceptNewTask(MonitorGuard & monitor);
-    virtual void wakeup(MonitorGuard & monitor);
+    bool acceptNewTask(MonitorGuard & monitor) override;
+    void wakeup(MonitorGuard & monitor) override;
+
 public:
     /**
      * Create a new blocking thread stack executor. The task limit specifies
@@ -35,4 +36,3 @@ public:
 };
 
 } // namespace vespalib
-

@@ -5,14 +5,6 @@
 
 namespace vespalib {
 
-//-----------------------------------------------------------------------------
-
-ThreadStackExecutor::ThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit) :
-    ThreadStackExecutorBase(stackSize, taskLimit)
-{
-    start(threads);
-}
-
 bool
 ThreadStackExecutor::acceptNewTask(MonitorGuard &)
 {
@@ -22,6 +14,12 @@ ThreadStackExecutor::acceptNewTask(MonitorGuard &)
 void
 ThreadStackExecutor::wakeup(MonitorGuard &)
 {
+}
+
+ThreadStackExecutor::ThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit) :
+    ThreadStackExecutorBase(stackSize, taskLimit)
+{
+    start(threads);
 }
 
 ThreadStackExecutor::~ThreadStackExecutor()
