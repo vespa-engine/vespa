@@ -1,0 +1,6 @@
+{
+    "dimensions": ["x","y"],
+    "cells": [
+        { "address": { "x": "foo", "y": "0" }, "value": 1.0 },
+        { "address": { "x": "foo", "y": "1" }, "value": 2.0 }]
+}
