@@ -8,6 +8,8 @@
 namespace search {
 namespace expression {
 
+class BucketResultNode;
+
 #define DECLARE_ABSTRACT_RESULTNODE(Class) DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, expression, Class)
 #define DECLARE_ABSTRACT_RESULTNODE_NS1(ns, Class) DECLARE_IDENTIFIABLE_ABSTRACT_NS3(search, expression, ns, Class)
 
@@ -121,6 +123,7 @@ public:
     virtual ResultDeserializer & onDeserializeResult(ResultDeserializer & is);
     virtual size_t getRawByteSize() const;
     virtual bool isMultiValue() const { return false; }
+    virtual const BucketResultNode& getNullBucket() const { throw std::runtime_error(vespalib::make_string("No null bucket defined for this type")); }
 };
 
 }

@@ -38,39 +38,18 @@ RangeBucketPreDefFunctionNode & RangeBucketPreDefFunctionNode::operator = (const
 void
 RangeBucketPreDefFunctionNode::onPrepareResult()
 {
+    // Use the type of the predefined buckets for the null bucket
+    const ResultNode& resultNode = _predef->empty() ? getArg().getResult() : _predef->get(0);
+    _nullResult = &resultNode.getNullBucket();
+
     const vespalib::Identifiable::RuntimeClass & cInfo(getArg().getResult().getClass());
     if (cInfo.inherits(ResultNodeVector::classId)) {
-        if (cInfo.inherits(IntegerResultNodeVector::classId)) {
-            _nullResult = & IntegerBucketResultNode::getNull();
-        } else if (cInfo.inherits(FloatResultNodeVector::classId)) {
-            _nullResult = & FloatBucketResultNode::getNull();
-        } else if (cInfo.inherits(StringResultNodeVector::classId)) {
-            _nullResult = & StringBucketResultNode::getNull();
-        } else if (cInfo.inherits(RawResultNodeVector::classId)) {
-            _nullResult = & RawBucketResultNode::getNull();
-        } else {
-            throw std::runtime_error(vespalib::make_string("cannot create appropriate bucket for type '%s'", cInfo.name()));
-        }
         setResultType(ResultNode::UP(_predef->clone()));
         static_cast<ResultNodeVector &>(updateResult()).clear();
         _handler.reset(new MultiValueHandler(*this));
         _result = & updateResult();
     } else {
-        if (cInfo.inherits(IntegerResultNode::classId)) {
-            _nullResult = & IntegerBucketResultNode::getNull();
-        } else if (cInfo.inherits(FloatResultNode::classId)) {
-            _nullResult = & FloatBucketResultNode::getNull();
-        } else if (cInfo.inherits(StringResultNode::classId)) {
-            _nullResult = & StringBucketResultNode::getNull();
-        } else if (cInfo.inherits(RawResultNode::classId)) {
-            _nullResult = & RawBucketResultNode::getNull();
-        } else {
-            throw std::runtime_error(vespalib::make_string("cannot create appropriate bucket for type '%s'", cInfo.name()));
-        }
-        _result = _nullResult;
-        if ( ! _predef->empty()) {
-            _result = & _predef->get(0);
-        }
+        _result = _predef->empty() ? _nullResult : &_predef->get(0);
         _handler.reset(new SingleValueHandler(*this));
     }
 }

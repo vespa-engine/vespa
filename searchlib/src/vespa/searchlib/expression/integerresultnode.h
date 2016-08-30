@@ -8,10 +8,14 @@
 namespace search {
 namespace expression {
 
+class BucketResultNode;
+
 class IntegerResultNode : public NumericResultNode
 {
 public:
     DECLARE_ABSTRACT_RESULTNODE(IntegerResultNode);
+
+    virtual const BucketResultNode& getNullBucket() const override;
 };
 
 template <typename T>
@@ -45,6 +49,7 @@ public:
     void set(int64_t value)  { _value = value; }
     IntegerResultNode & operator ++() { _value++; return *this; }
     IntegerResultNode & operator +=(int64_t v) { _value += v; return *this; }
+
 protected:
     void setValue(const T &value) { _value = value; }
     T getValue() const { return _value; }

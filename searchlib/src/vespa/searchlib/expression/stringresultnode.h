@@ -25,6 +25,7 @@ public:
     virtual void max(const ResultNode & b);
     virtual void add(const ResultNode & b);
     virtual void negate();
+    virtual const BucketResultNode& getNullBucket() const override;
 
 private:
     virtual int cmpMem(const void * a, const void *b) const {

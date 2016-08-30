@@ -44,6 +44,7 @@ public:
         _to = to;
         return *this;
     }
+    virtual const IntegerBucketResultNode& getNullBucket() const override { return getNull(); }
     static const IntegerBucketResultNode & getNull() { return _nullResult; }
 };
 

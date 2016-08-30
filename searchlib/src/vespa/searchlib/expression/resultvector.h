@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/enumresultnode.h>
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <vespa/searchlib/expression/floatresultnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
-#include <vespa/searchlib/expression/rawresultnode.h>
-#include <vespa/searchlib/expression/integerbucketresultnode.h>
-#include <vespa/searchlib/expression/floatbucketresultnode.h>
-#include <vespa/searchlib/expression/stringbucketresultnode.h>
-#include <vespa/searchlib/expression/rawbucketresultnode.h>
+#include "enumresultnode.h"
+#include "integerresultnode.h"
+#include "floatresultnode.h"
+#include "stringresultnode.h"
+#include "rawresultnode.h"
+#include "integerbucketresultnode.h"
+#include "floatbucketresultnode.h"
+#include "stringbucketresultnode.h"
+#include "rawbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <algorithm>
 
@@ -284,6 +284,7 @@ public:
         r.set(v);
         return r;
     }
+
 };
 
 class Int8ResultNodeVector : public NumericResultNodeVectorT<Int8ResultNode>
@@ -291,6 +292,8 @@ class Int8ResultNodeVector : public NumericResultNodeVectorT<Int8ResultNode>
 public:
     Int8ResultNodeVector() { }
     DECLARE_RESULTNODE(Int8ResultNodeVector);
+
+    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int16ResultNodeVector : public NumericResultNodeVectorT<Int16ResultNode>
@@ -298,6 +301,8 @@ class Int16ResultNodeVector : public NumericResultNodeVectorT<Int16ResultNode>
 public:
     Int16ResultNodeVector() { }
     DECLARE_RESULTNODE(Int16ResultNodeVector);
+
+    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int32ResultNodeVector : public NumericResultNodeVectorT<Int32ResultNode>
@@ -305,6 +310,8 @@ class Int32ResultNodeVector : public NumericResultNodeVectorT<Int32ResultNode>
 public:
     Int32ResultNodeVector() { }
     DECLARE_RESULTNODE(Int32ResultNodeVector);
+
+    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
@@ -312,6 +319,8 @@ class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
 public:
     Int64ResultNodeVector() { }
     DECLARE_RESULTNODE(Int64ResultNodeVector);
+
+    virtual const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
 };
 
 typedef Int64ResultNodeVector IntegerResultNodeVector;
@@ -328,6 +337,8 @@ class FloatResultNodeVector : public NumericResultNodeVectorT<FloatResultNode>
 public:
     FloatResultNodeVector() { }
     DECLARE_RESULTNODE(FloatResultNodeVector);
+
+    virtual const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
 };
 
 class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
@@ -335,6 +346,8 @@ class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<R
 public:
     StringResultNodeVector() { }
     DECLARE_RESULTNODE(StringResultNodeVector);
+
+    virtual const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
 };
 
 class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
@@ -342,6 +355,8 @@ class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultN
 public:
     RawResultNodeVector() { }
     DECLARE_RESULTNODE(RawResultNodeVector);
+
+    virtual const RawBucketResultNode& getNullBucket() const override { return RawBucketResultNode::getNull(); }
 };
 
 class IntegerBucketResultNodeVector : public ResultNodeVectorT<IntegerBucketResultNode, contains<IntegerBucketResultNode, int64_t>, GetInteger >

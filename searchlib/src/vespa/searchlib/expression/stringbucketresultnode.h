@@ -36,6 +36,7 @@ public:
         _to.reset(new StringResultNode(to));
         return *this;
     }
+    virtual const StringBucketResultNode& getNullBucket() const override { return getNull(); }
     static const StringBucketResultNode & getNull() { return _nullResult; }
 };
 
