@@ -49,6 +49,7 @@ ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
 void
 ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
 {
+    worker.verify();
     MonitorGuard monitor(worker.monitor);
     assert(worker.idle);
     assert(worker.task.task == 0);
@@ -60,12 +61,14 @@ ThreadStackExecutorBase::assignTask(const TaggedTask &task, Worker &worker)
 bool
 ThreadStackExecutorBase::obtainTask(Worker &worker)
 {
+    worker.verify();
     {
         MonitorGuard monitor(_monitor);
         if (worker.task.task != 0) {
+            assert(_taskCount != 0);
+            worker.task.task = 0;
             --_taskCount;
             _barrier.completeEvent(worker.task.token);
-            worker.task.task = 0;
         }
         unblock_threads(monitor);
         if (!_tasks.empty()) {
@@ -98,6 +101,7 @@ ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
         delete worker.task.task;
     }
     _executorCompletion.await(); // to allow unsafe signaling
+    worker.verify();
 }
 
 //-----------------------------------------------------------------------------
@@ -133,7 +137,10 @@ void
 ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
     MonitorGuard monitor(_monitor);
-    _taskLimit = taskLimit;
+    if (!_closed) {
+        _taskLimit = taskLimit;
+        wakeup(monitor);
+    }
 }
 
 ThreadStackExecutorBase::Stats
@@ -144,19 +151,6 @@ ThreadStackExecutorBase::getStats()
     _stats = Stats();
     _stats.maxPendingTasks = _taskCount;
     return stats;
-}
-
-bool
-ThreadStackExecutorBase::acceptNewTask(MonitorGuard & guard)
-{
-    (void) guard;
-    return (_taskCount < _taskLimit);
-}
-
-void
-ThreadStackExecutorBase::wakeup(MonitorGuard & monitor)
-{
-    (void) monitor;
 }
 
 ThreadStackExecutorBase::Task::UP

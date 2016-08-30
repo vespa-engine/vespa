@@ -43,8 +43,11 @@ private:
     struct Worker {
         Monitor    monitor;
         bool       idle;
+        uint32_t   pre_guard;
         TaggedTask task;
-        Worker() : monitor(), idle(false), task() {}
+        uint32_t   post_guard;
+        Worker() : monitor(), idle(false), pre_guard(0xaaaaaaaa), task(), post_guard(0x44444444) {}
+        void verify() { assert((pre_guard == 0xaaaaaaaa) && (post_guard == 0x44444444)); }
     };
 
     struct BarrierCompletion {
