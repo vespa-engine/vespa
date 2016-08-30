@@ -42,8 +42,7 @@ public class RecallSearcher extends Searcher {
         String recall = query.properties().getString(recallName);
         if (recall == null) return execution.search(query);
 
-        AnyParser parser = new AnyParser(
-                ParserEnvironment.fromExecutionContext(execution.context()));
+        AnyParser parser = new AnyParser(ParserEnvironment.fromExecutionContext(execution.context()));
         QueryTree root = parser.parse(Parsable.fromQueryModel(query.getModel()).setQuery("foo").setFilter(recall));
         String err;
         if (root.getRoot() instanceof NullItem) {

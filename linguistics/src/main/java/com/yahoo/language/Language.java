@@ -517,14 +517,14 @@ public enum Language {
      */
     public boolean isCjk() {
         switch (this) {
-        case CHINESE_SIMPLIFIED:
-        case CHINESE_TRADITIONAL:
-        case JAPANESE:
-        case KOREAN:
-        case THAI:
-            return true;
-        default:
-            return false;
+            case CHINESE_SIMPLIFIED:
+            case CHINESE_TRADITIONAL:
+            case JAPANESE:
+            case KOREAN:
+            case THAI:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -532,12 +532,10 @@ public enum Language {
      * <p>Convenience method for calling <tt>fromLocale(LocaleFactory.fromLanguageTag(languageTag))</tt>.</p>
      *
      * @param languageTag The language tag for which the <tt>Language</tt> to return.
-     * @return The corresponding <tt>Language</tt>, or {@link #UNKNOWN} if not known.
+     * @return the corresponding <tt>Language</tt>, or {@link #UNKNOWN} if not known.
      */
     public static Language fromLanguageTag(String languageTag) {
-        if (languageTag == null) {
-            return UNKNOWN;
-        }
+        if (languageTag == null) return UNKNOWN;
         return fromLocale(LocaleFactory.fromLanguageTag(languageTag));
     }
 

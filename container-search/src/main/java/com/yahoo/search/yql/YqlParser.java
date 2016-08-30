@@ -21,6 +21,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.IndexFacts;
@@ -178,6 +179,7 @@ public class YqlParser implements Parser {
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
     private final Normalizer normalizer;
     private final Segmenter segmenter;
+    private final Detector detector;
     private final Set<String> yqlSources = LazySet.newHashSet();
     private final Set<String> yqlSummaryFields = LazySet.newHashSet();
     private final String localSegmenterBackend;
@@ -225,6 +227,7 @@ public class YqlParser implements Parser {
         indexFacts = environment.getIndexFacts();
         normalizer = environment.getLinguistics().getNormalizer();
         segmenter = environment.getLinguistics().getSegmenter();
+        detector = environment.getLinguistics().getDetector();
         this.environment = environment;
 
         Tuple2<String, Version> version = environment.getLinguistics().getVersion(Linguistics.Component.SEGMENTER);
@@ -634,30 +637,26 @@ public class YqlParser implements Parser {
     private Item fetchUserQuery() {
         Preconditions.checkState(!queryParser, "Tried inserting user query into itself.");
         Preconditions.checkState(userQuery != null,
-                "User query must be set before trying to build complete query "
-                        + "tree including user query.");
+                                 "User query must be set before trying to build complete query "
+                                 + "tree including user query.");
         return userQuery.getModel().getQueryTree().getRoot();
     }
 
     @NonNull
     private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
+        // TODO add support for default arguments if property results in nothing
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        String wordData = getStringContents(args.get(0));
+
+        Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
+                                           Boolean.FALSE, "flag for allowing NullItem to be returned");
+        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.ALL.toString(), "grammar for handling user input");
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
-        Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
-                                           Boolean.FALSE, "flag for allowing NullItem to be returned");
-        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-
-        // TODO add support for default arguments if property results in nothing
-        String wordData = getStringContents(args.get(0));
-        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
-
-        String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE,
-                                           String.class, "en",
-                                           "language setting for segmenting user input parameter");
-        Language language = Language.fromLanguageTag(languageTag);
+        Language language = decideUserInputLanguage(ast, wordData);
         Item item;
         if (USER_INPUT_RAW.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, language);
@@ -667,7 +666,18 @@ public class YqlParser implements Parser {
             item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotations(ast, item);
         }
+        item.setLanguage(language);
         return item;
+    }
+    
+    private Language decideUserInputLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
+        String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
+                                           "language setting for segmenting user input parameter");
+        Language language = Language.fromLanguageTag(languageTag);
+        if (language != Language.UNKNOWN) return language;
+        language = detector.detect(wordData, null).getLanguage();
+        if (language != Language.UNKNOWN) return language;
+        return Language.ENGLISH;
     }
 
     private String getStringContents(OperatorNode<ExpressionOperator> propertySniffer) {
@@ -681,64 +691,6 @@ public class YqlParser implements Parser {
             default:
                 throw newUnexpectedArgumentException(propertySniffer.getOperator(),
                                                      ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
-        }
-    }
-
-    private class AnnotationPropagator extends QueryVisitor {
-
-        private final Boolean isRanked;
-        private final Boolean filter;
-        private final Boolean stem;
-        private final Boolean normalizeCase;
-        private final Boolean accentDrop;
-        private final Boolean usePositionData;
-
-        public AnnotationPropagator(OperatorNode<ExpressionOperator> ast) {
-            isRanked = getAnnotation(ast, RANKED, Boolean.class, null,
-                    RANKED_DESCRIPTION);
-            filter = getAnnotation(ast, FILTER, Boolean.class, null,
-                    FILTER_DESCRIPTION);
-            stem = getAnnotation(ast, STEM, Boolean.class, null,
-                    STEM_DESCRIPTION);
-            normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class,
-                    Boolean.TRUE, NORMALIZE_CASE_DESCRIPTION);
-            accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null,
-                    ACCENT_DROP_DESCRIPTION);
-            usePositionData = getAnnotation(ast, USE_POSITION_DATA,
-                    Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
-        }
-
-        @Override
-        public boolean visit(Item item) {
-            if (item instanceof WordItem) {
-                WordItem w = (WordItem) item;
-                if (usePositionData != null) {
-                    w.setPositionData(usePositionData);
-                }
-                if (stem != null) {
-                    w.setStemmed(!stem);
-                }
-                if (normalizeCase != null) {
-                    w.setLowercased(!normalizeCase);
-                }
-                if (accentDrop != null) {
-                    w.setNormalizable(accentDrop);
-                }
-            }
-            if (item instanceof TaggableItem) {
-                if (isRanked != null) {
-                    item.setRanked(isRanked);
-                }
-                if (filter != null) {
-                    item.setFilter(filter);
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public void onExit() {
-            // intentionally left blank
         }
     }
 
@@ -968,50 +920,39 @@ public class YqlParser implements Parser {
     private IntItem buildLessThan(OperatorNode<ExpressionOperator> ast) {
         IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("<" + fetchConditionWord(ast),
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class),
-                    number);
+            number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem(">" + fetchConditionWord(ast),
-                    fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class),
-                    number);
+            number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
         return number;
     }
 
     @NonNull
     private IntItem buildEquals(OperatorNode<ExpressionOperator> ast) {
-        IntItem number = new IntItem(fetchConditionWord(ast),
-                fetchConditionIndex(ast));
+        IntItem number = new IntItem(fetchConditionWord(ast), fetchConditionIndex(ast));
         if (isIndexOnLeftHandSide(ast)) {
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class),
-                    number);
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class),
-                    number);
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
-        return number;
     }
 
     @NonNull
     private String fetchConditionIndex(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
-        if (lhs.getOperator() == ExpressionOperator.LITERAL
-                || lhs.getOperator() == ExpressionOperator.NEGATE) {
+        if (lhs.getOperator() == ExpressionOperator.LITERAL || lhs.getOperator() == ExpressionOperator.NEGATE) {
             assertHasOperator(rhs, ExpressionOperator.READ_FIELD);
             return getIndex(rhs);
         }
-        if (rhs.getOperator() == ExpressionOperator.LITERAL
-                || rhs.getOperator() == ExpressionOperator.NEGATE) {
+        if (rhs.getOperator() == ExpressionOperator.LITERAL || rhs.getOperator() == ExpressionOperator.NEGATE) {
             assertHasOperator(lhs, ExpressionOperator.READ_FIELD);
             return getIndex(lhs);
         }
-        throw new IllegalArgumentException(
-                "Expected LITERAL and READ_FIELD, got " + lhs.getOperator()
-                        + " and " + rhs.getOperator() + ".");
+        throw new IllegalArgumentException("Expected LITERAL and READ_FIELD, got " + lhs.getOperator() + 
+                                           " and " + rhs.getOperator() + ".");
     }
 
     private static String getNumberAsString(OperatorNode<ExpressionOperator> ast) {
@@ -1127,9 +1068,7 @@ public class YqlParser implements Parser {
     @NonNull
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
-        return instantiateLeafItem(
-                getIndex(ast.<OperatorNode<ExpressionOperator>> getArgument(0)),
-                ast.<OperatorNode<ExpressionOperator>> getArgument(1));
+        return instantiateLeafItem(getIndex(ast.<OperatorNode<ExpressionOperator>> getArgument(0)), ast.<OperatorNode<ExpressionOperator>> getArgument(1));
     }
 
     @NonNull
@@ -1224,40 +1163,36 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private Item instantiateLeafItem(String field,
-            OperatorNode<ExpressionOperator> ast) {
+    private Item instantiateLeafItem(String field, OperatorNode<ExpressionOperator> ast) {
         switch (ast.getOperator()) {
-        case LITERAL:
-        case VARREF:
-            return instantiateWordItem(field, ast, null);
-        case CALL:
-            return instantiateCompositeLeaf(field, ast);
-        default:
-            throw newUnexpectedArgumentException(ast.getOperator().name(),
-                    ExpressionOperator.CALL, ExpressionOperator.LITERAL);
+            case LITERAL:
+            case VARREF:
+                return instantiateWordItem(field, ast, null);
+            case CALL:
+                return instantiateCompositeLeaf(field, ast);
+            default:
+                throw newUnexpectedArgumentException(ast.getOperator().name(),
+                                                     ExpressionOperator.CALL, ExpressionOperator.LITERAL);
         }
     }
 
     @NonNull
-    private Item instantiateCompositeLeaf(String field,
-            OperatorNode<ExpressionOperator> ast) {
+    private Item instantiateCompositeLeaf(String field, OperatorNode<ExpressionOperator> ast) {
         List<String> names = ast.getArgument(0);
-        Preconditions.checkArgument(names.size() == 1,
-                "Expected 1 name, got %s.", names.size());
+        Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
         switch (names.get(0)) {
-        case PHRASE:
-            return instantiatePhraseItem(field, ast);
-        case NEAR:
-            return instantiateNearItem(field, ast);
-        case ONEAR:
-            return instantiateONearItem(field, ast);
-        case EQUIV:
-            return instantiateEquivItem(field, ast);
-        case ALTERNATIVES:
-            return instantiateWordAlternativesItem(field, ast);
-        default:
-            throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR,
-                    ONEAR, PHRASE);
+            case PHRASE:
+                return instantiatePhraseItem(field, ast);
+            case NEAR:
+                return instantiateNearItem(field, ast);
+            case ONEAR:
+                return instantiateONearItem(field, ast);
+            case EQUIV:
+                return instantiateEquivItem(field, ast);
+            case ALTERNATIVES:
+                return instantiateWordAlternativesItem(field, ast);
+            default:
+                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE);
         }
     }
 
@@ -1284,8 +1219,8 @@ public class YqlParser implements Parser {
             terms.add(new WordAlternativesItem.Alternative(term, exactness));
         }
         Substring origin = getOrigin(ast);
-        final Boolean isFromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE,
-                IMPLICIT_TRANSFORMS_DESCRIPTION);
+        Boolean isFromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE,
+                                            IMPLICIT_TRANSFORMS_DESCRIPTION);
         return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
     }
 
@@ -1365,24 +1300,21 @@ public class YqlParser implements Parser {
             wordItem = new SubstringItem(wordData, fromQuery);
         } else {
             switch (segmentPolicy) {
-            case NEVER:
-                wordItem = new WordItem(wordData, fromQuery);
-                break;
-            case POSSIBLY:
-                if (shouldResegmentWord(field, fromQuery)) {
-                    wordItem = resegment(field, ast, wordData, fromQuery,
-                            parent, language);
-                } else {
+                case NEVER:
                     wordItem = new WordItem(wordData, fromQuery);
-                }
-                break;
-            case ALWAYS:
-                wordItem = resegment(field, ast, wordData, fromQuery, parent,
-                        language);
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Unexpected segmenting rule: " + segmentPolicy);
+                    break;
+                case POSSIBLY:
+                    if (shouldResegmentWord(field, fromQuery)) {
+                        wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
+                    } else {
+                        wordItem = new WordItem(wordData, fromQuery);
+                    }
+                    break;
+                case ALWAYS:
+                    wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
             }
         }
         if (wordItem instanceof WordItem) {
@@ -1397,18 +1329,17 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private TaggableItem resegment(String field,
-            OperatorNode<ExpressionOperator> ast, String wordData,
-            boolean fromQuery, Class<?> parent, Language language) {
-        final TaggableItem wordItem;
+    private TaggableItem resegment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
+                                   boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
-        final Substring s = getOrigin(ast);
-        final Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
+        Substring s = getOrigin(ast);
+        Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
         if (s != null) {
             toSegment = s.getValue();
         }
-        List<String> words = segmenter.segment(toSegment,
-                usedLanguage);
+        List<String> words = segmenter.segment(toSegment, usedLanguage);
+
+        TaggableItem wordItem;
         if (words.size() == 0) {
             wordItem = new WordItem(wordData, fromQuery);
         } else if (words.size() == 1 || !phraseArgumentSupported(parent)) {
@@ -1427,22 +1358,16 @@ public class YqlParser implements Parser {
     }
 
     private boolean phraseArgumentSupported(Class<?> parent) {
-        if (parent == null) {
-            return true;
-        } else if (parent == PhraseItem.class) {
-            // not supported in backend, but the container flattens the
-            // arguments itself
-            return true;
-        } else if (parent == EquivItem.class) {
-            return true;
-        } else {
-            return false;
-        }
+        if (parent == null) return true;
+
+        // not supported in backend, but the container flattens the arguments itself:
+        if (parent == PhraseItem.class) return true;
+
+        return parent == EquivItem.class;
     }
 
-    private void prepareWord(String field,
-            OperatorNode<ExpressionOperator> ast, boolean fromQuery,
-            WordItem wordItem) {
+    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery,
+                             WordItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
         if (shouldResegmentWord(field, fromQuery)) {
@@ -1479,30 +1404,24 @@ public class YqlParser implements Parser {
                                                       Map.class, Collections.emptyMap(), "item annotation map");
             for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
                 Preconditions.checkArgument(entry.getKey() instanceof String,
-                        "Expected String annotation key, got %s.", entry
-                                .getKey().getClass());
+                                            "Expected String annotation key, got %s.", entry.getKey().getClass());
                 Preconditions.checkArgument(entry.getValue() instanceof String,
-                        "Expected String annotation value, got %s.", entry
-                                .getValue().getClass());
+                                            "Expected String annotation value, got %s.", entry.getValue().getClass());
                 leaf.addAnnotation((String) entry.getKey(), entry.getValue());
             }
-            Boolean filter = getAnnotation(ast, FILTER, Boolean.class, null,
-                    FILTER_DESCRIPTION);
+            Boolean filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
             if (filter != null) {
                 leaf.setFilter(filter);
             }
-            Boolean isRanked = getAnnotation(ast, RANKED, Boolean.class, null,
-                    RANKED_DESCRIPTION);
+            Boolean isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
             if (isRanked != null) {
                 leaf.setRanked(isRanked);
             }
-            String label = getAnnotation(ast, LABEL, String.class, null,
-                    "item label");
+            String label = getAnnotation(ast, LABEL, String.class, null, "item label");
             if (label != null) {
                 leaf.setLabel(label);
             }
-            Integer weight = getAnnotation(ast, WEIGHT, Integer.class, null,
-                    "term weight for ranking");
+            Integer weight = getAnnotation(ast, WEIGHT, Integer.class, null, "term weight for ranking");
             if (weight != null) {
                 leaf.setWeight(weight);
             }
@@ -1511,7 +1430,7 @@ public class YqlParser implements Parser {
             IntItem number = (IntItem) out;
             Integer hitLimit = getCappedRangeSearchParameter(ast);
             if (hitLimit != null) {
-                number.setHitLimit(hitLimit.intValue());
+                number.setHitLimit(hitLimit);
             }
         }
 
@@ -1523,42 +1442,32 @@ public class YqlParser implements Parser {
 
         if (hitLimit != null) {
             Boolean ascending = getAnnotation(ast, ASCENDING_HITS_ORDER, Boolean.class, null,
-                    "ascending population ordering for capped range search");
+                                              "ascending population ordering for capped range search");
             Boolean descending = getAnnotation(ast, DESCENDING_HITS_ORDER, Boolean.class, null,
-                    "descending population ordering for capped range search");
+                                               "descending population ordering for capped range search");
             Preconditions.checkArgument(ascending == null || descending == null,
-                    "Settings for both ascending and descending ordering set, only one of these expected.");
+                                        "Settings for both ascending and descending ordering set, only one of these expected.");
             if (Boolean.TRUE.equals(descending) || Boolean.FALSE.equals(ascending)) {
-                hitLimit = Integer.valueOf(hitLimit.intValue() * -1);
+                hitLimit = hitLimit * -1;
             }
         }
         return hitLimit;
     }
 
     @Beta
-    public boolean isQueryParser() {
-        return queryParser;
-    }
+    public boolean isQueryParser() { return queryParser; }
 
     @Beta
-    public void setQueryParser(boolean queryParser) {
-        this.queryParser = queryParser;
-    }
+    public void setQueryParser(boolean queryParser) { this.queryParser = queryParser; }
 
     @Beta
-    public void setUserQuery(@NonNull Query userQuery) {
-        this.userQuery = userQuery;
-    }
+    public void setUserQuery(@NonNull Query userQuery) { this.userQuery = userQuery; }
 
     @Beta
-    public Set<String> getYqlSummaryFields() {
-        return yqlSummaryFields;
-    }
+    public Set<String> getYqlSummaryFields() { return yqlSummaryFields; }
 
     @Beta
-    public List<VespaGroupingStep> getGroupingSteps() {
-        return groupingSteps;
-    }
+    public List<VespaGroupingStep> getGroupingSteps() { return groupingSteps; }
 
     /**
      * Give the offset expected from the latest parsed query if anything is
@@ -1566,9 +1475,7 @@ public class YqlParser implements Parser {
      *
      * @return an Integer instance or null
      */
-    public Integer getOffset() {
-        return offset;
-    }
+    public Integer getOffset() { return offset; }
 
     /**
      * Give the number of hits expected from the latest parsed query if anything
@@ -1576,35 +1483,25 @@ public class YqlParser implements Parser {
      *
      * @return an Integer instance or null
      */
-    public Integer getHits() {
-        return hits;
-    }
+    public Integer getHits() { return hits; }
 
     /**
      * The timeout specified in the YQL+ query last parsed.
      *
      * @return an Integer instance or null
      */
-    public Integer getTimeout() {
-        return timeout;
-    }
+    public Integer getTimeout() { return timeout; }
 
     /**
      * The sorting specified in the YQL+ query last parsed.
      *
      * @return a Sorting instance or null
      */
-    public Sorting getSorting() {
-        return sorting;
-    }
+    public Sorting getSorting() { return sorting; }
 
-    Set<String> getDocTypes() {
-        return docTypes;
-    }
+    Set<String> getDocTypes() { return docTypes; }
 
-    Set<String> getYqlSources() {
-        return yqlSources;
-    }
+    Set<String> getYqlSources() { return yqlSources; }
 
     private static void assertHasOperator(OperatorNode<?> ast, Class<? extends Operator> expectedOperatorClass) {
         Preconditions.checkArgument(expectedOperatorClass.isInstance(ast.getOperator()),
@@ -1673,38 +1570,29 @@ public class YqlParser implements Parser {
         }
     }
 
-    private void wordStyleSettings(OperatorNode<ExpressionOperator> ast,
-            WordItem out) {
+    private void wordStyleSettings(OperatorNode<ExpressionOperator> ast, WordItem out) {
         Substring origin = getOrigin(ast);
         if (origin != null) {
             out.setOrigin(origin);
         }
-        Boolean usePositionData = getAnnotation(ast, USE_POSITION_DATA,
-                Boolean.class, null,
-                USE_POSITION_DATA_DESCRIPTION);
+        Boolean usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
         if (usePositionData != null) {
             out.setPositionData(usePositionData);
         }
-        Boolean stem = getAnnotation(ast, STEM, Boolean.class, null,
-                STEM_DESCRIPTION);
+        Boolean stem = getAnnotation(ast, STEM, Boolean.class, null, STEM_DESCRIPTION);
         if (stem != null) {
             out.setStemmed(!stem);
         }
-        Boolean normalizeCase = getAnnotation(ast, NORMALIZE_CASE,
-                Boolean.class, null,
-                NORMALIZE_CASE_DESCRIPTION);
+        Boolean normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
         if (normalizeCase != null) {
             out.setLowercased(!normalizeCase);
         }
-        Boolean accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class,
-                null,
-                ACCENT_DROP_DESCRIPTION);
+        Boolean accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
         if (accentDrop != null) {
             out.setNormalizable(accentDrop);
         }
-        Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING,
-                Boolean.class, null,
-                "setting for whether to force using AND for segments on and off");
+        Boolean andSegmenting = getAnnotation(ast, AND_SEGMENTING, Boolean.class, null,
+                                              "setting for whether to force using AND for segments on and off");
         if (andSegmenting != null) {
             if (andSegmenting) {
                 out.setSegmentingRule(SegmentingRule.BOOLEAN_AND);
@@ -1734,45 +1622,36 @@ public class YqlParser implements Parser {
         return new Substring(offset, length + offset, original);
     }
 
-    private static <T> T getMapValue(String mapName, Map<?, ?> map, String key,
-            Class<T> expectedValueClass) {
+    private static <T> T getMapValue(String mapName, Map<?, ?> map, String key, Class<T> expectedValueClass) {
         Object value = map.get(key);
-        Preconditions.checkArgument(value != null,
-                "Map annotation '%s' must contain an entry with key '%s'.",
-                mapName, key);
-        assert value != null;
+        Preconditions.checkArgument(value != null, "Map annotation '%s' must contain an entry with key '%s'.",
+                                    mapName, key);
         Preconditions.checkArgument(expectedValueClass.isInstance(value),
-                "Expected %s for entry '%s' in map annotation '%s', got %s.",
-                expectedValueClass.getName(), key, mapName, value.getClass()
-                        .getName());
+                                    "Expected %s for entry '%s' in map annotation '%s', got %s.",
+                                    expectedValueClass.getName(), key, mapName, value.getClass().getName());
         return expectedValueClass.cast(value);
     }
 
-    private <T> T getAnnotation(OperatorNode<?> ast, String key,
-    Class<T> expectedClass, T defaultValue, String description) {
-        return getAnnotation(ast, key, expectedClass, defaultValue,
-                description, true);
+    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, 
+                                T defaultValue, String description) {
+        return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
     }
 
-    private <T> T getAnnotation(OperatorNode<?> ast, String key,
-            Class<T> expectedClass, T defaultValue, String description, boolean considerParents) {
+    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue, 
+                                String description, boolean considerParents) {
         Object value = ast.getAnnotation(key);
-        for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null
-                && considerParents && i.hasNext();) {
+        for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null 
+                                                                       && considerParents && i.hasNext();) {
             value = i.next().getAnnotation(key);
         }
-        if (value == null) {
-            return defaultValue;
-        }
+        if (value == null) return defaultValue;
         Preconditions.checkArgument(expectedClass.isInstance(value),
-                "Expected %s for annotation '%s' (%s), got %s.", expectedClass
-                        .getName(), key, description, value.getClass()
-                        .getName());
+                                   "Expected %s for annotation '%s' (%s), got %s.", 
+                                    expectedClass.getName(), key, description, value.getClass().getName());
         return expectedClass.cast(value);
     }
 
-    private static IllegalArgumentException newUnexpectedArgumentException(
-            Object actual, Object... expected) {
+    private static IllegalArgumentException newUnexpectedArgumentException(Object actual, Object... expected) {
         StringBuilder out = new StringBuilder("Expected ");
         for (int i = 0, len = expected.length; i < len; ++i) {
             out.append(expected[i]);
@@ -1806,4 +1685,57 @@ public class YqlParser implements Parser {
             this.fromItem = fromItem;
         }
     }
+
+    private class AnnotationPropagator extends QueryVisitor {
+
+        private final Boolean isRanked;
+        private final Boolean filter;
+        private final Boolean stem;
+        private final Boolean normalizeCase;
+        private final Boolean accentDrop;
+        private final Boolean usePositionData;
+
+        public AnnotationPropagator(OperatorNode<ExpressionOperator> ast) {
+            isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
+            filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
+            stem = getAnnotation(ast, STEM, Boolean.class, null, STEM_DESCRIPTION);
+            normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, Boolean.TRUE, NORMALIZE_CASE_DESCRIPTION);
+            accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
+            usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
+        }
+
+        @Override
+        public boolean visit(Item item) {
+            if (item instanceof WordItem) {
+                WordItem w = (WordItem) item;
+                if (usePositionData != null) {
+                    w.setPositionData(usePositionData);
+                }
+                if (stem != null) {
+                    w.setStemmed(!stem);
+                }
+                if (normalizeCase != null) {
+                    w.setLowercased(!normalizeCase);
+                }
+                if (accentDrop != null) {
+                    w.setNormalizable(accentDrop);
+                }
+            }
+            if (item instanceof TaggableItem) {
+                if (isRanked != null) {
+                    item.setRanked(isRanked);
+                }
+                if (filter != null) {
+                    item.setFilter(filter);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void onExit() {
+            // intentionally left blank
+        }
+    }
+
 }

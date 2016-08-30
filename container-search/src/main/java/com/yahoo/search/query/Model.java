@@ -113,29 +113,45 @@ public class Model implements Cloneable {
     }
 
     /**
-     * Gets the language to use for parsing. If this is explicitly set, that language is returned, otherwise
-     * it is guessed from the query string. If this does not yield an actual language, English is
-     * returned as the default.
+     * Gets the language to use for parsing. If this is explicitly set in the model, that language is returned.
+     * Otherwise, if a query tree is already produced and any node in it specifies a language the first such 
+     * node encountered in a depth first 
+     * left to right search is returned. Otherwise the language is guessed from the query string. 
+     * If this does not yield an actual language, English is returned as the default.
      *
      * @return the language determined, never null
      */
+    // TODO: We can support multiple languages per query by changing searchers which call this
+    //       to look up the query to use at each point form item.getLanguage
+    //       with this as fallback for query branches where no parent item specifies language
     public Language getParsingLanguage() {
         Language language = getLanguage();
-        if (language != null) {
-            return language;
-        }
+        if (language != null) return language;
+
         language = Language.fromEncoding(encoding);
-        if (language != Language.UNKNOWN) {
-            return language;
-        }
+        if (language != Language.UNKNOWN) return language;
+
+        if (queryTree != null)
+            language = languageBelow(queryTree);
+        if (language != Language.UNKNOWN) return language;
+        
         Linguistics linguistics = execution.context().getLinguistics();
-        if (linguistics != null) {
+        if (linguistics != null)
             language = linguistics.getDetector().detect(queryString, null).getLanguage();
-        }
-        if (language != Language.UNKNOWN) {
-            return language;
-        }
+        if (language != Language.UNKNOWN) return language;
+
         return Language.ENGLISH;
+    }
+    
+    private Language languageBelow(Item item) {
+        if (item.getLanguage() != Language.UNKNOWN) return item.getLanguage();
+        if (item instanceof CompositeItem) {
+            for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext(); ) {
+                Language childLanguage = languageBelow(i.next());
+                if (childLanguage != Language.UNKNOWN) return childLanguage;
+            }
+        }
+        return Language.UNKNOWN;
     }
 
     /** Returns the explicitly set parsing language of this query model, or null if none */

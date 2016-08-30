@@ -3,6 +3,8 @@ package com.yahoo.search.yql;
 
 import static org.junit.Assert.*;
 
+import com.yahoo.language.Language;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.grouping.GroupingRequest;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -32,14 +34,15 @@ import java.util.List;
  * Smoke test for first generation YQL+ integration.
  */
 public class MinimalQueryInserterTestCase {
+
     private Chain<Searcher> searchChain;
     private Execution.Context context;
     private Execution execution;
 
     @Before
     public void setUp() throws Exception {
-        searchChain = new Chain<Searcher>(new MinimalQueryInserter());
-        context = Execution.Context.createContextStub(null);
+        searchChain = new Chain<>(new MinimalQueryInserter());
+        context = Execution.Context.createContextStub(null, null, new SimpleLinguistics());
         execution = new Execution(searchChain, context);
     }
 
@@ -115,29 +118,48 @@ public class MinimalQueryInserterTestCase {
     @Test
     @Ignore
     // TODO: YQL work in progress (jon)
-    public final void testTmp() {
-        final Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+    public void testTmp() {
+        Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         //execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
     }
 
     @Test
-    public final void testSearch() {
-        final Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+    public void testSearch() {
+        Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
+        assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage());
+    }
+
+    @Test
+    public void testUserLanguageIsDetectedWithUserInput() {
+        String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
+        Query query = new Query("search/?userString=" + japaneseWord + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userInput(@userString)%3B");
+        execution.search(query);
+        assertEquals("AND title:madonna default:" + japaneseWord, query.getModel().getQueryTree().toString());
+        assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
+    }
+
+    @Test
+    public void testUserLanguageIsDetectedWithUserQuery() {
+        String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
+        Query query = new Query("search/?query=" + japaneseWord + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        execution.search(query);
+        assertEquals("AND title:madonna " + japaneseWord, query.getModel().getQueryTree().toString());
+        assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
     }
 
     @Test
     public final void testUserQueryFailsWithoutArgument() {
-        final Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public final void testSearchFromAllSourcesWithUserSource() {
-        final Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
@@ -145,7 +167,7 @@ public class MinimalQueryInserterTestCase {
 
     @Test
     public final void testSearchFromAllSourcesWithoutUserSource() {
-        final Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
@@ -153,7 +175,7 @@ public class MinimalQueryInserterTestCase {
 
     @Test
     public final void testSearchFromSomeSourcesWithoutUserSource() {
-        final Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(2, query.getModel().getSources().size());

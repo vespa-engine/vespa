@@ -63,7 +63,7 @@ public class QueryTestCase {
     @Ignore
     @Test
     public void testSimpleProgram() {
-        Query q = new Query(httpEncode("?program=select * where myfield contains(word)"));
+        Query q = new Query(httpEncode("?program=select * from * where myfield contains(word)"));
         assertEquals("", q.getModel().getQueryTree().toString());
     }
 
