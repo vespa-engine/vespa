@@ -24,18 +24,6 @@ public class CuratorDatabaseClientTest {
     private CuratorDatabaseClient zkClient = new CuratorDatabaseClient(FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC());
 
     @Test
-    public void ensure_can_read_stored_host_with_instance_information_no_type() throws Exception {
-        String zkline = "{\"hostname\":\"oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com\",\"openStackId\":\"7951bb9d-3989-4a60-a21c-13690637c8ea\",\"configuration\":{\"flavor\":\"default\"},\"created\":1421054425159,\"allocated\":1421057746687,\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"music\",\"instanceId\":\"default\",\"serviceId\":\"container/default/0/0\"}}";
-
-        curator.framework().create().creatingParentsIfNeeded().forPath("/provision/v1/allocated/oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com", zkline.getBytes());
-
-        List<Node> allocatedNodes = zkClient.getNodes(Node.State.active);
-        assertEquals(1, allocatedNodes.size());
-        assertEquals("container/default/0/0", allocatedNodes.get(0).allocation().get().membership().stringValue());
-        assertEquals(Node.Type.tenant, allocatedNodes.get(0).type());
-    }
-
-    @Test
     public void ensure_can_read_stored_host_information() throws Exception {
         String zkline = "{\"hostname\":\"oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com\",\"openStackId\":\"7951bb9d-3989-4a60-a21c-13690637c8ea\",\"configuration\":{\"flavor\":\"default\"},\"created\":1421054425159, \"type\":\"host\"}";
         curator.framework().create().creatingParentsIfNeeded().forPath("/provision/v1/ready/oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com", zkline.getBytes());

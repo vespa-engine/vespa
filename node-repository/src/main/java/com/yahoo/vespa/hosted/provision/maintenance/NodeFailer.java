@@ -72,7 +72,7 @@ public class NodeFailer extends Maintainer {
 
     private List<Node> readyNodesWithHardwareFailure() {
         return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
-                .filter(n -> n.status().hardwareFailure())
+                .filter(n -> n.status().hardwareFailure().isPresent())
                 .collect(Collectors.toList());
     }
     

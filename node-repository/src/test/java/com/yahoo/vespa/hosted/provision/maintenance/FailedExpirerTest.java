@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
@@ -87,7 +88,7 @@ public class FailedExpirerTest {
 
         // Set node2 to have a detected hardware failure
         Node node2 = nodeRepository.getNode("node2").get();
-        node2 = node2.setStatus(node2.status().setHardwareFailure(true));
+        node2 = node2.setStatus(node2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.mce)));
         nodeRepository.write(node2);
 
         // Allocate the nodes

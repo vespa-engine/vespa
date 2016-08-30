@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.restapi.NodeStateSerializer;
 
@@ -167,8 +168,7 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.get().membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.get().restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.get().restartGeneration().current());
-            allocation.get().membership().cluster().dockerImage().ifPresent(
-                    image -> object.setString("wantedDockerImage", image));
+            allocation.get().membership().cluster().dockerImage().ifPresent(image -> object.setString("wantedDockerImage", image));
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
@@ -179,7 +179,8 @@ class NodesResponse extends HttpResponse {
         node.status().dockerImage().ifPresent(image -> object.setString("currentDockerImage", image));
         node.status().stateVersion().ifPresent(version -> object.setString("convergedStateVersion", version));
         object.setLong("failCount", node.status().failCount());
-        object.setBool("hardwareFailure", node.status().hardwareFailure());
+        object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
+        node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));
         toSlime(node.history(), object.setArray("history"));
     }
 
@@ -225,6 +226,16 @@ class NodesResponse extends HttpResponse {
     private static Node.State stateFromString(String stateString) {
         return NodeStateSerializer.fromWireName(stateString)
                 .orElseThrow(() -> new RuntimeException("Node state '" + stateString + "' is not known"));
+    }
+
+    private String toString(Status.HardwareFailureType type) {
+        switch (type) {
+            case mce: return "mce";
+            case smart: return "smart";
+            case kernel: return "kernel";
+            case unknown: return "unknown";
+            default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
+        }
     }
 
 }
