@@ -15,7 +15,8 @@ IndexEnvironment::IndexEnvironment() :
     _properties(),
     _fields(),
     _attrMan(),
-    _tableMan()
+    _tableMan(),
+    _constants()
 {
 }
 
@@ -35,6 +36,17 @@ IndexEnvironment::getFieldByName(const string &name) const
         }
     }
     return NULL;
+}
+
+void
+IndexEnvironment::addConstantValue(const vespalib::string &name,
+                                   vespalib::eval::ValueType type,
+                                   std::unique_ptr<vespalib::eval::Value> value)
+{
+    std::pair<vespalib::string, Constant> insertArg(
+            std::make_pair(name, Constant(std::move(type), std::move(value))));
+    auto insertRes = _constants.insert(std::move(insertArg));
+    assert(insertRes.second); // successful insert
 }
 
 } // namespace test

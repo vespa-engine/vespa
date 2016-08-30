@@ -20,6 +20,34 @@ namespace test {
 class IndexEnvironment : public IIndexEnvironment
 {
 public:
+    struct Constant : vespalib::eval::ConstantValue {
+        vespalib::eval::ValueType _type;
+        std::unique_ptr<vespalib::eval::Value> _value;
+        Constant(vespalib::eval::ValueType type,
+                     std::unique_ptr<vespalib::eval::Value> value)
+            : _type(std::move(type)), _value(std::move(value))
+        { }
+        Constant(Constant &&rhs)
+            : _type(std::move(rhs._type)),
+              _value(std::move(rhs._value))
+        {
+        }
+        const vespalib::eval::ValueType &type() const override { return _type; }
+        const vespalib::eval::Value &value() const override { return *_value; }
+        ~Constant() { }
+    };
+
+    struct ConstantRef : vespalib::eval::ConstantValue {
+        const Constant &_value;
+        ConstantRef(const Constant &value)
+            : _value(value)
+        { }
+        const vespalib::eval::ValueType &type() const override { return _value.type(); }
+        const vespalib::eval::Value &value() const override { return _value.value(); }
+        ~ConstantRef() { }
+    };
+
+    using ConstantsMap = std::map<vespalib::string, Constant>;
     /**
      * Constructs a new index environment.
      */
@@ -67,9 +95,18 @@ public:
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP();
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
+        auto it = _constants.find(name);
+        if (it != _constants.end()) {
+            return std::make_unique<ConstantRef>(it->second);
+        } else {
+            return vespalib::eval::ConstantValue::UP();
+        }
     }
+
+    void addConstantValue(const vespalib::string &name,
+                          vespalib::eval::ValueType type,
+                          std::unique_ptr<vespalib::eval::Value> value);
 
 private:
     IndexEnvironment(const IndexEnvironment &);             // hide
@@ -80,6 +117,7 @@ private:
     std::vector<FieldInfo> _fields;
     AttributeManager       _attrMan;
     TableManager           _tableMan;
+    ConstantsMap           _constants;
 };
 
 } // namespace test
