@@ -135,6 +135,7 @@ ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
 {
     MonitorGuard monitor(_monitor);
     _taskLimit = taskLimit;
+    wakeup(monitor);
 }
 
 ThreadStackExecutorBase::Stats
