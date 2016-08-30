@@ -1,13 +1,15 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet6Address;
@@ -24,13 +26,20 @@ import static org.junit.Assert.assertTrue;
  * @author valerijf
  */
 public class DockerTest {
+    /**
+     * To run these tests:
+     *  1. Remove Ignore annotations
+     *  2. (Temporary) Manually create the docker network used by DockerImpl by running:
+     *      $ sudo docker network create --ipv6 --gateway=<your local IPv6 address> --subnet=fe80::1/16 habla
+     */
     private static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
-            .caCertPath("/etc/dockercert_container/ca_cert.pem")
-            .clientCertPath("/etc/dockercert_container/client_cert.pem")
-            .clientKeyPath("/etc/dockercert_container/client_key.pem"));
+            .caCertPath("")     // Temporary setting it to empty as this field is required, in the future
+            .clientCertPath("") // DockerConfig should be rewritten and probably moved to docker-api module
+            .clientKeyPath("")
+            .uri("unix:///var/run/docker.sock"));
 
     private static final DockerImpl docker = new DockerImpl(dockerConfig);
-    private static final DockerImage dockerImage = new DockerImage("freva/simple-ipv6-server:latest");
+    private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
 
     @Ignore
@@ -50,7 +59,6 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
-    @Ignore
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         HostName hostName1 = new HostName("docker10.test.yahoo.com");
@@ -69,7 +77,7 @@ public class DockerTest {
 
             String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://[" + inetAddress2.getHostAddress() + "%eth0]/ping"};
             while (! docker.executeInContainer(containerName1, curlFromNodeToNode).isSuccess()) {
-                Thread.sleep(10);
+                Thread.sleep(20);
             }
             ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
             assertTrue("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
@@ -84,9 +92,9 @@ public class DockerTest {
     }
 
     private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = new String[]{"curl", "-g", "http://[" + target.getHostAddress() + "%" + getInterfaceName() + "]/ping"};
+        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target.getHostAddress() + "%" + getInterfaceName() + "]/ping"};
         while (!exec(curlNodeFromHost).equals("pong\n")) {
-            Thread.sleep(10);
+            Thread.sleep(20);
         }
         assertTrue("Could not reach " + containerName.asString() + " from host", exec(curlNodeFromHost).equals("pong\n"));
     }
@@ -138,10 +146,13 @@ public class DockerTest {
         return ret.toString();
     }
 
-    @BeforeClass
-    public static void setup() throws SocketException, ExecutionException, InterruptedException {
-        // Make sure we have an image we can run in all non pull/delete image tests
-        docker.pullImageAsync(dockerImage).get();
+    @Before
+    public void setup() throws IOException, ExecutionException, InterruptedException {
+        // Build the image locally
+        File dockerFilePath = new File("src/test/resources/simple-ipv6-server");
+        docker.docker
+                .buildImageCmd(dockerFilePath)
+                .withTag(dockerImage.asString()).exec(new BuildImageResultCallback()).awaitCompletion();
 
         // Create a temporary network
         Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
@@ -150,8 +161,8 @@ public class DockerTest {
                 .withIpam(ipam).exec();
     }
 
-    @AfterClass
-    public static void shutdown() {
+    @After
+    public void shutdown() {
         // Remove the network we created earlier
         docker.docker.removeNetworkCmd(DockerImpl.DOCKER_CUSTOM_IP6_NETWORK_NAME).exec();
     }
