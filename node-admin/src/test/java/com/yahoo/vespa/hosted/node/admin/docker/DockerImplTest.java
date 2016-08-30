@@ -47,7 +47,6 @@ public class DockerImplTest {
         assertThat(binds, hasItem(Bind.parse(directoryOnHost + ":" + dataDirectory)));
     }
 
-    @Ignore
     @Test
     public void vespaVersionIsParsed() {
         assertThat(DockerImpl.parseVespaVersion("5.119.53"), is(Optional.of("5.119.53")));
