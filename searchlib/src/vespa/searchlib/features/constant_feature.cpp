@@ -15,7 +15,7 @@ namespace search {
 namespace features {
 
 /**
- * Feature executor that returns a constant tensor.
+ * Feature executor that returns a constant value.
  */
 class ConstantFeatureExecutor : public fef::FeatureExecutor
 {
@@ -64,7 +64,7 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
 {
     _key = params[0].getValue();
     _value = env.getConstantValue(_key);
-    if (!_value) {
+    if (!_value || _value->type().is_error()) {
         LOG(error, "Constant '%s' not found", _key.c_str());
     }
     FeatureType output_type = _value ?
@@ -72,7 +72,7 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
                               FeatureType::number();
     describeOutput("out", "The constant looked up in index environment using the given key.",
                    output_type);
-    return static_cast<bool>(_value);
+    return (_value && !_value->type().is_error());
 }
 
 FeatureExecutor::LP

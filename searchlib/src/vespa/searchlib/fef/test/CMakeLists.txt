@@ -1,6 +1,7 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_fef_test OBJECT
     SOURCES
+    as_tensor.cpp
     dummy_dependency_handler.cpp
     featuretest.cpp
     ftlib.cpp

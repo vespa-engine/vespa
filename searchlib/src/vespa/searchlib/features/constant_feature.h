@@ -3,8 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-//#include <vespa/vespalib/tensor/tensor_type.h>
-//#include <vespa/vespalib/eval/value_cache/constant_value.h>
 
 namespace vespalib { namespace eval { struct ConstantValue; } }
 
@@ -14,7 +12,7 @@ namespace features {
 /**
  * Implements the blueprint for the constant feature.
  *
- * An executor of this outputs the value of a feature passed down with the constant.
+ * An executor of this outputs the value of a named constant.
  * This can either be a number or a tensor value.
  */
 class ConstantBlueprint : public search::fef::Blueprint {
@@ -30,24 +28,19 @@ public:
 
     ~ConstantBlueprint();
 
-    // Inherit doc from Blueprint.
     virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                   search::fef::IDumpFeatureVisitor &visitor) const;
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
+    virtual search::fef::Blueprint::UP createInstance() const override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc().string();
     }
 
-    // Inherit doc from Blueprint.
     virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
+                       const search::fef::ParameterList &params) override;
 
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const override;
 };
 
 } // namespace features

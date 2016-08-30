@@ -95,14 +95,7 @@ public:
     /** Returns a reference to the table manager of this. */
     TableManager &getTableManager() { return _tableMan; }
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
-        auto it = _constants.find(name);
-        if (it != _constants.end()) {
-            return std::make_unique<ConstantRef>(it->second);
-        } else {
-            return vespalib::eval::ConstantValue::UP();
-        }
-    }
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override;
 
     void addConstantValue(const vespalib::string &name,
                           vespalib::eval::ValueType type,

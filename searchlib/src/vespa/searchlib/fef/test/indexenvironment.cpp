@@ -11,6 +11,16 @@ namespace search {
 namespace fef {
 namespace test {
 
+using vespalib::eval::ValueType;
+using vespalib::eval::ErrorValue;
+
+namespace {
+
+IndexEnvironment::Constant notFoundError(ValueType::error_type(),
+                                         std::make_unique<ErrorValue>());
+
+}
+
 IndexEnvironment::IndexEnvironment() :
     _properties(),
     _fields(),
@@ -38,14 +48,26 @@ IndexEnvironment::getFieldByName(const string &name) const
     return NULL;
 }
 
+
+vespalib::eval::ConstantValue::UP
+IndexEnvironment::getConstantValue(const vespalib::string &name) const
+{
+    auto it = _constants.find(name);
+    if (it != _constants.end()) {
+        return std::make_unique<ConstantRef>(it->second);
+    } else {
+        return std::make_unique<ConstantRef>(notFoundError);
+    }
+}
+
 void
 IndexEnvironment::addConstantValue(const vespalib::string &name,
                                    vespalib::eval::ValueType type,
                                    std::unique_ptr<vespalib::eval::Value> value)
 {
-    std::pair<vespalib::string, Constant> insertArg(
-            std::make_pair(name, Constant(std::move(type), std::move(value))));
-    auto insertRes = _constants.insert(std::move(insertArg));
+    auto insertRes = _constants.emplace(name,
+                                        Constant(std::move(type),
+                                                 std::move(value)));
     assert(insertRes.second); // successful insert
 }
 

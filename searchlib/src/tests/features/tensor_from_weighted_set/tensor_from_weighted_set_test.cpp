@@ -2,15 +2,14 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/fef/test/as_tensor.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
@@ -27,9 +26,7 @@ using search::IntegerAttribute;
 using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
-using vespalib::eval::InterpretedFunction;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::DefaultTensorEngine;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -123,23 +120,6 @@ struct ExecFixture
         return extractTensor();
     }
 };
-
-struct AsTensor {
-    InterpretedFunction ifun;
-    InterpretedFunction::Context ctx;
-    const Value *result;
-    explicit AsTensor(const vespalib::string &expr)
-        : ifun(DefaultTensorEngine::ref(), Function::parse(expr)), ctx(), result(&ifun.eval(ctx))
-    {
-        ASSERT_TRUE(result->is_tensor());
-    }
-    bool operator==(const Tensor &rhs) const { return static_cast<const Tensor &>(*result->as_tensor()).equals(rhs); }
-};
-
-std::ostream &operator<<(std::ostream &os, const AsTensor &my_tensor) {
-    os << my_tensor.result->as_tensor();
-    return os;
-}
 
 TEST_F("require that weighted set string attribute can be converted to tensor (default dimension)",
         ExecFixture("tensorFromWeightedSet(attribute(wsstr))"))

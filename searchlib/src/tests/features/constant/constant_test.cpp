@@ -5,11 +5,10 @@
 
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/test/as_tensor.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 
 using search::feature_t;
@@ -18,12 +17,10 @@ using namespace search::fef::indexproperties;
 using namespace search::fef::test;
 using namespace search::features;
 using vespalib::eval::Function;
-using vespalib::eval::InterpretedFunction;
 using vespalib::eval::Value;
 using vespalib::eval::DoubleValue;
 using vespalib::eval::TensorValue;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
@@ -89,28 +86,6 @@ struct ExecFixture
                                             std::make_unique<DoubleValue>(value));
     }
 };
-
-struct AsTensor {
-    InterpretedFunction ifun;
-    InterpretedFunction::Context ctx;
-    const Value *result;
-    const Tensor *tensor;
-    explicit AsTensor(const vespalib::string &expr)
-        : ifun(DefaultTensorEngine::ref(), Function::parse(expr)), ctx(), result(&ifun.eval(ctx))
-    {
-        ASSERT_TRUE(result->is_tensor());
-        tensor = static_cast<const Tensor *>(result->as_tensor());
-    }
-    bool operator==(const Tensor &rhs) const {
-        return tensor->equals(rhs);
-    }
-};
-
-std::ostream &operator<<(std::ostream &os, const AsTensor &my_tensor) {
-    os << my_tensor.result->as_tensor();
-    return os;
-}
-
 
 TEST_F("require that missing constant is detected",
        ExecFixture("constant(foo)"))
