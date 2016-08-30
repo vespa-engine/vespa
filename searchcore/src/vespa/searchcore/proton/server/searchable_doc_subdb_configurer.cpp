@@ -96,17 +96,19 @@ SearchableDocSubDBConfigurer::reconfigureSearchView(const ISummaryManager::ISumm
 }
 
 SearchableDocSubDBConfigurer::
-SearchableDocSubDBConfigurer(const ISummaryManager::SP & summaryMgr,
-                             SearchViewHolder & searchView,
-                             FeedViewHolder & feedView,
-                             matching::QueryLimiter & queryLimiter,
-                             const vespalib::Clock & clock,
-                             const vespalib::string & subDbName,
+SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
+                             SearchViewHolder &searchView,
+                             FeedViewHolder &feedView,
+                             matching::QueryLimiter &queryLimiter,
+                             matching::ConstantValueRepo &constantValueRepo,
+                             const vespalib::Clock &clock,
+                             const vespalib::string &subDbName,
                              uint32_t distributionKey) :
     _summaryMgr(summaryMgr),
     _searchView(searchView),
     _feedView(feedView),
     _queryLimiter(queryLimiter),
+    _constantValueRepo(constantValueRepo),
     _clock(clock),
     _subDbName(subDbName),
     _distributionKey(distributionKey)
@@ -117,7 +119,7 @@ Matchers::UP
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
                                              const RankProfilesConfig &cfg)
 {
-    Matchers::UP newMatchers(new Matchers(_clock, _queryLimiter));
+    Matchers::UP newMatchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
     for (const auto &profile : cfg.rankprofile) {
         vespalib::string name = profile.name;
         search::fef::Properties properties;
@@ -127,7 +129,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
         }
         LOG(debug, "Adding matcher for rankprofile '%s'", name.c_str());
         // schema instance only used during call.
-        Matcher::SP profptr(new Matcher(*schema, properties, _clock, _queryLimiter, _distributionKey));
+        Matcher::SP profptr(new Matcher(*schema, properties, _clock, _queryLimiter, _constantValueRepo, _distributionKey));
         newMatchers->add(name, profptr);
     }
     return newMatchers;

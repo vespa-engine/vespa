@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_constant_value_repo.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -24,6 +25,7 @@ private:
     FieldNameMap                        _fieldNames;
     std::vector<search::fef::FieldInfo> _fields;
     mutable FeatureMotivation           _motivation;
+    const IConstantValueRepo           &_constantValueRepo;
 
     /**
      * Extract field information from the given schema and populate
@@ -38,9 +40,11 @@ public:
      *
      * @param schema the index schema
      * @param props config
+     * @param constantValueRepo repo used to access constant values for ranking
      **/
     IndexEnvironment(const search::index::Schema &schema,
-                     const search::fef::Properties &props);
+                     const search::fef::Properties &props,
+                     const IConstantValueRepo &constantValueRepo);
 
     // inherited from search::fef::IIndexEnvironment
     virtual const search::fef::Properties &getProperties() const override;
@@ -69,8 +73,8 @@ public:
     // inherited from search::fef::IIndexEnvironment
     virtual void hintAttributeAccess(const string &name) const override;
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP();
+    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
+        return _constantValueRepo.getConstant(name);
     }
 
     virtual ~IndexEnvironment();

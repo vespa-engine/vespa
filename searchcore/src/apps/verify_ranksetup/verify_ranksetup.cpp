@@ -5,6 +5,7 @@ LOG_SETUP("verify_ranksetup");
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
+#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/config/config.h>
@@ -38,11 +39,19 @@ public:
     int Main();
 };
 
+// TODO(geirst): Replace with actual constant values when available.
+struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
+    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const {
+        return std::make_unique<proton::matching::ErrorConstantValue>();
+    }
+};
+
 bool
 App::verify(const search::index::Schema &schema,
             const search::fef::Properties &props)
 {
-    proton::matching::IndexEnvironment indexEnv(schema, props);
+    EmptyConstantValueRepo emptyRepo;
+    proton::matching::IndexEnvironment indexEnv(schema, props, emptyRepo);
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);

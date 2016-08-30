@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_constant_value_repo.h"
 #include "indexenvironment.h"
 #include "matching_stats.h"
 #include "match_tools.h"
@@ -50,8 +51,8 @@ private:
     ViewResolver                  _viewResolver;
     vespalib::Lock                _statsLock;
     MatchingStats                 _stats;
-    const vespalib::Clock       & _clock;
-    QueryLimiter                & _queryLimiter;
+    const vespalib::Clock        &_clock;
+    QueryLimiter                 &_queryLimiter;
     uint32_t                      _distributionKey;
 
     search::FeatureSet::SP
@@ -77,6 +78,7 @@ public:
 
     Matcher(const Matcher &) = delete;
     Matcher &operator=(const Matcher &) = delete;
+
     /**
      * Create a new matcher. The schema represents the current index
      * layout.
@@ -87,8 +89,9 @@ public:
      **/
     Matcher(const search::index::Schema &schema,
             const search::fef::Properties &props,
-            const vespalib::Clock & clock,
-            QueryLimiter & queryLimiter,
+            const vespalib::Clock &clock,
+            QueryLimiter &queryLimiter,
+            const IConstantValueRepo &constantValueRepo,
             uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }

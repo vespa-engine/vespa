@@ -16,7 +16,9 @@ private:
 public:
     typedef std::shared_ptr<Matchers> SP;
     typedef std::unique_ptr<Matchers> UP;
-    Matchers(const vespalib::Clock & clock, matching::QueryLimiter & queryLimiter);
+    Matchers(const vespalib::Clock &clock,
+             matching::QueryLimiter &queryLimiter,
+             const matching::IConstantValueRepo &constantValueRepo);
     void add(const vespalib::string &name, matching::Matcher::SP matcher);
     matching::MatchingStats getStats() const;
     matching::MatchingStats getStats(const vespalib::string &name) const;

@@ -18,7 +18,10 @@
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
+#include <vespa/searchcore/proton/matching/constant_value_repo.h>
+#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/config/config-proton.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
 
@@ -72,12 +75,20 @@ public:
     };
 
 private:
+    struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
+        virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
+            return std::make_unique<matching::ErrorConstantValue>();
+        }
+    };
+
     typedef FastAccessDocSubDB Parent;
 
     IIndexManager::SP                   _indexMgr;
     IIndexWriter::SP                    _indexWriter;
     vespalib::VarHolder<SearchView::SP> _rSearchView;
     vespalib::VarHolder<SearchableFeedView::SP>   _rFeedView;
+    EmptyConstantValueFactory _constantValueFactory;
+    matching::ConstantValueRepo _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
     const size_t                        _numSearcherThreads;
     vespalib::ThreadExecutor           &_warmupExecutor;
