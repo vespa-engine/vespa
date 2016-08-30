@@ -21,6 +21,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::CompressionConfig;
 using vespalib::asciistream;
 using index::DummyFileHeaderContext;
 
@@ -272,13 +273,10 @@ Fixture::Fixture()
     : _baseDir("visitor"),
       _repo(makeDocTypeRepoConfig()),
       _storeConfig(DocumentStore::
-                   Config(document::CompressionConfig::NONE, 0, 0),
+                   Config(CompressionConfig::NONE, 0, 0),
                    LogDataStore::
-                   Config(50000, 0.2, 3.0, 0.2, 1, true,
-                          WriteableFileChunk::Config(
-                                  document::CompressionConfig(),
-                                  16384,
-                                  64))),
+                   Config(50000, 0.2, 3.0, 0.2, 1, true, CompressionConfig::LZ4,
+                          WriteableFileChunk::Config(CompressionConfig(), 16384, 64))),
       _executor(_storeConfig.getLogConfig().getNumThreads(), 128 * 1024),
       _fileHeaderContext(),
       _tlSyncer(),

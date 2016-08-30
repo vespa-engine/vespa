@@ -141,18 +141,26 @@ SummaryManager::SummaryManager(vespalib::ThreadStackExecutorBase & executor,
     search::DocumentStore::Config config(getStoreConfig(summary.cache));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-    document::CompressionConfig compression;
+    document::CompressionConfig chunkCompression;
     if (chunk.compression.type == ProtonConfig::Summary::Log::Chunk::Compression::LZ4) {
-        compression.type = document::CompressionConfig::LZ4;
+        chunkCompression.type = document::CompressionConfig::LZ4;
     }
-    compression.compressionLevel = chunk.compression.level;
-    search::WriteableFileChunk::Config fileConfig(compression, chunk.maxbytes, chunk.maxentries);
+    chunkCompression.compressionLevel = chunk.compression.level;
+
+    document::CompressionConfig compactCompression;
+    if (chunk.compression.type == ProtonConfig::Summary::Log::Chunk::Compression::LZ4) {
+        compactCompression.type = document::CompressionConfig::LZ4;
+    }
+    compactCompression.compressionLevel = chunk.compression.level;
+    
+    search::WriteableFileChunk::Config fileConfig(chunkCompression, chunk.maxbytes, chunk.maxentries);
     search::LogDataStore::Config logConfig(log.maxfilesize,
                                            log.maxdiskbloatfactor,
                                            log.maxbucketspread,
                                            log.minfilesizefactor,
                                            log.numthreads,
                                            log.compact2activefile,
+                                           compactCompression,
                                            fileConfig);
     logConfig.disableCrcOnRead(chunk.skipcrconread);
     _docStore.reset(

@@ -18,7 +18,7 @@ namespace docstore {
 class StoreByBucket
 {
 public:
-    StoreByBucket(vespalib::MemoryDataStore & backingMemory);
+    StoreByBucket(vespalib::MemoryDataStore & backingMemory, const document::CompressionConfig & compression);
     class IWrite {
     public:
         using BucketId=document::BucketId;
@@ -56,6 +56,7 @@ private:
     Chunk::UP                                _current;
     std::map<uint64_t, std::vector<Index>>   _where;
     vespalib::MemoryDataStore              & _backingMemory;
+    document::CompressionConfig              _compression;
 };
 
 }
