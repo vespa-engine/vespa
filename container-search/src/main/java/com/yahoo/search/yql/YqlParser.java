@@ -641,33 +641,36 @@ public class YqlParser implements Parser {
 
     @NonNull
     private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
+        // TODO add support for default arguments if property results in nothing
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        String wordData = getStringContents(args.get(0));
+
+        Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
+                                           Boolean.FALSE, "flag for allowing NullItem to be returned");
+        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.ALL.toString(), "grammar for handling user input");
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
-        Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
-                                           Boolean.FALSE, "flag for allowing NullItem to be returned");
-        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-
-        // TODO add support for default arguments if property results in nothing
-        String wordData = getStringContents(args.get(0));
-        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
-
+        Language language = decideQueryLanguage(ast);
+        if (USER_INPUT_RAW.equals(grammar)) {
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, language);
+        } else if (USER_INPUT_SEGMENT.equals(grammar)) {
+            return instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, language);
+        } else {
+            Item item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
+            propagateUserInputAnnotations(ast, item);
+            return item;
+        }
+    }
+    
+    private Language decideQueryLanguage(OperatorNode<ExpressionOperator> ast) {
         String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE,
                                            String.class, "en",
                                            "language setting for segmenting user input parameter");
         Language language = Language.fromLanguageTag(languageTag);
-        Item item;
-        if (USER_INPUT_RAW.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, language);
-        } else if (USER_INPUT_SEGMENT.equals(grammar)) {
-            item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, language);
-        } else {
-            item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
-            propagateUserInputAnnotations(ast, item);
-        }
-        return item;
+        return language;
     }
 
     private String getStringContents(OperatorNode<ExpressionOperator> propertySniffer) {
@@ -1365,24 +1368,21 @@ public class YqlParser implements Parser {
             wordItem = new SubstringItem(wordData, fromQuery);
         } else {
             switch (segmentPolicy) {
-            case NEVER:
-                wordItem = new WordItem(wordData, fromQuery);
-                break;
-            case POSSIBLY:
-                if (shouldResegmentWord(field, fromQuery)) {
-                    wordItem = resegment(field, ast, wordData, fromQuery,
-                            parent, language);
-                } else {
+                case NEVER:
                     wordItem = new WordItem(wordData, fromQuery);
-                }
-                break;
-            case ALWAYS:
-                wordItem = resegment(field, ast, wordData, fromQuery, parent,
-                        language);
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Unexpected segmenting rule: " + segmentPolicy);
+                    break;
+                case POSSIBLY:
+                    if (shouldResegmentWord(field, fromQuery)) {
+                        wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
+                    } else {
+                        wordItem = new WordItem(wordData, fromQuery);
+                    }
+                    break;
+                case ALWAYS:
+                    wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
             }
         }
         if (wordItem instanceof WordItem) {
@@ -1397,18 +1397,17 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private TaggableItem resegment(String field,
-            OperatorNode<ExpressionOperator> ast, String wordData,
-            boolean fromQuery, Class<?> parent, Language language) {
-        final TaggableItem wordItem;
+    private TaggableItem resegment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
+                                   boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
-        final Substring s = getOrigin(ast);
-        final Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
+        Substring s = getOrigin(ast);
+        Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
         if (s != null) {
             toSegment = s.getValue();
         }
-        List<String> words = segmenter.segment(toSegment,
-                usedLanguage);
+        List<String> words = segmenter.segment(toSegment, usedLanguage);
+
+        TaggableItem wordItem;
         if (words.size() == 0) {
             wordItem = new WordItem(wordData, fromQuery);
         } else if (words.size() == 1 || !phraseArgumentSupported(parent)) {
@@ -1427,22 +1426,16 @@ public class YqlParser implements Parser {
     }
 
     private boolean phraseArgumentSupported(Class<?> parent) {
-        if (parent == null) {
-            return true;
-        } else if (parent == PhraseItem.class) {
-            // not supported in backend, but the container flattens the
-            // arguments itself
-            return true;
-        } else if (parent == EquivItem.class) {
-            return true;
-        } else {
-            return false;
-        }
+        if (parent == null) return true;
+
+        // not supported in backend, but the container flattens the arguments itself:
+        if (parent == PhraseItem.class) return true;
+
+        return parent == EquivItem.class;
     }
 
-    private void prepareWord(String field,
-            OperatorNode<ExpressionOperator> ast, boolean fromQuery,
-            WordItem wordItem) {
+    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery,
+                             WordItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
         if (shouldResegmentWord(field, fromQuery)) {
@@ -1511,7 +1504,7 @@ public class YqlParser implements Parser {
             IntItem number = (IntItem) out;
             Integer hitLimit = getCappedRangeSearchParameter(ast);
             if (hitLimit != null) {
-                number.setHitLimit(hitLimit.intValue());
+                number.setHitLimit(hitLimit);
             }
         }
 
@@ -1523,13 +1516,13 @@ public class YqlParser implements Parser {
 
         if (hitLimit != null) {
             Boolean ascending = getAnnotation(ast, ASCENDING_HITS_ORDER, Boolean.class, null,
-                    "ascending population ordering for capped range search");
+                                              "ascending population ordering for capped range search");
             Boolean descending = getAnnotation(ast, DESCENDING_HITS_ORDER, Boolean.class, null,
-                    "descending population ordering for capped range search");
+                                               "descending population ordering for capped range search");
             Preconditions.checkArgument(ascending == null || descending == null,
-                    "Settings for both ascending and descending ordering set, only one of these expected.");
+                                        "Settings for both ascending and descending ordering set, only one of these expected.");
             if (Boolean.TRUE.equals(descending) || Boolean.FALSE.equals(ascending)) {
-                hitLimit = Integer.valueOf(hitLimit.intValue() * -1);
+                hitLimit = hitLimit * -1;
             }
         }
         return hitLimit;
