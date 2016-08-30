@@ -6,7 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Request;
 import com.yahoo.log.LogLevel;
-import com.yahoo.net.LinuxInetAddress;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.UnknownConfigIdException;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
-    private static final String localHostName;
+    private static final String localHostName = HostName.getLocalhost();
 
     private final JRTServerConfigRequest request;
     /* True only when this request has expired its server timeout and we need to respond to the client */
@@ -149,14 +149,6 @@ class GetConfigProcessor implements Runnable {
         ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, configMd5);
         request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.getConfigMd5());
         respond(request);
-    }
-
-    /**
-     * Done in a static block to prevent people invoking this directly.
-     * Do not call  java.net.Inet4AddressImpl.getLocalHostName() on each request, as this causes CPU bottlenecks.
-     */
-    static {
-        localHostName = LinuxInetAddress.getLocalHost().getHostName();
     }
 
     static boolean logDebug(Trace trace) {

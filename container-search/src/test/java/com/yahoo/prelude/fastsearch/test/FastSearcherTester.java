@@ -1,7 +1,7 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import com.yahoo.net.LinuxInetAddress;
+import com.yahoo.net.HostName;
 import com.yahoo.prelude.fastsearch.CacheParams;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
  */
 class FastSearcherTester {
 
-    public static final String selfHostname = LinuxInetAddress.getLocalHost().getHostName();
+    public static final String selfHostname = HostName.getLocalhost();
 
     private final MockFS4ResourcePool mockFS4ResourcePool;
     private final FastSearcher fastSearcher;

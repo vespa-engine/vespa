@@ -16,7 +16,7 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
-import com.yahoo.net.LinuxInetAddress;
+import com.yahoo.net.HostName;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
@@ -98,7 +98,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
-        this.selfHostname = LinuxInetAddress.getLocalHost().getHostName();
+        this.selfHostname = HostName.getLocalhost();
         this.containerClusterSize = containerClusterSize;
     }
 
