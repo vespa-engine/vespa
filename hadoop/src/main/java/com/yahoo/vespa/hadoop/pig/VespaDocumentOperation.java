@@ -61,6 +61,7 @@ public class VespaDocumentOperation extends EvalFunc<String> {
     private static final String PROPERTY_OPERATION = "operation";
     private static final String SIMPLE_ARRAY_FIELDS = "simple-array-fields";
     private static final String CREATE_TENSOR_FIELDS = "create-tensor-fields";
+    private static final String EXCLUDE_FIELDS = "exclude-fields";
 
     private static final String PARTIAL_UPDATE_ASSIGN = "assign";
 
@@ -155,11 +156,13 @@ public class VespaDocumentOperation extends EvalFunc<String> {
 
     @SuppressWarnings("unchecked")
     private static void writeField(String name, Object value, Byte type, JsonGenerator g, Properties properties, Operation op, int depth) throws IOException {
-        g.writeFieldName(name);
-        if (shouldWritePartialUpdate(op, depth)) {
-            writePartialUpdate(value, type, g, name, properties, op, depth);
-        } else {
-            writeValue(value, type, g, name, properties, op, depth);
+        if (shouldWriteField(name, properties, depth)) {
+            g.writeFieldName(name);
+            if (shouldWritePartialUpdate(op, depth)) {
+                writePartialUpdate(value, type, g, name, properties, op, depth);
+            } else {
+                writeValue(value, type, g, name, properties, op, depth);
+            }
         }
     }
 
@@ -289,6 +292,23 @@ public class VespaDocumentOperation extends EvalFunc<String> {
             }
         }
         return false;
+    }
+
+    private static boolean shouldWriteField(String name, Properties properties, int depth) {
+        if (properties == null || depth != 1) {
+            return true;
+        }
+        String excludeFields = properties.getProperty(EXCLUDE_FIELDS);
+        if (excludeFields == null) {
+            return true;
+        }
+        String[] fields = excludeFields.split(",");
+        for (String field : fields) {
+            if (field.trim().equalsIgnoreCase(name)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void writeTensor(Map<Object, Object> map, JsonGenerator g) throws IOException {
