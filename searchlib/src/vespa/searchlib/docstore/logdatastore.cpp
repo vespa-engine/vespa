@@ -742,7 +742,11 @@ LogDataStore::preload()
             ? createReadOnlyFile(FileId(_fileChunks.size()), *partList.rbegin())
             : createWritableFile(FileId(_fileChunks.size()), getMinLastPersistedSerialNum(), *partList.rbegin()));
     } else {
-        _fileChunks.push_back(createWritableFile(FileId::first(), 0));
+        if ( ! isReadOnly() ) {
+            _fileChunks.push_back(createWritableFile(FileId::first(), 0));
+        } else {
+            throw vespalib::IllegalArgument(getBaseDir() + " does not have any summary data.");
+        }
     }
     _active = FileId(_fileChunks.size() - 1);
     _prevActive = _active.prev();
