@@ -95,12 +95,14 @@ public class VespaRecordWriter extends RecordWriter {
             connParamsBuilder.setProxyPort(configuration.proxyPort());
         }
 
+        FeedParams.Builder feedParamsBuilder = new FeedParams.Builder();
+        feedParamsBuilder.setDataFormat(configuration.dataFormat());
+        feedParamsBuilder.setRoute(configuration.route());
+
         SessionParams.Builder sessionParams = new SessionParams.Builder();
         sessionParams.setThrottlerMinSize(configuration.throttlerMinSize());
         sessionParams.setConnectionParams(connParamsBuilder.build());
-        sessionParams.setFeedParams(new FeedParams.Builder()
-                .setDataFormat(configuration.dataFormat())
-                .build());
+        sessionParams.setFeedParams(feedParamsBuilder.build());
 
         String endpoints = configuration.endpoint();
         StringTokenizer tokenizer = new StringTokenizer(endpoints, ",");
