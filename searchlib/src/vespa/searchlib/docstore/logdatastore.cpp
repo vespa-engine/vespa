@@ -745,7 +745,7 @@ LogDataStore::preload()
         if ( ! isReadOnly() ) {
             _fileChunks.push_back(createWritableFile(FileId::first(), 0));
         } else {
-            throw vespalib::IllegalArgument(getBaseDir() + " does not have any summary data.");
+            throw vespalib::IllegalArgumentException(getBaseDir() + " does not have any summary data... And that is no good in readonly case.");
         }
     }
     _active = FileId(_fileChunks.size() - 1);

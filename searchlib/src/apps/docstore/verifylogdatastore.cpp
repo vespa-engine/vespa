@@ -49,10 +49,15 @@ VerifyLogDataStoreApp::verify(const vespalib::string & dir)
     vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
     transactionlog::NoSyncProxy noTlSyncer;
 
-    LogDataStore store(executor, dir, config, growStrategy, tuning,
-                       fileHeaderContext,
-                       noTlSyncer, NULL, true);
-    store.verify(false);
+    try {
+        LogDataStore store(executor, dir, config, growStrategy, tuning,
+                           fileHeaderContext,
+                           noTlSyncer, NULL, true);
+        store.verify(false);
+    } catch (const vespalib::Exception & e) {
+        fprintf(stderr, "Got exception: %s", e.what());
+        retval = 1;
+    }
     return retval;
 }
 
