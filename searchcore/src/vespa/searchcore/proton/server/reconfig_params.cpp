@@ -22,7 +22,7 @@ ReconfigParams::shouldSchemaChange() const
 bool
 ReconfigParams::shouldMatchersChange() const
 {
-    return _res.rankProfilesChanged || shouldSchemaChange();
+    return _res.rankProfilesChanged || _res.rankingConstantsChanged || shouldSchemaChange();
 }
 
 bool
