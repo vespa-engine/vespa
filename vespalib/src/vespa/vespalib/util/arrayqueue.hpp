@@ -334,9 +334,15 @@ public:
      *
      * @return the item value
      **/
-    const T &front() const {
-        return peek(0);
-    }
+    T &front() { return access(0); }
+
+    /**
+     * Look at the item at the front of this queue. This method may
+     * not be invoked on an empty queue.
+     *
+     * @return the item value
+     **/
+    const T &front() const { return peek(0); }
 
     /**
      * Look at the item at the back of this queue. This method may
