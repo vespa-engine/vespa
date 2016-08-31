@@ -32,43 +32,21 @@ namespace
 DocumentDBConfig::SP
 getConfig(int64_t generation, const Schema::SP &schema)
 {
-    typedef DocumentDBConfig::RankProfilesConfigSP RankProfilesConfigSP; 
-    typedef DocumentDBConfig::RankingConstantsConfigSP RankingConstantsConfigSP; 
-    typedef DocumentDBConfig::IndexschemaConfigSP IndexschemaConfigSP;
-    typedef DocumentDBConfig::AttributesConfigSP AttributesConfigSP;
-    typedef DocumentDBConfig::SummaryConfigSP SummaryConfigSP; 
-    typedef DocumentDBConfig::SummarymapConfigSP SummarymapConfigSP;
-    typedef DocumentDBConfig::JuniperrcConfigSP JuniperrcConfigSP;
-    typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
-
-    RankProfilesConfigSP rp(new vespa::config::search::RankProfilesConfig);
-    RankingConstantsConfigSP rc(new vespa::config::search::core::RankingConstantsConfig);
-    IndexschemaConfigSP is(new vespa::config::search::IndexschemaConfig);
-    AttributesConfigSP a(new vespa::config::search::AttributesConfig);
-    SummaryConfigSP s(new vespa::config::search::SummaryConfig);
-    SummarymapConfigSP sm(new vespa::config::search::SummarymapConfig);
-    JuniperrcConfigSP j(new vespa::config::search::summary::JuniperrcConfig);
-    DocumenttypesConfigSP dt(new document::DocumenttypesConfig);
-    document::DocumentTypeRepo::SP dtr(new document::DocumentTypeRepo);
-    search::TuneFileDocumentDB::SP tf(new search::TuneFileDocumentDB);
-    DocumentDBMaintenanceConfig::SP ddbm(new DocumentDBMaintenanceConfig);
-    
-    return DocumentDBConfig::SP(
-            new DocumentDBConfig(
+    return std::make_shared<DocumentDBConfig>(
                     generation,
-                    rp,
-                    rc,
-                    is,
-                    a,
-                    s,
-                    sm,
-                    j,
-                    dt,
-                    dtr,
-                    tf,
+                    std::make_shared<vespa::config::search::RankProfilesConfig>(),
+                    std::make_shared<vespa::config::search::core::RankingConstantsConfig>(),
+                    std::make_shared<vespa::config::search::IndexschemaConfig>(),
+                    std::make_shared<vespa::config::search::AttributesConfig>(),
+                    std::make_shared<vespa::config::search::SummaryConfig>(),
+                    std::make_shared<vespa::config::search::SummarymapConfig>(),
+                    std::make_shared<vespa::config::search::summary::JuniperrcConfig>(),
+                    std::make_shared<document::DocumenttypesConfig>(),
+                    std::make_shared<document::DocumentTypeRepo>(),
+                    std::make_shared<search::TuneFileDocumentDB>(),
                     schema,
-                    ddbm,
-                    "client", "test"));
+                    std::make_shared<DocumentDBMaintenanceConfig>(),
+                    "client", "test");
 }
 
 Schema::SP
@@ -98,9 +76,9 @@ makeBaseConfigSnapshot()
     BootstrapConfig::SP b(new BootstrapConfig(1,
                                               dtcfg,
                                               DocumentTypeRepo::SP(new DocumentTypeRepo(*dtcfg)),
-                                              BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
-                                              BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
-                                              TuneFileDocumentDB::SP(new TuneFileDocumentDB())));
+                                              std::make_shared<ProtonConfig>(),
+                                              std::make_shared<FiledistributorrpcConfig>(),
+                                              std::make_shared<TuneFileDocumentDB>()));
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(0);
     DocumentDBConfig::SP snap = dbcm.getConfig();

@@ -166,12 +166,12 @@ public:
           _sa()
     {
         assert(_mkdirOk);
-        BootstrapConfig::SP b(new BootstrapConfig(1,
-                                                  _documenttypesConfig,
-                                                  _repo,
-                                                  BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
-                                                  BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
-                                                  _tuneFileDocumentDB));
+        auto b = std::make_shared<BootstrapConfig>(1,
+                                                   _documenttypesConfig,
+                                                   _repo,
+                                                   std::make_shared<ProtonConfig>(),
+                                                   std::make_shared<FiledistributorrpcConfig>(),
+                                                   _tuneFileDocumentDB);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(0);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }

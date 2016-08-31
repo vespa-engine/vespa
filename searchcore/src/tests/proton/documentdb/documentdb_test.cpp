@@ -79,8 +79,8 @@ Fixture::Fixture()
         b(new BootstrapConfig(1,
                               documenttypesConfig,
                               repo,
-                              BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
-                              BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
+                              std::make_shared<ProtonConfig>(),
+                              std::make_shared<FiledistributorrpcConfig>(),
                               tuneFileDocumentDB));
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);

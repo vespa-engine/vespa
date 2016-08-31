@@ -100,33 +100,27 @@ public:
             return DocumentDBConfig::SP();
         }
         typedef DocumentDBConfig CS;
-        CS::RankProfilesConfigSP rankProfiles(new RankProfilesConfig());
-        CS::RankingConstantsConfigSP rankingConstants(new RankingConstantsConfig());
         CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
         CS::AttributesConfigSP attributes = _schemaFactory->createAttributes(*docType);
         CS::SummaryConfigSP summary = _schemaFactory->createSummary(*docType);
-        CS::SummarymapConfigSP summarymap(new SummarymapConfig());
-        CS::JuniperrcConfigSP juniperrc(new JuniperrcConfig());
-        CS::MaintenanceConfigSP maintenance(new DocumentDBMaintenanceConfig);
-        TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
         Schema::SP schema(new Schema());
         SchemaBuilder::build(*indexschema, *schema);
         SchemaBuilder::build(*attributes, *schema);
         SchemaBuilder::build(*summary, *schema);
         return DocumentDBConfig::SP(new DocumentDBConfig(
                         1,
-                        rankProfiles,
-                        rankingConstants,
+                        std::make_shared<RankProfilesConfig>(),
+                        std::make_shared<RankingConstantsConfig>(),
                         indexschema,
                         attributes,
                         summary,
-                        summarymap,
-                        juniperrc,
+                        std::make_shared<SummarymapConfig>(),
+                        std::make_shared<JuniperrcConfig>(),
                         _typeCfg,
                         _repo,
-                        tuneFileDocDB,
+                        std::make_shared<TuneFileDocumentDB>(),
                         schema,
-                        maintenance,
+                        std::make_shared<DocumentDBMaintenanceConfig>(),
                         "client",
                         docTypeName.getName()));
     }
@@ -172,8 +166,8 @@ public:
         BootstrapConfig::SP b(new BootstrapConfig(1,
                                                   factory.getTypeCfg(),
                                                   factory.getTypeRepo(),
-                                                  BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
-                                                  BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
+                                                  std::make_shared<ProtonConfig>(),
+                                                  std::make_shared<FiledistributorrpcConfig>(),
                                                   tuneFileDocDB));
         mgr.forwardConfig(b);
         mgr.nextGeneration(0);

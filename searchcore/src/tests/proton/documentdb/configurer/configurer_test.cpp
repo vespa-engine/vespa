@@ -317,47 +317,41 @@ struct FastAccessFixture
 DocumentDBConfig::SP
 createConfig()
 {
-    DocumentDBConfig::SP config
-        (new DocumentDBConfig(
-                0,
-                DocumentDBConfig::RankProfilesConfigSP(new RankProfilesConfig()),
-                DocumentDBConfig::RankingConstantsConfigSP(new RankingConstantsConfig()),
-                DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
-                DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
-                DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),
-                DocumentDBConfig::SummarymapConfigSP(new SummarymapConfig()),
-                DocumentDBConfig::JuniperrcConfigSP(new JuniperrcConfig()),
-                DocumenttypesConfigSP(new DocumenttypesConfig()),
-                DocumentTypeRepo::SP(createRepo()),
-                TuneFileDocumentDB::SP(new TuneFileDocumentDB),
-                Schema::SP(new Schema),
-                DocumentDBMaintenanceConfig::SP(
-                        new DocumentDBMaintenanceConfig),
-                "client", DOC_TYPE));
-    return config;
+    return std::make_shared<DocumentDBConfig>(
+            0,
+            std::make_shared<RankProfilesConfig>(),
+            std::make_shared<RankingConstantsConfig>(),
+            std::make_shared<IndexschemaConfig>(),
+            std::make_shared<AttributesConfig>(),
+            std::make_shared<SummaryConfig>(),
+            std::make_shared<SummarymapConfig>(),
+            std::make_shared<JuniperrcConfig>(),
+            std::make_shared<DocumenttypesConfig>(),
+            DocumentTypeRepo::SP(createRepo()),
+            std::make_shared<TuneFileDocumentDB>(),
+            std::make_shared<Schema>(),
+            std::make_shared<DocumentDBMaintenanceConfig>(),
+            "client", DOC_TYPE);
 }
 
 DocumentDBConfig::SP
 createConfig(const Schema::SP &schema)
 {
-    DocumentDBConfig::SP config
-        (new DocumentDBConfig(
-                0,
-                DocumentDBConfig::RankProfilesConfigSP(new RankProfilesConfig()),
-                DocumentDBConfig::RankingConstantsConfigSP(new RankingConstantsConfig()),
-                DocumentDBConfig::IndexschemaConfigSP(new IndexschemaConfig()),
-                DocumentDBConfig::AttributesConfigSP(new AttributesConfig()),
-                DocumentDBConfig::SummaryConfigSP(new SummaryConfig()),
-                DocumentDBConfig::SummarymapConfigSP(new SummarymapConfig()),
-                DocumentDBConfig::JuniperrcConfigSP(new JuniperrcConfig()),
-                DocumenttypesConfigSP(new DocumenttypesConfig()),
-                DocumentTypeRepo::SP(createRepo()),
-                TuneFileDocumentDB::SP(new TuneFileDocumentDB),
-                schema,
-                DocumentDBMaintenanceConfig::SP(
-                        new DocumentDBMaintenanceConfig),
-                "client", DOC_TYPE));
-    return config;
+    return std::make_shared<DocumentDBConfig>(
+            0,
+            std::make_shared<RankProfilesConfig>(),
+            std::make_shared<RankingConstantsConfig>(),
+            std::make_shared<IndexschemaConfig>(),
+            std::make_shared<AttributesConfig>(),
+            std::make_shared<SummaryConfig>(),
+            std::make_shared<SummarymapConfig>(),
+            std::make_shared<JuniperrcConfig>(),
+            std::make_shared<DocumenttypesConfig>(),
+            DocumentTypeRepo::SP(createRepo()),
+            std::make_shared<TuneFileDocumentDB>(),
+            schema,
+            std::make_shared<DocumentDBMaintenanceConfig>(),
+            "client", DOC_TYPE);
 }
 
 struct SearchViewComparer
