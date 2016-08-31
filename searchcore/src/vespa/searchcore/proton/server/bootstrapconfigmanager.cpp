@@ -89,7 +89,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     if (snapshot.isChanged<FiledistributorrpcConfig>(_configId, currentGen)) {
         LOG(info, "Filedistributorrpc config is changed");
         auto p = snapshot.getConfig<FiledistributorrpcConfig>(_configId);
-        newFiledistRpcConfSP = BootstrapConfig::FiledistributorrpcConfigSP(p.release());
+        newFiledistRpcConfSP = BootstrapConfig::FiledistributorrpcConfigSP(std::move(p));
     }
 
     if (snapshot.isChanged<DocumenttypesConfig>(_configId, currentGen)) {

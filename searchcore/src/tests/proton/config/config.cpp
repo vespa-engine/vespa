@@ -135,8 +135,8 @@ struct ConfigTestFixture {
                                                        BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(documenttypesBuilder)),
                                                        DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
-                                                       BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
-                                                       TuneFileDocumentDB::SP(new TuneFileDocumentDB())));
+                                                       std::make_shared<FiledistributorrpcConfig>(),
+                                                       std::make_shared<TuneFileDocumentDB>()));
     }
 
     void reload() { context->reload(); }

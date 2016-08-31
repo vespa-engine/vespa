@@ -181,10 +181,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
                     release());
     }
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
-        newRankingConstantsConfig =
-            RankingConstantsConfigSP(
-                    snapshot.getConfig<RankingConstantsConfig>(_configId)
-                    .release());
+        newRankingConstantsConfig = RankingConstantsConfigSP(
+                snapshot.getConfig<RankingConstantsConfig>(_configId));
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(spec);

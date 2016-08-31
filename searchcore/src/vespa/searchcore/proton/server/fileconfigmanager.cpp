@@ -384,7 +384,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
         repo.reset(new DocumentTypeRepo(*docTypesCfg));
     }
 
-    auto filedistRpcConf = BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig());
+    auto filedistRpcConf = std::make_shared<FiledistributorrpcConfig>();
 
     /*
      * XXX: If non-default maintenance config is used then an extra config

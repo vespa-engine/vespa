@@ -262,8 +262,8 @@ struct MyConfigSnapshot
 		    (new BootstrapConfig(1,
                                  documenttypesConfig,
                                  _builder.getDocumentTypeRepo(),
-                                 BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
-                                 BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
+                                 std::make_shared<ProtonConfig>(),
+                                 std::make_shared<FiledistributorrpcConfig>(),
                                  tuneFileDocumentDB));
 		config::DirSpec spec(cfgDir);
 		DocumentDBConfigHelper mgr(spec, "searchdocument");
