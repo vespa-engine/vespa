@@ -140,15 +140,6 @@ public class DockerImplTest {
     }
 
     @Test
-    public void onlyLeafImageIsUnused() throws Exception {
-        ImageGcTester
-                .withExistingImages(
-                        ImageBuilder.forId("parent-image"),
-                        ImageBuilder.forId("leaf-image").withParentId("parent-image"))
-                .expectUnusedImages("leaf-image");
-    }
-
-    @Test
     public void multipleUnusedImagesAreIdentified() throws Exception {
         ImageGcTester
                 .withExistingImages(
@@ -164,7 +155,7 @@ public class DockerImplTest {
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image"),
                         ImageBuilder.forId("image-2").withParentId("parent-image"))
-                .expectUnusedImages("image-1", "image-2");
+                .expectUnusedImages("parent-image", "image-1", "image-2");
     }
 
     @Test
