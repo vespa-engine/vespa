@@ -15,6 +15,7 @@ using namespace search::index;
 using namespace vespa::config::search;
 using std::shared_ptr;
 using std::make_shared;
+using vespa::config::search::core::RankingConstantsConfig;
 
 typedef shared_ptr<DocumentDBConfig> DDBCSP;
 
@@ -29,6 +30,7 @@ getConfig(int64_t generation, const Schema::SP &schema,
     return make_shared<DocumentDBConfig>(
             generation,
             make_shared<RankProfilesConfig>(),
+            make_shared<RankingConstantsConfig>(),
             make_shared<IndexschemaConfig>(),
             make_shared<AttributesConfig>(attributes),
             make_shared<SummaryConfig>(),

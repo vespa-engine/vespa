@@ -18,6 +18,7 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
+using namespace cloud::config::filedistribution;
 
 typedef DocumentDBConfigHelper DBCM;
 typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
@@ -32,6 +33,7 @@ DocumentDBConfig::SP
 getConfig(int64_t generation, const Schema::SP &schema)
 {
     typedef DocumentDBConfig::RankProfilesConfigSP RankProfilesConfigSP; 
+    typedef DocumentDBConfig::RankingConstantsConfigSP RankingConstantsConfigSP; 
     typedef DocumentDBConfig::IndexschemaConfigSP IndexschemaConfigSP;
     typedef DocumentDBConfig::AttributesConfigSP AttributesConfigSP;
     typedef DocumentDBConfig::SummaryConfigSP SummaryConfigSP; 
@@ -40,6 +42,7 @@ getConfig(int64_t generation, const Schema::SP &schema)
     typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
 
     RankProfilesConfigSP rp(new vespa::config::search::RankProfilesConfig);
+    RankingConstantsConfigSP rc(new vespa::config::search::core::RankingConstantsConfig);
     IndexschemaConfigSP is(new vespa::config::search::IndexschemaConfig);
     AttributesConfigSP a(new vespa::config::search::AttributesConfig);
     SummaryConfigSP s(new vespa::config::search::SummaryConfig);
@@ -54,6 +57,7 @@ getConfig(int64_t generation, const Schema::SP &schema)
             new DocumentDBConfig(
                     generation,
                     rp,
+                    rc,
                     is,
                     a,
                     s,
@@ -95,6 +99,7 @@ makeBaseConfigSnapshot()
                                               dtcfg,
                                               DocumentTypeRepo::SP(new DocumentTypeRepo(*dtcfg)),
                                               BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
+                                              BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                                               TuneFileDocumentDB::SP(new TuneFileDocumentDB())));
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(0);
@@ -126,6 +131,7 @@ makeEmptyConfigSnapshot(void)
     return DocumentDBConfig::SP(new DocumentDBConfig(
                                       0,
                                       DocumentDBConfig::RankProfilesConfigSP(),
+                                      DocumentDBConfig::RankingConstantsConfigSP(),
                                       DocumentDBConfig::IndexschemaConfigSP(),
                                       DocumentDBConfig::AttributesConfigSP(),
                                       DocumentDBConfig::SummaryConfigSP(),
@@ -159,6 +165,7 @@ void
 assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 {
     EXPECT_TRUE(exp.getRankProfilesConfig() == act.getRankProfilesConfig());
+    EXPECT_TRUE(exp.getRankingConstantsConfig() == act.getRankingConstantsConfig());
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());

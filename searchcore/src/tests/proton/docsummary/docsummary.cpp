@@ -31,6 +31,7 @@ using namespace search::docsummary;
 using namespace search::engine;
 using namespace search::index;
 using namespace search::transactionlog;
+using namespace cloud::config::filedistribution;
 using search::TuneFileDocumentDB;
 using document::DocumenttypesConfig;
 using storage::spi::Timestamp;
@@ -169,6 +170,7 @@ public:
                                                   _documenttypesConfig,
                                                   _repo,
                                                   BootstrapConfig::ProtonConfigSP(new ProtonConfig()),
+                                                  BootstrapConfig::FiledistributorrpcConfigSP(new FiledistributorrpcConfig()),
                                                   _tuneFileDocumentDB));
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(0);

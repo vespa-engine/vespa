@@ -18,6 +18,7 @@ vespa_define_module(
     searchcorespi
     searchsummary
     storageserver_storageapp
+    fileacquirer
 
     LIBS
     src/vespa/searchcore/config
