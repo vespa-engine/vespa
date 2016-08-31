@@ -30,6 +30,7 @@ import java.util.Optional;
 */
 // TODO Moved here from hosted repo as is, more work to be done before it is usable
 public class PopulateClient {
+
     static final Map<String, String> CLUSTER_TYPE_ELEMENT = ImmutableMap.of("container", "jdisc", "content", "content");
     static final String CONTAINER_CLUSTER_TYPE = "container";
     static final String CONTENT_CLUSTER_TYPE = "content";
@@ -84,6 +85,8 @@ public class PopulateClient {
     }
 
     private Node buildNode(String hostname, String clusterType, String clusterId, int nodeIndex) {
+        int group = 0; // TODO: We need the true group here
+        Optional<String> dockerImage = Optional.empty();
         return new Node(
                 hostname /* id */,
                 hostname /* Hostname */,
@@ -101,8 +104,10 @@ public class PopulateClient {
                                 ApplicationName.from(applicationId),
                                 InstanceName.from(instanceId)),
                         ClusterMembership.from(
-                                ClusterSpec.from(ClusterSpec.Type.from(clusterType),
-                                        ClusterSpec.Id.from(clusterId)),
+                                ClusterSpec.from(ClusterSpec.Type.from(clusterType), 
+                                                 ClusterSpec.Id.from(clusterId), 
+                                                 ClusterSpec.Group.from(group),
+                                                 dockerImage),
                                 nodeIndex),
                         creationClock.instant());
     }

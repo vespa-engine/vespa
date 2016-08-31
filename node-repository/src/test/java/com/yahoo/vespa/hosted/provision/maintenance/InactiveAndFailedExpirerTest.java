@@ -62,7 +62,7 @@ public class InactiveAndFailedExpirerTest {
         // Allocate then deallocate 2 nodes
         nodeRepository.setReady(nodes);
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, asHosts(nodes));

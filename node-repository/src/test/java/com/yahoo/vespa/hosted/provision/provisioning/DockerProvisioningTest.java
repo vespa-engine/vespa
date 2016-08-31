@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,7 +34,7 @@ public class DockerProvisioningTest {
             tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
         }
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")), 7, 1, dockerFlavor);
+        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 7, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);
@@ -48,7 +49,7 @@ public class DockerProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost");
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")), 1, 1, dockerFlavor);
+        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 1, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);

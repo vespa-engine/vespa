@@ -14,7 +14,10 @@ public final class ClusterSpec {
 
     private final Type type;
     private final Id id;
+
+    /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
+
     private final Optional<String> dockerImage;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Optional<String> dockerImage) {
@@ -37,16 +40,32 @@ public final class ClusterSpec {
 
     public ClusterSpec changeGroup(Optional<Group> newGroup) { return new ClusterSpec(type, id, newGroup, dockerImage); }
 
+    /** @deprecated pass a docker image or empty. TODO: Remove when no model older than 6.29 is in use */
+    @Deprecated
     public static ClusterSpec from(Type type, Id id) {
         return new ClusterSpec(type, id, Optional.empty(), Optional.empty());
     }
 
+    /** @deprecated either pass a group or not. TODO: Remove when no model older than 6.29 is in use */
+    @Deprecated 
     public static ClusterSpec from(Type type, Id id, Optional<Group> groupId) {
         return new ClusterSpec(type, id, groupId, Optional.empty());
     }
 
+    /** @deprecated pass a docker image or empty. TODO: Remove when no model older than 6.29 is in use */
+    @Deprecated
     public static ClusterSpec from(Type type, Id id, Optional<Group> groupId, Optional<String> dockerImage) {
         return new ClusterSpec(type, id, groupId, dockerImage);
+    }
+
+    /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
+    public static ClusterSpec from(Type type, Id id, Group groupId, Optional<String> dockerImage) {
+        return new ClusterSpec(type, id, Optional.of(groupId), dockerImage);
+    }
+
+    /** Create a specification <b>requesting</b> a cluster with these attributes */
+    public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
+        return new ClusterSpec(type, id, Optional.empty(), dockerImage);
     }
 
     @Override
@@ -132,33 +151,45 @@ public final class ClusterSpec {
     }
 
     /** Identifier of a group within a cluster */
+    @SuppressWarnings("deprecation")
     public static final class Group {
 
-        private final String id;
+        private final int index;
 
+        /** @deprecated pass a group index instead. TODO: Remove when no older config models than 6.29 remains */
+        @Deprecated
         public Group(String id) {
-            Objects.requireNonNull(id, "Group id cannot be null");
-            this.id = id;
+            this(Integer.parseInt(id));
+        }
+        
+        private Group(int index) {
+            this.index = index;
         }
 
-        public static Group from(String id) {
-            return new Group(id);
-        }
+        /** @deprecated pass a group index instead. TODO: Remove when no older config models than 6.29 remains */
+        @Deprecated
+        public static Group from(String id) { return new Group(id); }
+        
+        public static Group from(int index) { return new Group(index); }
 
-        public String value() { return id; }
+        /** @deprecated use index() instead. TODO: Remove when no older config models than 6.29 remains */
+        @Deprecated
+        public String value() { return String.valueOf(index); }
+        
+        public int index() { return index; }
 
         @Override
-        public String toString() { return "group '" + id + "'"; }
+        public String toString() { return "group " + index; }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            return ((Group)o).id.equals(this.id);
+            return ((Group)o).index == this.index;
         }
 
         @Override
-        public int hashCode() { return id.hashCode(); }
+        public int hashCode() { return index; }
 
     }
 

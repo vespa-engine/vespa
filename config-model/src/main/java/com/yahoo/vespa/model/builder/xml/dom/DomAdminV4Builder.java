@@ -71,7 +71,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterId), Optional.empty(), deployLogger).keySet();
+        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterId), deployLogger).keySet();
     }
 
     /**

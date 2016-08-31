@@ -201,7 +201,7 @@ class NodesResponse extends HttpResponse {
     private void toSlime(ClusterMembership membership, Cursor object) {
         object.setString("clustertype", membership.cluster().type().name());
         object.setString("clusterid", membership.cluster().id().value());
-        object.setString("group", membership.cluster().group().get().value());
+        object.setString("group", String.valueOf(membership.cluster().group().get().index()));
         object.setLong("index", membership.index());
         object.setBool("retired", membership.retired());
     }

@@ -98,11 +98,11 @@ public class RestApiTest {
             fail("host5.yahoo.com");
 
             ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-            ClusterSpec cluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
+            ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
             provisioner.prepare(app1, cluster1, Capacity.fromNodeCount(2), 1, null);
 
             ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
-            ClusterSpec cluster2 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Optional.empty());
+            ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Optional.empty());
             List<HostSpec> hosts = provisioner.prepare(app2, cluster2, Capacity.fromNodeCount(2), 1, null);
             NestedTransaction transaction = new NestedTransaction();
             provisioner.activate(transaction, app2, hosts);

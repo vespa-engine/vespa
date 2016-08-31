@@ -165,7 +165,7 @@ public class SerializationTest {
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
         assertEquals("container", node.allocation().get().membership().cluster().type().name());
-        assertEquals("0", node.allocation().get().membership().cluster().group().get().value());
+        assertEquals(0, node.allocation().get().membership().cluster().group().get().index());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(0, copy.history().events().size());
     }
