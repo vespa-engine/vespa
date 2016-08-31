@@ -2,5 +2,6 @@
 vespa_add_library(vespalib_vespalib_eval_value_cache OBJECT
     SOURCES
     constant_value_cache.cpp
+    constant_tensor_loader.cpp
     DEPENDS
 )
