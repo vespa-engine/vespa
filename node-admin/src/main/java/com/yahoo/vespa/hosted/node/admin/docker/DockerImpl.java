@@ -443,34 +443,28 @@ public class DockerImpl implements Docker {
     public Set<DockerImage> getUnusedDockerImages() {
         // Description of concepts and relationships:
         // - a docker image has an id, and refers to its parent image (if any) by image id.
-        // - a docker image may, in addition to id,  have multiple tags, but each tag identifies exactly one image.
-        // - a docker container refers to its image (exactly one) either by image id or by image tag.
+        // - a docker container refers to its image by image id.
         // What this method does to find images considered unused, is build a tree of dependencies
-        // (e.g. container->tag->image->image) and identify image nodes whose only children (if any) are leaf tags.
-        // In other words, an image node with no children, or only tag children having no children themselves is unused.
+        // (e.g. container->image->image) and identify image nodes whose only children (if any) are leaf image ids.
+        // In other words, an image node with no children is unused.
         // An image node with an image child is considered used.
         // An image node with a container child is considered used.
-        // An image node with a tag child with a container child is considered used.
         try {
             final Map<String, DockerObject> objects = new HashMap<>();
             final Map<String, String> dependencies = new HashMap<>();
 
-            // Populate maps with images (including tags) and their dependencies (parents).
+            // Populate maps with images and their dependencies (parents).
             for (Image image : docker.listImagesCmd().withShowAll(true).exec()) {
                 objects.put(image.getId(), new DockerObject(image.getId(), DockerObjectType.IMAGE));
                 if (image.getParentId() != null && !image.getParentId().isEmpty()) {
                     dependencies.put(image.getId(), image.getParentId());
                 }
-                for (String tag : image.getRepoTags()) {
-                    objects.put(tag, new DockerObject(tag, DockerObjectType.IMAGE_TAG));
-                    dependencies.put(tag, image.getId());
-                }
             }
 
-            // Populate maps with containers and their dependency to the image they run on.
+            // Populate maps with containers and their dependency to the image id they run on.
             for (com.github.dockerjava.api.model.Container container : docker.listContainersCmd().withShowAll(true).exec()) {
                 objects.put(container.getId(), new DockerObject(container.getId(), DockerObjectType.CONTAINER));
-                dependencies.put(container.getId(), container.getImage());
+                dependencies.put(container.getId(), container.getImageId());
             }
 
             // Now update every object with its dependencies.
@@ -481,10 +475,8 @@ public class DockerImpl implements Docker {
 
             // Find images that are not in use (i.e. leafs not used by any containers).
             return objects.values().stream()
-                    .filter(dockerObject -> dockerObject.type == DockerObjectType.IMAGE)
                     .filter(dockerObject -> !dockerObject.isInUse())
-                    .map(obj -> obj.id)
-                    .map(DockerImage::new)
+                    .map(obj -> new DockerImage(obj.id))
                     .collect(Collectors.toSet());
         } catch (DockerException e) {
             throw new RuntimeException("Unexpected exception", e);
@@ -493,7 +485,7 @@ public class DockerImpl implements Docker {
 
     // Helper enum for calculating which images are unused.
     private enum DockerObjectType {
-        IMAGE_TAG, IMAGE, CONTAINER
+        IMAGE, CONTAINER
     }
 
     // Helper class for calculating which images are unused.
@@ -502,30 +494,16 @@ public class DockerImpl implements Docker {
         public final DockerObjectType type;
         private final List<DockerObject> dependees = new LinkedList<>();
 
-        public DockerObject(final String id, final DockerObjectType type) {
+        private DockerObject(final String id, final DockerObjectType type) {
             this.id = id;
             this.type = type;
         }
 
-        public boolean isInUse() {
-            if (type == DockerObjectType.CONTAINER) {
-                return true;
-            }
-
-            if (dependees.isEmpty()) {
-                return false;
-            }
-
-            if (type == DockerObjectType.IMAGE) {
-                if (dependees.stream().anyMatch(obj -> obj.type == DockerObjectType.IMAGE)) {
-                    return true;
-                }
-            }
-
-            return dependees.stream().anyMatch(DockerObject::isInUse);
+        private boolean isInUse() {
+            return type == DockerObjectType.CONTAINER || !dependees.isEmpty();
         }
 
-        public void addDependee(final DockerObject dockerObject) {
+        private void addDependee(final DockerObject dockerObject) {
             dependees.add(dockerObject);
         }
 
@@ -543,7 +521,7 @@ public class DockerImpl implements Docker {
     private class ImagePullCallback extends PullImageResultCallback {
         private final DockerImage dockerImage;
 
-        ImagePullCallback(DockerImage dockerImage) {
+        private ImagePullCallback(DockerImage dockerImage) {
             this.dockerImage = dockerImage;
         }
 
