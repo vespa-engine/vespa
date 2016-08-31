@@ -47,7 +47,7 @@ public class DedicatedAdminV4Test {
                 + " </host>"
                 + "</hosts>";
         ApplicationPackage app = new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).build();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder().applicationPackage(app).modelHostProvisioner(new InMemoryProvisioner(Hosts.getHosts(app.getHosts()), true)).build());
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder().applicationPackage(app).modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true)).build());
         assertEquals(3, model.getHosts().size());
 
         Set<String> serviceNames0 = serviceNames(model.getConfig(SentinelConfig.class, "hosts/myhost0"));
