@@ -20,10 +20,6 @@ using search::index::Schema;
 using search::index::SchemaBuilder;
 using fastos::TimeStamp;
 
-// RankingConstantsConfigBuilder
-// RankingConstantsConfig
-
-
 namespace proton {
 
 const ConfigKeySet
@@ -185,7 +181,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
                     release());
     }
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
-        newRankingConstantsConfig = 
+        newRankingConstantsConfig =
             RankingConstantsConfigSP(
                     snapshot.getConfig<RankingConstantsConfig>(_configId)
                     .release());
@@ -194,8 +190,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
                 vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
-                fprintf(stderr, "GOT file-acq PATH is: %s (ref %s for name %s type %s)\n",
-                        filePath.c_str(), rc.fileref.c_str(), rc.name.c_str(), rc.type.c_str());
+                LOG(info, "GOT file-acq PATH is: %s (ref %s for name %s type %s)\n",
+                    filePath.c_str(), rc.fileref.c_str(), rc.name.c_str(), rc.type.c_str());
             }
         }
     }
