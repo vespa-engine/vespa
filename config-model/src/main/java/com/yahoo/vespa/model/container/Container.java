@@ -9,7 +9,6 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.container.jdisc.config.PortOverridesConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -47,7 +46,6 @@ public class Container extends AbstractService implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         ContainerHttpConfig.Producer,
-        PortOverridesConfig.Producer,
         ContainerMbusConfig.Producer
 {
     public static final class PortOverride {
@@ -116,7 +114,6 @@ public class Container extends AbstractService implements
         addBuiltinHandlers();
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
-        addChild(new SimpleComponent("com.yahoo.container.jdisc.ContainerPortsOverride"));
     }
 
     /** True if this container is retired (slated for removal) */
@@ -300,15 +297,6 @@ public class Container extends AbstractService implements
 
     public boolean isRpcServerEnabled() {
         return rpcServerEnabled;
-    }
-
-    @Override
-    public void getConfig(PortOverridesConfig.Builder builder) {
-        for (PortOverride portOverride: portOverrides) {
-            builder.server(new PortOverridesConfig.Server.Builder().
-                    id(portOverride.serverId.stringValue()).
-                    port(portOverride.port));
-        }
     }
 
     @Override

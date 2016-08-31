@@ -17,7 +17,6 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
-import com.yahoo.container.jdisc.config.PortOverridesConfig;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
@@ -79,8 +78,6 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
-    private final ContainerPortsOverride defaultContainerPortsOverride = new ContainerPortsOverride(
-            new PortOverridesConfig(new PortOverridesConfig.Builder()));
     private final OsgiFramework restrictedOsgiFramework;
     private volatile int applicationSerialNo = 0;
     private HandlersConfigurerDi configurer;
@@ -238,7 +235,6 @@ public final class ConfiguredApplication implements Application {
                 bind(OsgiFramework.class).toInstance(restrictedOsgiFramework);
                 bind(com.yahoo.jdisc.Timer.class).toInstance(timerSingleton);
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
-                bind(ContainerPortsOverride.class).toInstance(defaultContainerPortsOverride);
             }
         });
         modules.install(applicationWithLegacySetup.getMbusBindings());
