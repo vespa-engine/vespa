@@ -51,6 +51,7 @@
 #include "terminfofeature.h"
 #include "text_similarity_feature.h"
 #include "valuefeature.h"
+#include "constant_feature.h"
 
 using search::fef::Blueprint;
 
@@ -111,6 +112,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new ReverseProximityBlueprint()));
     registry.addPrototype(Blueprint::SP(new TermEditDistanceBlueprint()));
     registry.addPrototype(Blueprint::SP(new TermFieldMdBlueprint()));
+    registry.addPrototype(std::make_shared<ConstantBlueprint>());
 }
 
 } // namespace features

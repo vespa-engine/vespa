@@ -111,6 +111,7 @@ vespa_define_module(
     src/tests/engine/transportserver
     src/tests/features
     src/tests/features/beta
+    src/tests/features/constant
     src/tests/features/element_completeness
     src/tests/features/element_similarity_feature
     src/tests/features/euclidean_distance
