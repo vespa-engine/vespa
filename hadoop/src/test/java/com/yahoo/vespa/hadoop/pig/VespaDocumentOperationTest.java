@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class VespaDocumentOperationTest {
@@ -228,6 +229,21 @@ public class VespaDocumentOperationTest {
 
         assertEquals(2.0, cells.get(0).get("value").asDouble(), 1e-6);
         assertEquals(3.0, cells.get(1).get("value").asDouble(), 1e-6);
+    }
+
+
+    @Test
+    public void requireThatUDFCanExcludeFields() throws IOException {
+        String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>", "exclude-fields=application,date");
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.path("fields");
+
+        // 'application' and 'date' fields should not appear in JSON
+        assertNull(fields.get("application"));
+        assertNull(fields.get("date"));
+        assertNotNull(fields.get("name"));
+        assertNotNull(fields.get("value"));
     }
 
 
