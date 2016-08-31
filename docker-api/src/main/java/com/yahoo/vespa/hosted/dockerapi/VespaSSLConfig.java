@@ -1,8 +1,7 @@
-package com.yahoo.vespa.hosted.node.admin.util;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.core.SSLConfig;
-import com.yahoo.nodeadmin.docker.DockerConfig;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;

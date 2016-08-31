@@ -1,9 +1,8 @@
-package com.yahoo.vespa.hosted.node.admin.docker;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author valerijf
@@ -13,14 +12,14 @@ public class ContainerNameTest {
     public void testAlphanumericalContainerName() {
         String name = "container123";
         ContainerName containerName = new ContainerName(name);
-        assertThat(containerName.asString(), is(name));
+        assertEquals(containerName.asString(), name);
     }
 
     @Test
     public void testAlphanumericalWithDashContainerName() {
         String name = "container-123";
         ContainerName containerName = new ContainerName(name);
-        assertThat(containerName.asString(), is(name));
+        assertEquals(containerName.asString(), name);
     }
 
     @Test(expected=IllegalArgumentException.class)

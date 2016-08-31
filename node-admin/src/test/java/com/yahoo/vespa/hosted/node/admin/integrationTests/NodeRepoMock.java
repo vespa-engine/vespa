@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 

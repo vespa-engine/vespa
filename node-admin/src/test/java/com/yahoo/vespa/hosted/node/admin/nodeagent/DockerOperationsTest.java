@@ -1,20 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DockerOperationsTest {
     private final Docker docker = mock(Docker.class);
@@ -79,5 +84,40 @@ public class DockerOperationsTest {
 
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(actualResult));
+    }
+
+    @Test
+    public void vespaVersionIsParsed() {
+        assertThat(DockerOperations.parseVespaVersion("5.119.53"), CoreMatchers.is(Optional.of("5.119.53")));
+    }
+
+    @Test
+    public void vespaVersionIsParsedWithSpacesAndNewlines() {
+        assertThat(DockerOperations.parseVespaVersion("5.119.53\n"), CoreMatchers.is(Optional.of("5.119.53")));
+        assertThat(DockerOperations.parseVespaVersion(" 5.119.53 \n"), CoreMatchers.is(Optional.of("5.119.53")));
+        assertThat(DockerOperations.parseVespaVersion("\n 5.119.53 \n"), CoreMatchers.is(Optional.of("5.119.53")));
+    }
+
+    @Test
+    public void vespaVersionIsParsedWithIrregularVersionScheme() {
+        assertThat(DockerOperations.parseVespaVersion("7.2"), CoreMatchers.is(Optional.of("7.2")));
+        assertThat(DockerOperations.parseVespaVersion("8.0-beta"), CoreMatchers.is(Optional.of("8.0-beta")));
+        assertThat(DockerOperations.parseVespaVersion("foo"), CoreMatchers.is(Optional.of("foo")));
+        assertThat(DockerOperations.parseVespaVersion("119"), CoreMatchers.is(Optional.of("119")));
+    }
+
+    @Test
+    public void vespaVersionIsNotParsedFromNull() {
+        assertThat(DockerOperations.parseVespaVersion(null), CoreMatchers.is(Optional.empty()));
+    }
+
+    @Test
+    public void vespaVersionIsNotParsedFromEmptyString() {
+        assertThat(DockerOperations.parseVespaVersion(""), CoreMatchers.is(Optional.empty()));
+    }
+
+    @Test
+    public void vespaVersionIsNotParsedFromUnexpectedContent() {
+        assertThat(DockerOperations.parseVespaVersion("No such command 'vespanodectl'"), CoreMatchers.is(Optional.empty()));
     }
 }

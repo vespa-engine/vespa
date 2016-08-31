@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.docker;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -18,25 +15,12 @@ import com.github.dockerjava.core.RemoteApiVersion;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
-import com.google.common.base.Joiner;
-import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
-import com.yahoo.nodeadmin.docker.DockerConfig;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-
-import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -47,64 +31,36 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-/**
- * @author stiankri
- */
-public class DockerImpl implements Docker {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(DockerImpl.class);
+class DockerImpl implements Docker {
 
-    private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
-    private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-    private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
+    private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
-    private static final Map<String, String> CONTAINER_LABELS = new HashMap<>();
+
+    private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
+    private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
 
     private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
     private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
     private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
     private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
-    static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
-    static {
-        CONTAINER_LABELS.put(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
-    }
-
-    private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
-            getDefaults().underVespaHome("logs"),
-            getDefaults().underVespaHome("var/cache"),
-            getDefaults().underVespaHome("var/crash"),
-            getDefaults().underVespaHome("var/db/jdisc"),
-            getDefaults().underVespaHome("var/db/vespa"),
-            getDefaults().underVespaHome("var/jdisc_container"),
-            getDefaults().underVespaHome("var/jdisc_core"),
-            getDefaults().underVespaHome("var/logstash-forwarder"),
-            getDefaults().underVespaHome("var/maven"),
-            getDefaults().underVespaHome("var/scoreboards"),
-            getDefaults().underVespaHome("var/service"),
-            getDefaults().underVespaHome("var/share"),
-            getDefaults().underVespaHome("var/spool"),
-            getDefaults().underVespaHome("var/vespa"),
-            getDefaults().underVespaHome("var/yca"),
-            getDefaults().underVespaHome("var/ycore++"),
-            getDefaults().underVespaHome("var/zookeeper"));
-
-    final DockerClient docker;
+    private static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
     private final Object monitor = new Object();
-
     @GuardedBy("monitor")
     private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
 
+    final DockerClient dockerClient;
+
     DockerImpl(final DockerClient dockerClient) {
-        this.docker = dockerClient;
+        this.dockerClient = dockerClient;
     }
 
     @Inject
@@ -119,20 +75,20 @@ public class DockerImpl implements Docker {
         try {
              remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance()
                      .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
-            NODE_ADMIN_LOGGER.info("Found version of remote docker API: "+ remoteApiVersion);
+            logger.info("Found version of remote docker API: "+ remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
             // When this is fixed, we can remove this and do not specify version.
             if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
                 remoteApiVersion = RemoteApiVersion.VERSION_1_23;
-                NODE_ADMIN_LOGGER.info("Found version 1.24 or newer of remote API, using 1.23.");
+                logger.info("Found version 1.24 or newer of remote API, using 1.23.");
             }
         } catch (Exception e) {
-            NODE_ADMIN_LOGGER.error("Failed when trying to figure out remote API version of docker, using 1.23", e);
+            logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
             remoteApiVersion = RemoteApiVersion.VERSION_1_23;
         }
 
        // DockerClientImpl.getInstance().infoCmd().exec().getServerVersion();
-        this.docker = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
+        this.dockerClient = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
                 .withDockerHost(config.uri())
                 .withApiVersion(remoteApiVersion)
                 .build())
@@ -149,7 +105,7 @@ public class DockerImpl implements Docker {
             completionListener = new CompletableFuture<>();
             scheduledPulls.put(image, completionListener);
         }
-        docker.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+        dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
         return completionListener;
     }
 
@@ -165,7 +121,7 @@ public class DockerImpl implements Docker {
     @Override
     public boolean imageIsDownloaded(final DockerImage dockerImage) {
         try {
-            List<Image> images = docker.listImagesCmd().withShowAll(true).exec();
+            List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
             return images.stream().
                     flatMap(image -> Arrays.stream(image.getRepoTags())).
                     anyMatch(tag -> tag.equals(dockerImage.asString()));
@@ -175,82 +131,16 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void startContainer(
-            final DockerImage dockerImage,
-            final HostName hostName,
-            final ContainerName containerName,
-            final InetAddress nodeInetAddress,
-            double minCpuCores,
-            double minDiskAvailableGb,
-            double minMainMemoryAvailableGb) {
-        try {
-            String nodeIpAddress = nodeInetAddress.getHostAddress();
-            final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
-            final double GIGA = Math.pow(2.0, 30.0);
-
-            NODE_ADMIN_LOGGER.info("--- Starting up " + hostName.s() + " with node IP: " + nodeIpAddress +
-                    ", running IPv6: " + isRunningIPv6);
-
-            CreateContainerCmd containerConfigBuilder = docker.createContainerCmd(dockerImage.asString())
-                    .withName(containerName.asString())
-                    .withLabels(CONTAINER_LABELS)
-                    .withEnv(new String[]{"CONFIG_SERVER_ADDRESS=" + Joiner.on(',').join(Environment.getConfigServerHosts())})
-                    .withHostName(hostName.s())
-                    .withBinds(applicationStorageToMount(containerName));
-
-            // TODO: Enforce disk constraints
-            // TODO: Consider if CPU shares or quoata should be set. For now we are just assuming they are
-            // nicely controlled by docker.
-            if (minMainMemoryAvailableGb > 0.00001) {
-                containerConfigBuilder.withMemory((long) (GIGA * minMainMemoryAvailableGb));
-            }
-
-            //If container's IP address is IPv6, use our custom network mode and let docker handle networking.
-            //If container's IP address is IPv4, set up networking manually as before. In the future docker should
-            //set up the IPv4 network as well.
-            if (isRunningIPv6) {
-                containerConfigBuilder.withNetworkMode(DOCKER_CUSTOM_IP6_NETWORK_NAME).withIpv6Address(nodeIpAddress);
-            } else {
-                containerConfigBuilder.withNetworkMode("none");
-            }
-
-            CreateContainerResponse response = containerConfigBuilder.exec();
-            docker.startContainerCmd(response.getId()).exec();
-
-            if (! isRunningIPv6) {
-                setupContainerIPv4Networking(containerName, hostName);
-            }
-        } catch (IOException | DockerException e) {
-            throw new RuntimeException("Failed to start container " + containerName.asString(), e);
-        }
-    }
-
-    @Override
-    public String getVespaVersion(final ContainerName containerName) {
-        ProcessResult result = executeInContainer(containerName, DockerOperations.GET_VESPA_VERSION_COMMAND);
-        if (!result.isSuccess()) {
-            throw new RuntimeException("Container " + containerName.asString() + ": Command "
-                    + Arrays.toString(DockerOperations.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
-        }
-        return parseVespaVersion(result.getOutput())
-                .orElseThrow(() -> new RuntimeException(
-                        "Container " + containerName.asString() + ": Failed to parse vespa version from "
-                                + result.getOutput()));
-    }
-
-    // Returns empty if vespa version cannot be parsed.
-    static Optional<String> parseVespaVersion(final String rawVespaVersion) {
-        if (rawVespaVersion == null) return Optional.empty();
-
-        final Matcher matcher = VESPA_VERSION_PATTERN.matcher(rawVespaVersion.trim());
-        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    public StartContainerCommand createStartContainerCommand(DockerImage image, ContainerName name, HostName hostName) {
+        return new StartContainerCommandImpl(dockerClient, image, name, hostName)
+                .withLabel(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
     }
 
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         assert args.length >= 1;
         try {
-            final ExecCreateCmdResponse response = docker.execCreateCmd(containerName.asString())
+            final ExecCreateCmdResponse response = dockerClient.execCreateCmd(containerName.asString())
                     .withCmd(args)
                     .withAttachStdout(true)
                     .withAttachStderr(true)
@@ -258,10 +148,10 @@ public class DockerImpl implements Docker {
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream errors = new ByteArrayOutputStream();
-            ExecStartCmd execStartCmd = docker.execStartCmd(response.getId());
+            ExecStartCmd execStartCmd = dockerClient.execStartCmd(response.getId());
             execStartCmd.exec(new ExecStartResultCallback(output, errors)).awaitCompletion();
 
-            final InspectExecResponse state = docker.inspectExecCmd(execStartCmd.getExecId()).exec();
+            final InspectExecResponse state = dockerClient.inspectExecCmd(execStartCmd.getExecId()).exec();
             assert !state.isRunning();
             Integer exitCode = state.getExitCode();
             assert exitCode != null;
@@ -273,72 +163,10 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void setupContainerIPv4Networking(ContainerName containerName,
-                                              HostName hostName) throws UnknownHostException {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerImpl.class, containerName);
-
-        InspectContainerResponse containerInfo = docker.inspectContainerCmd(containerName.asString()).exec();
-        InspectContainerResponse.ContainerState state = containerInfo.getState();
-        Integer containerPid = -1;
-        if (state.getRunning()) {
-            containerPid = state.getPid();
-            if (containerPid == null) {
-                throw new RuntimeException("PID of running container for host " + hostName + " is null");
-            }
-        }
-
-        InetAddress inetAddress = InetAddress.getByName(hostName.s());
-        String ipAddress = inetAddress.getHostAddress();
-
-        final List<String> command = new LinkedList<>();
-        command.add("sudo");
-        command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
-
-        Environment.NetworkType networkType = Environment.networkType();
-        if (networkType != Environment.NetworkType.normal) {
-            command.add("--" + networkType);
-        }
-        command.add(containerPid.toString());
-        command.add(ipAddress);
-
-        for (int retry = 0; retry < 30; ++retry) {
-            try {
-                runCommand(command);
-                logger.info("Done setting up network");
-                return;
-            } catch (Exception e) {
-                final int sleepSecs = 3;
-                logger.warning("Failed to configure network with command " + command
-                        + ", will retry in " + sleepSecs + " seconds", e);
-                try {
-                    Thread.sleep(sleepSecs * 1000);
-                } catch (InterruptedException e1) {
-                    logger.warning("Sleep interrupted", e1);
-                }
-            }
-        }
-    }
-
-    private void runCommand(final List<String> command) throws Exception {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-
-        String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-        int resultCode = process.waitFor();
-        if (resultCode != 0) {
-            throw new Exception("Command " + Joiner.on(' ').join(command) + " failed: " + output);
-        }
-    }
-
-    static List<Bind> applicationStorageToMount(ContainerName containerName) {
-        return Stream.concat(
-                        Stream.of("/etc/hosts:/etc/hosts"),
-                        DIRECTORIES_TO_MOUNT.stream().map(directory ->
-                                Maintainer.pathInHostFromPathInNode(containerName, directory).toString() +
-                        ":" + directory))
-                .map(Bind::parse)
-                .collect(Collectors.toList());
+    @Override
+    public ContainerInfo inspectContainer(ContainerName containerName) {
+        InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName.asString()).exec();
+        return new ContainerInfoImpl(containerName, containerInfo);
     }
 
     @Override
@@ -346,7 +174,7 @@ public class DockerImpl implements Docker {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
             try {
-                docker.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+                dockerClient.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
             } catch (DockerException e) {
                 throw new RuntimeException("Failed to stop container", e);
             }
@@ -358,7 +186,7 @@ public class DockerImpl implements Docker {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
             try {
-                docker.removeContainerCmd(dockerContainer.get().getId()).exec();
+                dockerClient.removeContainerCmd(dockerContainer.get().getId()).exec();
             } catch (DockerException e) {
                 throw new RuntimeException("Failed to delete container", e);
             }
@@ -368,7 +196,7 @@ public class DockerImpl implements Docker {
     @Override
     public List<Container> getAllManagedContainers() {
         try {
-            return docker.listContainersCmd().withShowAll(true).exec().stream()
+            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
                     .filter(this::isManaged)
                     .flatMap(this::asContainer)
                     .collect(Collectors.toList());
@@ -387,7 +215,7 @@ public class DockerImpl implements Docker {
 
     private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
         try {
-            final InspectContainerResponse response = docker.inspectContainerCmd(dockerClientContainer.getId()).exec();
+            final InspectContainerResponse response = dockerClient.inspectContainerCmd(dockerClientContainer.getId()).exec();
             return Stream.of(new Container(
                     new HostName(response.getConfig().getHostName()),
                     new DockerImage(dockerClientContainer.getImage()),
@@ -403,7 +231,7 @@ public class DockerImpl implements Docker {
     private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(
             final ContainerName containerName, final boolean alsoGetStoppedContainers) {
         try {
-            return docker.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
+            return dockerClient.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
                     .filter(this::isManaged)
                     .filter(container -> matchName(container, containerName.asString()))
                     .findFirst();
@@ -412,12 +240,12 @@ public class DockerImpl implements Docker {
         }
     }
 
-
     private boolean isManaged(final com.github.dockerjava.api.model.Container container) {
         final Map<String, String> labels = container.getLabels();
         if (labels == null) {
             return false;
         }
+
         return LABEL_VALUE_MANAGEDBY.equals(labels.get(LABEL_NAME_MANAGEDBY));
     }
 
@@ -431,12 +259,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteImage(final DockerImage dockerImage) {
-        try {
-            NODE_ADMIN_LOGGER.info("Deleting docker image " + dockerImage);
-            docker.removeImageCmd(dockerImage.asString()).exec();
-        } catch (DockerException e) {
-            NODE_ADMIN_LOGGER.warning("Could not delete docker image " + dockerImage, e);
-        }
+        dockerClient.removeImageCmd(dockerImage.asString()).exec();
     }
 
     @Override
@@ -456,7 +279,7 @@ public class DockerImpl implements Docker {
             final Map<String, String> dependencies = new HashMap<>();
 
             // Populate maps with images (including tags) and their dependencies (parents).
-            for (Image image : docker.listImagesCmd().withShowAll(true).exec()) {
+            for (Image image : dockerClient.listImagesCmd().withShowAll(true).exec()) {
                 objects.put(image.getId(), new DockerObject(image.getId(), DockerObjectType.IMAGE));
                 if (image.getParentId() != null && !image.getParentId().isEmpty()) {
                     dependencies.put(image.getId(), image.getParentId());
@@ -468,7 +291,7 @@ public class DockerImpl implements Docker {
             }
 
             // Populate maps with containers and their dependency to the image they run on.
-            for (com.github.dockerjava.api.model.Container container : docker.listContainersCmd().withShowAll(true).exec()) {
+            for (com.github.dockerjava.api.model.Container container : dockerClient.listContainersCmd().withShowAll(true).exec()) {
                 objects.put(container.getId(), new DockerObject(container.getId(), DockerObjectType.CONTAINER));
                 dependencies.put(container.getId(), container.getImage());
             }

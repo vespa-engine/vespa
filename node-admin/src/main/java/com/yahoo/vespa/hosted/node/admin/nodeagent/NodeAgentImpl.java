@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;

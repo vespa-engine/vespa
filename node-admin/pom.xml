@@ -52,58 +52,6 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency> <!-- Remove once code uses docker-api bundle -->
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java</artifactId>
-            <version>3.0.2</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>javax.ws.rs-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpcore</artifactId>
-                </exclusion>
-
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
@@ -171,6 +119,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
                         <arg>-Werror</arg>

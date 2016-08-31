@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;

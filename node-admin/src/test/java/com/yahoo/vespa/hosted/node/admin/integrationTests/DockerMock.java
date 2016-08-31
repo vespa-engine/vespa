@@ -2,13 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.node.admin.docker.Container;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,15 +41,28 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName, InetAddress inetAddress,
-                               double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb) {
+    public StartContainerCommand createStartContainerCommand(
+            DockerImage dockerImage,
+            ContainerName containerName,
+            HostName hostName) {
         synchronized (monitor) {
-            requests.append("startContainer with DockerImage: ").append(dockerImage).append(", HostName: ").append(hostName)
-                    .append(", ContainerName: ").append(containerName).append(", InetAddress: ").append(inetAddress)
-                    .append(", minCpuCores: ").append(minCpuCores).append(", minDiskAvailableGb: ").append(minDiskAvailableGb)
-                    .append(", minMainMemoryAvailableGb: ").append(minMainMemoryAvailableGb).append("\n");
+            requests.append("createStartContainerCommand with DockerImage: ")
+                    .append(dockerImage).append(", HostName: ").append(hostName)
+                    .append(", ContainerName: ").append(containerName).append("\n");
             containers.add(new Container(hostName, dockerImage, containerName, true));
         }
+
+        return new StartContainerCommandMock();
+    }
+
+    @Override
+    public ContainerInfo inspectContainer(ContainerName containerName) {
+        return new ContainerInfo() {
+            @Override
+            public Optional<Integer> getPid() {
+                return Optional.of(2);
+            }
+        };
     }
 
     @Override
@@ -102,11 +114,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public String getVespaVersion(ContainerName containerName) {
-        return null;
-    }
-
-    @Override
     public void deleteImage(DockerImage dockerImage) {
 
     }
@@ -136,5 +143,41 @@ public class DockerMock implements Docker {
             requests = new StringBuilder();
         }
     }
-}
 
+    public static class StartContainerCommandMock implements StartContainerCommand {
+        @Override
+        public StartContainerCommand withLabel(String name, String value) {
+            return this;
+        }
+
+        @Override
+        public StartContainerCommand withEnvironment(String name, String value) {
+            return this;
+        }
+
+        @Override
+        public StartContainerCommand withVolume(String path, String volumePath) {
+            return this;
+        }
+
+        @Override
+        public StartContainerCommand withMemoryInMb(long megaBytes) {
+            return this;
+        }
+
+        @Override
+        public StartContainerCommand withNetworkMode(String mode) {
+            return this;
+        }
+
+        @Override
+        public StartContainerCommand withIpv6Address(String address) {
+            return this;
+        }
+
+        @Override
+        public void start() {
+
+        }
+    }
+}

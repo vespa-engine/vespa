@@ -1,8 +1,7 @@
-package com.yahoo.vespa.hosted.node.admin.docker;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.yahoo.nodeadmin.docker.DockerConfig;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.junit.After;
 import org.junit.Before;
@@ -56,7 +55,7 @@ public class DockerTest {
         docker.pullImageAsync(dockerImage).get();
 
         // Translate the human readable ID to sha256-hash ID that is returned by getUnusedDockerImages()
-        DockerImage targetImage = new DockerImage(docker.docker.inspectImageCmd(dockerImage.asString()).exec().getId());
+        DockerImage targetImage = new DockerImage(docker.dockerClient.inspectImageCmd(dockerImage.asString()).exec().getId());
         assertTrue("Image: " + dockerImage + " should be unused", docker.getUnusedDockerImages().contains(targetImage));
 
         // Remove the image
@@ -74,8 +73,9 @@ public class DockerTest {
         InetAddress inetAddress1 = Inet6Address.getByName("fe80::10");
         InetAddress inetAddress2 = Inet6Address.getByName("fe80::11");
 
-        docker.startContainer(dockerImage, hostName1, containerName1, inetAddress1, 0, 0, 0);
-        docker.startContainer(dockerImage, hostName2, containerName2, inetAddress2, 0, 0, 0);
+        // TODO: Use new Docker API.
+        // docker.startContainer(dockerImage, hostName1, containerName1, inetAddress1, 0, 0, 0);
+        // docker.startContainer(dockerImage, hostName2, containerName2, inetAddress2, 0, 0, 0);
 
         try {
             testReachabilityFromHost(containerName1, inetAddress1);
@@ -156,20 +156,22 @@ public class DockerTest {
     public void setup() throws IOException, ExecutionException, InterruptedException {
         // Build the image locally
         File dockerFilePath = new File("src/test/resources/simple-ipv6-server");
-        docker.docker
+        docker.dockerClient
                 .buildImageCmd(dockerFilePath)
                 .withTag(dockerImage.asString()).exec(new BuildImageResultCallback()).awaitCompletion();
 
         // Create a temporary network
         Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
                 .withSubnet("fe80::1/16").withGateway(getLocalIPv6Address()));
-        docker.docker.createNetworkCmd().withDriver("bridge").withName(DockerImpl.DOCKER_CUSTOM_IP6_NETWORK_NAME)
+        // TODO: This needs to match the network name in DockerOperations!?
+        docker.dockerClient.createNetworkCmd().withDriver("bridge").withName("habla")
                 .withIpam(ipam).exec();
     }
 
     @After
     public void shutdown() {
         // Remove the network we created earlier
-        docker.docker.removeNetworkCmd(DockerImpl.DOCKER_CUSTOM_IP6_NETWORK_NAME).exec();
+        // TODO: This needs to match the network name in DockerOperations!?
+        docker.dockerClient.removeNetworkCmd("habla").exec();
     }
 }

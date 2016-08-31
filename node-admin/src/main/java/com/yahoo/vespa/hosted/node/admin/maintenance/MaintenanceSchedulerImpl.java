@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;

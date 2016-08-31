@@ -2,12 +2,13 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.Container;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.docker.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.integrationTests.DockerMock;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
@@ -22,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyDouble;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.anyVararg;
@@ -76,7 +76,8 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer));
@@ -85,14 +86,10 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(docker, times(1)).executeInContainer(any(), anyVararg());
         final InOrder inOrder = inOrder(orchestrator, nodeRepository);
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
@@ -120,12 +117,11 @@ public class NodeAgentImplTest {
         final String vespaVersion = "7.8.9";
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
-        ;
-
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
         nodeAgent.tick();
@@ -135,14 +131,10 @@ public class NodeAgentImplTest {
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
 
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, wantedRestartGeneration, dockerImage, vespaVersion);
@@ -172,7 +164,8 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(wantedDockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
@@ -184,14 +177,10 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).suspend(hostName);
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
         inOrder.verify(docker, times(1)).executeInContainer(any(), anyVararg());
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, wantedDockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
@@ -252,8 +241,13 @@ public class NodeAgentImplTest {
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
 
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
+        when(docker.createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname)).thenReturn(new DockerMock.StartContainerCommandMock());
 
         nodeAgent.tick();
 
@@ -262,14 +256,10 @@ public class NodeAgentImplTest {
         verify(docker, times(1)).executeInContainer(any(), anyVararg());
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -294,7 +284,8 @@ public class NodeAgentImplTest {
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
 
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(docker.getContainer(hostName)).thenReturn(Optional.empty());
@@ -306,14 +297,10 @@ public class NodeAgentImplTest {
         verify(docker, times(1)).executeInContainer(any(), anyVararg());
         verify(orchestrator, never()).suspend(any(HostName.class));
         final InOrder inOrder = inOrder(orchestrator, docker, nodeRepository);
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
         inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -351,14 +338,10 @@ public class NodeAgentImplTest {
         verify(orchestrator).suspend(hostName);
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -393,14 +376,10 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, docker);
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -435,14 +414,10 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker).deleteContainer(containerName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -475,14 +450,10 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(containerName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -518,14 +489,10 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, docker);
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -562,14 +529,10 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker).deleteContainer(containerName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -605,14 +568,10 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(HostName.class));
         verify(docker, never()).stopContainer(any(ContainerName.class));
         verify(docker, never()).deleteContainer(any(ContainerName.class));
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(maintenanceScheduler, never()).deleteContainerStorage(any(ContainerName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
@@ -652,14 +611,10 @@ public class NodeAgentImplTest {
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -698,14 +653,10 @@ public class NodeAgentImplTest {
         inOrder.verify(docker).deleteContainer(containerName);
         inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -741,14 +692,10 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(docker, nodeRepository, maintenanceScheduler);
         inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -785,14 +732,10 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(docker, nodeRepository, maintenanceScheduler);
         inOrder.verify(maintenanceScheduler).deleteContainerStorage(containerName);
         inOrder.verify(nodeRepository).markAsReady(hostName);
-        verify(docker, never()).startContainer(
+        verify(docker, never()).createStartContainerCommand(
                 any(DockerImage.class),
-                any(HostName.class),
                 any(ContainerName.class),
-                any(InetAddress.class),
-                anyDouble(),
-                anyDouble(),
-                anyDouble());
+                any(HostName.class));
         verify(orchestrator, never()).resume(any(HostName.class));
         verify(nodeRepository, never()).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -831,7 +774,8 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(any(DockerImage.class))).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
         final InOrder inOrder = inOrder(nodeRepository, docker);
@@ -908,7 +852,8 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(any(DockerImage.class))).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
         doThrow(new IOException()).doNothing().when(nodeRepository).updateNodeAttributes(
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
@@ -967,7 +912,8 @@ public class NodeAgentImplTest {
                 .thenReturn(new ProcessResult(0, "node program exists", ""))
                 .thenReturn(new ProcessResult(0, "node program succeeds 3rd time", ""));
 
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
 
         final InOrder inOrder = inOrder(orchestrator, docker);
 
@@ -980,14 +926,10 @@ public class NodeAgentImplTest {
             fail("Expected to throw an exception");
         } catch (Exception e) {
         }
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
         inOrder.verify(docker, times(2)).executeInContainer(any(), anyVararg());
         inOrder.verifyNoMoreInteractions();
 
@@ -1064,7 +1006,8 @@ public class NodeAgentImplTest {
                         .thenReturn(new ProcessResult(0, "output", "")); // resuming succeeds
                 break;
         }
-        when(docker.getVespaVersion(containerName)).thenReturn(vespaVersion);
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+                .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
         when(docker.getContainer(hostName)).thenReturn(Optional.of(existingContainer)).thenReturn(Optional.empty());
@@ -1087,14 +1030,10 @@ public class NodeAgentImplTest {
 
         inOrder.verify(docker).stopContainer(containerName);
         inOrder.verify(docker).deleteContainer(containerName);
-        inOrder.verify(docker).startContainer(
-                eq(nodeSpec.wantedDockerImage.get()),
-                eq(nodeSpec.hostname),
-                eq(nodeSpec.containerName),
-                any(InetAddress.class),
-                eq(nodeSpec.minCpuCores.get()),
-                eq(nodeSpec.minDiskAvailableGb.get()),
-                eq(nodeSpec.minMainMemoryAvailableGb.get()));
+        inOrder.verify(docker).createStartContainerCommand(
+                nodeSpec.wantedDockerImage.get(),
+                nodeSpec.containerName,
+                nodeSpec.hostname);
 
         switch (scenario) {
             case EXCEPTION:

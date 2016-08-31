@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 
 import java.io.IOException;
