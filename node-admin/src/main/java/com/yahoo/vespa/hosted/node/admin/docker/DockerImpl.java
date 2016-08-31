@@ -449,7 +449,7 @@ public class DockerImpl implements Docker {
             do {
                 Image sparedImage = unusedDockerImagesByImageId.remove(imageToSpare);
                 imageToSpare = sparedImage.getParentId();
-            } while (imageToSpare != null);
+            } while (imageToSpare != null && !imageToSpare.isEmpty());
         }
 
         return unusedDockerImagesByImageId;
