@@ -49,10 +49,8 @@ ThreadStackExecutorBase::unblock_threads(const MonitorGuard &)
 void
 ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
 {
-    worker.verify();
     MonitorGuard monitor(worker.monitor);
-    assert(worker.idle);
-    assert(worker.task.task.get() == 0);
+    worker.verify(/* idle: */ true);
     worker.idle = false;
     worker.task = std::move(task);
     monitor.signal();
@@ -61,17 +59,18 @@ ThreadStackExecutorBase::assignTask(TaggedTask task, Worker &worker)
 bool
 ThreadStackExecutorBase::obtainTask(Worker &worker)
 {
-    worker.verify();
     {
         MonitorGuard monitor(_monitor);
         if (!worker.idle) {
             assert(_taskCount != 0);
             --_taskCount;
             _barrier.completeEvent(worker.task.token);
+            worker.idle = true;
         }
+        worker.verify(/* idle: */ true);
         unblock_threads(monitor);
         if (!_tasks.empty()) {
-            worker.task = std::move(_tasks.access(0));
+            worker.task = std::move(_tasks.front());
             worker.idle = false;
             _tasks.pop();
             wakeup(monitor);
@@ -80,7 +79,6 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
         if (_closed) {
             return false;
         }
-        worker.idle = true;
         _workers.push(&worker);
     }
     {
@@ -89,23 +87,22 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             monitor.wait();
         }
     }
-    return (worker.task.task.get() != nullptr);
+    worker.idle = !worker.task.task;
+    return !worker.idle;
 }
 
 void
 ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
 {
     Worker worker;
-    worker.verify();
-    assert(worker.idle);
-    assert(worker.task.task.get() == nullptr);
+    worker.verify(/* idle: */ true);
     while (obtainTask(worker)) {
+        worker.verify(/* idle: */ false);
         worker.task.task->run();
         worker.task.task.reset();
-        assert(!worker.idle);
     }
     _executorCompletion.await(); // to allow unsafe signaling
-    worker.verify();
+    worker.verify(/* idle: */ true);
 }
 
 //-----------------------------------------------------------------------------

@@ -56,7 +56,12 @@ private:
         uint32_t   post_guard;
         TaggedTask task;
         Worker() : monitor(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
-        void verify() { assert((pre_guard == 0xaaaaaaaa) && (post_guard == 0x55555555)); }
+        void verify(bool expect_idle) {
+            assert(pre_guard == 0xaaaaaaaa);
+            assert(post_guard == 0x55555555);
+            assert(idle == expect_idle);
+            assert(!task.task == expect_idle);
+        }
     };
 
     struct BarrierCompletion {
