@@ -20,6 +20,7 @@ public class VespaConfiguration {
     public static final String CONNECTIONS = "vespa.feed.connections";
     public static final String THROTTLER_MIN_SIZE = "vespa.feed.throttler.min.size";
     public static final String QUERY_CONNECTION_TIMEOUT = "vespa.query.connection.timeout";
+    public static final String ROUTE = "vespa.feed.route";
 
     private final Configuration conf;
     private final Properties override;
@@ -77,6 +78,10 @@ public class VespaConfiguration {
 
     public int queryConnectionTimeout() {
         return getInt(QUERY_CONNECTION_TIMEOUT, 10000);
+    }
+
+    public String route() {
+        return getString(ROUTE);
     }
 
 
