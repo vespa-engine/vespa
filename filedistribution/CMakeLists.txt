@@ -10,6 +10,7 @@ vespa_define_module(
     staging_vespalib
     vespadefaults
     vespalib
+    fileacquirer
 
     EXTERNAL_DEPENDS
     torrent-rasterbar
@@ -18,7 +19,6 @@ vespa_define_module(
     src/vespa/filedistribution/rpc
     src/vespa/filedistribution/common
     src/vespa/filedistribution/manager
-    src/vespa/filedistribution/rpcconfig
     src/vespa/filedistribution/distributor
     src/vespa/filedistribution/model
 

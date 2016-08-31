@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config/file_acquirer/file_acquirer.h>
 
 using namespace config;
 using namespace vespa::config::search::core;
@@ -19,6 +20,10 @@ using search::index::Schema;
 using search::index::SchemaBuilder;
 using fastos::TimeStamp;
 
+// RankingConstantsConfigBuilder
+// RankingConstantsConfig
+
+
 namespace proton {
 
 const ConfigKeySet
@@ -26,6 +31,7 @@ DocumentDBConfigManager::createConfigKeySet() const
 {
     ConfigKeySet set;
     set.add<RankProfilesConfig,
+            RankingConstantsConfig,
             IndexschemaConfig,
             AttributesConfig,
             SummaryConfig,
@@ -123,6 +129,7 @@ void
 DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
 {
     typedef DocumentDBConfig::RankProfilesConfigSP RankProfilesConfigSP;
+    typedef DocumentDBConfig::RankingConstantsConfigSP RankingConstantsConfigSP;
     typedef DocumentDBConfig::IndexschemaConfigSP IndexschemaConfigSP;
     typedef DocumentDBConfig::AttributesConfigSP AttributesConfigSP;
     typedef DocumentDBConfig::SummaryConfigSP SummaryConfigSP;
@@ -132,6 +139,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
 
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
+    RankingConstantsConfigSP newRankingConstantsConfig;
     IndexschemaConfigSP newIndexschemaConfig;
     AttributesConfigSP newAttributesConfig;
     SummaryConfigSP newSummaryConfig;
@@ -160,6 +168,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     int64_t currentGeneration = -1;
     if (current.get() != NULL) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
+        newRankingConstantsConfig = current->getRankingConstantsConfigSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         newAttributesConfig = current->getAttributesConfigSP();
         newSummaryConfig = current->getSummaryConfigSP();
@@ -169,11 +178,27 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         currentGeneration = current->getGeneration();
     }
 
-    if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration))
+    if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration)) {
         newRankProfilesConfig =
             RankProfilesConfigSP(
                     snapshot.getConfig<RankProfilesConfig>(_configId).
                     release());
+    }
+    if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
+        newRankingConstantsConfig = 
+            RankingConstantsConfigSP(
+                    snapshot.getConfig<RankingConstantsConfig>(_configId)
+                    .release());
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
+                vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
+                fprintf(stderr, "GOT file-acq PATH is: %s (ref %s for name %s type %s)\n",
+                        filePath.c_str(), rc.fileref.c_str(), rc.name.c_str(), rc.type.c_str());
+            }
+        }
+    }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         std::unique_ptr<IndexschemaConfig> indexschemaConfig =
             snapshot.getConfig<IndexschemaConfig>(_configId);
@@ -218,6 +243,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     DocumentDBConfig::SP newSnapshot(
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
+                                 newRankingConstantsConfig,
                                  newIndexschemaConfig,
                                  newAttributesConfig,
                                  newSummaryConfig,

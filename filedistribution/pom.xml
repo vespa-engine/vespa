@@ -29,8 +29,7 @@
         <configuration>
           <defFilesDirectories>
             src/vespa/filedistribution/distributor,
-            src/vespa/filedistribution/model,
-            src/vespa/filedistribution/rpcconfig
+            src/vespa/filedistribution/model
           </defFilesDirectories>
         </configuration>
         <executions>

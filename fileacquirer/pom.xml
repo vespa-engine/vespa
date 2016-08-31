@@ -27,4 +27,21 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>config-class-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>config-gen</id>
+            <goals>
+              <goal>config-gen</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

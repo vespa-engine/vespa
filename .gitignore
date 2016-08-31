@@ -36,3 +36,4 @@ Testing
 /.ninja_log
 /build.ninja
 /rules.ninja
+*_test_app
