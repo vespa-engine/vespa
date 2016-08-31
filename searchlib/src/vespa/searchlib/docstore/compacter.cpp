@@ -9,8 +9,6 @@ LOG_SETUP(".searchlib.docstore.compacter");
 namespace search {
 namespace docstore {
 
-using document::CompressionConfig;
-
 void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
@@ -18,13 +16,14 @@ Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *bu
     _ds.write(guard, fileId, lid, buffer, sz);
 }
 
-BucketCompacter::BucketCompacter(const CompressionConfig & compression, LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination) :
+BucketCompacter::BucketCompacter(const CompressionConfig & compression, LogDataStore & ds, ThreadExecutor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
     _sourceFileId(source),
     _destinationFileId(destination),
     _ds(ds),
     _bucketizer(bucketizer),
     _writeCount(0),
-    _backingMemory(0x40000000),
+    _lock(),
+    _backingMemory(0x40000000, &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),
@@ -32,7 +31,7 @@ BucketCompacter::BucketCompacter(const CompressionConfig & compression, LogDataS
 {
     _tmpStore.reserve(256);
     for (size_t i(0); i < 256; i++) {
-        _tmpStore.emplace_back(_backingMemory, compression);
+        _tmpStore.emplace_back(_backingMemory, executor, compression);
     }
 }
 
