@@ -179,7 +179,7 @@ public class ProvisioningTester implements AutoCloseable {
             if (requestedCluster.group().isPresent())
                 assertEquals(requestedCluster.group(), nodeCluster.group());
             else
-                assertEquals("0", nodeCluster.group().get().value());
+                assertEquals(0, nodeCluster.group().get().index());
 
             indices.add(host.membership().get().index());
         }

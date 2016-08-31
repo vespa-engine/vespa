@@ -93,10 +93,8 @@ public class NodesSpecification {
     /** Returns the number of host groups this specifies. Default is 1 */
     public int groups() { return groups; }
 
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, Optional<ClusterSpec.Group> clusterGroup, DeployLogger logger) {
-        if (clusterGroup.isPresent() && groups > 1)
-            throw new IllegalArgumentException("Cannot both specify a group and request multiple groups");
-        ClusterSpec cluster = ClusterSpec.from(clusterType, clusterId, clusterGroup, dockerImage);
+    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, dockerImage);
         return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor), groups, logger);
     }
 

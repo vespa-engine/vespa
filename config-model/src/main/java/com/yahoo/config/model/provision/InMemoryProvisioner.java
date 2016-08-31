@@ -114,7 +114,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
         else {
             for (int i = 0; i < groups; i++) {
-                allocation.addAll(allocateHostGroup(cluster.changeGroup(Optional.of(ClusterSpec.Group.from(String.valueOf(i)))),
+                allocation.addAll(allocateHostGroup(cluster.changeGroup(Optional.of(ClusterSpec.Group.from(i))),
                                                     flavor,
                                                     capacity / groups,
                                                     allocation.size()));

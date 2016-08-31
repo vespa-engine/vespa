@@ -60,7 +60,7 @@ class Preparer {
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             // Generated groups always have contiguous indexes starting from 0
             ClusterSpec clusterGroup =
-                cluster.group().isPresent() ? cluster : cluster.changeGroup(Optional.of(ClusterSpec.Group.from(String.valueOf(groupIndex))));
+                cluster.group().isPresent() ? cluster : cluster.changeGroup(Optional.of(ClusterSpec.Group.from(groupIndex)));
 
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup, nodes/wantedGroups, flavor, surplusNodes, highestIndex);
             replace(acceptedNodes, accepted);
@@ -80,7 +80,7 @@ class Preparer {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
-            if (Integer.parseInt(nodeCluster.group().get().value()) >= wantedGroups)
+            if (nodeCluster.group().get().index() >= wantedGroups)
                 surplusNodes.add(node);
         }
         return surplusNodes;
@@ -92,8 +92,8 @@ class Preparer {
             Node node = i.next();
             ClusterMembership membership = node.allocation().get().membership();
             ClusterSpec cluster = membership.cluster();
-            if (Integer.parseInt(cluster.group().get().value()) >= wantedGroups) {
-                ClusterSpec.Group newGroup = targetGroup.orElse(ClusterSpec.Group.from(String.valueOf(0)));
+            if (cluster.group().get().index() >= wantedGroups) {
+                ClusterSpec.Group newGroup = targetGroup.orElse(ClusterSpec.Group.from(0));
                 ClusterMembership newGroupMembership = membership.changeCluster(cluster.changeGroup(Optional.of(newGroup)));
                 i.set(node.setAllocation(node.allocation().get().changeMembership(newGroupMembership)));
             }

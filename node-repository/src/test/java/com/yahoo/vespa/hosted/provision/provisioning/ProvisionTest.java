@@ -454,15 +454,15 @@ public class ProvisionTest {
         SystemState state2 = prepare(application1, 1, 1, 1, 1, "default", tester);
         tester.activate(application1, state2.allHosts);
 
-        // group0
-        assertFalse(state2.hostByMembership("test", 0, 0).membership().get().retired());
-        assertTrue( state2.hostByMembership("test", 0, 1).membership().get().retired());
-        assertTrue( state2.hostByMembership("test", 0, 2).membership().get().retired());
+        // content0
+        assertFalse(state2.hostByMembership("content0", 0, 0).membership().get().retired());
+        assertTrue( state2.hostByMembership("content0", 0, 1).membership().get().retired());
+        assertTrue( state2.hostByMembership("content0", 0, 2).membership().get().retired());
 
-        // group1
-        assertFalse(state2.hostByMembership("test", 1, 0).membership().get().retired());
-        assertTrue( state2.hostByMembership("test", 1, 1).membership().get().retired());
-        assertTrue( state2.hostByMembership("test", 1, 2).membership().get().retired());
+        // content1
+        assertFalse(state2.hostByMembership("content1", 0, 0).membership().get().retired());
+        assertTrue( state2.hostByMembership("content1", 0, 1).membership().get().retired());
+        assertTrue( state2.hostByMembership("content1", 0, 2).membership().get().retired());
     }
 
     @Test
@@ -473,8 +473,8 @@ public class ProvisionTest {
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
 
         ApplicationId applicationId = tester.makeApplicationId();
-        ClusterSpec contentClusterSpec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"));
-        ClusterSpec containerClusterSpec = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"));
+        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
+        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
 
 
         List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large"); //should be replaced by 5 large-variant
@@ -487,64 +487,64 @@ public class ProvisionTest {
     }
 
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int group0Size, int group1Size, String flavor, ProvisioningTester tester) {
+    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
-        ClusterSpec containerCluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
-        ClusterSpec contentGroup0 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("0")));
-        ClusterSpec contentGroup1 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.of(ClusterSpec.Group.from("1")));
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
+        ClusterSpec contentCluster0 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), ClusterSpec.Group.from(0), Optional.empty());
+        ClusterSpec contentCluster1 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), ClusterSpec.Group.from(0), Optional.empty());
 
         Set<HostSpec> container0 = new HashSet<>(tester.prepare(application, containerCluster0, container0Size, 1, flavor));
         Set<HostSpec> container1 = new HashSet<>(tester.prepare(application, containerCluster1, container1Size, 1, flavor));
-        Set<HostSpec> group0 = new HashSet<>(tester.prepare(application, contentGroup0, group0Size, 1, flavor));
-        Set<HostSpec> group1 = new HashSet<>(tester.prepare(application, contentGroup1, group1Size, 1, flavor));
+        Set<HostSpec> content0 = new HashSet<>(tester.prepare(application, contentCluster0, content0Size, 1, flavor));
+        Set<HostSpec> content1 = new HashSet<>(tester.prepare(application, contentCluster1, content1Size, 1, flavor));
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
         allHosts.addAll(container1);
-        allHosts.addAll(group0);
-        allHosts.addAll(group1);
+        allHosts.addAll(content0);
+        allHosts.addAll(content1);
 
         int expectedContainer0Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(container0Size));
         int expectedContainer1Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(container1Size));
-        int expectedGroup0Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(group0Size));
-        int expectedGroup1Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(group1Size));
+        int expectedContent0Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(content0Size));
+        int expectedContent1Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(content1Size));
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
-                     expectedContainer0Size + expectedContainer1Size + expectedGroup0Size + expectedGroup1Size,
+                     expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,
                      tester.nonretired(allHosts).size());
         // Check cluster/group sizes
         assertEquals(expectedContainer0Size, tester.nonretired(container0).size());
         assertEquals(expectedContainer1Size, tester.nonretired(container1).size());
-        assertEquals(expectedGroup0Size, tester.nonretired(group0).size());
-        assertEquals(expectedGroup1Size, tester.nonretired(group1).size());
+        assertEquals(expectedContent0Size, tester.nonretired(content0).size());
+        assertEquals(expectedContent1Size, tester.nonretired(content1).size());
         // Check cluster membership
         tester.assertMembersOf(containerCluster0, container0);
         tester.assertMembersOf(containerCluster1, container1);
-        tester.assertMembersOf(contentGroup0, group0);
-        tester.assertMembersOf(contentGroup1, group1);
+        tester.assertMembersOf(contentCluster0, content0);
+        tester.assertMembersOf(contentCluster1, content1);
 
-        return new SystemState(allHosts, container0, container1, group0, group1);
+        return new SystemState(allHosts, container0, container1, content0, content1);
     }
 
     private static class SystemState {
 
         private Set<HostSpec> allHosts;
+        private Set<HostSpec> container0;
         private Set<HostSpec> container1;
-        private Set<HostSpec> container2;
-        private Set<HostSpec> group1;
-        private Set<HostSpec> group2;
+        private Set<HostSpec> content0;
+        private Set<HostSpec> content1;
 
         public SystemState(Set<HostSpec> allHosts,
                            Set<HostSpec> container1,
                            Set<HostSpec> container2,
-                           Set<HostSpec> group1,
-                           Set<HostSpec> group2) {
+                           Set<HostSpec> content0,
+                           Set<HostSpec> content1) {
             this.allHosts = allHosts;
-            this.container1 = container1;
-            this.container2 = container2;
-            this.group1 = group1;
-            this.group2 = group2;
+            this.container0 = container1;
+            this.container1 = container2;
+            this.content0 = content0;
+            this.content1 = content1;
         }
         
         /** Returns a host by cluster name and index, or null if there is no host with the given values in this */
@@ -562,7 +562,7 @@ public class ProvisionTest {
         
         private boolean groupMatches(Optional<ClusterSpec.Group> clusterGroup, int group) {
             if ( ! clusterGroup.isPresent()) return group==0;
-            return Integer.parseInt(clusterGroup.get().value()) == group;
+            return clusterGroup.get().index() == group;
         }
 
         public Set<String> hostNames() {
@@ -582,10 +582,10 @@ public class ProvisionTest {
 
         public void assertExtends(SystemState other) {
             assertTrue(this.allHosts.containsAll(other.allHosts));
+            assertExtends(this.container0, other.container0);
             assertExtends(this.container1, other.container1);
-            assertExtends(this.container2, other.container2);
-            assertExtends(this.group1, other.group1);
-            assertExtends(this.group2, other.group2);
+            assertExtends(this.content0, other.content0);
+            assertExtends(this.content1, other.content1);
         }
 
         private void assertExtends(Set<HostSpec> extension,
@@ -605,10 +605,10 @@ public class ProvisionTest {
 
         public void assertEquals(SystemState other) {
             org.junit.Assert.assertEquals(this.allHosts, other.allHosts);
+            org.junit.Assert.assertEquals(this.container0, other.container0);
             org.junit.Assert.assertEquals(this.container1, other.container1);
-            org.junit.Assert.assertEquals(this.container2, other.container2);
-            org.junit.Assert.assertEquals(this.group1, other.group1);
-            org.junit.Assert.assertEquals(this.group2, other.group2);
+            org.junit.Assert.assertEquals(this.content0, other.content0);
+            org.junit.Assert.assertEquals(this.content1, other.content1);
         }
 
     }

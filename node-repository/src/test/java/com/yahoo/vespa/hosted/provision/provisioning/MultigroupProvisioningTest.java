@@ -179,7 +179,7 @@ public class MultigroupProvisioningTest {
             nonretiredGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
 
             if (wantedGroups > 1)
-                assertTrue("Group ids are always in [0, wantedGroups>", Integer.parseInt(group.value()) < wantedGroups);
+                assertTrue("Group indexes are always in [0, wantedGroups>", group.index() < wantedGroups);
         }
         assertEquals("Total nonretired nodes", nodeCount, indexes.size());
         assertEquals("Total nonretired groups", wantedGroups, nonretiredGroups.size());
@@ -194,7 +194,7 @@ public class MultigroupProvisioningTest {
         assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test")); }
+    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty()); }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));

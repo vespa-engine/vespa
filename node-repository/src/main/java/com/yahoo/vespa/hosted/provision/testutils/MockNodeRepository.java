@@ -83,15 +83,15 @@ public class MockNodeRepository extends NodeRepository {
         move("host55.yahoo.com", Node.State.dirty);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-        ClusterSpec cluster1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty(), Optional.of("image-123"));
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.of("image-123"));
         provisioner.prepare(app1, cluster1, Capacity.fromNodeCount(2), 1, null);
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
-        ClusterSpec cluster2 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Optional.empty());
+        ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Optional.empty());
         activate(provisioner.prepare(app2, cluster2, Capacity.fromNodeCount(2), 1, null), app2, provisioner);
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
-        ClusterSpec cluster3 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id3"), Optional.empty());
+        ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id3"), Optional.empty());
         activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2), 1, null), app3, provisioner);
     }
 

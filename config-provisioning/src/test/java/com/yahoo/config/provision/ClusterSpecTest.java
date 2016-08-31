@@ -21,9 +21,9 @@ public class ClusterSpecTest {
     @Test
     public void testGroupEquals() {
         new EqualsTester()
-                .addEqualityGroup(ClusterSpec.Group.from("id1"), ClusterSpec.Group.from("id1"))
-                .addEqualityGroup(ClusterSpec.Group.from("id2"))
-                .addEqualityGroup(ClusterSpec.Group.from("id3"))
+                .addEqualityGroup(ClusterSpec.Group.from(1), ClusterSpec.Group.from(1))
+                .addEqualityGroup(ClusterSpec.Group.from(2))
+                .addEqualityGroup(ClusterSpec.Group.from(3))
                 .testEquals();
     }
 

@@ -16,7 +16,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
@@ -27,7 +27,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContentService(ClusterMembership.from(cluster, 37));
     }
 
@@ -39,18 +39,18 @@ public class ClusterMembershipTest {
     @Test
     public void testServiceInstanceWithGroup() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               Optional.of(ClusterSpec.Group.from("gr4")));
+                                               ClusterSpec.Group.from(4), Optional.empty());
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/gr4/37", Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Optional.empty()));
     }
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Optional.empty());
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
@@ -62,13 +62,13 @@ public class ClusterMembershipTest {
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                Optional.of(ClusterSpec.Group.from("gr4")));
+                                               ClusterSpec.Group.from(4), Optional.empty());
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/gr4/37/retired", Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Optional.empty()));
     }
 
     private void assertContainerService(ClusterMembership instance) {
@@ -91,10 +91,10 @@ public class ClusterMembershipTest {
     private void assertContentServiceWithGroup(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.content, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());
-        assertEquals("gr4", instance.cluster().group().get().value());
+        assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/gr4/37", instance.stringValue());
+        assertEquals("content/id1/4/37", instance.stringValue());
     }
 
     private void assertContentServiceWithRetire(ClusterMembership instance) {
@@ -108,10 +108,10 @@ public class ClusterMembershipTest {
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.content, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());
-        assertEquals("gr4", instance.cluster().group().get().value());
+        assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/gr4/37/retired", instance.stringValue());
+        assertEquals("content/id1/4/37/retired", instance.stringValue());
     }
 
 }

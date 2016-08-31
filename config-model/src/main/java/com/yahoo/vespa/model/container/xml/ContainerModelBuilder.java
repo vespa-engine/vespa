@@ -418,7 +418,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     
     private HostResource allocateSingleNodeHost(ContainerCluster cluster, DeployLogger logger) {
         if (cluster.isHostedVespa()) {
-            ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty());
+            ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), Optional.empty());
             return cluster.getHostSystem().allocateHosts(clusterSpec, Capacity.fromNodeCount(1), 1, logger).keySet().iterator().next();
         } else {
             return cluster.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
@@ -429,7 +429,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement));
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
-                                                                                  ClusterSpec.Id.from(cluster.getName()), Optional.empty(), log);
+                                                                                  ClusterSpec.Id.from(cluster.getName()), 
+                                                                                  log);
         return createNodesFromHosts(hosts, cluster);
     }
     
@@ -452,7 +453,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement)), 
                                             referenceId, 
                                             cluster.getRoot().getHostSystem(),
-                                            null,
                                             context.getDeployLogger());
         return createNodesFromHosts(hosts, cluster);
     }

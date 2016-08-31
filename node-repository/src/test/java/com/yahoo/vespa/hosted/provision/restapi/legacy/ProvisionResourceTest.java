@@ -139,7 +139,7 @@ public class ProvisionResourceTest {
     }
 
     private List<Node> assignNode(ApplicationId applicationId, int capacity, ClusterSpec.Type type) {
-        ClusterSpec cluster = ClusterSpec.from(type, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(type, ClusterSpec.Id.from("test"), Optional.empty());
         List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(capacity), 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);

@@ -31,7 +31,7 @@ public class ClusterMembership {
 
         String[] components = restValue.split("/");
 
-        if ( components.length == 3)
+        if ( components.length == 3) // Aug 2016: This should never happen any more
             initWithoutGroup(components, dockerImage);
         else if (components.length == 4)
             initWithGroup(components, dockerImage);
@@ -50,20 +50,21 @@ public class ClusterMembership {
     }
 
     private void initWithoutGroup(String[] components, Optional<String> dockerImage) {
-        this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        Optional.empty(), dockerImage);
+        this.cluster = ClusterSpec.request(ClusterSpec.Type.valueOf(components[0]), 
+                                           ClusterSpec.Id.from(components[1]),
+                                           dockerImage);
         this.index = Integer.parseInt(components[2]);
     }
 
     private void initWithGroup(String[] components, Optional<String> dockerImage) {
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        Optional.of(ClusterSpec.Group.from(components[2])), dockerImage);
+                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), dockerImage);
         this.index = Integer.parseInt(components[3]);
     }
 
     protected String toStringValue() {
         return cluster.type().name() + "/" + cluster.id().value() +
-                ( cluster.group().isPresent() ? "/" + cluster.group().get().value() : "") + "/" + index +
+                ( cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") + "/" + index +
                 ( retired ? "/retired" : "");
     }
 

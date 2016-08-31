@@ -158,11 +158,9 @@ public class StorageGroup {
     public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification, 
                                                                       String clusterIdString, 
                                                                       HostSystem hostSystem, 
-                                                                      String groupIndex, 
                                                                       DeployLogger logger) {
         ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
-        Optional<ClusterSpec.Group> groupId = groupIndex == null ? Optional.empty() : Optional.of(ClusterSpec.Group.from(groupIndex));
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, groupId, logger);
+        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger);
     }
 
     public static class Builder {
@@ -248,9 +246,11 @@ public class StorageGroup {
              * @return the storage group build by this
              */
             public StorageGroup buildHosted(ContentCluster owner, Optional<GroupBuilder> parent) {
+                if (storageGroup.getIndex() != null)
+                    throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().getHostSystem(), storageGroup.getIndex(), deployLogger) :
+                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().getHostSystem(), deployLogger) :
                         Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
@@ -268,7 +268,7 @@ public class StorageGroup {
 
                     // create subgroups as returned from allocation
                     for (Map.Entry<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
-                        String groupIndex = hostGroup.getKey().get().value();
+                        String groupIndex = String.valueOf(hostGroup.getKey().get().index());
                         StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex, Optional.empty(), false, Optional.empty());
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
                             subgroup.nodes.add(createStorageNode(owner, host.getKey(), subgroup, host.getValue()));

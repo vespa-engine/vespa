@@ -93,8 +93,8 @@ public class NodeFailerTest {
         createHostNodes(3, nodeRepository, NODE_FLAVORS);
 
         // Create applications
-        ClusterSpec clusterApp1 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
-        ClusterSpec clusterApp2 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         int wantedNodesApp1 = 5;
         int wantedNodesApp2 = 7;
         activate(APP_1, clusterApp1, wantedNodesApp1, provisioner);
