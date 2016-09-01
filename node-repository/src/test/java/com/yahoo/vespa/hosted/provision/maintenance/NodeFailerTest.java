@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
@@ -155,8 +156,8 @@ public class NodeFailerTest {
         // Failures are detected on two ready nodes, which are then failed
         Node readyFail1 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(2);
         Node readyFail2 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(3);
-        nodeRepository.write(readyFail1.setStatus(readyFail1.status().setHardwareFailure(true)));
-        nodeRepository.write(readyFail2.setStatus(readyFail2.status().setHardwareFailure(true)));
+        nodeRepository.write(readyFail1.setStatus(readyFail1.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog))));
+        nodeRepository.write(readyFail2.setStatus(readyFail2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.disk_smart))));
         assertEquals(4, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         failer.run();
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());

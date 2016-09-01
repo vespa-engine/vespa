@@ -23,6 +23,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <thread>
+#include <chrono>
 
 namespace storage {
 
@@ -671,7 +672,14 @@ LockableMap<Map>::chunkedAll(Functor& functor,
 {
     key_type key{};
     while (processNextChunk(functor, key, clientId, chunkSize)) {
-        std::this_thread::yield();
+        // Rationale: delay iteration for as short a time as possible while
+        // allowing another thread blocked on the main DB mutex to acquire it
+        // in the meantime. Simply yielding the thread does not have the
+        // intended effect with the Linux scheduler.
+        // This is a pragmatic stop-gap solution; a more robust change requires
+        // the redesign of bucket DB locking and signalling semantics in the
+        // face of blocked point lookups.
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 }
 

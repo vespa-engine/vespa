@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ public class SerializationTest {
         node = node.setFlavor(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
         node = node.setStatus(node.status().setVespaVersion(Version.fromString("1.2.3")));
         node = node.setStatus(node.status().increaseFailCount().increaseFailCount());
-        node = node.setStatus(node.status().setHardwareFailure(true));
+        node = node.setStatus(node.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
         node = node.setType(Node.Type.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
@@ -78,7 +79,7 @@ public class SerializationTest {
         assertEquals("large", copy.configuration().flavor().name());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
-        assertEquals(true, copy.status().hardwareFailure());
+        assertEquals(Status.HardwareFailureType.memory_mcelog, copy.status().hardwareFailure().get());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().removable(), copy.allocation().get().removable());
@@ -100,7 +101,9 @@ public class SerializationTest {
 
     @Test
     public void testRebootAndRestartandTypeNoCurrentValuesSerialization() {
-        String nodeData = "{\n" +
+        String nodeData = 
+                "{\n" +
+                "   \"type\" : \"tenant\",\n" +
                 "   \"rebootGeneration\" : 0,\n" +
                 "   \"configuration\" : {\n" +
                 "      \"flavor\" : \"default\"\n" +
@@ -132,6 +135,38 @@ public class SerializationTest {
         assertEquals(Node.Type.tenant, node.type());
     }
 
+    // TODO: Remove when 6.28 is deployed everywhere
+    @Test
+    public void testLegacyHardwareFailureBooleanDeserialization() {
+        String nodeData =
+                "{\n" +
+                "   \"type\" : \"tenant\",\n" +
+                "   \"rebootGeneration\" : 0,\n" +
+                "   \"configuration\" : {\n" +
+                "      \"flavor\" : \"default\"\n" +
+                "   },\n" +
+                "   \"history\" : [\n" +
+                "      {\n" +
+                "         \"type\" : \"reserved\",\n" +
+                "         \"at\" : 1444391402611\n" +
+                "      }\n" +
+                "   ],\n" +
+                "   \"instance\" : {\n" +
+                "      \"applicationId\" : \"myApplication\",\n" +
+                "      \"tenantId\" : \"myTenant\",\n" +
+                "      \"instanceId\" : \"myInstance\",\n" +
+                "      \"serviceId\" : \"content/myId/0\",\n" +
+                "      \"restartGeneration\" : 0,\n" +
+                "      \"removable\" : false\n" +
+                "   },\n" +
+                "   \"openStackId\" : \"myId\",\n" +
+                "   \"hostname\" : \"myHostname\",\n" +
+                "   \"hardwareFailure\" : true\n" +
+                "}";
+
+        Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
+        assertEquals(Status.HardwareFailureType.unknown, node.status().hardwareFailure().get());
+    }
     @Test
     public void testRetiredNodeSerialization() {
         Node node = createNode();
@@ -160,7 +195,7 @@ public class SerializationTest {
 
     @Test
     public void testAssimilatedDeserialization() {
-        Node node = nodeSerializer.fromJson(Node.State.active, "{\"hostname\":\"assimilate2.vespahosted.corp.bf1.yahoo.com\",\"openStackId\":\"\",\"configuration\":{\"flavor\":\"ugccloud-container\"},\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
+        Node node = nodeSerializer.fromJson(Node.State.active, "{\"type\":\"tenant\",\"hostname\":\"assimilate2.vespahosted.corp.bf1.yahoo.com\",\"openStackId\":\"\",\"configuration\":{\"flavor\":\"ugccloud-container\"},\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
         assertEquals(0, node.history().events().size());
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
@@ -212,39 +247,6 @@ public class SerializationTest {
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
-    }
-
-    // TODO: Remove when 5.120 is released everywhere
-    @Test
-    public void serialize_parentHostname_from_dockerHostHostName() {
-        final String parentHostname = "parent.yahoo.com";
-        String nodeData = "{\n" +
-                "   \"rebootGeneration\" : 0,\n" +
-                "   \"configuration\" : {\n" +
-                "      \"flavor\" : \"default\"\n" +
-                "   },\n" +
-                "   \"history\" : [\n" +
-                "      {\n" +
-                "         \"type\" : \"reserved\",\n" +
-                "         \"at\" : 1444391402611\n" +
-                "      }\n" +
-                "   ],\n" +
-                "   \"instance\" : {\n" +
-                "      \"applicationId\" : \"myApplication\",\n" +
-                "      \"tenantId\" : \"myTenant\",\n" +
-                "      \"instanceId\" : \"myInstance\",\n" +
-                "      \"serviceId\" : \"content/myId/0\",\n" +
-                "      \"restartGeneration\" : 0,\n" +
-                "      \"removable\" : false\n" +
-                "   },\n" +
-                "   \"openStackId\" : \"fooId\",\n" +
-                "   \"hostname\" : \"fooHost\",\n" +
-                "   \"dockerHostHostName\" : \"" + parentHostname + "\"\n" +
-                "}";
-        // No parent hostname, but dockerHostHostName is set, so parent hostname should be set after deserialization
-
-        Node deserializedNode2 = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
-        assertEquals(parentHostname, deserializedNode2.parentHostname().get());
     }
 
     private Node createNode() {

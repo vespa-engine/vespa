@@ -48,7 +48,7 @@ public class FailedExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
-            if (recycleCandidate.status().hardwareFailure()) continue;
+            if (recycleCandidate.status().hardwareFailure().isPresent()) continue;
             if (failCountIndicatesHwFail(zone) && recycleCandidate.status().failCount() >= 5) continue;
             nodesToRecycle.add(recycleCandidate);
         }

@@ -31,7 +31,7 @@ public class FormatInputStream {
      * @param stream              InputStream of the data if present
      * @param inputFile           Path to file to use as input
      * @param addRootElementToXml To add vespafeed root element around the input data stream
-     * @throws IOException
+     * @throws IOException        on errors.
      */
     public FormatInputStream(InputStream stream, Optional<String> inputFile, boolean addRootElementToXml)
             throws IOException {
