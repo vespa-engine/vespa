@@ -266,6 +266,8 @@ private:
         return (usage*_config.getMaxDiskBloatFactor() < bloat);
     }
 
+    size_t computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const;
+
     /*
      * Protect against compactWorst() dropping file chunk.  Caller must hold
      * _updateLock.

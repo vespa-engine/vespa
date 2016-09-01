@@ -5,6 +5,7 @@
 #include "logdatastore.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <stdexcept>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.logdatastore");
@@ -25,6 +26,7 @@ using common::FileHeaderContext;
 using std::runtime_error;
 using document::BucketId;
 using docstore::StoreByBucket;
+using docstore::BucketCompacter;
 
 LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
                            const vespalib::string &dirName,
@@ -444,8 +446,9 @@ void LogDataStore::compactFile(FileId fileId)
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
         }
-
-        compacter.reset(new docstore::BucketCompacter(_config.compactCompression(), *this, *_bucketizer, fc->getFileId(), destinationFileId));
+        size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());
+        compacter.reset(new BucketCompacter(numSignificantBucketBits, _config.compactCompression(), *this,
+                                            *_bucketizer, fc->getFileId(), destinationFileId));
     } else {
         compacter.reset(new docstore::Compacter(*this));
     }
@@ -861,6 +864,37 @@ LogDataStore::setLid(uint32_t lid, const LidInfo & meta)
         setNextId(_lidInfo.size());
     }
     _lidInfo[lid] = meta;
+}
+
+size_t
+LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const
+{
+    vespalib::BenchmarkTimer timer(1.0);
+    size_t msbHistogram[64];
+    memset(msbHistogram, 0, sizeof(msbHistogram));
+    timer.before();
+    auto bucketizerGuard = bucketizer.getGuard();
+    GenerationHandler::Guard lidGuard(_genHandler.takeGuard());
+    for (size_t i(0), m(_lidInfo.size()); i < m; i++) {
+        LidInfo lid(_lidInfo[i]);
+        if (lid.valid() && (lid.getFileId() == fileId.getId())) {
+            BucketId bucketId = bucketizer.getBucketOf(bucketizerGuard, i);
+            size_t msbCount = vespalib::Optimized::msbIdx(bucketId.toKey());
+            msbHistogram[msbCount]++;
+        }
+    }
+    timer.after();
+    if (LOG_WOULD_LOG(debug)) {
+        for (size_t i(0); i < 64; i++) {
+            LOG(info, "msbCount[%ld] = %ld", i, msbHistogram[i]);
+        }
+    }
+    size_t msb(64);
+    while ((msb > 0) && (msbHistogram[msb - 1] == 0)) {
+        msb--;
+    }
+    LOG(info, "computeNumberOfSignificantBucketIdBits(file=%d) = %ld = %ld took %1.3f", fileId.getId(), msb, msbHistogram[msb-1], timer.min_time());
+    return msb;
 }
 
 void
