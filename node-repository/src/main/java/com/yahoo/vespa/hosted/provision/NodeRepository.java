@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient zkClient;
+    private final Curator curator;
 
     /**
      * Creates a node repository form a zookeeper provider.
@@ -72,6 +73,7 @@ public class NodeRepository extends AbstractComponent {
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock) {
         this.zkClient = new CuratorDatabaseClient(flavors, curator, clock);
+        this.curator = curator;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -350,8 +352,15 @@ public class NodeRepository extends AbstractComponent {
     
     private void updateAllowedHosts() {
         StringBuilder s = new StringBuilder();
+        
+        // Add tenant hosts
         for (Node node : getNodes(Node.Type.tenant))
             s.append(node.hostname()).append(",");
+
+        // Add the zooKeeper servers
+        for (String hostPort : curator.connectionSpec().split("/"))
+            s.append(hostPort.split(":")[0]).append(",");
+
         if (s.length() > 0)
             s.setLength(s.length()-1); // remove last comma
         System.setProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY, s.toString());

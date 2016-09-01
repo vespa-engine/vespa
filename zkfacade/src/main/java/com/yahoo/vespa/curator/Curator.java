@@ -54,7 +54,7 @@ public class Curator {
     private final String connectionSpec;
     private final int serverCount;
 
-    /** Creates a curator instance from a comma-separated string of ZooKeeper host names */
+    /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
         return new Curator(connectionSpec);
     }
@@ -64,7 +64,7 @@ public class Curator {
     public Curator(ConfigserverConfig configserverConfig, ZooKeeperServer server) {
         this(createConnectionSpec(configserverConfig));
     }
-
+    
     private static String createConnectionSpec(ConfigserverConfig config) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < config.zookeeperserver().size(); i++) {
@@ -103,15 +103,14 @@ public class Curator {
     }
 
     private static void validateConnectionSpec(String connectionSpec) {
-        if (connectionSpec == null || connectionSpec.isEmpty()) {
+        if (connectionSpec == null || connectionSpec.isEmpty())
             throw new IllegalArgumentException(String.format("Connections spec '%s' is not valid", connectionSpec));
-        }
     }
 
     /** Returns the number of zooKeeper servers in this cluster */
     public int serverCount() { return serverCount; }
 
-    /** Returns a comma-separated list of the zookeeper servers in this cluster */
+    /** Returns the servers in this cluster as a comma-separated list of host:port strings */
     public String connectionSpec() { return connectionSpec; }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
