@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -47,8 +49,11 @@ import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +81,7 @@ public class NodeFailerTest {
     // Components with state
     private ManualClock clock;
     private Curator curator;
+    private TestHostLivenessTracker hostLivenessTracker;
     private ServiceMonitorStub serviceMonitor;
     private MockDeployer deployer;
     private NodeRepository nodeRepository;
@@ -107,13 +113,12 @@ public class NodeFailerTest {
         apps.put(APP_1, new MockDeployer.ApplicationContext(APP_1, clusterApp1, wantedNodesApp1, Optional.of("default"), 1));
         apps.put(APP_2, new MockDeployer.ApplicationContext(APP_2, clusterApp2, wantedNodesApp2, Optional.of("default"), 1));
         deployer = new MockDeployer(provisioner, apps);
-        // ... and a service monitor
+        // ... and the other services
+        hostLivenessTracker = new TestHostLivenessTracker(clock);
         serviceMonitor = new ServiceMonitorStub(apps, nodeRepository);
-
         orchestrator = new OrchestratorMock();
 
-        failer = new NodeFailer(deployer, serviceMonitor, nodeRepository,
-                DOWNTIME_LIMIT_ONE_HOUR, clock, orchestrator);
+        failer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, DOWNTIME_LIMIT_ONE_HOUR, clock, orchestrator);
     }
 
     @Test
@@ -139,6 +144,8 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
             failer.run();
             clock.advance(Duration.ofMinutes(5));
+            allNodesMakeAConfigRequestExcept();
+
             assertEquals( 0, deployer.redeployments);
             assertEquals(12, nodeRepository.getNodes(Node.Type.tenant, Node.State.active).size());
             assertEquals( 0, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
@@ -164,6 +171,7 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 45; minutes +=5 ) {
             failer.run();
             clock.advance(Duration.ofMinutes(5));
+            allNodesMakeAConfigRequestExcept();
             assertEquals( 0, deployer.redeployments);
             assertEquals(12, nodeRepository.getNodes(Node.Type.tenant, Node.State.active).size());
             assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
@@ -173,6 +181,7 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 30; minutes +=5 ) {
             failer.run();
             clock.advance(Duration.ofMinutes(5));
+            allNodesMakeAConfigRequestExcept();
         }
 
         // downHost2 should now be failed and replaced, but not downHost1
@@ -186,8 +195,10 @@ public class NodeFailerTest {
         serviceMonitor.setHostDown(downHost1);
         failer.run();
         clock.advance(Duration.ofMinutes(5));
+        allNodesMakeAConfigRequestExcept();
         // the system goes down and do not have updated information when coming back
         clock.advance(Duration.ofMinutes(120));
+        hostLivenessTracker.setConstructedNow();
         serviceMonitor.setStatusIsKnown(false);
         failer.run();
         // due to this, nothing is failed
@@ -197,6 +208,7 @@ public class NodeFailerTest {
         assertEquals( 1, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         // when status becomes known, and the host is still down, it is failed
         clock.advance(Duration.ofMinutes(5));
+        allNodesMakeAConfigRequestExcept();
         serviceMonitor.setStatusIsKnown(true);
         failer.run();
         assertEquals( 2, deployer.redeployments);
@@ -211,6 +223,7 @@ public class NodeFailerTest {
         for (int minutes = 0; minutes < 75; minutes +=5 ) {
             failer.run();
             clock.advance(Duration.ofMinutes(5));
+            allNodesMakeAConfigRequestExcept();
             assertEquals( 2, deployer.redeployments);
             assertEquals(12, nodeRepository.getNodes(Node.Type.tenant, Node.State.active).size());
             assertEquals( 4, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
@@ -230,7 +243,51 @@ public class NodeFailerTest {
                    >
                    lastNode.allocation().get().membership().index());
     }
+    
+    @Test
+    public void testFailingReadyNodes() {
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
+            clock.advance(Duration.ofMinutes(5));
+            allNodesMakeAConfigRequestExcept();
+            failer.run();
+            assertEquals( 4, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        }
+        
+        List<Node> ready = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready);
 
+        // Two ready nodes die
+        clock.advance(Duration.ofMinutes(180));
+        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2));
+        failer.run();
+        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+
+        // Another ready node die but we restart so we don't have enough information
+        clock.advance(Duration.ofMinutes(180));
+        hostLivenessTracker.setConstructedNow();
+        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2), ready.get(3));
+        failer.run();
+        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+        
+        // Now we get enough information
+        clock.advance(Duration.ofMinutes(180));
+        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2), ready.get(3));
+        failer.run();
+        assertEquals( 1, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals(ready.get(1), nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(0));
+        assertEquals( 3, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+    }
+    
+    private void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
+        Set<Node> deadNodes = new HashSet<>(Arrays.asList(deadNodeArray));
+        for (Node node : nodeRepository.getNodes(Node.Type.tenant)) {
+            if ( ! deadNodes.contains(node))
+                hostLivenessTracker.receivedRequestFrom(node.hostname());
+        }
+    }
+    
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         createReadyNodes(count, 0, nodeRepository, nodeFlavors);
     }
@@ -267,6 +324,38 @@ public class NodeFailerTest {
                 highestIndex = node;
         }
         return highestIndex;
+    }
+
+    /** This is a fully functional implementation */
+    private static class TestHostLivenessTracker implements HostLivenessTracker {
+
+        private final Clock clock;
+        private Instant constructionTime;
+        private final Map<String, Instant> lastRequestFromHost = new HashMap<>();
+
+        public TestHostLivenessTracker(Clock clock) {
+            this.clock = clock;
+            this.constructionTime = clock.instant();
+        }
+        
+        public void setConstructedNow() {
+            constructionTime = clock.instant();
+            lastRequestFromHost.clear();
+        }
+
+        @Override
+        public Instant remembersRequestsSince() { return constructionTime; }
+
+        @Override
+        public void receivedRequestFrom(String hostname) {
+            lastRequestFromHost.put(hostname, clock.instant());
+        }
+
+        @Override
+        public Optional<Instant> lastRequestFrom(String hostname) {
+            return Optional.ofNullable(lastRequestFromHost.get(hostname));
+        }
+
     }
 
     private static class ServiceMonitorStub implements ServiceMonitor {
@@ -343,8 +432,8 @@ public class NodeFailerTest {
 
         @Override
         public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
-            return suspendedApplications.contains(appId) ? ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN :
-                    ApplicationInstanceStatus.NO_REMARKS;
+            return suspendedApplications.contains(appId) 
+                                ? ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN : ApplicationInstanceStatus.NO_REMARKS;
         }
 
         @Override
@@ -367,4 +456,5 @@ public class NodeFailerTest {
             throw new RuntimeException("Not implemented");
         }
     }
+
 }
