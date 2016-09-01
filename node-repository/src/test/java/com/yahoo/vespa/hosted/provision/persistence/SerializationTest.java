@@ -65,7 +65,7 @@ public class SerializationTest {
         node = node.setFlavor(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
         node = node.setStatus(node.status().setVespaVersion(Version.fromString("1.2.3")));
         node = node.setStatus(node.status().increaseFailCount().increaseFailCount());
-        node = node.setStatus(node.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.mce)));
+        node = node.setStatus(node.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
         node = node.setType(Node.Type.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
@@ -79,7 +79,7 @@ public class SerializationTest {
         assertEquals("large", copy.configuration().flavor().name());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
-        assertEquals(Status.HardwareFailureType.mce, copy.status().hardwareFailure().get());
+        assertEquals(Status.HardwareFailureType.memory_mcelog, copy.status().hardwareFailure().get());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().removable(), copy.allocation().get().removable());

@@ -25,11 +25,11 @@ public class Status {
     public enum HardwareFailureType {
         
         /** There are mce log error messages */
-        mce,
-        /** There are SMART log error messages */
-        smart,
+        memory_mcelog,
+        /** There are smart log error messages */
+        disk_smart,
         /** There are kernel log error messages */
-        kernel,
+        disk_kernel,
         /** There is an error but its type is unknown */ 
         // TODO: Remove this when all hosts in the node repo has a failure type
         unknown

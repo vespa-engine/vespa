@@ -88,7 +88,7 @@ public class FailedExpirerTest {
 
         // Set node2 to have a detected hardware failure
         Node node2 = nodeRepository.getNode("node2").get();
-        node2 = node2.setStatus(node2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.mce)));
+        node2 = node2.setStatus(node2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
         nodeRepository.write(node2);
 
         // Allocate the nodes

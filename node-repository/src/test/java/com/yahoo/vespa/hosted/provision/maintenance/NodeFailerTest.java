@@ -149,8 +149,8 @@ public class NodeFailerTest {
         // Failures are detected on two ready nodes, which are then failed
         Node readyFail1 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(2);
         Node readyFail2 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(3);
-        nodeRepository.write(readyFail1.setStatus(readyFail1.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.mce))));
-        nodeRepository.write(readyFail2.setStatus(readyFail2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.smart))));
+        nodeRepository.write(readyFail1.setStatus(readyFail1.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog))));
+        nodeRepository.write(readyFail2.setStatus(readyFail2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.disk_smart))));
         assertEquals(4, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         failer.run();
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());

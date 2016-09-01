@@ -115,9 +115,9 @@ public class NodePatcher {
 
     private Optional<Status.HardwareFailureType> toHardwareFailureType(String failureType) {
         switch (failureType) {
-            case "mce" : return Optional.of(Status.HardwareFailureType.mce);
-            case "smart" : return Optional.of(Status.HardwareFailureType.smart);
-            case "kernel" : return Optional.of(Status.HardwareFailureType.kernel);
+            case "memory_mcelog" : return Optional.of(Status.HardwareFailureType.memory_mcelog);
+            case "disk_smart" : return Optional.of(Status.HardwareFailureType.disk_smart);
+            case "disk_kernel" : return Optional.of(Status.HardwareFailureType.disk_kernel);
             case "unknown" : throw new IllegalArgumentException("An actual hardware failure type must be provided, not 'unknown'");
             default : throw new IllegalArgumentException("Unknown hardware failure '" + failureType + "'");
         }

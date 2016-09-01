@@ -230,9 +230,9 @@ class NodesResponse extends HttpResponse {
 
     private String toString(Status.HardwareFailureType type) {
         switch (type) {
-            case mce: return "mce";
-            case smart: return "smart";
-            case kernel: return "kernel";
+            case memory_mcelog: return "memory_mcelog";
+            case disk_smart: return "disk_smart";
+            case disk_kernel: return "disk_kernel";
             case unknown: return "unknown";
             default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
         }
