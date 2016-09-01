@@ -54,7 +54,7 @@ public final class JDisc implements AutoCloseable {
                                                 bindings(path, configModelRepo, networking));
 
             application = (StandaloneContainerApplication) testDriver.application();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             StackTrace.filterLogAndDieToJDiscInit(t);
             throw t;
         }

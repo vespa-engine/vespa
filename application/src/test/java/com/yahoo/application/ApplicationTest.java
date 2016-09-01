@@ -62,7 +62,7 @@ public class ApplicationTest {
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
-                    new Query("?query=substring:foobar&tracelevel=3"));
+                                                                             new Query("?query=substring:foobar&tracelevel=3"));
             assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar", result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
     }
@@ -306,6 +306,13 @@ public class ApplicationTest {
             assertNotNull(docproc);
             assertEquals(1, docproc.getResponses().size());
             assertEquals(200, docproc.getResponses().get(0).getStatus());
+        }
+    }
+    
+    @Test
+    public void file_distribution() throws Exception {
+        try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/filedistribution/"), Networking.disable)) {
+            // Deployment succeeded
         }
     }
 

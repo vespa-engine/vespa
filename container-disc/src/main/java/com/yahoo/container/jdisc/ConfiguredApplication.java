@@ -116,17 +116,13 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void start() {
-        try {
-            ContainerDiscApplication.hackToInitializeServer(getConfig(QrConfig.class));
+        ContainerDiscApplication.hackToInitializeServer(getConfig(QrConfig.class));
 
-            ContainerBuilder builder = createBuilderWithGuiceBindings();
-            configureComponents(builder.guiceModules().activate());
+        ContainerBuilder builder = createBuilderWithGuiceBindings();
+        configureComponents(builder.guiceModules().activate());
 
-            intitializeAndActivateContainer(builder);
-            startReconfigurerThread();
-        } catch (Exception e) {
-            com.yahoo.protect.Process.logAndDie("Failed starting container:", e);
-        }
+        intitializeAndActivateContainer(builder);
+        startReconfigurerThread();
     }
 
     private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
