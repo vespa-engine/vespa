@@ -66,24 +66,10 @@ struct AddressExtractor : ObjectTraverser {
     }
 };
 
-struct LoadError : ConstantValue {
-    ValueType my_type;
-    ErrorValue my_value;
-    LoadError() : my_type(ValueType::error_type()), my_value() {}
-    const ValueType &type() const override { return my_type; }
-    const Value &value() const override { return my_value; }
-};
-
-struct TensorConstant : ConstantValue {
-    ValueType my_type;
-    TensorValue my_value;
-    TensorConstant(std::unique_ptr<Tensor> tensor)
-        : my_type(tensor->engine().type_of(*tensor)), my_value(std::move(tensor)) {}
-    const ValueType &type() const override { return my_type; }
-    const Value &value() const override { return my_value; }
-};
-
 } // namespace vespalib::eval::<unnamed>
+
+using ErrorConstant = SimpleConstantValue<ErrorValue>;
+using TensorConstant = SimpleConstantValue<TensorValue>;
 
 ConstantValue::UP
 ConstantTensorLoader::create(const vespalib::string &path, const vespalib::string &type) const
@@ -91,17 +77,17 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     ValueType value_type = ValueType::from_spec(type);
     if (value_type.is_error()) {
         LOG(warning, "invalid type specification: %s", type.c_str());
-        return std::make_unique<LoadError>();
+        return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
     File file(path);
     if (!file.valid()) {
         LOG(warning, "could not read file: %s", path.c_str());
-        return std::make_unique<LoadError>();
+        return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
     Slime slime;
     if (slime::JsonFormat::decode(Memory(file.data, file.size), slime) == 0) {
         LOG(warning, "file contains invalid json: %s", path.c_str());
-        return std::make_unique<LoadError>();
+        return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
     std::set<vespalib::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {
@@ -117,7 +103,8 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         cells[i]["address"].traverse(extractor);
         spec.add(address, cells[i]["value"].asDouble());
     }
-    return std::make_unique<TensorConstant>(_engine.create(spec));
+    auto tensor = _engine.create(spec);
+    return std::make_unique<TensorConstant>(_engine.type_of(*tensor), std::move(tensor));
 }
 
 } // namespace vespalib::eval
