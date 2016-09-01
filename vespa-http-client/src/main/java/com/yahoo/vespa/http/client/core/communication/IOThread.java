@@ -140,39 +140,37 @@ class IOThread implements Runnable, AutoCloseable {
             if (! running.await(2 * localQueueTimeOut, TimeUnit.MILLISECONDS)) {
                 log.info("Waited " + 2 * localQueueTimeOut
                         + " ms for queue to be empty, did not happen, interrupting thread.");
-                thread.interrupt();
-                try {
-                    running.await();
-                    log.info("Now thread finished (after interrupt).");
-                } catch (InterruptedException e) {
-                    log.log(Level.INFO, "Interrupted while waiting for threads to finish after they were interrupted.", e);
-                }
             }
         } catch (InterruptedException e) {
-            log.log(Level.INFO, "Interrupted while waiting for threads to finish.", e);
+            log.log(Level.INFO, "Interrupted while waiting for threads to finish sending.", e);
         }
 
-        try {
-            if (resultQueue.getPendingSize() > 0) {
-                log.info("We have outstanding operations, maybe we did an interrupt? Draining.");
-                processResponse(client.drain());
-            }
-        } catch (Exception e) {
-            drainDocumentQueueWhenFailingPermanently(e);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
-        } finally {
+        // Make 5 attempts the next 30 secs to get results from previous operations.
+        for (int i = 0 ; i < 5; i++) {
+            int size = resultQueue.getPendingSize();
+            if (size == 0) break;
+            log.info("We have outstanding operations (" + size +") , waiting for responses, iteraton: " + i + ".");
+
             try {
-                client.close();
-            } finally {
-                // If there is still documents in the queue, fail them.
-                drainDocumentQueueWhenFailingPermanently(new Exception(
-                        "Closed call, did not manage to process everything so failing this document."));
+                processResponse(client.drain());
+            } catch (Throwable e) {
+                log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
+                break;
+            }
+            try {
+                Thread.sleep(6000);
+            } catch (InterruptedException e) {
+                break;
             }
         }
+        try {
+            client.close();
+        } finally {
+            // If there is still documents in the queue, fail them.
+            drainDocumentQueueWhenFailingPermanently(new Exception(
+                    "Closed call, did not manage to process everything so failing this document."));
+        }
+
         log.fine("Session to " + endpoint + " closed.");
     }
 
