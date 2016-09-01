@@ -195,10 +195,8 @@ public class NodeRepository extends AbstractComponent {
         Optional<Node> nodeToDeallocate = getNode(hostname, Node.State.failed, Node.State.parked);
         if ( ! nodeToDeallocate.isPresent())
             throw new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the failed or parked state");
-        if (nodeToDeallocate.get().status().hardwareFailure()) {
-            throw new IllegalArgumentException(String.format("Could not deallocate %s: Hardware failure flag is set",
-                    hostname));
-        }
+        if (nodeToDeallocate.get().status().hardwareFailure().isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
         return deallocate(Collections.singletonList(nodeToDeallocate.get())).get(0);
     }
 

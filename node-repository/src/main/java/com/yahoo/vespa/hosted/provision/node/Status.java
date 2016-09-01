@@ -20,7 +20,21 @@ public class Status {
     private final Optional<String> stateVersion;
     private final Optional<String> dockerImage;
     private final int failCount;
-    private final boolean hardwareFailure;
+    private final Optional<HardwareFailureType> hardwareFailure;
+    
+    public enum HardwareFailureType {
+        
+        /** There are mce log error messages */
+        memory_mcelog,
+        /** There are smart log error messages */
+        disk_smart,
+        /** There are kernel log error messages */
+        disk_kernel,
+        /** There is an error but its type is unknown */ 
+        // TODO: Remove this when all hosts in the node repo has a failure type
+        unknown
+        
+    }
 
     public Status(Generation generation,
                   Optional<Version> vespaVersion,
@@ -28,7 +42,7 @@ public class Status {
                   Optional<String> stateVersion,
                   Optional<String> dockerImage,
                   int failCount,
-                  boolean hardwareFailure) {
+                  Optional<HardwareFailureType> hardwareFailure) {
         this.reboot = generation;
         this.vespaVersion = vespaVersion;
         this.hostedVersion = hostedVersion;
@@ -82,12 +96,12 @@ public class Status {
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
-    /** Returns whether a hardware failure has been detected on this node */
-    public boolean hardwareFailure() { return hardwareFailure; }
+    /** Returns the type of the last hardware failure detected on this node, or empty if none */
+    public Optional<HardwareFailureType> hardwareFailure() { return hardwareFailure; }
 
-    public Status setHardwareFailure(boolean hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
+    public Status setHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
 
     /** Returns the initial status of a newly provisioned node */
-    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, false); }
+    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty()); }
 
 }

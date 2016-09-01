@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,8 +72,10 @@ public class NodePatcher {
                 return node.setStatus(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.setConfiguration(node.configuration().setFlavor(nodeFlavors.getFlavorOrThrow(asString(value))));
-            case "hardwareFailure" :
-                return node.setStatus(node.status().setHardwareFailure(asBoolean(value)));
+            case "hardwareFailure" : // TODO (Aug 2016): Remove support for this when mpolden says ok
+                return node.setStatus(node.status().setHardwareFailure(toHardwareFailureType(asBoolean(value))));
+            case "hardwareFailureType" :
+                return node.setStatus(node.status().setHardwareFailure(toHardwareFailureType(asString(value))));
             case "parentHostname" :
                 return node.setParentHostname(asString(value));
             default :
@@ -104,6 +107,20 @@ public class NodePatcher {
         if ( ! field.type().equals(Type.BOOL))
             throw new IllegalArgumentException("Expected a BOOL value, got a " + field.type());
         return field.asBool();
+    }
+
+    private Optional<Status.HardwareFailureType> toHardwareFailureType(boolean failure) {
+        return failure ? Optional.of(Status.HardwareFailureType.unknown) : Optional.empty();
+    }
+
+    private Optional<Status.HardwareFailureType> toHardwareFailureType(String failureType) {
+        switch (failureType) {
+            case "memory_mcelog" : return Optional.of(Status.HardwareFailureType.memory_mcelog);
+            case "disk_smart" : return Optional.of(Status.HardwareFailureType.disk_smart);
+            case "disk_kernel" : return Optional.of(Status.HardwareFailureType.disk_kernel);
+            case "unknown" : throw new IllegalArgumentException("An actual hardware failure type must be provided, not 'unknown'");
+            default : throw new IllegalArgumentException("Unknown hardware failure '" + failureType + "'");
+        }
     }
 
 }

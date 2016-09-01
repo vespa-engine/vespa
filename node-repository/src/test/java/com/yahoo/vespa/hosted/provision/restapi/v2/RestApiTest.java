@@ -184,7 +184,7 @@ public class RestApiTest {
                 "{\"message\":\"Moved host12.yahoo.com to failed\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host12.yahoo.com",
                 new byte[0], Request.Method.PUT), 400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not deallocate host12.yahoo.com: Hardware failure flag is set\"}");
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not deallocate host12.yahoo.com: It has a hardware failure\"}");
     }
 
     @Test

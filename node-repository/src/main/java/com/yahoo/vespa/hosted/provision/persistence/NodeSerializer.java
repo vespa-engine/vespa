@@ -11,6 +11,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -42,8 +43,6 @@ public class NodeSerializer {
     // Node fields
     private static final String hostnameKey = "hostname";
     private static final String openStackIdKey = "openStackId";
-    // TODO Legacy name. Remove when 5.120 is released everywhere
-    private static final String dockerHostHostNameKey = "dockerHostHostName";
     private static final String parentHostnameKey = "parentHostname";
     private static final String configurationKey ="configuration";
     private static final String historyKey = "history";
@@ -102,10 +101,10 @@ public class NodeSerializer {
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
         node.status().hostedVersion().ifPresent(version -> object.setString(hostedVersionKey, version.toString()));
-        node.status().stateVersion().ifPresent(version -> object.setString(stateVersionKey, version.toString()));
+        node.status().stateVersion().ifPresent(version -> object.setString(stateVersionKey, version));
         node.status().dockerImage().ifPresent(image -> object.setString(dockerImageKey, image));
         object.setLong(failCountKey, node.status().failCount());
-        object.setBool(hardwareFailureKey, node.status().hardwareFailure());
+        node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -154,18 +153,17 @@ public class NodeSerializer {
                         state,
                         allocationFromSlime(object.field(instanceKey)),
                         historyFromSlime(object.field(historyKey)),
-                        typeFromSlime(object.field(nodeTypeKey)));
+                        nodeTypeFromString(object.field(nodeTypeKey).asString()));
     }
 
     private Status statusFromSlime(Inspector object) {
-        return new Status(
-                generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
-                softwareVersionFromSlime(object.field(vespaVersionKey)),
-                softwareVersionFromSlime(object.field(hostedVersionKey)),
-                optionalString(object.field(stateVersionKey)),
-                optionalString(object.field(dockerImageKey)),
-                (int)object.field(failCountKey).asLong(),
-                object.field(hardwareFailureKey).asBool());
+        return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
+                          softwareVersionFromSlime(object.field(vespaVersionKey)),
+                          softwareVersionFromSlime(object.field(hostedVersionKey)),
+                          optionalString(object.field(stateVersionKey)),
+                          optionalString(object.field(dockerImageKey)),
+                          (int)object.field(failCountKey).asLong(),
+                          hardwareFailureFromSlime(object.field(hardwareFailureKey)));
     }
 
     private Configuration configurationFromSlime(Inspector object) {
@@ -174,17 +172,17 @@ public class NodeSerializer {
 
     private Optional<Allocation> allocationFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new Allocation(
-                applicationIdFromSlime(object),
-                ClusterMembership.from(object.field(serviceIdKey).asString(), optionalString(object.field(dockerImageKey))),
-                generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
-                object.field(removableKey).asBool()));
+        return Optional.of(new Allocation(applicationIdFromSlime(object),
+                                          ClusterMembership.from(object.field(serviceIdKey).asString(), 
+                                                                 optionalString(object.field(dockerImageKey))),
+                                          generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
+                                          object.field(removableKey).asBool()));
     }
 
     private ApplicationId applicationIdFromSlime(Inspector object) {
         return ApplicationId.from(TenantName.from(object.field(tenantIdKey).asString()),
-                ApplicationName.from(object.field(applicationIdKey).asString()),
-                InstanceName.from(object.field(instanceIdKey).asString()));
+                                  ApplicationName.from(object.field(applicationIdKey).asString()),
+                                  InstanceName.from(object.field(instanceIdKey).asString()));
     }
 
     private History historyFromSlime(Inspector array) {
@@ -221,11 +219,14 @@ public class NodeSerializer {
     private Optional<String> parentHostnameFromSlime(Inspector object) {
         if (object.field(parentHostnameKey).valid())
             return Optional.of(object.field(parentHostnameKey).asString());
-        // TODO Remove when 5.120 is released everywhere
-        else if (object.field(dockerHostHostNameKey).valid())
-            return Optional.of(object.field(dockerHostHostNameKey).asString());
         else
             return Optional.empty();
+    }
+    
+    private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
+        if ( ! object.valid()) return Optional.empty();
+        if (object.type() == Type.BOOL) return Optional.of(Status.HardwareFailureType.unknown); // TODO: Remove this line when 6.28 is deployed everywhere
+        return Optional.of(hardwareFailureFromString(object.asString()));
     }
 
     // Enum <-> string mappings
@@ -273,12 +274,11 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }
 
-    private Node.Type typeFromSlime(Inspector object) {
-        if ( ! object.valid()) return Node.Type.tenant; // TODO: Remove this and change to pass string line when 6.13 is released everywhere
-        switch (object.asString()) {
+    private Node.Type nodeTypeFromString(String typeString) {
+        switch (typeString) {
             case "tenant" : return Node.Type.tenant;
             case "host" : return Node.Type.host;
-            default : throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
+            default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
     private String toString(Node.Type type) {
@@ -286,7 +286,26 @@ public class NodeSerializer {
             case tenant: return "tenant";
             case host: return "host";
         }
-        throw new IllegalArgumentException("Unknown node type '" + type.toString() + "'");
+        throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
+    }
+
+    private Status.HardwareFailureType hardwareFailureFromString(String hardwareFailureString) {
+        switch (hardwareFailureString) {
+            case "memory_mcelog" : return Status.HardwareFailureType.memory_mcelog;
+            case "disk_smart" : return Status.HardwareFailureType.disk_smart;
+            case "disk_kernel" : return Status.HardwareFailureType.disk_kernel;
+            case "unknown" : return Status.HardwareFailureType.unknown;
+            default : throw new IllegalArgumentException("Unknown hardware failure '" + hardwareFailureString + "'");
+        }
+    }
+    private String toString(Status.HardwareFailureType type) {
+        switch (type) {
+            case memory_mcelog: return "memory_mcelog";
+            case disk_smart: return "disk_smart";
+            case disk_kernel: return "disk_kernel";
+            case unknown: return "unknown";
+            default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
+        }
     }
 
 }
