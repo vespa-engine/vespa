@@ -140,6 +140,15 @@ public class DockerImplTest {
     }
 
     @Test
+    public void onlyLeafImageIsUnused() throws Exception {
+        ImageGcTester
+                .withExistingImages(
+                        ImageBuilder.forId("parent-image"),
+                        ImageBuilder.forId("leaf-image").withParentId("parent-image"))
+                .expectUnusedImages("leaf-image");
+    }
+
+    @Test
     public void multipleUnusedImagesAreIdentified() throws Exception {
         ImageGcTester
                 .withExistingImages(
@@ -155,7 +164,7 @@ public class DockerImplTest {
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image"),
                         ImageBuilder.forId("image-2").withParentId("parent-image"))
-                .expectUnusedImages("parent-image", "image-1", "image-2");
+                .expectUnusedImages("image-1", "image-2");
     }
 
     @Test
@@ -167,6 +176,16 @@ public class DockerImplTest {
                         ImageBuilder.forId("image-2").withParentId("parent-image").withTag("1.24"))
                 .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImageId("image-1"))
                 .expectUnusedImages("image-2");
+    }
+
+    @Test
+    public void unusedImagesWithMultipleTags() throws Exception {
+        ImageGcTester
+                .withExistingImages(
+                        ImageBuilder.forId("parent-image"),
+                        ImageBuilder.forId("image-1").withParentId("parent-image")
+                                .withTag("vespa-6").withTag("vespa-6.28").withTag("vespa:latest"))
+                .expectUnusedImages("vespa-6", "vespa-6.28", "vespa:latest");
     }
 
     @Test

@@ -38,6 +38,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -440,30 +441,45 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private Map<String, Image> generateUnusedImages(List<com.github.dockerjava.api.model.Container> containerList, Map<String, Image> dockerImageByImageId) {
-        Map<String, Image> unusedDockerImagesByImageId = new HashMap<>(dockerImageByImageId);
+    private Map<String, Image> filterOutImagesUsedByContainers(List<com.github.dockerjava.api.model.Container> containerList,
+                                                              Map<String, Image> dockerImagesByImageId) {
+        Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
 
-        // Do not remove images used by containers, also do not those image's parent.
         for (com.github.dockerjava.api.model.Container container : containerList) {
-            String imageToSpare = container.getImageId();
-            do {
-                Image sparedImage = unusedDockerImagesByImageId.remove(imageToSpare);
-                imageToSpare = sparedImage.getParentId();
-            } while (imageToSpare != null && !imageToSpare.isEmpty());
+            filteredDockerImagesByImageId.remove(container.getImageId());
         }
 
-        return unusedDockerImagesByImageId;
+        return filteredDockerImagesByImageId;
+    }
+
+    private Map<String, Image> filterOutParentImages(Map<String, Image> dockerImagesByImageId) {
+        Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
+
+        for (Image image : dockerImagesByImageId.values()) {
+            if (image.getParentId() != null && !image.getParentId().isEmpty()) {
+                filteredDockerImagesByImageId.remove(image.getParentId());
+            }
+        }
+
+        return filteredDockerImagesByImageId;
     }
 
     @Override
     public Set<DockerImage> getUnusedDockerImages() {
+        // This methods finds a set of images that are unused by any other container or image, and thus can be safely
+        // deleted. Images that are parent to some other image are considered as used to ensure that their children
+        // are deleted before them. In the next call of this function, those parents will be childless and become unused.
         try {
             List<Image> images = docker.listImagesCmd().withShowAll(true).exec();
             Map<String, Image> dockerImageByImageId = images.stream().collect(Collectors.toMap(Image::getId, img -> img));
 
             List<com.github.dockerjava.api.model.Container> containers = docker.listContainersCmd().withShowAll(true).exec();
-            Map<String, Image> unusedImages = generateUnusedImages(containers, dockerImageByImageId);
+            Map<String, Image> unusedImagesByContainers = filterOutImagesUsedByContainers(containers, dockerImageByImageId);
+            Map<String, Image> unusedImages = filterOutParentImages(unusedImagesByContainers);
 
+            // If an image is referred to by multiple tags, we must delete the image by calling delete for each of the
+            // tags used by the image, the deletion of the final tag will also delete the image itself. For images
+            // having only one tag, it is safest to delete my image ID since the tag may be empty.
             return unusedImages.values().stream()
                     .map(img -> img.getRepoTags().length > 1 ? Arrays.asList(img.getRepoTags()) : Collections.singletonList(img.getId()))
                     .flatMap(List::stream)
