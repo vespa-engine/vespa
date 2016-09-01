@@ -4,10 +4,11 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.DockerMock;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
@@ -17,7 +18,6 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,12 +48,12 @@ public class NodeAgentImplTest {
     private static final ProcessResult NODE_PROGRAM_DOESNT_EXIST = new ProcessResult(1, "", "");
 
     private final HostName hostName = new HostName("hostname");
-    private final Docker docker = mock(Docker.class);
+    private final DockerOperations docker = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
 
-    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperationsImpl(docker), maintenanceScheduler);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -74,9 +74,10 @@ public class NodeAgentImplTest {
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
         final String vespaVersion = "7.8.9";
 
-        when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
+        when(docker.shouldScheduleDownloadOfImage(dockerImage)).thenReturn(false);
+        when(docker.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any()));
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
@@ -120,7 +121,7 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
@@ -164,7 +165,7 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(wantedDockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
@@ -241,7 +242,7 @@ public class NodeAgentImplTest {
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
 
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
         when(docker.createStartContainerCommand(
@@ -284,7 +285,7 @@ public class NodeAgentImplTest {
         when(docker.imageIsDownloaded(dockerImage)).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
 
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
@@ -774,7 +775,7 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(any(DockerImage.class))).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 
@@ -852,7 +853,7 @@ public class NodeAgentImplTest {
 
         when(docker.imageIsDownloaded(any(DockerImage.class))).thenReturn(true);
         when(docker.executeInContainer(eq(containerName), anyVararg())).thenReturn(NODE_PROGRAM_DOESNT_EXIST);
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
         doThrow(new IOException()).doNothing().when(nodeRepository).updateNodeAttributes(
@@ -912,7 +913,7 @@ public class NodeAgentImplTest {
                 .thenReturn(new ProcessResult(0, "node program exists", ""))
                 .thenReturn(new ProcessResult(0, "node program succeeds 3rd time", ""));
 
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
 
         final InOrder inOrder = inOrder(orchestrator, docker);
@@ -1006,7 +1007,7 @@ public class NodeAgentImplTest {
                         .thenReturn(new ProcessResult(0, "output", "")); // resuming succeeds
                 break;
         }
-        when(docker.executeInContainer(eq(containerName), eq(DockerOperations.GET_VESPA_VERSION_COMMAND)))
+        when(docker.executeInContainer(eq(containerName), eq(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND)))
                 .thenReturn(new ProcessResult(0, vespaVersion, ""));
         when(orchestrator.suspend(any(HostName.class))).thenReturn(true);
 

@@ -2,8 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
@@ -12,12 +13,12 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;

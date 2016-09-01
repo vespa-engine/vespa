@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.nodeagent;
+package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
@@ -37,7 +37,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * Class that wraps the Docker class and have some tools related to running programs in docker.
  * @author dybis
  */
-public class DockerOperations implements DockerOperationsInterface {
+public class DockerOperationsImpl implements DockerOperations {
     static final String NODE_PROGRAM = Defaults.getDefaults().vespaHome() + "bin/vespa-nodectl";
     public static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
 
@@ -67,18 +67,18 @@ public class DockerOperations implements DockerOperationsInterface {
 
     private final Docker docker;
 
-    public DockerOperations(Docker docker) {
+    public DockerOperationsImpl(Docker docker) {
         this.docker = docker;
     }
 
     @Override
     public String getVespaVersionOrNull(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
-        ProcessResult result = docker.executeInContainer(containerName, DockerOperations.GET_VESPA_VERSION_COMMAND);
+        ProcessResult result = docker.executeInContainer(containerName, DockerOperationsImpl.GET_VESPA_VERSION_COMMAND);
         if (!result.isSuccess()) {
             logger.warning("Container " + containerName.asString() + ": Command "
-                    + Arrays.toString(DockerOperations.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
+                    + Arrays.toString(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
             return null;
         }
         Optional<String> vespaVersion = parseVespaVersion(result.getOutput());
@@ -126,7 +126,7 @@ public class DockerOperations implements DockerOperationsInterface {
         }
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
@@ -178,7 +178,7 @@ public class DockerOperations implements DockerOperationsInterface {
      * Any failures are logged and ignored.
      */
     private void trySuspendNode(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         Optional<ProcessResult> result;
 
         try {
@@ -198,9 +198,8 @@ public class DockerOperations implements DockerOperationsInterface {
         }
     }
 
-    @Override
-    public void startContainer(final ContainerNodeSpec nodeSpec) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+    void startContainer(final ContainerNodeSpec nodeSpec) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
 
         logger.info("Starting container " + nodeSpec.containerName);
         try {
@@ -255,7 +254,7 @@ public class DockerOperations implements DockerOperationsInterface {
     private void setupContainerIPv4Networking(ContainerName containerName,
                                               HostName hostName,
                                               String ipAddress) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);
         Optional<Integer> containerPid = containerInfo.getPid();
@@ -305,8 +304,9 @@ public class DockerOperations implements DockerOperationsInterface {
         }
     }
 
-    void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+    @Override
+    public void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
 
         logger.info("Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
@@ -324,7 +324,7 @@ public class DockerOperations implements DockerOperationsInterface {
 
     private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
             throws Exception {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperations.class, nodeSpec.containerName);
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend

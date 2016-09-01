@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import org.junit.After;
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class NodeStateTest {
         dockerMock = new DockerMock();
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperations(dockerMock), maintenanceSchedulerMock);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock), maintenanceSchedulerMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
         hostName = new HostName("host1");

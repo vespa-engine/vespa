@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -52,7 +52,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         MaintenanceScheduler maintenanceScheduler = new MaintenanceSchedulerImpl();
 
         final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperations(docker), maintenanceScheduler);
+                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperationsImpl(docker), maintenanceScheduler);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, NODE_AGENT_SCAN_INTERVAL_MILLIS);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
