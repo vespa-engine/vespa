@@ -30,7 +30,9 @@ public class NodeRepositoryTest {
     public void nodeRepositoryTest() {
         NodeFlavors nodeFlavors = new NodeFlavors(createConfig());
         Clock clock = new ManualClock();
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, new MockCurator(), clock);
+        MockCurator curator = new MockCurator();
+        curator.setConnectionSpec("server1:1234,server2:5678");
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
 
         assertEquals(0, nodeRepository.getNodes(Node.Type.tenant).size());
 
@@ -41,13 +43,13 @@ public class NodeRepositoryTest {
         nodeRepository.addNodes(nodes);
 
         assertEquals(3, nodeRepository.getNodes(Node.Type.tenant).size());
-        assertEquals(asSet("host1,host2,host3"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
+        assertEquals(asSet("host1,host2,host3,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
         
         nodeRepository.move("host2", Node.State.parked);
         assertTrue(nodeRepository.remove("host2"));
 
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant).size());
-        assertEquals(asSet("host1,host3"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
+        assertEquals(asSet("host1,host3,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
     }
     
     private Set<String> asSet(String s) {

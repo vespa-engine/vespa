@@ -358,7 +358,7 @@ public class NodeRepository extends AbstractComponent {
             s.append(node.hostname()).append(",");
 
         // Add the zooKeeper servers
-        for (String hostPort : curator.connectionSpec().split("/"))
+        for (String hostPort : curator.connectionSpec().split(","))
             s.append(hostPort.split(":")[0]).append(",");
 
         if (s.length() > 0)

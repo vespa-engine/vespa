@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -80,6 +81,7 @@ public class Curator {
     }
 
     private Curator(String connectionSpec) {
+        Objects.requireNonNull(connectionSpec, "The curator connection spec cannot be null");
         this.connectionSpec = connectionSpec;
         this.serverCount = connectionSpec.split(",").length;
         validateConnectionSpec(connectionSpec);
@@ -110,7 +112,10 @@ public class Curator {
     /** Returns the number of zooKeeper servers in this cluster */
     public int serverCount() { return serverCount; }
 
-    /** Returns the servers in this cluster as a comma-separated list of host:port strings */
+    /** 
+     * Returns the servers in this cluster as a comma-separated list of host:port strings. 
+     * This may be empty but never null 
+     */
     public String connectionSpec() { return connectionSpec; }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
