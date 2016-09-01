@@ -2,56 +2,81 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("verify_ranksetup");
-#include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchcore/proton/matching/indexenvironment.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
-#include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/test/plugin/setup.h>
+
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/proton/matching/error_constant_value.h>
+#include <vespa/searchcore/proton/matching/indexenvironment.h>
+#include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/test/plugin/setup.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
+#include <vespa/vespalib/eval/value_cache/constant_value.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
 
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-attributes.h>
-
-using config::IConfigContext;
 using config::ConfigContext;
-using config::ConfigSubscriber;
 using config::ConfigHandle;
-using vespa::config::search::RankProfilesConfig;
-using vespa::config::search::IndexschemaConfig;
-using vespa::config::search::AttributesConfig;
 using config::ConfigRuntimeException;
+using config::ConfigSubscriber;
+using config::IConfigContext;
 using config::InvalidConfigException;
+using proton::matching::IConstantValueRepo;
+using vespa::config::search::AttributesConfig;
+using vespa::config::search::IndexschemaConfig;
+using vespa::config::search::RankProfilesConfig;
+using vespa::config::search::core::RankingConstantsConfig;
+using vespalib::eval::ConstantValue;
+using vespalib::eval::ErrorValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::TensorValue;
+using vespalib::eval::ValueType;
+using vespalib::tensor::DefaultTensorEngine;
+
+using ErrorConstant = vespalib::eval::SimpleConstantValue<ErrorValue>;
+using TensorConstant = vespalib::eval::SimpleConstantValue<TensorValue>;
 
 class App : public FastOS_Application
 {
 public:
     bool verify(const search::index::Schema &schema,
-                const search::fef::Properties &props);
+                const search::fef::Properties &props,
+                const IConstantValueRepo &repo);
 
-    bool verifyConfig(const vespa::config::search::RankProfilesConfig &rankCfg,
-                      const vespa::config::search::IndexschemaConfig  &schemaCfg,
-                      const vespa::config::search::AttributesConfig   &attributeCfg);
+    bool verifyConfig(const RankProfilesConfig &rankCfg,
+                      const IndexschemaConfig &schemaCfg,
+                      const AttributesConfig &attributeCfg,
+                      const RankingConstantsConfig &constantsCfg);
 
     int usage();
     int Main();
 };
 
-// TODO(geirst): Replace with actual constant values when available.
-struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
-    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const {
-        return std::make_unique<proton::matching::ErrorConstantValue>();
+struct DummyConstantValueRepo : IConstantValueRepo {
+    const RankingConstantsConfig &cfg;
+    DummyConstantValueRepo(const RankingConstantsConfig &cfg_in) : cfg(cfg_in) {}
+    virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const {
+        for (const auto &entry: cfg.constant) {
+            if (entry.name == name) {                
+                const auto &engine = DefaultTensorEngine::ref();
+                auto tensor = engine.create(TensorSpec(entry.type));
+                return std::make_unique<TensorConstant>(engine.type_of(*tensor), std::move(tensor));
+            }
+        }
+        return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
 };
 
 bool
 App::verify(const search::index::Schema &schema,
-            const search::fef::Properties &props)
+            const search::fef::Properties &props,
+            const IConstantValueRepo &repo)
 {
-    EmptyConstantValueRepo emptyRepo;
-    proton::matching::IndexEnvironment indexEnv(schema, props, emptyRepo);
+    proton::matching::IndexEnvironment indexEnv(schema, props, repo);
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);
@@ -75,23 +100,25 @@ App::verify(const search::index::Schema &schema,
 }
 
 bool
-App::verifyConfig(const vespa::config::search::RankProfilesConfig &rankCfg,
-                  const vespa::config::search::IndexschemaConfig  &schemaCfg,
-                  const vespa::config::search::AttributesConfig   &attributeCfg)
+App::verifyConfig(const RankProfilesConfig &rankCfg,
+                  const IndexschemaConfig &schemaCfg,
+                  const AttributesConfig &attributeCfg,
+                  const RankingConstantsConfig &constantsCfg)
 {
+    (void) constantsCfg;
     bool ok = true;
     search::index::Schema schema;
     search::index::SchemaBuilder::build(schemaCfg, schema);
     search::index::SchemaBuilder::build(attributeCfg, schema);
-
+    DummyConstantValueRepo repo(constantsCfg);
     for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
         search::fef::Properties properties;
-        const vespa::config::search::RankProfilesConfig::Rankprofile &profile = rankCfg.rankprofile[i];
+        const RankProfilesConfig::Rankprofile &profile = rankCfg.rankprofile[i];
         for(size_t j = 0; j < profile.fef.property.size(); j++) {
             properties.add(profile.fef.property[j].name,
                            profile.fef.property[j].value);
         }
-        if (verify(schema, properties)) {
+        if (verify(schema, properties, repo)) {
             LOG(info, "rank profile '%s': pass", profile.name.c_str());
         } else {
             LOG(error, "rank profile '%s': FAIL", profile.name.c_str());
@@ -127,9 +154,13 @@ App::Main()
         ConfigHandle<RankProfilesConfig>::UP rankHandle = subscriber.subscribe<RankProfilesConfig>(cfgId);
         ConfigHandle<AttributesConfig>::UP attributesHandle = subscriber.subscribe<AttributesConfig>(cfgId);
         ConfigHandle<IndexschemaConfig>::UP schemaHandle = subscriber.subscribe<IndexschemaConfig>(cfgId);
+        ConfigHandle<RankingConstantsConfig>::UP constantsHandle = subscriber.subscribe<RankingConstantsConfig>(cfgId);
 
         subscriber.nextConfig();
-        ok = verifyConfig(*rankHandle->getConfig(), *schemaHandle->getConfig(), *attributesHandle->getConfig());
+        ok = verifyConfig(*rankHandle->getConfig(),
+                          *schemaHandle->getConfig(),
+                          *attributesHandle->getConfig(),
+                          *constantsHandle->getConfig());
     } catch (ConfigRuntimeException & e) {
         LOG(error, "Unable to subscribe to config: %s", e.getMessage().c_str());
     } catch (InvalidConfigException & e) {
