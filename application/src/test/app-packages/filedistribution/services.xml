@@ -1,0 +1,7 @@
+<jdisc version="1.0">
+    <component id="com.yahoo.example.MyComponent" bundle="basic-application">
+        <config name="example.my-component">
+            <myFile>my-files/my-file.txt</myFile>
+        </config>
+    </component>
+</jdisc>
