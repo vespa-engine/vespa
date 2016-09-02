@@ -48,6 +48,7 @@ struct Model {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
     std::map<std::string,std::pair<std::string,std::string> > attributes;
     std::map<std::string,std::string>                         properties;
+    std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
     Model() : indexes(), attributes(), properties(), extra_profiles() {
         verify_dir();
@@ -118,10 +119,20 @@ struct Model {
             out.fmt("rankprofile[%zu].fef.property[%zu].value \"%s\"\n", i, i, extra_profiles[i-1]?valid_feature:invalid_feature);
         }
     }
+    void write_ranking_constants(const Writer &out) {
+        size_t idx = 0;
+        for (const auto &entry: constants) {
+            out.fmt("constant[%zu].name \"%s\"\n", idx, entry.first.c_str());
+            out.fmt("constant[%zu].fileref \"12345\"\n", idx);
+            out.fmt("constant[%zu].type \"%s\"\n", idx, entry.second.c_str());            
+            ++idx;
+        }
+    }
     void generate() {
         write_attributes(Writer(gen_dir + "/attributes.cfg"));
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
+        write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
     }
     bool verify() {
         generate();
@@ -155,6 +166,7 @@ struct SimpleModel : Model {
         index("list", Schema::STRING, Schema::ARRAY);
         index("keywords", Schema::STRING, Schema::WEIGHTEDSET);
         attribute("date", Schema::INT32, Schema::SINGLE);
+        constants["my_tensor"] = "tensor(x{},y{})";
     }
 };
 
@@ -239,6 +251,16 @@ TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleM
 TEST_F("require that shadowed attributes can be used", ShadowModel()) {
     f.first_phase("attribute(both)");
     EXPECT_TRUE(f.verify());
+}
+
+TEST_F("require that ranking constants can be used", SimpleModel()) {
+    f.first_phase("constant(my_tensor)");
+    EXPECT_TRUE(f.verify());
+}
+
+TEST_F("require that undefined ranking constants cannot be used", SimpleModel()) {
+    f.first_phase("constant(bogus_tensor)");
+    EXPECT_FALSE(f.verify());
 }
 
 //-----------------------------------------------------------------------------
