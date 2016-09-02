@@ -289,24 +289,20 @@ public:
 class SingleValueBitNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueBitNumericAttribute(const vespalib::string & baseFileName);
+    SingleValueBitNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
 };
 
 
-class SingleValueSemiNibbleNumericAttribute :
-    public SingleValueSmallNumericAttribute
+class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueSemiNibbleNumericAttribute(const vespalib::string &
-            baseFileName);
+    SingleValueSemiNibbleNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
 };
 
-class SingleValueNibbleNumericAttribute :
-    public SingleValueSmallNumericAttribute
+class SingleValueNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueNibbleNumericAttribute(const vespalib::string &
-                                      baseFileName);
+    SingleValueNibbleNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
 };
 
 }

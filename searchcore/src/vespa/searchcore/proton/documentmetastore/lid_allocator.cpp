@@ -14,13 +14,15 @@ using search::queryeval::SearchIterator;
 using search::AttributeVector;
 using vespalib::GenerationHolder;
 using search::QueryTermSimple;
+using search::GrowStrategy;
 
 namespace proton {
 namespace documentmetastore {
 
 LidAllocator::LidAllocator(uint32_t size,
                            uint32_t capacity,
-                           GenerationHolder &genHolder)
+                           GenerationHolder &genHolder,
+                           const GrowStrategy & grow)
     : _holdLids(),
       _freeLids(size,
                 capacity,
@@ -38,7 +40,7 @@ LidAllocator::LidAllocator(uint32_t size,
                        false,
                        false),
       _lidFreeListConstructed(false),
-      _activeLidsAttr(new BitAttribute("[activelids]")),
+      _activeLidsAttr(new BitAttribute("[activelids]", grow)),
       _activeLids(static_cast<BitAttribute &>(*_activeLidsAttr)),
       _numActiveLids(0u)
 {
