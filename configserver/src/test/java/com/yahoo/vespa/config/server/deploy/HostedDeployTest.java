@@ -47,11 +47,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class HostedDeployTest extends TestWithCurator {
+public class HostedDeployTest {
 
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", curator);
+        DeployTester tester = new DeployTester("src/test/apps/hosted/");
         tester.deployApp("myApp");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
                 
@@ -62,7 +62,7 @@ public class HostedDeployTest extends TestWithCurator {
 
     @Test
     public void testRedeployAfterExpiredValidationOverride() throws InterruptedException, IOException {
-        DeployTester tester = new DeployTester("src/test/apps/validationOverride/", curator);
+        DeployTester tester = new DeployTester("src/test/apps/validationOverride/");
         tester.deployApp("myApp");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 

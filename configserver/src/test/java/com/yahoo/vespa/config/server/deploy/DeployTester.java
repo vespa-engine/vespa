@@ -26,8 +26,12 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,12 +56,12 @@ public class DeployTester {
 
     private ApplicationId id;
 
-    public DeployTester(String appPath, Curator curator) {
+    public DeployTester(String appPath) {
         try {
-            this.curator = curator;
+            this.curator = new MockCurator();
             this.testApp = new File(appPath);
-            tenants = new Tenants(new TestComponentRegistry(curator, modelFactoryRegistry), Metrics.createTestMetrics());
-            tenant = tenants.defaultTenant();
+            this.tenants = new Tenants(new TestComponentRegistry(curator, modelFactoryRegistry), Metrics.createTestMetrics());
+            this.tenant = tenants.defaultTenant();
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);

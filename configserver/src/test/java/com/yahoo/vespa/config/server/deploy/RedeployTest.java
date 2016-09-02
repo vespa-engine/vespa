@@ -41,11 +41,11 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class RedeployTest extends TestWithCurator {
+public class RedeployTest {
 
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
-        DeployTester tester = new DeployTester("src/test/apps/app", curator);
+        DeployTester tester = new DeployTester("src/test/apps/app");
         tester.deployApp("myapp");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
@@ -62,7 +62,7 @@ public class RedeployTest extends TestWithCurator {
     /** No deployment is done because there is no local active session. */
     @Test
     public void testNoRedeploy() {
-        DeployTester tester = new DeployTester("ignored/app/path", curator);
+        DeployTester tester = new DeployTester("ignored/app/path");
         ApplicationId id = ApplicationId.from(TenantName.from("default"),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
