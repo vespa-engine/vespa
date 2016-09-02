@@ -3,6 +3,7 @@ vespa_add_library(searchcore_test STATIC
     SOURCES
     buckethandler.cpp
     clusterstatehandler.cpp
+    documentdb_config_builder.cpp
     userdocumentsbuilder.cpp
     DEPENDS
 )

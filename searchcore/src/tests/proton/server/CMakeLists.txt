@@ -46,6 +46,7 @@ vespa_add_executable(searchcore_memoryconfigstore_test_app TEST
     SOURCES
     memoryconfigstore_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_pcommon
 )

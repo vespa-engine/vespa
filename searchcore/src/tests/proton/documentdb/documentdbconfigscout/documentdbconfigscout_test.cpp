@@ -6,6 +6,7 @@ LOG_SETUP("documentdbconfigscout_test");
 
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/server/documentdbconfigscout.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
@@ -27,22 +28,8 @@ getConfig(int64_t generation, const Schema::SP &schema,
           shared_ptr<DocumentTypeRepo> repo,
           const AttributesConfig &attributes)
 {
-    return make_shared<DocumentDBConfig>(
-            generation,
-            make_shared<RankProfilesConfig>(),
-            make_shared<RankingConstantsConfig>(),
-            make_shared<matching::RankingConstants>(),
-            make_shared<IndexschemaConfig>(),
-            make_shared<AttributesConfig>(attributes),
-            make_shared<SummaryConfig>(),
-            make_shared<SummarymapConfig>(),
-            make_shared<summary::JuniperrcConfig>(),
-            make_shared<DocumenttypesConfig>(),
-            repo,
-            make_shared<TuneFileDocumentDB>(),
-            schema,
-            make_shared<DocumentDBMaintenanceConfig>(),
-            "client", "test");
+    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").
+            repo(repo).attributes(make_shared<AttributesConfig>(attributes)).build();
 }
 
 

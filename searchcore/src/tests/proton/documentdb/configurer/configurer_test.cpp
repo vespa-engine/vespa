@@ -19,15 +19,10 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
-#include <vespa/searchcore/proton/server/searchable_feed_view.h>
-#include <vespa/searchcore/proton/server/matchers.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/vespalib/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 using namespace config;
@@ -317,43 +312,15 @@ struct FastAccessFixture
 DocumentDBConfig::SP
 createConfig()
 {
-    return std::make_shared<DocumentDBConfig>(
-            0,
-            std::make_shared<RankProfilesConfig>(),
-            std::make_shared<RankingConstantsConfig>(),
-            std::make_shared<matching::RankingConstants>(),
-            std::make_shared<IndexschemaConfig>(),
-            std::make_shared<AttributesConfig>(),
-            std::make_shared<SummaryConfig>(),
-            std::make_shared<SummarymapConfig>(),
-            std::make_shared<JuniperrcConfig>(),
-            std::make_shared<DocumenttypesConfig>(),
-            DocumentTypeRepo::SP(createRepo()),
-            std::make_shared<TuneFileDocumentDB>(),
-            std::make_shared<Schema>(),
-            std::make_shared<DocumentDBMaintenanceConfig>(),
-            "client", DOC_TYPE);
+    return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", DOC_TYPE).
+            repo(createRepo()).build();
 }
 
 DocumentDBConfig::SP
 createConfig(const Schema::SP &schema)
 {
-    return std::make_shared<DocumentDBConfig>(
-            0,
-            std::make_shared<RankProfilesConfig>(),
-            std::make_shared<RankingConstantsConfig>(),
-            std::make_shared<matching::RankingConstants>(),
-            std::make_shared<IndexschemaConfig>(),
-            std::make_shared<AttributesConfig>(),
-            std::make_shared<SummaryConfig>(),
-            std::make_shared<SummarymapConfig>(),
-            std::make_shared<JuniperrcConfig>(),
-            std::make_shared<DocumenttypesConfig>(),
-            DocumentTypeRepo::SP(createRepo()),
-            std::make_shared<TuneFileDocumentDB>(),
-            schema,
-            std::make_shared<DocumentDBMaintenanceConfig>(),
-            "client", DOC_TYPE);
+    return test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
+            repo(createRepo()).build();
 }
 
 struct SearchViewComparer

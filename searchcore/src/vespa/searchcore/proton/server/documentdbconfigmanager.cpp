@@ -125,19 +125,18 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
 void
 DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
 {
-    typedef DocumentDBConfig::RankProfilesConfigSP RankProfilesConfigSP;
-    typedef DocumentDBConfig::RankingConstantsConfigSP RankingConstantsConfigSP;
-    typedef DocumentDBConfig::IndexschemaConfigSP IndexschemaConfigSP;
-    typedef DocumentDBConfig::AttributesConfigSP AttributesConfigSP;
-    typedef DocumentDBConfig::SummaryConfigSP SummaryConfigSP;
-    typedef DocumentDBConfig::SummarymapConfigSP SummarymapConfigSP;
-    typedef DocumentDBConfig::JuniperrcConfigSP JuniperrcConfigSP;
-    typedef DocumentDBConfig::MaintenanceConfigSP MaintenanceConfigSP;
+    using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
+    using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
+    using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
+    using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
+    using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
+    using SummarymapConfigSP = DocumentDBConfig::SummarymapConfigSP;
+    using JuniperrcConfigSP = DocumentDBConfig::JuniperrcConfigSP;
+    using MaintenanceConfigSP = DocumentDBConfig::MaintenanceConfigSP;
 
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
-    RankingConstantsConfigSP newRankingConstantsConfig;
-    matching::RankingConstants::SP newRankingConstants = std::make_shared<matching::RankingConstants>();
+    matching::RankingConstants::SP newRankingConstants;
     IndexschemaConfigSP newIndexschemaConfig;
     AttributesConfigSP newAttributesConfig;
     SummaryConfigSP newSummaryConfig;
@@ -166,7 +165,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     int64_t currentGeneration = -1;
     if (current.get() != NULL) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
-        newRankingConstantsConfig = current->getRankingConstantsConfigSP();
+        newRankingConstants = current->getRankingConstantsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         newAttributesConfig = current->getAttributesConfigSP();
         newSummaryConfig = current->getSummaryConfigSP();
@@ -183,15 +182,16 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
                     release());
     }
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
-        newRankingConstantsConfig = RankingConstantsConfigSP(
+        RankingConstantsConfigSP newRankingConstantsConfig = RankingConstantsConfigSP(
                 snapshot.getConfig<RankingConstantsConfig>(_configId));
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
         RankingConstants::Vector constants;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(spec);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
+                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')\n");
                 vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
-                LOG(info, "GOT file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')\n",
+                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')\n",
                     filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
                 constants.emplace_back(rc.name, rc.type, filePath);
             }
@@ -242,7 +242,6 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     DocumentDBConfig::SP newSnapshot(
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
-                                 newRankingConstantsConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
                                  newAttributesConfig,

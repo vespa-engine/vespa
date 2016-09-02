@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_fileconfigmanager_test_app TEST
     SOURCES
     fileconfigmanager_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_pcommon
     searchcore_fconfig

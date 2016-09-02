@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_documentdbconfigscout_test_app TEST
     SOURCES
     documentdbconfigscout_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_attribute
 )
