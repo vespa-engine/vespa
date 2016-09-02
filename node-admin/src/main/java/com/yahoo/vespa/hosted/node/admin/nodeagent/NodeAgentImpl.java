@@ -166,7 +166,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
-        dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
+        dockerOperations.executeResume(nodeSpec.containerName);
         containerState = RUNNING;
     }
 
@@ -177,6 +177,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.wantedRestartGeneration.get(),
                 nodeSpec.wantedDockerImage.get(),
                 containerVespaVersion);
+        // TODO: We should only update if the new current values match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
                     + lastAttributesSet + " -> " + currentAttributes);

@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-class DockerImpl implements Docker {
+public class DockerImpl implements Docker {
 
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 

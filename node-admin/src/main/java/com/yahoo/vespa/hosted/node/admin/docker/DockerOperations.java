@@ -10,14 +10,15 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 public interface DockerOperations {
     String getVespaVersionOrNull(ContainerName containerName);
 
+    // Returns true if container is absent on return
+    boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, HostName hostname, Orchestrator orchestrator)
+            throws Exception;
+
     // Returns true if started
     boolean startContainerIfNeeded(ContainerNodeSpec nodeSpec);
 
     // Returns false if image is already downloaded
     boolean shouldScheduleDownloadOfImage(DockerImage dockerImage);
-
-    boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, HostName hostname, Orchestrator orchestrator)
-            throws Exception;
 
     void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
 
