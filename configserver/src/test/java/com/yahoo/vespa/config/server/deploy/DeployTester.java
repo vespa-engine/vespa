@@ -48,15 +48,17 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(Tenant tenant) throws InterruptedException, IOException {
+    public ApplicationId deployApp(Tenant tenant, String appName) throws InterruptedException, IOException {
         LocalSession session = tenant.getSessionFactory().createSession(testApp, "default", new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
-        ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from("myapp"), InstanceName.defaultName());
+        ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         session.prepare(new SilentDeployLogger(), new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id), Optional.empty(), tenantPath);
         session.createActivateTransaction().commit();
         tenant.getLocalSessionRepo().addSession(session);
         this.id = id;
         return id;
     }
+    
+    public ApplicationId applicationId() { return id; }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(Tenants tenants, Curator curator) {
         ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.withProvisioner(createHostProvisioner()),

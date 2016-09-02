@@ -42,7 +42,7 @@ public class HostedDeployTest extends TestWithTenant {
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
         DeployTester tester = new DeployTester("src/test/apps/hosted/");
-        tester.deployApp(tenant);
+        tester.deployApp(tenant, "myApp");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tenants, curator);
                 
         assertTrue(deployment.isPresent());
