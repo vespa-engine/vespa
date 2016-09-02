@@ -21,18 +21,19 @@ using index::IDiskIndex;
 using fastos::TimeStamp;
 using fastos::ClockSystem;
 
-WarmupIndexCollection::WarmupIndexCollection(double warmupSeconds,
+WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              ISearchableIndexCollection::SP prev,
                                              ISearchableIndexCollection::SP next,
                                              IndexSearchable & warmup,
                                              vespalib::ThreadExecutor & executor,
                                              IWarmupDone & warmupDone) :
+    _warmupConfig(warmupConfig),
     _prev(prev),
     _next(next),
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
-    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupSeconds)),
+    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
     _handledTerms()
 {
     if (next->valid()) {
@@ -40,7 +41,7 @@ WarmupIndexCollection::WarmupIndexCollection(double warmupSeconds,
     } else {
         LOG(warning, "Next index is not valid, Dangerous !! : %s", next->toString().c_str());
     }
-    LOG(debug, "For %g seconds I will warm up %s.", warmupSeconds, typeid(_warmup).name());
+    LOG(debug, "For %g seconds I will warm up %s.", warmupConfig.getDuration(), typeid(_warmup).name());
     LOG(debug, "%s", toString().c_str());
 }
 
@@ -72,8 +73,7 @@ WarmupIndexCollection::toString() const
 WarmupIndexCollection::~WarmupIndexCollection()
 {
     if (_warmupEndTime != 0) {
-        LOG(info,
-            "Warmup aborted due to new state change or application shutdown");
+        LOG(info, "Warmup aborted due to new state change or application shutdown");
     }
    _executor.sync();
 }
@@ -210,7 +210,10 @@ WarmupIndexCollection::WarmupTask::run()
         _bluePrint->fetchPostings(true);
         SearchIterator::UP it(_bluePrint->createSearch(*_matchData, true));
         it->initFullRange();
-        for (it->seek(0); !it->isAtEnd(); it->seek(it->getDocId()+1)) {
+        for (uint32_t docId = it->seekFirst(1); !it->isAtEnd(); docId = it->seekNext(docId+1)) {
+            if (_warmup.doUnpack()) {
+                it->unpack(docId);
+            }
         }
     } else {
         LOG(debug, "Warmup has finished, ignoring task.");

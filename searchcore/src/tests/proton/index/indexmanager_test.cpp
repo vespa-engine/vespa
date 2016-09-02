@@ -169,7 +169,7 @@ Document::UP Fixture::addDocument(uint32_t id) {
 void Fixture::resetIndexManager() {
     _index_manager.reset(0);
     _index_manager.reset(
-            new IndexManager(index_dir, 0.0, 2, 0, getSchema(), getSchema(),
+            new IndexManager(index_dir, searchcorespi::index::WarmupConfig(), 2, 0, getSchema(), getSchema(),
                              _reconfigurer, _writeService, _writeService.getMasterExecutor(),
                              TuneFileIndexManager(), TuneFileAttributes(),
                              _fileHeaderContext));

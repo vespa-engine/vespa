@@ -11,24 +11,20 @@ namespace proton
 
 IndexManagerInitializer::
 IndexManagerInitializer(const vespalib::string &baseDir,
-                        double diskIndexWarmupTime,
+                        const searchcorespi::index::WarmupConfig & warmup,
                         size_t maxFlushed,
                         size_t cacheSize,
                         const search::index::Schema &schema,
                         const search::index::Schema &fusionSchema,
-                        searchcorespi::IIndexManager::Reconfigurer &
-                        reconfigurer,
-                        searchcorespi::index::IThreadingService &
-                        threadingService,
+                        searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
+                        searchcorespi::index::IThreadingService & threadingService,
                         vespalib::ThreadExecutor & warmupExecutor,
-                        const search::TuneFileIndexManager &
-                        tuneFileIndexManager,
+                        const search::TuneFileIndexManager & tuneFileIndexManager,
                         const search::TuneFileAttributes &tuneFileAttributes,
-                        const search::common::FileHeaderContext &
-                        fileHeaderContext,
+                        const search::common::FileHeaderContext & fileHeaderContext,
                         std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager)
     : _baseDir(baseDir),
-      _diskIndexWarmupTime(diskIndexWarmupTime),
+      _warmup(warmup),
       _maxFlushed(maxFlushed),
       _cacheSize(cacheSize),
       _schema(schema),
@@ -52,7 +48,7 @@ IndexManagerInitializer::run()
     vespalib::mkdir(_baseDir, false);
     *_indexManager = std::make_shared<proton::IndexManager>
                     (_baseDir,
-                     _diskIndexWarmupTime,
+                     _warmup,
                      _maxFlushed,
                      _cacheSize,
                      _schema,

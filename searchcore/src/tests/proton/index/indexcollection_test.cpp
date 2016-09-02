@@ -16,6 +16,7 @@ using search::queryeval::FakeSearchable;
 using search::FixedSourceSelector;
 using namespace proton;
 using namespace searchcorespi;
+using searchcorespi::index::WarmupConfig;
 
 namespace {
 
@@ -53,7 +54,7 @@ public:
 IndexCollection::UP
 Test::createWarmup(const IndexCollection::SP & prev, const IndexCollection::SP & next)
 {
-    return IndexCollection::UP(new WarmupIndexCollection(1.0, prev, next, *_warmup, _executor, *this));
+    return IndexCollection::UP(new WarmupIndexCollection(WarmupConfig(1.0, false), prev, next, *_warmup, _executor, *this));
 }
 
 int

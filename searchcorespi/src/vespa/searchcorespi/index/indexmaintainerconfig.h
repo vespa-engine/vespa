@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
+#include "warmupconfig.h"
 
 namespace searchcorespi {
 namespace index {
@@ -14,7 +15,7 @@ namespace index {
 class IndexMaintainerConfig {
 private:
     const vespalib::string _baseDir;
-    const double _diskIndexWarmupTime;
+    const WarmupConfig _warmup;
     const size_t _maxFlushed;
     const search::index::Schema _schema;
     const search::index::Schema _fusionSchema;
@@ -22,7 +23,7 @@ private:
 
 public:
     IndexMaintainerConfig(const vespalib::string &baseDir,
-                          double diskIndexWarmupTime,
+                          const WarmupConfig & warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
                           const search::index::Schema &fusionSchema,
@@ -35,9 +36,7 @@ public:
         return _baseDir;
     }
 
-    double getDiskIndexWarmupTime() const {
-       return _diskIndexWarmupTime;
-    }
+    WarmupConfig getWarmup() const { return _warmup; }
 
     /**
      * Returns the initial schema containing all current index fields.
