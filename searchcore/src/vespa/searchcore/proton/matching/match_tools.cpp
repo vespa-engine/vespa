@@ -126,6 +126,7 @@ MatchToolsFactory(QueryLimiter                    & queryLimiter,
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         _query.optimize();
         _query.fetchPostings();
+        _query.freeze();
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         vespalib::string limit_attribute = DegradationAttribute::lookup(rankProperties);
         size_t limit_maxhits = DegradationMaxHits::lookup(rankProperties);

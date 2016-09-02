@@ -127,14 +127,17 @@ private:
     Blueprint *_parent;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
-
-    Blueprint &operator=(const Blueprint &); // disable
+    bool       _frozen;
 
 protected:
     virtual void notifyChange() {
         if (_parent != nullptr) {
             _parent->notifyChange();
         }
+    }
+    void freeze_self() {
+        getState();
+        _frozen = true;
     }
 
 public:
@@ -145,7 +148,8 @@ public:
     };
 
     Blueprint();
-    Blueprint(const Blueprint &x);
+    Blueprint(const Blueprint &) = delete;
+    Blueprint &operator=(const Blueprint &) = delete;
     virtual ~Blueprint();
 
     void setParent(Blueprint *parent) { _parent = parent; }
@@ -172,6 +176,8 @@ public:
     double hit_ratio() const { return getState().hit_ratio(_docid_limit); }        
 
     virtual void fetchPostings(bool strict) = 0;
+    virtual void freeze() = 0;
+    bool frozen() const { return _frozen; }
 
     virtual SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const = 0;
 
@@ -196,6 +202,7 @@ private:
 
 protected:
     void notifyChange() override final {
+        assert(!frozen());
         Blueprint::notifyChange();
         _stale = true;
     }
@@ -203,10 +210,9 @@ protected:
 
 public:
     StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
-    StateCache(const StateCache &x)
-        : Blueprint(x), _stale(true), _state(FieldSpecBaseList()) {}
     const State &getState() const override final {
         if (_stale) {
+            assert(!frozen());
             updateState();
         }
         return _state;
@@ -243,7 +249,6 @@ protected:
 public:
     typedef std::vector<size_t> IndexList;
     IntermediateBlueprint();
-    IntermediateBlueprint(const IntermediateBlueprint &x);
     virtual ~IntermediateBlueprint();
 
     void setDocIdLimit(uint32_t limit) override final;
@@ -269,6 +274,8 @@ public:
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(bool strict) override;
+    void freeze() override final;
+
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
     bool isIntermediate() const override { return true; }
 };
@@ -293,6 +300,7 @@ public:
     const State &getState() const override final { return _state; }
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(bool strict) override;
+    void freeze() override final;
     SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
