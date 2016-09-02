@@ -55,7 +55,7 @@ public class RedeployTest extends TestWithTenant {
         assertEquals(id, tenant.getLocalSessionRepo().getSession(activeSessionIdAfter).getApplicationId());
     }
 
-    /** No deploYMENT is done because there isn't a local active session. */
+    /** No deployment is done because there isn't a local active session. */
     @Test
     public void testNoRedeploy() {
         ApplicationId id = ApplicationId.from(TenantName.from("default"),

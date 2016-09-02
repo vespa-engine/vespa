@@ -336,7 +336,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     public void redeployApplications(Deployer deployer) {
-        final int totalNumberOfApplications = tenantsCopy().values().stream()
+        int totalNumberOfApplications = tenantsCopy().values().stream()
                 .mapToInt(tenant -> tenant.getApplicationRepo().listApplications().size()).sum();
         int applicationsRedeployed = 0;
         for (Tenant tenant : tenantsCopy().values()) {

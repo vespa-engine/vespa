@@ -39,67 +39,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class HostedDeployTest extends TestWithTenant {
 
-    private static final Path appPath = Path.createRoot().append("testapp");
-    private File testApp = new File("src/test/apps/hosted/");
-    private Path tenantPath = appPath;
-
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
-        ApplicationId id = deployApp();
-
-        ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.withProvisioner(createHostProvisioner()),
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
-
-        Optional<com.yahoo.config.provision.Deployment> deployment = applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
+        DeployTester tester = new DeployTester("src/test/apps/hosted/");
+        tester.deployApp(tenant);
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tenants, curator);
+                
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
-    }
-
-    /**
-     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
-     */
-    private ApplicationId deployApp() throws InterruptedException, IOException {
-        LocalSession session = tenant.getSessionFactory().createSession(testApp, "default", new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
-        ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from("myapp"), InstanceName.defaultName());
-        session.prepare(new SilentDeployLogger(), new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id), Optional.empty(), tenantPath);
-        session.createActivateTransaction().commit();
-        tenant.getLocalSessionRepo().addSession(session);
-        return id;
-    }
-
-    private Provisioner createHostProvisioner() {
-        return new ProvisionerAdapter(new InMemoryProvisioner(true, "host0", "host1", "host2"));
-    }
-
-    private static class ProvisionerAdapter implements Provisioner {
-
-        private final HostProvisioner hostProvisioner;
-
-        public ProvisionerAdapter(HostProvisioner hostProvisioner) {
-            this.hostProvisioner = hostProvisioner;
-        }
-
-        @Override
-        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            return hostProvisioner.prepare(cluster, capacity, groups, logger);
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            // noop
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            // noop
-        }
-
-        @Override
-        public void restart(ApplicationId application, HostFilter filter) {
-            // noop
-        }
-
     }
 
 }

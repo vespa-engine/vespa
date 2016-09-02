@@ -1,0 +1,3 @@
+<validation-overrides>
+    <allow until="2016-09-01">skip-old-config-models</allow>
+</validation-overrides>
