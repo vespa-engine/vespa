@@ -109,7 +109,7 @@ public:
     }
 
     void setFastAccess(bool v) { _fastAccess = v; }
-    void setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; }
+    Config & setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; return *this; }
     bool operator!=(const Config &b) const { return !(operator==(b)); }
 
     bool
