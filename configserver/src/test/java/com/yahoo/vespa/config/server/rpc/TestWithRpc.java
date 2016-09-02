@@ -65,7 +65,6 @@ public class TestWithRpc {
         generationCounter = new MemoryGenerationCounter();
         createAndStartRpcServer(false);
         assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
-        assertEquals(Instant.ofEpochMilli(100), hostLivenessTracker.remembersRequestsSince());
     }
 
     @After

@@ -19,7 +19,6 @@ import java.util.Optional;
 public class ConfigRequestHostLivenessTracker implements HostLivenessTracker {
 
     private final Clock clock;
-    private final Instant constructionTime;
     private final Map<String, Instant> lastRequestFromHost = new HashMap<>();
 
     @Inject
@@ -30,12 +29,8 @@ public class ConfigRequestHostLivenessTracker implements HostLivenessTracker {
     
     public ConfigRequestHostLivenessTracker(Clock clock) {
         this.clock = clock;
-        this.constructionTime = clock.instant();
     }
             
-    @Override
-    public Instant remembersRequestsSince() { return constructionTime; }
-
     @Override
     public void receivedRequestFrom(String hostname) {
         lastRequestFromHost.put(hostname, clock.instant());

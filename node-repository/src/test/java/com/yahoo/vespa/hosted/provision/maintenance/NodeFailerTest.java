@@ -119,7 +119,11 @@ public class NodeFailerTest {
         serviceMonitor = new ServiceMonitorStub(apps, nodeRepository);
         orchestrator = new OrchestratorMock();
 
-        failer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, DOWNTIME_LIMIT_ONE_HOUR, clock, orchestrator);
+        failer = createFailer();
+    }
+    
+    private NodeFailer createFailer() {
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, DOWNTIME_LIMIT_ONE_HOUR, clock, orchestrator);
     }
 
     @Test
@@ -199,7 +203,7 @@ public class NodeFailerTest {
         allNodesMakeAConfigRequestExcept();
         // the system goes down and do not have updated information when coming back
         clock.advance(Duration.ofMinutes(120));
-        hostLivenessTracker.setConstructedNow();
+        failer = createFailer();
         serviceMonitor.setStatusIsKnown(false);
         failer.run();
         // due to this, nothing is failed
@@ -264,15 +268,7 @@ public class NodeFailerTest {
         assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
 
-        // Another ready node die but we restart so we don't have enough information
-        clock.advance(Duration.ofMinutes(180));
-        hostLivenessTracker.setConstructedNow();
-        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2), ready.get(3));
-        failer.run();
-        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
-        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
-        
-        // Now we get enough information
+        // Another ready node die
         clock.advance(Duration.ofMinutes(180));
         allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2), ready.get(3));
         failer.run();
@@ -331,22 +327,12 @@ public class NodeFailerTest {
     private static class TestHostLivenessTracker implements HostLivenessTracker {
 
         private final Clock clock;
-        private Instant constructionTime;
         private final Map<String, Instant> lastRequestFromHost = new HashMap<>();
 
         public TestHostLivenessTracker(Clock clock) {
             this.clock = clock;
-            this.constructionTime = clock.instant();
         }
         
-        public void setConstructedNow() {
-            constructionTime = clock.instant();
-            lastRequestFromHost.clear();
-        }
-
-        @Override
-        public Instant remembersRequestsSince() { return constructionTime; }
-
         @Override
         public void receivedRequestFrom(String hostname) {
             lastRequestFromHost.put(hostname, clock.instant());

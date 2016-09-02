@@ -48,6 +48,9 @@ public class NodeFailer extends Maintainer {
     private final Duration downTimeLimit;
     private final Clock clock;
     private final Orchestrator orchestrator;
+    
+    private final Duration nodeRequestInterval = Duration.ofMinutes(10);
+    private final Instant constructionTime;
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker, 
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
@@ -60,6 +63,7 @@ public class NodeFailer extends Maintainer {
         this.downTimeLimit = downTimeLimit;
         this.clock = clock;
         this.orchestrator = orchestrator;
+        constructionTime = clock.instant();
     }
 
     private static Duration min(Duration d1, Duration d2) {
@@ -69,9 +73,10 @@ public class NodeFailer extends Maintainer {
     @Override
     protected void maintain() {
         // Ready nodes
-        for (Node node : readyNodesWithHardwareFailure())
-            nodeRepository().fail(node.hostname());
+        updateNodeLivenessEventsForReadyNodes();
         for (Node node : readyNodesWhichAreDead())
+            nodeRepository().fail(node.hostname());
+        for (Node node : readyNodesWithHardwareFailure())
             nodeRepository().fail(node.hostname());
 
         // Active nodes
@@ -80,26 +85,38 @@ public class NodeFailer extends Maintainer {
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node))
                 failActive(node);
         }
-        
-    }
-
-    private List<Node> readyNodesWithHardwareFailure() {
-        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
-                .filter(node -> node.status().hardwareFailure().isPresent())
-                .collect(Collectors.toList());
     }
     
-    private List<Node> readyNodesWhichAreDead() {
+    private void updateNodeLivenessEventsForReadyNodes() {
+        // Update node last request events through ZooKeeper to collect request to all config servers.
+        // We do this here ("lazily") to avoid writing to zk for each config request.
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
+            for (Node node : nodeRepository().getNodes(Node.Type.tenant, Node.State.ready)) {
+                Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
+                if ( ! lastLocalRequest.isPresent()) continue;
+
+                Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
+                if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
+                    History updatedHistory = node.history().record(new History.Event(History.Event.Type.requested, 
+                                                                                     lastLocalRequest.get()));
+                    nodeRepository().write(node.setHistory(updatedHistory));
+                }
+            }
+        }
+    }
+
+    private List<Node> readyNodesWhichAreDead() {    
+        // Allow requests some time to be registered in case all config servers have been down
+        if (constructionTime.isAfter(clock.instant().minus(nodeRequestInterval).minus(nodeRequestInterval) ))
+            return Collections.emptyList();
+        
         // Nodes are taken as dead if they have not made a config request since this instant.
         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
-        Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(Duration.ofMinutes(10));
+        Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
         
-        if ( ! hostLivenessTracker.remembersRequestsSince().isBefore(oldestAcceptableRequestTime))
-            return Collections.emptyList(); // we haven't tracked long enough to tell if nodes are dead
-
         return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
-                .filter(node -> ! hasRecordedResponseAfter(oldestAcceptableRequestTime, node))
+                .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
                 .collect(Collectors.toList());
     }
 
@@ -108,13 +125,19 @@ public class NodeFailer extends Maintainer {
         if ( ! readiedEvent.isPresent()) return false;
         return readiedEvent.get().at().isBefore(instant);
     }
-    
-    private boolean hasRecordedResponseAfter(Instant instant, Node node) {
-        Optional<Instant> lastResponse = hostLivenessTracker.lastRequestFrom(node.hostname());
-        if ( ! lastResponse.isPresent()) return false;
-        return lastResponse.get().isAfter(instant);
+
+    private boolean hasRecordedRequestAfter(Instant instant, Node node) {
+        Optional<History.Event> lastRequest = node.history().event(History.Event.Type.requested);
+        if ( ! lastRequest.isPresent()) return false;
+        return lastRequest.get().at().isAfter(instant);
     }
-    
+
+    private List<Node> readyNodesWithHardwareFailure() {
+        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
+                .filter(node -> node.status().hardwareFailure().isPresent())
+                .collect(Collectors.toList());
+    }
+
     private boolean applicationSuspended(Node node) {
         try {
             return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())

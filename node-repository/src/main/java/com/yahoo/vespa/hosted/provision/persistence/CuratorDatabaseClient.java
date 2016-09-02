@@ -170,8 +170,8 @@ public class CuratorDatabaseClient {
     private History newNodeHistory(Node node, Node.State toState) {
         History history = node.history();
 
-        // wipe history to avoid expiring based on events under the previous allocation
-        if (toState == Node.State.ready)
+        // wipe history when a node *becomes* ready to avoid expiring based on events under the previous allocation
+        if (node.state() != Node.State.ready && toState == Node.State.ready)
             history = History.empty();
 
         return history.recordStateTransition(node.state(), toState, clock.instant());

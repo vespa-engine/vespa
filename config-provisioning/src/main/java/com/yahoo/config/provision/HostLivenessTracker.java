@@ -11,9 +11,6 @@ import java.util.Optional;
  */
 public interface HostLivenessTracker {
 
-    /** Returns the instant after which this remembers all requests */
-    Instant remembersRequestsSince();
-    
     /** Called each time a config request is received from a client */
     void receivedRequestFrom(String hostname);
 
