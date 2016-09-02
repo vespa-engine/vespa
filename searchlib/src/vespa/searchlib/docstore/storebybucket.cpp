@@ -1,58 +1,74 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storebybucket.h"
+#include <vespa/vespalib/util/closuretask.h>
 
 namespace search {
 namespace docstore {
 
 using document::BucketId;
-using document::CompressionConfig;
+using vespalib::makeTask;
+using vespalib::makeClosure;
 
-StoreByBucket::StoreByBucket(vespalib::MemoryDataStore & backingMemory, const CompressionConfig & compression) :
-    _chunks(),
+StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & executor, const CompressionConfig & compression) :
+    _chunkSerial(0),
     _current(),
     _where(),
     _backingMemory(backingMemory),
+    _executor(executor),
+    _lock(),
+    _chunks(),
     _compression(compression)
 {
-    createCurrent();
+    createChunk().swap(_current);
 }
 
 void
 StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
 {
     if ( ! _current->hasRoom(sz)) {
-        closeCurrent();
-        createCurrent();
+        Chunk::UP tmpChunk = createChunk();
+        _current.swap(tmpChunk);
+        _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(tmpChunk))));
     }
-    Index idx(bucketId, _chunks.size(), chunkId, lid);
+    Index idx(bucketId, _current->getId(), chunkId, lid);
     _current->append(lid, buffer, sz);
     _where[bucketId.toKey()].push_back(idx);
 }
 
-void StoreByBucket::createCurrent()
+Chunk::UP
+StoreByBucket::createChunk()
 {
-    _current.reset(new Chunk(_chunks.size(), Chunk::Config(0x10000, 1000)));
+    return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(0x10000, 1000));
+}
+
+uint64_t
+StoreByBucket::getChunkCount() const {
+    vespalib::LockGuard guard(_lock);
+    return _chunks.size();
 }
 
 void
-StoreByBucket::closeCurrent()
+StoreByBucket::closeChunk(Chunk::UP chunk)
 {
     vespalib::DataBuffer buffer;
-    _current->pack(1, buffer, _compression);
+    chunk->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
-    _chunks.emplace_back(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
-    _current.reset();
+    ConstBufferRef bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
+    vespalib::LockGuard guard(_lock);
+    _chunks[chunk->getId()] = bufferRef;
 }
 
 void
 StoreByBucket::drain(IWrite & drainer)
 {
-    closeCurrent();
+    _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(_current))));
+    _executor.sync();
     std::vector<Chunk::UP> chunks;
-    chunks.reserve(_chunks.size());
-    for (const vespalib::ConstBufferRef buffer : _chunks) {
-        chunks.push_back(std::make_unique<Chunk>(chunks.size(), buffer.data(), buffer.size()));
+    chunks.resize(_chunks.size());
+    for (const auto & it : _chunks) {
+        ConstBufferRef buf(it.second);
+        chunks[it.first].reset(new Chunk(it.first, buf.data(), buf.size()));
     }
     _chunks.clear();
     for (auto & it : _where) {

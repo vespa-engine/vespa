@@ -33,10 +33,12 @@ private:
  **/
 class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
 {
+    using CompressionConfig = document::CompressionConfig;
+    using ThreadExecutor = vespalib::ThreadExecutor;
 public:
     using FileId = FileChunk::FileId;
-    BucketCompacter(size_t maxSignificantBucketBits, const document::CompressionConfig & compression, LogDataStore & ds,
-                    const IBucketizer & bucketizer, FileId source, FileId destination);
+    BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds,
+                    ThreadExecutor & exeutor, const IBucketizer & bucketizer, FileId source, FileId destination);
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
     void close() override;
@@ -49,6 +51,7 @@ private:
     LogDataStore             & _ds;
     const IBucketizer        & _bucketizer;
     uint64_t                   _writeCount;
+    vespalib::Lock             _lock;
     vespalib::MemoryDataStore  _backingMemory;
     std::vector<StoreByBucket> _tmpStore;
     GenerationHandler::Guard   _lidGuard;
