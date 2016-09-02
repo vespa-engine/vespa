@@ -85,8 +85,8 @@ LidAllocator::ensureSpace(DocId lid,
     while(lid >= _activeLids.getNumDocs()) {
         DocId activeLid;
         _activeLids.addDoc(activeLid);
-        _activeLids.commit();
     }
+    _activeLids.commit();
 }
 
 void
