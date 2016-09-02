@@ -24,13 +24,13 @@ AttributeFactory::createSingleStd(const vespalib::string & baseFileName, const C
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::UINT1:
-        ret.reset(new SingleValueBitNumericAttribute(baseFileName));
+        ret.reset(new SingleValueBitNumericAttribute(baseFileName, info.getGrowStrategy()));
         break;
     case BasicType::UINT2:
-        ret.reset(new SingleValueSemiNibbleNumericAttribute(baseFileName));
+        ret.reset(new SingleValueSemiNibbleNumericAttribute(baseFileName, info.getGrowStrategy()));
         break;
     case BasicType::UINT4:
-        ret.reset(new SingleValueNibbleNumericAttribute(baseFileName));
+        ret.reset(new SingleValueNibbleNumericAttribute(baseFileName, info.getGrowStrategy()));
         break;
     case BasicType::INT8:
         ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >(baseFileName, info));

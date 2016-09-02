@@ -35,7 +35,8 @@ private:
 public:
     LidAllocator(uint32_t size,
                  uint32_t capacity,
-                 vespalib::GenerationHolder &genHolder);
+                 vespalib::GenerationHolder &genHolder,
+                 const search::GrowStrategy & grow);
 
     DocId getFreeLid(DocId lidLimit);
     DocId peekFreeLid(DocId lidLimit);
