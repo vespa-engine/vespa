@@ -163,9 +163,12 @@ public:
     BucketDensityComputer(const IBucketizer * bucketizer) : _bucketizer(bucketizer), _count(0) { }
     void recordLid(const vespalib::GenerationHandler::Guard & guard, uint32_t lid, uint32_t dataSize) {
         if (_bucketizer && (dataSize > 0)) {
-            _count++;
-            _bucketSet[_bucketizer->getBucketOf(guard, lid).getId()]++;
+            recordLid(_bucketizer->getBucketOf(guard, lid));
         }
+    }
+    void recordLid(document::BucketId bucketId) {
+        _count++;
+        _bucketSet[bucketId.getId()]++;
     }
     size_t getNumBuckets() const { return _bucketSet.size(); }
     vespalib::GenerationHandler::Guard getGuard() const {
