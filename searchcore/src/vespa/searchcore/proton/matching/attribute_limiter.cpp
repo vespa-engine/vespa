@@ -79,6 +79,7 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool st
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
         _blueprint->fetchPostings(strictSearch);
         _estimatedHits = _blueprint->getState().estimate().estHits;
+        _blueprint->freeze();
     }
     _match_datas.push_back(layout.createMatchData());
     return _blueprint->createSearch(*_match_datas.back(), strictSearch);

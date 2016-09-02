@@ -153,8 +153,13 @@ Query::optimize()
 void
 Query::fetchPostings(void)
 {
-    _blueprint->getState(); // ensure final state is cached to ensure thread safety
     _blueprint->fetchPostings(true);
+}
+
+void
+Query::freeze()
+{
+    _blueprint->freeze();
 }
 
 Blueprint::HitEstimate
