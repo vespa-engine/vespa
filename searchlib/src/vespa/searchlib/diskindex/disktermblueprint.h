@@ -37,8 +37,6 @@ public:
                       search::diskindex::DiskIndex::LookupResult::UP lookupRes,
                       bool useBitVector);
 
-    DiskTermBlueprint(const DiskTermBlueprint &);
-
     // Inherit doc from Blueprint.
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
     virtual search::queryeval::SearchIterator::UP

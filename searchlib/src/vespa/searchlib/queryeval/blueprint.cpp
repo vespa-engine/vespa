@@ -71,14 +71,8 @@ Blueprint::min(const std::vector<HitEstimate> &data)
 Blueprint::Blueprint()
     : _parent(0),
       _sourceId(0xffffffff),
-      _docid_limit(0)
-{
-}
-
-Blueprint::Blueprint(const Blueprint &x)
-    : _parent(0),
-      _sourceId(x.getSourceId()),
-      _docid_limit(x.get_docid_limit())
+      _docid_limit(0),
+      _frozen(false)
 {
 }
 
@@ -343,14 +337,6 @@ IntermediateBlueprint::IntermediateBlueprint()
 {
 }
 
-IntermediateBlueprint::
-IntermediateBlueprint(const IntermediateBlueprint &x)
-    : StateCache(x),
-      _children()
-{
-    // children are not copied
-}
-
 const Blueprint &
 IntermediateBlueprint::getChild(size_t n) const
 {
@@ -409,6 +395,15 @@ IntermediateBlueprint::fetchPostings(bool strict)
         bool strictChild = (strict && inheritStrict(i));
         _children[i]->fetchPostings(strictChild);
     }
+}
+
+void
+IntermediateBlueprint::freeze()
+{
+    for (size_t i = 0; i < _children.size(); ++i) {
+        _children[i]->freeze();
+    }
+    freeze_self();
 }
 
 namespace {
@@ -475,6 +470,12 @@ void
 LeafBlueprint::fetchPostings(bool strict)
 {
     (void) strict;
+}
+
+void
+LeafBlueprint::freeze()
+{
+    freeze_self();
 }
 
 SearchIterator::UP

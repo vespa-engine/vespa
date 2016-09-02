@@ -53,27 +53,6 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpecBase & field,
                             _lookupRes->counts._numDocs == 0));
 }
 
-
-DiskTermBlueprint::DiskTermBlueprint(const DiskTermBlueprint & rhs)
-    : SimpleLeafBlueprint(rhs),
-      _field(rhs._field),
-      _diskIndex(rhs._diskIndex),
-      _lookupRes(new DiskIndex::LookupResult(*rhs._lookupRes)),
-      _useBitVector(rhs._useBitVector),
-      _fetchPostingsDone(rhs._fetchPostingsDone),
-      _hasEquivParent(rhs._hasEquivParent),
-      _postingHandle(),
-      _bitVector()
-{
-    if (_fetchPostingsDone) {
-        if (rhs._bitVector.get() != NULL)
-            _bitVector = BitVector::create(*rhs._bitVector);
-        if (_bitVector.get() == NULL) {
-            _postingHandle = _diskIndex.readPostingList(*_lookupRes);
-        }
-    }
-}
-
 namespace {
 
 bool
