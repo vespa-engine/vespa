@@ -84,6 +84,7 @@ public:
      **/
     void optimize();
     void fetchPostings(void);
+    void freeze();
 
     /**
      * Create the actual search iterator tree used to find matches.
