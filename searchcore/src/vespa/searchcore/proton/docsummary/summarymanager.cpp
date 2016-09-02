@@ -111,14 +111,20 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
 
 namespace {
 
-search::DocumentStore::Config getStoreConfig(const ProtonConfig::Summary::Cache & cache)
-{
+template<typename T>
+document::CompressionConfig
+deriveCompression(const T & config) {
     document::CompressionConfig compression;
-    if (cache.compression.type == ProtonConfig::Summary::Cache::Compression::LZ4) {
+    if (config.type == T::LZ4) {
         compression.type = document::CompressionConfig::LZ4;
     }
-    compression.compressionLevel = cache.compression.level;
-    return search::DocumentStore::Config(compression, cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+    compression.compressionLevel = config.level;
+    return compression;
+}
+
+search::DocumentStore::Config getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+{
+    return search::DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
 }
@@ -141,26 +147,15 @@ SummaryManager::SummaryManager(vespalib::ThreadStackExecutorBase & executor,
     search::DocumentStore::Config config(getStoreConfig(summary.cache));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-    document::CompressionConfig chunkCompression;
-    if (chunk.compression.type == ProtonConfig::Summary::Log::Chunk::Compression::LZ4) {
-        chunkCompression.type = document::CompressionConfig::LZ4;
-    }
-    chunkCompression.compressionLevel = chunk.compression.level;
 
-    document::CompressionConfig compactCompression;
-    if (chunk.compression.type == ProtonConfig::Summary::Log::Chunk::Compression::LZ4) {
-        compactCompression.type = document::CompressionConfig::LZ4;
-    }
-    compactCompression.compressionLevel = chunk.compression.level;
-    
-    search::WriteableFileChunk::Config fileConfig(chunkCompression, chunk.maxbytes, chunk.maxentries);
+    search::WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes, chunk.maxentries);
     search::LogDataStore::Config logConfig(log.maxfilesize,
                                            log.maxdiskbloatfactor,
                                            log.maxbucketspread,
                                            log.minfilesizefactor,
                                            log.numthreads,
                                            log.compact2activefile,
-                                           compactCompression,
+                                           deriveCompression(log.compact.compression),
                                            fileConfig);
     logConfig.disableCrcOnRead(chunk.skipcrconread);
     _docStore.reset(
