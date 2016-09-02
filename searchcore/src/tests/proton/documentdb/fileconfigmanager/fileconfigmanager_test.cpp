@@ -5,10 +5,8 @@ LOG_SETUP("fileconfigmanager_test");
 
 #include "config-mycfg.h"
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
-#include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 
 using namespace config;
@@ -36,6 +34,7 @@ getConfig(int64_t generation, const Schema::SP &schema)
                     generation,
                     std::make_shared<vespa::config::search::RankProfilesConfig>(),
                     std::make_shared<vespa::config::search::core::RankingConstantsConfig>(),
+                    std::make_shared<matching::RankingConstants>(),
                     std::make_shared<vespa::config::search::IndexschemaConfig>(),
                     std::make_shared<vespa::config::search::AttributesConfig>(),
                     std::make_shared<vespa::config::search::SummaryConfig>(),
@@ -110,6 +109,7 @@ makeEmptyConfigSnapshot(void)
                                       0,
                                       DocumentDBConfig::RankProfilesConfigSP(),
                                       DocumentDBConfig::RankingConstantsConfigSP(),
+                                      DocumentDBConfig::RankingConstants::SP(),
                                       DocumentDBConfig::IndexschemaConfigSP(),
                                       DocumentDBConfig::AttributesConfigSP(),
                                       DocumentDBConfig::SummaryConfigSP(),

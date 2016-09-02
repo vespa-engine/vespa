@@ -16,6 +16,7 @@ LOG_SETUP(".proton.server.searchabledocsubdb");
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::RankProfilesConfig;
@@ -47,8 +48,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg,
       _indexWriter(),
       _rSearchView(),
       _rFeedView(),
-      _constantValueFactory(),
-      _constantValueRepo(_constantValueFactory),
+      _tensorLoader(vespalib::tensor::DefaultTensorEngine::ref()),
+      _constantValueRepo(_tensorLoader),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
@@ -210,6 +211,7 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
     AttributeManager::SP attrMgr = getAndResetInitAttributeManager();
     const Schema::SP &schema = configSnapshot.getSchemaSP();
     const IIndexManager::SP &indexMgr = getIndexManager();
+    _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
     Matchers::SP matchers(_configurer.
                           createMatchers(schema,
                                   configSnapshot.getRankProfilesConfig()).

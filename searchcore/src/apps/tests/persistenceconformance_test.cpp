@@ -111,6 +111,7 @@ public:
                         1,
                         std::make_shared<RankProfilesConfig>(),
                         std::make_shared<RankingConstantsConfig>(),
+                        std::make_shared<matching::RankingConstants>(),
                         indexschema,
                         attributes,
                         summary,

@@ -8,6 +8,8 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/proton/matching/ranking_constants.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
@@ -15,7 +17,6 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 
 namespace proton {
 
@@ -26,6 +27,7 @@ public:
     {
     public:
         bool rankProfilesChanged;
+        bool rankingConstantsCfgChanged;
         bool rankingConstantsChanged;
         bool indexschemaChanged;
         bool attributesChanged;
@@ -41,23 +43,25 @@ public:
         ComparisonResult();
     };
 
-    typedef std::shared_ptr<DocumentDBConfig> SP;
-    typedef std::shared_ptr<vespa::config::search::IndexschemaConfig> IndexschemaConfigSP;
-    typedef std::shared_ptr<vespa::config::search::AttributesConfig> AttributesConfigSP;
-    typedef std::shared_ptr<vespa::config::search::RankProfilesConfig> RankProfilesConfigSP;
-    typedef std::shared_ptr<vespa::config::search::core::RankingConstantsConfig> RankingConstantsConfigSP;
-    typedef std::shared_ptr<vespa::config::search::SummaryConfig> SummaryConfigSP;
-    typedef std::shared_ptr<vespa::config::search::SummarymapConfig> SummarymapConfigSP;
-    typedef std::shared_ptr<vespa::config::search::summary::JuniperrcConfig> JuniperrcConfigSP;
-    typedef std::shared_ptr<document::DocumenttypesConfig> DocumenttypesConfigSP;
-    typedef DocumentDBMaintenanceConfig::SP MaintenanceConfigSP;
+    using SP = std::shared_ptr<DocumentDBConfig>;
+    using IndexschemaConfigSP = std::shared_ptr<vespa::config::search::IndexschemaConfig>;
+    using AttributesConfigSP = std::shared_ptr<vespa::config::search::AttributesConfig>;
+    using RankProfilesConfigSP = std::shared_ptr<vespa::config::search::RankProfilesConfig>;
+    using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
+    using RankingConstants = matching::RankingConstants;
+    using SummaryConfigSP = std::shared_ptr<vespa::config::search::SummaryConfig>;
+    using SummarymapConfigSP = std::shared_ptr<vespa::config::search::SummarymapConfig>;
+    using JuniperrcConfigSP = std::shared_ptr<vespa::config::search::summary::JuniperrcConfig>;
+    using DocumenttypesConfigSP = std::shared_ptr<document::DocumenttypesConfig>;
+    using MaintenanceConfigSP = DocumentDBMaintenanceConfig::SP;
 
 private:
     vespalib::string               _configId;
     vespalib::string               _docTypeName;
     int64_t                        _generation;
     RankProfilesConfigSP           _rankProfiles;
-    RankingConstantsConfigSP       _rankingConstants;
+    RankingConstantsConfigSP       _rankingConstantsCfg;
+    RankingConstants::SP           _rankingConstants;
     IndexschemaConfigSP            _indexschema;
     AttributesConfigSP             _attributes;
     SummaryConfigSP                _summary;
@@ -82,7 +86,8 @@ private:
 public:
     DocumentDBConfig(int64_t generation,
                      const RankProfilesConfigSP &rankProfiles,
-                     const RankingConstantsConfigSP &rankingConstants,
+                     const RankingConstantsConfigSP &rankingConstantsCfg,
+                     const RankingConstants::SP &rankingConstants,
                      const IndexschemaConfigSP &indexschema,
                      const AttributesConfigSP &attributes,
                      const SummaryConfigSP &summary,
@@ -110,7 +115,9 @@ public:
     getRankProfilesConfig() const { return *_rankProfiles; }
 
     const vespa::config::search::core::RankingConstantsConfig &
-    getRankingConstantsConfig() const { return *_rankingConstants; }
+    getRankingConstantsConfig() const { return *_rankingConstantsCfg; }
+
+    const RankingConstants &getRankingConstants() const { return *_rankingConstants; }
 
     const vespa::config::search::IndexschemaConfig &
     getIndexschemaConfig() const { return *_indexschema; }
@@ -134,7 +141,9 @@ public:
     getRankProfilesConfigSP(void) const { return _rankProfiles; }
 
     const RankingConstantsConfigSP &
-    getRankingConstantsConfigSP() const { return _rankingConstants; }
+    getRankingConstantsConfigSP() const { return _rankingConstantsCfg; }
+
+    const RankingConstants::SP &getRankingConstantsSP() const { return _rankingConstants; }
 
     const IndexschemaConfigSP &
     getIndexschemaConfigSP(void) const { return _indexschema; }

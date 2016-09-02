@@ -194,6 +194,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     SearchView::SP searchView = _searchView.get();
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
+        _constantValueRepo.reconfigure(newConfig.getRankingConstants());
         Matchers::SP newMatchers(
                 createMatchers(newConfig.getSchemaSP(),
                                newConfig.getRankProfilesConfig()).

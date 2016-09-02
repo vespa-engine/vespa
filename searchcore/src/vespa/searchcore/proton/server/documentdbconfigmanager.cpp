@@ -15,10 +15,11 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 
 using document::DocumentTypeRepo;
+using fastos::TimeStamp;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
-using fastos::TimeStamp;
+using proton::matching::RankingConstants;
 
 namespace proton {
 
@@ -136,6 +137,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
     RankingConstantsConfigSP newRankingConstantsConfig;
+    matching::RankingConstants::SP newRankingConstants = std::make_shared<matching::RankingConstants>();
     IndexschemaConfigSP newIndexschemaConfig;
     AttributesConfigSP newAttributesConfig;
     SummaryConfigSP newSummaryConfig;
@@ -184,14 +186,17 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         newRankingConstantsConfig = RankingConstantsConfigSP(
                 snapshot.getConfig<RankingConstantsConfig>(_configId));
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        RankingConstants::Vector constants;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(spec);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
                 vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
-                LOG(info, "GOT file-acq PATH is: %s (ref %s for name %s type %s)\n",
-                    filePath.c_str(), rc.fileref.c_str(), rc.name.c_str(), rc.type.c_str());
+                LOG(info, "GOT file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')\n",
+                    filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
+                constants.emplace_back(rc.name, rc.type, filePath);
             }
         }
+        newRankingConstants = std::make_shared<RankingConstants>(constants);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         std::unique_ptr<IndexschemaConfig> indexschemaConfig =
@@ -238,6 +243,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
                                  newRankingConstantsConfig,
+                                 newRankingConstants,
                                  newIndexschemaConfig,
                                  newAttributesConfig,
                                  newSummaryConfig,
