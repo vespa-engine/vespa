@@ -12,7 +12,7 @@ namespace searchcorespi {
 namespace index {
 
 IndexMaintainerConfig::IndexMaintainerConfig(const vespalib::string &baseDir,
-                                             WarmupConfig warmup,
+                                             const WarmupConfig & warmup,
                                              size_t maxFlushed,
                                              const Schema &schema,
                                              const Schema &fusionSchema,

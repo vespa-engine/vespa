@@ -4,20 +4,10 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
+#include "warmupconfig.h"
 
 namespace searchcorespi {
 namespace index {
-
-class WarmupConfig {
-public:
-    WarmupConfig() : _duration(0.0), _unpack(false) { }
-    WarmupConfig(double duration, bool unpack) : _duration(duration), _unpack(unpack) { }
-    double getDuration() const { return _duration; }
-    bool getUnpack() const { return _unpack; }
-private:
-    double _duration;
-    bool   _unpack;
-};
 
 /**
  * Class that keeps the config used when constructing an index maintainer.
@@ -33,7 +23,7 @@ private:
 
 public:
     IndexMaintainerConfig(const vespalib::string &baseDir,
-                          WarmupConfig warmup,
+                          const WarmupConfig & warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
                           const search::index::Schema &fusionSchema,

@@ -5,6 +5,7 @@
 #include <vespa/searchcorespi/index/isearchableindexcollection.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include "warmupconfig.h"
 
 namespace searchcorespi {
 
@@ -20,15 +21,15 @@ public:
 class WarmupIndexCollection : public ISearchableIndexCollection,
                               public std::enable_shared_from_this<WarmupIndexCollection>
 {
+    using WarmupConfig = index::WarmupConfig;
 public:
     typedef std::shared_ptr<WarmupIndexCollection> SP;
-    WarmupIndexCollection(double warmupSeconds,
+    WarmupIndexCollection(const WarmupConfig & warmupConfig,
                           ISearchableIndexCollection::SP prev,
                           ISearchableIndexCollection::SP next,
                           IndexSearchable & warmup,
                           vespalib::ThreadExecutor & executor,
-                          IWarmupDone & warmupDone,
-                          bool doUnpack);
+                          IWarmupDone & warmupDone);
     ~WarmupIndexCollection();
     // Implements IIndexCollection
     const ISourceSelector &getSourceSelector() const override;
@@ -57,7 +58,7 @@ public:
 
     const ISearchableIndexCollection::SP & getNextIndexCollection() const { return _next; }
     vespalib::string toString() const override;
-    bool doUnpack() const { return _doUnpack; }
+    bool doUnpack() const { return _warmupConfig.getUnpack(); }
 private:
     typedef search::fef::MatchData MatchData;
     typedef search::queryeval::FakeRequestContext FakeRequestContext;
@@ -97,6 +98,7 @@ private:
     void fireWarmup(Task::UP task);
     bool handledBefore(uint32_t fieldId, const Node &term);
 
+    const WarmupConfig               _warmupConfig;
     ISearchableIndexCollection::SP   _prev;
     ISearchableIndexCollection::SP   _next;
     IndexSearchable                & _warmup;
@@ -107,7 +109,6 @@ private:
     typedef vespalib::hash_set<vespalib::string> TermMap;
     typedef vespalib::hash_map<uint32_t, TermMap> FieldTermMap;
     FieldTermMap                     _handledTerms;
-    bool                             _doUnpack;
 };
 
 }  // namespace searchcorespi

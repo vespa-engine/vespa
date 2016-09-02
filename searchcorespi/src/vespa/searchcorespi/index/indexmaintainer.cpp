@@ -365,17 +365,12 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
 {
     assert(indexes->valid());
     (void) guard;
-    if (_diskIndexWarmupTime > 0) {
+    if (_warmupConfig.getDuration() > 0) {
         if (dynamic_cast<const IDiskIndex *>(&source) != NULL) {
             LOG(debug, "Warming up a disk index.");
             indexes = std::make_shared<WarmupIndexCollection>
-                      (_diskIndexWarmupTime,
-                       getLeaf(guard, _source_list, true),
-                       indexes,
-                       static_cast<IDiskIndex &>(source),
-                       _ctx.getWarmupExecutor(),
-                       *this,
-                       _unpackAtWarmup);
+                      (_warmupConfig, getLeaf(guard, _source_list, true), indexes,
+                       static_cast<IDiskIndex &>(source), _ctx.getWarmupExecutor(), *this);
         } else {
             LOG(debug, "No warmup needed as it is a memory index that is mapped in.");
         }
@@ -791,8 +786,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                  const IndexMaintainerContext &ctx,
                                  IIndexMaintainerOperations &operations)
     : _base_dir(config.getBaseDir()),
-      _diskIndexWarmupTime(config.getWarmup().getDuration()),
-      _unpackAtWarmup(config.getWarmup().getUnpack()),
+      _warmupConfig(config.getWarmup()),
       _active_indexes(new ActiveDiskIndexes()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),

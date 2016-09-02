@@ -21,28 +21,27 @@ using index::IDiskIndex;
 using fastos::TimeStamp;
 using fastos::ClockSystem;
 
-WarmupIndexCollection::WarmupIndexCollection(double warmupSeconds,
+WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              ISearchableIndexCollection::SP prev,
                                              ISearchableIndexCollection::SP next,
                                              IndexSearchable & warmup,
                                              vespalib::ThreadExecutor & executor,
-                                             IWarmupDone & warmupDone,
-                                             bool doUnpack) :
+                                             IWarmupDone & warmupDone) :
+    _warmupConfig(warmupConfig),
     _prev(prev),
     _next(next),
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
-    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupSeconds)),
-    _handledTerms(),
-    _doUnpack(doUnpack)
+    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
+    _handledTerms()
 {
     if (next->valid()) {
         setCurrentIndex(next->getCurrentIndex());
     } else {
         LOG(warning, "Next index is not valid, Dangerous !! : %s", next->toString().c_str());
     }
-    LOG(debug, "For %g seconds I will warm up %s.", warmupSeconds, typeid(_warmup).name());
+    LOG(debug, "For %g seconds I will warm up %s.", warmupConfig.getDuration(), typeid(_warmup).name());
     LOG(debug, "%s", toString().c_str());
 }
 
