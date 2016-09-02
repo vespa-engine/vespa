@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Keeps track of the last config request made by each hostname.
@@ -19,7 +20,7 @@ import java.util.Optional;
 public class ConfigRequestHostLivenessTracker implements HostLivenessTracker {
 
     private final Clock clock;
-    private final Map<String, Instant> lastRequestFromHost = new HashMap<>();
+    private final Map<String, Instant> lastRequestFromHost = new ConcurrentHashMap<>();
 
     @Inject
     @SuppressWarnings("unused")
