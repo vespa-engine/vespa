@@ -8,13 +8,24 @@
 namespace searchcorespi {
 namespace index {
 
+class WarmupConfig {
+public:
+    WarmupConfig() : _duration(0.0), _unpack(false) { }
+    WarmupConfig(double duration, bool unpack) : _duration(duration), _unpack(unpack) { }
+    double getDuration() const { return _duration; }
+    bool getUnpack() const { return _unpack; }
+private:
+    double _duration;
+    bool   _unpack;
+};
+
 /**
  * Class that keeps the config used when constructing an index maintainer.
  */
 class IndexMaintainerConfig {
 private:
     const vespalib::string _baseDir;
-    const double _diskIndexWarmupTime;
+    const WarmupConfig _warmup;
     const size_t _maxFlushed;
     const search::index::Schema _schema;
     const search::index::Schema _fusionSchema;
@@ -22,7 +33,7 @@ private:
 
 public:
     IndexMaintainerConfig(const vespalib::string &baseDir,
-                          double diskIndexWarmupTime,
+                          WarmupConfig warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
                           const search::index::Schema &fusionSchema,
@@ -35,9 +46,7 @@ public:
         return _baseDir;
     }
 
-    double getDiskIndexWarmupTime() const {
-       return _diskIndexWarmupTime;
-    }
+    WarmupConfig getWarmup() const { return _warmup; }
 
     /**
      * Returns the initial schema containing all current index fields.

@@ -88,6 +88,7 @@ class IndexMaintainer : public boost::noncopyable,
     typedef search::queryeval::ISourceSelector ISourceSelector;
     const vespalib::string _base_dir;
     const double           _diskIndexWarmupTime;
+    const bool             _unpackAtWarmup;
     ActiveDiskIndexes::SP  _active_indexes;
     IndexDiskLayout        _layout;
     Schema                 _schema;             // Protected by SL + IUL

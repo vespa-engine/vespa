@@ -53,7 +53,7 @@ public:
 IndexCollection::UP
 Test::createWarmup(const IndexCollection::SP & prev, const IndexCollection::SP & next)
 {
-    return IndexCollection::UP(new WarmupIndexCollection(1.0, prev, next, *_warmup, _executor, *this));
+    return IndexCollection::UP(new WarmupIndexCollection(1.0, prev, next, *_warmup, _executor, *this, false));
 }
 
 int

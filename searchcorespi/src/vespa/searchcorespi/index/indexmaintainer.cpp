@@ -374,7 +374,8 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
                        indexes,
                        static_cast<IDiskIndex &>(source),
                        _ctx.getWarmupExecutor(),
-                       *this);
+                       *this,
+                       _unpackAtWarmup);
         } else {
             LOG(debug, "No warmup needed as it is a memory index that is mapped in.");
         }
@@ -790,7 +791,8 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                  const IndexMaintainerContext &ctx,
                                  IIndexMaintainerOperations &operations)
     : _base_dir(config.getBaseDir()),
-      _diskIndexWarmupTime(config.getDiskIndexWarmupTime()),
+      _diskIndexWarmupTime(config.getWarmup().getDuration()),
+      _unpackAtWarmup(config.getWarmup().getUnpack()),
       _active_indexes(new ActiveDiskIndexes()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),

@@ -20,6 +20,7 @@ using search::TuneFileSearch;
 using searchcorespi::index::IDiskIndex;
 using search::diskindex::SelectorArray;
 using searchcorespi::index::IndexMaintainerConfig;
+using searchcorespi::index::WarmupConfig;
 using searchcorespi::index::IndexMaintainerContext;
 using searchcorespi::index::IMemoryIndex;
 using searchcorespi::index::IThreadingService;
@@ -79,7 +80,7 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
 
 
 IndexManager::IndexManager(const vespalib::string &baseDir,
-                           const double warmupTime,
+                           const WarmupConfig & warmup,
                            const size_t maxFlushed,
                            const size_t cacheSize,
                            const Schema &schema,
@@ -93,7 +94,7 @@ IndexManager::IndexManager(const vespalib::string &baseDir,
     _operations(fileHeaderContext, tuneFileIndexManager, cacheSize,
                 threadingService),
     _maintainer(IndexMaintainerConfig(baseDir,
-                                      warmupTime,
+                                      warmup,
                                       maxFlushed,
                                       schema,
                                       fusionSchema,

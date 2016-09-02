@@ -27,7 +27,8 @@ public:
                           ISearchableIndexCollection::SP next,
                           IndexSearchable & warmup,
                           vespalib::ThreadExecutor & executor,
-                          IWarmupDone & warmupDone);
+                          IWarmupDone & warmupDone,
+                          bool doUnpack);
     ~WarmupIndexCollection();
     // Implements IIndexCollection
     const ISourceSelector &getSourceSelector() const override;
@@ -56,6 +57,7 @@ public:
 
     const ISearchableIndexCollection::SP & getNextIndexCollection() const { return _next; }
     vespalib::string toString() const override;
+    bool doUnpack() const { return _doUnpack; }
 private:
     typedef search::fef::MatchData MatchData;
     typedef search::queryeval::FakeRequestContext FakeRequestContext;
@@ -105,6 +107,7 @@ private:
     typedef vespalib::hash_set<vespalib::string> TermMap;
     typedef vespalib::hash_map<uint32_t, TermMap> FieldTermMap;
     FieldTermMap                     _handledTerms;
+    bool                             _doUnpack;
 };
 
 }  // namespace searchcorespi
