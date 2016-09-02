@@ -407,7 +407,7 @@ function(vespa_add_test)
         set(CONTROL_FILE "${ARG_NAME}.run")
         add_custom_target("${CONTROL_FILE}_target" ALL DEPENDS ${CONTROL_FILE})
         add_custom_command(OUTPUT ${CONTROL_FILE}
-                COMMAND ctest --output-on-failure -R ${ARG_NAME} || (rm -f ${CONTROL_FILE} && false)
+                COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -R ${ARG_NAME} || (rm -f ${CONTROL_FILE} && false)
                 COMMAND touch ${CONTROL_FILE}
                 DEPENDS ${TEST_DEPENDENCIES}
                 COMMENT "Executing ${ARG_COMMAND}")
