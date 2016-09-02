@@ -105,7 +105,6 @@ App::verifyConfig(const RankProfilesConfig &rankCfg,
                   const AttributesConfig &attributeCfg,
                   const RankingConstantsConfig &constantsCfg)
 {
-    (void) constantsCfg;
     bool ok = true;
     search::index::Schema schema;
     search::index::SchemaBuilder::build(schemaCfg, schema);
