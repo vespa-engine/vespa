@@ -69,6 +69,7 @@ private:
 private:
     vespalib::Lock                                 _lock;
     std::string                                    _name;
+    std::string                                    _path_prefix;
     SharedState                                    _state;
     std::vector<vespalib::LinkedPtr<ThreadState> > _threadStorage;
 
@@ -91,6 +92,7 @@ private:
 public:
     void init(const char *name);
     std::string getName();
+    std::string get_path(const std::string &local_file);
     void setThreadName(const char *name);
     const char *getThreadName();
     void setThreadUnwind(bool unwind);

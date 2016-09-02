@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/vespalib/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/eval/tensor_spec.h>
@@ -43,27 +42,27 @@ void verify_tensor(std::unique_ptr<Tensor> expect, ConstantValue::UP actual) {
 }
 
 TEST_F("require that load fails for invalid types", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(vespalib::TestApp::GetSourceDirectory() + "dense.json", "invalid type spec")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("dense.json"), "invalid type spec")));
 }
 
 TEST_F("require that load fails for invalid file name", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(vespalib::TestApp::GetSourceDirectory() + "missing_file.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("missing_file.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that load fails for invalid json", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(vespalib::TestApp::GetSourceDirectory() + "invalid.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("invalid.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that dense tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_dense_tensor(), f1.create(vespalib::TestApp::GetSourceDirectory() + "dense.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that sparse tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(vespalib::TestApp::GetSourceDirectory() + "sparse.json", "tensor(x{},y{})")));
+    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json"), "tensor(x{},y{})")));
 }
 
 TEST_F("require that mixed tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_mixed_tensor(), f1.create(vespalib::TestApp::GetSourceDirectory() + "mixed.json", "tensor(x{},y[2])")));
+    TEST_DO(verify_tensor(make_mixed_tensor(), f1.create(TEST_PATH("mixed.json"), "tensor(x{},y[2])")));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
