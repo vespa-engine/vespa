@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.builder.xml.XmlHelper;
-import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -17,26 +18,60 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * TODO: What is this?
+ * A collection of hosts
  *
- * @author hmusum
+ * @author bratseth
  */
 public class Hosts {
 
     public static final Logger log = Logger.getLogger(Hosts.class.getPackage().toString());
 
-    private final HashMap<String, Host> hosts = new LinkedHashMap<>();
-    private final Map<String, String> alias2hostname = new LinkedHashMap<>();
-    private final Map<String, Host> alias2host = new LinkedHashMap<>();
+    private final ImmutableMap<String, Host> hosts;
 
+    public Hosts(Collection<Host> hosts) {
+        validateAliases(hosts);
+        
+        ImmutableMap.Builder<String, Host> hostsBuilder = new ImmutableMap.Builder<>();
+        for (Host host : hosts)
+            hostsBuilder.put(host.hostname(), host);
+        this.hosts = hostsBuilder.build();
+
+        System.setProperty("zookeeper.vespa.clients", toHostnameString(hosts)); // See com.yahoo.vespa.zookeeper.ZooKeeperServer
+    }
+
+    /** Throw IllegalArgumentException if host aliases breaks invariants */
+    private void validateAliases(Collection<Host> hosts) {
+        Set<String> aliases = new HashSet<>();
+        for (Host host : hosts) {
+            if (host.aliases().size() > 0) {
+                if (host.aliases().size() < 1)
+                    throw new IllegalArgumentException("Host '" + host.hostname() + "' must have at least one <alias> tag.");
+                for (String alias : host.aliases()) {
+                    if (aliases.contains(alias))
+                        throw new IllegalArgumentException("Alias '" + alias + "' is used by multiple hosts.");
+                    aliases.add(alias);
+                }
+            }
+        }
+    }
+    
+    private String toHostnameString(Collection<Host> hosts) {
+        StringBuilder b = new StringBuilder();
+        for (Host host : hosts)
+            b.append(host.hostname()).append(",");
+        if (b.length() > 0)
+            b.setLength(b.length() - 1); // remove last comma
+        return b.toString();
+    }
+    
     /**
      * Builds host system from a hosts.xml file
      *
      * @param hostsFile a reader for host from application package
      * @return the HostSystem for this application package
      */
-    public static Hosts getHosts(Reader hostsFile) {
-        Hosts hosts = new Hosts();
+    public static Hosts readFrom(Reader hostsFile) {
+        List<Host> hosts = new ArrayList<>();
         Document doc;
         try {
             doc = XmlHelper.getDocumentBuilder().parse(new InputSource(hostsFile));
@@ -55,62 +90,13 @@ public class Hosts {
             if (hostAliases.isEmpty()) {
                 throw new IllegalArgumentException("No host aliases defined for host '" + name + "'");
             }
-            Host host = new Host(name, hostAliases);
-            hosts.addHost(host, hostAliases);
+            hosts.add(new Host(name, hostAliases));
         }
-        log.log(LogLevel.DEBUG, "Created hosts:" + hosts);
-        return hosts;
+        return new Hosts(hosts);
     }
 
-    public Collection<Host> getHosts() {
-        return hosts.values();
-    }
-
-    /**
-     * Adds one host to this host system.
-     *
-     * @param host    The host to add
-     * @param aliases The aliases for this host.
-     */
-    public void addHost(Host host, List<String> aliases) {
-        hosts.put(host.getHostname(), host);
-        if ((aliases != null) && (aliases.size() > 0)) {
-            addHostAliases(aliases, host);
-        }
-    }
-
-    /**
-     * Add all aliases for one host
-     *
-     * @param hostAliases A list of host aliases
-     * @param host        The Host instance to add the alias for
-     */
-    private void addHostAliases(List<String> hostAliases, Host host) {
-        if (hostAliases.size() < 1) {
-            throw new RuntimeException("Host '" + host.getHostname() + "' must have at least one <alias> tag.");
-        }
-        for (String alias : hostAliases) {
-            addHostAlias(alias, host);
-        }
-    }
-
-    /**
-     * Adds an alias for the given host
-     *
-     * @param alias alias (string) for a Host
-     * @param host  the {@link Host} to add the alias for
-     */
-    protected void addHostAlias(String alias, Host host) {
-        if (alias2hostname.containsKey(alias)) {
-            throw new RuntimeException("Alias '" + alias + "' must be used for only one host!");
-        }
-        alias2hostname.put(alias, host.getHostname());
-        alias2host.put(alias, host);
-    }
-
-    public Map<String, Host> getAlias2host() {
-        return alias2host;
-    }
+    /** Returns an immutable collection of the hosts of this */
+    public Collection<Host> asCollection() { return hosts.values(); }
 
     @Override
     public String toString() {

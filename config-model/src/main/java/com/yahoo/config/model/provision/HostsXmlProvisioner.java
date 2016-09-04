@@ -22,27 +22,24 @@ public class HostsXmlProvisioner implements HostProvisioner {
     public static final String IMPLICIT_ADMIN_HOSTALIAS = "INTERNAL_VESPA_IMPLICIT_ADMIN";
 
     public HostsXmlProvisioner(Reader hosts) {
-        this.hosts = Hosts.getHosts(hosts);
+        this.hosts = Hosts.readFrom(hosts);
     }
 
     @Override
     public HostSpec allocateHost(String alias) {
-        /**
-         * Some special rules to allow no admin elements as well
-         * as jdisc element without nodes.
-         */
+        // Some special rules to allow no admin elements as well as jdisc element without nodes.
         if (alias.equals(IMPLICIT_ADMIN_HOSTALIAS)) {
-            if (hosts.getHosts().size() > 1) {
-                throw new IllegalArgumentException("More than 1 host specified (" + hosts.getHosts().size() + ") and <admin> not specified");
+            if (hosts.asCollection().size() > 1) {
+                throw new IllegalArgumentException("More than 1 host specified (" + hosts.asCollection().size() + ") and <admin> not specified");
             } else {
                 return host2HostSpec(getFirstHost());
             }
         } else if (alias.equals(Container.SINGLENODE_CONTAINER_SERVICESPEC)) {
             return host2HostSpec(getFirstHost());
         }
-        for (Host host : hosts.getHosts()) {
-            if (host.getHostAliases().contains(alias)) {
-                return new HostSpec(host.getHostname(), host.getHostAliases());
+        for (Host host : hosts.asCollection()) {
+            if (host.aliases().contains(alias)) {
+                return new HostSpec(host.hostname(), host.aliases());
             }
         }
         throw new IllegalArgumentException("Unable to find host for alias '" + alias + "'");
@@ -54,11 +51,11 @@ public class HostsXmlProvisioner implements HostProvisioner {
     }
 
     private HostSpec host2HostSpec(Host host) {
-        return new HostSpec(host.getHostname(), host.getHostAliases());
+        return new HostSpec(host.hostname(), host.aliases());
     }
 
     private Host getFirstHost() {
-        return hosts.getHosts().iterator().next();
+        return hosts.asCollection().iterator().next();
     }
 
 }
