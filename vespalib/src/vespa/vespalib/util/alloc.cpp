@@ -36,6 +36,7 @@ void * AlignedHeapAlloc::alloc(size_t sz, size_t alignment)
 namespace {
 
 volatile bool _G_hasHugePageFailureJustHappened(false);
+volatile bool _G_SilenceCoreOnOOM(false);
 volatile int  _G_HugeFlags = -1;
 volatile size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 volatile size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
@@ -60,29 +61,26 @@ struct MMapInfo {
 typedef std::map<const void *, MMapInfo> MMapStore;
 MMapStore _G_HugeMappings;
 
+size_t
+readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
+    const char * str = getenv(name);
+    if (str != NULL) {
+        char * e(NULL);
+        size_t value = strtoul(str, &e, 0);
+        if ((e == 0) || (e[0] == '\0')) {
+            return value;
+        }
+        LOG(warning, "Not able to to decode %s='%s' as number. Failed at '%s'", name, str, e);
+    }
+    return defaultValue;
+}
+
 void initializeEnvironment()
 {
     _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != NULL) ? MAP_HUGETLB : 0;
-    const char * mmapLogLimitStr = getenv("VESPA_MMAP_LOG_LIMIT");
-    if (mmapLogLimitStr != NULL) {
-        char * e(NULL);
-        size_t mmapLogLimit = strtoul(mmapLogLimitStr, &e, 0);
-        if ((e == 0) || (e[0] == '\0')) {
-            _G_MMapLogLimit = mmapLogLimit;
-        } else {
-            LOG(warning, "Not able to to decode VESPA_MMAP_LOG_LIMIT='%s' as number. Failed at '%s'", mmapLogLimitStr, e);
-        }
-    }
-    const char * mmapNoCoreLimitStr = getenv("VESPA_MMAP_NOCORE_LIMIT");
-    if (mmapNoCoreLimitStr != NULL) {
-        char * e(NULL);
-        size_t mmapNoCoreLimit = strtoul(mmapNoCoreLimitStr, &e, 0);
-        if ((e == 0) || (e[0] == '\0')) {
-            _G_MMapNoCoreLimit = mmapNoCoreLimit;
-        } else {
-            LOG(warning, "Not able to to decode VESPA_MMAP_NOCORE_LIMIT='%s' as number. Failed at %s", mmapNoCoreLimitStr, e);
-        }
-    }
+    _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != NULL) ? true : false;
+    _G_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
+    _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
 }
 
 size_t sum(const MMapStore & s)
@@ -120,7 +118,14 @@ void * MMapAlloc::alloc(size_t sz)
             }
             buf = mmap(NULL, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
-                throw std::runtime_error(make_string("Failed mmaping anonymous of size %ld errno(%d)", sz, errno));
+                stackTrace = getStackTrace(1);
+                string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
+                if (_G_SilenceCoreOnOOM) {
+                    LOG(fatal, "Will exit with code 66 due to: %s", msg.c_str());
+                    exit(66);  //OR _exit() ?
+                } else {
+                    throw OOMException(msg, VESPA_STRLOC);
+                }
             }
         } else {
             if (_G_hasHugePageFailureJustHappened) {

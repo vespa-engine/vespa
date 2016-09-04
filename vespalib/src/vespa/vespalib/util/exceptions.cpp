@@ -11,6 +11,7 @@ namespace vespalib {
 
 VESPA_IMPLEMENT_EXCEPTION(UnsupportedOperationException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(IllegalArgumentException, Exception);
+VESPA_IMPLEMENT_EXCEPTION(OOMException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(IllegalStateException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(OverflowException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(UnderflowException, Exception);
