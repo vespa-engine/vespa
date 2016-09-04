@@ -49,12 +49,12 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        this(Collections.singletonMap("default", hosts.asCollection()), failOnOutOfCapacity, 0, retiredHostNames);
+        this(Collections.singletonMap("default", hosts.getHosts()), failOnOutOfCapacity, 0, retiredHostNames);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        this(Collections.singletonMap("default", hosts.asCollection()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
+        this(Collections.singletonMap("default", hosts.getHosts()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
     }
 
     public InMemoryProvisioner(Map<String, Collection<Host>> hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
@@ -88,7 +88,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         List<Host> defaultHosts = freeNodes.get("default");
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts of default flavor available");
         Host newHost = freeNodes.removeValue("default", 0);
-        HostSpec hostSpec = new HostSpec(newHost.hostname(), newHost.aliases());
+        HostSpec hostSpec = new HostSpec(newHost.getHostname(), newHost.getHostAliases());
         legacyMapping.put(alias, hostSpec);
         return hostSpec;
     }
@@ -141,7 +141,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             if (freeNodes.get(flavor).isEmpty()) throw new IllegalArgumentException("No nodes of flavor '" + flavor + "' available");
             Host newHost = freeNodes.removeValue(flavor, 0);
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
-            allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), membership));
+            allocation.add(new HostSpec(newHost.getHostname(), newHost.getHostAliases(), membership));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

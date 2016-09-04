@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
-import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -56,7 +55,6 @@ import java.util.stream.Collectors;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient zkClient;
-    private final Curator curator;
 
     /**
      * Creates a node repository form a zookeeper provider.
@@ -73,7 +71,6 @@ public class NodeRepository extends AbstractComponent {
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock) {
         this.zkClient = new CuratorDatabaseClient(flavors, curator, clock);
-        this.curator = curator;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -129,9 +126,7 @@ public class NodeRepository extends AbstractComponent {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
         }
         try (Mutex lock = lockUnallocated()) {
-            List<Node> addedNodes = zkClient.addNodes(nodes);
-            updateAllowedHosts();
-            return addedNodes;
+            return zkClient.addNodes(nodes);
         }
     }
 
@@ -247,16 +242,14 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Removes a node. A node must be in the failed or parked state before it can be removed.
      *
-     * @return true if the node was removed, false if it was not found in one of these states
+     * @return true if the node was removed, false if it was not found
      */
     public boolean remove(String hostname) {
         Optional<Node> nodeToRemove = getNode(hostname, Node.State.failed, Node.State.parked);
-        if ( ! nodeToRemove.isPresent()) return false;
-
+        if ( ! nodeToRemove.isPresent()) 
+            return false;
         try (Mutex lock = lock(nodeToRemove.get())) {
-            boolean removed = zkClient.removeNode(nodeToRemove.get().state(), hostname);
-            updateAllowedHosts();
-            return removed;
+            return zkClient.removeNode(nodeToRemove.get().state(), hostname);
         }
     }
 
@@ -346,22 +339,6 @@ public class NodeRepository extends AbstractComponent {
     /** Acquires the appropriate lock for this node */
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
-    }
-    
-    private void updateAllowedHosts() {
-        StringBuilder s = new StringBuilder();
-        
-        // Add tenant hosts
-        for (Node node : getNodes(Node.Type.tenant))
-            s.append(node.hostname()).append(",");
-
-        // Add the zooKeeper servers
-        for (String hostPort : curator.connectionSpec().split(","))
-            s.append(hostPort.split(":")[0]).append(",");
-
-        if (s.length() > 0)
-            s.setLength(s.length()-1); // remove last comma
-        System.setProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY, s.toString());
     }
 
 }
