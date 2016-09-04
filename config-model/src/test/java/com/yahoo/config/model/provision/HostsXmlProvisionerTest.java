@@ -74,7 +74,7 @@ public class HostsXmlProvisionerTest {
         assertCorrectNumberOfHosts(map, 3);
         assertTrue(map.keySet().containsAll(aliases));
         
-        assertEquals("test1.yahoo.com,test2.yahoo.com,test3.yahoo.com", System.getProperty("zookeeper.vespa.clients"));
+        assertEquals("", System.getProperty("zookeeper.vespa.clients"));
     }
 
     @Test(expected = IllegalArgumentException.class)
