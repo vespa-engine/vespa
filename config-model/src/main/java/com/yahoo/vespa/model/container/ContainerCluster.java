@@ -173,6 +173,7 @@ public final class ContainerCluster
     private Zone zone;
     
     private Optional<String> hostClusterId = Optional.empty();
+    private Optional<Integer> memoryPercentage = Optional.empty();
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
         super(parent, subId);
@@ -790,6 +791,14 @@ public final class ContainerCluster
      * of a content cluster.
      */
     public Optional<String> getHostClusterId() { return hostClusterId; }
+
+    public void setMemoryPercentage(Optional<Integer> memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+
+    /** 
+     * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
+     * or empty if this is not specified by the application.
+     */
+    public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
 
     @Override
     public String toString() {

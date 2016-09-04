@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -82,29 +83,41 @@ public class ContainerClusterTest {
     }
 
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {
+        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty());
+    }
+    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, 
+                                                    Optional<Integer> memoryPercentage) {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
+        cluster.setMemoryPercentage(memoryPercentage);
         cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
         return cluster;
     }
-    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, int percentage) {
-        ContainerCluster cluster = createContainerCluster(isHosted, isCombinedCluster);
+    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, 
+                                                            Optional<Integer> explicitMemoryPercentage, 
+                                                            int expectedMemoryPercentage) {
+        ContainerCluster cluster = createContainerCluster(isHosted, isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getSearch().getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
-        assertEquals(percentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
     }
 
     @Test
     public void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         boolean hosted = true;
         boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, 33);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, 17);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined,  0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.empty(), 33);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, Optional.empty(), 17);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, Optional.empty(), 0);
+        
+        // Explicit value overrides all defaults
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.of(67), 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, Optional.of(68), 68);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, Optional.of(69), 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {

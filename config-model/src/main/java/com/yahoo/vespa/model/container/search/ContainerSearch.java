@@ -38,10 +38,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer
 {
+
     private final List<AbstractSearchCluster> systems = new LinkedList<>();
     private Options options = null;
 
-    //For legacy qrs clusters only.
+    // For legacy qrs clusters only.
     private BinaryScaledAmount totalCacheSize = new BinaryScaledAmount();
 
     private QueryProfiles queryProfiles;
@@ -49,12 +50,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private PageTemplates pageTemplates;
     private final boolean hostedVespa;
     private final boolean isCombinedCluster;
+    private final Optional<Integer> memoryPercentage;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
         this.hostedVespa  = cluster.isHostedVespa();
         this.isCombinedCluster = cluster.getHostClusterId().isPresent();
+        this.memoryPercentage = cluster.getMemoryPercentage();
         cluster.addComponent(getFS4ResourcePool());
     }
 
@@ -122,7 +125,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     @Override
     public void getConfig(QrStartConfig.Builder qsB) {
     	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
-    	if (hostedVespa) {
+        if (memoryPercentage.isPresent()) {
+            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(memoryPercentage.get());
+        }
+    	else if (hostedVespa) {
             if (isCombinedCluster)
                 internalBuilder.heapSizeAsPercentageOfPhysicalMemory(17);
             else

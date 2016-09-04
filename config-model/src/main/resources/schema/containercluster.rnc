@@ -184,6 +184,7 @@ DocumentApi = element document-api {
 NodesOfContainerCluster = element nodes {
     attribute jvmargs { text }? &
     attribute preload { text }? &
+    attribute allocated-memory { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
     (
       attribute of { xsd:string }
