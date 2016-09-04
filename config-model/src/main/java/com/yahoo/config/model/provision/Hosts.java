@@ -36,7 +36,8 @@ public class Hosts {
             hostsBuilder.put(host.hostname(), host);
         this.hosts = hostsBuilder.build();
 
-        System.setProperty("zookeeper.vespa.clients", toHostnameString(hosts)); // See com.yahoo.vespa.zookeeper.ZooKeeperServer
+        // Don't limit zk connections on non-hosted systems
+        System.setProperty("zookeeper.vespa.clients", "");
     }
 
     /** Throw IllegalArgumentException if host aliases breaks invariants */
@@ -53,15 +54,6 @@ public class Hosts {
                 }
             }
         }
-    }
-    
-    private String toHostnameString(Collection<Host> hosts) {
-        StringBuilder b = new StringBuilder();
-        for (Host host : hosts)
-            b.append(host.hostname()).append(",");
-        if (b.length() > 0)
-            b.setLength(b.length() - 1); // remove last comma
-        return b.toString();
     }
     
     /**
