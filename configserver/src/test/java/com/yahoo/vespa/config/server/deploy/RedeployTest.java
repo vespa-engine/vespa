@@ -2,11 +2,19 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.ModelCreateResult;
+import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -21,6 +29,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +38,13 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -62,11 +77,40 @@ public class RedeployTest {
     /** No deployment is done because there is no local active session. */
     @Test
     public void testNoRedeploy() {
-        DeployTester tester = new DeployTester("ignored/app/path");
+        List<ModelFactory> modelFactories = new ArrayList<>();
+        modelFactories.add(DeployTester.createDefaultModelFactory());
+        modelFactories.add(new OldNonWorkingModelFactory());
+        DeployTester tester = new DeployTester("ignored/app/path", modelFactories);
         ApplicationId id = ApplicationId.from(TenantName.from("default"),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
         assertFalse(tester.redeployFromLocalActive(id).isPresent());
+    }
+    
+    private static class OldNonWorkingModelFactory implements ModelFactory {
+
+        @Override
+        public Version getVersion() {
+            return Version.fromIntValues(1, 0, 0);
+        }
+
+        @Override
+        public Model createModel(ModelContext modelContext) {
+            try {
+                Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+                ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().build();
+                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build();
+                return new VespaModel(deployState);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+            throw new IllegalArgumentException("Validation fails");
+        }
+
     }
 
 }

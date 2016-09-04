@@ -56,7 +56,7 @@ public class DeployTester {
     private ApplicationId id;
 
     public DeployTester(String appPath) {
-        this(appPath, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
+        this(appPath, Collections.singletonList(createDefaultModelFactory()));
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
@@ -72,6 +72,8 @@ public class DeployTester {
     }
 
     public Tenant tenant() { return tenants.defaultTenant(); }
+    
+    public static ModelFactory createDefaultModelFactory() { return new VespaModelFactory(new NullConfigModelRegistry()); }
     
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
