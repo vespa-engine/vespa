@@ -92,19 +92,6 @@ size_t sum(const MMapStore & s)
     return sum;
 }
 
-class SilenceUncaughtException {
-public:
-    SilenceUncaughtException(const std::exception & e) : _e(e) { }
-    ~SilenceUncaughtException() {
-        if (std::uncaught_exception()) {
-            LOG(fatal, "Will exit with code 66 due to: %s", _e.what());
-            exit(66);  //OR _exit() ?
-        }
-    }
-private:
-    const std::exception & _e;
-};
-
 }
 void * MMapAlloc::alloc(size_t sz)
 {

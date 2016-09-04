@@ -9,6 +9,9 @@
 #include <vespa/vespalib/util/backtrace.h>
 #endif
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespa.exception");
+
 namespace vespalib {
 
 ExceptionPtr::ExceptionPtr()
@@ -148,6 +151,14 @@ Exception::toString() const
         str.append(getStackTrace(_skipStack, _stack, _stackframes));
     }
     return str;
+}
+
+SilenceUncaughtException::~SilenceUncaughtException()
+{
+    if (std::uncaught_exception()) {
+        LOG(fatal, "Will exit with code 66 due to: %s", _e.what());
+        exit(66);  //OR _exit() ?
+    }
 }
 
 } // namespace vespalib

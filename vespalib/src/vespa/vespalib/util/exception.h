@@ -233,6 +233,15 @@ public:
     virtual string toString() const;
 };
 
+class SilenceUncaughtException {
+public:
+    SilenceUncaughtException(const std::exception & e) : _e(e) { }
+    ~SilenceUncaughtException();
+private:
+    const std::exception & _e;
+};
+
+
 } // namespace vespalib
 
 #include <vespa/vespalib/util/exceptions.h>
