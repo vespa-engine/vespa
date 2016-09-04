@@ -92,6 +92,19 @@ size_t sum(const MMapStore & s)
     return sum;
 }
 
+class SilenceUncaughtException {
+public:
+    SilenceUncaughtException(const std::exception & e) : _e(e) { }
+    ~SilenceUncaughtException() {
+        if (std::uncaught_exception()) {
+            LOG(fatal, "Will exit with code 66 due to: %s", _e.what());
+            exit(66);  //OR _exit() ?
+        }
+    }
+private:
+    const std::exception & _e;
+};
+
 }
 void * MMapAlloc::alloc(size_t sz)
 {
@@ -120,11 +133,12 @@ void * MMapAlloc::alloc(size_t sz)
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
                 string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
+                OOMException oom(msg, VESPA_STRLOC);
                 if (_G_SilenceCoreOnOOM) {
-                    LOG(fatal, "Will exit with code 66 due to: %s", msg.c_str());
-                    exit(66);  //OR _exit() ?
+                    SilenceUncaughtException silence(oom);
+                    throw oom;
                 } else {
-                    throw OOMException(msg, VESPA_STRLOC);
+                    throw oom;
                 }
             }
         } else {
