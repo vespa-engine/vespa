@@ -1,39 +1,40 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A hostname with zero or more aliases. This is immutable.
+ * A hostname with zero or more aliases.
  *
  * @author hmusum
  */
 public class Host {
 
     private final String hostname;
-    private final ImmutableList<String> aliases;
+    private final List<String> hostAliases;
 
     public Host(String hostname) {
         this.hostname = hostname;
-        this.aliases = ImmutableList.of();
+        this.hostAliases = new ArrayList<>();
     }
 
     public Host(String hostname, List<String> hostAliases) {
         this.hostname = hostname;
-        this.aliases = ImmutableList.copyOf(hostAliases);
+        this.hostAliases = hostAliases;
     }
 
-    public String hostname() { return hostname; }
+    public String getHostname() {
+        return hostname;
+    }
 
-    /** Returns an immutable list of the aliases of this node, which may be empty but never null */
-    public List<String> aliases() { return aliases; }
+    public List<String> getHostAliases() {
+        return hostAliases;
+    }
 
     @Override
     public String toString() {
-        return hostname + (aliases.size() > 0 ? " (aliases: " + aliases + ")" : "" );
+        return hostname + " (aliases: " + hostAliases + ")";
     }
 
 }

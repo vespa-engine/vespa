@@ -81,7 +81,7 @@ public class ModelProvisioningTest {
                 + " </host>"
                 + "</hosts>";
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(null, services);
-        VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(new StringReader(hosts)), true)));
+        VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.getHosts(new StringReader(hosts)), true)));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().size(), is(3));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getConfigId(), is("mydisc/container.0"));
         assertTrue(model.getContainerClusters().get("mydisc").getContainers().get(0).isInitialized());
