@@ -7,6 +7,7 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.http.v2.SessionActiveHandlerTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -58,7 +59,8 @@ public class InjectedGlobalComponentRegistryTest {
         configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().configServerDBDir(Files.createTempDir().getAbsolutePath()));
         serverDB = new ConfigServerDB(configserverConfig);
         sessionPreparer = new SessionTest.MockSessionPreparer();
-        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), new HostRegistries());
+        rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(), 
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker());
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);

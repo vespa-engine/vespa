@@ -248,6 +248,7 @@ public class NodeSerializer {
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
+            case "requested" : return History.Event.Type.requested;
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
@@ -261,6 +262,7 @@ public class NodeSerializer {
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
+            case requested: return "requested";
         }
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }

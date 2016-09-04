@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -30,13 +31,17 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final DirtyExpirer dirtyExpirer;
 
     @Inject
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, ServiceMonitor serviceMonitor, Zone zone, Orchestrator orchestrator) {
-        this(nodeRepository, deployer, serviceMonitor, zone, Clock.systemUTC(), orchestrator);
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, 
+                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
+                                     Zone zone, Orchestrator orchestrator) {
+        this(nodeRepository, deployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator);
     }
 
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, ServiceMonitor serviceMonitor, Zone zone, Clock clock, Orchestrator orchestrator) {
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, 
+                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
+                                     Zone zone, Clock clock, Orchestrator orchestrator) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
-        nodeFailer = new NodeFailer(deployer, serviceMonitor, nodeRepository, fromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, fromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator);
         applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, fromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, fromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, fromEnv("retired_expiry").orElse(defaults.retiredExpiry));
