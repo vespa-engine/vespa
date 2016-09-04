@@ -11,11 +11,13 @@ import java.util.*;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
  */
 public class HostsXmlProvisionerTest {
+
     private static final String oneHost = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<hosts>\n" +
             "    <host name=\"test1.yahoo.com\">\n" +
@@ -71,6 +73,8 @@ public class HostsXmlProvisionerTest {
         assertThat(map.size(), is(3));
         assertCorrectNumberOfHosts(map, 3);
         assertTrue(map.keySet().containsAll(aliases));
+        
+        assertEquals("test1.yahoo.com,test2.yahoo.com,test3.yahoo.com", System.getProperty("zookeeper.vespa.clients"));
     }
 
     @Test(expected = IllegalArgumentException.class)

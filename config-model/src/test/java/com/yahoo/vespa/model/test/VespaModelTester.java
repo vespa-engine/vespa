@@ -13,9 +13,11 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,11 +50,11 @@ public class VespaModelTester {
     public Hosts addHosts(int count) { return addHosts("default", count); }
     /** Adds some hosts to this system */
     public Hosts addHosts(String flavor, int count) { 
-        Hosts hosts = new Hosts();
+        List<Host> hosts = new ArrayList<>();
         for (int i = 0; i < count; i++)
-            hosts.addHost(new com.yahoo.config.model.provision.Host(flavor + i), Collections.emptyList());
-        this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts.getHosts());
-        return hosts;
+            hosts.add(new com.yahoo.config.model.provision.Host(flavor + i));
+        this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts);
+        return new Hosts(hosts);
     }
 
     /** Creates a model which uses 0 as start index and fails on out of capacity */

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.*;
 import com.yahoo.net.HostName;
@@ -31,7 +30,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        this.hostSpec = new HostSpec(host.getHostname(), host.getHostAliases());
+        this.hostSpec = new HostSpec(host.hostname(), host.aliases());
     }
 
     @Override
@@ -42,7 +41,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) { // TODO: This should fail if capacity requested is more than 1
         List<HostSpec> hosts = new ArrayList<>();
-        hosts.add(new HostSpec(host.getHostname(), host.getHostAliases(), ClusterMembership.from(cluster, counter++)));
+        hosts.add(new HostSpec(host.hostname(), host.aliases(), ClusterMembership.from(cluster, counter++)));
         return hosts;
     }
 

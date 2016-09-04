@@ -178,4 +178,5 @@ public class ConfigserverCluster extends AbstractConfigProducer
     public void getConfig(HealthMonitorConfig.Builder builder) {
         builder.snapshot_interval(60.0);
     }
+
 }
