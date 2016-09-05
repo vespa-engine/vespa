@@ -38,7 +38,7 @@ public class UserConfigBuilder {
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(element);
         log.log(LogLevel.SPAM, "Looking at " + key);
 
-        ConfigDefinition def = getConfigDef(key, configDefinitionStore);
+        ConfigDefinition def = configDefinitionStore.getConfigDefinition(key).orElse(null);
         // TODO: Fail here unless deploying with :force true
         if (def == null) {
             logger.log(LogLevel.WARNING, "Unable to find config definition for config '" + key.getNamespace() + "." + key.getName() +
@@ -59,13 +59,6 @@ public class UserConfigBuilder {
         } else {
             builderMap.put(key, payloadBuilder);
         }
-    }
-
-    /**
-     * Returns the config definition matching the given name, or null if not found.
-     */
-    private static ConfigDefinition getConfigDef(ConfigDefinitionKey configDefinitionKey, ConfigDefinitionStore configDefinitionStore) {
-        return configDefinitionStore.getConfigDefinition(configDefinitionKey).orElse(null);
     }
 
 }
