@@ -133,10 +133,6 @@ public class DeployState implements ConfigDefinitionStore {
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
         log.log(LogLevel.DEBUG, "Getting config definition " + defKey);
-        // Fall back to default namespace if not found.
-        if (defKey.getNamespace() == null || defKey.getNamespace().isEmpty()) {
-            defKey = new ConfigDefinitionKey(defKey.getName(), CNode.DEFAULT_NAMESPACE);
-        }
         ConfigDefinitionKey lookupKey = defKey;
         // Fall back to just using name
         if ( ! existingConfigDefs.containsKey(lookupKey)) {

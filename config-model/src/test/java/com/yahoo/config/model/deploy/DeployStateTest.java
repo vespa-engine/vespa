@@ -78,15 +78,14 @@ public class DeployStateTest {
 
     @Test
     public void testDefinitionRepoIsUsed() {
-        final Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
+        Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("foo", "bar"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("foo", new String[]{"namespace=bar", "foo int default=0"}));
         defs.put(new ConfigDefinitionKey("test2", "a.b"),
-                new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
+                 new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
         DeployState state = createDeployState(app, defs);
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("foo", "bar")));
-        assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("test1", "")));
         ConfigDefinition overridden = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
         assertNotNull(overridden);
         Double defaultValue = overridden.getDoubleDefs().get("doubleVal").getDefVal();
@@ -98,31 +97,17 @@ public class DeployStateTest {
     public void testGetConfigDefinition() {
         Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("test2", "a.b"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
-        defs.put(new ConfigDefinitionKey("test2", "c.d"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=c.d", "doubleVal double default=1.0"}));
+        //defs.put(new ConfigDefinitionKey("test2", "c.d"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=c.d", "doubleVal double default=1.0"}));
         defs.put(new ConfigDefinitionKey("test3", "xyzzy"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test3", new String[]{"namespace=xyzzy", "message string"}));
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
         DeployState state = createDeployState(app, defs);
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")));
 
-        // Should not fallback to using test2 with another namespace
-        try {
-            state.getConfigDefinition(new ConfigDefinitionKey("test2", ""));
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Using config definition 'test2' is ambiguous, there are more than one config definitions with this name, please specify namespace"));
-        }
-
         ConfigDefinition test1 = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
         assertNotNull(test1);
         assertThat(test1.getName(), is("test2"));
         assertThat(test1.getNamespace(), is("a.b"));
-
-        // Should fallback to using test3 with another namespace, since only one exists
-        ConfigDefinition test3 = state.getConfigDefinition(new ConfigDefinitionKey("test3", "")).get();
-        assertNotNull(test3);
-        assertThat(test3.getName(), is("test3"));
-        assertThat(test3.getNamespace(), is("xyzzy"));
     }
 
     @Test
