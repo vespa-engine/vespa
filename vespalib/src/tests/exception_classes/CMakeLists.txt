@@ -19,3 +19,9 @@ vespa_add_executable(vespalib_caught_uncaught_app TEST
     DEPENDS
     vespalib
 )
+vespa_add_executable(vespalib_mmap_app TEST
+    SOURCES
+    mmap.cpp
+    DEPENDS
+    vespalib
+)

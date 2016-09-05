@@ -176,9 +176,11 @@ SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
 
 SilenceUncaughtException::~SilenceUncaughtException()
 {
-    std::set_terminate(_oldTerminate);
-    std::lock_guard<std::mutex> guard(_G_silence_mutex);
-    _G_what = "";
+    if ( ! std::uncaught_exception() ) {
+        std::set_terminate(_oldTerminate);
+        std::lock_guard<std::mutex> guard(_G_silence_mutex);
+        _G_what = "";
+    }
 }
 
 } // namespace vespalib
