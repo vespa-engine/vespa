@@ -1,11 +1,13 @@
 package com.yahoo.searchdefinition;
 
-import com.yahoo.tensor.TensorType;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Iterator;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author gjoranv
@@ -38,10 +40,14 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search s = searchBuilder.getSearch();
-        RankingConstant constant = s.getRankingConstants().iterator().next();
+
+        Iterator<RankingConstant> constantIterator = s.getRankingConstants().iterator();
+        RankingConstant constant = constantIterator.next();
         assertEquals(TENSOR_NAME, constant.getName());
         assertEquals(TENSOR_FILE, constant.getFileName());
         assertEquals(TENSOR_TYPE, constant.getType());
+
+        assertFalse(constantIterator.hasNext());
     }
 
     @Test
