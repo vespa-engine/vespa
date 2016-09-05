@@ -34,7 +34,7 @@ vespalib::string _G_what;
 void silent_terminate() {
     std::lock_guard<std::mutex> guard(_G_silence_mutex);
     LOG(fatal, "Will exit with code 66 due to: %s", _G_what.c_str());
-    exit(66);  //OR _exit() ?
+    std::exit(66);
 }
 
 }
@@ -48,15 +48,9 @@ SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
 
 SilenceUncaughtException::~SilenceUncaughtException()
 {
-    LOG(info, "Reinstating the old handler");
     std::set_terminate(_oldTerminate);
     std::lock_guard<std::mutex> guard(_G_silence_mutex);
     _G_what = "";
-    if ( std::uncaught_exception() ) {
-        LOG(info, "We are not caught");
-    } else {
-        LOG(info, "We are caught");
-    }
 }
 
 vespalib::string
