@@ -1,24 +1,22 @@
 #include <vespa/vespalib/util/exception.h>
 
-using vespalib::SilenceUncaughtException;
-using vespalib::GuardTheTerminationHandler;
+using namespace vespalib;
 
 void throwE() {
-    std::runtime_error e("caught or not");
+    ExceptionWithPayload e("caught or not");
     throw e;
 }
 
 void silenceE() {
-    std::runtime_error e("caught or not");
-    SilenceUncaughtException silenced(e);
+    ExceptionWithPayload e("caught or not");
+    e.setPayload(std::make_unique<SilenceUncaughtException>(e));
     throw e;
 }
 
 void throwAndCatch() {
-    GuardTheTerminationHandler terminationHandlerGuard;
     try {
         silenceE();
-    } catch (const std::exception & e) {
+    } catch (const ExceptionWithPayload & e) {
         printf("caught it\n");
     }
 }

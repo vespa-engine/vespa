@@ -46,7 +46,6 @@ namespace vespalib {
 
 VESPA_DEFINE_EXCEPTION(UnsupportedOperationException, Exception);
 VESPA_DEFINE_EXCEPTION(IllegalArgumentException, Exception);
-VESPA_DEFINE_EXCEPTION(OOMException, Exception);
 VESPA_DEFINE_EXCEPTION(IllegalStateException, Exception);
 VESPA_DEFINE_EXCEPTION(OverflowException, Exception);
 VESPA_DEFINE_EXCEPTION(UnderflowException, Exception);
@@ -57,6 +56,31 @@ VESPA_DEFINE_EXCEPTION(NetworkSetupFailureException, IllegalStateException);
 #endif
 
 //-----------------------------------------------------------------------------
+
+/**
+ * @brief Exception indicating the failure to listen for connections
+ * on a socket.
+ **/
+class ExceptionWithPayload : public std::exception {
+public:
+    class Anything {
+    public:
+       typedef std::unique_ptr<Anything> UP;
+       virtual ~Anything() { }
+    };
+    ExceptionWithPayload(vespalib::stringref msg) : std::exception(), _msg(msg), _payload() { }
+    ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload) : std::exception(), _msg(msg), _payload(std::move(payload)) { }
+    void setPayload(Anything::UP payload) { _payload = std::move(payload); }
+private:
+    vespalib::string _msg;
+    Anything::UP     _payload;
+};
+
+class OOMException : public ExceptionWithPayload {
+public:
+    OOMException(vespalib::stringref msg) : ExceptionWithPayload(msg) { }
+    OOMException(vespalib::stringref msg, Anything::UP payload) : ExceptionWithPayload(msg, std::move(payload)) { }
+};
 
 /**
  * @brief Exception indicating the failure to listen for connections
@@ -113,6 +137,16 @@ public:
 
 private:
     Type _type;
+};
+
+class SilenceUncaughtException : public ExceptionWithPayload::Anything {
+public:
+    SilenceUncaughtException(const SilenceUncaughtException &) = delete;
+    SilenceUncaughtException & operator = (const SilenceUncaughtException &) = delete;
+    SilenceUncaughtException(const std::exception & e);
+    ~SilenceUncaughtException();
+private:
+    std::terminate_handler _oldTerminate;
 };
 
 }

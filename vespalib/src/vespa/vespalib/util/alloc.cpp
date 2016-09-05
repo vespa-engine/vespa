@@ -120,12 +120,12 @@ void * MMapAlloc::alloc(size_t sz)
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
                 string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
-                OOMException oom(msg, VESPA_STRLOC);
                 if (_G_SilenceCoreOnOOM) {
-                    SilenceUncaughtException silence(oom);
+                    OOMException oom(msg);
+                    oom.setPayload(std::make_unique<SilenceUncaughtException>(oom));
                     throw oom;
                 } else {
-                    throw oom;
+                    throw OOMException(msg);
                 }
             }
         } else {

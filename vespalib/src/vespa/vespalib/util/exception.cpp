@@ -4,14 +4,10 @@
 #include <vespa/vespalib/util/exception.h>
 #include <algorithm>
 #include <vespa/fastos/backtrace.h>
-#include <mutex>
 
 #ifdef VESPALIB_EXCEPTION_USEBACKTRACES
 #include <vespa/vespalib/util/backtrace.h>
 #endif
-
-#include <vespa/log/log.h>
-LOG_SETUP(".vespa.exception");
 
 namespace vespalib {
 
@@ -152,50 +148,6 @@ Exception::toString() const
         str.append(getStackTrace(_skipStack, _stack, _stackframes));
     }
     return str;
-}
-
-namespace {
-
-std::mutex _G_silence_mutex;
-vespalib::string _G_what;
-
-void silent_terminate() {
-    std::lock_guard<std::mutex> guard(_G_silence_mutex);
-    LOG(fatal, "Will exit with code 66 due to: %s", _G_what.c_str());
-    exit(66);  //OR _exit() ?
-}
-
-}
-
-SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
-    _oldTerminate(std::set_terminate(silent_terminate))
-{
-    std::lock_guard<std::mutex> guard(_G_silence_mutex);
-    _G_what = e.what();
-}
-
-SilenceUncaughtException::~SilenceUncaughtException()
-{
-    if ( ! std::uncaught_exception() ) {
-        LOG(info, "Reinstating the old handler");
-        std::set_terminate(_oldTerminate);
-        std::lock_guard<std::mutex> guard(_G_silence_mutex);
-        _G_what = "";
-    } else {
-        LOG(info, "We are not caught, ignoring the old handler");
-    }
-}
-
-GuardTheTerminationHandler::GuardTheTerminationHandler() :
-    _oldTerminate(std::set_terminate(silent_terminate))
-{
-}
-
-GuardTheTerminationHandler::~GuardTheTerminationHandler()
-{
-    if (std::get_terminate() != _oldTerminate) {
-        std::set_terminate(_oldTerminate);
-    }
 }
 
 } // namespace vespalib

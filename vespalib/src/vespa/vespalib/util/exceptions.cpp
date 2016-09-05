@@ -4,14 +4,17 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <mutex>
 
 #include <errno.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".vespa.exceptions");
 
 namespace vespalib {
 
 VESPA_IMPLEMENT_EXCEPTION(UnsupportedOperationException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(IllegalArgumentException, Exception);
-VESPA_IMPLEMENT_EXCEPTION(OOMException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(IllegalStateException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(OverflowException, Exception);
 VESPA_IMPLEMENT_EXCEPTION(UnderflowException, Exception);
@@ -22,6 +25,39 @@ VESPA_IMPLEMENT_EXCEPTION_SPINE(PortListenException);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(IoException);
 
 //-----------------------------------------------------------------------------
+
+namespace {
+
+std::mutex _G_silence_mutex;
+vespalib::string _G_what;
+
+void silent_terminate() {
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    LOG(fatal, "Will exit with code 66 due to: %s", _G_what.c_str());
+    exit(66);  //OR _exit() ?
+}
+
+}
+
+SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
+    _oldTerminate(std::set_terminate(silent_terminate))
+{
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    _G_what = e.what();
+}
+
+SilenceUncaughtException::~SilenceUncaughtException()
+{
+    LOG(info, "Reinstating the old handler");
+    std::set_terminate(_oldTerminate);
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    _G_what = "";
+    if ( std::uncaught_exception() ) {
+        LOG(info, "We are not caught");
+    } else {
+        LOG(info, "We are caught");
+    }
+}
 
 vespalib::string
 PortListenException::make_message(int port, const vespalib::stringref &protocol,
