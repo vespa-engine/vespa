@@ -1769,7 +1769,7 @@ void rankingConstant(Search search) :
         {
             constant = new RankingConstant(name);
         }
-      lbrace() (constantItem(constant) (<NL>)*)+ <RBRACE> )
+      lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
     {
         search.addRankingConstant(constant);
     }
@@ -1781,7 +1781,7 @@ void rankingConstant(Search search) :
  * @param constant The constant to modify.
  * @return Null.
  */
-Object constantItem(RankingConstant constant) :
+Object rankingConstantItem(RankingConstant constant) :
 {
     String fileName = null;
     TensorType type = null;
