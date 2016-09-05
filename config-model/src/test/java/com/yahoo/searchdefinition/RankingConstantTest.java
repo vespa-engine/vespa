@@ -39,9 +39,9 @@ public class RankingConstantTest {
                 "}"
         ));
         searchBuilder.build();
-        Search s = searchBuilder.getSearch();
+        Search search = searchBuilder.getSearch();
 
-        Iterator<RankingConstant> constantIterator = s.getRankingConstants().iterator();
+        Iterator<RankingConstant> constantIterator = search.getRankingConstants().iterator();
         RankingConstant constant = constantIterator.next();
         assertEquals(TENSOR_NAME, constant.getName());
         assertEquals(TENSOR_FILE, constant.getFileName());
@@ -96,8 +96,8 @@ public class RankingConstantTest {
                 "}"
         ));
         searchBuilder.build();
-        Search s = searchBuilder.getSearch();
-        RankingConstant constant = s.getRankingConstants().iterator().next();
+        Search search = searchBuilder.getSearch();
+        RankingConstant constant = search.getRankingConstants().iterator().next();
         assertEquals("simplename", constant.getFileName());
     }
 
