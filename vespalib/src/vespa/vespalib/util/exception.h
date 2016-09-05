@@ -243,6 +243,16 @@ private:
     std::terminate_handler _oldTerminate;
 };
 
+class GuardTheTerminationHandler {
+public:
+    GuardTheTerminationHandler(const GuardTheTerminationHandler &) = delete;
+    GuardTheTerminationHandler & operator = (const GuardTheTerminationHandler &) = delete;
+    GuardTheTerminationHandler();
+    ~GuardTheTerminationHandler();
+private:
+    std::terminate_handler _oldTerminate;
+};
+
 
 } // namespace vespalib
 

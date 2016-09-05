@@ -17,6 +17,12 @@ TEST("that uncaught silenced exception causes exitcode 66") {
     EXPECT_EQUAL(proc.getExitCode(), 66);
 }
 
+TEST("that caught silenced exception followed by an uncaught causes exitcode 0") {
+    SlaveProc proc("./vespalib_caught_uncaught_app uncaught_after_silenced_and_caught");
+    proc.wait();
+    EXPECT_LESS(proc.getExitCode(), 0);
+}
+
 TEST("that caught silenced exception causes exitcode 0") {
     SlaveProc proc("./vespalib_caught_uncaught_app silenced_and_caught");
     proc.wait();

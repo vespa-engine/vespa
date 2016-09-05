@@ -177,9 +177,24 @@ SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
 SilenceUncaughtException::~SilenceUncaughtException()
 {
     if ( ! std::uncaught_exception() ) {
+        LOG(info, "Reinstating the old handler");
         std::set_terminate(_oldTerminate);
         std::lock_guard<std::mutex> guard(_G_silence_mutex);
         _G_what = "";
+    } else {
+        LOG(info, "We are not caught, ignoring the old handler");
+    }
+}
+
+GuardTheTerminationHandler::GuardTheTerminationHandler() :
+    _oldTerminate(std::set_terminate(silent_terminate))
+{
+}
+
+GuardTheTerminationHandler::~GuardTheTerminationHandler()
+{
+    if (std::get_terminate() != _oldTerminate) {
+        std::set_terminate(_oldTerminate);
     }
 }
 
