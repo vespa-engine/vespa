@@ -32,12 +32,13 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageCluster> {
         @Override
         protected StorageCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-            ModelElement clusterElem = new ModelElement(producerSpec);
+            final ModelElement clusterElem = new ModelElement(producerSpec);
+            final ContentCluster cluster = (ContentCluster)ancestor;
 
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterName(clusterElem),
-                                      new FileStorProducer.Builder().build(((ContentCluster)ancestor), clusterElem),
-                                      new IntegrityCheckerProducer.Builder().build(clusterElem),
+                                      new FileStorProducer.Builder().build(cluster, clusterElem),
+                                      new IntegrityCheckerProducer.Builder().build(cluster, clusterElem),
                                       new StorServerProducer.Builder().build(clusterElem),
                                       new StorVisitorProducer.Builder().build(clusterElem),
                                       new PersistenceProducer.Builder().build(clusterElem));
