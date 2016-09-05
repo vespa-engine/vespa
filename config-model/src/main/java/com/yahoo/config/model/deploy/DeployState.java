@@ -135,6 +135,7 @@ public class DeployState implements ConfigDefinitionStore {
         log.log(LogLevel.DEBUG, "Getting config definition " + defKey);
         ConfigDefinitionKey lookupKey = defKey;
         // Fall back to just using name
+        /*
         if ( ! existingConfigDefs.containsKey(lookupKey)) {
 
             int count = 0;
@@ -158,6 +159,9 @@ public class DeployState implements ConfigDefinitionStore {
                 }
             }
         }
+        */
+        if ( ! existingConfigDefs.containsKey(lookupKey))
+            lookupKey = null;
 
         if (lookupKey == null) {
             throw new IllegalArgumentException("Could not find a config definition with name '" + defKey + "'.");

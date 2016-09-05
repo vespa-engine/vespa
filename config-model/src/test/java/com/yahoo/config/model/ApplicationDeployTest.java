@@ -344,7 +344,7 @@ public class ApplicationDeployTest {
         ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", CNode.DEFAULT_NAMESPACE)).get();
         assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
 
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", CNode.DEFAULT_NAMESPACE)).get();
+        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", "xyzzy")).get();
         assertThat(def.getNamespace(), is("xyzzy"));
 
         def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", "qux")).get();
