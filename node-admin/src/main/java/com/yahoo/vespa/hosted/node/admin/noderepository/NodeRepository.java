@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.noderepository;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 
 import java.io.IOException;
 import java.util.List;

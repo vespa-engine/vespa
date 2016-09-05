@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

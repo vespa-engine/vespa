@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.Container;
-import com.yahoo.vespa.hosted.node.admin.docker.Docker;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -129,6 +129,7 @@ public class NodeAdminImpl implements NodeAdmin {
         // Delete images that have been eligible for some time.
         firstTimeEligibleForGC.forEach((dockerImage, timestamp) -> {
             if (currentTime - timestamp > MIN_AGE_IMAGE_GC_MILLIS) {
+                logger.info("Deleting Docker image " + dockerImage);
                 docker.deleteImage(dockerImage);
             }
         });

@@ -2,8 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
@@ -12,12 +13,12 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -165,7 +166,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
-        dockerOperations.executeResume(nodeSpec.containerName);//, RESUME_NODE_COMMAND);
+        dockerOperations.executeResume(nodeSpec.containerName);
         containerState = RUNNING;
     }
 
@@ -176,6 +177,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.wantedRestartGeneration.get(),
                 nodeSpec.wantedDockerImage.get(),
                 containerVespaVersion);
+        // TODO: We should only update if the new current values match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
                     + lastAttributesSet + " -> " + currentAttributes);

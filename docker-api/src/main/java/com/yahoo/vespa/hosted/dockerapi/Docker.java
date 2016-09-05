@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.docker;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
@@ -10,11 +10,24 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * @author stiankri
+ * API to simplify the com.github.dockerjava API for clients,
+ * and to avoid OSGi exporting those classes.
  */
 public interface Docker {
+    interface StartContainerCommand {
+        StartContainerCommand withLabel(String name, String value);
+        StartContainerCommand withEnvironment(String name, String value);
+        StartContainerCommand withVolume(String path, String volumePath);
+        StartContainerCommand withMemoryInMb(long megaBytes);
+        StartContainerCommand withNetworkMode(String mode);
+        StartContainerCommand withIpv6Address(String address);
+        void start();
+    }
 
-    void startContainer(DockerImage dockerImage, HostName hostName, ContainerName containerName, InetAddress nodeInetAddress, double minCpuCores, double minDiskAvailableGb, double minMainMemoryAvailableGb);
+    StartContainerCommand createStartContainerCommand(
+            DockerImage dockerImage,
+            ContainerName containerName,
+            HostName hostName);
 
     void stopContainer(ContainerName containerName);
 
@@ -27,8 +40,6 @@ public interface Docker {
     CompletableFuture<DockerImage> pullImageAsync(DockerImage image);
 
     boolean imageIsDownloaded(DockerImage image);
-
-    String getVespaVersion(ContainerName containerName);
 
     void deleteImage(DockerImage dockerImage);
 
@@ -44,4 +55,11 @@ public interface Docker {
      * @throws RuntimeException  (or some subclass thereof) on failure, including docker failure, command failure
      */
     ProcessResult executeInContainer(ContainerName containerName, String... args);
+
+    interface ContainerInfo {
+        /** returns Optional.empty() if not running. */
+        Optional<Integer> getPid();
+    }
+
+    ContainerInfo inspectContainer(ContainerName containerName);
 }

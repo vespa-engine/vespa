@@ -6,9 +6,9 @@
       <binding>http://*/rest/*</binding>
     </handler>
     <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
-    <component id="docker" class="com.yahoo.vespa.hosted.node.admin.docker.DockerImpl" bundle="node-admin"/>
+    <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
 
-    <config name='nodeadmin.docker.docker'>
+    <config name='vespa.hosted.dockerapi.docker'>
       <caCertPath>/host/docker/certs/ca_cert.pem</caCertPath>
       <clientCertPath>/host/docker/certs/client_cert.pem</clientCertPath>
       <clientKeyPath>/host/docker/certs/client_key.pem</clientKeyPath>

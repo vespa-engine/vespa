@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.docker;
+package com.yahoo.vespa.hosted.dockerapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,10 +12,8 @@ import com.github.dockerjava.api.command.InspectExecCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.command.ListImagesCmd;
-import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import com.yahoo.vespa.defaults.Defaults;
 import org.junit.Test;
 import org.mockito.Matchers;
 
@@ -24,64 +22,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author tonytv
  */
 public class DockerImplTest {
-    @Test
-    public void data_directories_are_mounted_in_from_the_host() {
-        List<Bind> binds = DockerImpl.applicationStorageToMount(new ContainerName("my-container"));
-
-        String dataDirectory = Defaults.getDefaults().vespaHome() + "logs";
-        String directoryOnHost = "/home/docker/container-storage/my-container" + dataDirectory;
-        assertThat(binds, hasItem(Bind.parse(directoryOnHost + ":" + dataDirectory)));
-    }
-
-    @Test
-    public void vespaVersionIsParsed() {
-        assertThat(DockerImpl.parseVespaVersion("5.119.53"), is(Optional.of("5.119.53")));
-    }
-
-    @Test
-    public void vespaVersionIsParsedWithSpacesAndNewlines() {
-        assertThat(DockerImpl.parseVespaVersion("5.119.53\n"), is(Optional.of("5.119.53")));
-        assertThat(DockerImpl.parseVespaVersion(" 5.119.53 \n"), is(Optional.of("5.119.53")));
-        assertThat(DockerImpl.parseVespaVersion("\n 5.119.53 \n"), is(Optional.of("5.119.53")));
-    }
-
-    @Test
-    public void vespaVersionIsParsedWithIrregularVersionScheme() {
-        assertThat(DockerImpl.parseVespaVersion("7.2"), is(Optional.of("7.2")));
-        assertThat(DockerImpl.parseVespaVersion("8.0-beta"), is(Optional.of("8.0-beta")));
-        assertThat(DockerImpl.parseVespaVersion("foo"), is(Optional.of("foo")));
-        assertThat(DockerImpl.parseVespaVersion("119"), is(Optional.of("119")));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromNull() {
-        assertThat(DockerImpl.parseVespaVersion(null), is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromEmptyString() {
-        assertThat(DockerImpl.parseVespaVersion(""), is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromUnexpectedContent() {
-        assertThat(DockerImpl.parseVespaVersion("No such command 'vespanodectl'"), is(Optional.empty()));
-    }
-
     @Test
     public void testExecuteCompletes() throws Exception {
         final String containerId = "container-id";

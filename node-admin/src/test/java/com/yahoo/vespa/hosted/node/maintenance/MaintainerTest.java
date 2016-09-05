@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.maintenance;
 
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
