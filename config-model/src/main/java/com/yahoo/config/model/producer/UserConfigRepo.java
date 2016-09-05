@@ -94,16 +94,4 @@ public class UserConfigRepo {
         return userConfigsMap.keySet();
     }
 
-    /**
-     * Will take the warning messages stored on the payload builders, and apply them to the producer's {@link DeployLogger}
-     * @param producer the producer to apply warnings to
-     */
-    public void applyWarnings(AbstractConfigProducer<?> producer) {
-        for (ConfigPayloadBuilder b : userConfigsMap.values()) {
-            for (String warning : b.warnings()) {
-                producer.deployLogger().log(LogLevel.WARNING, warning);
-            }
-        }
-    }
-    
 }

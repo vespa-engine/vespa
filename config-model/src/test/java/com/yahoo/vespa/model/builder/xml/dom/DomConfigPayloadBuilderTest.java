@@ -35,7 +35,7 @@ public class DomConfigPayloadBuilderTest {
     @Test
     public void testFunctionTest_DefaultValues() throws FileNotFoundException, ParserConfigurationException {
         Element configRoot = getDocument(new FileReader(new File("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml")));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<>()));
+        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         String expected = ""
                 + "{"
                 + "\"bool_val\":\"false\","
@@ -72,7 +72,7 @@ public class DomConfigPayloadBuilderTest {
     @Test
     public void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
         Element configRoot = getDocument(new FileReader(new File("src/test/cfg/admin/userconfigs/whitespace-test.xml")));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", config);
     }
 
@@ -85,7 +85,7 @@ public class DomConfigPayloadBuilderTest {
                 "    <item key=\"foo\">1337</item>" +
                 "  </intmap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig), new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"intmap\":{\"bar\":\"1338\",\"foo\":\"1337\"}}", userConfig);
     }
 
@@ -102,7 +102,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </item>" +
                 "  </innermap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig), new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"innermap\":{\"bar\":{\"foo\":\"baz\"},\"foo\":{\"foo\":\"bar\"}}}", userConfig);
     }
 
@@ -125,7 +125,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </item>" +
                 "  </nestedmap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig), new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"nestedmap\":{" +
                 "\"bar\":{\"inner\":{\"bar1\":\"30\",\"bar2\":\"40\"}}," +
                 "\"foo\":{\"inner\":{\"foo1\":\"10\",\"foo2\":\"20\"}}}}", userConfig);
@@ -139,7 +139,7 @@ public class DomConfigPayloadBuilderTest {
                 "  <intarr operation=\"append\">1</intarr>" +
                 "  <intarr operation=\"append\">2</intarr>" +
                 "</config> ");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig), new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"intarr\":[\"1\",\"2\"]}", userConfig);
     }
 
@@ -149,7 +149,7 @@ public class DomConfigPayloadBuilderTest {
                 "<config name=\"function-test\">" +
                 "  <some-struct> <any-value>17</any-value> </some-struct>" +
                 "</config> ");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig), new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"someStruct\":{\"anyValue\":\"17\"}}", userConfig);
     }
 
@@ -158,7 +158,7 @@ public class DomConfigPayloadBuilderTest {
     public void testFailWrongTagName()  throws FileNotFoundException, ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<configs name=\"foo\"/>"));
         try {
-            new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>());
+            new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for wrong tag name.");
         } catch (ConfigurationRuntimeException e) {
             assertThat(e.getMessage(),
@@ -171,7 +171,7 @@ public class DomConfigPayloadBuilderTest {
     public void testFailNoNameAttribute()  throws FileNotFoundException, ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config/>"));
         try {
-            new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>());
+            new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for mismatch between def-name and xml name attribute.");
         } catch (ConfigurationRuntimeException e) {
             assertThat(e.getMessage(),
@@ -184,19 +184,19 @@ public class DomConfigPayloadBuilderTest {
         Element configRoot = getDocument(new StringReader("<config name=\"function-test\" namespace=\"config\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"int_val\":\"1\"}", config);
 
         configRoot = getDocument(new StringReader("<config name=\"config.function-test\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
-        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"int_val\":\"1\"}", config);
 
         configRoot = getDocument(new StringReader("<config name=\"config.function_test\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
-        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"int_val\":\"1\"}", config);
     }
 
@@ -252,7 +252,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </intarr>" +
                 "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"intarr\":[\"13\",\"10\",\"1337\"]}", userConfig);
     }
 
@@ -267,7 +267,7 @@ public class DomConfigPayloadBuilderTest {
                         "    </lolarray>" +
                         "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"lolarray\":[{\"foo\":\"hei\",\"bar\":\"hei2\"},{\"foo\":\"hoo\",\"bar\":\"hoo2\"},{\"foo\":\"happ\",\"bar\":\"happ2\"}]}",
                       userConfig);
     }
@@ -283,7 +283,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </lolarray>" +
                 "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>()));
+        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"lolarray\":[{\"fooarray\":[\"13\"]},{\"fooarray\":[\"10\"]},{\"fooarray\":[\"1337\"]}]}", userConfig);
     }
 
@@ -293,7 +293,7 @@ public class DomConfigPayloadBuilderTest {
                 "<config name=\"arraytypes\" version=\"1\">" +
                 "    <item>13</item>" +
                 "</config>");
-        new DomConfigPayloadBuilder(null).build(configRoot, new ArrayList<String>());
+        new DomConfigPayloadBuilder(null).build(configRoot);
     }
 
     @Test(expected=ConfigurationRuntimeException.class)
@@ -305,7 +305,7 @@ public class DomConfigPayloadBuilderTest {
         DefParser defParser = new DefParser("simpletypes",
                 new FileReader(new File("src/test/resources/configdefinitions/simpletypes.def")));
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
-        ConfigPayloadBuilder builder =  new DomConfigPayloadBuilder(def).build(configRoot, new ArrayList<String>());
+        ConfigPayloadBuilder builder =  new DomConfigPayloadBuilder(def).build(configRoot);
         //assertThat(builder.warnings().size(), is(1));
     }
 

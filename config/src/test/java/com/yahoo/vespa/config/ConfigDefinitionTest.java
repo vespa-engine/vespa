@@ -153,56 +153,54 @@ public class ConfigDefinitionTest {
 
         def.structDef("struct");
 
-        assertVerify(def, "boolval", "true", 0);
-        assertVerify(def, "boolval", "false", 0);
+        assertVerify(def, "boolval", "true");
+        assertVerify(def, "boolval", "false");
         assertVerify(def, "boolval", "invalid", IllegalArgumentException.class);
 
 
-        assertVerify(def, "stringval", "foobar", 0);
-        assertVerify(def, "stringval", "foobar", 0);
-        assertVerify(def, "intval", "123", 0);
+        assertVerify(def, "stringval", "foobar");
+        assertVerify(def, "stringval", "foobar");
+        assertVerify(def, "intval", "123");
         assertVerify(def, "intval", "foobar", IllegalArgumentException.class);
-        assertVerify(def, "longval", "1234", 0);
+        assertVerify(def, "longval", "1234");
         assertVerify(def, "longval", "foobar", IllegalArgumentException.class);
         assertVerify(def, "doubleval", "foobar", IllegalArgumentException.class);
-        assertVerify(def, "doubleval", "3", 0);
-        assertVerify(def, "doubleval", "3.14", 0);
+        assertVerify(def, "doubleval", "3");
+        assertVerify(def, "doubleval", "3.14");
         assertVerify(def, "enumval", "foobar", IllegalArgumentException.class);
         assertVerify(def, "enumval", "foo", IllegalArgumentException.class);
-        assertVerify(def, "enumval", "FOO", 0);
-        assertVerify(def, "refval", "foobar", 0);
-        assertVerify(def, "fileval", "foobar", 0);
+        assertVerify(def, "enumval", "FOO");
+        assertVerify(def, "refval", "foobar");
+        assertVerify(def, "fileval", "foobar");
 
-        assertVerifyComplex(def, "innerarr", 0);
-        assertVerifyComplex(def, "leafmap", 0);
-        assertVerifyComplex(def, "intArray", 0);
-        assertVerifyComplex(def, "longArray", 0);
-        assertVerifyComplex(def, "doubleArray", 0);
-        assertVerifyComplex(def, "enumArray", 0);
-        assertVerifyComplex(def, "stringArray", 0);
-        assertVerifyArray(intArray, "1345", 0, 0);
+        assertVerifyComplex(def, "innerarr");
+        assertVerifyComplex(def, "leafmap");
+        assertVerifyComplex(def, "intArray");
+        assertVerifyComplex(def, "longArray");
+        assertVerifyComplex(def, "doubleArray");
+        assertVerifyComplex(def, "enumArray");
+        assertVerifyComplex(def, "stringArray");
+        assertVerifyArray(intArray, "1345", 0);
         assertVerifyArray(intArray, "invalid", 0, IllegalArgumentException.class);
-        assertVerifyArray(longArray, "1345", 0, 0);
+        assertVerifyArray(longArray, "1345", 0);
         assertVerifyArray(longArray, "invalid", 0, IllegalArgumentException.class);
-        assertVerifyArray(doubleArray, "1345", 0, 0);
-        assertVerifyArray(doubleArray, "1345.3", 0, 0);
+        assertVerifyArray(doubleArray, "1345", 0);
+        assertVerifyArray(doubleArray, "1345.3", 0);
         assertVerifyArray(doubleArray, "invalid", 0, IllegalArgumentException.class);
         assertVerifyArray(enumArray, "valid", 0, IllegalArgumentException.class);
-        assertVerifyArray(enumArray, "VALID", 0, 0);
+        assertVerifyArray(enumArray, "VALID", 0);
         assertVerifyArray(enumArray, "inVALID", 0, IllegalArgumentException.class);
-        assertVerifyArray(stringArray, "VALID", 0, 0);
-        assertVerifyComplex(def, "struct", 0);
+        assertVerifyArray(stringArray, "VALID", 0);
+        assertVerifyComplex(def, "struct");
     }
 
-    private void assertVerifyArray(ConfigDefinition.ArrayDef def, String val, int index, int expectedNumWarnings) {
-        List<String> issuedWarnings = new ArrayList<>();
-        def.verify(val, index, issuedWarnings);
-        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    private void assertVerifyArray(ConfigDefinition.ArrayDef def, String val, int index) {
+        def.verify(val, index);
     }
 
     private void assertVerifyArray(ConfigDefinition.ArrayDef def, String val, int index, Class<?> expectedException) {
         try {
-            def.verify(val, index, new ArrayList<String>());
+            def.verify(val, index);
         } catch (Exception e) {
             if (!(e.getClass().isAssignableFrom(expectedException))) {
                 throw e;
@@ -210,15 +208,13 @@ public class ConfigDefinitionTest {
         }
     }
 
-    private void assertVerify(ConfigDefinition def, String id, String val, int expectedNumWarnings) {
-        List<String> issuedWarnings = new ArrayList<>();
-        def.verify(id, val, issuedWarnings);
-        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    private void assertVerify(ConfigDefinition def, String id, String val) {
+        def.verify(id, val);
     }
 
     private void assertVerify(ConfigDefinition def, String id, String val, Class<?> expectedException) {
         try {
-            def.verify(id, val, new ArrayList<String>());
+            def.verify(id, val);
         } catch (Exception e) {
             if (!(e.getClass().isAssignableFrom(expectedException))) {
                 throw e;
@@ -226,9 +222,8 @@ public class ConfigDefinitionTest {
         }
     }
 
-    private void assertVerifyComplex(ConfigDefinition def, String id, int expectedNumWarnings) {
-        List<String> issuedWarnings = new ArrayList<>();
-        def.verify(id, issuedWarnings);
-        assertThat(issuedWarnings.size(), is(expectedNumWarnings));
+    private void assertVerifyComplex(ConfigDefinition def, String id) {
+        def.verify(id);
     }
+
 }

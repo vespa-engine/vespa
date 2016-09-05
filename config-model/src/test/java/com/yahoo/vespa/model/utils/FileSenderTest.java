@@ -42,7 +42,7 @@ public class FileSenderTest {
         serviceList.add(service);
         ConfigDefinitionKey key = new ConfigDefinitionKey("myname", "mynamespace");
         def = new ConfigDefinition("myname", "1", "mynamespace");
-        builder = new ConfigPayloadBuilder(def, new ArrayList<String>());
+        builder = new ConfigPayloadBuilder(def);
         Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new HashMap<>();
         builderMap.put(key, builder);
         UserConfigRepo testRepo = new UserConfigRepo(builderMap);

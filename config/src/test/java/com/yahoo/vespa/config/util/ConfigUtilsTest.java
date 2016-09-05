@@ -206,13 +206,8 @@ public class ConfigUtilsTest {
 
     @Test
     public void testGetConfigDefinitionKey() {
-        String input = "foo";
+        String input = "foo.bar";
         ConfigDefinitionKey def = ConfigUtils.getConfigDefinitionKeyFromString(input);
-        assertThat(def.getName(), is("foo"));
-        assertThat(def.getNamespace(), is(""));
-
-        input = "foo.bar";
-        def = ConfigUtils.getConfigDefinitionKeyFromString(input);
         assertThat(def.getName(), is("bar"));
         assertThat(def.getNamespace(), is("foo"));
 
@@ -225,22 +220,12 @@ public class ConfigUtilsTest {
         def = ConfigUtils.getConfigDefinitionKeyFromString(input);
         assertThat(def.getName(), is("qux"));
         assertThat(def.getNamespace(), is("foo.bar"));
-
-        input = "foo.2";
-        def = ConfigUtils.getConfigDefinitionKeyFromString(input);
-        assertThat(def.getName(), is("foo"));
-        assertThat(def.getNamespace(), is(""));
     }
 
     @Test
     public void testCreateConfigDefinitionKeyFromZKString() {
-        String input = "foo,1";
+        String input = "bar.foo,1";
         ConfigDefinitionKey def = ConfigUtils.createConfigDefinitionKeyFromZKString(input);
-        assertThat(def.getName(), is("foo"));
-        assertThat(def.getNamespace(), is(""));
-
-        input = "bar.foo,1";
-        def = ConfigUtils.createConfigDefinitionKeyFromZKString(input);
         assertThat(def.getName(), is("foo"));
         assertThat(def.getNamespace(), is("bar"));
     }

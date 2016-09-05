@@ -43,13 +43,12 @@ public class DomConfigPayloadBuilder {
      * Builds a {@link ConfigPayloadBuilder} representing the input 'config' xml element.
      *
      * @param configE        The 'config' xml element
-     * @param issuedWarnings a list that will be populated with issued warnings when building the config payload
      * @return a new payload builder built from xml.
      */
-    public ConfigPayloadBuilder build(Element configE, List<String> issuedWarnings) {
+    public ConfigPayloadBuilder build(Element configE) {
         parseConfigName(configE);
 
-        ConfigPayloadBuilder payloadBuilder = new ConfigPayloadBuilder(configDefinition, issuedWarnings);
+        ConfigPayloadBuilder payloadBuilder = new ConfigPayloadBuilder(configDefinition);
         for (Element child : XML.getChildren(configE)) {
             parseElement(child, payloadBuilder, null);
         }

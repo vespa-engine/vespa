@@ -21,17 +21,16 @@ public class ConfigPayloadBuilder {
     private final Map<String, Array> arrayMap;
     private final Map<String, MapBuilder> mapBuilderMap;
     private final ConfigDefinition configDefinition;
-    private List<String> warnings = new ArrayList<>();
 
     /**
      * Construct a payload builder that is not a leaf.
      */
     public ConfigPayloadBuilder() {
-        this(null, null, null);
+        this(null, null);
     }
 
-    public ConfigPayloadBuilder(ConfigDefinition configDefinition, List<String> warnings) {
-        this(configDefinition, null, warnings);
+    public ConfigPayloadBuilder(ConfigDefinition configDefinition) {
+        this(configDefinition, null);
     }
 
     /**
@@ -39,17 +38,16 @@ public class ConfigPayloadBuilder {
      *
      * @param value The value of this leaf.
      */
-    private ConfigPayloadBuilder(String value, List<String> warnings) {
-        this(null, value, warnings);
+    private ConfigPayloadBuilder(String value) {
+        this(null, value);
     }
 
-    private ConfigPayloadBuilder(ConfigDefinition configDefinition, String value, List<String> warnings) {
+    private ConfigPayloadBuilder(ConfigDefinition configDefinition, String value) {
         this.objectMap = new LinkedHashMap<>();
         this.arrayMap = new LinkedHashMap<>();
         this.mapBuilderMap = new LinkedHashMap<>();
         this.value = value;
         this.configDefinition = configDefinition;
-        this.warnings=warnings;
     }
 
     /**
@@ -59,13 +57,13 @@ public class ConfigPayloadBuilder {
      * @param value Value of the config field.
      */
     public void setField(String name, String value) {
-        validateField(name, value, warnings);
-        objectMap.put(name, new ConfigPayloadBuilder(value, warnings));
+        validateField(name, value);
+        objectMap.put(name, new ConfigPayloadBuilder(value));
     }
 
-    private void validateField(String name, String value, List<String> warnings) {
+    private void validateField(String name, String value) {
         if (configDefinition != null) {
-            configDefinition.verify(name, value, warnings);
+            configDefinition.verify(name, value);
         }
     }
 
@@ -78,8 +76,8 @@ public class ConfigPayloadBuilder {
     public ConfigPayloadBuilder getObject(String name) {
         ConfigPayloadBuilder p = objectMap.get(name);
         if (p == null) {
-            validateObject(name, warnings);
-            p = new ConfigPayloadBuilder(getStructDef(name), warnings);
+            validateObject(name);
+            p = new ConfigPayloadBuilder(getStructDef(name));
             objectMap.put(name, p);
         }
         return p;
@@ -89,9 +87,9 @@ public class ConfigPayloadBuilder {
         return (configDefinition == null ? null : configDefinition.getStructDefs().get(name));
     }
 
-    private void validateObject(String name, List<String> warnings) {
+    private void validateObject(String name) {
         if (configDefinition != null) {
-            configDefinition.verify(name, warnings);
+            configDefinition.verify(name);
         }
     }
 
@@ -104,16 +102,16 @@ public class ConfigPayloadBuilder {
     public Array getArray(String name) {
         Array a = arrayMap.get(name);
         if (a == null) {
-            validateArray(name, warnings);
+            validateArray(name);
             a = new Array(configDefinition, name);
             arrayMap.put(name, a);
         }
         return a;
     }
 
-    private void validateArray(String name, List<String> warnings) {
+    private void validateArray(String name) {
         if (configDefinition != null) {
-            configDefinition.verify(name, warnings);
+            configDefinition.verify(name);
         }
     }
 
@@ -194,24 +192,16 @@ public class ConfigPayloadBuilder {
     public MapBuilder getMap(String name) {
         MapBuilder a = mapBuilderMap.get(name);
         if (a == null) {
-            validateMap(name, warnings);
+            validateMap(name);
             a = new MapBuilder(configDefinition, name);
             mapBuilderMap.put(name, a);
         }
         return a;
     }
 
-    /**
-     * The definition warnings issued for this payload
-     * @return list of warnings
-     */
-    public List<String> warnings() {
-        return warnings;
-    }
-
-    private void validateMap(String name, List<String> warnings) {
+    private void validateMap(String name) {
         if (configDefinition != null) {
-            configDefinition.verify(name, warnings);
+            configDefinition.verify(name);
         }
     }
 
@@ -229,11 +219,11 @@ public class ConfigPayloadBuilder {
         }
 
         public void put(String key, String value) {
-            elements.put(key, new ConfigPayloadBuilder(getLeafMapDef(name), value, warnings));
+            elements.put(key, new ConfigPayloadBuilder(getLeafMapDef(name), value));
         }
 
         public ConfigPayloadBuilder put(String key) {
-            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getStructMapDef(name), warnings);
+            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getStructMapDef(name));
             elements.put(key, p);
             return p;
         }
@@ -308,13 +298,13 @@ public class ConfigPayloadBuilder {
         public void append(String value) {
             setAppend();
             validateArrayElement(getArrayDef(name), value, elements.size());
-            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getArrayDef(name), value, warnings);
+            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getArrayDef(name), value);
             elements.put(elements.size(), p);
         }
 
         private void validateArrayElement(ConfigDefinition.ArrayDef arrayDef, String value, int index) {
             if (arrayDef != null) {
-                arrayDef.verify(value, index, warnings);
+                arrayDef.verify(value, index);
             }
         }
 
@@ -338,7 +328,7 @@ public class ConfigPayloadBuilder {
          */
         public ConfigPayloadBuilder append() {
             setAppend();
-            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getInnerArrayDef(name), warnings);
+            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getInnerArrayDef(name));
             elements.put(elements.size(), p);
             return p;
         }
@@ -351,7 +341,7 @@ public class ConfigPayloadBuilder {
          */
         public void set(int index, String value) {
             verifyIndex();
-            ConfigPayloadBuilder p = new ConfigPayloadBuilder(value, warnings);
+            ConfigPayloadBuilder p = new ConfigPayloadBuilder(value);
             elements.put(index, p);
         }
 
@@ -364,7 +354,7 @@ public class ConfigPayloadBuilder {
          */
         public ConfigPayloadBuilder set(int index) {
             verifyIndex();
-            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getInnerArrayDef(name), warnings);
+            ConfigPayloadBuilder p = new ConfigPayloadBuilder(getInnerArrayDef(name));
             elements.put(index, p);
             return p;
         }
@@ -435,7 +425,6 @@ public class ConfigPayloadBuilder {
         this.value = other.value;
         this.objectMap = other.objectMap;
         this.configDefinition = other.configDefinition;
-        this.warnings = other.warnings;
     }
 
     public ConfigPayloadBuilder(ConfigPayload payload) {

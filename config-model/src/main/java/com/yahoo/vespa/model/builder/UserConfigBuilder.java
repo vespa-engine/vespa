@@ -39,16 +39,11 @@ public class UserConfigBuilder {
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(element);
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
-        // TODO: Fail here unless deploying with :force true
-        if ( ! def.isPresent()) {
+        if ( ! def.isPresent()) { // TODO: Fail instead of warn
             logger.log(LogLevel.WARNING, "Unable to find config definition for config '" + key +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
-        List<String> issuedWarnings = new ArrayList<>();
-        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element, issuedWarnings);
-        for (String warning : issuedWarnings)
-            logger.log(LogLevel.WARNING, warning);
-
+        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);
         ConfigPayloadBuilder old = builderMap.get(key);
         if (old != null) {
             logger.log(LogLevel.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");

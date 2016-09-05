@@ -18,11 +18,11 @@ public class ConfigDefinitionKeyTest {
 
     @Test
     public void testBasic() {
-        ConfigDefinitionKey def1 = new ConfigDefinitionKey("foo", "");
+        ConfigDefinitionKey def1 = new ConfigDefinitionKey("foo", "fuz");
         ConfigDefinitionKey def2 = new ConfigDefinitionKey("foo", "bar");
 
         assertThat(def1.getName(), is("foo"));
-        assertThat(def1.getNamespace(), is(""));
+        assertThat(def1.getNamespace(), is("fuz"));
 
         assertTrue(def1.equals(def1));
         assertFalse(def1.equals(def2));

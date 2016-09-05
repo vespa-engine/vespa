@@ -40,7 +40,7 @@ public class ConfigPayloadBuilderTest {
         def.arrayDef("myarray").setTypeSpec(new ConfigDefinition.TypeSpec("myarray", "int", null, null, null, null));
         ConfigDefinition myinnerarray = def.innerArrayDef("myinnerarray");
         myinnerarray.addIntDef("foo");
-        builderWithDef = new ConfigPayloadBuilder(def, new ArrayList<String>());
+        builderWithDef = new ConfigPayloadBuilder(def);
     }
 
     @Test
@@ -274,90 +274,71 @@ public class ConfigPayloadBuilderTest {
     @Test(expected=IllegalArgumentException.class)
     public void require_that_values_are_verified_against_def() {
         builderWithDef.setField("boolval", "true");
-        assertThat(builderWithDef.warnings().size(), is(0));
         builderWithDef.setField("boolval", "invalid");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_arrays_must_exist() {
         builderWithDef.getArray("arraydoesnotexist");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_structs_must_exist() {
         builderWithDef.getObject("structdoesnotexist");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_definition_is_passed_to_childstruct() {
         ConfigPayloadBuilder nestedStruct = builderWithDef.getObject("mystruct");
-        assertThat(builderWithDef.warnings().size(), is(0));
         nestedStruct.setField("doesnotexit", "foo");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_definition_is_passed_to_childstruct_but_invalid_field_will_throw() {
         ConfigPayloadBuilder nestedStruct = builderWithDef.getObject("mystruct");
         nestedStruct.setField("foofield", "invalid");
-        //assertThat(builderWithDef.warnings().size(), is(2));
     }
 
     @Test
     public void require_that_definition_is_passed_to_childarray() {
         ConfigPayloadBuilder.Array nestedArray = builderWithDef.getArray("myarray");
-        assertThat(builderWithDef.warnings().size(), is(0));
         nestedArray.append("1337");
-        assertThat(builderWithDef.warnings().size(), is(0));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_definition_is_passed_to_childarray_but_invalid_field_will_throw() {
         ConfigPayloadBuilder.Array nestedArray = builderWithDef.getArray("myarray");
         nestedArray.append("invalid");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test
     public void require_that_definition_is_passed_to_inner_array_with_append() {
         ConfigPayloadBuilder.Array innerArray = builderWithDef.getArray("myinnerarray");
-        assertThat(builderWithDef.warnings().size(), is(0));
         ConfigPayloadBuilder innerStruct = innerArray.append();
         assertNotNull(innerStruct.getConfigDefinition());
-        assertThat(builderWithDef.warnings().size(), is(0));
         innerStruct.setField("foo", "1337");
-        assertThat(builderWithDef.warnings().size(), is(0));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_definition_is_passed_to_inner_array_with_append_but_invalid_field_will_throw() {
         ConfigPayloadBuilder.Array innerArray = builderWithDef.getArray("myinnerarray");
-        assertThat(builderWithDef.warnings().size(), is(0));
         ConfigPayloadBuilder innerStruct = innerArray.append();
         innerStruct.setField("foo", "invalid");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
 
     @Test
     public void require_that_definition_is_passed_to_inner_array_with_index() {
         ConfigPayloadBuilder.Array innerArray = builderWithDef.getArray("myinnerarray");
-        assertThat(builderWithDef.warnings().size(), is(0));
         ConfigPayloadBuilder innerStruct = innerArray.set(1);
         assertNotNull(innerStruct.getConfigDefinition());
-        assertThat(builderWithDef.warnings().size(), is(0));
         innerStruct.setField("foo", "1337");
-        assertThat(builderWithDef.warnings().size(), is(0));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void require_that_definition_is_passed_to_inner_array_with_index_but_invalid_field_will_throw() {
         ConfigPayloadBuilder.Array innerArray = builderWithDef.getArray("myinnerarray");
-        assertThat(builderWithDef.warnings().size(), is(0));
         ConfigPayloadBuilder innerStruct = innerArray.set(1);
         innerStruct.setField("foo", "invalid");
-        //assertThat(builderWithDef.warnings().size(), is(1));
     }
+
 }
