@@ -132,49 +132,17 @@ public class DeployState implements ConfigDefinitionStore {
             }
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
-        log.log(LogLevel.DEBUG, "Getting config definition " + defKey);
         ConfigDefinitionKey lookupKey = defKey;
-        // Fall back to just using name
-        /*
+
         if ( ! existingConfigDefs.containsKey(lookupKey)) {
-
-            int count = 0;
-            for (ConfigDefinitionKey entry : existingConfigDefs.keySet()) {
-                if (entry.getName().equals(defKey.getName())) {
-                    count++;
-                }
-            }
-            if (count > 1) {
-                throw new IllegalArgumentException("Using config definition '" +  defKey.getName() + "' is ambiguous, there are more than one config definitions with this name, please specify namespace");
-            }
-
-            lookupKey = null;
-            log.log(LogLevel.DEBUG, "Could not find config definition '" + defKey + "', trying with same name in all namespaces");
-            for (ConfigDefinitionKey entry : existingConfigDefs.keySet()) {
-                if (entry.getName().equals(defKey.getName()) && defKey.getNamespace().equals(CNode.DEFAULT_NAMESPACE)) {
-                    log.log(LogLevel.INFO, "Could not find config definition '" + defKey + "'" +
-                            ", using config definition '" + entry + "' with same name instead (please use new namespace when specifying this config)");
-                    lookupKey = entry;
-                    break;
-                }
-            }
-        }
-        */
-        if ( ! existingConfigDefs.containsKey(lookupKey))
-            lookupKey = null;
-
-        if (lookupKey == null) {
             throw new IllegalArgumentException("Could not find a config definition with name '" + defKey + "'.");
         }
         if (defArchive.get(defKey) != null) {
-            log.log(LogLevel.DEBUG, "Found in archive: " + defKey);
             return Optional.ofNullable(defArchive.get(defKey));
         }
 
-        log.log(LogLevel.DEBUG, "Retrieving config definition: " + defKey);
         ConfigDefinition def = existingConfigDefs.get(lookupKey).parse();
 
-        log.log(LogLevel.DEBUG, "Adding " + def + " to archive");
         defArchive.put(defKey, def);
         return Optional.ofNullable(def);
     }
