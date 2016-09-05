@@ -135,12 +135,12 @@ public class DeployState implements ConfigDefinitionStore {
         if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
 
         if (defArchive.get(defKey) != null)
-            return Optional.ofNullable(defArchive.get(defKey));
+            return Optional.of(defArchive.get(defKey));
 
         ConfigDefinition def = existingConfigDefs.get(defKey).parse();
 
         defArchive.put(defKey, def);
-        return Optional.ofNullable(def);
+        return Optional.of(def);
     }
 
     private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(final ConfigDefinitionRepo configDefinitionRepo) {
