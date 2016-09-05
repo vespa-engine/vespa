@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.node.maintenance;
 
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+
 import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
@@ -13,6 +15,8 @@ import java.util.stream.Collectors;
  */
 
 public class DeleteOldAppData {
+    private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(DeleteOldAppData.class);
+
     /**
      * (Recursively) deletes files if they match all the criteria, also deletes empty directories.
      *
@@ -30,13 +34,13 @@ public class DeleteOldAppData {
                 if (recursive) {
                     deleteFiles(file.getAbsolutePath(), maxAgeSeconds, fileNameRegex, true);
                     if (file.list().length == 0 && !file.delete()) {
-                        System.err.println("Could not delete directory: " + file.getAbsolutePath());
+                        logger.warning("Could not delete directory: " + file.getAbsolutePath());
                     }
                 }
             } else if (isPatternMatchingFilename(fileNamePattern, file) &&
                     isTimeSinceLastModifiedMoreThan(file, Duration.ofSeconds(maxAgeSeconds))) {
                 if (!file.delete()) {
-                    System.err.println("Could not delete file: " + file.getAbsolutePath());
+                    logger.warning("Could not delete file: " + file.getAbsolutePath());
                 }
             }
         }
@@ -62,7 +66,7 @@ public class DeleteOldAppData {
 
         for (int i = nMostRecentToKeep; i < filesInDeleteDir.size(); i++) {
             if (!filesInDeleteDir.get(i).delete()) {
-                System.err.println("Could not delete file: " + filesInDeleteDir.get(i).getAbsolutePath());
+                logger.warning("Could not delete file: " + filesInDeleteDir.get(i).getAbsolutePath());
             }
         }
     }
@@ -75,7 +79,7 @@ public class DeleteOldAppData {
                 deleteFilesLargerThan(file, sizeInBytes);
             } else {
                 if (file.length() > sizeInBytes && !file.delete()) {
-                    System.err.println("Could not delete file: " + file.getAbsolutePath());
+                    logger.warning("Could not delete file: " + file.getAbsolutePath());
                 }
             }
         }
@@ -98,7 +102,7 @@ public class DeleteOldAppData {
                     isTimeSinceLastModifiedMoreThan(getMostRecentlyModifiedFileIn(file), Duration.ofSeconds(maxAgeSeconds))) {
                 deleteFiles(file.getPath(), 0, null, true);
                 if (file.list().length == 0 && !file.delete()) {
-                    System.err.println("Could not delete directory: " + file.getAbsolutePath());
+                    logger.warning("Could not delete directory: " + file.getAbsolutePath());
                 }
             }
         }
