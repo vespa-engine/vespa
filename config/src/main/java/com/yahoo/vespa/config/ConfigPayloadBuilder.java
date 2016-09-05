@@ -15,6 +15,7 @@ import java.util.*;
  * @since 5.1
  */
 public class ConfigPayloadBuilder {
+
     private String value;
     private final Map<String, ConfigPayloadBuilder> objectMap;
     private final Map<String, Array> arrayMap;

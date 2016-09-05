@@ -38,9 +38,9 @@ public class UserConfigBuilder {
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(element);
         log.log(LogLevel.SPAM, "Looking at " + key);
 
-        ConfigDefinition def = configDefinitionStore.getConfigDefinition(key).orElse(null);
+        Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         // TODO: Fail here unless deploying with :force true
-        if (def == null) {
+        if ( ! def.isPresent()) {
             logger.log(LogLevel.WARNING, "Unable to find config definition for config '" + key.getNamespace() + "." + key.getName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
@@ -48,9 +48,7 @@ public class UserConfigBuilder {
         for (String warning : issuedWarnings) {
             logger.log(LogLevel.WARNING, warning);
         }
-        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def).build(element, issuedWarnings);
-        log.log(LogLevel.SPAM, "configvalue=" + ConfigPayload.fromBuilder(payloadBuilder).toString());
-        log.log(LogLevel.DEBUG, "Looking up key: " + key.toString());
+        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element, issuedWarnings);
         ConfigPayloadBuilder old = builderMap.get(key);
         if (old != null) {
             logger.log(LogLevel.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");

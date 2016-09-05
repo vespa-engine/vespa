@@ -32,6 +32,7 @@ public class DomConfigPayloadBuilder {
     private static final Pattern namePattern = ConfigDefinition.namePattern;
     private static final Pattern namespacePattern = ConfigDefinition.namespacePattern;
 
+    /** The config definition, not null if not found */
     private final ConfigDefinition configDefinition;
 
     public DomConfigPayloadBuilder(ConfigDefinition configDefinition) {
@@ -57,8 +58,8 @@ public class DomConfigPayloadBuilder {
 
     public static ConfigDefinitionKey parseConfigName(Element configE) {
         if (!configE.getNodeName().equals("config")) {
-            throw new ConfigurationRuntimeException("The root element must be 'config', but was '"
-                    + configE.getNodeName() + "'.");
+            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" 
+                                                    + configE.getNodeName() + "'.");
         }
         if (!configE.hasAttribute("name")) {
             throw new ConfigurationRuntimeException
