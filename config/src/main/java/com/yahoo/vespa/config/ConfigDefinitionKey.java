@@ -61,9 +61,7 @@ public class ConfigDefinitionKey {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(namespace).append(".").append(name);
-        return sb.toString();
+        return namespace + "." + name;
     }
 
 }
