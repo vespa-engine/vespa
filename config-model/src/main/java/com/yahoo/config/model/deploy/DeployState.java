@@ -132,16 +132,12 @@ public class DeployState implements ConfigDefinitionStore {
             }
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
-        ConfigDefinitionKey lookupKey = defKey;
+        if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
 
-        if ( ! existingConfigDefs.containsKey(lookupKey)) {
-            throw new IllegalArgumentException("Could not find a config definition with name '" + defKey + "'.");
-        }
-        if (defArchive.get(defKey) != null) {
+        if (defArchive.get(defKey) != null)
             return Optional.ofNullable(defArchive.get(defKey));
-        }
 
-        ConfigDefinition def = existingConfigDefs.get(lookupKey).parse();
+        ConfigDefinition def = existingConfigDefs.get(defKey).parse();
 
         defArchive.put(defKey, def);
         return Optional.ofNullable(def);

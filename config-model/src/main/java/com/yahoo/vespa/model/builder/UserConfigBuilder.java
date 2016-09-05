@@ -65,12 +65,7 @@ public class UserConfigBuilder {
      * Returns the config definition matching the given name, or null if not found.
      */
     private static ConfigDefinition getConfigDef(ConfigDefinitionKey configDefinitionKey, ConfigDefinitionStore configDefinitionStore) {
-        try {
-            return configDefinitionStore.getConfigDefinition(configDefinitionKey).orElse(null);
-        } catch (IllegalArgumentException e) {
-            log.log(LogLevel.DEBUG, "Unable to retrieve config definition: " + e.getMessage());
-            return null;
-        }
+        return configDefinitionStore.getConfigDefinition(configDefinitionKey).orElse(null);
     }
 
 }
