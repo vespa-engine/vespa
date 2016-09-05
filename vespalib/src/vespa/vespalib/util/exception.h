@@ -235,10 +235,12 @@ public:
 
 class SilenceUncaughtException {
 public:
-    SilenceUncaughtException(const std::exception & e) : _e(e) { }
+    SilenceUncaughtException(const SilenceUncaughtException &) = delete;
+    SilenceUncaughtException & operator = (const SilenceUncaughtException &) = delete;
+    SilenceUncaughtException(const std::exception & e);
     ~SilenceUncaughtException();
 private:
-    const std::exception & _e;
+    std::terminate_handler _oldTerminate;
 };
 
 
