@@ -36,6 +36,7 @@ import static org.junit.Assert.fail;
  * @since 5.12
  */
 public class DeployStateTest {
+
     @Test
     public void testProvisionerIsSet() {
         DeployState.Builder builder = new DeployState.Builder();
@@ -86,7 +87,7 @@ public class DeployStateTest {
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("foo", "bar")));
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("test1", "")));
-        ConfigDefinition overridden = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b"));
+        ConfigDefinition overridden = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
         assertNotNull(overridden);
         Double defaultValue = overridden.getDoubleDefs().get("doubleVal").getDefVal();
         assertNotNull(defaultValue);
@@ -95,7 +96,7 @@ public class DeployStateTest {
 
     @Test
     public void testGetConfigDefinition() {
-        final Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
+        Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("test2", "a.b"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         defs.put(new ConfigDefinitionKey("test2", "c.d"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=c.d", "doubleVal double default=1.0"}));
         defs.put(new ConfigDefinitionKey("test3", "xyzzy"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("test3", new String[]{"namespace=xyzzy", "message string"}));
@@ -112,13 +113,13 @@ public class DeployStateTest {
             assertThat(e.getMessage(), is("Using config definition 'test2' is ambiguous, there are more than one config definitions with this name, please specify namespace"));
         }
 
-        final ConfigDefinition test1 = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b"));
+        ConfigDefinition test1 = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
         assertNotNull(test1);
         assertThat(test1.getName(), is("test2"));
         assertThat(test1.getNamespace(), is("a.b"));
 
         // Should fallback to using test3 with another namespace, since only one exists
-        ConfigDefinition test3 = state.getConfigDefinition(new ConfigDefinitionKey("test3", ""));
+        ConfigDefinition test3 = state.getConfigDefinition(new ConfigDefinitionKey("test3", "")).get();
         assertNotNull(test3);
         assertThat(test3.getName(), is("test3"));
         assertThat(test3.getNamespace(), is("xyzzy"));
@@ -126,7 +127,7 @@ public class DeployStateTest {
 
     @Test
     public void testRotations() {
-        final Set<Rotation> rotations = new HashSet<>();
+        Set<Rotation> rotations = new HashSet<>();
         assertThat(new DeployState.Builder().rotations(rotations).build().getRotations().size(), is(0));
         for (String name : new String[]{"rotation-001.vespa.a02.yahoodns.net", "rotation-002.vespa.a02.yahoodns.net"}) {
             rotations.add(new Rotation(name));
@@ -134,7 +135,7 @@ public class DeployStateTest {
         assertThat(new DeployState.Builder().rotations(rotations).build().getRotations(), equalTo(rotations));
     }
 
-    private DeployState createDeployState(ApplicationPackage app, final Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs) {
+    private DeployState createDeployState(ApplicationPackage app, Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs) {
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
         builder.configDefinitionRepo(new ConfigDefinitionRepo() {
             @Override
@@ -144,5 +145,6 @@ public class DeployStateTest {
         });
         return builder.build();
     }
+
 }
 

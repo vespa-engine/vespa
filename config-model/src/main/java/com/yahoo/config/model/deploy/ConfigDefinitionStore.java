@@ -4,12 +4,17 @@ package com.yahoo.config.model.deploy;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 
+import java.util.Optional;
+
 /**
  * @author lulf
  * @since 5.1
  */
 public interface ConfigDefinitionStore {
 
-    ConfigDefinition getConfigDefinition(ConfigDefinitionKey defKey);
+    /**
+     * Returns a config definition, or empty if the config definition is not found.
+     */
+    Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey);
 
 }

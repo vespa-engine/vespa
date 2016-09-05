@@ -123,14 +123,8 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the validation overrides of this. This is never null */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
-    /**
-     * Returns the config def with the given name and namespace.
-     *
-     * @param defKey The {@link ConfigDefinitionKey} that will uniquely identify a config definition.
-     * @return The definition with a matching name and namespace
-     * @throws java.lang.IllegalArgumentException if def is not found.
-     */
-    public final ConfigDefinition getConfigDefinition(ConfigDefinitionKey defKey) {
+    @Override
+    public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {
         if (existingConfigDefs == null) {
             existingConfigDefs = new LinkedHashMap<>();
             if (configDefinitionRepo.isPresent()) {
@@ -145,7 +139,7 @@ public class DeployState implements ConfigDefinitionStore {
         }
         ConfigDefinitionKey lookupKey = defKey;
         // Fall back to just using name
-        if (!existingConfigDefs.containsKey(lookupKey)) {
+        if ( ! existingConfigDefs.containsKey(lookupKey)) {
 
             int count = 0;
             for (ConfigDefinitionKey entry : existingConfigDefs.keySet()) {
@@ -174,7 +168,7 @@ public class DeployState implements ConfigDefinitionStore {
         }
         if (defArchive.get(defKey) != null) {
             log.log(LogLevel.DEBUG, "Found in archive: " + defKey);
-            return defArchive.get(defKey);
+            return Optional.ofNullable(defArchive.get(defKey));
         }
 
         log.log(LogLevel.DEBUG, "Retrieving config definition: " + defKey);
@@ -182,7 +176,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         log.log(LogLevel.DEBUG, "Adding " + def + " to archive");
         defArchive.put(defKey, def);
-        return def;
+        return Optional.ofNullable(def);
     }
 
     private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(final ConfigDefinitionRepo configDefinitionRepo) {

@@ -23,6 +23,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
@@ -35,7 +36,7 @@ public class UserConfigBuilderTest {
 
     private final ConfigDefinitionStore configDefinitionStore = new ConfigDefinitionStore() {
         @Override
-        public ConfigDefinition getConfigDefinition(ConfigDefinitionKey defKey) { return null; }
+        public Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) { return Optional.empty(); }
     };
 
     @Test

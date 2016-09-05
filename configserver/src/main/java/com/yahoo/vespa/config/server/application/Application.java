@@ -216,6 +216,7 @@ public class Application implements ModelResult {
      * legacy config namespace (or not using config namespace))
      */
     private static class ConfigDefinitionWrapper {
+
         private final ConfigDefinitionKey defKey;
         private final ConfigDefinition def;
 

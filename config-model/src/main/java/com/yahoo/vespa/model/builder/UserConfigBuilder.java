@@ -66,7 +66,7 @@ public class UserConfigBuilder {
      */
     private static ConfigDefinition getConfigDef(ConfigDefinitionKey configDefinitionKey, ConfigDefinitionStore configDefinitionStore) {
         try {
-            return configDefinitionStore.getConfigDefinition(configDefinitionKey);
+            return configDefinitionStore.getConfigDefinition(configDefinitionKey).orElse(null);
         } catch (IllegalArgumentException e) {
             log.log(LogLevel.DEBUG, "Unable to retrieve config definition: " + e.getMessage());
             return null;
