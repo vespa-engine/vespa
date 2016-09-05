@@ -41,7 +41,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     } else {
         LOG(warning, "Next index is not valid, Dangerous !! : %s", next->toString().c_str());
     }
-    LOG(debug, "For %g seconds I will warm up %s.", warmupConfig.getDuration(), typeid(_warmup).name());
+    LOG(debug, "For %g seconds I will warm up '%s' %s unpack.", warmupConfig.getDuration(), typeid(_warmup).name(), warmupConfig.getUnpack() ? "with" : "without");
     LOG(debug, "%s", toString().c_str());
 }
 
