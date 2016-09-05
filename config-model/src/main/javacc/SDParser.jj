@@ -1788,11 +1788,16 @@ Object constantItem(RankingConstant constant) :
 }
 {
     ( (<FILE> <COLON> fileName = filePath() { } (<NL>)*) { constant.setFileName(fileName); }
-      | type = tensorTypeWithPrefix("For ranking constant ' " + constant.getName() + "'") (<NL>)* { constant.setType(type); }
+      | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
     )
     {
         return null;
     }
+}
+
+String rankingConstantErrorMessage(String name) : {}
+{
+    { return "For ranking constant ' " + name + "'"; }
 }
 
 String filePath() : { }
