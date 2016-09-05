@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content.storagecluster;
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
 import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 /**
  * Serves stor-integritychecker config for storage clusters.
@@ -11,7 +12,11 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 public class IntegrityCheckerProducer implements StorIntegritycheckerConfig.Producer {
 
     public static class Builder {
-        protected IntegrityCheckerProducer build(ModelElement clusterElem) {
+        protected IntegrityCheckerProducer build(ContentCluster cluster, ModelElement clusterElem) {
+            if (!cluster.isMemfilePersistence()) {
+                return integrityCheckerDisabled();
+            }
+
             ModelElement tuning = clusterElem.getChild("tuning");
 
             if (tuning == null) {
@@ -61,6 +66,12 @@ public class IntegrityCheckerProducer implements StorIntegritycheckerConfig.Prod
         this.startTime = startTime;
         this.stopTime = stopTime;
         this.weeklyCycle = weeklyCycle;
+    }
+
+    private static IntegrityCheckerProducer integrityCheckerDisabled() {
+        // Leave start/start times at default, but mark each day of the week as
+        // not allowing the integrity checker to be run.
+        return new IntegrityCheckerProducer(null, null, "-------");
     }
 
     @Override

@@ -151,11 +151,14 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMaintenance() {
+    public void maintenance_tuning_is_honored_for_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
                 "  <documents/>" +
+                "  <engine>\n" +
+                "    <vds/>\n" +
+                "  </engine>\n" +
                 "  <tuning>" +
                 "    <maintenance start=\"01:00\" stop=\"02:00\" high=\"tuesday\"/>\n" +
                 "  </tuning>" +
@@ -169,6 +172,42 @@ public class StorageClusterTest {
         assertEquals(60, config.dailycyclestart());
         assertEquals(120, config.dailycyclestop());
         assertEquals("rrRrrrr", config.weeklycycle());
+    }
+
+    @Test
+    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
+        StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
+        parse(
+                "<cluster id=\"bees\">\n" +
+                "  <documents/>" +
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</cluster>"
+        ).getConfig(builder);
+        StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
+        // '-' --> don't run on the given week day
+        assertEquals("-------", config.weeklycycle());
+    }
+
+    @Test
+    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() {
+        StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
+        parse(
+                "<cluster id=\"bees\">\n" +
+                "  <documents/>" +
+                "  <engine>\n" +
+                "    <vds/>\n" +
+                "  </engine>\n" +
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</cluster>"
+        ).getConfig(builder);
+        StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
+        // No tuning element has been provided, but we should still get a default weeklycycle
+        // config generated since we're on VDS.
+        assertEquals("Rrrrrrr", config.weeklycycle());
     }
 
     @Test
