@@ -9,8 +9,6 @@ LOG_SETUP(".searchlib.docstore.compacter");
 namespace search {
 namespace docstore {
 
-using document::CompressionConfig;
-
 void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
@@ -18,13 +16,15 @@ Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *bu
     _ds.write(guard, fileId, lid, buffer, sz);
 }
 
-BucketCompacter::BucketCompacter(const CompressionConfig & compression, LogDataStore & ds, const IBucketizer & bucketizer, FileId source, FileId destination) :
+BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds, ThreadExecutor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
+    _unSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
     _sourceFileId(source),
     _destinationFileId(destination),
     _ds(ds),
     _bucketizer(bucketizer),
     _writeCount(0),
-    _backingMemory(0x40000000),
+    _lock(),
+    _backingMemory(0x40000000, &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),
@@ -32,7 +32,7 @@ BucketCompacter::BucketCompacter(const CompressionConfig & compression, LogDataS
 {
     _tmpStore.reserve(256);
     for (size_t i(0); i < 256; i++) {
-        _tmpStore.emplace_back(_backingMemory, compression);
+        _tmpStore.emplace_back(_backingMemory, executor, compression);
     }
 }
 
@@ -48,7 +48,7 @@ BucketCompacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const vo
     guard.unlock();
     BucketId bucketId = (sz > 0) ? _bucketizer.getBucketOf(_bucketizerGuard, lid) : BucketId();
     uint64_t sortableBucketId = bucketId.toKey();
-    _tmpStore[(sortableBucketId >> 56) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
+    _tmpStore[(sortableBucketId >> _unSignificantBucketBits) % _tmpStore.size()].add(bucketId, chunkId, lid, buffer, sz);
     if ((_writeCount % 1000) == 0) {
         _bucketizerGuard = _bucketizer.getGuard();
     }

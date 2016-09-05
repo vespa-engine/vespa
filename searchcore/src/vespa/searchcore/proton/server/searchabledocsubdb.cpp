@@ -99,7 +99,7 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>
         (vespaIndexDir,
-         indexCfg.warmup.time,
+         searchcorespi::index::WarmupConfig(indexCfg.warmup.time, indexCfg.warmup.unpack),
          indexCfg.maxflushed,
          indexCfg.cache.size,
          *schema,

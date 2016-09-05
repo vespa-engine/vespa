@@ -19,6 +19,8 @@ import java.util.List;
  */
 public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
+    public static final String ZOOKEEPER_VESPA_CLIENTS_PROPERTY = "zookeeper.vespa.clients";
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
@@ -29,6 +31,8 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         this.config = config;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + config.juteMaxBuffer());
+        System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
+
         writeConfigToDisk(config);
         zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
@@ -40,7 +44,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     public ZooKeeperServer(ZookeeperServerConfig config) {
         this(config, true);
     }
-
+    
     private void writeConfigToDisk(ZookeeperServerConfig config) {
        String cfg = transformConfigToString(config);
        try (FileWriter writer = new FileWriter(Defaults.getDefaults().underVespaHome(config.zooKeeperConfigFile()))) {

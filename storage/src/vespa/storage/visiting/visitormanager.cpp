@@ -207,10 +207,10 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
     _maxFixedConcurrentVisitors = maxConcurrentVisitorsFixed;
     _maxVariableConcurrentVisitors = maxConcurrentVisitorsVariable;
     _maxVisitorQueueSize = config->maxvisitorqueuesize;
-    std::shared_ptr<PropagateVisitorConfig> cmd(
-            new PropagateVisitorConfig(*config));
-    for (int32_t i=0; i<config->visitorthreads; ++i) {
-        _visitorThread[i].first->processMessage(0, cmd);
+
+    auto cmd = std::make_shared<PropagateVisitorConfig>(*config);
+    for (auto& thread : _visitorThread) {
+        thread.first->processMessage(0, cmd);
     }
 }
 

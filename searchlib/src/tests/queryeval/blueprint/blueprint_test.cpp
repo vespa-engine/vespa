@@ -651,17 +651,8 @@ Test::testBlueprintMakeNew()
     orig->setSourceId(42);
     MyOr *myOr = dynamic_cast<MyOr*>(orig.get());
     ASSERT_TRUE(myOr != 0);
-    Blueprint::UP copy1 = makeNew(myOr);
-    Blueprint::UP copy2 = makeNew(myOr);
-    TEST_DO(check_equal(*copy1, *copy2));
-    TEST_DO(check_not_equal(*orig, *copy1));
-    TEST_DO(check_not_equal(*orig, *copy2));
-    EXPECT_TRUE(dynamic_cast<MyOr*>(copy1.get()) != 0);
-    EXPECT_TRUE(dynamic_cast<MyOr*>(copy2.get()) != 0);
     EXPECT_EQUAL(42u, orig->getSourceId());
-    EXPECT_EQUAL(42u, copy1->getSourceId());
     EXPECT_EQUAL(2u, orig->getState().numFields());
-    EXPECT_EQUAL(0u, copy1->getState().numFields());
 }
 
 vespalib::string

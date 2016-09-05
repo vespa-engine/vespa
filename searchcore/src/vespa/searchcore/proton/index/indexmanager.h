@@ -54,7 +54,7 @@ private:
 
 public:
     IndexManager(const vespalib::string &baseDir,
-                 double diskIndexWarmupTime,
+                 const searchcorespi::index::WarmupConfig & warmup,
                  size_t maxFlushed,
                  size_t cacheSize,
                  const Schema &schema,

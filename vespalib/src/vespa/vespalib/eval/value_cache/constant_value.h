@@ -22,6 +22,21 @@ struct ConstantValue {
 };
 
 /**
+ * A simple implementation of a constant value that bundles together a
+ * ValueType instance with a specific Value subclass instance.
+ **/
+template <typename VALUE>
+struct SimpleConstantValue : ConstantValue {
+    ValueType my_type;
+    VALUE my_value;
+    template <typename... Args>
+    SimpleConstantValue(const ValueType &type_in, Args &&...args)
+        : my_type(type_in), my_value(std::forward<Args>(args)...) {}
+    const ValueType &type() const override { return my_type; }
+    const Value &value() const override { return my_value; }
+};
+
+/**
  * An abstract factory of constant values. The typical use-case for
  * this will be to load constant values from file with a cache on top
  * to share constants among users.

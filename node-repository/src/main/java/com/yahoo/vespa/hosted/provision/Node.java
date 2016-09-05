@@ -197,7 +197,7 @@ public final class Node {
     }
 
     /** Returns a copy of this node with the given history. */
-    private Node setHistory(History history) {
+    public Node setHistory(History history) {
         return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
     }
 

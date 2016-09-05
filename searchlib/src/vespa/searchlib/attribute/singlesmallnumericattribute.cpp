@@ -200,13 +200,26 @@ log2bits<uint32_t>(void)
     return 0x05u;
 }
 
+using search::attribute::Config;
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
+using search::GrowStrategy;
+
+Config
+createConfig(BasicType bt, CollectionType ct) {
+    return Config(bt, ct);
+}
+Config
+createConfig(BasicType bt, CollectionType ct, const GrowStrategy & grow) {
+    return createConfig(bt, ct).setGrowStrategy(grow);
 }
 
+}
 
 SingleValueBitNumericAttribute::
-SingleValueBitNumericAttribute(const vespalib::string &baseFileName)
+SingleValueBitNumericAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       Config(BasicType::UINT1, CollectionType::SINGLE),
+                                       createConfig(BasicType::UINT1, CollectionType::SINGLE, grow),
                                        0x01u /* valueMask */,
                                        0x00u /* valueShiftShift */,
                                        8 * sizeof(Word) - 1 /* valueShiftMask */,
@@ -216,9 +229,9 @@ SingleValueBitNumericAttribute(const vespalib::string &baseFileName)
 
 
 SingleValueSemiNibbleNumericAttribute::
-SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName)
+SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName, const search::GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       Config(BasicType::UINT2, CollectionType::SINGLE),
+                                       createConfig(BasicType::UINT2, CollectionType::SINGLE, grow),
                                        0x03u /* valueMask */,
                                        0x01u /* valueShiftShift */,
                                        4 * sizeof(Word) - 1 /* valueShiftMask */,
@@ -228,9 +241,9 @@ SingleValueSemiNibbleNumericAttribute(const vespalib::string &baseFileName)
 
 
 SingleValueNibbleNumericAttribute::
-SingleValueNibbleNumericAttribute(const vespalib::string &baseFileName)
+SingleValueNibbleNumericAttribute(const vespalib::string &baseFileName, const search::GrowStrategy & grow)
     : SingleValueSmallNumericAttribute(baseFileName,
-                                       Config(BasicType::UINT1, CollectionType::SINGLE),
+                                       createConfig(BasicType::UINT1, CollectionType::SINGLE, grow),
                                        0x0fu /* valueMask */,
                                        0x02u /* valueShiftShift */,
                                        2 * sizeof(Word) - 1 /* valueShiftMask */,

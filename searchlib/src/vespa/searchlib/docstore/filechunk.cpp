@@ -385,8 +385,11 @@ FileChunk::updateLidMap(ISetLid & ds, uint64_t serialNum)
                     BucketDensityComputer bucketMap(_bucketizer);
                     for (size_t i(0), m(chunkMeta.getNumEntries()); i < m; i++) {
                         const LidMeta & lidMeta(chunkMeta[i]);
-                        bucketMap.recordLid(bucketizerGuard, lidMeta.getLid(), lidMeta.size());
-                        globalBucketMap.recordLid(bucketizerGuard, lidMeta.getLid(), lidMeta.size());
+                        if (_bucketizer && (lidMeta.size() > 0)) {
+                            document::BucketId bucketId = _bucketizer->getBucketOf(bucketizerGuard, lidMeta.getLid());
+                            bucketMap.recordLid(bucketId);
+                            globalBucketMap.recordLid(bucketId);
+                        }
                         ds.setLid(lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
                         _addedBytes += adjustSize(lidMeta.size());
                     }

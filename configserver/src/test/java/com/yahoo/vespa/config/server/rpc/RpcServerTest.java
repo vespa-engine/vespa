@@ -26,6 +26,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -47,7 +49,6 @@ public class RpcServerTest extends TestWithRpc {
         testEnabled();
         testEmptyConfigHostedVespa();
     }
-
 
     private void testEmptyConfigHostedVespa() throws InterruptedException {
         rpcServer.onTenantDelete(TenantName.defaultName());
@@ -124,4 +125,5 @@ public class RpcServerTest extends TestWithRpc {
         rpcServer.printStatistics(req);
         assertThat(req.returnValues().get(0).asString(), is("Delayed responses queue size: 0"));
     }
+
 }

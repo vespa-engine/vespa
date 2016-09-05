@@ -40,6 +40,7 @@ private:
         }
         return true;
     }
+    int run();
 
 public:
     virtual int Main();
@@ -55,6 +56,17 @@ RPCClient::Main()
         fprintf(stderr, "    supported types: {'b','h','i','l','f','d','s'}\n");
         return 1;
     }
+    try {
+        return run();
+    } catch (const std::exception & e) {
+        fprintf(stderr, "Caught exception : '%s'", e.what());
+        return 2;
+    }
+}
+
+int
+RPCClient::run()
+{
     int retCode = 0;
     FRT_Supervisor supervisor;
     supervisor.Start();

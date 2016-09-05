@@ -42,27 +42,27 @@ void verify_tensor(std::unique_ptr<Tensor> expect, ConstantValue::UP actual) {
 }
 
 TEST_F("require that load fails for invalid types", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create("dense.json", "invalid type spec")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("dense.json"), "invalid type spec")));
 }
 
 TEST_F("require that load fails for invalid file name", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create("missing_file.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("missing_file.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that load fails for invalid json", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create("invalid.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_error(f1.create(TEST_PATH("invalid.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that dense tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_dense_tensor(), f1.create("dense.json", "tensor(x[2],y[2])")));
+    TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that sparse tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create("sparse.json", "tensor(x{},y{})")));
+    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json"), "tensor(x{},y{})")));
 }
 
 TEST_F("require that mixed tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_tensor(make_mixed_tensor(), f1.create("mixed.json", "tensor(x{},y[2])")));
+    TEST_DO(verify_tensor(make_mixed_tensor(), f1.create(TEST_PATH("mixed.json"), "tensor(x{},y[2])")));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

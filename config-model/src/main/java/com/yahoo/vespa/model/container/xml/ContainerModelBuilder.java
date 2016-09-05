@@ -387,6 +387,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             applyNodesTagJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
+            applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
 
@@ -413,6 +414,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             result.forEach(container -> {
                 container.setProp("endpointaliases", cluster.endpointAliases().stream().collect(Collectors.joining(",")));
             });
+        }
+    }
+    
+    private void applyMemoryPercentage(ContainerCluster cluster, String memoryPercentage) {
+        if (memoryPercentage == null || memoryPercentage.isEmpty()) return;
+        memoryPercentage = memoryPercentage.trim();
+
+        if ( ! memoryPercentage.endsWith("%"))
+            throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
+                                               " must be an integer percentage ending by the '%' sign");
+        memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
+
+        try {
+            cluster.setMemoryPercentage(Optional.of(Integer.parseInt(memoryPercentage)));
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
+                                               " must be an integer percentage ending by the '%' sign");
         }
     }
     

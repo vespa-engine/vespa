@@ -87,7 +87,7 @@ class IndexMaintainer : public boost::noncopyable,
     typedef std::vector<FrozenMemoryIndexRef> FrozenMemoryIndexRefs;
     typedef search::queryeval::ISourceSelector ISourceSelector;
     const vespalib::string _base_dir;
-    const double           _diskIndexWarmupTime;
+    const WarmupConfig     _warmupConfig;
     ActiveDiskIndexes::SP  _active_indexes;
     IndexDiskLayout        _layout;
     Schema                 _schema;             // Protected by SL + IUL

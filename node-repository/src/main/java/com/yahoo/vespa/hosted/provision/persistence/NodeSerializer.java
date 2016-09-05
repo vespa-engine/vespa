@@ -225,7 +225,13 @@ public class NodeSerializer {
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        if (object.type() == Type.BOOL) return Optional.of(Status.HardwareFailureType.unknown); // TODO: Remove this line when 6.28 is deployed everywhere
+        // TODO: Remove boolean handling when 6.28 is deployed everywhere
+        if (object.type() == Type.BOOL) {
+            if (!object.asBool()) {
+                return Optional.empty();
+            }
+            return Optional.of(Status.HardwareFailureType.unknown);
+        }
         return Optional.of(hardwareFailureFromString(object.asString()));
     }
 
@@ -242,6 +248,7 @@ public class NodeSerializer {
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
+            case "requested" : return History.Event.Type.requested;
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
@@ -255,6 +262,7 @@ public class NodeSerializer {
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
+            case requested: return "requested";
         }
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }

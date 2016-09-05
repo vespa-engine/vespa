@@ -24,13 +24,12 @@ Test::testEmptyBlueprint()
 {
     MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
     EmptyBlueprint empty(FieldSpecBase(1, 11));
-    EmptyBlueprint copy(empty);
-    ASSERT_TRUE(copy.getState().numFields() == 1u);
-    EXPECT_EQUAL(1u, copy.getState().field(0).getFieldId());
-    EXPECT_EQUAL(11u, copy.getState().field(0).getHandle());
+    ASSERT_TRUE(empty.getState().numFields() == 1u);
+    EXPECT_EQUAL(1u, empty.getState().field(0).getFieldId());
+    EXPECT_EQUAL(11u, empty.getState().field(0).getHandle());
 
-    copy.fetchPostings(true);
-    SearchIterator::UP search = copy.createSearch(*md, true);
+    empty.fetchPostings(true);
+    SearchIterator::UP search = empty.createSearch(*md, true);
 
     SimpleResult res;
     res.search(*search);
@@ -46,10 +45,9 @@ Test::testSimpleBlueprint()
     a.addHit(3).addHit(5).addHit(7);
     SimpleBlueprint simple(a);
     simple.tag("tag");
-    SimpleBlueprint copy(simple);
-    EXPECT_EQUAL("tag", copy.tag());
-    copy.fetchPostings(true);
-    SearchIterator::UP search = copy.createSearch(*md, true);
+    EXPECT_EQUAL("tag", simple.tag());
+    simple.fetchPostings(true);
+    SearchIterator::UP search = simple.createSearch(*md, true);
 
     SimpleResult res;
     res.search(*search);
@@ -69,10 +67,9 @@ Test::testFakeBlueprint()
     uint32_t fieldId = 0;
     TermFieldHandle handle = 0;
     FakeBlueprint orig(FieldSpec("<field>", fieldId, handle), fake);
-    FakeBlueprint copy(orig);
 
-    copy.fetchPostings(true);
-    SearchIterator::UP search = copy.createSearch(*md, true);
+    orig.fetchPostings(true);
+    SearchIterator::UP search = orig.createSearch(*md, true);
     search->initFullRange();
     EXPECT_TRUE(!search->seek(1u));
     EXPECT_EQUAL(10u, search->getDocId());

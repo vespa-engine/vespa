@@ -10,8 +10,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.Node.State;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -20,12 +20,12 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import java.time.Duration;
-import java.util.Optional;
 
 /**
  * @author bratseth
@@ -167,6 +167,40 @@ public class SerializationTest {
         Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
         assertEquals(Status.HardwareFailureType.unknown, node.status().hardwareFailure().get());
     }
+
+    // TODO: Remove when 6.28 is deployed everywhere
+    @Test
+    public void testLegacyNonHardwareFailureDeserialization() {
+        String nodeData =
+                "{\n" +
+                        "   \"type\" : \"tenant\",\n" +
+                        "   \"rebootGeneration\" : 0,\n" +
+                        "   \"configuration\" : {\n" +
+                        "      \"flavor\" : \"default\"\n" +
+                        "   },\n" +
+                        "   \"history\" : [\n" +
+                        "      {\n" +
+                        "         \"type\" : \"reserved\",\n" +
+                        "         \"at\" : 1444391402611\n" +
+                        "      }\n" +
+                        "   ],\n" +
+                        "   \"instance\" : {\n" +
+                        "      \"applicationId\" : \"myApplication\",\n" +
+                        "      \"tenantId\" : \"myTenant\",\n" +
+                        "      \"instanceId\" : \"myInstance\",\n" +
+                        "      \"serviceId\" : \"content/myId/0\",\n" +
+                        "      \"restartGeneration\" : 0,\n" +
+                        "      \"removable\" : false\n" +
+                        "   },\n" +
+                        "   \"openStackId\" : \"myId\",\n" +
+                        "   \"hostname\" : \"myHostname\",\n" +
+                        "   \"hardwareFailure\" : false\n" +
+                        "}";
+
+        Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
+        assertFalse(node.status().hardwareFailure().isPresent());
+    }
+
     @Test
     public void testRetiredNodeSerialization() {
         Node node = createNode();

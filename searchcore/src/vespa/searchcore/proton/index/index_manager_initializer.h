@@ -16,7 +16,7 @@ namespace proton
 class IndexManagerInitializer :  public initializer::InitializerTask
 {
     const vespalib::string                      _baseDir;
-    double                                      _diskIndexWarmupTime;
+    const searchcorespi::index::WarmupConfig    _warmup;
     size_t                                      _maxFlushed;
     size_t                                      _cacheSize;
     const search::index::Schema                 _schema;
@@ -31,22 +31,17 @@ class IndexManagerInitializer :  public initializer::InitializerTask
 public:
     // Note: lifetime of indexManager must be handled by caller.
     IndexManagerInitializer(const vespalib::string &baseDir,
-                            double diskIndexWarmupTime,
+                            const searchcorespi::index::WarmupConfig & warmup,
                             size_t maxFlushed,
                             size_t cacheSize,
                             const search::index::Schema &schema,
                             const search::index::Schema &fusionSchema,
-                            searchcorespi::IIndexManager::Reconfigurer &
-                            reconfigurer,
-                            searchcorespi::index::IThreadingService &
-                            threadingService,
+                            searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
+                            searchcorespi::index::IThreadingService & threadingService,
                             vespalib::ThreadExecutor & warmupExecutor,
-                            const search::TuneFileIndexManager &
-                            tuneFileIndexManager,
-                            const search::TuneFileAttributes &
-                            tuneFileAttributes,
-                            const search::common::FileHeaderContext &
-                            fileHeaderContext,
+                            const search::TuneFileIndexManager & tuneFileIndexManager,
+                            const search::TuneFileAttributes & tuneFileAttributes,
+                            const search::common::FileHeaderContext & fileHeaderContext,
                             std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager);
     virtual void run() override;
 };

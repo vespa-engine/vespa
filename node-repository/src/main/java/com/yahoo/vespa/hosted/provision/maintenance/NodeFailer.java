@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -36,21 +38,32 @@ public class NodeFailer extends Maintainer {
 
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
 
-    private final Deployer deployer;
+    /** Provides information about the status of ready hosts */
+    private final HostLivenessTracker hostLivenessTracker;
+    
+    /** Provides (more accurate) information about the status of active hosts */
     private final ServiceMonitor serviceMonitor;
+
+    private final Deployer deployer;
     private final Duration downTimeLimit;
     private final Clock clock;
     private final Orchestrator orchestrator;
+    
+    private final Duration nodeRequestInterval = Duration.ofMinutes(10);
+    private final Instant constructionTime;
 
-    public NodeFailer(Deployer deployer, ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
+    public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker, 
+                      ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator) {
         // check ping status every five minutes, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
         this.deployer = deployer;
+        this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;
         this.downTimeLimit = downTimeLimit;
         this.clock = clock;
         this.orchestrator = orchestrator;
+        constructionTime = clock.instant();
     }
 
     private static Duration min(Duration d1, Duration d2) {
@@ -59,27 +72,76 @@ public class NodeFailer extends Maintainer {
 
     @Override
     protected void maintain() {
+        // Ready nodes
+        updateNodeLivenessEventsForReadyNodes();
+        for (Node node : readyNodesWhichAreDead())
+            nodeRepository().fail(node.hostname());
+        for (Node node : readyNodesWithHardwareFailure())
+            nodeRepository().fail(node.hostname());
+
+        // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
             if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node))
                 failActive(node);
         }
-        
-        for (Node node : readyNodesWithHardwareFailure()) {
-            nodeRepository().fail(node.hostname());
+    }
+    
+    private void updateNodeLivenessEventsForReadyNodes() {
+        // Update node last request events through ZooKeeper to collect request to all config servers.
+        // We do this here ("lazily") to avoid writing to zk for each config request.
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
+            for (Node node : nodeRepository().getNodes(Node.Type.tenant, Node.State.ready)) {
+                Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
+                if ( ! lastLocalRequest.isPresent()) continue;
+
+                Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
+                if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
+                    History updatedHistory = node.history().record(new History.Event(History.Event.Type.requested, 
+                                                                                     lastLocalRequest.get()));
+                    nodeRepository().write(node.setHistory(updatedHistory));
+                }
+            }
         }
+    }
+
+    private List<Node> readyNodesWhichAreDead() {    
+        // Allow requests some time to be registered in case all config servers have been down
+        if (constructionTime.isAfter(clock.instant().minus(nodeRequestInterval).minus(nodeRequestInterval) ))
+            return Collections.emptyList();
+        
+        // Nodes are taken as dead if they have not made a config request since this instant.
+        // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
+        Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
+        
+        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
+                .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
+                .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
+                .collect(Collectors.toList());
+    }
+
+    private boolean wasMadeReadyBefore(Instant instant, Node node) {
+        Optional<History.Event> readiedEvent = node.history().event(History.Event.Type.readied);
+        if ( ! readiedEvent.isPresent()) return false;
+        return readiedEvent.get().at().isBefore(instant);
+    }
+
+    private boolean hasRecordedRequestAfter(Instant instant, Node node) {
+        Optional<History.Event> lastRequest = node.history().event(History.Event.Type.requested);
+        if ( ! lastRequest.isPresent()) return false;
+        return lastRequest.get().at().isAfter(instant);
     }
 
     private List<Node> readyNodesWithHardwareFailure() {
         return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
-                .filter(n -> n.status().hardwareFailure().isPresent())
+                .filter(node -> node.status().hardwareFailure().isPresent())
                 .collect(Collectors.toList());
     }
-    
+
     private boolean applicationSuspended(Node node) {
         try {
             return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())
-                    == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
+                   == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (ApplicationIdNotFoundException e) {
             //Treat it as not suspended and allow to fail the node anyway
             return false;

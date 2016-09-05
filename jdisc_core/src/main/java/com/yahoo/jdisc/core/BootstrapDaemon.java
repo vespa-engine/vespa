@@ -5,6 +5,7 @@ import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,11 +52,20 @@ public class BootstrapDaemon implements Daemon {
 
     @Override
     public void start() throws Exception {
-        if (!privileged) {
-            log.finer("Initializing application without privileges.");
-            loader.init(bundleLocation, false);
+        try {
+            if (!privileged) {
+                log.finer("Initializing application without privileges.");
+                loader.init(bundleLocation, false);
+            }
+            loader.start();
+        } catch (Exception e) {
+            try {
+                log.log(Level.SEVERE, "Failed starting container", e);
+            }
+            finally {
+                Runtime.getRuntime().halt(1);
+            }
         }
-        loader.start();
     }
 
     @Override

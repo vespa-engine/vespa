@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
@@ -35,7 +36,8 @@ public class MockRpc extends RpcServer {
 
 
     public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication) {
-        super(createConfig(port), null, Metrics.createTestMetrics(), new HostRegistries());
+        super(createConfig(port), null, Metrics.createTestMetrics(), 
+              new HostRegistries(), new ConfigRequestHostLivenessTracker());
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }

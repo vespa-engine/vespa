@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.jrt.Acceptor;
@@ -58,15 +59,17 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
+// TODO: Split business logic out of this
 public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
+    public static final String getConfigMethodName = "getConfigV3";
+    
     static final int TRACELEVEL = 6;
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
     private final Supervisor supervisor = new Supervisor(new Transport());
     private Spec spec = null;
-    private boolean running = false;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
 
@@ -79,6 +82,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final SuperModelController superModelController;
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
+    private final HostLivenessTracker hostLivenessTracker;
     
     private final ThreadPoolExecutor executorService;
     private volatile boolean allTenantsLoaded = false;
@@ -89,11 +93,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * @param config The config to use for setting up this server
      */
     @Inject
-    public RpcServer(ConfigserverConfig config, SuperModelController superModelController, MetricUpdaterFactory metrics, HostRegistries hostRegistries) {
+    public RpcServer(ConfigserverConfig config, SuperModelController superModelController, MetricUpdaterFactory metrics, 
+                     HostRegistries hostRegistries, HostLivenessTracker hostLivenessTracker) {
         this.superModelController = superModelController;
         this.metricUpdaterFactory = metrics;
         this.supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
+        this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
         executorService = new ThreadPoolExecutor(config.numthreads(), config.numthreads(), 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
@@ -105,25 +111,24 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
+     * Called by reflection from RCP.
      * Handles RPC method "config.v3.getConfig" requests.
      * Uses the template pattern to call methods in classes that extend RpcServer.
-     *
-     * @param req a Request
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getConfigV3(Request req) {
         if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "getConfigV3");
+            log.log(LogLevel.SPAM, getConfigMethodName);
         }
         req.detach();
         JRTServerConfigRequestV3 request = JRTServerConfigRequestV3.createFromRequest(req);
         addToRequestQueue(request);
+        hostLivenessTracker.receivedRequestFrom(request.getClientHostName());
     }
 
     /**
+     * Called by reflection from RCP.
      * Returns 0 if server is alive.
-     *
-     * @param req a Request
      */
     @SuppressWarnings("UnusedDeclaration")
     public final void ping(Request req) {
@@ -131,6 +136,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
+     * Called by reflection from RCP.
      * Returns a String with statistics data for the server.
      *
      * @param req a Request
@@ -143,14 +149,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         log.log(LogLevel.DEBUG, "Ready for requests on " + spec);
         try {
             Acceptor acceptor = supervisor.listen(spec);
-            running = true;
             supervisor.transport().join();
             acceptor.shutdown().join();
         } catch (ListenFailedException e) {
             stop();
             throw new RuntimeException("Could not listen at " + spec, e);
         }
-        running = false;
     }
 
     public void stop() {
@@ -169,19 +173,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     private void setUpHandlers() {
         // The getConfig method in this class will handle RPC calls for getting config
-        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this, "getConfigV3"));
-        getSupervisor().addMethod(new Method("ping", "", "i",
-                this, "ping")
-                .methodDesc("ping")
-                .returnDesc(0, "ret code", "return code, 0 is OK"));
-        getSupervisor().addMethod(new Method("printStatistics", "", "s",
-                this, "printStatistics")
-                .methodDesc("printStatistics")
-                .returnDesc(0, "statistics", "Statistics for server"));
-    }
-
-    public boolean isRunning() {
-        return running;
+        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this, getConfigMethodName));
+        getSupervisor().addMethod(new Method("ping", "", "i", this, "ping")
+                                  .methodDesc("ping")
+                                  .returnDesc(0, "ret code", "return code, 0 is OK"));
+        getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
+                                  .methodDesc("printStatistics")
+                                  .returnDesc(0, "statistics", "Statistics for server"));
     }
 
     /**
@@ -258,10 +256,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         superModelController.removeApplication(applicationId);
         configReloaded(delayedConfigResponses.drainQueue(applicationId), Tenants.logPre(applicationId));
         configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), Tenants.logPre(ApplicationId.global()));
-    }
-
-    public Spec getSpec() {
-        return spec;
     }
 
     public void respond(JRTServerConfigRequest request) {

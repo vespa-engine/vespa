@@ -2,12 +2,16 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.net.HostName;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
+import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
@@ -18,10 +22,13 @@ import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import org.junit.After;
 import org.junit.Before;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -32,7 +39,12 @@ import static org.junit.Assert.assertTrue;
  * @author lulf
  * @since 5.17
  */
+// TODO: Make this a Tester instead of a superclass
 public class TestWithRpc {
+
+    private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
+    private final String myHostname = HostName.getLocalhost();
+    private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
 
     protected RpcServer rpcServer;
     protected MockTenantProvider tenantProvider;
@@ -52,6 +64,7 @@ public class TestWithRpc {
         tenantProvider = new MockTenantProvider();
         generationCounter = new MemoryGenerationCounter();
         createAndStartRpcServer(false);
+        assertFalse(hostLivenessTracker.lastRequestFrom(myHostname).isPresent());
     }
 
     @After
@@ -69,9 +82,11 @@ public class TestWithRpc {
 
     protected void createAndStartRpcServer(boolean hostedVespa) {
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
-                new SuperModelController(generationCounter,
-                                         new TestConfigDefinitionRepo(), new ConfigserverConfig(new ConfigserverConfig.Builder())),
-                Metrics.createTestMetrics(), new HostRegistries());
+                                  new SuperModelController(generationCounter,
+                                                           new TestConfigDefinitionRepo(), 
+                                                           new ConfigserverConfig(new ConfigserverConfig.Builder())),
+                                  Metrics.createTestMetrics(), new HostRegistries(),
+                                  hostLivenessTracker);
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();
@@ -105,6 +120,9 @@ public class TestWithRpc {
     }
 
     protected void performRequest(Request req) {
+        clock.advance(Duration.ofMillis(10));
         sup.connect(spec).invokeSync(req, 120.0);
+        if (req.methodName().equals(RpcServer.getConfigMethodName))
+            assertEquals(clock.instant(), hostLivenessTracker.lastRequestFrom(myHostname).get());
     }
 }

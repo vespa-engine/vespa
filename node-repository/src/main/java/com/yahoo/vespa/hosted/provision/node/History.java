@@ -79,6 +79,16 @@ public class History {
     /** Returns the empty history */
     public static History empty() { return new History(Collections.emptyList()); }
 
+    @Override
+    public String toString() {
+        if (events.isEmpty()) return "history: (empty)";
+        StringBuilder b = new StringBuilder("history: ");
+        for (Event e : events.values())
+            b.append(e).append(", ");
+         b.setLength(b.length() -2); // remove last comma
+        return b.toString();
+    }
+    
     /** An event which may happen to a node */
     public static class Event {
 
@@ -96,10 +106,19 @@ public class History {
         /** Returns the instant this even took place */
         public Instant at() { return at; }
 
-        public enum Type { readied, reserved, activated, retired, deactivated, failed, deallocated, down }
+        public enum Type { 
+            // State move events
+            readied, reserved, activated, deactivated, failed, deallocated, 
+            // An active node was retired
+            retired,
+            // An active node went down according to the service monitor
+            down, 
+            // A node made a config request, indicating it is live
+            requested 
+        }
 
         @Override
-        public String toString() { return type + " event at " + at; }
+        public String toString() { return "'" + type + "' event at " + at; }
 
     }
 
