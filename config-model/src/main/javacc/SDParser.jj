@@ -1198,15 +1198,8 @@ Object attributeTensorType(AttributeOperation attribute) :
     TensorType tensorType;
 }
 {
-    <TENSOR_TYPE>
+    tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
-        tensorTypeString = token.image;
-        try {
-            tensorType = TensorType.fromSpec(tensorTypeString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("For attribute field '" + attribute.getName() +
-                "': Illegal tensor type spec: " + e.getMessage());
-        }
         attribute.setTensorType(tensorType);
     }
     { return null; }
@@ -1795,7 +1788,7 @@ Object constantItem(RankingConstant constant) :
 }
 {
     ( (<FILE> <COLON> fileName = filePath() { } (<NL>)*) { constant.setFileName(fileName); }
-      | type = tensorType("For ranking constant ' " + constant.getName() + "'") (<NL>)* { constant.setType(type); }
+      | type = tensorTypeWithPrefix("For ranking constant ' " + constant.getName() + "'") (<NL>)* { constant.setType(type); }
     )
     {
         return null;
@@ -2320,7 +2313,7 @@ void constantTensor(RankProfile profile, String name) :
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValue() |
-         tensorType = tensorType(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString), tensorType));
@@ -2348,12 +2341,19 @@ String tensorValue() :
     }
 }
 
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+{
+    <TYPE> <COLON> type= tensorType(errorMessage)
+    { return type; }
+}
+
 TensorType tensorType(String errorMessage) :
 {
     String tensorTypeString;
 }
 {
-    <TYPE> <COLON> ( <TENSOR_TYPE> { tensorTypeString = token.image; } )
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {
