@@ -172,26 +172,26 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void publishStateToNodeRepoIfChanged(final ContainerNodeSpec nodeSpec) throws IOException {
         final String containerVespaVersion = dockerOperations.getVespaVersionOrNull(nodeSpec.containerName);
-
-        final NodeAttributes currentAttributes = new NodeAttributes(
+        publishStateToNodeRepoIfChanged(nodeSpec.hostname, new NodeAttributes(
                 nodeSpec.wantedRestartGeneration.get(),
                 nodeSpec.wantedDockerImage.get(),
-                containerVespaVersion);
-        // TODO: We should only update if the new current values match the node repo's current values
+                containerVespaVersion));
+    }
+
+    private void publishStateToNodeRepoIfChanged(HostName hostName, NodeAttributes currentAttributes) throws IOException {
+        // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
-                    + lastAttributesSet + " -> " + currentAttributes);
+                                + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
-                    lastAttributesSet + "} -> {" + currentAttributes + "}");
+                                    lastAttributesSet + "} -> {" + currentAttributes + "}");
             nodeRepository.updateNodeAttributes(
-                    nodeSpec.hostname,
+                    hostName,
                     currentAttributes.restartGeneration,
                     currentAttributes.dockerImage,
                     currentAttributes.vespaVersion);
             lastAttributesSet = currentAttributes;
         }
-
-        logger.info("Call resume against Orchestrator");
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
@@ -317,6 +317,7 @@ public class NodeAgentImpl implements NodeAgent {
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
                 publishStateToNodeRepoIfChanged(nodeSpec);
+                logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
                 break;
             case INACTIVE:
@@ -329,6 +330,12 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
+                publishStateToNodeRepoIfChanged(nodeSpec.hostname,
+                                                // Clear current Docker image and vespa version, as nothing is running on this node
+                                                new NodeAttributes(
+                                                        nodeSpec.wantedRestartGeneration.get(),
+                                                        new DockerImage(""),
+                                                        ""));
                 nodeRepository.markAsReady(nodeSpec.hostname);
                 break;
             case FAILED:
