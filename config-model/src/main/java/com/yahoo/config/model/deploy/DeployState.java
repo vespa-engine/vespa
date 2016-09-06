@@ -123,14 +123,8 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the validation overrides of this. This is never null */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
-    /**
-     * Returns the config def with the given name and namespace.
-     *
-     * @param defKey The {@link ConfigDefinitionKey} that will uniquely identify a config definition.
-     * @return The definition with a matching name and namespace
-     * @throws java.lang.IllegalArgumentException if def is not found.
-     */
-    public final ConfigDefinition getConfigDefinition(ConfigDefinitionKey defKey) {
+    @Override
+    public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {
         if (existingConfigDefs == null) {
             existingConfigDefs = new LinkedHashMap<>();
             if (configDefinitionRepo.isPresent()) {
@@ -138,54 +132,18 @@ public class DeployState implements ConfigDefinitionStore {
             }
             existingConfigDefs.putAll(applicationPackage.getAllExistingConfigDefs());
         }
-        log.log(LogLevel.DEBUG, "Getting config definition " + defKey);
-        // Fall back to default namespace if not found.
-        if (defKey.getNamespace() == null || defKey.getNamespace().isEmpty()) {
-            defKey = new ConfigDefinitionKey(defKey.getName(), CNode.DEFAULT_NAMESPACE);
-        }
-        ConfigDefinitionKey lookupKey = defKey;
-        // Fall back to just using name
-        if (!existingConfigDefs.containsKey(lookupKey)) {
+        if ( ! existingConfigDefs.containsKey(defKey)) return Optional.empty();
 
-            int count = 0;
-            for (ConfigDefinitionKey entry : existingConfigDefs.keySet()) {
-                if (entry.getName().equals(defKey.getName())) {
-                    count++;
-                }
-            }
-            if (count > 1) {
-                throw new IllegalArgumentException("Using config definition '" +  defKey.getName() + "' is ambiguous, there are more than one config definitions with this name, please specify namespace");
-            }
+        if (defArchive.get(defKey) != null)
+            return Optional.of(defArchive.get(defKey));
 
-            lookupKey = null;
-            log.log(LogLevel.DEBUG, "Could not find config definition '" + defKey + "', trying with same name in all namespaces");
-            for (ConfigDefinitionKey entry : existingConfigDefs.keySet()) {
-                if (entry.getName().equals(defKey.getName()) && defKey.getNamespace().equals(CNode.DEFAULT_NAMESPACE)) {
-                    log.log(LogLevel.INFO, "Could not find config definition '" + defKey + "'" +
-                            ", using config definition '" + entry + "' with same name instead (please use new namespace when specifying this config)");
-                    lookupKey = entry;
-                    break;
-                }
-            }
-        }
+        ConfigDefinition def = existingConfigDefs.get(defKey).parse();
 
-        if (lookupKey == null) {
-            throw new IllegalArgumentException("Could not find a config definition with name '" + defKey + "'.");
-        }
-        if (defArchive.get(defKey) != null) {
-            log.log(LogLevel.DEBUG, "Found in archive: " + defKey);
-            return defArchive.get(defKey);
-        }
-
-        log.log(LogLevel.DEBUG, "Retrieving config definition: " + defKey);
-        ConfigDefinition def = existingConfigDefs.get(lookupKey).parse();
-
-        log.log(LogLevel.DEBUG, "Adding " + def + " to archive");
         defArchive.put(defKey, def);
-        return def;
+        return Optional.of(def);
     }
 
-    private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(final ConfigDefinitionRepo configDefinitionRepo) {
+    private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(ConfigDefinitionRepo configDefinitionRepo) {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> keyToRepo = new LinkedHashMap<>();
         for (final Map.Entry<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defEntry : configDefinitionRepo.getConfigDefinitions().entrySet()) {
             keyToRepo.put(defEntry.getKey(), new UnparsedConfigDefinition() {

@@ -70,15 +70,26 @@ public class FilesApplicationPackage implements ApplicationPackage {
     // NOTE: these directories exist in the original user app, but their locations are given in 'services.xml'
     private final List<String> userIncludeDirs = new ArrayList<>();
     private final ApplicationMetaData metaData;
+    private final boolean includeSourceFiles;
+
+    /** Creates from a directory with source files included */
+    public static FilesApplicationPackage fromFile(File appDir) {
+        return fromFile(appDir, false);
+    }
 
     /**
      * Returns an application package object based on the given application dir
      *
      * @param appDir application package directory
+     * @param includeSourceFiles read files from source directories /src/main and src/test in addition
+     *                           to the application package location. This is useful during development
+     *                           to be able to run tests without a complete build first.
      * @return an Application package instance
      */
-    public static FilesApplicationPackage fromFile(File appDir) {
-        return new Builder(appDir).preprocessedDir(new File(appDir, ".preprocessed")).build();
+    public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
+        return new Builder(appDir).preprocessedDir(new File(appDir, ".preprocessed"))
+                                  .includeSourceFiles(includeSourceFiles)
+                                  .build();
     }
 
     /** Creates package from a local directory, typically deploy app   */
@@ -86,37 +97,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return new Builder(appDir).deployData(deployData).build();
     }
 
-    /**
-     * Builder for {@link com.yahoo.config.model.application.provider.FilesApplicationPackage}. Use
-     * this to create instances in a flexible manner.
-     */
-    public static class Builder {
-        private final File appDir;
-        private Optional<File> preprocessedDir = Optional.empty();
-        private Optional<ApplicationMetaData> metaData = Optional.empty();
-
-        public Builder(File appDir) {
-            this.appDir = appDir;
-        }
-
-        public Builder preprocessedDir(File preprocessedDir) {
-            this.preprocessedDir = Optional.ofNullable(preprocessedDir);
-            return this;
-        }
-
-        public Builder deployData(DeployData deployData) {
-            this.metaData = Optional.of(metaDataFromDeployData(appDir, deployData));
-            return this;
-        }
-
-        public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, ".preprocessed")), metaData.orElse(readMetaData(appDir)));
-        }
-    }
-
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(), deployData.getDeployTimestamp(),
-                deployData.getApplicationName(), computeCheckSum(appDir), deployData.getGeneration(), deployData.getCurrentlyActiveGeneration());
+        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(), 
+                                       deployData.getDeployTimestamp(), deployData.getApplicationName(), 
+                                       computeCheckSum(appDir), deployData.getGeneration(), 
+                                       deployData.getCurrentlyActiveGeneration());
     }
 
     /**
@@ -126,10 +111,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * @param appDir application package directory
      * @param preprocessedDir preprocessed application package output directory
      * @param metaData metadata for this application package
+     * @param includeSourceFiles include files from source dirs
      */
     @SuppressWarnings("deprecation")
-    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData) {
+    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
         verifyAppDir(appDir);
+        this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
@@ -164,7 +151,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             File dir = new File(appDir, relativePath.getRelative());
             if ( ! dir.isDirectory()) return readers;
 
-            final File[] files = dir.listFiles();
+            File[] files = dir.listFiles();
             if (files != null) {
                 for (File file : files) {
                     if (file.isDirectory()) {
@@ -213,18 +200,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return new File(appDir, ApplicationPackage.HOSTS);
     }
 
-    private File getFileWithFallback(String first, String second) {
-        File firstFile = new File(appDir, first);
-        File secondFile = new File(appDir, second);
-        if (firstFile.exists()) {
-            return firstFile;
-        } else if (secondFile.exists()) {
-            return secondFile;
-        } else {
-            return firstFile;
-        }
-    }
-
     @Override
     public String getServicesSource() {
         return getServicesFile().getPath();
@@ -248,7 +223,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
             return Optional.empty();
         }
     }
-
 
     @Override
     public List<String> getUserIncludeDirs() {
@@ -319,7 +293,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             Collection<String> disjoint = new ArrayList<>(fileSds);
             disjoint.retainAll(bundleSds);
             throw new IllegalArgumentException("For the following search definitions names there are collisions between those specified inside " +
-            		"docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
+            		                           "docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
         }
     }
 
@@ -348,7 +322,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 String sdName = entry.getKey();
                 if (usedNames.contains(sdName)) {
                     throw new IllegalArgumentException("The search definition name '"+sdName+"' used in bundle '"+
-                            bundle.getName()+"' is already used in classpath or previous bundle.");
+                                                       bundle.getName()+"' is already used in classpath or previous bundle.");
                 }
                 usedNames.add(sdName);
                 String sdPayload = entry.getValue();
@@ -380,7 +354,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                         String sdName = sdFile.getName();
                         if (usedNames.contains(sdName)) {
                             throw new IllegalArgumentException("The search definition name '"+sdName+
-                                    "' found in classpath already used earlier in classpath.");
+                                                               "' found in classpath already used earlier in classpath.");
                         }
                         usedNames.add(sdName);
                         String contents = IOUtils.readAll(new FileReader(sdFile));
@@ -395,7 +369,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
                     String sdName = entry.getKey();
                     if (usedNames.contains(sdName)) {
                         throw new IllegalArgumentException("The search definitions name '"+sdName+
-                                "' used in bundle '"+jarFile.getName()+"' already used in classpath or previous bundle.");
+                                                           "' used in bundle '"+jarFile.getName()+"' " +
+                                                           "is already used in classpath or previous bundle.");
                     }
                     usedNames.add(sdName);
                     String sdPayload = entry.getValue();
@@ -405,22 +380,27 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
 	}
 
-    private Reader retrieveConfigDefReader(String defName) {
-        File def = new File(configDefsDir + File.separator + defName);
+    /** 
+     * Creates a reader for a config definition
+     * 
+     * @param defPath the path to the application package
+     * @return the reader of this config definition
+     */
+    private Reader retrieveConfigDefReader(File defPath) {
         try {
-            return new NamedReader(def.getAbsolutePath(), new FileReader(def));
+            return new NamedReader(defPath.getPath(), new FileReader(defPath));
         } catch (IOException e) {
-            throw new IllegalArgumentException("Could not read config definition file '" +
-                    def.getAbsolutePath() + "'", e);
+            throw new IllegalArgumentException("Could not read config definition file '" + defPath + "'", e);
         }
     }
 
     @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
-
-        if (configDefsDir.isDirectory()) {
-            addAllDefsFromConfigDir(defs, configDefsDir);
+        addAllDefsFromConfigDir(defs, configDefsDir);
+        if (includeSourceFiles) { // allow running from source, assuming mvn file project layout
+            addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
+            addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
         }
         addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
         return defs;
@@ -450,62 +430,56 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
+        if (! configDefsDir.isDirectory()) return;
+
         log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
-        for (final File def : configDefsDir.listFiles(
-                new FilenameFilter() { @Override public boolean accept(File dir, String name) {
+        for (File def : configDefsDir.listFiles(
+                new FilenameFilter() { @Override public boolean accept(File dir, String name) { // TODO: Fix
                     return name.matches(".*\\.def");}})) {
 
             log.log(LogLevel.DEBUG, "Processing config definition '" + def + "'");
             String[] nv = def.getName().split("\\.def");
-            if (nv == null) {
-                log.log(LogLevel.WARNING, "Skipping '" + def + "', cannot determine name");
-            } else {
-                ConfigDefinitionKey key;
-                try {
-                    key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
-                }
-                if (key.getNamespace().isEmpty()) {
-                    throw new IllegalArgumentException("Config definition '" + nv + "' has no namespace");
-                }
-                boolean addFile = false;
-                if (defs.containsKey(key)) {
-                    if (nv[0].contains(".")) {
-                        log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + ". The file '" + def + "' will take precedence");
-                        addFile = true;
-                    } else {
-                        log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + ". Skipping '" + def + "', as it does not contain namespace in filename");
-                    }
-                } else {
-                    addFile = true;
-                }
-                if (addFile) {
-                    log.log(LogLevel.DEBUG, "Adding " + key + " to archive of all existing config defs");
-                    final ConfigDefinitionKey finalKey = key;
-                    defs.put(key, new UnparsedConfigDefinition() {
-                        @Override
-                        public ConfigDefinition parse() {
-                            DefParser parser = new DefParser(finalKey.getName(), retrieveConfigDefReader(def.getName()));
-                            return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
-                        }
+            ConfigDefinitionKey key;
+            try {
+                key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: Fix
+                break;
+            }
+            if (key.getNamespace().isEmpty())
+                throw new IllegalArgumentException("Config definition '" + def + "' has no namespace");
 
-                        @Override
-                        public String getUnparsedContent() {
-                            return readConfigDefinition(def.getName());
-                        }
-                    });
+            if (defs.containsKey(key)) {
+                if (nv[0].contains(".")) {
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                                           ". The file '" + def + "' will take precedence");
+                } else {
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                                           ". Skipping '" + def + "', as it does not contain namespace in filename");
+                    continue; // skip
                 }
             }
+
+            defs.put(key, new UnparsedConfigDefinition() {
+                @Override
+                public ConfigDefinition parse() {
+                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReader(def));
+                    return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
+                }
+
+                @Override
+                public String getUnparsedContent() {
+                    return readConfigDefinition(def);
+                }
+            });
         }
     }
 
-    private String readConfigDefinition(String name) {
-        try (Reader reader = retrieveConfigDefReader(name)) {
+    private String readConfigDefinition(File defPath) {
+        try (Reader reader = retrieveConfigDefReader(defPath)) {
             return IOUtils.readAll(reader);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading config definition " + name, e);
+            throw new RuntimeException("Error reading config definition '" + defPath + "'", e);
         }
     }
 
@@ -687,7 +661,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         if (getHostsFile().exists()) {
             preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
         }
-        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir);
+        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
     }
@@ -767,6 +741,43 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 digest.update(buffer, 0, i);
             }
         } while(i!=-1);
+    }
+
+    /**
+     * Builder for {@link com.yahoo.config.model.application.provider.FilesApplicationPackage}. Use
+     * this to create instances in a flexible manner.
+     */
+    public static class Builder {
+
+        private final File appDir;
+        private Optional<File> preprocessedDir = Optional.empty();
+        private Optional<ApplicationMetaData> metaData = Optional.empty();
+        private boolean includeSourceFiles = true;
+
+        public Builder(File appDir) {
+            this.appDir = appDir;
+        }
+
+        public Builder preprocessedDir(File preprocessedDir) {
+            this.preprocessedDir = Optional.ofNullable(preprocessedDir);
+            return this;
+        }
+
+        public Builder deployData(DeployData deployData) {
+            this.metaData = Optional.of(metaDataFromDeployData(appDir, deployData));
+            return this;
+        }
+
+        public Builder includeSourceFiles(boolean includeSourceFiles) {
+            this.includeSourceFiles = includeSourceFiles;
+            return this;
+        }
+
+        public FilesApplicationPackage build() {
+            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, ".preprocessed")),
+                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles);
+        }
+
     }
 
 }

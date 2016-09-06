@@ -255,8 +255,8 @@ public class ApplicationDeployTest {
 
     @Test
     public void testConfigDefinitionsFromJars() throws IOException {
-       String appName = "src/test/cfg//application/app1";
-        FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName));
+        String appName = "src/test/cfg//application/app1";
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
         assertThat(defs.size(), is(2));
     }
@@ -341,33 +341,19 @@ public class ApplicationDeployTest {
 
         DeployState deployState = new DeployState.Builder().applicationPackage(app).build();
 
-        ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", CNode.DEFAULT_NAMESPACE));
+        ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", CNode.DEFAULT_NAMESPACE)).get();
         assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
 
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", CNode.DEFAULT_NAMESPACE));
+        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", "xyzzy")).get();
         assertThat(def.getNamespace(), is("xyzzy"));
 
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", "qux"));
+        def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", "qux")).get();
         assertThat(def.getNamespace(), is("qux"));
 
         // A config def without version in filename and version in file header
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("xyzzy", CNode.DEFAULT_NAMESPACE));
+        def = deployState.getConfigDefinition(new ConfigDefinitionKey("xyzzy", CNode.DEFAULT_NAMESPACE)).get();
         assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
         assertThat(def.getName(), is("xyzzy"));
-
-        // Without giving namespace, namespace is really CNode.DEFAULT_NAMESPACE
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", ""));
-        assertThat(def.getNamespace(), is("xyzzy"));
-
-        // Without giving namespace, namespace is really xyzzy
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", ""));
-        assertThat(def.getNamespace(), is("xyzzy"));
-
-        // Two defs, one with and one without namespace. The one with namespace should have precedence.
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("bar", "xyzzy"));
-        assertThat(def.getNamespace(), is("xyzzy"));
-        assertTrue(def.getIntDefs().containsKey("foo")); // xyzzy.baz.def has precedence before baz.def, so foo exists
-        assertThat(def.getIntDefs().get("bar").getDefVal(), is(2));
     }
 
     @Test(expected=IllegalArgumentException.class)

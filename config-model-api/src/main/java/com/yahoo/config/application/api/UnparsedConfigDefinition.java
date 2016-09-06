@@ -4,11 +4,14 @@ package com.yahoo.config.application.api;
 import com.yahoo.vespa.config.ConfigDefinition;
 
 /**
- * Represents a config definition that has not been parsed.
+ * A config definition that has not been parsed.
+ * 
  * @author lulf
  * @since 5.20
 */
 public interface UnparsedConfigDefinition {
-    public ConfigDefinition parse();
-    public String getUnparsedContent();
+
+    ConfigDefinition parse();
+    String getUnparsedContent();
+
 }

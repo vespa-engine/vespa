@@ -258,8 +258,13 @@ public final class Node {
     }
 
     public enum Type {
+        
+        /** A node to be assigned to a tenant to run application workloads */
         tenant,
+        
+        /** A host of a set of (docker) tenant nodes */
         host;
+
     }
 
 }

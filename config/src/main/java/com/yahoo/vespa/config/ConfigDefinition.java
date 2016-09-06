@@ -85,65 +85,65 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         return ancestor;
     }
 
-    private static void defFail(String id, String val, String type, Exception e, List<String> warnings) {
-        defFail("Invalid value '" + val + "' for " + type + " '" + id + "'. "+ Exceptions.toMessageString(e), warnings);
+    private static void defFail(String id, String val, String type, Exception e) {
+        defFail("Invalid value '" + val + "' for " + type + " '" + id + "'. "+ Exceptions.toMessageString(e));
     }
 
-    public void verify(String id, String val, List<String> warnings) {
+    public void verify(String id, String val) {
         if (stringDefs.containsKey(id)) {
-            verifyString(id, warnings);
+            verifyString(id);
         } else if (enumDefs.containsKey(id)) {
-            verifyEnum(id ,val, warnings);
+            verifyEnum(id ,val);
         } else if (referenceDefs.containsKey(id)) {
-            verifyReference(id, warnings);
+            verifyReference(id);
         } else if (fileDefs.containsKey(id)) {
-            verifyFile(id, warnings);
+            verifyFile(id);
         } else if (pathDefs.containsKey(id)) {
-            verifyPath(id, warnings);
+            verifyPath(id);
         } else if (boolDefs.containsKey(id)) {
-            verifyBool(id, val, warnings);
+            verifyBool(id, val);
         } else if (intDefs.containsKey(id)) {
-            verifyInt(id, val, warnings);
+            verifyInt(id, val);
         } else if (longDefs.containsKey(id)) {
-            verifyLong(id, val, warnings);
+            verifyLong(id, val);
         } else if (doubleDefs.containsKey(id)) {
-            verifyDouble(id, val, warnings);
+            verifyDouble(id, val);
         } else if (structDefs.containsKey(id)) {
-            verifyStruct(id, warnings);
+            verifyStruct(id);
         } else if (arrayDefs.containsKey(id)) {
-            verifyArray(id, warnings);
+            verifyArray(id);
         } else if (innerArrayDefs.containsKey(id)) {
-            verifyInnerArray(id, warnings);
+            verifyInnerArray(id);
         } else if (leafMapDefs.containsKey(id)) {
-		verifyLeafMap(id, warnings);
+		verifyLeafMap(id);
         } else if (structMapDefs.containsKey(id)) {
-            verifyStructMap(id, warnings);
+            verifyStructMap(id);
         } else {
             defFail("No such field in definition " + getRoot().getNamespace() + "." + getRoot().getName() +
-                    ": " + getAncestorString() + id, warnings);
+                    ": " + getAncestorString() + id);
         }
     }
 
-    private boolean verifyDouble(String id, String val, List<String> warnings) {
+    private boolean verifyDouble(String id, String val) {
         try {
-            return verifyDouble(id, Double.parseDouble(val), warnings);
+            return verifyDouble(id, Double.parseDouble(val));
         } catch (NumberFormatException e) {
-            defFail(id, val, "double", e, warnings);
+            defFail(id, val, "double", e);
             return false;
         }
     }
 
-    private boolean verifyBool(String id, String val, List<String> warnings) {
+    private boolean verifyBool(String id, String val) {
         if ("true".equalsIgnoreCase(val) || "false".equalsIgnoreCase(val)) {
-            return verifyBool(id, warnings);
+            return verifyBool(id);
         } else {
-            defFail(id, val, "bool", null, warnings);
+            defFail(id, val, "bool", null);
             return false;
         }
     }
 
-    public void verify(String id, List<String> warnings) {
-        verify(id, null, warnings);
+    public void verify(String id) {
+        verify(id, null);
     }
 
     /**
@@ -230,97 +230,97 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             return enumVals;
         }
 
-        public boolean checkValue(String id, String val, int index, List<String> warnings) {
+        public boolean checkValue(String id, String val, int index) {
             if ("int".equals(getType())) {
-                return checkInt(id, val, index, warnings);
+                return checkInt(id, val, index);
             } else if ("long".equals(getType())) {
-                return checkLong(id, val, index, warnings);
+                return checkLong(id, val, index);
             } else if ("double".equals(getType())) {
-                return checkDouble(id, val, index, warnings);
+                return checkDouble(id, val, index);
             } else if ("enum".equals(getType())) {
-                return checkEnum(id, val, index, warnings);
+                return checkEnum(id, val, index);
             }
             return true;
         }
 
-        private boolean checkEnum(String id, String val, int index, List<String> warnings) {
+        private boolean checkEnum(String id, String val, int index) {
             if (!getEnumVals().contains(val)) {
-                ConfigDefinition.failInvalidEnum(val, id, id+"["+index+"]", warnings);
+                ConfigDefinition.failInvalidEnum(val, id, id+"["+index+"]");
                 return false;
             }
             return true;
         }
 
-        private boolean checkDouble(String id, String val, int index, List<String> warnings) {
+        private boolean checkDouble(String id, String val, int index) {
             try {
-                return checkDouble(Double.parseDouble(val), id, index, warnings);
+                return checkDouble(Double.parseDouble(val), id, index);
             } catch (NumberFormatException e) {
-                ConfigDefinition.defFail(id, val, "double", e, warnings);
+                ConfigDefinition.defFail(id, val, "double", e);
                 return false;
             }
         }
 
-        private boolean checkLong(String id, String val, int index, List<String> warnings) {
+        private boolean checkLong(String id, String val, int index) {
             try {
-                return checkLong(Long.parseLong(val), id, index, warnings);
+                return checkLong(Long.parseLong(val), id, index);
             } catch (NumberFormatException e) {
-                ConfigDefinition.defFail(id, val, "long", e, warnings);
+                ConfigDefinition.defFail(id, val, "long", e);
                 return false;
             }
         }
 
-        private boolean checkInt(String id, String val, int index, List<String> warnings) {
+        private boolean checkInt(String id, String val, int index) {
             try {
-                return checkInt(Integer.parseInt(val), id, index, warnings);
+                return checkInt(Integer.parseInt(val), id, index);
             } catch (NumberFormatException e) {
-                ConfigDefinition.defFail(id, val, "int", e, warnings);
+                ConfigDefinition.defFail(id, val, "int", e);
                 return false;
             }
         }
 
-        private boolean checkInt(Integer theVal, String id, int arrayIndex, List<String> warnings) {
+        private boolean checkInt(Integer theVal, String id, int arrayIndex) {
             if (!"int".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"", warnings);
+                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"");
                 return false;
             }
             if (getMax()!=null && theVal>(Integer)getMax()) {
-                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             if (getMin()!=null && theVal<(Integer)getMin()) {
-                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             return true;
         }
 
-        private boolean checkLong(Long theVal, String id, int arrayIndex, List<String> warnings) {
+        private boolean checkLong(Long theVal, String id, int arrayIndex) {
             if (!"long".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"", warnings);
+                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"");
                 return false;
             }
             if (getMax()!=null && theVal>(Long)getMax()) {
-                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             if (getMin()!=null && theVal<(Long)getMin()) {
-                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             return true;
         }
 
-        private boolean checkDouble(Double theVal, String id, int arrayIndex, List<String> warnings) {
+        private boolean checkDouble(Double theVal, String id, int arrayIndex) {
             if (!"double".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\", array type is "+getType(), warnings);
+                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\", array type is "+getType());
                 return false;
             }
             if (getMax()!=null && (theVal>(Double)getMax())) {
-                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             if (getMin()!=null && theVal<(Double)getMin()) {
-                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]", warnings);
+                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
                 return false;
             }
             return true;
@@ -375,10 +375,10 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             this.typeSpec = typeSpec;
         }
 
-        public void verify(String val, int index, List<String> warnings) {
+        public void verify(String val, int index) {
             if (val != null && getTypeSpec() != null) {
                 TypeSpec spec = getTypeSpec();
-                spec.checkValue(getName(), val, index, warnings);
+                spec.checkValue(getName(), val, index);
             }
         }
     }
@@ -815,21 +815,21 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     /**
      * Throws if the given value is not legal
      */
-    private boolean verifyDouble(String id, Double val, List<String> warnings) {
+    private boolean verifyDouble(String id, Double val) {
         DoubleDef def = doubleDefs.get(id);
         if (def==null) {
-            defFail("No such double in " + verifyWarning(id), warnings);
+            defFail("No such double in " + verifyWarning(id));
             return false;
         }
         if (val==null) {
             return true;
         }
         if (def.getMin()!=null && val<def.getMin()) {
-            failTooSmall(val, def.getMin(), toString(), getAncestorString()+id, warnings);
+            failTooSmall(val, def.getMin(), toString(), getAncestorString()+id);
             return false;
         }
         if (def.getMax()!=null && val>def.getMax()) {
-            failTooBig(val, def.getMax(), toString(), getAncestorString()+id, warnings);
+            failTooBig(val, def.getMax(), toString(), getAncestorString()+id);
             return false;
         }
         return true;
@@ -838,15 +838,15 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     /**
      * Throws if the given value is not legal
      */
-    private boolean verifyEnum(String id, String val, List<String> warnings) {
+    private boolean verifyEnum(String id, String val) {
         EnumDef def = enumDefs.get(id);
         if (def==null) {
-            defFail("No such enum in " + verifyWarning(id), warnings);
+            defFail("No such enum in " + verifyWarning(id));
             return false;
         }
         if (!def.getVals().contains(val)) {
             defFail("Invalid enum value '"+val+"' in def "+toString()+
-                    " enum '"+getAncestorString()+id+"'.", warnings);
+                    " enum '"+getAncestorString()+id+"'.");
             return false;
         }
         return true;
@@ -855,40 +855,40 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     /**
      * Throws if the given value is not legal
      */
-    private boolean verifyInt(String id, Integer val, List<String> warnings) {
+    private boolean verifyInt(String id, Integer val) {
         IntDef def = intDefs.get(id);
         if (def==null) {
-            defFail("No such integer in " + verifyWarning(id), warnings);
+            defFail("No such integer in " + verifyWarning(id));
             return false;
         }
         if (val==null) {
             return true;
         }
         if (def.getMin()!=null && val<def.getMin()) {
-            failTooSmall(val, def.getMin(), name, id, warnings);
+            failTooSmall(val, def.getMin(), name, id);
             return false;
         }
         if (def.getMax()!=null && val>def.getMax()) {
-            failTooBig(val, def.getMax(), name, id, warnings);
+            failTooBig(val, def.getMax(), name, id);
             return false;
         }
         return true;
     }
 
-    private boolean verifyInt(String id, String val, List<String> warnings) {
+    private boolean verifyInt(String id, String val) {
         try {
-            return verifyInt(id, Integer.parseInt(val), warnings);
+            return verifyInt(id, Integer.parseInt(val));
         } catch (NumberFormatException e) {
-            ConfigDefinition.defFail(id, val, "int", e, warnings);
+            ConfigDefinition.defFail(id, val, "int", e);
             return false;
         }
     }
 
-    private boolean verifyLong(String id, String val, List<String> warnings) {
+    private boolean verifyLong(String id, String val) {
         try {
-            return verifyLong(id, Long.parseLong(val), warnings);
+            return verifyLong(id, Long.parseLong(val));
         } catch (NumberFormatException e) {
-            ConfigDefinition.defFail(id, val, "long", e, warnings);
+            ConfigDefinition.defFail(id, val, "long", e);
             return false;
         }
     }
@@ -896,135 +896,130 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     /**
      * Throws if the given value is not legal
      */
-    private boolean verifyLong(String id, Long val, List<String> warnings) {
+    private boolean verifyLong(String id, Long val) {
         LongDef def = longDefs.get(id);
         if (def==null) {
-            defFail("No such long in " + verifyWarning(id), warnings);
+            defFail("No such long in " + verifyWarning(id));
             return false;
         }
         if (val==null) {
             return true;
         }
         if (def.getMin()!=null && val<def.getMin()) {
-            failTooSmall(val, def.getMin(), name, id, warnings);
+            failTooSmall(val, def.getMin(), name, id);
             return false;
         }
         if (def.getMax()!=null && val>def.getMax()) {
-            failTooBig(val, def.getMax(), name, id, warnings);
+            failTooBig(val, def.getMax(), name, id);
             return false;
         }
         return true;
     }
 
-    static void failTooSmall(Object val, Object min, String defName, String valKey, List<String> warnings) {
-        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+"<"+min, warnings);
+    static void failTooSmall(Object val, Object min, String defName, String valKey) {
+        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+"<"+min);
     }
 
-    static void failTooBig(Object val, Object max, String defName, String valKey, List<String> warnings) {
-        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+">"+max, warnings);
+    static void failTooBig(Object val, Object max, String defName, String valKey) {
+        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+">"+max);
     }
 
-    static void failInvalidEnum(Object val, String defName, String defKey, List<String> warnings) {
-        defFail("Invalid enum value \""+val+"\" for \""+defKey+"\" in definition \""+defName, warnings);
+    static void failInvalidEnum(Object val, String defName, String defKey) {
+        defFail("Invalid enum value \""+val+"\" for \""+defKey+"\" in definition \""+defName);
     }
 
     /**
      * Adds the given log msg to list, and logs it
      * @param msg failure message
-     * @param warnings list of warnings collected during model building.
      * @return warnings list with msg added
      */
-    static List<String> defFail(String msg, List<String> warnings) {
+    static List<String> defFail(String msg) {
         throw new IllegalArgumentException(msg);
-        // Idea here is to store errors in list instead, and throw from model builder in vespamodel instead. But not so important.
-        /*warnings.add(msg);
-        log.log(LogLevel.WARNING, msg);
-        return warnings;*/
     }
 
-    private boolean verifyString(String id, List<String> warnings) {
+    private boolean verifyString(String id) {
         if (!stringDefs.containsKey(id)) {
-            defFail("No such string in " + verifyWarning(id), warnings);
+            defFail("No such string in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyReference(String id, List<String> warnings) {
+    private boolean verifyReference(String id) {
         if (!referenceDefs.containsKey(id)) {
-            defFail("No such reference in " + verifyWarning(id), warnings);
+            defFail("No such reference in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyFile(String id, List<String> warnings) {
+    private boolean verifyFile(String id) {
         if (!fileDefs.containsKey(id)) {
-            defFail("No such file in " + verifyWarning(id), warnings);
+            defFail("No such file in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyPath(String id, List<String> warnings) {
+    private boolean verifyPath(String id) {
         if (!pathDefs.containsKey(id)) {
-            defFail("No such path in " + verifyWarning(id), warnings);
+            defFail("No such path in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyBool(String id, List<String> warnings) {
+    private boolean verifyBool(String id) {
         if (!boolDefs.containsKey(id)) {
-            defFail("No such bool in " + verifyWarning(id), warnings);
+            defFail("No such bool in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyArray(String id, List<String> warnings) {
+    private boolean verifyArray(String id) {
         String failString = "No such array in " + verifyWarning(id);
         if (!arrayDefs.containsKey(id)) {
             if (innerArrayDefs.containsKey(id)) {
                 failString += ". However, the definition does contain an inner array with the same name.";
             }
-            defFail(failString, warnings);
+            defFail(failString);
             return false;
         }
         return true;
     }
 
-    private boolean verifyInnerArray(String id, List<String> warnings) {
+    private boolean verifyInnerArray(String id) {
         String failString = "No such inner array in " + verifyWarning(id);
         if (!innerArrayDefs.containsKey(id)) {
             if (arrayDefs.containsKey(id)) {
                 failString += ". However, the definition does contain an array with the same name.";
             }
-            defFail(failString, warnings);
+            defFail(failString);
             return false;
         }
         return true;
     }
 
-    private boolean verifyStruct(String id, List<String> warnings) {
+    private boolean verifyStruct(String id) {
         if (!structDefs.containsKey(id)) {
-            defFail("No such struct in " + verifyWarning(id), warnings);
+            defFail("No such struct in " + verifyWarning(id));
             return false;
         }
         return true;
     }
 
-    private boolean verifyLeafMap(String id, List<String> warnings) {
+    private boolean verifyLeafMap(String id) {
 	if (!leafMapDefs.containsKey(id)) {
-		defFail("No such leaf map in " + verifyWarning(id), warnings);
+		defFail("No such leaf map in " + verifyWarning(id));
             return false;
 	}
 	return true;
     }
 
-    private boolean verifyStructMap(String id, List<String> warnings) {
+    private boolean verifyStructMap(String id) {
 	if (!structMapDefs.containsKey(id)) {
-		defFail("No such struct map in " + verifyWarning(id), warnings);
+		defFail("No such struct map in " + verifyWarning(id));
             return false;
 	}
 	return true;

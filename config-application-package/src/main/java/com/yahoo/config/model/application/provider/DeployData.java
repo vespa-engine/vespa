@@ -8,6 +8,7 @@ package com.yahoo.config.model.application.provider;
  * @since 5.1.11
  */
 public class DeployData {
+
     /* Which user deployed */
     private final String deployedByUser;
 
