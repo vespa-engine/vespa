@@ -160,19 +160,19 @@ TEST_F("require that weighted set from query can be converted to tensor (explici
 TEST_F("require that empty tensor is created if attribute does not exists",
         ExecFixture("tensorFromWeightedSet(attribute(null))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute type is not supported",
         ExecFixture("tensorFromWeightedSet(attribute(astr))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(astr{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if query parameter is not found",
         ExecFixture("tensorFromWeightedSet(query(null))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -80,13 +80,13 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::WSET ||
             attribute->isFloatingPointType()) {
         LOG(warning, "The attribute vector '%s' is NOT of type weighted set of string or integer."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
     }
     if (attribute->isIntegerType()) {
         // Using WeightedStringContent ensures that the integer values are converted
@@ -117,7 +117,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         }
         return ConstantTensorExecutor::create(tensorBuilder.build());
     }
-    return ConstantTensorExecutor::createEmpty();
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
 }
 
 }
@@ -130,7 +130,7 @@ TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironm
     } else if (_sourceType == QUERY_SOURCE) {
         return createQueryExecutor(env, _sourceParam, _dimension);
     }
-    return ConstantTensorExecutor::createEmpty();
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}));
 }
 
 } // namespace features

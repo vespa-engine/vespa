@@ -189,26 +189,20 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         for (const auto &name: dimension_names) {
             dimensions.emplace_back(name);
         }
-        if (dimensions.empty() && false) { // XXX: 0-dimensional tensor should be double
-            double value = 0.0;
-            for (const auto &cell: node.cells()) {
-                value = cell.second;
+        TensorSpec spec(dimensions.empty()
+                        ? ValueType::double_type().to_spec()
+                        : ValueType::tensor_type(dimensions).to_spec());
+        for (const auto &cell: node.cells()) {
+            const auto &address = cell.first;
+            TensorSpec::Address spec_address;
+            for (const auto &binding: address) {
+                spec_address.emplace(binding.first, TensorSpec::Label(binding.second));
             }
-            program.emplace_back(op_load_const, wrap_param<Value>(stash.create<DoubleValue>(value)));
-        } else {
-            TensorSpec spec(ValueType::tensor_type(dimensions).to_spec());
-            for (const auto &cell: node.cells()) {
-                const auto &address = cell.first;
-                TensorSpec::Address spec_address;
-                for (const auto &binding: address) {
-                    spec_address.emplace(binding.first, TensorSpec::Label(binding.second));
-                }
-                spec.add(spec_address, cell.second);
-            }
-            std::unique_ptr<eval::Tensor> tensor = tensor_engine.create(spec);
-            program.emplace_back(op_load_const,
-                                 wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
+            spec.add(spec_address, cell.second);
         }
+        std::unique_ptr<eval::Tensor> tensor = tensor_engine.create(spec);
+        program.emplace_back(op_load_const,
+                             wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
     }
     virtual void visit(const TensorSum &node) {
         if (node.dimension().empty()) {
