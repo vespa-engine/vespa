@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
@@ -108,48 +107,6 @@ public class NodeAdminImplTest {
         verifyNoMoreInteractions(nodeAgent2);
     }
 
-    private static final DockerImage IMAGE_1 = new DockerImage("image-1");
-    private static final DockerImage IMAGE_2 = new DockerImage("image-2");
-    private static final DockerImage IMAGE_3 = new DockerImage("image-3");
-    private static final DockerImage IMAGE_4 = new DockerImage("image-4");
-
-    @Test
-    public void withNoUnusedImagesNoImagesAreConsideredDeletable() {
-        final Set<DockerImage> currentlyUnusedImages = Collections.emptySet();
-        final List<ContainerNodeSpec> pendingContainers = Collections.emptyList();
-
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
-
-        assertThat(deletableImages, is(Collections.emptySet()));
-    }
-
-    @Test
-    public void withNoPendingContainersAllUnusedImagesAreConsideredDeletable() {
-        final Set<DockerImage> currentlyUnusedImages = Stream.of(IMAGE_1, IMAGE_2, IMAGE_3)
-                .collect(Collectors.toSet());
-        final List<ContainerNodeSpec> pendingContainers = Collections.emptyList();
-
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
-
-        final Set<DockerImage> expectedDeletableImages = Stream.of(IMAGE_1, IMAGE_2, IMAGE_3)
-                .collect(Collectors.toSet());
-        assertThat(deletableImages, is(expectedDeletableImages));
-    }
-
-    @Test
-    public void imagesRequiredByPendingContainersAreNotConsideredDeletable() {
-        final Set<DockerImage> currentlyUnusedImages = Stream.of(IMAGE_1, IMAGE_2, IMAGE_3)
-                .collect(Collectors.toSet());
-        final List<ContainerNodeSpec> pendingContainers = Stream.of(IMAGE_2, IMAGE_4)
-                .map(NodeAdminImplTest::newNodeSpec)
-                .collect(Collectors.toList());
-
-        final Set<DockerImage> deletableImages = NodeAdminImpl.getDeletableDockerImages(currentlyUnusedImages, pendingContainers);
-
-        final Set<DockerImage> expectedDeletableImages = Stream.of(IMAGE_1, IMAGE_3)
-                .collect(Collectors.toSet());
-        assertThat(deletableImages, is(expectedDeletableImages));
-    }
 
     @Test
     public void fullOuterJoinTest() {
@@ -179,18 +136,5 @@ public class NodeAdminImplTest {
 
     private static <T, U> Pair<Optional<T>, Optional<U>> newPair(T t, U u) {
         return new Pair<>(Optional.ofNullable(t), Optional.ofNullable(u));
-    }
-
-    private static ContainerNodeSpec newNodeSpec(final DockerImage dockerImage) {
-        return new ContainerNodeSpec(
-                new HostName("host-for-" + dockerImage.asString()),
-                Optional.of(dockerImage),
-                new ContainerName("container-for-" + dockerImage.asString()),
-                NodeState.ACTIVE,
-                Optional.of(1L),
-                Optional.of(1L),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
     }
 }

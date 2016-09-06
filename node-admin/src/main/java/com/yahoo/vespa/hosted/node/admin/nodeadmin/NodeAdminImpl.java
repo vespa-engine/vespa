@@ -118,21 +118,13 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
-        final Set<DockerImage> deletableDockerImages = getDeletableDockerImages(
-                docker.getUnusedDockerImages(), containersToRun);
         final long currentTime = System.currentTimeMillis();
-        // TODO: This logic should be unit tested.
-        firstTimeEligibleForGC = deletableDockerImages.stream()
-                .collect(Collectors.toMap(
-                        dockerImage -> dockerImage,
-                        dockerImage -> Optional.ofNullable(firstTimeEligibleForGC.get(dockerImage)).orElse(currentTime)));
-        // Delete images that have been eligible for some time.
-        firstTimeEligibleForGC.forEach((dockerImage, timestamp) -> {
-            if (currentTime - timestamp > MIN_AGE_IMAGE_GC_MILLIS) {
-                logger.info("Deleting Docker image " + dockerImage);
-                docker.deleteImage(dockerImage);
-            }
-        });
+        Set<DockerImage> imagesToSpare = containersToRun.stream()
+                .flatMap(nodeSpec -> streamOf(nodeSpec.wantedDockerImage))
+                .filter(image -> currentTime - firstTimeEligibleForGC.getOrDefault(image, currentTime) > MIN_AGE_IMAGE_GC_MILLIS)
+                .collect(Collectors.toSet());
+
+        docker.deleteUnusedDockerImages(imagesToSpare);
     }
 
     // Turns an Optional<T> into a Stream<T> of length zero or one depending upon whether a value is present.
@@ -140,15 +132,6 @@ public class NodeAdminImpl implements NodeAdmin {
     private static <T> Stream<T> streamOf(Optional<T> opt) {
         return opt.map(Stream::of)
                 .orElseGet(Stream::empty);
-    }
-
-    static Set<DockerImage> getDeletableDockerImages(
-            final Set<DockerImage> currentlyUnusedDockerImages,
-            final List<ContainerNodeSpec> pendingContainers) {
-        final Set<DockerImage> imagesNeededNowOrInTheFuture = pendingContainers.stream()
-                .flatMap(nodeSpec -> streamOf(nodeSpec.wantedDockerImage))
-                .collect(Collectors.toSet());
-        return diff(currentlyUnusedDockerImages, imagesNeededNowOrInTheFuture);
     }
 
     // Set-difference. Returns minuend minus subtrahend.

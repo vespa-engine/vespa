@@ -116,8 +116,8 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public Set<DockerImage> getUnusedDockerImages() {
-        return new HashSet<>();
+    public void deleteUnusedDockerImages(Set<DockerImage> except) {
+
     }
 
     @Override
