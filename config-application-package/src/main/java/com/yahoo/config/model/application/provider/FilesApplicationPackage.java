@@ -94,7 +94,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /** Creates package from a local directory, typically deploy app   */
     public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData) {
-        return new Builder(appDir).deployData(deployData).build();
+        return fromFileWithDeployData(appDir, deployData, false);
+    }
+
+    /** Creates package from a local directory, typically deploy app   */
+    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData, 
+                                                                 boolean includeSourceFiles) {
+        return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
     }
 
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
@@ -752,7 +758,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         private final File appDir;
         private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
-        private boolean includeSourceFiles = true;
+        private boolean includeSourceFiles = false;
 
         public Builder(File appDir) {
             this.appDir = appDir;
