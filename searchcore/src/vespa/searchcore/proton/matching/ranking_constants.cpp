@@ -18,9 +18,9 @@ RankingConstants::Constant::Constant(const vespalib::string &name_in,
 bool
 RankingConstants::Constant::operator==(const Constant &rhs) const
 {
-    return name == rhs.name &&
-           type == rhs.type &&
-           filePath == rhs.filePath;
+    return (name == rhs.name) &&
+           (type == rhs.type) &&
+           (filePath == rhs.filePath);
 }
 
 RankingConstants::RankingConstants()

@@ -156,20 +156,20 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
 
 
 bool
-DocumentDBConfig::valid(void) const
+DocumentDBConfig::valid() const
 {
-    return _rankProfiles.get() != NULL &&
-           _rankingConstants.get() != NULL &&
-           _indexschema.get() != NULL &&
-           _attributes.get() != NULL &&
-           _summary.get() != NULL &&
-           _summarymap.get() != NULL &&
-           _juniperrc.get() != NULL &&
-           _documenttypes.get() != NULL &&
-           _repo.get() != NULL &&
-           _tuneFileDocumentDB.get() != NULL &&
-           _schema.get() != NULL &&
-           _maintenance.get() != NULL;
+    return (_rankProfiles.get() != NULL) &&
+           (_rankingConstants.get() != NULL) &&
+           (_indexschema.get() != NULL) &&
+           (_attributes.get() != NULL) &&
+           (_summary.get() != NULL) &&
+           (_summarymap.get() != NULL) &&
+           (_juniperrc.get() != NULL) &&
+           (_documenttypes.get() != NULL) &&
+           (_repo.get() != NULL) &&
+           (_tuneFileDocumentDB.get() != NULL) &&
+           (_schema.get() != NULL) &&
+           (_maintenance.get() != NULL);
 }
 
 namespace
