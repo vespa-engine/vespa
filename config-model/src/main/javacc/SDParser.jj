@@ -31,6 +31,7 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
+import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.DefaultRankProfile;
@@ -209,6 +210,7 @@ TOKEN :
 | < PREFIX: "prefix" >
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
+| < CONSTANT: "constant">
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -340,6 +342,7 @@ TOKEN :
 | < INTEGER: ("-")? (["0"-"9"])+ >
 | < LONG: ("-")? (["0"-"9"])+"L" >
 | < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
+| < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
 | < VARIABLE: "$" <IDENTIFIER> >
@@ -411,6 +414,7 @@ Object rootSearchItem(Search search) : { }
       | documentSummary(search)
       | field(null, search)
       | index(search, null)
+      | rankingConstant(search)
       | rankProfile(search)
       | searchStemming(search)
       | useDocument(search)
@@ -1194,15 +1198,8 @@ Object attributeTensorType(AttributeOperation attribute) :
     TensorType tensorType;
 }
 {
-    <TENSOR_TYPE>
+    tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
-        tensorTypeString = token.image;
-        try {
-            tensorType = TensorType.fromSpec(tensorTypeString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("For attribute field '" + attribute.getName() +
-                "': Illegal tensor type spec: " + e.getMessage());
-        }
         attribute.setTensorType(tensorType);
     }
     { return null; }
@@ -1758,6 +1755,58 @@ Object indexBody(IndexOperation index) :
 }
 
 /**
+ * Consumes a constant block of a search element.
+ *
+ * @param search The search object to add content to.
+ */
+void rankingConstant(Search search) :
+{
+    String name;
+    RankingConstant constant;
+}
+{
+    ( <CONSTANT> name = identifier()
+        {
+            constant = new RankingConstant(name);
+        }
+      lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
+    {
+        search.addRankingConstant(constant);
+    }
+}
+
+/**
+ * This rule consumes a constant block.
+ *
+ * @param constant The constant to modify.
+ * @return Null.
+ */
+Object rankingConstantItem(RankingConstant constant) :
+{
+    String fileName = null;
+    TensorType type = null;
+}
+{
+    ( (<FILE> <COLON> fileName = filePath() { } (<NL>)*) { constant.setFileName(fileName); }
+      | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
+    )
+    {
+        return null;
+    }
+}
+
+String rankingConstantErrorMessage(String name) : {}
+{
+    { return "For ranking constant ' " + name + "'"; }
+}
+
+String filePath() : { }
+{
+    ( <FILE_PATH> | <STRING> | <IDENTIFIER>)
+    { return token.image; }
+}
+
+/**
  * Consumes a rank-profile block of a search element.
  *
  * @param search The search object to add content to.
@@ -2269,7 +2318,7 @@ void constantTensor(RankProfile profile, String name) :
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValue() |
-         tensorType = tensorType(profile.getName(), name) ) (<NL>)* )* <RBRACE>
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString), tensorType));
@@ -2277,6 +2326,11 @@ void constantTensor(RankProfile profile, String name) :
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString)));
         }
     }
+}
+
+String constantTensorErrorMessage(String rankProfileName, String constantTensorName) : {}
+{
+    { return "For constant tensor '" + constantTensorName + "' in rank profile '" + rankProfileName + "'"; }
 }
 
 String tensorValue() :
@@ -2292,19 +2346,25 @@ String tensorValue() :
     }
 }
 
-TensorType tensorType(String rankProfileName, String constantTensorName) :
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+{
+    <TYPE> <COLON> type= tensorType(errorMessage)
+    { return type; }
+}
+
+TensorType tensorType(String errorMessage) :
 {
     String tensorTypeString;
 }
 {
-    <TYPE> <COLON> ( <TENSOR_TYPE> { tensorTypeString = token.image; } )
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {
             tensorType = TensorType.fromSpec(tensorTypeString);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("For constant tensor '" + constantTensorName + "' in rank profile '" + rankProfileName +
-                "': Illegal tensor type spec: " + e.getMessage());
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
         }
         return tensorType;
     }

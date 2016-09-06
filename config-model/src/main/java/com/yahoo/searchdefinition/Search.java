@@ -141,6 +141,7 @@ public class Search implements Serializable {
     }
 
     public void addRankingConstant(RankingConstant rConstant) {
+        rConstant.validate();
         String name = rConstant.getName();
         if (rankingConstants.get(name) != null) {
             throw new IllegalArgumentException("Ranking constant '"+name+"' defined twice");
