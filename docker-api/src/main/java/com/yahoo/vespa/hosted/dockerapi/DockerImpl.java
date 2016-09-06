@@ -280,7 +280,7 @@ public class DockerImpl implements Docker {
         // Transform map of image ID:image to map of image tag:image (for each tag the image has)
         for (Map.Entry<String, Image> entry : dockerImagesByImageId.entrySet()) {
             String[] repoTags = entry.getValue().getRepoTags();
-            // If no tags present, fall back to image ID:image
+            // If no tags present, fall back to image ID
             if (repoTags.length == 0 || repoTags[0].isEmpty()) {
                 dockerImageByImageTags.put(entry.getKey(), entry.getValue());
             } else {
@@ -327,11 +327,9 @@ public class DockerImpl implements Docker {
             Image image2 = unusedImagesByExcept.get(o2);
 
             // If image2 is parent of image1, image1 comes before image2
-            if (image1.getParentId() != null && !image1.getParentId().isEmpty() &&
-                    image1.getParentId().equals(image2.getId())) return -1;
+            if (Objects.equals(image1.getParentId(), image2.getId())) return -1;
             // If image1 is parent of image2, image2 comes before image1
-            else if (image2.getParentId() != null && !image2.getParentId().isEmpty() &&
-                    image2.getParentId().equals(image1.getId())) return 1;
+            else if (Objects.equals(image2.getParentId(), image1.getId())) return 1;
             // Otherwise, sort lexicographically by image name (For testing)
             else return o1.compareTo(o2);
         });
