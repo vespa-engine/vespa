@@ -460,7 +460,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "      <documents>" +
                         "        <document type='music' mode='index'/>" +
                         "      </documents>" +
-                        "    <group mmap-nocore-limit=\"200000\">" +
+                        "    <group mmap-core-limit=\"200000\">" +
                         "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
                         "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
                         "    </group>" +
@@ -482,6 +482,61 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
+    public void canConfigureCoreOnOOM() throws Exception {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group core-on-oom=\"true\">" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
+        ContentSearchCluster s;
+
+        s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertTrue(b.getRootGroup().getCoreOnOOM().isPresent());
+        assertTrue(b.getRootGroup().getCoreOnOOM().get());
+
+        assertThat(s.getSearchNodes().size(), is(2));
+        assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
+        assertTrue(s.getSearchNodes().get(1).getCoreOnOOM());
+        assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
+        assertEquals("", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+    }
+
+    @Test
+    public void defaultCoreOnOOMIsFalse() throws Exception {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                        "    <redundancy>2</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                        "    </group>" +
+                        "</content>");
+        ContentSearchCluster s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
+
+        assertThat(s.getSearchNodes().size(), is(2));
+        assertFalse(s.getSearchNodes().get(0).getCoreOnOOM());
+        assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+    }
+
+    @Test
     public void canConfigureMmapNoCoreLimitPerHost() throws Exception {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
@@ -490,13 +545,11 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "        <document type='music' mode='index'/>" +
                         "      </documents>" +
                         "    <group>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-nocore-limit=\"200000\"/>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-core-limit=\"200000\"/>" +
                         "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
                         "    </group>" +
                         "</content>");
-        ContentSearchCluster s;
-
-        s = b.getSearch();
+        ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
         assertEquals(2, b.getStorageNodes().getChildren().size());
@@ -507,6 +560,32 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(-1, s.getSearchNodes().get(1).getMMapNoCoreLimit());
         assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(0).getMMapNoCoreEnvVariable());
         assertEquals("", s.getSearchNodes().get(1).getMMapNoCoreEnvVariable());
+    }
+
+    @Test
+    public void canConfigureCoreOnOOMPerHost() throws Exception {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\" core-on-oom=\"true\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" core-on-oom=\"false\"/>" +
+                "    </group>" +
+                "</content>");
+        ContentSearchCluster s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(2, b.getStorageNodes().getChildren().size());
+        assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
+
+        assertThat(s.getSearchNodes().size(), is(2));
+        assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
+        assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
+        assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
     }
 
     @Test

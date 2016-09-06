@@ -36,6 +36,7 @@ public class StorageGroup {
     String name;
     private final ContentCluster owner;
     private final Optional<Long> mmapNoCoreLimit;
+    private final Optional<Boolean> coreOnOOM;
 
     private final List<StorageGroup> subgroups = new ArrayList<>();
     private final List<StorageNode> nodes = new ArrayList<>();
@@ -52,7 +53,7 @@ public class StorageGroup {
      * @param useCpuSocketAffinity whether processes should be started with socket affinity
      */
     private StorageGroup(ContentCluster owner, String name, String index, Optional<String> partitions,
-                         boolean useCpuSocketAffinity, Optional<Long> mmapNoCoreLimit)
+                         boolean useCpuSocketAffinity, Optional<Long> mmapNoCoreLimit, Optional<Boolean> coreOnOOM)
     {
         this.owner = owner;
         this.index = index;
@@ -60,6 +61,7 @@ public class StorageGroup {
         this.partitions = partitions;
         this.useCpuSocketAffinity = useCpuSocketAffinity;
         this.mmapNoCoreLimit = mmapNoCoreLimit;
+        this.coreOnOOM = coreOnOOM;
     }
 
     /** Returns the name of this group, or null if it is the root group */
@@ -79,6 +81,7 @@ public class StorageGroup {
     public Optional<String> getPartitions() { return partitions; }
     public boolean useCpuSocketAffinity() { return useCpuSocketAffinity; }
     public Optional<Long> getMmapNoCoreLimit() { return mmapNoCoreLimit; }
+    public Optional<Boolean> getCoreOnOOM() { return coreOnOOM; }
 
     /** Returns all the nodes below this group */
     public List<StorageNode> recursiveGetNodes() {
@@ -269,7 +272,8 @@ public class StorageGroup {
                     // create subgroups as returned from allocation
                     for (Map.Entry<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
                         String groupIndex = String.valueOf(hostGroup.getKey().get().index());
-                        StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex, Optional.empty(), false, Optional.empty());
+                        StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex, Optional.empty(),
+                                                                 false, Optional.empty(),Optional.empty());
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
                             subgroup.nodes.add(createStorageNode(owner, host.getKey(), subgroup, host.getValue()));
                         }
@@ -349,7 +353,8 @@ public class StorageGroup {
             StorageGroup group = new StorageGroup(owner, name, index,
                                                   childAsString(groupElement, "distribution.partitions"),
                                                   booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
-                                                  childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT));
+                                                  childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
+                                                  childAsBoolean(groupElement, VespaDomBuilder.CORE_ON_OOM));
 
             List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(group, groupElement.get()) : Collections.emptyList();
 
@@ -374,6 +379,10 @@ public class StorageGroup {
         private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
             if ( ! element.isPresent()) return Optional.empty();
             return Optional.ofNullable(element.get().childAsLong(childTagName));
+        }
+        private Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
+            if ( ! element.isPresent()) return Optional.empty();
+            return Optional.ofNullable(element.get().childAsBoolean(childTagName));
         }
 
         private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {

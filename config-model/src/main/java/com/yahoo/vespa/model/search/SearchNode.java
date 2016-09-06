@@ -229,9 +229,19 @@ public class SearchNode extends AbstractService implements
         return serviceLayerService;
     }
 
+    public String getMMapNoCoreEnvVariable() {
+        return (getMMapNoCoreLimit() >= 0l)
+                ? "VESPA_MMAP_NOCORE_LIMIT=" + getMMapNoCoreLimit() + " "
+                : "";
+    }
+
+    public String getCoreOnOOMEnvVariable() {
+        return getCoreOnOOM() ? "" : "VESPA_SILENCE_CORE_ON_OOM=true ";
+    }
+
     @Override
     public String getStartupCommand() {
-        String startup = getMMapNoCoreEnvVariable() + "exec $ROOT/sbin/proton " + "--identity " + getConfigId();
+        String startup = getCoreOnOOMEnvVariable() + getMMapNoCoreEnvVariable() + "exec $ROOT/sbin/proton " + "--identity " + getConfigId();
         if (serviceLayerService != null) {
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }

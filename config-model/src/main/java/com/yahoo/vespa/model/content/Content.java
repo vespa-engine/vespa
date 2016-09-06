@@ -166,6 +166,11 @@ public class Content extends ConfigModel {
                 s.setMMapNoCoreLimit(cluster.getRootGroup().getMmapNoCoreLimit().get());
             }
         }
+        if (cluster.getRootGroup().getCoreOnOOM().isPresent()) {
+            for (AbstractService s : cluster.getSearch().getSearchNodes()) {
+                s.setCoreOnOOM(cluster.getRootGroup().getCoreOnOOM().get());
+            }
+        }
         cluster.prepare();
     }
 

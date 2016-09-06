@@ -191,17 +191,19 @@ Documents = element documents {
 }
 
 ContentNode = element node {
-      GenericConfig* &
-      service.attlist &
-      attribute distribution-key { xsd:nonNegativeInteger } &
-      attribute capacity { xsd:double { minExclusive = "0.0" } }? &
-      attribute cpu-socket { xsd:nonNegativeInteger }? &
-      attribute mmap-nocore-limit { xsd:nonNegativeInteger }?
+    GenericConfig* &
+    service.attlist &
+    attribute distribution-key { xsd:nonNegativeInteger } &
+    attribute capacity { xsd:double { minExclusive = "0.0" } }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
+    attribute cpu-socket { xsd:nonNegativeInteger }?
 }
 
 ContentNodes = element nodes {
     attribute cpu-socket-affinity { xsd:string }? &
-    attribute mmap-nocore-limit { xsd:nonNegativeInteger }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
     (
       (
         attribute count { xsd:positiveInteger } &
@@ -221,7 +223,8 @@ TopGroup = element group {
     # break all system tests and backward compatibility.
     attribute name { xsd:string }? &
     attribute cpu-socket-affinity { xsd:string }? &
-    attribute mmap-nocore-limit { xsd:nonNegativeInteger }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
     attribute distribution-key { xsd:nonNegativeInteger }? &
     (
         ContentNode +
