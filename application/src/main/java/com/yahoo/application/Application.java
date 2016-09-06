@@ -102,7 +102,8 @@ public final class Application implements AutoCloseable {
     private VespaModel createVespaModel() {
         try {
             DeployState deployState = new DeployState.Builder()
-                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile()))
+                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), 
+                                                                         /* Include source files */ true))
                     .deployLogger((level, s) -> { })
                     .build();
             return new VespaModel(new NullConfigModelRegistry(), deployState);

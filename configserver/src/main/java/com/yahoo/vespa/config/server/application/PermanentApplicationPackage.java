@@ -24,8 +24,7 @@ public class PermanentApplicationPackage {
 
     public PermanentApplicationPackage(ConfigserverConfig config) {
         File app = new File(Defaults.getDefaults().underVespaHome(config.applicationDirectory()));
-        applicationPackage = Optional.<ApplicationPackage>ofNullable(app.exists() ?
-                                                                     FilesApplicationPackage.fromFile(app) : null);
+        applicationPackage = Optional.<ApplicationPackage>ofNullable(app.exists() ? FilesApplicationPackage.fromFile(app) : null);
         if (applicationPackage.isPresent()) {
             log.log(LogLevel.DEBUG, "Detected permanent application package in '" +
                                     Defaults.getDefaults().underVespaHome(config.applicationDirectory()) +

@@ -74,7 +74,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /** Creates from a directory with source files included */
     public static FilesApplicationPackage fromFile(File appDir) {
-        return fromFile(appDir, true);
+        return fromFile(appDir, false);
     }
 
     /**
@@ -661,7 +661,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         if (getHostsFile().exists()) {
             preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
         }
-        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir);
+        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
     }
