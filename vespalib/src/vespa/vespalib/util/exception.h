@@ -42,11 +42,11 @@
  * \ref VESPA_DEFINE_EXCEPTION_SPINE
  * @param MyClass the name of your class
  **/
-#define VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)                            \
-  const char *MyClass::getName() const { return VESPA_STRINGIZE(MyClass); } \
-  vespalib::Exception *MyClass::clone() const { return new MyClass(*this); }          \
-  void MyClass::throwSelf() const { throw MyClass(*this); }                 \
-  MyClass& MyClass::setCause(const vespalib::Exception& cause)                       \
+#define VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)                             \
+  const char *MyClass::getName() const { return VESPA_STRINGIZE(MyClass); }  \
+  vespalib::Exception *MyClass::clone() const { return new MyClass(*this); } \
+  void MyClass::throwSelf() const { throw MyClass(*this); }                  \
+  MyClass& MyClass::setCause(const vespalib::Exception& cause)               \
         { _cause = vespalib::ExceptionPtr(cause); return *this; }
 
 /**

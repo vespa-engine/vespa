@@ -36,6 +36,7 @@ void * AlignedHeapAlloc::alloc(size_t sz, size_t alignment)
 namespace {
 
 volatile bool _G_hasHugePageFailureJustHappened(false);
+volatile bool _G_SilenceCoreOnOOM(false);
 volatile int  _G_HugeFlags = -1;
 volatile size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 volatile size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
@@ -60,30 +61,34 @@ struct MMapInfo {
 typedef std::map<const void *, MMapInfo> MMapStore;
 MMapStore _G_HugeMappings;
 
+size_t
+readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
+    const char * str = getenv(name);
+    if (str != nullptr) {
+        char * e(nullptr);
+        size_t value = strtoul(str, &e, 0);
+        if ((e == 0) || (e[0] == '\0')) {
+            return value;
+        }
+        LOG(warning, "Not able to to decode %s='%s' as number. Failed at '%s'", name, str, e);
+    }
+    return defaultValue;
+}
+
 void initializeEnvironment()
 {
-    _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != NULL) ? MAP_HUGETLB : 0;
-    const char * mmapLogLimitStr = getenv("VESPA_MMAP_LOG_LIMIT");
-    if (mmapLogLimitStr != NULL) {
-        char * e(NULL);
-        size_t mmapLogLimit = strtoul(mmapLogLimitStr, &e, 0);
-        if ((e == 0) || (e[0] == '\0')) {
-            _G_MMapLogLimit = mmapLogLimit;
-        } else {
-            LOG(warning, "Not able to to decode VESPA_MMAP_LOG_LIMIT='%s' as number. Failed at '%s'", mmapLogLimitStr, e);
-        }
-    }
-    const char * mmapNoCoreLimitStr = getenv("VESPA_MMAP_NOCORE_LIMIT");
-    if (mmapNoCoreLimitStr != NULL) {
-        char * e(NULL);
-        size_t mmapNoCoreLimit = strtoul(mmapNoCoreLimitStr, &e, 0);
-        if ((e == 0) || (e[0] == '\0')) {
-            _G_MMapNoCoreLimit = mmapNoCoreLimit;
-        } else {
-            LOG(warning, "Not able to to decode VESPA_MMAP_NOCORE_LIMIT='%s' as number. Failed at %s", mmapNoCoreLimitStr, e);
-        }
-    }
+    _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0;
+    _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
+    _G_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
+    _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
 }
+
+class Initialize {
+public:
+    Initialize() { initializeEnvironment(); }
+};
+
+Initialize _G_initializer;
 
 size_t sum(const MMapStore & s)
 {
@@ -95,22 +100,20 @@ size_t sum(const MMapStore & s)
 }
 
 }
+
 void * MMapAlloc::alloc(size_t sz)
 {
-    void * buf(NULL);
+    void * buf(nullptr);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
-        if (_G_HugeFlags == -1) {
-            initializeEnvironment();
-        }
         size_t mmapId = std::atomic_fetch_add(&_G_mmapCount, 1ul);
         string stackTrace;
         if (sz >= _G_MMapLogLimit) {
             stackTrace = getStackTrace(1);
             LOG(info, "mmap %ld of size %ld from %s", mmapId, sz, stackTrace.c_str());
         }
-        buf = mmap(NULL, sz, prot, flags | _G_HugeFlags, -1, 0);
+        buf = mmap(nullptr, sz, prot, flags | _G_HugeFlags, -1, 0);
         if (buf == MAP_FAILED) {
             if ( ! _G_hasHugePageFailureJustHappened ) {
                 _G_hasHugePageFailureJustHappened = true;
@@ -118,9 +121,17 @@ void * MMapAlloc::alloc(size_t sz)
                           " Will resort to ordinary mmap until it works again.",
                            sz, FastOS_FileInterface::getLastErrorString().c_str());
             }
-            buf = mmap(NULL, sz, prot, flags, -1, 0);
+            buf = mmap(nullptr, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
-                throw std::runtime_error(make_string("Failed mmaping anonymous of size %ld errno(%d)", sz, errno));
+                stackTrace = getStackTrace(1);
+                string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
+                if (_G_SilenceCoreOnOOM) {
+                    OOMException oom(msg);
+                    oom.setPayload(std::make_unique<SilenceUncaughtException>(oom));
+                    throw oom;
+                } else {
+                    throw OOMException(msg);
+                }
             }
         } else {
             if (_G_hasHugePageFailureJustHappened) {
@@ -143,7 +154,7 @@ void * MMapAlloc::alloc(size_t sz)
 
 void MMapAlloc::free(void * buf, size_t sz)
 {
-    if (buf != NULL) {
+    if (buf != nullptr) {
         madvise(buf, sz, MADV_DONTNEED);
         munmap(buf, sz);
         if (sz >= _G_MMapLogLimit) {

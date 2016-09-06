@@ -4,8 +4,12 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <mutex>
 
 #include <errno.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".vespa.exceptions");
 
 namespace vespalib {
 
@@ -21,6 +25,33 @@ VESPA_IMPLEMENT_EXCEPTION_SPINE(PortListenException);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(IoException);
 
 //-----------------------------------------------------------------------------
+
+namespace {
+
+std::mutex _G_silence_mutex;
+vespalib::string _G_what;
+
+void silent_terminate() {
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    LOG(fatal, "Will exit with code 66 due to: %s", _G_what.c_str());
+    std::quick_exit(66);
+}
+
+}
+
+SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
+    _oldTerminate(std::set_terminate(silent_terminate))
+{
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    _G_what = e.what();
+}
+
+SilenceUncaughtException::~SilenceUncaughtException()
+{
+    std::set_terminate(_oldTerminate);
+    std::lock_guard<std::mutex> guard(_G_silence_mutex);
+    _G_what = "";
+}
 
 vespalib::string
 PortListenException::make_message(int port, const vespalib::stringref &protocol,
