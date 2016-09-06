@@ -83,6 +83,13 @@ void initializeEnvironment()
     _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
 }
 
+class Initialize {
+public:
+    Initialize() { initializeEnvironment(); }
+};
+
+Initialize _G_initializer;
+
 size_t sum(const MMapStore & s)
 {
     size_t sum(0);
@@ -93,15 +100,13 @@ size_t sum(const MMapStore & s)
 }
 
 }
+
 void * MMapAlloc::alloc(size_t sz)
 {
     void * buf(nullptr);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
-        if (_G_HugeFlags == -1) {
-            initializeEnvironment();
-        }
         size_t mmapId = std::atomic_fetch_add(&_G_mmapCount, 1ul);
         string stackTrace;
         if (sz >= _G_MMapLogLimit) {
