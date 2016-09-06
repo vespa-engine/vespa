@@ -36,10 +36,10 @@ void * AlignedHeapAlloc::alloc(size_t sz, size_t alignment)
 namespace {
 
 volatile bool _G_hasHugePageFailureJustHappened(false);
-volatile bool _G_SilenceCoreOnOOM(false);
-volatile int  _G_HugeFlags = -1;
-volatile size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
-volatile size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
+bool _G_SilenceCoreOnOOM(false);
+int  _G_HugeFlags = 0;
+size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
+size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 Lock _G_lock;
 std::atomic<size_t> _G_mmapCount(0);
 
