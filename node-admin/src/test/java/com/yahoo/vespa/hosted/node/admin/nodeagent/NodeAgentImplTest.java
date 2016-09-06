@@ -274,8 +274,9 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).startContainerIfNeeded(any());
         verify(orchestrator, never()).resume(any(HostName.class));
-        verify(nodeRepository, never()).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), anyString());
+        // current Docker image and vespa version should be cleared
+        verify(nodeRepository, times(1)).updateNodeAttributes(
+                any(HostName.class), anyLong(), eq(new DockerImage("")), eq(""));
     }
 
     @Test
