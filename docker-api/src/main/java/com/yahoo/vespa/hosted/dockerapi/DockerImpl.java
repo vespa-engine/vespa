@@ -21,6 +21,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,7 +73,8 @@ public class DockerImpl implements Docker {
 
         RemoteApiVersion remoteApiVersion;
         try {
-             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance()
+             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
+                     buildDockerClientConfig(config).build())
                      .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
             logger.info("Found version of remote docker API: "+ remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
@@ -86,11 +88,26 @@ public class DockerImpl implements Docker {
             remoteApiVersion = RemoteApiVersion.VERSION_1_23;
         }
 
-        this.dockerClient = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
-                .withDockerHost(config.uri())
+        this.dockerClient = DockerClientImpl.getInstance(
+                buildDockerClientConfig(config)
                 .withApiVersion(remoteApiVersion)
                 .build())
                 .withDockerCmdExecFactory(dockerFactory);
+    }
+
+    static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
+        DefaultDockerClientConfig.Builder dockerConfigBuilder = new DefaultDockerClientConfig.Builder()
+                .withDockerHost(config.uri());
+
+        if (URI.create(config.uri()).getScheme().equals("tcp") && !config.caCertPath().isEmpty()) {
+            // In current version of docker-java (3.0.2), withDockerTlsVerify() only effect is when using it together
+            // with withDockerCertPath(), where setting withDockerTlsVerify() must be set to true, otherwise the
+            // cert path parameter will be ignored.
+            // withDockerTlsVerify() has no effect when used with withCustomSslConfig()
+            dockerConfigBuilder.withCustomSslConfig(new VespaSSLConfig(config));
+        }
+
+        return dockerConfigBuilder;
     }
 
     @Override
