@@ -411,8 +411,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
         addAllDefsFromConfigDir(defs, configDefsDir);
-        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
-        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
+        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions")); // Allow running from source
+        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions")); // Allow running from source
         addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
         return defs;
     }
