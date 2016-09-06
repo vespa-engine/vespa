@@ -279,7 +279,7 @@ void Fdispatch::configure(std::unique_ptr<FdispatchrcConfig> cfg)
 {
     if (cfg && _config) {
         if ( needRestart(*_config, *cfg) ) {
-            const int sleepMS = (1.0 + 30 * _rndGen.nextDouble()) * 1000;
+            const int sleepMS = (0.100 + 2 * _rndGen.nextDouble()) * 1000;
             LOG(warning, "Will restart by abort in %d ms.", sleepMS);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepMS));
             _needRestart.store(true);
