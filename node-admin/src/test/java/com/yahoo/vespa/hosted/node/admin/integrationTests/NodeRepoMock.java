@@ -20,20 +20,13 @@ import java.util.stream.Collectors;
  * @author dybis
  */
 public class NodeRepoMock implements NodeRepository {
-
-    private static List<ContainerNodeSpec> containerNodeSpecs;
-    private static StringBuilder requests;
+    private List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+    private final CallOrderVerifier callOrder;
 
     private static final Object monitor = new Object();
 
-    static {
-        reset();
-    }
-
-    public NodeRepoMock() {
-        if (OrchestratorMock.semaphore.tryAcquire()) {
-            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using NodeRepoMock");
-        }
+    public NodeRepoMock(CallOrderVerifier callOrder) {
+        this.callOrder = callOrder;
     }
 
     @Override
@@ -55,10 +48,8 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public void updateNodeAttributes(HostName hostName, long restartGeneration, DockerImage dockerImage, String containerVespaVersion) throws IOException {
         synchronized (monitor) {
-            requests.append("updateNodeAttributes with HostName: ").append(hostName)
-                    .append(", restartGeneration: ").append(restartGeneration)
-                    .append(", DockerImage: ").append(dockerImage)
-                    .append(", containerVespaVersion: ").append(containerVespaVersion).append("\n");
+            callOrder.add("updateNodeAttributes with HostName: " + hostName + ", restartGeneration: " + restartGeneration +
+                    ", DockerImage: " + dockerImage + ", containerVespaVersion: " + containerVespaVersion);
         }
     }
 
@@ -73,11 +64,11 @@ public class NodeRepoMock implements NodeRepository {
                         cns.get().wantedRestartGeneration, cns.get().currentRestartGeneration,
                         cns.get().minCpuCores, cns.get().minMainMemoryAvailableGb, cns.get().minDiskAvailableGb);
             }
-            requests.append("markAsReady with HostName: ").append(hostName).append("\n");
+            callOrder.add("markAsReady with HostName: " + hostName);
         }
     }
 
-    public static void updateContainerNodeSpec(HostName hostName,
+    public void updateContainerNodeSpec(HostName hostName,
                                                Optional<DockerImage> wantedDockerImage,
                                                ContainerName containerName,
                                                NodeState nodeState,
@@ -92,20 +83,20 @@ public class NodeRepoMock implements NodeRepository {
                 minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb));
     }
 
-    public static void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
+    public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
         removeContainerNodeSpec(containerNodeSpec.hostname);
         synchronized (monitor) {
             containerNodeSpecs.add(containerNodeSpec);
         }
     }
 
-    public static void clearContainerNodeSpecs() {
+    public void clearContainerNodeSpecs() {
         synchronized (monitor) {
             containerNodeSpecs.clear();
         }
     }
 
-    public static void removeContainerNodeSpec(HostName hostName) {
+    public void removeContainerNodeSpec(HostName hostName) {
         synchronized (monitor) {
             containerNodeSpecs = containerNodeSpecs.stream()
                     .filter(c -> !c.hostname.equals(hostName))
@@ -113,22 +104,9 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    public static int getNumberOfContainerSpecs() {
+    public int getNumberOfContainerSpecs() {
         synchronized (monitor) {
             return containerNodeSpecs.size();
-        }
-    }
-
-    public static String getRequests() {
-        synchronized (monitor) {
-            return requests.toString();
-        }
-    }
-
-    public static void reset() {
-        synchronized (monitor) {
-            containerNodeSpecs = new ArrayList<>();
-            requests = new StringBuilder();
         }
     }
 }

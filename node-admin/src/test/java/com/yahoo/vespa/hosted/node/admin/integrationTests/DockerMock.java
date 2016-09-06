@@ -23,21 +23,12 @@ import java.util.stream.Collectors;
  * @author valerijf
  */
 public class DockerMock implements Docker {
-    private List<Container> containers;
-    private static StringBuilder requests;
-
+    private List<Container> containers = new ArrayList<>();
+    public final CallOrderVerifier callOrder;
     private static final Object monitor = new Object();
 
-    static {
-        reset();
-    }
-
-    public DockerMock() {
-        if (OrchestratorMock.semaphore.tryAcquire()) {
-            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using DockerMock");
-        }
-
-        containers = new ArrayList<>();
+    public DockerMock(CallOrderVerifier callOrder) {
+        this.callOrder = callOrder;
     }
 
     @Override
@@ -46,9 +37,8 @@ public class DockerMock implements Docker {
             ContainerName containerName,
             HostName hostName) {
         synchronized (monitor) {
-            requests.append("createStartContainerCommand with DockerImage: ")
-                    .append(dockerImage).append(", HostName: ").append(hostName)
-                    .append(", ContainerName: ").append(containerName).append("\n");
+            callOrder.add("createStartContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
+                    ", ContainerName: " + containerName);
             containers.add(new Container(hostName, dockerImage, containerName, true));
         }
 
@@ -57,18 +47,13 @@ public class DockerMock implements Docker {
 
     @Override
     public ContainerInfo inspectContainer(ContainerName containerName) {
-        return new ContainerInfo() {
-            @Override
-            public Optional<Integer> getPid() {
-                return Optional.of(2);
-            }
-        };
+        return () -> Optional.of(2);
     }
 
     @Override
     public void stopContainer(ContainerName containerName) {
         synchronized (monitor) {
-            requests.append("stopContainer with ContainerName: ").append(containerName).append("\n");
+            callOrder.add("stopContainer with ContainerName: " + containerName);
             containers = containers.stream()
                     .map(container -> container.name.equals(containerName) ?
                             new Container(container.hostname, container.image, container.name, false) : container)
@@ -79,7 +64,7 @@ public class DockerMock implements Docker {
     @Override
     public void deleteContainer(ContainerName containerName) {
         synchronized (monitor) {
-            requests.append("deleteContainer with ContainerName: ").append(containerName).append("\n");
+            callOrder.add("deleteContainer with ContainerName: " + containerName);
             containers = containers.stream()
                     .filter(container -> !container.name.equals(containerName))
                     .collect(Collectors.toList());
@@ -103,8 +88,20 @@ public class DockerMock implements Docker {
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(DockerImage image) {
         synchronized (monitor) {
-            requests.append("pullImageAsync with DockerImage: ").append(image);
-            return null;
+            callOrder.add("pullImageAsync with DockerImage: " + image);
+            final CompletableFuture<DockerImage> completableFuture = new CompletableFuture<>();
+            new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(500);
+                        completableFuture.complete(image);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }.start();
+            return completableFuture;
         }
     }
 
@@ -126,23 +123,12 @@ public class DockerMock implements Docker {
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         synchronized (monitor) {
-            requests.append("executeInContainer with ContainerName: ").append(containerName)
-                    .append(", args: ").append(Arrays.toString(args)).append("\n");
+            callOrder.add("executeInContainer with ContainerName: " + containerName +
+                    ", args: " + Arrays.toString(args));
         }
-        return new ProcessResult(0, "OK", "");
+        return new ProcessResult(0, null, "");
     }
 
-    public static String getRequests() {
-        synchronized (monitor) {
-            return requests.toString();
-        }
-    }
-
-    public static void reset() {
-        synchronized (monitor) {
-            requests = new StringBuilder();
-        }
-    }
 
     public static class StartContainerCommandMock implements StartContainerCommand {
         @Override
