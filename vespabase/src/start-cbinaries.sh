@@ -64,21 +64,9 @@ bname=`basename $0`
 no_valgrind=true
 use_callgrind=false
 
-if [ "$bname" = "storaged" ] || [ "$bname" = "distributord" ]; then
-    memorySize=${vespa_storageserver__virtual_memory_size}
-    if [ "$memorySize" ]; then
-        log_debug_message "vespa_storageserver.virtual_memory_size set to $memorySize, running: ulimit -v $memorySize"
-        ulimit -v $memorySize
-    fi
-fi
-
 if [ "$bname" = "filedistributor" ]; then
     VESPA_USE_VALGRIND=""
     VESPA_VALGRIND_OPT=""
-fi
-
-if [ "$bname" = "vespafeeder-old" ] || [ "$bname" = "vdsfeeder" ]; then
-    export VESPA_LOG_LEVEL="all -spam -debug -config -info -event"
 fi
 
 case $VESPA_VALGRIND_OPT in
