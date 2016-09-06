@@ -91,6 +91,10 @@
           <jdiscPrivilegedActivator>true</jdiscPrivilegedActivator>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
 
       <plugin>
         <groupId>org.scala-tools</groupId>
