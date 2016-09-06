@@ -397,27 +397,22 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * Creates a reader for a config definition
      * 
      * @param defPath the path to the application package
-     * @param insideApplicationPackage true if the path is relative to the config definition dire in the application
-     *                                 package, false if it is absolute, or relative to the current path, which
-     *                                 is useful when running out of source during development
      * @return the reader of this config definition
      */
-    private Reader retrieveConfigDefReader(String defPath, boolean insideApplicationPackage) {
-        File defFile = insideApplicationPackage ? new File(defPath) : new File(defPath);
+    private Reader retrieveConfigDefReader(File defPath) {
         try {
-            return new NamedReader(defFile.getAbsolutePath(), new FileReader(defFile));
+            return new NamedReader(defPath.getPath(), new FileReader(defPath));
         } catch (IOException e) {
-            throw new IllegalArgumentException("Could not read config definition file '" + 
-                                               defFile.getAbsolutePath() + "'", e);
+            throw new IllegalArgumentException("Could not read config definition file '" + defPath + "'", e);
         }
     }
 
     @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
-        addAllDefsFromConfigDir(defs, configDefsDir, true);
-        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"), false);
-        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"), false);
+        addAllDefsFromConfigDir(defs, configDefsDir);
+        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
+        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
         addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
         return defs;
     }
@@ -445,8 +440,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
     }
 
-    private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir,
-                                         boolean insideApplicationPackage) {
+    private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
         if (! configDefsDir.isDirectory()) return;
 
         log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
@@ -480,24 +474,23 @@ public class FilesApplicationPackage implements ApplicationPackage {
             defs.put(key, new UnparsedConfigDefinition() {
                 @Override
                 public ConfigDefinition parse() {
-                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReader(def.getPath(),
-                                                                                            insideApplicationPackage));
+                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReader(def));
                     return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
                 }
 
                 @Override
                 public String getUnparsedContent() {
-                    return readConfigDefinition(def.getPath(), insideApplicationPackage);
+                    return readConfigDefinition(def);
                 }
             });
         }
     }
 
-    private String readConfigDefinition(String defPath, boolean insideApplicationPackage) {
-        try (Reader reader = retrieveConfigDefReader(defPath, insideApplicationPackage)) {
+    private String readConfigDefinition(File defPath) {
+        try (Reader reader = retrieveConfigDefReader(defPath)) {
             return IOUtils.readAll(reader);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading config definition " + defPath, e);
+            throw new RuntimeException("Error reading config definition '" + defPath + "'", e);
         }
     }
 
