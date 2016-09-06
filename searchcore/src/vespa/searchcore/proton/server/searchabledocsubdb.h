@@ -21,6 +21,7 @@
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/vespalib/eval/value_cache/constant_tensor_loader.h>
+#include <vespa/vespalib/eval/value_cache/constant_value_cache.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
 
@@ -81,6 +82,7 @@ private:
     vespalib::VarHolder<SearchView::SP>         _rSearchView;
     vespalib::VarHolder<SearchableFeedView::SP> _rFeedView;
     vespalib::eval::ConstantTensorLoader        _tensorLoader;
+    vespalib::eval::ConstantValueCache          _constantValueCache;
     matching::ConstantValueRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
     const size_t                                _numSearcherThreads;
