@@ -65,7 +65,7 @@ class ExceptionWithPayload : public std::exception {
 public:
     class Anything {
     public:
-       typedef std::unique_ptr<Anything> UP;
+       using UP = std::unique_ptr<Anything>;
        virtual ~Anything() { }
     };
     ExceptionWithPayload(vespalib::stringref msg) : std::exception(), _msg(msg), _payload() { }
