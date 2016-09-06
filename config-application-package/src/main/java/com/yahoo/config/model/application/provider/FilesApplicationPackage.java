@@ -70,15 +70,26 @@ public class FilesApplicationPackage implements ApplicationPackage {
     // NOTE: these directories exist in the original user app, but their locations are given in 'services.xml'
     private final List<String> userIncludeDirs = new ArrayList<>();
     private final ApplicationMetaData metaData;
+    private final boolean includeSourceFiles;
+
+    /** Creates from a directory with source files included */
+    public static FilesApplicationPackage fromFile(File appDir) {
+        return fromFile(appDir, true);
+    }
 
     /**
      * Returns an application package object based on the given application dir
      *
      * @param appDir application package directory
+     * @param includeSourceFiles read files from source directories /src/main and src/test in addition
+     *                           to the application package location. This is useful during development
+     *                           to be able to run tests without a complete build first.
      * @return an Application package instance
      */
-    public static FilesApplicationPackage fromFile(File appDir) {
-        return new Builder(appDir).preprocessedDir(new File(appDir, ".preprocessed")).build();
+    public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
+        return new Builder(appDir).preprocessedDir(new File(appDir, ".preprocessed"))
+                                  .includeSourceFiles(includeSourceFiles)
+                                  .build();
     }
 
     /** Creates package from a local directory, typically deploy app   */
@@ -86,37 +97,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return new Builder(appDir).deployData(deployData).build();
     }
 
-    /**
-     * Builder for {@link com.yahoo.config.model.application.provider.FilesApplicationPackage}. Use
-     * this to create instances in a flexible manner.
-     */
-    public static class Builder {
-        private final File appDir;
-        private Optional<File> preprocessedDir = Optional.empty();
-        private Optional<ApplicationMetaData> metaData = Optional.empty();
-
-        public Builder(File appDir) {
-            this.appDir = appDir;
-        }
-
-        public Builder preprocessedDir(File preprocessedDir) {
-            this.preprocessedDir = Optional.ofNullable(preprocessedDir);
-            return this;
-        }
-
-        public Builder deployData(DeployData deployData) {
-            this.metaData = Optional.of(metaDataFromDeployData(appDir, deployData));
-            return this;
-        }
-
-        public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, ".preprocessed")), metaData.orElse(readMetaData(appDir)));
-        }
-    }
-
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(), deployData.getDeployTimestamp(),
-                deployData.getApplicationName(), computeCheckSum(appDir), deployData.getGeneration(), deployData.getCurrentlyActiveGeneration());
+        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(), 
+                                       deployData.getDeployTimestamp(), deployData.getApplicationName(), 
+                                       computeCheckSum(appDir), deployData.getGeneration(), 
+                                       deployData.getCurrentlyActiveGeneration());
     }
 
     /**
@@ -126,10 +111,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * @param appDir application package directory
      * @param preprocessedDir preprocessed application package output directory
      * @param metaData metadata for this application package
+     * @param includeSourceFiles include files from source dirs
      */
     @SuppressWarnings("deprecation")
-    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData) {
+    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
         verifyAppDir(appDir);
+        this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
@@ -306,7 +293,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             Collection<String> disjoint = new ArrayList<>(fileSds);
             disjoint.retainAll(bundleSds);
             throw new IllegalArgumentException("For the following search definitions names there are collisions between those specified inside " +
-            		"docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
+            		                           "docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
         }
     }
 
@@ -335,7 +322,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 String sdName = entry.getKey();
                 if (usedNames.contains(sdName)) {
                     throw new IllegalArgumentException("The search definition name '"+sdName+"' used in bundle '"+
-                            bundle.getName()+"' is already used in classpath or previous bundle.");
+                                                       bundle.getName()+"' is already used in classpath or previous bundle.");
                 }
                 usedNames.add(sdName);
                 String sdPayload = entry.getValue();
@@ -411,8 +398,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
         addAllDefsFromConfigDir(defs, configDefsDir);
-        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions")); // Allow running from source
-        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions")); // Allow running from source
+        if (includeSourceFiles) { // allow running from source, assuming mvn file project layout
+            addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
+            addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
+        }
         addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
         return defs;
     }
@@ -752,6 +741,43 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 digest.update(buffer, 0, i);
             }
         } while(i!=-1);
+    }
+
+    /**
+     * Builder for {@link com.yahoo.config.model.application.provider.FilesApplicationPackage}. Use
+     * this to create instances in a flexible manner.
+     */
+    public static class Builder {
+
+        private final File appDir;
+        private Optional<File> preprocessedDir = Optional.empty();
+        private Optional<ApplicationMetaData> metaData = Optional.empty();
+        private boolean includeSourceFiles = true;
+
+        public Builder(File appDir) {
+            this.appDir = appDir;
+        }
+
+        public Builder preprocessedDir(File preprocessedDir) {
+            this.preprocessedDir = Optional.ofNullable(preprocessedDir);
+            return this;
+        }
+
+        public Builder deployData(DeployData deployData) {
+            this.metaData = Optional.of(metaDataFromDeployData(appDir, deployData));
+            return this;
+        }
+
+        public Builder includeSourceFiles(boolean includeSourceFiles) {
+            this.includeSourceFiles = includeSourceFiles;
+            return this;
+        }
+
+        public FilesApplicationPackage build() {
+            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, ".preprocessed")),
+                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles);
+        }
+
     }
 
 }

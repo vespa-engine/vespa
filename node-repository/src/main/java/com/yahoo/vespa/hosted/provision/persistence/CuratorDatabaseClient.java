@@ -231,7 +231,9 @@ public class CuratorDatabaseClient {
 
     /** Creates an returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
-        Path lockPath = root.append("locks")
+        Path lockPath = 
+                root
+                .append("locks")
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());

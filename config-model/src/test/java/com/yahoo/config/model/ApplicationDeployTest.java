@@ -255,8 +255,8 @@ public class ApplicationDeployTest {
 
     @Test
     public void testConfigDefinitionsFromJars() throws IOException {
-       String appName = "src/test/cfg//application/app1";
-        FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName));
+        String appName = "src/test/cfg//application/app1";
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
         assertThat(defs.size(), is(2));
     }
