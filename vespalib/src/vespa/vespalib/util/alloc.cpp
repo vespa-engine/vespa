@@ -64,8 +64,8 @@ MMapStore _G_HugeMappings;
 size_t
 readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
     const char * str = getenv(name);
-    if (str != NULL) {
-        char * e(NULL);
+    if (str != nullptr) {
+        char * e(nullptr);
         size_t value = strtoul(str, &e, 0);
         if ((e == 0) || (e[0] == '\0')) {
             return value;
@@ -77,8 +77,8 @@ readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
 
 void initializeEnvironment()
 {
-    _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != NULL) ? MAP_HUGETLB : 0;
-    _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != NULL) ? true : false;
+    _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0;
+    _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
     _G_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
     _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
 }
@@ -95,7 +95,7 @@ size_t sum(const MMapStore & s)
 }
 void * MMapAlloc::alloc(size_t sz)
 {
-    void * buf(NULL);
+    void * buf(nullptr);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -108,7 +108,7 @@ void * MMapAlloc::alloc(size_t sz)
             stackTrace = getStackTrace(1);
             LOG(info, "mmap %ld of size %ld from %s", mmapId, sz, stackTrace.c_str());
         }
-        buf = mmap(NULL, sz, prot, flags | _G_HugeFlags, -1, 0);
+        buf = mmap(nullptr, sz, prot, flags | _G_HugeFlags, -1, 0);
         if (buf == MAP_FAILED) {
             if ( ! _G_hasHugePageFailureJustHappened ) {
                 _G_hasHugePageFailureJustHappened = true;
@@ -116,7 +116,7 @@ void * MMapAlloc::alloc(size_t sz)
                           " Will resort to ordinary mmap until it works again.",
                            sz, FastOS_FileInterface::getLastErrorString().c_str());
             }
-            buf = mmap(NULL, sz, prot, flags, -1, 0);
+            buf = mmap(nullptr, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
                 string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
@@ -149,7 +149,7 @@ void * MMapAlloc::alloc(size_t sz)
 
 void MMapAlloc::free(void * buf, size_t sz)
 {
-    if (buf != NULL) {
+    if (buf != nullptr) {
         madvise(buf, sz, MADV_DONTNEED);
         munmap(buf, sz);
         if (sz >= _G_MMapLogLimit) {
