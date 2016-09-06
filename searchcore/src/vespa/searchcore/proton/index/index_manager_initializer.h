@@ -16,7 +16,7 @@ namespace proton
 class IndexManagerInitializer :  public initializer::InitializerTask
 {
     const vespalib::string                      _baseDir;
-    const searchcorespi::index::WarmupConfig    _warmup;
+    const searchcorespi::index::WarmupConfig    _warmupCfg;
     size_t                                      _maxFlushed;
     size_t                                      _cacheSize;
     const search::index::Schema                 _schema;
@@ -31,7 +31,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
 public:
     // Note: lifetime of indexManager must be handled by caller.
     IndexManagerInitializer(const vespalib::string &baseDir,
-                            const searchcorespi::index::WarmupConfig & warmup,
+                            const searchcorespi::index::WarmupConfig & warmupCfg,
                             size_t maxFlushed,
                             size_t cacheSize,
                             const search::index::Schema &schema,
