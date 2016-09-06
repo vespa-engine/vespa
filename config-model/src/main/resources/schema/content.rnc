@@ -197,6 +197,10 @@ ContentNode = element node {
     attribute capacity { xsd:double { minExclusive = "0.0" } }? &
     attribute mmap-core-limit { xsd:nonNegativeInteger }? &
     attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
     attribute cpu-socket { xsd:nonNegativeInteger }?
 }
 
@@ -204,6 +208,10 @@ ContentNodes = element nodes {
     attribute cpu-socket-affinity { xsd:string }? &
     attribute mmap-core-limit { xsd:nonNegativeInteger }? &
     attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
     (
       (
         attribute count { xsd:positiveInteger } &
@@ -225,6 +233,10 @@ TopGroup = element group {
     attribute cpu-socket-affinity { xsd:string }? &
     attribute mmap-core-limit { xsd:nonNegativeInteger }? &
     attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
     attribute distribution-key { xsd:nonNegativeInteger }? &
     (
         ContentNode +

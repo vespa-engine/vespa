@@ -53,6 +53,11 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     // If this is true it will dump core when OOM
     private boolean coreOnOOM = false;
 
+    private String noVespaMalloc = "";
+    private String vespaMalloc = "";
+    private String vespaMallocDebug = "";
+    private String vespaMallocDebugStackTrace = "";
+
     /** The ports metainfo object */
     protected PortsMeta portsMeta = new PortsMeta();
 
@@ -410,12 +415,52 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         this.preload = preload;
     }
     public long getMMapNoCoreLimit() { return mmapNoCoreLimit; }
-    public void setMMapNoCoreLimit(long noCoreLimit) {
-        this.mmapNoCoreLimit = noCoreLimit;
-    }
+    public void setMMapNoCoreLimit(long noCoreLimit) { this.mmapNoCoreLimit = noCoreLimit; }
     public boolean getCoreOnOOM() { return coreOnOOM; }
-    public void setCoreOnOOM(boolean coreOnOOM) {
-        this.coreOnOOM = coreOnOOM;
+    public void setCoreOnOOM(boolean coreOnOOM) { this.coreOnOOM = coreOnOOM; }
+
+    public String getNoVespaMalloc() { return noVespaMalloc; }
+    public String getVespaMalloc() { return vespaMalloc; }
+    public String getVespaMallocDebug() { return vespaMallocDebug; }
+    public String getVespaMallocDebugStackTrace() { return vespaMallocDebugStackTrace; }
+    public void setNoVespaMalloc(String s) { noVespaMalloc = s; }
+    public void setVespaMalloc(String s) { vespaMalloc = s; }
+    public void setVespaMallocDebug(String s) { vespaMallocDebug = s; }
+    public void setVespaMallocDebugStackTrace(String s) { vespaMallocDebugStackTrace = s; }
+
+    public String getMMapNoCoreEnvVariable() {
+        return (getMMapNoCoreLimit() >= 0l)
+                ? "VESPA_MMAP_NOCORE_LIMIT=" + getMMapNoCoreLimit() + " "
+                : "";
+    }
+
+    public String getCoreOnOOMEnvVariable() {
+        return getCoreOnOOM() ? "" : "VESPA_SILENCE_CORE_ON_OOM=true ";
+    }
+    public String getNoVespaMallocEnvVariable() {
+        return "".equals(getNoVespaMalloc())
+                ? ""
+                : "VESPA_USE_NO_VESPAMALLOC=\"" + getNoVespaMalloc() + "\" ";
+    }
+    public String getVespaMallocEnvVariable() {
+        return "".equals(getVespaMalloc())
+                ? ""
+                : "VESPA_USE_VESPAMALLOC=\"" + getVespaMalloc() + "\" ";
+    }
+    public String getVespaMallocDebugEnvVariable() {
+        return "".equals(getVespaMallocDebug())
+                ? ""
+                : "VESPA_USE_VESPAMALLOC_D=\"" + getVespaMallocDebug() + "\" ";
+    }
+    public String getVespaMallocDebugStackTraceEnvVariable() {
+        return "".equals(getVespaMallocDebugStackTrace())
+                ? ""
+                : "VESPA_USE_VESPAMALLOC_DST=\"" + getVespaMallocDebugStackTrace() + "\" ";
+    }
+
+    public String getEnvVariables() {
+        return getCoreOnOOMEnvVariable() + getMMapNoCoreEnvVariable() + getNoVespaMallocEnvVariable() +
+                getVespaMallocEnvVariable() + getVespaMallocDebugEnvVariable() + getVespaMallocDebugStackTraceEnvVariable();
     }
 
     /**
