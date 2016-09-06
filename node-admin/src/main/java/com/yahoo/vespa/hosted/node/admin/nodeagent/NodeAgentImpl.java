@@ -170,7 +170,18 @@ public class NodeAgentImpl implements NodeAgent {
         containerState = RUNNING;
     }
 
-    private void publishStateToNodeRepoIfChanged(final ContainerNodeSpec nodeSpec) throws IOException {
+    private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) throws IOException {
+        publishStateToNodeRepoIfChanged(
+                nodeSpec.hostname,
+                // Clear current Docker image and vespa version, as nothing is running on this node
+                new NodeAttributes(
+                        nodeSpec.wantedRestartGeneration.get(),
+                        new DockerImage(""),
+                        ""));
+        nodeRepository.markAsReady(nodeSpec.hostname);
+    }
+
+    private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
         final String containerVespaVersion = dockerOperations.getVespaVersionOrNull(nodeSpec.containerName);
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, new NodeAttributes(
                 nodeSpec.wantedRestartGeneration.get(),
@@ -316,7 +327,7 @@ public class NodeAgentImpl implements NodeAgent {
                 //    has been successfully rolled out.
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
-                publishStateToNodeRepoIfChanged(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
                 break;
@@ -330,13 +341,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
-                publishStateToNodeRepoIfChanged(nodeSpec.hostname,
-                                                // Clear current Docker image and vespa version, as nothing is running on this node
-                                                new NodeAttributes(
-                                                        nodeSpec.wantedRestartGeneration.get(),
-                                                        new DockerImage(""),
-                                                        ""));
-                nodeRepository.markAsReady(nodeSpec.hostname);
+                updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
             case FAILED:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
