@@ -164,7 +164,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             File dir = new File(appDir, relativePath.getRelative());
             if ( ! dir.isDirectory()) return readers;
 
-            final File[] files = dir.listFiles();
+            File[] files = dir.listFiles();
             if (files != null) {
                 for (File file : files) {
                     if (file.isDirectory()) {
@@ -213,18 +213,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return new File(appDir, ApplicationPackage.HOSTS);
     }
 
-    private File getFileWithFallback(String first, String second) {
-        File firstFile = new File(appDir, first);
-        File secondFile = new File(appDir, second);
-        if (firstFile.exists()) {
-            return firstFile;
-        } else if (secondFile.exists()) {
-            return secondFile;
-        } else {
-            return firstFile;
-        }
-    }
-
     @Override
     public String getServicesSource() {
         return getServicesFile().getPath();
@@ -248,7 +236,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
             return Optional.empty();
         }
     }
-
 
     @Override
     public List<String> getUserIncludeDirs() {
@@ -380,7 +367,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                         String sdName = sdFile.getName();
                         if (usedNames.contains(sdName)) {
                             throw new IllegalArgumentException("The search definition name '"+sdName+
-                                    "' found in classpath already used earlier in classpath.");
+                                                               "' found in classpath already used earlier in classpath.");
                         }
                         usedNames.add(sdName);
                         String contents = IOUtils.readAll(new FileReader(sdFile));
@@ -395,7 +382,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
                     String sdName = entry.getKey();
                     if (usedNames.contains(sdName)) {
                         throw new IllegalArgumentException("The search definitions name '"+sdName+
-                                "' used in bundle '"+jarFile.getName()+"' already used in classpath or previous bundle.");
+                                                           "' used in bundle '"+jarFile.getName()+"' " +
+                                                           "is already used in classpath or previous bundle.");
                     }
                     usedNames.add(sdName);
                     String sdPayload = entry.getValue();
@@ -405,23 +393,31 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
 	}
 
-    private Reader retrieveConfigDefReader(String defName) {
-        File def = new File(configDefsDir + File.separator + defName);
+    /** 
+     * Creates a reader for a config definition
+     * 
+     * @param defPath the path to the application package
+     * @param insideApplicationPackage true if the path is relative to the config definition dire in the application
+     *                                 package, false if it is absolute, or relative to the current path, which
+     *                                 is useful when running out of source during development
+     * @return the reader of this config definition
+     */
+    private Reader retrieveConfigDefReader(String defPath, boolean insideApplicationPackage) {
+        File defFile = insideApplicationPackage ? new File(defPath) : new File(defPath);
         try {
-            return new NamedReader(def.getAbsolutePath(), new FileReader(def));
+            return new NamedReader(defFile.getAbsolutePath(), new FileReader(defFile));
         } catch (IOException e) {
-            throw new IllegalArgumentException("Could not read config definition file '" +
-                    def.getAbsolutePath() + "'", e);
+            throw new IllegalArgumentException("Could not read config definition file '" + 
+                                               defFile.getAbsolutePath() + "'", e);
         }
     }
 
     @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = new LinkedHashMap<>();
-
-        if (configDefsDir.isDirectory()) {
-            addAllDefsFromConfigDir(defs, configDefsDir);
-        }
+        addAllDefsFromConfigDir(defs, configDefsDir, true);
+        addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"), false);
+        addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"), false);
         addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
         return defs;
     }
@@ -449,63 +445,59 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
     }
 
-    private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
+    private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir,
+                                         boolean insideApplicationPackage) {
+        if (! configDefsDir.isDirectory()) return;
+
         log.log(LogLevel.DEBUG, "Getting all config definitions from '" + configDefsDir + "'");
-        for (final File def : configDefsDir.listFiles(
-                new FilenameFilter() { @Override public boolean accept(File dir, String name) {
+        for (File def : configDefsDir.listFiles(
+                new FilenameFilter() { @Override public boolean accept(File dir, String name) { // TODO: Fix
                     return name.matches(".*\\.def");}})) {
 
             log.log(LogLevel.DEBUG, "Processing config definition '" + def + "'");
             String[] nv = def.getName().split("\\.def");
-            if (nv == null) {
-                log.log(LogLevel.WARNING, "Skipping '" + def + "', cannot determine name");
-            } else {
-                ConfigDefinitionKey key;
-                try {
-                    key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
-                }
-                if (key.getNamespace().isEmpty()) {
-                    throw new IllegalArgumentException("Config definition '" + nv + "' has no namespace");
-                }
-                boolean addFile = false;
-                if (defs.containsKey(key)) {
-                    if (nv[0].contains(".")) {
-                        log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + ". The file '" + def + "' will take precedence");
-                        addFile = true;
-                    } else {
-                        log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + ". Skipping '" + def + "', as it does not contain namespace in filename");
-                    }
-                } else {
-                    addFile = true;
-                }
-                if (addFile) {
-                    log.log(LogLevel.DEBUG, "Adding " + key + " to archive of all existing config defs");
-                    final ConfigDefinitionKey finalKey = key;
-                    defs.put(key, new UnparsedConfigDefinition() {
-                        @Override
-                        public ConfigDefinition parse() {
-                            DefParser parser = new DefParser(finalKey.getName(), retrieveConfigDefReader(def.getName()));
-                            return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
-                        }
+            ConfigDefinitionKey key;
+            try {
+                key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: Fix
+                break;
+            }
+            if (key.getNamespace().isEmpty())
+                throw new IllegalArgumentException("Config definition '" + def + "' has no namespace");
 
-                        @Override
-                        public String getUnparsedContent() {
-                            return readConfigDefinition(def.getName());
-                        }
-                    });
+            if (defs.containsKey(key)) {
+                if (nv[0].contains(".")) {
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                                           ". The file '" + def + "' will take precedence");
+                } else {
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                                           ". Skipping '" + def + "', as it does not contain namespace in filename");
+                    continue; // skip
                 }
             }
+
+            defs.put(key, new UnparsedConfigDefinition() {
+                @Override
+                public ConfigDefinition parse() {
+                    DefParser parser = new DefParser(key.getName(), retrieveConfigDefReader(def.getPath(),
+                                                                                            insideApplicationPackage));
+                    return ConfigDefinitionBuilder.createConfigDefinition(parser.getTree());
+                }
+
+                @Override
+                public String getUnparsedContent() {
+                    return readConfigDefinition(def.getPath(), insideApplicationPackage);
+                }
+            });
         }
     }
 
-    private String readConfigDefinition(String name) {
-        try (Reader reader = retrieveConfigDefReader(name)) {
+    private String readConfigDefinition(String defPath, boolean insideApplicationPackage) {
+        try (Reader reader = retrieveConfigDefReader(defPath, insideApplicationPackage)) {
             return IOUtils.readAll(reader);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading config definition " + name, e);
+            throw new RuntimeException("Error reading config definition " + defPath, e);
         }
     }
 

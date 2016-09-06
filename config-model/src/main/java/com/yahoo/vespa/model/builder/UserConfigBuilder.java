@@ -40,7 +40,7 @@ public class UserConfigBuilder {
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         if ( ! def.isPresent()) { // TODO: Fail instead of warn
-            logger.log(LogLevel.WARNING, "Unable to find config definition for config '" + key +
+            logger.log(LogLevel.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
         ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);

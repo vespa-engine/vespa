@@ -143,7 +143,7 @@ public class DeployState implements ConfigDefinitionStore {
         return Optional.of(def);
     }
 
-    private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(final ConfigDefinitionRepo configDefinitionRepo) {
+    private static Map<ConfigDefinitionKey, UnparsedConfigDefinition> createLazyMapping(ConfigDefinitionRepo configDefinitionRepo) {
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> keyToRepo = new LinkedHashMap<>();
         for (final Map.Entry<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defEntry : configDefinitionRepo.getConfigDefinitions().entrySet()) {
             keyToRepo.put(defEntry.getKey(), new UnparsedConfigDefinition() {

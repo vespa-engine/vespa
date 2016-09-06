@@ -104,9 +104,7 @@ public interface ApplicationPackage {
     Collection<NamedReader> searchDefinitionContents();
 
     /**
-     * Subclass hook.
-     * Returns a mapping from def key to a file name that can be used for lookup.
-     * @return An mapping of all config definition combos available in this package.
+     * Returns all the config definitions available in this package as unparsed data.
      */
     Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs();
 

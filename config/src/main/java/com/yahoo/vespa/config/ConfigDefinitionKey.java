@@ -4,9 +4,9 @@ package com.yahoo.vespa.config;
 import java.util.Objects;
 
 /**
- * Represents one config definition key (name, namespace)
+ * A config definition key: name, namespace)
  *
- * @author vegardh
+ * @author bratseth
  */
 public class ConfigDefinitionKey {
 
@@ -36,22 +36,21 @@ public class ConfigDefinitionKey {
         this(key.getName(), key.getNamespace());
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public String getNamespace() {
-        return namespace;
+    public String getNamespace() { return namespace; }
+
+    public String asFileName() {
+        return namespace + "." + name + ".def";
     }
 
     @Override
-    public boolean equals(Object oth) {
-        if (!(oth instanceof ConfigDefinitionKey)) {
-            return false;
-        }
-        ConfigDefinitionKey other = (ConfigDefinitionKey) oth;
-        return name.equals(other.getName()) &&
-                namespace.equals(other.getNamespace());
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof ConfigDefinitionKey)) return false;
+
+        ConfigDefinitionKey other = (ConfigDefinitionKey)o;
+        return name.equals(other.getName()) && namespace.equals(other.getNamespace());
     }
 
     @Override
