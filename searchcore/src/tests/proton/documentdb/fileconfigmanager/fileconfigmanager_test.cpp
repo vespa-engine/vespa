@@ -5,10 +5,9 @@ LOG_SETUP("fileconfigmanager_test");
 
 #include "config-mycfg.h"
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
-#include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 
 using namespace config;
@@ -32,21 +31,7 @@ namespace
 DocumentDBConfig::SP
 getConfig(int64_t generation, const Schema::SP &schema)
 {
-    return std::make_shared<DocumentDBConfig>(
-                    generation,
-                    std::make_shared<vespa::config::search::RankProfilesConfig>(),
-                    std::make_shared<vespa::config::search::core::RankingConstantsConfig>(),
-                    std::make_shared<vespa::config::search::IndexschemaConfig>(),
-                    std::make_shared<vespa::config::search::AttributesConfig>(),
-                    std::make_shared<vespa::config::search::SummaryConfig>(),
-                    std::make_shared<vespa::config::search::SummarymapConfig>(),
-                    std::make_shared<vespa::config::search::summary::JuniperrcConfig>(),
-                    std::make_shared<document::DocumenttypesConfig>(),
-                    std::make_shared<document::DocumentTypeRepo>(),
-                    std::make_shared<search::TuneFileDocumentDB>(),
-                    schema,
-                    std::make_shared<DocumentDBMaintenanceConfig>(),
-                    "client", "test");
+    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").build();
 }
 
 Schema::SP
@@ -106,22 +91,7 @@ saveBaseConfigSnapshot(const DocumentDBConfig &snap, const Schema &history, Seri
 DocumentDBConfig::SP
 makeEmptyConfigSnapshot(void)
 {
-    return DocumentDBConfig::SP(new DocumentDBConfig(
-                                      0,
-                                      DocumentDBConfig::RankProfilesConfigSP(),
-                                      DocumentDBConfig::RankingConstantsConfigSP(),
-                                      DocumentDBConfig::IndexschemaConfigSP(),
-                                      DocumentDBConfig::AttributesConfigSP(),
-                                      DocumentDBConfig::SummaryConfigSP(),
-                                      DocumentDBConfig::SummarymapConfigSP(),
-                                      DocumentDBConfig::JuniperrcConfigSP(),
-                                      DocumenttypesConfigSP(),
-                                      DocumentTypeRepo::SP(),
-                                      TuneFileDocumentDB::SP(
-                                              new TuneFileDocumentDB()),
-                                      Schema::SP(),
-                                      DocumentDBMaintenanceConfig::SP(),
-                                      "client", "test"));
+    return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", "test").build();
 }
 
 void incInt(int *i, const DocumentType&) { ++*i; }
@@ -143,7 +113,7 @@ void
 assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 {
     EXPECT_TRUE(exp.getRankProfilesConfig() == act.getRankProfilesConfig());
-    EXPECT_TRUE(exp.getRankingConstantsConfig() == act.getRankingConstantsConfig());
+    EXPECT_TRUE(exp.getRankingConstants() == act.getRankingConstants());
     EXPECT_TRUE(exp.getIndexschemaConfig() == act.getIndexschemaConfig());
     EXPECT_TRUE(exp.getAttributesConfig() == act.getAttributesConfig());
     EXPECT_TRUE(exp.getSummaryConfig() == act.getSummaryConfig());

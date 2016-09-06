@@ -118,7 +118,6 @@ struct ConfigTestFixture {
         DoctypeFixture::LP fixture(dbConfig[name]);
         return (fixture->attributesBuilder == dbc->getAttributesConfig() &&
                 fixture->rankProfilesBuilder == dbc->getRankProfilesConfig() &&
-                fixture->rankingConstantsBuilder == dbc->getRankingConstantsConfig() &&
                 fixture->indexschemaBuilder == dbc->getIndexschemaConfig() &&
                 fixture->summaryBuilder == dbc->getSummaryConfig() &&
                 fixture->summarymapBuilder == dbc->getSummarymapConfig() &&

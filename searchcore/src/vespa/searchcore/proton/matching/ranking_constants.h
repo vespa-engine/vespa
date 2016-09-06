@@ -22,6 +22,7 @@ public:
         Constant(const vespalib::string &name_in,
                  const vespalib::string &type_in,
                  const vespalib::string &filePath_in);
+        bool operator==(const Constant &rhs) const;
     };
 
     using Vector = std::vector<Constant>;
@@ -31,8 +32,10 @@ private:
     Map _constants;
 
 public:
+    using SP = std::shared_ptr<RankingConstants>;
     RankingConstants();
     RankingConstants(const Vector &constants);
+    bool operator==(const RankingConstants &rhs) const;
     const Constant *getConstant(const vespalib::string &name) const;
 };
 

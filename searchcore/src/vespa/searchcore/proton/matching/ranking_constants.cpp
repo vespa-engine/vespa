@@ -15,6 +15,14 @@ RankingConstants::Constant::Constant(const vespalib::string &name_in,
 {
 }
 
+bool
+RankingConstants::Constant::operator==(const Constant &rhs) const
+{
+    return (name == rhs.name) &&
+           (type == rhs.type) &&
+           (filePath == rhs.filePath);
+}
+
 RankingConstants::RankingConstants()
     : _constants()
 {
@@ -26,6 +34,12 @@ RankingConstants::RankingConstants(const Vector &constants)
     for (const auto &constant : constants) {
         _constants.insert(std::make_pair(constant.name, constant));
     }
+}
+
+bool
+RankingConstants::operator==(const RankingConstants &rhs) const
+{
+    return _constants == rhs._constants;
 }
 
 const RankingConstants::Constant *

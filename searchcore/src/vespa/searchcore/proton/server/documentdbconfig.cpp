@@ -35,7 +35,7 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
 DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
                const RankProfilesConfigSP &rankProfiles,
-               const RankingConstantsConfigSP &rankingConstants,
+               const RankingConstants::SP &rankingConstants,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
                const SummaryConfigSP &summary,
@@ -97,8 +97,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
 {
     return equals<RankProfilesConfig>(_rankProfiles.get(),
                                       rhs._rankProfiles.get()) &&
-           equals<RankingConstantsConfig>(_rankingConstants.get(),
-                                          rhs._rankingConstants.get()) &&
+           equals<RankingConstants>(_rankingConstants.get(),
+                                    rhs._rankingConstants.get()) &&
            equals<IndexschemaConfig>(_indexschema.get(),
                                      rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(),
@@ -128,7 +128,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.rankProfilesChanged =
         !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
     retval.rankingConstantsChanged =
-        !equals<RankingConstantsConfig>(_rankingConstants.get(), rhs._rankingConstants.get());
+        !equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get());
     retval.indexschemaChanged =
         !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged =
@@ -156,20 +156,20 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
 
 
 bool
-DocumentDBConfig::valid(void) const
+DocumentDBConfig::valid() const
 {
-    return _rankProfiles.get() != NULL &&
-       _rankingConstants.get() != NULL &&
-            _indexschema.get() != NULL &&
-             _attributes.get() != NULL &&
-                _summary.get() != NULL &&
-             _summarymap.get() != NULL &&
-              _juniperrc.get() != NULL &&
-          _documenttypes.get() != NULL &&
-                   _repo.get() != NULL &&
-     _tuneFileDocumentDB.get() != NULL &&
-                 _schema.get() != NULL &&
-            _maintenance.get() != NULL;
+    return (_rankProfiles.get() != NULL) &&
+           (_rankingConstants.get() != NULL) &&
+           (_indexschema.get() != NULL) &&
+           (_attributes.get() != NULL) &&
+           (_summary.get() != NULL) &&
+           (_summarymap.get() != NULL) &&
+           (_juniperrc.get() != NULL) &&
+           (_documenttypes.get() != NULL) &&
+           (_repo.get() != NULL) &&
+           (_tuneFileDocumentDB.get() != NULL) &&
+           (_schema.get() != NULL) &&
+           (_maintenance.get() != NULL);
 }
 
 namespace
@@ -198,7 +198,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
     SP ret = std::make_shared<DocumentDBConfig>(
                 o._generation,
                 emptyConfig(o._rankProfiles),
-                emptyConfig(o._rankingConstants),
+                std::make_shared<RankingConstants>(),
                 o._indexschema,
                 o._attributes,
                 o._summary,

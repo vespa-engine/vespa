@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_configurer_test_app TEST
     SOURCES
     configurer_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_reprocessing
     searchcore_index

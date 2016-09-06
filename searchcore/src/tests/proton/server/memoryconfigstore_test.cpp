@@ -7,7 +7,7 @@ LOG_SETUP("memoryconfigstore_test");
 
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 
@@ -20,23 +20,7 @@ namespace {
 DocumentDBConfig::SP
 getConfig(int64_t generation, const Schema::SP &schema)
 {
-    return DocumentDBConfig::SP(
-            new DocumentDBConfig(
-                    generation,
-                    DocumentDBConfig::RankProfilesConfigSP(),
-                    DocumentDBConfig::RankingConstantsConfigSP(),
-                    DocumentDBConfig::IndexschemaConfigSP(),
-                    DocumentDBConfig::AttributesConfigSP(),
-                    DocumentDBConfig::SummaryConfigSP(),
-                    DocumentDBConfig::SummarymapConfigSP(),
-                    DocumentDBConfig::JuniperrcConfigSP(),
-                    DocumentDBConfig::DocumenttypesConfigSP(),
-                    document::DocumentTypeRepo::SP(),
-                    search::TuneFileDocumentDB::SP(),
-                    schema,
-                    DocumentDBMaintenanceConfig::SP(),
-                    "client",
-                    "test"));
+    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").build();
 }
 
 
