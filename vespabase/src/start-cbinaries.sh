@@ -64,11 +64,6 @@ bname=`basename $0`
 no_valgrind=true
 use_callgrind=false
 
-if [ "$bname" = "filedistributor" ]; then
-    VESPA_USE_VALGRIND=""
-    VESPA_VALGRIND_OPT=""
-fi
-
 case $VESPA_VALGRIND_OPT in
     *callgrind*) use_callgrind=true;;
 esac
