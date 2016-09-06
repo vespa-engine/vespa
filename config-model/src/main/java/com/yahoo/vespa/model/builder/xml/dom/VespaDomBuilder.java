@@ -38,13 +38,13 @@ import java.util.logging.Logger;
 public class VespaDomBuilder extends VespaModelBuilder {
 
     public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
-    public static final String PRELOAD_ATTRIB_NAME = "preload";
-    public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";
-    public static final String CORE_ON_OOM = "core-on-oom";
-    public static final String NO_VESPAMALLOC = "no-vespamalloc";
-    public static final String VESPAMALLOC = "vespamalloc";
-    public static final String VESPAMALLOC_DEBUG = "vespamalloc-debug";
-    public static final String VESPAMALLOC_DEBUG_STACKTRACE = "vespamalloc-debug-stacktrace";
+    public static final String PRELOAD_ATTRIB_NAME = "preload";        // Intended for vespa engineers
+    public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";  // Intended for vespa engineers
+    public static final String CORE_ON_OOM = "core-on-oom";            // Intended for vespa engineers
+    public static final String NO_VESPAMALLOC = "no-vespamalloc";      // Intended for vespa engineers
+    public static final String VESPAMALLOC = "vespamalloc";            // Intended for vespa engineers
+    public static final String VESPAMALLOC_DEBUG = "vespamalloc-debug"; // Intended for vespa engineers
+    public static final String VESPAMALLOC_DEBUG_STACKTRACE = "vespamalloc-debug-stacktrace"; // Intended for vespa engineers
     private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
     public static final String CPU_SOCKET_AFFINITY_ATTRIB_NAME = "cpu-socket-affinity";
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
