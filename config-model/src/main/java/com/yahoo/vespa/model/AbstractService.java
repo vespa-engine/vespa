@@ -50,6 +50,9 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     // If larger or equal to 0 it mean that explicit mmaps shall not be included in coredump.
     private long mmapNoCoreLimit = -1l;
 
+    // If this is true it will dump core when OOM
+    private boolean coreOnOOM = false;
+
     /** The ports metainfo object */
     protected PortsMeta portsMeta = new PortsMeta();
 
@@ -410,11 +413,9 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     public void setMMapNoCoreLimit(long noCoreLimit) {
         this.mmapNoCoreLimit = noCoreLimit;
     }
-
-    public String getMMapNoCoreEnvVariable() {
-        return (getMMapNoCoreLimit() >= 0l)
-                ? "VESPA_MMAP_NOCORE_LIMIT=" + getMMapNoCoreLimit() + " "
-                : "";
+    public boolean getCoreOnOOM() { return coreOnOOM; }
+    public void setCoreOnOOM(boolean coreOnOOM) {
+        this.coreOnOOM = coreOnOOM;
     }
 
     /**

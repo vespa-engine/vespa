@@ -37,9 +37,10 @@ import java.util.logging.Logger;
  */
 public class VespaDomBuilder extends VespaModelBuilder {
 
-    public static final String JVMARGS_ATTRIB_NAME="jvmargs";
-    public static final String PRELOAD_ATTRIB_NAME="preload";
-    public static final String MMAP_NOCORE_LIMIT="mmap-nocore-limit";
+    public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
+    public static final String PRELOAD_ATTRIB_NAME = "preload";
+    public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";
+    public static final String CORE_ON_OOM = "core-on-oom";
     private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
     public static final String CPU_SOCKET_AFFINITY_ATTRIB_NAME = "cpu-socket-affinity";
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
@@ -141,6 +142,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 }
                 if (producerSpec.hasAttribute(MMAP_NOCORE_LIMIT)) {
                     t.setMMapNoCoreLimit(Long.parseLong(producerSpec.getAttribute(MMAP_NOCORE_LIMIT)));
+                }
+                if (producerSpec.hasAttribute(CORE_ON_OOM)) {
+                    t.setCoreOnOOM(Boolean.parseBoolean(producerSpec.getAttribute(CORE_ON_OOM)));
                 }
                 if (producerSpec.hasAttribute(CPU_SOCKET_ATTRIB_NAME)) {
                     t.setAffinity(new Affinity.Builder().cpuSocket(Integer.parseInt(producerSpec.getAttribute(CPU_SOCKET_ATTRIB_NAME))).build());
