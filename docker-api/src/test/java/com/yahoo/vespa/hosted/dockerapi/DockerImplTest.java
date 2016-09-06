@@ -13,11 +13,16 @@ import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.ListContainersCmd;
 import com.github.dockerjava.api.command.ListImagesCmd;
 import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.junit.Test;
 import org.mockito.Matchers;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,6 +41,61 @@ import static org.mockito.Mockito.when;
  * @author tonytv
  */
 public class DockerImplTest {
+    @Test
+    public void testDockerConfigWithUnixPath() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        String dockerUri = "unix:///var/run/docker.sock";
+        DockerConfig config = createConfig(dockerUri, null, null, null);
+        DefaultDockerClientConfig clientConfig = DockerImpl.buildDockerClientConfig(config).build();
+
+        assertTrue("Docker uri incorrectly set", clientConfig.getDockerHost().toString().equals(dockerUri));
+        assertTrue("SSL config was set when using socket", clientConfig.getSSLConfig() == null);
+    }
+
+    @Test
+    public void testDockerConfigWithTcpPathWithoutSSL() {
+        String dockerUri = "tcp://127.0.0.1:2376";
+        DockerConfig config = createConfig(dockerUri, null, null, null);
+        DefaultDockerClientConfig clientConfig = DockerImpl.buildDockerClientConfig(config).build();
+
+        assertTrue("Docker uri incorrectly set", clientConfig.getDockerHost().toString().equals(dockerUri));
+        assertTrue("SSL config was set", clientConfig.getSSLConfig() == null);
+    }
+
+    @Test
+    public void testDockerConfigWithTcpPathWithSslConfig() throws IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        String dockerUri = "tcp://127.0.0.1:2376";
+        DockerConfig config = createConfig(dockerUri, "/some/path/ca", "/some/path/cert", "/some/path/key");
+        DefaultDockerClientConfig clientConfig = DockerImpl.buildDockerClientConfig(config).build();
+
+        assertTrue("Docker uri incorrectly set", clientConfig.getDockerHost().toString().equals(dockerUri));
+        assertTrue("SSL config was not set", clientConfig.getSSLConfig() != null);
+    }
+
+    @Test(expected=RuntimeException.class)
+    public void testDockerConfigWithTcpPathWithInvalidSslConfig() throws IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        String dockerUri = "tcp://127.0.0.1:2376";
+        DockerConfig config = createConfig(dockerUri, "/some/path/ca", "/some/path/cert", "/some/path/key");
+        DefaultDockerClientConfig clientConfig = DockerImpl.buildDockerClientConfig(config).build();
+
+        assertTrue("Docker uri incorrectly set", clientConfig.getDockerHost().toString().equals(dockerUri));
+        assertTrue("SSL config was not set", clientConfig.getSSLConfig() != null);
+
+        // SSL certificates are read during the getSSLContext(), the invalid paths should cause a RuntimeException
+        clientConfig.getSSLConfig().getSSLContext();
+    }
+
+
+    private static DockerConfig createConfig(String uri, String caCertPath, String clientCertPath, String clientKeyPath) {
+        DockerConfig.Builder configBuilder = new DockerConfig.Builder();
+
+        if (uri             != null) configBuilder.uri(uri);
+        if (caCertPath      != null) configBuilder.caCertPath(caCertPath);
+        if (clientCertPath  != null) configBuilder.clientCertPath(clientCertPath);
+        if (clientKeyPath   != null) configBuilder.clientKeyPath(clientKeyPath);
+
+        return new DockerConfig(configBuilder);
+    }
+
     @Test
     public void testExecuteCompletes() throws Exception {
         final String containerId = "container-id";
