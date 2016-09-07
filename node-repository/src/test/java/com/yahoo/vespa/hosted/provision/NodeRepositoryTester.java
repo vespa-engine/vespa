@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 
@@ -40,7 +39,7 @@ public class NodeRepositoryTester {
     
     public Node addNode(String id, String hostname, String flavor, Node.Type type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
-                                              new Configuration(nodeFlavors.getFlavorOrThrow(flavor)), type);
+                                              nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
     }
 

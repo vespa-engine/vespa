@@ -13,7 +13,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -195,7 +194,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
                 parentHostname,
-                new Configuration(nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString())),
+                nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));
     }
 

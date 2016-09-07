@@ -7,7 +7,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.restapi.NodeStateSerializer;
 import com.yahoo.vespa.hosted.provision.restapi.legacy.ContainersForHost.DockerContainer;
@@ -28,6 +27,7 @@ import java.util.stream.Stream;
 @Path("/provision")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProvisionResource {
+
     private static final Logger log = Logger.getLogger(ProvisionResource.class.getName());
 
     private final NodeRepository nodeRepository;
@@ -47,7 +47,7 @@ public class ProvisionResource {
     public void addNodes(List<HostInfo> hostInfoList) {
         List<Node> nodes = new ArrayList<>();
         for (HostInfo hostInfo : hostInfoList)
-            nodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow(hostInfo.flavor)), Node.Type.tenant));
+            nodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname, Optional.empty(), nodeFlavors.getFlavorOrThrow(hostInfo.flavor), Node.Type.tenant));
         nodeRepository.addNodes(nodes);
     }
 

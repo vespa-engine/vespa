@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -27,7 +26,7 @@ public final class Node {
     private final String hostname;
     private final String openStackId;
     private final Optional<String> parentHostname;
-    private final Configuration configuration;
+    private final Flavor flavor;
     private final Status status;
     private final State state;
     private final Type type;
@@ -39,24 +38,24 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Configuration configuration, Type type) {
-        return new Node(openStackId, hostname, parentHostname, configuration, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, Type type) {
+        return new Node(openStackId, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                         Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
-                Configuration configuration, Status status, State state, Allocation allocation, History history, Type type) {
-        this(openStackId, hostname, parentHostname, configuration, status, state, Optional.of(allocation), history, type);
+                Flavor flavor, Status status, State state, Allocation allocation, History history, Type type) {
+        this(openStackId, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
-                Configuration configuration, Status status, State state, Optional<Allocation> allocation,
+                Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, Type type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
         Objects.requireNonNull(hostname, "A node must have a hostname");
         Objects.requireNonNull(parentHostname, "A null parentHostname is not permitted.");
-        Objects.requireNonNull(configuration, "A node must have a configuration");
+        Objects.requireNonNull(flavor, "A node must have a flavor");
         Objects.requireNonNull(status, "A node must have a status");
         Objects.requireNonNull(state, "A null node state is not permitted");
         Objects.requireNonNull(allocation, "A null node allocation is not permitted");
@@ -67,7 +66,7 @@ public final class Node {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.openStackId = openStackId;
-        this.configuration = configuration;
+        this.flavor = flavor;
         this.status = status;
         this.state = state;
         this.allocation = allocation;
@@ -91,8 +90,8 @@ public final class Node {
     /** Returns the parent hostname for this node if this node is a docker container or a VM (i.e. it has a parent host). Otherwise, empty **/
     public Optional<String> parentHostname() { return parentHostname; }
 
-    /** Returns the hardware configuration of this node */
-    public Configuration configuration() { return configuration; }
+    /** Returns the flavor of this node */
+    public Flavor flavor() { return flavor; }
 
     /** Returns the known information about the nodes ephemeral status */
     public Status status() { return status; }
@@ -142,28 +141,22 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node setStatus(Status status) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node setType(Type type) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
-    /** Returns a node with the hardware configuration assigned to the given value */
-    public Node setConfiguration(Configuration configuration) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+    /** Returns a node with the flavor assigned to the given value */
+    public Node setFlavor(Flavor flavor) {
+        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the current generation set to generation */
     public Node setReboot(Generation generation) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status.setReboot(generation), state,
-                        allocation, history, type);
-    }
-
-    /** Returns a copy of this with the flavor set to flavor */
-    public Node setFlavor(Flavor flavor) {
-        return new Node(openStackId, hostname, parentHostname, new Configuration(flavor), status, state,
+        return new Node(openStackId, hostname, parentHostname, flavor, status.setReboot(generation), state,
                         allocation, history, type);
     }
 
@@ -188,17 +181,18 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node setAllocation(Allocation allocation) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node setParentHostname(String parentHostname) {
-        return new Node(openStackId, hostname, Optional.of(parentHostname), configuration, status, state, allocation, history, type);
+        return new Node(openStackId, hostname, Optional.of(parentHostname), flavor, status, state, 
+                        allocation, history, type);
     }
 
     /** Returns a copy of this node with the given history. */
     public Node setHistory(History history) {
-        return new Node(openStackId, hostname, parentHostname, configuration, status, state, allocation, history, type);
+        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     @Override

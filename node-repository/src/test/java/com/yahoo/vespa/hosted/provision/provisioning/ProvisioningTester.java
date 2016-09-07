@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -206,7 +205,8 @@ public class ProvisioningTester implements AutoCloseable {
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
                                                 UUID.randomUUID().toString(),
                                                 Optional.empty(),
-                                                new Configuration(nodeFlavors.getFlavorOrThrow(flavor)), Node.Type.tenant));
+                                                nodeFlavors.getFlavorOrThrow(flavor), 
+                                                Node.Type.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
         return nodes;
@@ -223,7 +223,7 @@ public class ProvisioningTester implements AutoCloseable {
         for (int i = 0; i < n; i++) {
             final String hostname = UUID.randomUUID().toString();
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                    new Configuration(nodeFlavors.getFlavorOrThrow(flavor)), Node.Type.tenant));
+                      nodeFlavors.getFlavorOrThrow(flavor), Node.Type.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
@@ -250,7 +250,7 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     private Flavor getNodeFlavor(String hostname) {
-        return nodeRepository.getNode(hostname).map(Node::configuration).map(Configuration::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
+        return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {

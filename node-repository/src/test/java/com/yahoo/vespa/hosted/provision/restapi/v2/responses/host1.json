@@ -6,11 +6,11 @@
   "hostname": "parent1.yahoo.com",
   "openStackId": "what",
   "flavor": "default",
+  "canonicalFlavor": "default",
   "minDiskAvailableGb":400.0,
   "minMainMemoryAvailableGb":16.0,
   "description":"Host node",
   "minCpuCores":2.0,
-  "canonicalFlavor": "default",
   "environment":"env",
   "owner": {
     "tenant": "tenant3",

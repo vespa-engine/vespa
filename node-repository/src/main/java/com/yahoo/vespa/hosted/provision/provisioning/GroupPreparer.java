@@ -105,7 +105,7 @@ class GroupPreparer {
     /** Sort nodes according to their cost, and if the cost is equal, sort by hostname (to get stable tests) */
     private List<Node> sortNodeListByCost(List<Node> nodeList) {
         Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                .compare(n1.configuration().flavor().cost(), n2.configuration().flavor().cost())
+                .compare(n1.flavor().cost(), n2.flavor().cost())
                 .compare(n1.hostname(), n2.hostname())
                 .result()
         );
@@ -268,7 +268,7 @@ class GroupPreparer {
         }
 
         private boolean hasCompatibleFlavor(Node node) {
-            return node.configuration().flavor().satisfies(requestedFlavor);
+            return node.flavor().satisfies(requestedFlavor);
         }
 
         /** Updates the state of some existing nodes in this list by replacing them by id with the given instances. */

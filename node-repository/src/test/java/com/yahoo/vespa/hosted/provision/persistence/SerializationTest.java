@@ -12,7 +12,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
@@ -76,7 +75,7 @@ public class SerializationTest {
         assertEquals(2, copy.allocation().get().restartGeneration().current());
         assertEquals(3, copy.status().reboot().wanted());
         assertEquals(4, copy.status().reboot().current());
-        assertEquals("large", copy.configuration().flavor().name());
+        assertEquals("large", copy.flavor().name());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
         assertEquals(Status.HardwareFailureType.memory_mcelog, copy.status().hardwareFailure().get());
@@ -277,14 +276,14 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant);
+        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
 
     private Node createNode() {
-        return Node.create("myId", "myHostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host);
+        return Node.create("myId", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host);
     }
 
 }

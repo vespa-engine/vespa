@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.*;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
@@ -91,7 +90,7 @@ public class PopulateClient {
                 hostname /* id */,
                 hostname /* Hostname */,
                 Optional.empty() /* parent hostname */,
-                new Configuration(getFlavor(clusterType, clusterId).get()),
+                getFlavor(clusterType, clusterId).get(),
                 Status.initial(),
                 Node.State.active,
                 Optional.empty() /* Allocation */,

@@ -93,7 +93,7 @@ public class
         private void toSlime(Node node, Cursor object) {
             object.setString("id", node.openStackId());
             object.setString("hostname", node.hostname());
-            object.setString("flavor", node.configuration().flavor().name());
+            object.setString("flavor", node.flavor().name());
             Optional<Allocation> allocation = node.allocation();
             if (! allocation.isPresent()) return;
             toSlime(allocation.get().owner(), object.setObject("owner"));

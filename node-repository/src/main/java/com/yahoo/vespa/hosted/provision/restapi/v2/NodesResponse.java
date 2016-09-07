@@ -142,33 +142,26 @@ class NodesResponse extends HttpResponse {
             object.setString("parentHostname", node.parentHostname().get());
         }
         object.setString("openStackId", node.openStackId());
-        object.setString("flavor", node.configuration().flavor().name());
-        if (node.configuration().flavor().getMinDiskAvailableGb() > 0) {
-            object.setDouble("minDiskAvailableGb", node.configuration().flavor().getMinDiskAvailableGb());
-        }
-        if (node.configuration().flavor().getMinMainMemoryAvailableGb() > 0) {
-            object.setDouble("minMainMemoryAvailableGb", node.configuration().flavor().getMinMainMemoryAvailableGb());
-        }
-        if (node.configuration().flavor().getDescription() != null && ! node.configuration().flavor().getDescription().isEmpty()) {
-            object.setString("description", node.configuration().flavor().getDescription());
-        }
-        if (node.configuration().flavor().getMinCpuCores() > 0) {
-            object.setDouble("minCpuCores", node.configuration().flavor().getMinCpuCores());
-        }
-        object.setString("canonicalFlavor", node.configuration().flavor().canonicalName());
-        if (node.configuration().flavor().cost() > 0) {
-            object.setLong("cost", node.configuration().flavor().cost());
-        }
-        if (node.configuration().flavor().getEnvironment() != null && ! node.configuration().flavor().getEnvironment().isEmpty()) {
-            object.setString("environment", node.configuration().flavor().getEnvironment());
-        }
-        Optional<Allocation> allocation = node.allocation();
-        if (allocation.isPresent()) {
-            toSlime(allocation.get().owner(), object.setObject("owner"));
-            toSlime(allocation.get().membership(), object.setObject("membership"));
-            object.setLong("restartGeneration", allocation.get().restartGeneration().wanted());
-            object.setLong("currentRestartGeneration", allocation.get().restartGeneration().current());
-            allocation.get().membership().cluster().dockerImage().ifPresent(image -> object.setString("wantedDockerImage", image));
+        object.setString("flavor", node.flavor().name());
+        object.setString("canonicalFlavor", node.flavor().canonicalName());
+        if (node.flavor().getMinDiskAvailableGb() > 0)
+            object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
+        if (node.flavor().getMinMainMemoryAvailableGb() > 0)
+            object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
+        if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
+            object.setString("description", node.flavor().getDescription());
+        if (node.flavor().getMinCpuCores() > 0)
+            object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
+        if (node.flavor().cost() > 0)
+            object.setLong("cost", node.flavor().cost());
+        if (node.flavor().getEnvironment() != null && ! node.flavor().getEnvironment().isEmpty())
+            object.setString("environment", node.flavor().getEnvironment());
+        if (node.allocation().isPresent()) {
+            toSlime(node.allocation().get().owner(), object.setObject("owner"));
+            toSlime(node.allocation().get().membership(), object.setObject("membership"));
+            object.setLong("restartGeneration", node.allocation().get().restartGeneration().wanted());
+            object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
+            node.allocation().get().membership().cluster().dockerImage().ifPresent(image -> object.setString("wantedDockerImage", image));
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());

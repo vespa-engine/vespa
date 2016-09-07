@@ -71,7 +71,7 @@ public class NodePatcher {
             case "failCount" :
                 return node.setStatus(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
-                return node.setConfiguration(node.configuration().setFlavor(nodeFlavors.getFlavorOrThrow(asString(value))));
+                return node.setFlavor(nodeFlavors.getFlavorOrThrow(asString(value)));
             case "hardwareFailure" : // TODO (Aug 2016): Remove support for this when mpolden says ok
                 return node.setStatus(node.status().setHardwareFailure(toHardwareFailureType(asBoolean(value))));
             case "hardwareFailureType" :

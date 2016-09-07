@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -113,9 +113,9 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo */
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
-                           Configuration configuration, Node.Type type) {
-        return Node.create(openStackId, hostname, parentHostname, configuration, type);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, 
+                           Flavor flavor, Node.Type type) {
+        return Node.create(openStackId, hostname, parentHostname, flavor, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */

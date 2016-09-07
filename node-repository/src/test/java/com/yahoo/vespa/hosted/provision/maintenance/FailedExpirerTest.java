@@ -18,7 +18,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -67,14 +66,14 @@ public class FailedExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(3);
-        nodes.add(nodeRepository.createNode("node1", "node1", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode("node2", "node2", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode("node3", "node3", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode("node1", "node1", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode("node2", "node2", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode("node3", "node3", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
         nodeRepository.addNodes(nodes);
 
         List<Node> hostNodes = new ArrayList<>(1);
-        hostNodes.add(nodeRepository.createNode("parent1", "parent1", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
-        hostNodes.add(nodeRepository.createNode("parent2", "parent2", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
+        hostNodes.add(nodeRepository.createNode("parent1", "parent1", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
+        hostNodes.add(nodeRepository.createNode("parent2", "parent2", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
         nodeRepository.addNodes(hostNodes);
 
 

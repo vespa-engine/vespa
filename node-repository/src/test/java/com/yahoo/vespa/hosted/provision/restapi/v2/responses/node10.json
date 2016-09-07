@@ -7,11 +7,11 @@
   "parentHostname": "parent.yahoo.com",
   "openStackId": "node10",
   "flavor": "default",
+  "canonicalFlavor": "default",
   "minDiskAvailableGb":400.0,
   "minMainMemoryAvailableGb":16.0,
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
-  "canonicalFlavor": "default",
   "environment":"env",
   "owner": {
     "tenant": "tenant1",

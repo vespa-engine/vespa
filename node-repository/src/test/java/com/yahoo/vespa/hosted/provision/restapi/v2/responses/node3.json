@@ -6,8 +6,8 @@
   "hostname": "host3.yahoo.com",
   "openStackId": "node3",
   "flavor":"expensive",
-  "description":"Flavor-name-is-expensive",
   "canonicalFlavor":"default",
+  "description":"Flavor-name-is-expensive",
   "cost":200,
   "owner": {
     "tenant": "tenant3",

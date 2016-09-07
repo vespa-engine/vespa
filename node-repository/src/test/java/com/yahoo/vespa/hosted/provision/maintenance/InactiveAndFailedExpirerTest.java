@@ -15,7 +15,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -50,13 +49,13 @@ public class InactiveAndFailedExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
         nodeRepository.addNodes(nodes);
 
         List<Node> hostNodes = new ArrayList<>(2);
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
+        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
+        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
         nodeRepository.addNodes(hostNodes);
 
         // Allocate then deallocate 2 nodes
