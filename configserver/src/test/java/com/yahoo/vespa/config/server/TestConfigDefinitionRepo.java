@@ -3,14 +3,12 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.config.SimpletypesConfig;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author lulf

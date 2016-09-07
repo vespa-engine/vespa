@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
@@ -362,32 +361,6 @@ public class ConfigCurator {
             }
         }
         return ret.toArray(new File[ret.size()]);
-    }
-
-    /**
-     * The node string for a given config and path. Ignores id and/or version if the path is that of a
-     * data set that doesn't use id or version.
-     *
-     * @param path    a zookeeper path
-     * @param name    config definition name
-     * @param version config definition version
-     * @param id      config id
-     * @return a String with path to a zookeeper node for a given config and path
-     */
-    public static String getZkNodePath(String path, String name, String version, String id) {
-        if (path.endsWith(DEFCONFIGS_ZK_SUBPATH) || path.endsWith(USER_DEFCONFIGS_ZK_SUBPATH))
-            return getConfigNodeName(name, version);
-        throw new IllegalArgumentException("Don't know how data in " + path + " is organised in ZK");
-    }
-
-    public static String getConfigNodeName(String name, String version) {
-        return getConfigNodeName(name, version, null);
-    }
-
-    public static String getConfigNodeName(String name, String version, String configId) {
-        if (configId == null || "".equals(configId))
-            return name + "," + version;
-        return name + "," + version + "," + configId;
     }
 
     /** Deletes the node at the given path, and any children it may have. If the node does not exist this does nothing */

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.provision;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.*;
 
@@ -28,10 +27,9 @@ public class StaticProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-        List<HostSpec> l = provisionInfo.getHosts().stream()
+        return provisionInfo.getHosts().stream()
                 .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
                 .collect(Collectors.toList());
-        return l;
     }
 
     private boolean matches(ClusterSpec nodeCluster, ClusterSpec requestedCluster) {

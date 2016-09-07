@@ -4,11 +4,8 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;

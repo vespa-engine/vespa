@@ -26,7 +26,7 @@ public class ConfigServerDBTest {
         serverDB = ConfigServerDB.createTestConfigServerDb(tempDir.getAbsolutePath());
     }
 
-    private ConfigServerDB createInitializer(File pluginDir) throws IOException {
+    private ConfigServerDB createInitializer() throws IOException {
         File existingDef = new File(serverDB.classes(), "test.def");
         IOUtils.writeFile(existingDef, "hello", false);
         return ConfigServerDB.createTestConfigServerDb(tempDir.getAbsolutePath());
@@ -35,7 +35,7 @@ public class ConfigServerDBTest {
     @Test
     public void require_that_existing_def_files_are_copied() throws IOException {
         assertThat(serverDB.serverdefs().listFiles().length, is(0));
-        createInitializer(Files.createTempDir());
+        createInitializer();
         assertThat(serverDB.serverdefs().listFiles().length, is(1));
     }
 }

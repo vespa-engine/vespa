@@ -8,8 +8,6 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.rpc.LZ4ConfigResponseFactory;
-import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import org.junit.Before;
 import org.junit.Test;
 

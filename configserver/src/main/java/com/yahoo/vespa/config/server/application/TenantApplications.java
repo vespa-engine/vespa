@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.util.List;
 

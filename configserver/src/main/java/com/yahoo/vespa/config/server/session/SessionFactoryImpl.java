@@ -71,7 +71,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     @Override
     public LocalSession createSession(File applicationFile, String applicationName, DeployLogger logger, TimeoutBudget timeoutBudget) {
-        return create(applicationFile, applicationName, logger, nonExistingActiveSession, timeoutBudget);
+        return create(applicationFile, applicationName, nonExistingActiveSession, timeoutBudget);
     }
 
     private void ensureZKPathDoesNotExist(Path sessionPath) {
@@ -120,12 +120,12 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
         final long liveApp = getLiveApp(existingSessionId);
         logger.log(LogLevel.DEBUG, "Create from existing application id " + existingSessionId + ", live app for it is " + liveApp);
-        LocalSession session = create(existingApp, metaData.getApplicationName(), logger, liveApp, timeoutBudget);
+        LocalSession session = create(existingApp, metaData.getApplicationName(), liveApp, timeoutBudget);
         session.setApplicationId(existingSessionId);
         return session;
     }
 
-    private LocalSession create(File applicationFile, String applicationName, DeployLogger logger, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
+    private LocalSession create(File applicationFile, String applicationName, long currentlyActiveSession, TimeoutBudget timeoutBudget) {
         long sessionId = sessionCounter.nextSessionId();
         Path sessionIdPath = sessionsPath.append(String.valueOf(sessionId));
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Next session id is " + sessionId + " , sessionIdPath=" + sessionIdPath.getAbsolute());

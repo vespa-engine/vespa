@@ -26,8 +26,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;

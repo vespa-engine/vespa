@@ -5,7 +5,6 @@ import com.yahoo.config.provision.HostLivenessTracker;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
