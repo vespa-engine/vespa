@@ -2,5 +2,6 @@
 vespa_add_library(vespalib_vespalib_eval_test OBJECT
     SOURCES
     eval_spec.cpp
+    tensor_conformance.cpp
     DEPENDS
 )
