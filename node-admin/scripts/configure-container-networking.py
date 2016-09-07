@@ -19,7 +19,8 @@ from pyroute2 import IPRoute
 from pyroute2 import NetNS
 from pyroute2.netlink import NetlinkError
 from socket import gethostname
-
+from socket import AF_INET
+from socket import AF_INET6
 
 def create_directory_ignore_exists(path, permissions):
     if not os.path.isdir(path):
@@ -188,12 +189,12 @@ def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_le
         if is_same_address and is_same_netmask:
             ip_already_configured = True
         else:
+            # TODO Should we remove auto assigned ipv6 address (fe80:*) that is constructed from mac address?
             print("Deleting old ip address. %s/%s" % (existing_ip_address, existing_ip_prefixlen))
-            result_of_remove = net_namespace.addr('remove',
-                                                  index=interface_index,
-                                                  address=existing_ip_address,
-                                                  mask=existing_ip_prefixlen)
-            print(result_of_remove)
+            net_namespace.addr('remove',
+                               index=interface_index,
+                               address=existing_ip_address,
+                               mask=existing_ip_prefixlen)
 
     if not ip_already_configured:
         try:
@@ -206,7 +207,7 @@ def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_le
             if e.code == 17:  # File exists, i.e. address is already added
                 pass
 
-def get_default_route(net_namespace):
+def get_default_route(net_namespace, family):
     # route format: {
     #     'family': 2,
     #     'dst_len': 0,
@@ -233,9 +234,10 @@ def get_default_route(net_namespace):
     #     'scope': 0
     # }
     default_routes = net_namespace.get_default_routes()
-    if len(default_routes) != 1:
-        raise RuntimeError("Couldn't find single default route: " + str(default_routes))
-    return default_routes[0]
+    for route in default_routes:
+        if route['family'] == family:
+            return route
+    raise RuntimeError("Couldn't find default route: " + str(default_routes))
 
 
 # Parse arguments
@@ -264,7 +266,7 @@ try:
 except ValueError:
     raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
 container_ip = ipaddress.ip_address(unicode(container_ip_arg))
-
+family = AF_INET6 if container_ip.version == 6 else AF_INET
 
 # Done parsing arguments, now let's get to work.
 
@@ -338,11 +340,10 @@ elif vm_mode:
 else:
     # Set up default route/gateway in container.
 
-    host_default_route = get_default_route(net_namespace=host_ns)
-
+    host_default_route = get_default_route(net_namespace=host_ns, family=family)
     host_default_route_device_index = get_attribute(host_default_route, 'RTA_OIF')
     if host_device_index_for_container != host_default_route_device_index:
         raise RuntimeError("Container's ip address is not on the same network as the host's default route."
                            " Could not set up default route for the container.")
     host_default_route_gateway = get_attribute(host_default_route, 'RTA_GATEWAY')
-    container_ns.route("replace", gateway=host_default_route_gateway, index=container_interface_index)
+    container_ns.route(command="replace", gateway=host_default_route_gateway, index=container_interface_index, family=family)
