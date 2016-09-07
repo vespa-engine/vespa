@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/eval/function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
-#include <vespa/vespalib/eval/eval_spec.h>
+#include <vespa/vespalib/eval/test/eval_spec.h>
 #include <vespa/vespalib/eval/basic_nodes.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>

@@ -125,6 +125,7 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/eval
+    src/vespa/vespalib/eval/test
     src/vespa/vespalib/eval/value_cache
     src/vespa/vespalib/geo
     src/vespa/vespalib/io

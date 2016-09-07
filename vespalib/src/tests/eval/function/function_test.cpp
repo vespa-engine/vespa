@@ -4,7 +4,7 @@
 #include <vespa/vespalib/eval/operator_nodes.h>
 #include <vespa/vespalib/eval/node_traverser.h>
 #include <set>
-#include <vespa/vespalib/eval/eval_spec.h>
+#include <vespa/vespalib/eval/test/eval_spec.h>
 #include <vespa/vespalib/eval/check_type.h>
 
 using namespace vespalib::eval;
