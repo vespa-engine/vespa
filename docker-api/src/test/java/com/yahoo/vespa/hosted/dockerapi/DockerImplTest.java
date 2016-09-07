@@ -88,7 +88,7 @@ public class DockerImplTest {
     public void singleImageWithContainerIsUsed() throws Exception {
         ImageGcTester
                 .withExistingImages(ImageBuilder.forId("image-1"))
-                .andExistingContainers(ContainerBuilder.forId("container-1").withImage("image-1"))
+                .andExistingContainers(ContainerBuilder.forId("container-1").withImageId("image-1"))
                 .expectUnusedImages();
     }
 
@@ -98,7 +98,7 @@ public class DockerImplTest {
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("leaf-image").withParentId("parent-image"))
-                .expectUnusedImages("leaf-image");
+                .expectUnusedImages("leaf-image", "parent-image");
     }
 
     @Test
@@ -117,7 +117,7 @@ public class DockerImplTest {
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image"),
                         ImageBuilder.forId("image-2").withParentId("parent-image"))
-                .expectUnusedImages("image-1", "image-2");
+                .expectUnusedImages("image-1", "image-2", "parent-image");
     }
 
     @Test
@@ -125,52 +125,88 @@ public class DockerImplTest {
         ImageGcTester
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
-                        ImageBuilder.forId("image-1").withParentId("parent-image"),
-                        ImageBuilder.forId("image-2").withParentId("parent-image"))
-                .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImage("image-1"))
-                .expectUnusedImages("image-2");
+                        ImageBuilder.forId("image-1").withParentId("parent-image").withTag("latest"),
+                        ImageBuilder.forId("image-2").withParentId("parent-image").withTag("1.24"))
+                .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImageId("image-1"))
+                .expectUnusedImages("1.24");
     }
 
     @Test
-    public void containerCanReferToImageByTag() throws Exception {
+    public void unusedImagesWithMultipleTags() throws Exception {
         ImageGcTester
-                .withExistingImages(ImageBuilder.forId("image-1").withTag("vespa-6"))
-                .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImage("vespa-6"))
-                .expectUnusedImages();
+                .withExistingImages(
+                        ImageBuilder.forId("parent-image"),
+                        ImageBuilder.forId("image-1").withParentId("parent-image")
+                                .withTag("vespa-6").withTag("vespa-6.28").withTag("vespa:latest"))
+                .expectUnusedImages("vespa-6", "vespa-6.28", "vespa:latest", "parent-image");
     }
 
     @Test
     public void taggedImageWithNoContainersIsUnused() throws Exception {
         ImageGcTester
                 .withExistingImages(ImageBuilder.forId("image-1").withTag("vespa-6"))
-                .expectUnusedImages("image-1");
+                .expectUnusedImages("vespa-6");
+    }
+
+    @Test
+    public void unusedImagesWithMultipleTagsAndExcept() throws Exception {
+        ImageGcTester
+                .withExistingImages(
+                        ImageBuilder.forId("parent-image"),
+                        ImageBuilder.forId("image-1").withParentId("parent-image")
+                                .withTag("vespa-6").withTag("vespa-6.28").withTag("vespa:latest"))
+                .andExceptImages("vespa-6.28")
+                .expectUnusedImages("vespa-6", "vespa:latest");
+    }
+
+    @Test
+    public void unusedImagesWithExcept() throws Exception {
+        ImageGcTester
+                .withExistingImages(
+                        ImageBuilder.forId("parent-1"),
+                        ImageBuilder.forId("parent-2").withTag("p-tag:1"),
+                        ImageBuilder.forId("image-1-1").withParentId("parent-1").withTag("i-tag:1").withTag("i-tag:2").withTag("i-tag-3"),
+                        ImageBuilder.forId("image-1-2").withParentId("parent-1"),
+                        ImageBuilder.forId("image-2-1").withParentId("parent-2").withTag("i-tag:4"))
+                .andExceptImages("image-1-2")
+                .andExistingContainers(
+                        ContainerBuilder.forId("cont-1").withImageId("image-1-1"))
+                .expectUnusedImages("i-tag:4", "p-tag:1");
     }
 
     private static class ImageGcTester {
         private final List<Image> existingImages;
+        private Set<DockerImage> exceptImages = Collections.emptySet();
         private List<com.github.dockerjava.api.model.Container> existingContainers = Collections.emptyList();
 
         private ImageGcTester(final List<Image> images) {
             this.existingImages = images;
         }
 
-        public static ImageGcTester withExistingImages(final ImageBuilder... images) {
+        private static ImageGcTester withExistingImages(final ImageBuilder... images) {
             final List<Image> existingImages = Arrays.stream(images)
                     .map(ImageBuilder::toImage)
                     .collect(Collectors.toList());
             return new ImageGcTester(existingImages);
         }
 
-        public ImageGcTester andExistingContainers(final ContainerBuilder... containers) {
+        private ImageGcTester andExistingContainers(final ContainerBuilder... containers) {
             this.existingContainers = Arrays.stream(containers)
                     .map(ContainerBuilder::toContainer)
                     .collect(Collectors.toList());
             return this;
         }
 
-        public void expectUnusedImages(final String... imageIds) throws Exception {
+        private ImageGcTester andExceptImages(final String... images) {
+            this.exceptImages = Arrays.stream(images)
+                    .map(DockerImage::new)
+                    .collect(Collectors.toSet());
+            return this;
+        }
+
+        private void expectUnusedImages(final String... imageIds) throws Exception {
             final DockerClient dockerClient = mock(DockerClient.class);
-            final Docker docker = new DockerImpl(dockerClient);
+            final DockerImpl docker = new DockerImpl(dockerClient);
             final ListImagesCmd listImagesCmd = mock(ListImagesCmd.class);
             final ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
 
@@ -182,11 +218,11 @@ public class DockerImplTest {
             when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
             when(listContainersCmd.exec()).thenReturn(existingContainers);
 
-            final Set<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
+            final List<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
                     .map(DockerImage::new)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList());
             assertThat(
-                    docker.getUnusedDockerImages(),
+                    docker.getUnusedDockerImages(exceptImages),
                     is(expectedUnusedImages));
 
         }
@@ -227,11 +263,11 @@ public class DockerImplTest {
 
         private ImageBuilder(String id) { this.id = id; }
 
-        public static ImageBuilder forId(String id) { return new ImageBuilder(id); }
-        public ImageBuilder withParentId(String parentId) { this.parentId = parentId; return this; }
-        public ImageBuilder withTag(String tag) { this.repoTags.add(tag); return this; }
+        private static ImageBuilder forId(String id) { return new ImageBuilder(id); }
+        private ImageBuilder withParentId(String parentId) { this.parentId = parentId; return this; }
+        private ImageBuilder withTag(String tag) { this.repoTags.add(tag); return this; }
 
-        public Image toImage() { return createFrom(Image.class, this); }
+        private Image toImage() { return createFrom(Image.class, this); }
     }
 
     // Workaround for Container class that can't be instantiated directly in Java (instantiate via Jackson instead).
@@ -240,14 +276,14 @@ public class DockerImplTest {
         @JsonProperty("Id")
         private final String id;
 
-        @JsonProperty("Image")
-        private String image;
+        @JsonProperty("ImageID")
+        private String imageId;
 
         private ContainerBuilder(String id) { this.id = id; }
         private static ContainerBuilder forId(final String id) { return new ContainerBuilder(id); }
-        public ContainerBuilder withImage(String image) { this.image = image; return this; }
+        private ContainerBuilder withImageId(String imageId) { this.imageId = imageId; return this; }
 
-        public com.github.dockerjava.api.model.Container toContainer() {
+        private com.github.dockerjava.api.model.Container toContainer() {
             return createFrom(com.github.dockerjava.api.model.Container.class, this);
         }
     }

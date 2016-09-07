@@ -22,8 +22,8 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -260,111 +260,96 @@ public class DockerImpl implements Docker {
         dockerClient.removeImageCmd(dockerImage.asString()).exec();
     }
 
+    private Map<String, Image> filterOutImagesUsedByContainers(
+            Map<String, Image> dockerImagesByImageId, List<com.github.dockerjava.api.model.Container> containerList) {
+        Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
+
+        for (com.github.dockerjava.api.model.Container container : containerList) {
+            String imageToSpare = container.getImageId();
+            do {
+                Image sparedImage = filteredDockerImagesByImageId.remove(imageToSpare);
+                imageToSpare = sparedImage.getParentId();
+            } while (imageToSpare != null && !imageToSpare.isEmpty());
+        }
+
+        return filteredDockerImagesByImageId;
+    }
+
+    private Map<String, Image> filterOutExceptImages(Map<String, Image> dockerImagesByImageId, Set<DockerImage> except) {
+        Map<String, Image> dockerImageByImageTags = new HashMap<>();
+        // Transform map of image ID:image to map of image tag:image (for each tag the image has)
+        for (Map.Entry<String, Image> entry : dockerImagesByImageId.entrySet()) {
+            String[] repoTags = entry.getValue().getRepoTags();
+            // If no tags present, fall back to image ID
+            if (repoTags.length == 0 || repoTags[0].isEmpty()) {
+                dockerImageByImageTags.put(entry.getKey(), entry.getValue());
+            } else {
+                for (String tag : repoTags) {
+                    if (!tag.isEmpty()) {
+                        dockerImageByImageTags.put(tag, entry.getValue());
+                    }
+                }
+            }
+        }
+
+        // Remove images we want to keep from the map of unused images, also recursively keep the parents of images we want to keep
+        except.forEach(image -> {
+            String imageToSpare = image.asString();
+            do {
+                Image sparedImage = dockerImageByImageTags.remove(imageToSpare);
+                imageToSpare = sparedImage == null ? null : sparedImage.getParentId();
+            } while (imageToSpare != null && !imageToSpare.isEmpty());
+        });
+        return dockerImageByImageTags;
+    }
+
+    /**
+     * Generates lists of images that are safe to delete, in the order that is safe to delete them (children before
+     * parents). The function starts with a map of all images and the filters out images that are used now or will be
+     * used in near future (through the use of except set).
+     *
+     * @param except set of image tags to keep, regardless whether they are being used right now or not.
+     * @return List of image tags of unused images, if unused image has no tag, will return image ID instead.
+     */
+    List<DockerImage> getUnusedDockerImages(Set<DockerImage> except) {
+        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
+        Map<String, Image> dockerImageByImageId = images.stream().collect(Collectors.toMap(Image::getId, img -> img));
+
+        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
+        Map<String, Image> unusedImagesByContainers = filterOutImagesUsedByContainers(dockerImageByImageId, containers);
+        Map<String, Image> unusedImagesByExcept = filterOutExceptImages(unusedImagesByContainers, except);
+
+        List<String> unusedImages = unusedImagesByExcept.keySet().stream().collect(Collectors.toList());
+        // unusedImages now contains all the unused images, all we need to do now is to order them in a way that is
+        // safe to delete with. The order is:
+        Collections.sort(unusedImages, (o1, o2) -> {
+            Image image1 = unusedImagesByExcept.get(o1);
+            Image image2 = unusedImagesByExcept.get(o2);
+
+            // If image2 is parent of image1, image1 comes before image2
+            if (Objects.equals(image1.getParentId(), image2.getId())) return -1;
+            // If image1 is parent of image2, image2 comes before image1
+            else if (Objects.equals(image2.getParentId(), image1.getId())) return 1;
+            // Otherwise, sort lexicographically by image name (For testing)
+            else return o1.compareTo(o2);
+        });
+
+        return unusedImages.stream().map(DockerImage::new).collect(Collectors.toList());
+    }
+
     @Override
-    public Set<DockerImage> getUnusedDockerImages() {
-        // Description of concepts and relationships:
-        // - a docker image has an id, and refers to its parent image (if any) by image id.
-        // - a docker image may, in addition to id,  have multiple tags, but each tag identifies exactly one image.
-        // - a docker container refers to its image (exactly one) either by image id or by image tag.
-        // What this method does to find images considered unused, is build a tree of dependencies
-        // (e.g. container->tag->image->image) and identify image nodes whose only children (if any) are leaf tags.
-        // In other words, an image node with no children, or only tag children having no children themselves is unused.
-        // An image node with an image child is considered used.
-        // An image node with a container child is considered used.
-        // An image node with a tag child with a container child is considered used.
+    public void deleteUnusedDockerImages(Set<DockerImage> except) {
         try {
-            final Map<String, DockerObject> objects = new HashMap<>();
-            final Map<String, String> dependencies = new HashMap<>();
-
-            // Populate maps with images (including tags) and their dependencies (parents).
-            for (Image image : dockerClient.listImagesCmd().withShowAll(true).exec()) {
-                objects.put(image.getId(), new DockerObject(image.getId(), DockerObjectType.IMAGE));
-                if (image.getParentId() != null && !image.getParentId().isEmpty()) {
-                    dependencies.put(image.getId(), image.getParentId());
-                }
-                for (String tag : image.getRepoTags()) {
-                    objects.put(tag, new DockerObject(tag, DockerObjectType.IMAGE_TAG));
-                    dependencies.put(tag, image.getId());
-                }
-            }
-
-            // Populate maps with containers and their dependency to the image they run on.
-            for (com.github.dockerjava.api.model.Container container : dockerClient.listContainersCmd().withShowAll(true).exec()) {
-                objects.put(container.getId(), new DockerObject(container.getId(), DockerObjectType.CONTAINER));
-                dependencies.put(container.getId(), container.getImage());
-            }
-
-            // Now update every object with its dependencies.
-            dependencies.forEach((fromId, toId) -> {
-                Optional.ofNullable(objects.get(toId))
-                        .ifPresent(obj -> obj.addDependee(objects.get(fromId)));
-            });
-
-            // Find images that are not in use (i.e. leafs not used by any containers).
-            return objects.values().stream()
-                    .filter(dockerObject -> dockerObject.type == DockerObjectType.IMAGE)
-                    .filter(dockerObject -> !dockerObject.isInUse())
-                    .map(obj -> obj.id)
-                    .map(DockerImage::new)
-                    .collect(Collectors.toSet());
+            getUnusedDockerImages(except).stream().forEach(this::deleteImage);
         } catch (DockerException e) {
             throw new RuntimeException("Unexpected exception", e);
-        }
-    }
-
-    // Helper enum for calculating which images are unused.
-    private enum DockerObjectType {
-        IMAGE_TAG, IMAGE, CONTAINER
-    }
-
-    // Helper class for calculating which images are unused.
-    private static class DockerObject {
-        public final String id;
-        public final DockerObjectType type;
-        private final List<DockerObject> dependees = new LinkedList<>();
-
-        public DockerObject(final String id, final DockerObjectType type) {
-            this.id = id;
-            this.type = type;
-        }
-
-        public boolean isInUse() {
-            if (type == DockerObjectType.CONTAINER) {
-                return true;
-            }
-
-            if (dependees.isEmpty()) {
-                return false;
-            }
-
-            if (type == DockerObjectType.IMAGE) {
-                if (dependees.stream().anyMatch(obj -> obj.type == DockerObjectType.IMAGE)) {
-                    return true;
-                }
-            }
-
-            return dependees.stream().anyMatch(DockerObject::isInUse);
-        }
-
-        public void addDependee(final DockerObject dockerObject) {
-            dependees.add(dockerObject);
-        }
-
-        @Override
-        public String toString() {
-            return "DockerObject {"
-                    + " id=" + id
-                    + " type=" + type.name().toLowerCase()
-                    + " inUse=" + isInUse()
-                    + " dependees=" + dependees.stream().map(obj -> obj.id).collect(Collectors.toList())
-                    + " }";
         }
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
         private final DockerImage dockerImage;
 
-        ImagePullCallback(DockerImage dockerImage) {
+        private ImagePullCallback(DockerImage dockerImage) {
             this.dockerImage = dockerImage;
         }
 
