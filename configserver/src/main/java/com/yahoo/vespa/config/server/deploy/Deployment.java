@@ -51,13 +51,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final DeployLogger logger = new SilentDeployLogger();
 
     private boolean prepared = false;
+    
+    /** Whether this model should be validated (only takes effect if prepared=false) */
+    private boolean validate;
 
     private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
 
     private Deployment(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
                        Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                       Duration timeout, Clock clock, boolean prepared) {
+                       Duration timeout, Clock clock, boolean prepared, boolean validate) {
         this.session = session;
         this.localSessionRepo = localSessionRepo;
         this.tenantPath = tenantPath;
@@ -67,20 +70,21 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.timeout = timeout;
         this.clock = clock;
         this.prepared = prepared;
+        this.validate = validate;
     }
 
     public static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
                                         Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                                        Duration timeout, Clock clock) {
+                                        Duration timeout, Clock clock, boolean validate) {
         return new Deployment(session, localSessionRepo, tenantPath, configserverConfig, hostProvisioner, activateLock,
-                              timeout, clock, false);
+                              timeout, clock, false, validate);
     }
 
     public static Deployment prepared(LocalSession session, LocalSessionRepo localSessionRepo,
                                       Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
                                       Duration timeout, Clock clock) {
         return new Deployment(session, localSessionRepo, null, null, hostProvisioner, activateLock,
-                              timeout, clock, true);
+                              timeout, clock, true, true);
     }
 
     public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
@@ -100,7 +104,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         session.prepare(logger,
                         /** Assumes that session has already set application id, see {@link com.yahoo.vespa.config.server.session.SessionFactoryImpl}. */
-                        new PrepareParams(configserverConfig).applicationId(session.getApplicationId()).timeoutBudget(timeoutBudget),
+                        new PrepareParams(configserverConfig).applicationId(session.getApplicationId()).timeoutBudget(timeoutBudget).ignoreValidationErrors( ! validate),
                         Optional.empty(),
                         tenantPath);
         this.prepared = true;
@@ -173,12 +177,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre()+"active session id at create time=" + activeSessionAtCreate);
+        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
 
         long sessionId = session.getSessionId();
         long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre()+"sessionId=" + sessionId + ", current active session=" + currentActiveSessionSessionId);
+        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "sessionId=" + sessionId + 
+                                ", current active session=" + currentActiveSessionSessionId);
         if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
                 currentActiveSessionSessionId != sessionId) {
             String errMsg = currentActiveSession.logPre()+"Cannot activate session " +
@@ -186,7 +191,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                             currentActiveSessionSessionId + ") has changed since session " + sessionId +
                             " was created (was " + activeSessionAtCreate + " at creation time)";
             if (ignoreStaleSessionFailure) {
-                log.warning(errMsg+ " (Continuing because of force.)");
+                log.warning(errMsg + " (Continuing because of force.)");
             } else {
                 throw new IllegalStateException(errMsg);
             }
@@ -198,7 +203,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
             throw new IllegalArgumentException("It is not possible to activate session " + sessionId +
-                    ", because it is older than current active session (" + currentActiveSessionId + ")");
+                                               ", because it is older than current active session (" + 
+                                               currentActiveSessionId + ")");
         }
     }
 }

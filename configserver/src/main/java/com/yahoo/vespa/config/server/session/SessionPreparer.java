@@ -82,11 +82,10 @@ public class SessionPreparer {
      * @param params                      parameters controlling behaviour of prepare.
      * @param currentActiveApplicationSet Set of currently active applications.
      * @param tenantPath Zookeeper path for the tenant for this session
-     * @return The config change actions that must be done to handle the activation of the models prepared.
+     * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
-                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath)
-    {
+                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
         Preparation prep = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
         prep.preprocess();
         try {

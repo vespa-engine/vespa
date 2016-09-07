@@ -11,6 +11,7 @@ import java.util.Optional;
  * @author lulf
  */
 public class MockDeployer implements com.yahoo.config.provision.Deployer {
+
     public ApplicationId lastDeployed;
 
     @Override
@@ -18,4 +19,5 @@ public class MockDeployer implements com.yahoo.config.provision.Deployer {
         lastDeployed = application;
         return Optional.empty();
     }
+
 }

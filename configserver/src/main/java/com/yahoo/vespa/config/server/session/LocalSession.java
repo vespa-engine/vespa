@@ -60,9 +60,13 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         this.superModelGenerationCounter = sessionContext.getSuperModelGenerationCounter();
     }
 
-    public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
+    public ConfigChangeActions prepare(DeployLogger logger, 
+                                       PrepareParams params, 
+                                       Optional<ApplicationSet> currentActiveApplicationSet, 
+                                       Path tenantPath) {
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
-        ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params, currentActiveApplicationSet, tenantPath);
+        ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params, 
+                                                              currentActiveApplicationSet, tenantPath);
         setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;
