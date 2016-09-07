@@ -171,6 +171,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) throws IOException {
+        /*
         publishStateToNodeRepoIfChanged(
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
@@ -178,6 +179,7 @@ public class NodeAgentImpl implements NodeAgent {
                         nodeSpec.wantedRestartGeneration.get(),
                         new DockerImage(""),
                         ""));
+                        */
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
 
