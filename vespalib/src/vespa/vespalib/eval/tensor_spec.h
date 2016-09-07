@@ -25,20 +25,26 @@ public:
         Label(const char *name_in) : index(npos), name(name_in) {}
         bool is_mapped() const { return (index == npos); }
         bool is_indexed() const { return (index != npos); }
+        bool operator<(const Label &rhs) const {
+            if (index != rhs.index) {
+                return (index < rhs.index);
+            }
+            return (name < rhs.name);
+        }
     };
     using Address = std::map<vespalib::string,Label>;
-    using Cell = std::pair<Address,double>;
+    using Cells = std::map<Address,double>;
 private:
     vespalib::string _type;
-    std::vector<Cell> _cells;
+    Cells _cells;
 public:
     TensorSpec(const vespalib::string &type_spec) : _type(type_spec), _cells() {}
     TensorSpec &add(const Address &address, double value) {
-        _cells.emplace_back(address, value);
+        _cells.emplace(address, value);
         return *this;
     }
     const vespalib::string &type() const { return _type; }
-    const std::vector<Cell> &cells() const { return _cells; }
+    const Cells &cells() const { return _cells; }
 };
 
 } // namespace vespalib::eval

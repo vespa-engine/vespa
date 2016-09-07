@@ -152,13 +152,13 @@ TEST_F("require that array attribute can be converted to tensor (explicit dimens
 TEST_F("require that empty tensor is created if attribute does not exists",
         ExecFixture("tensorFromLabels(attribute(null))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute type is not supported",
         ExecFixture("tensorFromLabels(attribute(wsstr))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(wsstr{})"), f.execute());
 }
 
 
@@ -185,7 +185,7 @@ TEST_F("require that string array from query can be converted to tensor (explici
 TEST_F("require that empty tensor is created if query parameter is not found",
         ExecFixture("tensorFromLabels(query(null))"))
 {
-    EXPECT_EQUAL(AsTensor("{  }"), f.execute());
+    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

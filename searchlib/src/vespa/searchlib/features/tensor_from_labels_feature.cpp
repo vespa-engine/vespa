@@ -62,13 +62,13 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::ARRAY ||
             attribute->isFloatingPointType()) {
         LOG(warning, "The attribute vector '%s' is NOT of type array of string or integer."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty();
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
     }
     // Note that for array attribute vectors the default weight is 1.0 for all values.
     // This means we can get the attribute content as weighted content and build
@@ -102,7 +102,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         }
         return ConstantTensorExecutor::create(tensorBuilder.build());
     }
-    return ConstantTensorExecutor::createEmpty();
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
 }
 
 }
@@ -115,7 +115,7 @@ TensorFromLabelsBlueprint::createExecutor(const search::fef::IQueryEnvironment &
     } else if (_sourceType == QUERY_SOURCE) {
         return createQueryExecutor(env, _sourceParam, _dimension);
     }
-    return ConstantTensorExecutor::createEmpty();
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}));
 }
 
 } // namespace features

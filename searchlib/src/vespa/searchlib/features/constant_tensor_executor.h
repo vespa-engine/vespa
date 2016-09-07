@@ -3,10 +3,11 @@
 #pragma once
 
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/eval/value.h>
-#include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/vespalib/tensor/tensor_mapper.h>
+#include <vespa/vespalib/eval/value_type.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/tensor/tensor_type.h>
 #include <memory>
 
 namespace search {
@@ -28,23 +29,19 @@ public:
     virtual void execute(fef::MatchData &data) override {
         *data.resolve_object_feature(outputs()[0]) = *_tensor;
     }
-    static fef::FeatureExecutor::LP create(vespalib::tensor::Tensor::UP tensor) {
+    static fef::FeatureExecutor::LP create(std::unique_ptr<vespalib::eval::Tensor> tensor) {
         return FeatureExecutor::LP(new ConstantTensorExecutor
-                (std::make_unique<vespalib::eval::TensorValue>(std::move(tensor))));
+                                   (std::make_unique<vespalib::eval::TensorValue>(std::move(tensor))));
+    }
+    static fef::FeatureExecutor::LP createEmpty(const vespalib::eval::ValueType &valueType) {
+        return create(vespalib::tensor::DefaultTensorEngine::ref()
+                      .create(vespalib::eval::TensorSpec(valueType.to_spec())));
     }
     static fef::FeatureExecutor::LP createEmpty() {
-        // XXX: we should use numbers instead of empty tensors
-        vespalib::tensor::DefaultTensor::builder builder;
-        return FeatureExecutor::LP(new ConstantTensorExecutor
-                                   (std::make_unique<vespalib::eval::TensorValue>
-                                           (builder.build())));
+        return createEmpty(vespalib::eval::ValueType::double_type());
     }
     static fef::FeatureExecutor::LP createEmpty(const vespalib::tensor::TensorType &tensorType) {
-        vespalib::tensor::DefaultTensor::builder builder;
-        vespalib::tensor::TensorMapper mapper(tensorType);
-        return FeatureExecutor::LP(new ConstantTensorExecutor
-                                   (std::make_unique<vespalib::eval::TensorValue>
-                                           (mapper.map(*builder.build()))));
+        return createEmpty(tensorType.as_value_type());
     }
 };
 
