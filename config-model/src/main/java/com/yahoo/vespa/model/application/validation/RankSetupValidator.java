@@ -14,6 +14,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
@@ -111,6 +112,11 @@ public class RankSetupValidator extends Validator {
             AttributesConfig.Producer acProd = (AttributesConfig.Producer) producer;
             acProd.getConfig(acb);
             writeConfig(dir, "attributes.cfg", new AttributesConfig(acb));
+
+            RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
+            RankingConstantsConfig.Producer rccProd = (RankingConstantsConfig.Producer) producer;
+            rccProd.getConfig(rccb);
+            writeConfig(dir, "ranking-constants.cfg", new RankingConstantsConfig(rccb));
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
