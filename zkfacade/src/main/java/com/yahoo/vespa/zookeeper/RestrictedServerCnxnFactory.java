@@ -27,11 +27,11 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     
     @Override
     protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
-        String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName(); // TODO: Move this line down
+        String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
 
         String zookeeperClients = System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY);
         if (zookeeperClients == null || zookeeperClients.isEmpty()) {
-            log.info("Allowing connection to ZooKeeper from " + remoteHost + ", as " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " is not set"); // TODO: Remove this line
+            log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " is not set");
             return super.createConnection(socket, selection); // client checking is not activated
         }
 
@@ -39,10 +39,10 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         if ( ! remoteHost.equals("localhost") && ! zooKeeperClients.contains(remoteHost)) {
             String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
                                   ": This cluster only allow connection from hosts in: " + zooKeeperClients;
-            log.warning(errorMessage);
+            log.info(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
-        log.info("Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + zookeeperClients); // TODO: Remove this line
+        log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + zookeeperClients);
         return super.createConnection(socket, selection);
     }
 
