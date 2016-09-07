@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -24,6 +25,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
     private final NodeFailer nodeFailer;
     private final ApplicationMaintainer applicationMaintainer;
+    private final ZooKeeperAccessMaintainer zooKeeperAccessMaintainer;
     private final ReservationExpirer reservationExpirer;
     private final InactiveExpirer inactiveExpirer;
     private final RetiredExpirer retiredExpirer;
@@ -31,18 +33,19 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final DirtyExpirer dirtyExpirer;
 
     @Inject
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, 
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Orchestrator orchestrator) {
-        this(nodeRepository, deployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator);
+        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator);
     }
 
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, 
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Clock clock, Orchestrator orchestrator) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, fromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator);
         applicationMaintainer = new ApplicationMaintainer(deployer, nodeRepository, fromEnv("redeploy_frequency").orElse(defaults.redeployFrequency));
+        zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, fromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval));
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, fromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, fromEnv("retired_expiry").orElse(defaults.retiredExpiry));
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, fromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
@@ -59,6 +62,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     public void deconstruct() {
         nodeFailer.deconstruct();
         applicationMaintainer.deconstruct();
+        zooKeeperAccessMaintainer.deconstruct();
         reservationExpirer.deconstruct();
         inactiveExpirer.deconstruct();
         retiredExpirer.deconstruct();
@@ -73,6 +77,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         /** The time a node must be continuously nonresponsive before it is failed */
         private final Duration failGrace;
+        
+        private final Duration zooKeeperAccessMaintenanceInterval;
 
         private final Duration reservationExpiry;
         private final Duration inactiveExpiry;
@@ -84,18 +90,20 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             if (environment.equals(Environment.prod)) {
                 // These values are to avoid losing data (retired), and to be able to return an application
                 // back to a previous state fast (inactive)
-                redeployFrequency = Duration.ofMinutes(30);
                 failGrace = Duration.ofMinutes(60);
+                redeployFrequency = Duration.ofMinutes(30);
+                zooKeeperAccessMaintenanceInterval = Duration.ofMinutes(1);
                 reservationExpiry = Duration.ofMinutes(15);
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredExpiry = Duration.ofDays(4); // enough time to migrate data
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
             } else {
-                redeployFrequency = Duration.ofMinutes(30);
-                failGrace = Duration.ofMinutes(60);
                 // These values ensure tests and development is not delayed due to nodes staying around
                 // Use non-null values as these also determine the maintenance interval
+                failGrace = Duration.ofMinutes(60);
+                redeployFrequency = Duration.ofMinutes(30);
+                zooKeeperAccessMaintenanceInterval = Duration.ofSeconds(10);
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofMinutes(1);
                 retiredExpiry = Duration.ofMinutes(1);
