@@ -35,6 +35,7 @@ public class ZooKeeperAccessMaintainerTest {
         maintainer.maintain();
 
         assertEquals(3, tester.getNodes(Node.Type.tenant).size());
+        assertEquals(0, tester.getNodes(Node.Type.proxy).size());
         assertEquals(asSet("host1,host2,host3,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
 
         tester.addNode("proxy1", "host4", "default", Node.Type.proxy);
@@ -42,6 +43,7 @@ public class ZooKeeperAccessMaintainerTest {
         maintainer.maintain();
 
         assertEquals(3, tester.getNodes(Node.Type.tenant).size());
+        assertEquals(2, tester.getNodes(Node.Type.proxy).size());
         assertEquals(asSet("host1,host2,host3,host4,host5,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
 
         tester.nodeRepository().move("host2", Node.State.parked);
@@ -49,6 +51,7 @@ public class ZooKeeperAccessMaintainerTest {
         maintainer.maintain();
 
         assertEquals(2, tester.getNodes(Node.Type.tenant).size());
+        assertEquals(2, tester.getNodes(Node.Type.proxy).size());
         assertEquals(asSet("host1,host3,host4,host5,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
     }
 
