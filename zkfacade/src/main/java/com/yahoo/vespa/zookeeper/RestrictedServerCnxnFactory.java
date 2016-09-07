@@ -39,8 +39,9 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         if ( ! remoteHost.equals("localhost") && ! zooKeeperClients.contains(remoteHost)) {
             String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
                                   ": This cluster only allow connection from hosts in: " + zooKeeperClients;
-            log.info(errorMessage);
-            throw new IllegalArgumentException(errorMessage);
+            // log.info(errorMessage);
+            // throw new IllegalArgumentException(errorMessage);
+            log.fine("Would reject if activated: " + errorMessage);
         }
         log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + zookeeperClients);
         return super.createConnection(socket, selection);
