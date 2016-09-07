@@ -1,7 +1,7 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.hosted.dockerapi
 
-caCertPath string
-clientCertPath string
-clientKeyPath string
-uri string default = "tcp://127.0.0.1:2376"
+caCertPath string default = ""
+clientCertPath string default = ""
+clientKeyPath string default = ""
+uri string default = "unix:///host/var/run/docker.sock"
