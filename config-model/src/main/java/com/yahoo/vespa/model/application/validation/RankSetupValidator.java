@@ -14,6 +14,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
@@ -97,20 +98,25 @@ public class RankSetupValidator extends Validator {
     }
 
     private void writeConfigs(String dir, AbstractConfigProducer producer) throws IOException {
-            RankProfilesConfig.Builder rpb = new RankProfilesConfig.Builder();
-            RankProfilesConfig.Producer rpProd = (RankProfilesConfig.Producer) producer;
-            rpProd.getConfig(rpb);
-            writeConfig(dir, "rank-profiles.cfg", new RankProfilesConfig(rpb));
+            RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
+            RankProfilesConfig.Producer.class.cast(producer).getConfig(rpcb);
+            RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
+            writeConfig(dir, rpc.getDefName() + ".cfg", rpc);
 
-            IndexschemaConfig.Builder isB = new IndexschemaConfig.Builder();
-            IndexschemaConfig.Producer isProd = (IndexschemaConfig.Producer) producer;
-            isProd.getConfig(isB);
-            writeConfig(dir, "indexschema.cfg", new IndexschemaConfig(isB));
+            IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
+            IndexschemaConfig.Producer.class.cast(producer).getConfig(iscb);
+            IndexschemaConfig isc = new IndexschemaConfig(iscb);
+            writeConfig(dir, isc.getDefName() + ".cfg", isc);
 
             AttributesConfig.Builder acb = new AttributesConfig.Builder();
-            AttributesConfig.Producer acProd = (AttributesConfig.Producer) producer;
-            acProd.getConfig(acb);
-            writeConfig(dir, "attributes.cfg", new AttributesConfig(acb));
+            AttributesConfig.Producer.class.cast(producer).getConfig(acb);
+            AttributesConfig ac = new AttributesConfig(acb);
+            writeConfig(dir, ac.getDefName() + ".cfg", ac);
+
+            RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
+            RankingConstantsConfig.Producer.class.cast(producer).getConfig(rccb);
+            RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
+            writeConfig(dir, rcc.getDefName() + ".cfg", rcc);
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
