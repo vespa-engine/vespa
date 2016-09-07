@@ -175,7 +175,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
                 new NodeAttributes(
-                        nodeSpec.wantedRestartGeneration.get(),
+                        nodeSpec.wantedRestartGeneration.orElse(0L),
                         new DockerImage(""),
                         ""));
         nodeRepository.markAsReady(nodeSpec.hostname);
