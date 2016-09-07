@@ -189,9 +189,10 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(spec);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
-                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')\n");
+                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')",
+                    rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
                 vespalib::string filePath = fileAcquirer.wait_for(rc.fileref, 5*60);
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')\n",
+                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",
                     filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
                 constants.emplace_back(rc.name, rc.type, filePath);
             }
