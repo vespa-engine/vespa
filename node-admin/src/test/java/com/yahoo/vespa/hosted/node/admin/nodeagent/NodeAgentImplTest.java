@@ -246,9 +246,8 @@ public class NodeAgentImplTest {
                 any(HostName.class), anyLong(), any(DockerImage.class), anyString());
     }
 
-    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState nodeState)
+    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState nodeState, Optional<Long> wantedRestartGeneration)
             throws Exception {
-        final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
@@ -256,8 +255,8 @@ public class NodeAgentImplTest {
                 Optional.of(dockerImage),
                 containerName,
                 nodeState,
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
+                wantedRestartGeneration,
+                wantedRestartGeneration, //currentRestartGeneration
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
@@ -281,12 +280,17 @@ public class NodeAgentImplTest {
 
     @Test
     public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.DIRTY);
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.DIRTY, Optional.of(1L));
+    }
+
+    @Test
+    public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() throws Exception {
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.DIRTY, Optional.empty());
     }
 
     @Test
     public void provisionedNodeWithNoContainerIsCleanedAndRecycled() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.PROVISIONED);
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.PROVISIONED, Optional.of(1L));
     }
 
     @Test
