@@ -18,8 +18,8 @@ public interface ModelFactory {
 
     /**
      * Creates an instance of a {@link Model}. The resulting instance will be used to serve config. No model
-     * validation will be done, calling this method presupposes that {@link #createAndValidateModel} has already
-     * been called.
+     * validation will be done, calling this method assumes that {@link #createAndValidateModel} has already
+     * been called at some point for this model.
      *
      * @param modelContext An instance of {@link ModelContext}, containing dependencies for creating a {@link Model}.
      * @return a {@link Model} instance.

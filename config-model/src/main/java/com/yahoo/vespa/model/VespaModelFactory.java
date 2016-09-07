@@ -84,6 +84,31 @@ public class VespaModelFactory implements ModelFactory {
         return buildModel(createDeployState(modelContext));
     }
 
+    @Override
+    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
+        if (modelContext.appDir().isPresent()) {
+            ApplicationPackageXmlFilesValidator validator =
+                    ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
+                                                                                  modelContext.deployLogger(),
+                                                                                  modelContext.vespaVersion());
+            try {
+                validator.checkApplication();
+                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage());
+            } catch (IllegalArgumentException e) {
+                rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+        } else {
+            validateXML(modelContext.applicationPackage(), modelContext.deployLogger(), ignoreValidationErrors);
+        }
+        DeployState deployState = createDeployState(modelContext);
+        VespaModel model = buildModel(deployState);
+        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
+        return new ModelCreateResult(model, changeActions);
+    }
+
     private VespaModel buildModel(DeployState deployState) {
         try {
             return new VespaModel(configModelRegistry, deployState);
@@ -146,31 +171,6 @@ public class VespaModelFactory implements ModelFactory {
     private static boolean isHostedVespaRoutingApplication(ModelContext modelContext) {
         ApplicationId id = modelContext.properties().applicationId();
         return modelContext.properties().hostedVespa() && id.isHostedVespaRoutingApplication();
-    }
-
-    @Override
-    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-        if (modelContext.appDir().isPresent()) {
-                ApplicationPackageXmlFilesValidator validator =
-                        ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
-                                                                                      modelContext.deployLogger(),
-                                                                                      modelContext.vespaVersion());
-                try {
-                    validator.checkApplication();
-                    ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage());
-                } catch (IllegalArgumentException e) {
-                    rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-        } else {
-            validateXML(modelContext.applicationPackage(), modelContext.deployLogger(), ignoreValidationErrors);
-        }
-        DeployState deployState = createDeployState(modelContext);
-        VespaModel model = buildModel(deployState);
-        List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
-        return new ModelCreateResult(model, changeActions);
     }
 
     private void validateXML(ApplicationPackage applicationPackage, DeployLogger deployLogger, boolean ignoreValidationErrors) {
