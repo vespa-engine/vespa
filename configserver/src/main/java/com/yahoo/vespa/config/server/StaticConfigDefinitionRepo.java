@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;

@@ -33,7 +33,7 @@ public class TenantHandlerTest extends TenantTest {
     @Test
     public void testTenantCreate() throws Exception {
         assertFalse(tenants.tenantsCopy().containsKey(a));
-        TenantCreateResponse response = (TenantCreateResponse) putSync(a,
+        TenantCreateResponse response = (TenantCreateResponse) putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
     }
@@ -42,14 +42,13 @@ public class TenantHandlerTest extends TenantTest {
     public void testTenantCreateWithAllPossibleCharactersInName() throws Exception {
         TenantName tenantName = TenantName.from("aB-9999_foo");
         assertFalse(tenants.tenantsCopy().containsKey(tenantName));
-        TenantCreateResponse response = (TenantCreateResponse) putSync(a,
+        TenantCreateResponse response = (TenantCreateResponse) putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + tenantName, Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant " + tenantName + " created.\"}");
     }
 
-    private HttpResponse putSync(TenantName name, HttpRequest testRequest) throws InterruptedException {
-        HttpResponse response = handler.handlePUT(testRequest);
-        return response;
+    private HttpResponse putSync(HttpRequest testRequest) throws InterruptedException {
+        return handler.handlePUT(testRequest);
     }
 
     @Test(expected=NotFoundException.class)
@@ -67,7 +66,7 @@ public class TenantHandlerTest extends TenantTest {
     @Test(expected=BadRequestException.class)
     public void testCreateExisting() throws Exception {
         assertFalse(tenants.tenantsCopy().containsKey(a));
-        TenantCreateResponse response = (TenantCreateResponse) putSync(a, HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
+        TenantCreateResponse response = (TenantCreateResponse) putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
         Tenant ta = tenants.tenantsCopy().get(a);
         assertEquals(ta.getName(), a);
@@ -76,7 +75,7 @@ public class TenantHandlerTest extends TenantTest {
 
     @Test
     public void testDelete() throws IOException, InterruptedException {
-        putSync(a, HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
+        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertEquals(tenants.tenantsCopy().get(a).getName(), a);
         TenantDeleteResponse delResp = (TenantDeleteResponse) handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.DELETE));
         assertResponseEquals(delResp, "{\"message\":\"Tenant a deleted.\"}");
@@ -85,7 +84,7 @@ public class TenantHandlerTest extends TenantTest {
 
     @Test
     public void testDeleteTenantWithActiveApplications() throws Exception {
-        putSync(a, HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
+        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
         assertEquals(tenants.tenantsCopy().get(a).getName(), a);
 
         final Tenant tenant = tenants.tenantsCopy().get(a);
@@ -109,7 +108,7 @@ public class TenantHandlerTest extends TenantTest {
     
     @Test(expected=BadRequestException.class)
     public void testIllegalNameSlashes() throws InterruptedException {
-        putSync(a, HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a/b", Method.PUT));
+        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a/b", Method.PUT));
     }
     
 }

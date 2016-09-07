@@ -13,7 +13,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
-import com.yahoo.vespa.defaults.Defaults;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

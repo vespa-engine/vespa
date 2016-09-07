@@ -215,7 +215,7 @@ public class StateResource implements StateClient {
                         // NOP
                     }
                 } else if ("link".equals(entry.getKey()) && entry.getValue() instanceof String) {
-                    buildSingleLink(entry, model, linkBuffer(applicationIdentifier), incomingIdentifier);
+                    buildSingleLink(entry, linkBuffer(applicationIdentifier), incomingIdentifier);
                 } else {
                     rewriteResourceLinks(entry.getValue(), model, self, applicationIdentifier, incomingIdentifier);
                 }
@@ -224,9 +224,8 @@ public class StateResource implements StateClient {
     }
 
     private void buildSingleLink(Map.Entry<Object, Object> entry,
-            ServiceModel model,
-            StringBuilder newUri,
-            String incomingIdentifier) {
+                                 StringBuilder newUri,
+                                 String incomingIdentifier) {
         newUri.append("/service/")
                 .append(incomingIdentifier);
         newUri.append(entry.getValue());

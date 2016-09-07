@@ -231,9 +231,4 @@ public class ConfigCuratorTest {
         configCurator.deleteRecurse("/nonexisting");
     }
 
-    @Test
-    public void testGetZkNodePath() {
-        assertEquals("foo,1", ConfigCurator.getZkNodePath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH, "foo", "1", "a/b"));
-    }
-    
 }

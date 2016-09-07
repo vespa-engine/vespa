@@ -3,18 +3,14 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.base.Splitter;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**
