@@ -28,39 +28,19 @@ public class NodeRepositoryTest {
 
     @Test
     public void nodeRepositoryTest() {
-        NodeFlavors nodeFlavors = new NodeFlavors(createConfig());
-        Clock clock = new ManualClock();
-        MockCurator curator = new MockCurator();
-        curator.setConnectionSpec("server1:1234,server2:5678");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        assertEquals(0, tester.getNodes(Node.Type.tenant).size());
 
-        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant).size());
+        tester.addNode("id1", "host1", "default", Node.Type.tenant);
+        tester.addNode("id2", "host2", "default", Node.Type.tenant);
+        tester.addNode("id3", "host3", "default", Node.Type.tenant);
 
-        List<Node> nodes = new ArrayList<>();
-        nodes.add(nodeRepository.createNode("id1", "host1", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode("id2", "host2", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode("id3", "host3", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
-        nodeRepository.addNodes(nodes);
-
-        assertEquals(3, nodeRepository.getNodes(Node.Type.tenant).size());
-        assertEquals(asSet("host1,host2,host3,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
+        assertEquals(3, tester.getNodes(Node.Type.tenant).size());
         
-        nodeRepository.move("host2", Node.State.parked);
-        assertTrue(nodeRepository.remove("host2"));
+        tester.nodeRepository().move("host2", Node.State.parked);
+        assertTrue(tester.nodeRepository().remove("host2"));
 
-        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant).size());
-        assertEquals(asSet("host1,host3,server1,server2"), asSet(System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY)));
+        assertEquals(2, tester.getNodes(Node.Type.tenant).size());
     }
     
-    private Set<String> asSet(String s) {
-        return new HashSet<>(Arrays.asList(s.split(",")));
-    }
-
-    private NodeRepositoryConfig createConfig() {
-        FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 4., 100, "BARE_METAL").cost(3);
-        b.addFlavor("small", 1., 2., 50, "BARE_METAL").cost(2);
-        return b.build();
-    }
-
 }

@@ -14,8 +14,6 @@ public class FileDistributionManager {
 
     private final static boolean available;
 
-    private long nativeFileDistributionManager;
-
     private final File applicationDirectory;
     private final String appId;
     private final Lock lock;

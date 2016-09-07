@@ -286,6 +286,7 @@ public class NodeSerializer {
         switch (typeString) {
             case "tenant" : return Node.Type.tenant;
             case "host" : return Node.Type.host;
+            case "proxy" : return Node.Type.proxy;
             default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
@@ -293,6 +294,7 @@ public class NodeSerializer {
         switch (type) {
             case tenant: return "tenant";
             case host: return "host";
+            case proxy: return "proxy";
         }
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
     }

@@ -188,6 +188,7 @@ class NodesResponse extends HttpResponse {
         switch(type) {
             case tenant: return "tenant";
             case host: return "host";
+            case proxy: return "proxy";
             default:
                 throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
         }
