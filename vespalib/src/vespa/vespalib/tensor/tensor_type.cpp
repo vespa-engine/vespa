@@ -113,7 +113,7 @@ TensorType::keep_dimensions_in(const TensorType &rhs) const
 ValueType
 TensorType::as_value_type() const
 {
-    if (is_number()) {
+    if (is_number() || (is_tensor() && dimensions().empty())) {
         return ValueType::double_type();
     }
     if (is_tensor()) {

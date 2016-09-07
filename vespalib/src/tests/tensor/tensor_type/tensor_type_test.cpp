@@ -279,8 +279,8 @@ TEST("require that tensor type can be converted to value type") {
                  TensorType::sparse({"x", "y", "z"}).as_value_type());
     EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"y", 20}, {"z", 30}}),
                  TensorType::dense({{"x", 10}, {"y", 20}, {"z", 30}}).as_value_type());
-    EXPECT_EQUAL(ValueType::tensor_type({}), TensorType::sparse({}).as_value_type());
-    EXPECT_EQUAL(ValueType::tensor_type({}), TensorType::dense({}).as_value_type());
+    EXPECT_EQUAL(ValueType::double_type(), TensorType::sparse({}).as_value_type());
+    EXPECT_EQUAL(ValueType::double_type(), TensorType::dense({}).as_value_type());
 }
 
 TEST("require that invalid tensor type spec is parsed as invalid") {
