@@ -298,11 +298,11 @@ public class DockerImpl implements Docker {
         for (Map.Entry<String, Image> entry : dockerImagesByImageId.entrySet()) {
             String[] repoTags = entry.getValue().getRepoTags();
             // If no tags present, fall back to image ID
-            if (repoTags.length == 0 || repoTags[0].isEmpty()) {
+            if (repoTags == null || repoTags.length == 0) {
                 dockerImageByImageTags.put(entry.getKey(), entry.getValue());
             } else {
                 for (String tag : repoTags) {
-                    if (!tag.isEmpty()) {
+                    if (tag != null && !tag.isEmpty()) {
                         dockerImageByImageTags.put(tag, entry.getValue());
                     }
                 }
@@ -331,6 +331,28 @@ public class DockerImpl implements Docker {
     List<DockerImage> getUnusedDockerImages(Set<DockerImage> except) {
         List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
         Map<String, Image> dockerImageByImageId = images.stream().collect(Collectors.toMap(Image::getId, img -> img));
+
+        // TODO: Remove remove this after all cases of repo tags have been found
+        for (Image image : dockerImageByImageId.values()) {
+            if (image.getRepoTags() == null) {
+                logger.info("^^^ Repo tags are null: " + image.getId());
+            } else if (image.getRepoTags().length == 0) {
+                logger.info("^^^ Repo tags array is empty: " + image.getId());
+            } else {
+                List<String> repoTagsList = Arrays.asList(image.getRepoTags());
+                if (repoTagsList.contains(null)) {
+                    logger.info("^^^ Repo tags array contained null tag: " + image.getId());
+                } else if (repoTagsList.contains("")) {
+                    logger.info("^^^ Repo tags array contained empty tag: " + image.getId());
+                }
+            }
+
+            if (image.getParentId() == null) {
+                logger.info("^^^ Parent ID is null");
+            } else if (image.getParentId().isEmpty()) {
+                logger.info("^^^ Parent ID is empty");
+            }
+        }
 
         List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
         Map<String, Image> unusedImagesByContainers = filterOutImagesUsedByContainers(dockerImageByImageId, containers);
