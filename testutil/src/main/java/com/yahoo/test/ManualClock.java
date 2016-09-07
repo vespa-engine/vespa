@@ -3,7 +3,10 @@ package com.yahoo.test;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAmount;
 
 /** A clock which initially has the time of its creation but can only be advanced by calling advance */
@@ -12,6 +15,10 @@ public class ManualClock extends Clock {
     private Instant currentTime = Instant.now();
 
     public ManualClock() {}
+
+    public ManualClock(String utcIsoTime) {
+        this(at(utcIsoTime));
+    }
 
     public ManualClock(Instant currentTime) {
         this.currentTime = currentTime;
@@ -32,5 +39,9 @@ public class ManualClock extends Clock {
 
     @Override
     public long millis() { return currentTime.toEpochMilli(); }
+
+    public static Instant at(String utcIsoTime) {
+        return LocalDateTime.parse(utcIsoTime, DateTimeFormatter.ISO_DATE_TIME).atZone(ZoneOffset.UTC).toInstant();
+    }
 
 }

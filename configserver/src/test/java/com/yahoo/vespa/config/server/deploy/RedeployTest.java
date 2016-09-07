@@ -16,6 +16,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestWithCurator;
@@ -78,8 +79,8 @@ public class RedeployTest {
     @Test
     public void testNoRedeploy() {
         List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(DeployTester.createDefaultModelFactory());
-        modelFactories.add(new OldNonWorkingModelFactory());
+        modelFactories.add(DeployTester.createDefaultModelFactory(Clock.systemUTC()));
+        modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0)));
         DeployTester tester = new DeployTester("ignored/app/path", modelFactories);
         ApplicationId id = ApplicationId.from(TenantName.from("default"),
                                               ApplicationName.from("default"),
@@ -87,30 +88,4 @@ public class RedeployTest {
         assertFalse(tester.redeployFromLocalActive(id).isPresent());
     }
     
-    private static class OldNonWorkingModelFactory implements ModelFactory {
-
-        @Override
-        public Version getVersion() {
-            return Version.fromIntValues(1, 0, 0);
-        }
-
-        @Override
-        public Model createModel(ModelContext modelContext) {
-            try {
-                Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-                ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().build();
-                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build();
-                return new VespaModel(deployState);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-            throw new IllegalArgumentException("Validation fails");
-        }
-
-    }
-
 }

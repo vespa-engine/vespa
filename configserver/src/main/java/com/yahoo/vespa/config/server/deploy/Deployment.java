@@ -173,12 +173,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void checkIfActiveHasChanged(LocalSession session, LocalSession currentActiveSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre()+"active session id at create time=" + activeSessionAtCreate);
+        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create
 
         long sessionId = session.getSessionId();
         long currentActiveSessionSessionId = currentActiveSession.getSessionId();
-        log.log(LogLevel.DEBUG, currentActiveSession.logPre()+"sessionId=" + sessionId + ", current active session=" + currentActiveSessionSessionId);
+        log.log(LogLevel.DEBUG, currentActiveSession.logPre() + "sessionId=" + sessionId + 
+                                ", current active session=" + currentActiveSessionSessionId);
         if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
                 currentActiveSessionSessionId != sessionId) {
             String errMsg = currentActiveSession.logPre()+"Cannot activate session " +
@@ -186,7 +187,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                             currentActiveSessionSessionId + ") has changed since session " + sessionId +
                             " was created (was " + activeSessionAtCreate + " at creation time)";
             if (ignoreStaleSessionFailure) {
-                log.warning(errMsg+ " (Continuing because of force.)");
+                log.warning(errMsg + " (Continuing because of force.)");
             } else {
                 throw new IllegalStateException(errMsg);
             }
@@ -198,7 +199,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
             throw new IllegalArgumentException("It is not possible to activate session " + sessionId +
-                    ", because it is older than current active session (" + currentActiveSessionId + ")");
+                                               ", because it is older than current active session (" + 
+                                               currentActiveSessionId + ")");
         }
     }
 }

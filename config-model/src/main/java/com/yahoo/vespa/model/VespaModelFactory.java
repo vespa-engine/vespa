@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -44,6 +45,7 @@ public class VespaModelFactory implements ModelFactory {
     private static final Logger log = Logger.getLogger(VespaModelFactory.class.getName());
     private final ConfigModelRegistry configModelRegistry;
     private final Zone zone;
+    private final Clock clock;
 
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry, Zone zone) {
@@ -55,9 +57,13 @@ public class VespaModelFactory implements ModelFactory {
         }
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.zone = zone;
+        this.clock = Clock.systemUTC();
     }
 
     public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
+        this(configModelRegistry, Clock.systemUTC());
+    }
+    public VespaModelFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();
             log.info("Will not load config models from plugins, as no registry is available");
@@ -65,6 +71,7 @@ public class VespaModelFactory implements ModelFactory {
             this.configModelRegistry = configModelRegistry;
         }
         this.zone = Zone.defaultZone();
+        this.clock = clock;
     }
 
     @Override
@@ -95,7 +102,8 @@ public class VespaModelFactory implements ModelFactory {
             .properties(createDeployProperties(modelContext.properties()))
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
-            .zone(zone);
+            .zone(zone)
+            .now(clock.instant());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build();
     }
