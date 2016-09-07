@@ -67,7 +67,10 @@ public class SessionPrepareHandler extends SessionHandler {
         // An app id currently using only the name
         ApplicationId appId = prepParams.getApplicationId();
         DeployLogger logger = createLogger(rawDeployLog, verbose, appId);
-        ConfigChangeActions actions = session.prepare(logger, prepParams, getCurrentActiveApplicationSet(tenantContext, appId), tenantContext.getPath());
+        ConfigChangeActions actions = session.prepare(logger, 
+                                                      prepParams, 
+                                                      getCurrentActiveApplicationSet(tenantContext, appId), 
+                                                      tenantContext.getPath());
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, Tenants.logPre(appId)+"Session "+session.getSessionId()+" prepared successfully. ");
         return new SessionPrepareResponse(rawDeployLog, tenantContext, request, session, actions);

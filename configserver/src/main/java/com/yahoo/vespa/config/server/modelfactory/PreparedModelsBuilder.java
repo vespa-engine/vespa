@@ -164,7 +164,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 Optional.of(version));
 
         log.log(LogLevel.DEBUG, "Running createAndValidateModel for Vespa version " + version);
-        ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
+        ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
         log.log(LogLevel.DEBUG, "Done building model for Vespa version " + version);
         return new PreparedModelsBuilder.PreparedModelResult(version, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());

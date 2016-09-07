@@ -27,6 +27,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -177,7 +178,9 @@ public class DeployTester {
 
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
-            throw new IllegalArgumentException("Validation fails");
+            if ( ! ignoreValidationErrors)
+                throw new IllegalArgumentException("Validation fails");
+            return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
         }
 
     }

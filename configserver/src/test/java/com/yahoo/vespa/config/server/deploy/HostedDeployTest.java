@@ -65,7 +65,7 @@ public class HostedDeployTest {
                 tester.deployApp("myApp");
                 fail("Expected redeployment to fail");
             }
-            catch (IllegalArgumentException expected) {
+            catch (Exception expected) {
                 // success
             }
         }

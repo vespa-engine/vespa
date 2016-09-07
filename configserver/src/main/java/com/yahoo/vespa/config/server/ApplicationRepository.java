@@ -74,7 +74,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  configserverConfig,
                                                  hostProvisioner,
                                                  new ActivateLock(curator, tenant.getPath()),
-                                                 timeout, clock));
+                                                 timeout, 
+                                                 clock,
+                                                 /* already deployed, validate: */ false));
     }
 
     public Deployment deployFromPreparedSession(LocalSession session, ActivateLock lock, LocalSessionRepo localSessionRepo, Duration timeout) {
