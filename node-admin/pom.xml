@@ -19,6 +19,12 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>docker-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+        <groupId>com.yahoo.vespa</groupId>
             <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -45,12 +51,6 @@
             <groupId>net.jpountz.lz4</groupId>
             <artifactId>lz4</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>docker-api</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -84,6 +84,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>application-model</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -119,6 +120,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+
                     <source>1.8</source>
                     <target>1.8</target>
                     <compilerArgs>
@@ -131,6 +133,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
+
                     <finalName>node-admin-maintenance</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
