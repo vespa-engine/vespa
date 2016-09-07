@@ -46,7 +46,7 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
 
     @Override
     public String toString() {
-        return "SooKeeper access maintainer";
+        return "ZooKeeper access maintainer";
     }
 
 }
