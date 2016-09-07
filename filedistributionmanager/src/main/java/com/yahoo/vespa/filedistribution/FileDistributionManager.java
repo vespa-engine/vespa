@@ -14,6 +14,9 @@ public class FileDistributionManager {
 
     private final static boolean available;
 
+    @SuppressWarnings({"UnusedDeclaration"}) // Needs to be here due to JNI
+    private long nativeFileDistributionManager;
+
     private final File applicationDirectory;
     private final String appId;
     private final Lock lock;
