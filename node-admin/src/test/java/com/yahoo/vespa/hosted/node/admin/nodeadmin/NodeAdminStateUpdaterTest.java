@@ -4,12 +4,10 @@ import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -33,24 +31,7 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class NodeAdminStateUpdaterTest {
-
-    @Before
-    public void before() {
-        try {
-            OrchestratorMock.semaphore.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        OrchestratorMock.reset();
-    }
-
-    @After
-    public void after() {
-        OrchestratorMock.semaphore.release();
-    }
-
     @Test
-    @Ignore
     @SuppressWarnings("unchecked")
     public void testExceptionIsCaughtAndDataIsPassedAndFreeze() throws Exception {
         NodeRepository nodeRepository = mock(NodeRepository.class);
@@ -76,7 +57,8 @@ public class NodeAdminStateUpdaterTest {
         containersToRun.add(createSample());
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
-        OrchestratorMock orchestratorMock = new OrchestratorMock();
+        CallOrderVerifier callOrder = new CallOrderVerifier();
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
         NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
         latch.await();
@@ -87,14 +69,14 @@ public class NodeAdminStateUpdaterTest {
                 is(Optional.of("Not all node agents are frozen.")));
         assertTrue(numberOfElements > 4);
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
-        Thread.sleep(2);
+        Thread.sleep(10);
 
         when(nodeAdmin.isFrozen()).thenReturn(false);
         assertThat(accumulatedArgumentList.size(), is(numberOfElements));
         assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
                 is(Optional.empty()));
         while (accumulatedArgumentList.size() == numberOfElements) {
-            Thread.sleep(1);
+            Thread.sleep(10);
         }
         refresher.deconstruct();
     }

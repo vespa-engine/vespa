@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -23,8 +23,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
+    private final Environment environment = new Environment();
     private final Docker docker = mock(Docker.class);
-    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker);
+    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 
     @Test
     public void absenceOfNodeProgramIsSuccess() throws Exception {

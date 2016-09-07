@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.orchestrator;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
@@ -35,8 +34,16 @@ public class OrchestratorImpl implements Orchestrator {
 
     private final ConfigServerHttpRequestExecutor requestExecutor;
 
-    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
+    // For testing
+    OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
+    }
+
+    public OrchestratorImpl(Set<HostName> configServerHosts) {
+        if (configServerHosts.isEmpty()) {
+            throw new IllegalStateException("Environment setting for config servers missing or empty.");
+        }
+        this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
     }
 
     @Override
@@ -94,13 +101,5 @@ public class OrchestratorImpl implements Orchestrator {
             logger.info("Got error on resume " + hostName, e);
             return false;
         }
-    }
-
-    public static OrchestratorImpl createOrchestratorFromSettings() {
-        final Set<HostName> configServerHosts = Environment.getConfigServerHosts();
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
-        return new OrchestratorImpl(ConfigServerHttpRequestExecutor.create(configServerHosts));
     }
 }

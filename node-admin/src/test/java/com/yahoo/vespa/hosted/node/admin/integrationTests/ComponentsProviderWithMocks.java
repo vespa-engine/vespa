@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.util.function.Function;
 
@@ -19,13 +20,15 @@ import java.util.function.Function;
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
-    public NodeRepoMock nodeRepositoryMock = new NodeRepoMock();
-    private MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
-    private OrchestratorMock orchestratorMock = new OrchestratorMock();
-    private Docker dockerMock = new DockerMock();
+    static final CallOrderVerifier callOrder = new CallOrderVerifier();
+    static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
+    static final MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+    static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
+    static final Docker dockerMock = new DockerMock(callOrder);
 
-    private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-            new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock), maintenanceSchedulerMock);
+    private Environment environment = new Environment();
+    private final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName,
+            nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
 

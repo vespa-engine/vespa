@@ -38,8 +38,8 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author dybis
  */
 public class DockerOperationsImpl implements DockerOperations {
-    static final String NODE_PROGRAM = Defaults.getDefaults().vespaHome() + "bin/vespa-nodectl";
-    public static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
+    private static final String NODE_PROGRAM = Defaults.getDefaults().vespaHome() + "bin/vespa-nodectl";
+    private static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
 
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
@@ -66,9 +66,11 @@ public class DockerOperationsImpl implements DockerOperations {
             getDefaults().underVespaHome("var/zookeeper"));
 
     private final Docker docker;
+    private final Environment environment;
 
-    public DockerOperationsImpl(Docker docker) {
+    public DockerOperationsImpl(Docker docker, Environment environment) {
         this.docker = docker;
+        this.environment = environment;
     }
 
     @Override
@@ -203,11 +205,11 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Starting container " + nodeSpec.containerName);
         try {
-            InetAddress nodeInetAddress = InetAddress.getByName(nodeSpec.hostname.s());
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
             final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            String configServers = Environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
+            String configServers = environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
             Docker.StartContainerCommand command = docker.createStartContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
@@ -267,7 +269,7 @@ public class DockerOperationsImpl implements DockerOperations {
         command.add("sudo");
         command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
 
-        Environment.NetworkType networkType = Environment.networkType();
+        Environment.NetworkType networkType = environment.networkType();
         if (networkType != Environment.NetworkType.normal) {
             command.add("--" + networkType);
         }
@@ -318,8 +320,6 @@ public class DockerOperationsImpl implements DockerOperations {
             assert nodeSpec.wantedDockerImage.get().equals(dockerImage);
             callback.run();
         });
-
-        return;
     }
 
     private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)

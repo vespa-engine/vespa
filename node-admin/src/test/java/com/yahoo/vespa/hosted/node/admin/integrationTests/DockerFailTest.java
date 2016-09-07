@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -12,51 +13,48 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
   * @author valerijf
  */
 public class DockerFailTest {
-    private NodeRepoMock nodeRepositoryMock;
-    private DockerMock dockerMock;
-    private ContainerNodeSpec initialContainerNodeSpec;
+    private CallOrderVerifier callOrder;
+    private Docker dockerMock;
     private NodeAdminStateUpdater updater;
+    private ContainerNodeSpec initialContainerNodeSpec;
 
     @Before
-    public void before() throws InterruptedException {
-        try {
-            OrchestratorMock.semaphore.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public void before() throws InterruptedException, UnknownHostException {
+        callOrder = new CallOrderVerifier();
+        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
+        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
+        dockerMock = new DockerMock(callOrder);
 
-        MaintenanceSchedulerMock.reset();
-        OrchestratorMock.reset();
-        NodeRepoMock.reset();
-        DockerMock.reset();
-
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
-        OrchestratorMock orchestratorMock = new OrchestratorMock();
-        nodeRepositoryMock = new NodeRepoMock();
-        dockerMock = new DockerMock();
+        Environment environment = mock(Environment.class);
+        when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
+        when(environment.getInetAddressForHost(any(String.class))).thenReturn(Inet6Address.getByName("::1"));
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock), maintenanceSchedulerMock);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
-        HostName hostName = new HostName("host1");
         initialContainerNodeSpec = new ContainerNodeSpec(
-                hostName,
+                new HostName("hostName"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
                 NodeState.ACTIVE,
@@ -65,7 +63,7 @@ public class DockerFailTest {
                 Optional.of(1d),
                 Optional.of(1d),
                 Optional.of(1d));
-        NodeRepoMock.addContainerNodeSpec(initialContainerNodeSpec);
+        nodeRepositoryMock.addContainerNodeSpec(initialContainerNodeSpec);
 
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
 
@@ -74,39 +72,25 @@ public class DockerFailTest {
             Thread.sleep(10);
         }
 
-        while (!DockerMock.getRequests().startsWith(
-                "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n")) {
-            Thread.sleep(10);
-        }
+        assert callOrder.verifyInOrder(1000,
+                "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]");
     }
 
     @After
     public void after() {
         updater.deconstruct();
-        OrchestratorMock.semaphore.release();
     }
 
-    @Ignore // TODO: Remove
     @Test
     public void dockerFailTest() throws InterruptedException {
         dockerMock.deleteContainer(initialContainerNodeSpec.containerName);
 
-        String goal = "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n" +
-                "deleteContainer with ContainerName: ContainerName { name=container }\n" +
-                "startContainer with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: " +
-                "ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]\n" +
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]\n";
-
-
-        while (!DockerMock.getRequests().equals(goal)) {
-            Thread.sleep(1000);
-        }
-
-        assertThat(DockerMock.getRequests(), is(goal));
+        assertTrue(callOrder.verifyInOrder(1000,
+                "deleteContainer with ContainerName: ContainerName { name=container }",
+                "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]"));
     }
 }

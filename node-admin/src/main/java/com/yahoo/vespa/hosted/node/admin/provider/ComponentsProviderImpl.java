@@ -42,17 +42,15 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         String baseHostName = java.util.Optional.ofNullable(System.getenv(ENV_HOSTNAME))
                 .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
 
-        Set<HostName> configServerHosts = Environment.getConfigServerHosts();
-        if (configServerHosts.isEmpty()) {
-            throw new IllegalStateException("Environment setting for config servers missing or empty.");
-        }
+        Environment environment = new Environment();
+        Set<HostName> configServerHosts = environment.getConfigServerHosts();
 
+        Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
-        Orchestrator orchestrator = OrchestratorImpl.createOrchestratorFromSettings();
         MaintenanceScheduler maintenanceScheduler = new MaintenanceSchedulerImpl();
 
-        final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepository, orchestrator, new DockerOperationsImpl(docker), maintenanceScheduler);
+        final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
+                orchestrator, new DockerOperationsImpl(docker, environment), maintenanceScheduler);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, NODE_AGENT_SCAN_INTERVAL_MILLIS);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);

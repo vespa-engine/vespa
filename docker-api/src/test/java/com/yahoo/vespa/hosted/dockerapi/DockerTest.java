@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
@@ -70,18 +69,17 @@ public class DockerTest {
         HostName hostName2 = new HostName("docker11.test.yahoo.com");
         ContainerName containerName1 = new ContainerName("test-container-1");
         ContainerName containerName2 = new ContainerName("test-container-2");
-        InetAddress inetAddress1 = Inet6Address.getByName("fe80::10");
-        InetAddress inetAddress2 = Inet6Address.getByName("fe80::11");
+        String inetAddress1 = Inet6Address.getByName("fe80::10").getHostAddress();
+        String inetAddress2 = Inet6Address.getByName("fe80::11").getHostAddress();
 
-        // TODO: Use new Docker API.
-        // docker.startContainer(dockerImage, hostName1, containerName1, inetAddress1, 0, 0, 0);
-        // docker.startContainer(dockerImage, hostName2, containerName2, inetAddress2, 0, 0, 0);
+         docker.createStartContainerCommand(dockerImage, containerName1, hostName1).withIpv6Address(inetAddress1).start();
+         docker.createStartContainerCommand(dockerImage, containerName2, hostName2).withIpv6Address(inetAddress2).start();
 
         try {
             testReachabilityFromHost(containerName1, inetAddress1);
             testReachabilityFromHost(containerName2, inetAddress2);
 
-            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://[" + inetAddress2.getHostAddress() + "%eth0]/ping"};
+            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://[" + inetAddress2 + "%eth0]/ping"};
             while (! docker.executeInContainer(containerName1, curlFromNodeToNode).isSuccess()) {
                 Thread.sleep(20);
             }
@@ -97,8 +95,8 @@ public class DockerTest {
         }
     }
 
-    private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target.getHostAddress() + "%" + getInterfaceName() + "]/ping"};
+    private void testReachabilityFromHost(ContainerName containerName, String target) throws IOException, InterruptedException {
+        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target + "%" + getInterfaceName() + "]/ping"};
         while (!exec(curlNodeFromHost).equals("pong\n")) {
             Thread.sleep(20);
         }

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,14 +17,12 @@ import java.util.stream.Collectors;
  * @author bakksjo
  */
 public class Environment {
-    private Environment() {} // Prevents instantiation.
-
     private static final String ENV_CONFIGSERVERS = "services__addr_configserver";
     private static final String ENV_NETWORK_TYPE = "NETWORK_TYPE";
 
     public enum NetworkType { normal, local, vm }
 
-    public static Set<HostName> getConfigServerHosts() {
+    public Set<HostName> getConfigServerHosts() {
         final String configServerHosts = System.getenv(ENV_CONFIGSERVERS);
         if (configServerHosts == null) {
             return Collections.emptySet();
@@ -34,11 +34,15 @@ public class Environment {
                 .collect(Collectors.toSet());
     }
 
-    public static NetworkType networkType() throws IllegalArgumentException {
+    public NetworkType networkType() throws IllegalArgumentException {
         String networkTypeInEnvironment = System.getenv(ENV_NETWORK_TYPE);
         if (networkTypeInEnvironment == null) {
             return NetworkType.normal;
         }
         return NetworkType.valueOf(networkTypeInEnvironment);
+    }
+
+    public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
+        return InetAddress.getByName(hostname);
     }
 }

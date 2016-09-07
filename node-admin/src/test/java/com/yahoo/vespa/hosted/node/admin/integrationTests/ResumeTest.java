@@ -12,20 +12,21 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Scenario test for NodeAdminStateUpdater.
@@ -33,38 +34,23 @@ import static org.junit.Assert.assertThat;
  * @author dybis
  */
 public class ResumeTest {
-    @Before
-    public void resetMocks() {
-        try {
-            OrchestratorMock.semaphore.acquire();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        MaintenanceSchedulerMock.reset();
-        OrchestratorMock.reset();
-        NodeRepoMock.reset();
-        DockerMock.reset();
-    }
-
-    @After
-    public void after() {
-        OrchestratorMock.semaphore.release();
-    }
-
-    @Ignore // TODO: Remove
     @Test
-    public void test() throws InterruptedException {
-        NodeRepoMock nodeRepositoryMock = new NodeRepoMock();
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock();
-        OrchestratorMock orchestratorMock = new OrchestratorMock();
-        DockerMock dockerMock = new DockerMock();
+    public void test() throws InterruptedException, UnknownHostException {
+        CallOrderVerifier callOrder = new CallOrderVerifier();
+        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
+        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
+        DockerMock dockerMock = new DockerMock(callOrder);
+
+        Environment environment = mock(Environment.class);
+        when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
+        when(environment.getInetAddressForHost(any(String.class))).thenReturn(Inet6Address.getByName("::1"));
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock), maintenanceSchedulerMock);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
 
-        NodeRepoMock.addContainerNodeSpec(new ContainerNodeSpec(
+        nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
                 new HostName("host1"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
@@ -82,45 +68,30 @@ public class ResumeTest {
             Thread.sleep(10);
         }
 
-        while (!DockerMock.getRequests().startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, " +
-                "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n")) {
-            Thread.sleep(10);
-        }
-
-        assertThat(DockerMock.getRequests(), startsWith("startContainer with DockerImage: DockerImage { imageId=dockerImage }, " +
-                "HostName: host1, ContainerName: ContainerName { name=container }, InetAddress: null, minCpuCores: 1.0, " +
-                "minDiskAvailableGb: 1.0, minMainMemoryAvailableGb: 1.0\n"));
-
-
-        // Check that NodeRepo has received the PATCH update
-        while (!NodeRepoMock.getRequests().startsWith("updateNodeAttributes with HostName: host1, " +
-                "restartGeneration: 1, DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n")) {
-            Thread.sleep(10);
-        }
-
-        assertThat(NodeRepoMock.getRequests(), startsWith("updateNodeAttributes with HostName: host1, restartGeneration: 1," +
-                " DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null\n"));
+        // Check that the container is started and NodeRepo has received the PATCH update
+        assertTrue(callOrder.verifyInOrder(1000,
+                "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                "updateNodeAttributes with HostName: host1, restartGeneration: 1, DockerImage: DockerImage { imageId=dockerImage }, containerVespaVersion: null"));
 
         // Force orchestrator to reject the suspend
-        OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
+        orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
 
         // At this point NodeAdmin should be fine with the suspend and it is up to Orchestrator
         while (!updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED)
                 .equals(Optional.of("Orchestrator reject suspend"))) {
-            Thread.sleep(5);
+            Thread.sleep(10);
         }
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
 
-        //Make orchestrator allow suspend requests
-        OrchestratorMock.setForceGroupSuspendResponse(Optional.empty());
+        //Make orchestrator allow suspend callOrder
+        orchestratorMock.setForceGroupSuspendResponse(Optional.empty());
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
         // Now, change data in node repo, should not propagate.
-        NodeRepoMock.clearContainerNodeSpecs();
+        nodeRepositoryMock.clearContainerNodeSpecs();
 
         // New node repo state should have not propagated to node admin
-        Thread.sleep(2);
+        Thread.sleep(10);
         assertThat(nodeAdmin.getListOfHosts().size(), is(1));
 
         // Now resume
@@ -128,23 +99,13 @@ public class ResumeTest {
 
         // Now node repo state should propagate to node admin again
         while (nodeAdmin.getListOfHosts().size() != 0) {
-            Thread.sleep(1);
+            Thread.sleep(10);
         }
 
-        final String[] allRequests = OrchestratorMock.getRequests().split("\n");
-        final List<String> noRepeatingRequests = new ArrayList<>();
-        for (String request : allRequests) {
-            if (!noRepeatingRequests.contains(request)) {
-                noRepeatingRequests.add(request);
-            }
-        }
-
-        List<String> expectedRequests = Arrays.asList("Resume for host1",
+        assertTrue(callOrder.verifyInOrder(1000,
+                "Resume for host1",
                 "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
-                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty");
-
-        // Check that the orchestrator did receive and properly responded to the previous requests
-        assertThat(noRepeatingRequests, is(expectedRequests));
+                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty"));
 
         updater.deconstruct();
     }

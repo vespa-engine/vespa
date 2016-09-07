@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author dybis
@@ -41,15 +42,6 @@ public class RunInContainerTest {
 
     @Before
     public void startContainer() throws Exception {
-        try {
-            OrchestratorMock.semaphore.acquire();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        OrchestratorMock.reset();
-        NodeRepoMock.reset();
-        DockerMock.reset();
-
         port = findRandomOpenPort();
         System.out.println("PORT IS " + port);
         container = JDisc.fromServicesXml(createServiceXml(port), Networking.enable);
@@ -58,7 +50,6 @@ public class RunInContainerTest {
     @After
     public void after() {
         container.close();
-        OrchestratorMock.semaphore.release();
     }
 
     private boolean doPutCall(String command) throws IOException {
@@ -88,7 +79,6 @@ public class RunInContainerTest {
                 HttpHost target = new HttpHost("localhost", port, "http");
                 HttpGet getRequest = new HttpGet("/rest/info");
                 HttpResponse httpResponse = httpclient.execute(target, getRequest);
-                HttpEntity entity = httpResponse.getEntity();
                 if (httpResponse.getStatusLine().getStatusCode() != 200) {
                     continue;
                 }
@@ -112,9 +102,11 @@ public class RunInContainerTest {
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
-        OrchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
+
+        ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
-        assertThat(OrchestratorMock.getRequests(), is("Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]\n"));
+        assertTrue(ComponentsProviderWithMocks.callOrder.verifyInOrder(1000,
+                "Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]"));
 
         assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }

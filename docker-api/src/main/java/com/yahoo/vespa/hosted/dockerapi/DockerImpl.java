@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 
 
 public class DockerImpl implements Docker {
-
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
@@ -53,7 +52,7 @@ public class DockerImpl implements Docker {
 
     private static final String DOCKER_CUSTOM_IP6_NETWORK_NAME = "habla";
 
-    private final Object monitor = new Object();
+    public final Object monitor = new Object();
     @GuardedBy("monitor")
     private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
 
@@ -87,7 +86,6 @@ public class DockerImpl implements Docker {
             remoteApiVersion = RemoteApiVersion.VERSION_1_23;
         }
 
-       // DockerClientImpl.getInstance().infoCmd().exec().getServerVersion();
         this.dockerClient = DockerClientImpl.getInstance(new DefaultDockerClientConfig.Builder()
                 .withDockerHost(config.uri())
                 .withApiVersion(remoteApiVersion)

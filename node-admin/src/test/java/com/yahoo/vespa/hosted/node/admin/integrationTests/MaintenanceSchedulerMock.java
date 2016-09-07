@@ -9,18 +9,10 @@ import java.io.IOException;
  * @author valerijf
  */
 public class MaintenanceSchedulerMock implements MaintenanceScheduler {
-    private static StringBuilder requests;
+    private final CallOrderVerifier callOrder;
 
-    private static final Object monitor = new Object();
-
-    static {
-        reset();
-    }
-
-    public MaintenanceSchedulerMock() {
-        if (OrchestratorMock.semaphore.tryAcquire()) {
-            throw new RuntimeException("OrchestratorMock.semaphore must be acquired before using MaintenanceSchedulerMock");
-        }
+    public MaintenanceSchedulerMock(CallOrderVerifier callOrder) {
+        this.callOrder = callOrder;
     }
 
     @Override
@@ -35,19 +27,6 @@ public class MaintenanceSchedulerMock implements MaintenanceScheduler {
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        synchronized (monitor) {
-            requests.append("DeleteContainerStorage with ContainerName: ").append(containerName).append("\n");
-        }
-    }
-
-
-    public static String getRequests() {
-        return requests.toString();
-    }
-
-    public static void reset() {
-        synchronized (monitor) {
-            requests = new StringBuilder();
-        }
+        callOrder.add("DeleteContainerStorage with ContainerName: " + containerName);
     }
 }
