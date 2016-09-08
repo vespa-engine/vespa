@@ -827,7 +827,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard 
     updateCurrentDiskFootprint();
 
     if (wlen != static_cast<ssize_t>(os.size())) {
-        throw SummaryException("Failed writing idx file", _idxFile, VESPA_STRLOC);
+        throw SummaryException(make_string("Failed writing %ld bytes to idx file. Only wrote %ld bytes ", os.size(), wlen), _idxFile, VESPA_STRLOC);
     }
     if ( ! _idxFile.Sync()) {
         throw SummaryException("Failed fsync of idx file", _idxFile, VESPA_STRLOC);
