@@ -26,11 +26,15 @@ public class ConfigPayloadBuilder {
      * Construct a payload builder that is not a leaf.
      */
     public ConfigPayloadBuilder() {
-        this(null, null);
+        this(null, (String)null);
     }
 
     public ConfigPayloadBuilder(ConfigDefinition configDefinition) {
-        this(configDefinition, null);
+        this(configDefinition, (String)null);
+    }
+
+    public ConfigPayloadBuilder(ConfigDefinition configDefinition, List<String> warnings) {
+        this(configDefinition);
     }
 
     /**
