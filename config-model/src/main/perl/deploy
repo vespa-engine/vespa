@@ -391,8 +391,14 @@ sub http_upload {
           print_request_failed($exitcode, $configsource_url_used);
           print "Retrying with another config server\n";
         } else {
-          print_request_failed($exitcode, $configsource_url_used);
-          exit 1;
+          if ($exitcode != 0) {
+            print_request_failed($exitcode, $configsource_url_used);
+            exit 1;
+          } else { # Non-200 HTTP status code
+            print "Request failed. HTTP status code: $status_code\n";
+            print_response($response);
+            exit 1;
+          }
         }
       } while ($retry);
     }
