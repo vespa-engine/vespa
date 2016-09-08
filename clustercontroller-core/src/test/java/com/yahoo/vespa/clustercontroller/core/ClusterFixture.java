@@ -8,16 +8,12 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.core.mocks.TestEventLog;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
-import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.mockito.Mockito.mock;
 
@@ -26,23 +22,26 @@ class ClusterFixture {
     public final Distribution distribution;
     public final FakeTimer timer;
     public final EventLogInterface eventLog;
-    public final SystemStateGenerator generator;
+    public final SystemStateGenerator nodeStateChangeHandler;
+    public final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
     ClusterFixture(ContentCluster cluster, Distribution distribution) {
         this.cluster = cluster;
         this.distribution = distribution;
+        //this.cluster.setDistribution(distribution);
         this.timer = new FakeTimer();
         this.eventLog = mock(EventLogInterface.class);
-        this.generator = createGeneratorForFixtureCluster();
+        this.nodeStateChangeHandler = createNodeStateChangeHandlerForCluster();
+        this.params.cluster(this.cluster);
     }
 
-    SystemStateGenerator createGeneratorForFixtureCluster() {
+    SystemStateGenerator createNodeStateChangeHandlerForCluster() {
         final int controllerIndex = 0;
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
-        SystemStateGenerator generator = new SystemStateGenerator(timer, eventLog, metricUpdater);
-        generator.setNodes(cluster.clusterInfo());
-        generator.setDistribution(distribution);
-        return generator;
+        SystemStateGenerator handler = new SystemStateGenerator(timer, eventLog, metricUpdater);
+        handler.setNodes(cluster.clusterInfo());
+        handler.setDistribution(distribution);
+        return handler;
     }
 
     ClusterFixture bringEntireClusterUp() {
@@ -65,7 +64,7 @@ class ClusterFixture {
         NodeStateOrHostInfoChangeHandler handler = mock(NodeStateOrHostInfoChangeHandler.class);
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
 
-        generator.handleNewReportedNodeState(nodeInfo, nodeState, handler);
+        nodeStateChangeHandler.handleNewReportedNodeState(nodeInfo, nodeState, handler);
         nodeInfo.setReportedState(nodeState, timer.getCurrentTimeInMillis());
     }
 
@@ -103,7 +102,7 @@ class ClusterFixture {
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
         nodeInfo.setWantedState(nodeState);
 
-        generator.proposeNewNodeState(nodeInfo, nodeState);
+        nodeStateChangeHandler.proposeNewNodeState(nodeInfo, nodeState);
     }
 
     ClusterFixture proposeStorageNodeWantedState(final int index, State state, String description) {
@@ -125,12 +124,26 @@ class ClusterFixture {
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
         nodeInfo.setWantedState(nodeState);
 
-        generator.proposeNewNodeState(nodeInfo, nodeState);
+        nodeStateChangeHandler.proposeNewNodeState(nodeInfo, nodeState);
         return this;
     }
 
-    void disableAutoClusterTakedown() {
-        generator.setMinNodesUp(0, 0, 0.0, 0.0);
+    ClusterFixture disableAutoClusterTakedown() {
+        setMinNodesUp(0, 0, 0.0, 0.0);
+        return this;
+    }
+
+    ClusterFixture setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
+        params.minStorageNodesUp(minStorNodes)
+              .minDistributorNodesUp(minDistNodes)
+              .minRatioOfStorageNodesUp(minStorRatio)
+              .minRatioOfDistributorNodesUp(minDistRatio);
+        return this;
+    }
+
+    ClusterFixture setMinNodeRatioPerGroup(double upRatio) {
+        params.minNodeRatioPerGroup(upRatio);
+        return this;
     }
 
     static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
@@ -141,18 +154,25 @@ class ClusterFixture {
     }
 
     void disableTransientMaintenanceModeOnDown() {
-        generator.setMaxTransitionTime(buildTransitionTimeMap(0, 0));
+        this.params.transitionTimes(0);
     }
 
     void enableTransientMaintenanceModeOnDown(final int transitionTime) {
-        generator.setMaxTransitionTime(buildTransitionTimeMap(transitionTime, transitionTime));
+        this.params.transitionTimes(transitionTime);
+    }
+
+    AnnotatedClusterState annotatedGeneratedClusterState() {
+        params.currentTimeInMilllis(timer.getCurrentTimeInMillis());
+        return ClusterStateGenerator.generatedStateFrom(params);
     }
 
     String generatedClusterState() {
-        return generator.getClusterState().toString();
+        return annotatedGeneratedClusterState().getClusterState().toString();
     }
 
-    String verboseGeneratedClusterState() { return generator.getClusterState().toString(true); }
+    String verboseGeneratedClusterState() {
+        return annotatedGeneratedClusterState().getClusterState().toString(true);
+    }
 
     static ClusterFixture forFlatCluster(int nodeCount) {
         Collection<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(nodeCount);
