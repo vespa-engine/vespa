@@ -27,17 +27,16 @@ private:
 
     using seconds = std::chrono::duration<double, std::ratio<1,1>>;
 
-    template<typename DURATION>
-    static inline clock::duration to_internal(DURATION x) {
-        return std::chrono::duration_cast<clock::duration>(x);
+    static inline clock::duration to_internal(double x) {
+        return std::chrono::duration_cast<clock::duration>(seconds(x));
     }
 
-    template<typename DURATION>
-    static inline double to_external(DURATION x) {
+    static inline double to_external(clock::duration x) {
         return std::chrono::duration_cast<seconds>(x).count();
     }
 
     clock::time_point _end_time;
+    clock::duration _min_time;
 
 public:
     /**
@@ -45,7 +44,19 @@ public:
      * @param budget amount of time in seconds
      **/
     explicit TimeBoxer(double budget)
-        : _end_time(clock::now() + to_internal(seconds(budget)))
+        : _end_time(clock::now() + to_internal(budget)),
+          _min_time(to_internal(0))
+    {
+    }
+
+    /**
+     * Construct a TimeBoxer with a given budget from now
+     * @param budget amount of time in seconds
+     * @param min_time a minimum to be returned from timeLeft()
+     **/
+    TimeBoxer(double budget, double min_time)
+        : _end_time(clock::now() + to_internal(budget)),
+          _min_time(to_internal(min_time))
     {
     }
 
@@ -57,14 +68,15 @@ public:
     }
 
     /**
-     * @return the seconds left before the budget elapses
+     * Note: Never returns less than min_time even if budget is expired.
+     * @return the seconds left before the budget expires
      **/
     double timeLeft() {
         clock::time_point now = clock::now();
-        if (now < _end_time) {
+        if (now + _min_time < _end_time) {
             return to_external(_end_time - now);
         }
-        return 0.0;
+        return to_external(_min_time);
     }
 };
 

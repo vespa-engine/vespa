@@ -9,12 +9,13 @@
 
 int main(int, char **)
 {
-    vespalib::TimeBoxer tb(3.0);
+    vespalib::TimeBoxer tb(3.0, 1.25);
     while (tb.hasTimeLeft()) {
         double tl = tb.timeLeft();
         printf("time left: %g seconds\n", tl);
         sleep(1);
     }
+    printf("expired, time left: %g seconds\n", tb.timeLeft());
 }
 
 #endif
