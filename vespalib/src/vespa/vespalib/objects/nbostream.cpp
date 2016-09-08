@@ -23,7 +23,7 @@ std::ostream & operator << (std::ostream & os, const HexDump & hd)
 void nbostream::fail(State s)
 {
     _state = static_cast<State>(_state | s);
-    throw IllegalStateException(vespalib::make_string("Stream failed bufsize(%lu), readp(%d), writep(%d)", (unsigned long)_wbuf.size(), _rp, _wp), VESPA_STRLOC);
+    throw IllegalStateException(make_string("Stream failed bufsize(%lu), readp(%ld), writep(%ld)", (unsigned long)_wbuf.size(), _rp, _wp), VESPA_STRLOC);
 }
 
 void nbostream::reserve(size_t sz)
