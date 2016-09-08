@@ -375,9 +375,12 @@ sub http_upload {
   my $configsource_url_used = $configsource_url;
   LOOP: {
       do {
+        my $status_code;
+        my $response;
         $output = http_upload_lowlevel($configsource_url, $application_package);
+        ($status_code, $response) = parse_http_response($output);
         $exitcode = $? >> 8;
-        last LOOP if ($exitcode == 0);
+        last LOOP if ($exitcode == 0 && $status_code == 200);
 
         debug("exitcode=$exitcode\n");
         debug("output=$output\n");
