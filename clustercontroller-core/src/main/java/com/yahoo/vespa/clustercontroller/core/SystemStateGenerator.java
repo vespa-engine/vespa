@@ -590,9 +590,11 @@ public class SystemStateGenerator {
             }
         }
 
-        if (reportedState.equals(node.getReportedState()) &&  ! reportedState.getState().equals(State.INITIALIZING))
+        if (reportedState.equals(node.getReportedState()) &&  ! reportedState.getState().equals(State.INITIALIZING)) {
             return;
+        }
 
+        // FIXME comparison against current cluster state view no longer makes sense!
         NodeState alteredState = decideNodeStateGivenReportedState(node, currentState, reportedState, nodeListener);
         if (alteredState != null) {
             ClusterState clusterState = currentClusterStateView.getClusterState();
@@ -639,25 +641,14 @@ public class SystemStateGenerator {
 
                     // TODO handle in baseline
                 } else if (alteredState.getMinUsedBits() != currentState.getMinUsedBits()) {
-                    log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count have changed from "
+                    log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count has changed from "
                                             + currentState.getMinUsedBits() + " to " + alteredState.getMinUsedBits());
                     int oldCount = currentState.getMinUsedBits();
                     currentState.setMinUsedBits(alteredState.getMinUsedBits());
                     nextState.setNodeState(node.getNode(), currentState);
-                    int minDistBits = calculateMinDistributionBitCount();
-                    if (minDistBits < nextState.getDistributionBitCount()
-                        || (nextState.getDistributionBitCount() < this.idealDistributionBits && minDistBits >= this.idealDistributionBits))
-                    {
-                        // If this will actually affect global cluster state.
-                        eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
-                                                + " to " + currentState.getMinUsedBits() + ". Updated cluster state.", NodeEvent.Type.CURRENT, currentTime), isMaster);
-                        nextStateViewChanged = true;
-                    } else {
-                        log.log(LogLevel.DEBUG, "Altered min distribution bit count from " + oldCount
-                                + " to " + currentState.getMinUsedBits() + ". No effect for cluster state with ideal " + this.idealDistributionBits
-                                + ", new " + minDistBits + ", old " + nextState.getDistributionBitCount() + " though.");
-                        clusterState.setNodeState(node.getNode(), currentState);
-                    }
+                    eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
+                                            + " to " + currentState.getMinUsedBits(), NodeEvent.Type.CURRENT, currentTime), isMaster);
+                    nextStateViewChanged = true;
                 } else {
                     log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
                             + currentState.getTextualDifference(alteredState));

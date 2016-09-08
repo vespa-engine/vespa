@@ -648,7 +648,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (mustRecomputeCandidateClusterState()) {
             systemStateGenerator.unsetStateChangedFlag();
             ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
-            params.currentTimeInMilllis(timer.getCurrentTimeInMillis()).cluster(cluster)
+            params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
+                    .cluster(cluster)
                     .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
             final AnnotatedClusterState candidate = ClusterStateGenerator.generatedStateFrom(params);
 
