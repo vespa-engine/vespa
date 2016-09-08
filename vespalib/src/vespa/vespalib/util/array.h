@@ -176,8 +176,8 @@ public:
     bool operator == (const Array & rhs) const;
     bool operator != (const Array & rhs) const { return !(*this == rhs); }
 private:
-    T *       array(uint32_t i)       { return static_cast<T *>(_array.get()) + i; }
-    const T * array(uint32_t i) const { return static_cast<const T *>(_array.get()) + i; }
+    T *       array(size_t i)       { return static_cast<T *>(_array.get()) + i; }
+    const T * array(size_t i) const { return static_cast<const T *>(_array.get()) + i; }
     void cleanup();
     void increase(size_t n);
     void extend(size_t n) {
@@ -186,7 +186,7 @@ private:
         }
     }
     B        _array;
-    uint32_t _sz;
+    size_t _sz;
 };
 
 template <typename T>
