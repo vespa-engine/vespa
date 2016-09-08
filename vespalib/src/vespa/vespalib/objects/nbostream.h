@@ -235,7 +235,7 @@ class nbostream
     State state() const { return _state; }
     bool good() const { return _state == ok; }
     void clear()        { _wbuf.clear(); _wp = _rp = 0; _state = ok; }
-    void adjustReadPos(ssize_t adj) { uint32_t npos = _rp + adj; if (__builtin_expect(npos > _wp, false)) { fail(eof); } _rp = npos; }
+    void adjustReadPos(ssize_t adj) { size_t npos = _rp + adj; if (__builtin_expect(npos > _wp, false)) { fail(eof); } _rp = npos; }
     friend std::ostream & operator << (std::ostream & os, const nbostream & s) { return os << HexDump(&s._rbuf[s._rp], s.left()); }
     static bool     n2h(bool v)     { return v; }
     static int8_t   n2h(int8_t v)   { return v; }
@@ -318,14 +318,14 @@ class nbostream
     void write4(const void *v) { write(v, 4); }
     void write8(const void *v) { write(v, 8); }
     void fail(State s);
-    uint32_t left()  const { return _wp - _rp; }
-    uint32_t space() const { return _wbuf.size() - _wp; }
+    size_t left()  const { return _wp - _rp; }
+    size_t space() const { return _wbuf.size() - _wp; }
     void compact();
     void extend(size_t newSize);
     Buffer         _wbuf;
     ConstBufferRef _rbuf;
-    uint32_t       _rp;
-    uint32_t       _wp;
+    size_t         _rp;
+    size_t         _wp;
     State          _state;
     const bool     _longLivedBuffer;
 };
