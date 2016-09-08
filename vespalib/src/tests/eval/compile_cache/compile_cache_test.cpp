@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/eval/compile_cache.h>
 #include <vespa/vespalib/eval/key_gen.h>
-#include <vespa/vespalib/eval/eval_spec.h>
+#include <vespa/vespalib/eval/test/eval_spec.h>
 #include <set>
 
 using namespace vespalib::eval;

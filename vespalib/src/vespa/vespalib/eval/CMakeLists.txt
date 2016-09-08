@@ -7,7 +7,6 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     compiled_function.cpp
     deinline_forest.cpp
     delete_node.cpp
-    eval_spec.cpp
     function.cpp
     gbdt.cpp
     interpreted_function.cpp

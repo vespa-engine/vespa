@@ -84,6 +84,7 @@ vespa_define_module(
     src/tests/tensor/tensor
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_address_element_iterator
+    src/tests/tensor/tensor_conformance
     src/tests/tensor/tensor_function
     src/tests/tensor/tensor_mapper
     src/tests/tensor/tensor_operations
@@ -125,6 +126,7 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/eval
+    src/vespa/vespalib/eval/test
     src/vespa/vespalib/eval/value_cache
     src/vespa/vespalib/geo
     src/vespa/vespalib/io
