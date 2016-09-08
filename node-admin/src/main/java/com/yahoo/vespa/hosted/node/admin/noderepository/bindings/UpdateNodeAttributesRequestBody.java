@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.noderepository.bindings;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 
 /**
  * Automagically handles (de)serialization based on 1:1 message fields and identifier names.
@@ -20,12 +21,12 @@ public class UpdateNodeAttributesRequestBody {
     public String currentDockerImage;
     public String currentVespaVersion;
 
-    public UpdateNodeAttributesRequestBody(
-            final Long restartGeneration,
-            final String currentDockerImage,
-            String currentVespaVersion) {
-        this.currentRestartGeneration = restartGeneration;
-        this.currentDockerImage = currentDockerImage;
-        this.currentVespaVersion = currentVespaVersion;
+    public UpdateNodeAttributesRequestBody(NodeAttributes nodeAttributes) {
+        if (nodeAttributes.getDockerImage() != null) {
+            this.currentDockerImage = nodeAttributes.getDockerImage().asString();
+        }
+
+        this.currentRestartGeneration = nodeAttributes.getRestartGeneration();
+        this.currentVespaVersion = nodeAttributes.getVespaVersion();
     }
 }

@@ -5,6 +5,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 
@@ -46,10 +47,9 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(HostName hostName, long restartGeneration, DockerImage dockerImage, String containerVespaVersion) throws IOException {
+    public void updateNodeAttributes(HostName hostName, NodeAttributes nodeAttributes) throws IOException {
         synchronized (monitor) {
-            callOrder.add("updateNodeAttributes with HostName: " + hostName + ", restartGeneration: " + restartGeneration +
-                    ", DockerImage: " + dockerImage + ", containerVespaVersion: " + containerVespaVersion);
+            callOrder.add("updateNodeAttributes with HostName: " + hostName + ", NodeAttributes: " + nodeAttributes);
         }
     }
 

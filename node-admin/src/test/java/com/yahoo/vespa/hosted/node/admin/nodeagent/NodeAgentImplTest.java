@@ -21,8 +21,6 @@ import java.util.Optional;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -86,7 +84,12 @@ public class NodeAgentImplTest {
         // TODO: Verify this isn't run unless 1st time
         inOrder.verify(dockerOperations, times(1)).executeResume(eq(containerName));
         // TODO: This should not happen when nothing is changed. Now it happens 1st time through.
-        inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
+        inOrder.verify(nodeRepository).updateNodeAttributes(
+                hostName,
+                new NodeAttributes()
+                        .withRestartGeneration(restartGeneration)
+                        .withDockerImage(dockerImage)
+                        .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -121,7 +124,11 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         inOrder.verify(dockerOperations, times(1)).executeResume(eq(containerName));
-        inOrder.verify(nodeRepository).updateNodeAttributes(hostName, restartGeneration, dockerImage, vespaVersion);
+        inOrder.verify(nodeRepository).updateNodeAttributes(
+                hostName, new NodeAttributes()
+                        .withRestartGeneration(restartGeneration)
+                        .withDockerImage(dockerImage)
+                        .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -187,8 +194,7 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).startContainerIfNeeded(eq(nodeSpec));
         verify(orchestrator, never()).resume(any(HostName.class));
-        verify(nodeRepository, never()).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), anyString());
+        verify(nodeRepository, never()).updateNodeAttributes(any(HostName.class), any(NodeAttributes.class));
     }
 
     @Test
@@ -213,8 +219,7 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
         verify(orchestrator, never()).resume(any(HostName.class));
-        verify(nodeRepository, never()).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), anyString());
+        verify(nodeRepository, never()).updateNodeAttributes(any(HostName.class), any(NodeAttributes.class));
     }
 
     @Test
@@ -242,8 +247,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
 
         verify(orchestrator, never()).resume(any(HostName.class));
-        verify(nodeRepository, never()).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), anyString());
+        verify(nodeRepository, never()).updateNodeAttributes(any(HostName.class), any(NodeAttributes.class));
     }
 
     private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState nodeState, Optional<Long> wantedRestartGeneration)
@@ -274,10 +278,8 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).startContainerIfNeeded(any());
         verify(orchestrator, never()).resume(any(HostName.class));
         // current Docker image and vespa version should be cleared
-        //verify(nodeRepository, times(1)).updateNodeAttributes(
-        //        any(HostName.class), anyLong(), eq(new DockerImage("")), eq(""));
-        verify(nodeRepository, never()).updateNodeAttributes(
-                any(HostName.class), anyLong(), any(DockerImage.class), any(String.class));
+        verify(nodeRepository, times(1)).updateNodeAttributes(
+                any(HostName.class), eq(new NodeAttributes().withDockerImage(new DockerImage("")).withVespaVersion("")));
     }
 
     @Test
