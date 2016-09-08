@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -207,7 +208,7 @@ public class DockerOperationsImpl implements DockerOperations {
         try {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname.s());
             String nodeIpAddress = nodeInetAddress.getHostAddress();
-            final boolean isRunningIPv6 = nodeInetAddress instanceof Inet6Address;
+            final boolean useDockerNetworking = nodeInetAddress instanceof Inet6Address && !useNetworkScriptForIpv6();
 
             String configServers = environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
             Docker.StartContainerCommand command = docker.createStartContainerCommand(
@@ -235,7 +236,7 @@ public class DockerOperationsImpl implements DockerOperations {
             //If container's IP address is IPv6, use our custom network mode and let docker handle networking.
             //If container's IP address is IPv4, set up networking manually as before. In the future docker should
             //set up the IPv4 network as well.
-            if (isRunningIPv6) {
+            if (useDockerNetworking) {
                 // TODO: What's "habla"? Can we change to anything here, or it seems "none" is reserved.
                 command.withNetworkMode("habla").withIpv6Address(nodeIpAddress);
             } else {
@@ -245,17 +246,23 @@ public class DockerOperationsImpl implements DockerOperations {
             logger.info("Starting new container with args: " + command);
             command.start();
 
-            if (!isRunningIPv6) {
-                setupContainerIPv4Networking(nodeSpec.containerName, nodeSpec.hostname, nodeIpAddress);
+            if (!useDockerNetworking) {
+                setupContainerNetworkingWithScript(nodeSpec.containerName, nodeSpec.hostname, nodeIpAddress);
             }
         } catch (UnknownHostException e) {
             throw new RuntimeException("Failed to start container " + nodeSpec.containerName.asString(), e);
         }
     }
 
-    private void setupContainerIPv4Networking(ContainerName containerName,
-                                              HostName hostName,
-                                              String ipAddress) {
+    private boolean useNetworkScriptForIpv6() {
+        // TODO: Remove: Either always use network script for IPv6, or never
+        return new File("/tmp/use-network-script.marker").exists();
+    }
+
+    private void setupContainerNetworkingWithScript(
+            ContainerName containerName,
+            HostName hostName,
+            String ipAddress) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);
