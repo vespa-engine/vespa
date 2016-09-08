@@ -14,6 +14,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:vespalib_vespalib_testkit>
     $<TARGET_OBJECTS:vespalib_vespalib_text>
+    $<TARGET_OBJECTS:vespalib_vespalib_time>
     $<TARGET_OBJECTS:vespalib_vespalib_trace>
     $<TARGET_OBJECTS:vespalib_vespalib_util>
     $<TARGET_OBJECTS:vespalib_vespalib_websocket>

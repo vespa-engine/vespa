@@ -141,6 +141,7 @@ vespa_define_module(
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit
     src/vespa/vespalib/text
+    src/vespa/vespalib/time
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
     src/vespa/vespalib/websocket
