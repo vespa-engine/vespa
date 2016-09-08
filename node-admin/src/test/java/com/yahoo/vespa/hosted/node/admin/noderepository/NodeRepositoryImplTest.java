@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 
 import org.junit.After;
@@ -113,7 +114,12 @@ public class NodeRepositoryImplTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
         HostName hostname = new HostName("host4.yahoo.com");
-        nodeRepositoryApi.updateNodeAttributes(hostname, 1L, new DockerImage("image-1"), "6.2.3");
+        nodeRepositoryApi.updateNodeAttributes(
+                hostname,
+                new NodeAttributes()
+                        .withRestartGeneration(1L)
+                        .withDockerImage(new DockerImage("image-1"))
+                        .withVespaVersion("6.2.3"));
     }
 
     @Test(expected = RuntimeException.class)
@@ -121,7 +127,12 @@ public class NodeRepositoryImplTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
         HostName hostname = new HostName("host4.yahoo.com");
-        nodeRepositoryApi.updateNodeAttributes(hostname, 1L, new DockerImage("image-1"), "6.2.3\n");
+        nodeRepositoryApi.updateNodeAttributes(
+                hostname,
+                new NodeAttributes()
+                        .withRestartGeneration(1L)
+                        .withDockerImage(new DockerImage("image-1"))
+                        .withVespaVersion("6.2.3\n"));
     }
 
     @Test

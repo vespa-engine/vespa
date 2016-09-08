@@ -9,15 +9,38 @@ import java.util.Objects;
 // It somewhat sucks that this class almost duplicates a binding class used by NodeRepositoryImpl,
 // but using the binding class here would be a layer violation, and would also tie this logic to
 // serialization-related dependencies it needs not have.
-class NodeAttributes {
-    public final long restartGeneration;
-    public final DockerImage dockerImage;
-    public final String vespaVersion;
+public class NodeAttributes {
+    private Long restartGeneration = null;
+    private DockerImage dockerImage = null;
+    private String vespaVersion = null;
 
-    NodeAttributes(long restartGeneration, DockerImage dockerImage, String vespaVersion) {
+    public NodeAttributes() { }
+
+    public NodeAttributes withRestartGeneration(Long restartGeneration) {
         this.restartGeneration = restartGeneration;
+        return this;
+    }
+
+    public NodeAttributes withDockerImage(DockerImage dockerImage) {
         this.dockerImage = dockerImage;
+        return this;
+    }
+
+    public NodeAttributes withVespaVersion(String vespaVersion) {
         this.vespaVersion = vespaVersion;
+        return this;
+    }
+
+    public Long getRestartGeneration() {
+        return restartGeneration;
+    }
+
+    public DockerImage getDockerImage() {
+        return dockerImage;
+    }
+
+    public String getVespaVersion() {
+        return vespaVersion;
     }
 
     @Override

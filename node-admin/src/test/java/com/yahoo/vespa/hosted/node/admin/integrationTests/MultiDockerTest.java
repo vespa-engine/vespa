@@ -110,10 +110,10 @@ public class MultiDockerTest {
                         "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"));
 
         assertTrue(callOrder.verifyInOrder(1000,
-                "updateNodeAttributes with HostName: host1, restartGeneration: 1, DockerImage: DockerImage { imageId=image1 }, containerVespaVersion: null",
-                "updateNodeAttributes with HostName: host2, restartGeneration: 1, DockerImage: DockerImage { imageId=image2 }, containerVespaVersion: null",
+                "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
+                "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
                 "markAsReady with HostName: host2",
-                "updateNodeAttributes with HostName: host3, restartGeneration: 1, DockerImage: DockerImage { imageId=image1 }, containerVespaVersion: null"));
+                "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}"));
     }
 
     private ContainerNodeSpec addAndWaitForNode(HostName hostName, ContainerName containerName, Optional<DockerImage> dockerImage) throws InterruptedException {

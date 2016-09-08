@@ -5,6 +5,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeReadyResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
@@ -109,20 +110,11 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(
-            final HostName hostName,
-            final long restartGeneration,
-            final DockerImage dockerImage,
-            final String currentVespaVersion)
-            throws IOException {
-
+    public void updateNodeAttributes(final HostName hostName, final NodeAttributes nodeAttributes) throws IOException {
         UpdateNodeAttributesResponse response = requestExecutor.patch(
                 "/nodes/v2/node/" + hostName,
                 port,
-                new UpdateNodeAttributesRequestBody(
-                        restartGeneration,
-                        dockerImage.asString(),
-                        currentVespaVersion),
+                new UpdateNodeAttributesRequestBody(nodeAttributes),
                 UpdateNodeAttributesResponse.class);
 
         if (response.errorCode == null || response.errorCode.isEmpty()) {

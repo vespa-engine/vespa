@@ -171,24 +171,23 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) throws IOException {
-        /*
         publishStateToNodeRepoIfChanged(
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
-                new NodeAttributes(
-                        nodeSpec.wantedRestartGeneration.orElse(0L),
-                        new DockerImage(""),
-                        ""));
-                        */
+                new NodeAttributes()
+                        .withDockerImage(new DockerImage(""))
+                        .withVespaVersion(""));
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
         final String containerVespaVersion = dockerOperations.getVespaVersionOrNull(nodeSpec.containerName);
-        publishStateToNodeRepoIfChanged(nodeSpec.hostname, new NodeAttributes(
-                nodeSpec.wantedRestartGeneration.get(),
-                nodeSpec.wantedDockerImage.get(),
-                containerVespaVersion));
+        final NodeAttributes nodeAttributes = new NodeAttributes()
+                .withRestartGeneration(nodeSpec.wantedRestartGeneration.get())
+                .withDockerImage(nodeSpec.wantedDockerImage.get())
+                .withVespaVersion(containerVespaVersion);
+
+        publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
 
     private void publishStateToNodeRepoIfChanged(HostName hostName, NodeAttributes currentAttributes) throws IOException {
@@ -198,11 +197,7 @@ public class NodeAgentImpl implements NodeAgent {
                                 + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
                                     lastAttributesSet + "} -> {" + currentAttributes + "}");
-            nodeRepository.updateNodeAttributes(
-                    hostName,
-                    currentAttributes.restartGeneration,
-                    currentAttributes.dockerImage,
-                    currentAttributes.vespaVersion);
+            nodeRepository.updateNodeAttributes(hostName, currentAttributes);
             lastAttributesSet = currentAttributes;
         }
     }
