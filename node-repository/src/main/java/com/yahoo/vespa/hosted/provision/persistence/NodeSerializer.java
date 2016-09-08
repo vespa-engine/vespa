@@ -117,7 +117,7 @@ public class NodeSerializer {
         object.setString(serviceIdKey, allocation.membership().stringValue());
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
-        object.setBool(removableKey, allocation.removable());
+        object.setBool(removableKey, allocation.isRemovable());
         allocation.membership().cluster().dockerImage().ifPresent( dockerImage ->
                 object.setString(dockerImageKey, dockerImage));
     }

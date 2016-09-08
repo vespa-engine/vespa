@@ -162,8 +162,8 @@ public class CuratorDatabaseClient {
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
-        if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().increaseFailCount();
-        if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().decreaseFailCount(); // fail undo
+        if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().withIncreasedFailCount();
+        if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().withDecreasedFailCount(); // fail undo
         return node.status();
     }
 

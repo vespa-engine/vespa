@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
@@ -95,7 +94,7 @@ class Preparer {
             if (cluster.group().get().index() >= wantedGroups) {
                 ClusterSpec.Group newGroup = targetGroup.orElse(ClusterSpec.Group.from(0));
                 ClusterMembership newGroupMembership = membership.changeCluster(cluster.changeGroup(Optional.of(newGroup)));
-                i.set(node.setAllocation(node.allocation().get().changeMembership(newGroupMembership)));
+                i.set(node.with(node.allocation().get().with(newGroupMembership)));
             }
         }
     }
@@ -127,7 +126,7 @@ class Preparer {
     private List<Node> retire(List<Node> nodes) {
         List<Node> retired = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
-            if ( ! node.allocation().get().removable())
+            if ( ! node.allocation().get().isRemovable())
                 retired.add(node.retireByApplication(clock.instant()));
         }
         return retired;

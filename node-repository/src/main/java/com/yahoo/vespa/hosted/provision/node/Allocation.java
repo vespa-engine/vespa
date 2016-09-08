@@ -49,19 +49,19 @@ public class Allocation {
     public Allocation unretire() { return new Allocation(owner, clusterMembership.unretire(), restartGeneration, removable); }
 
     /** Return whether this node is ready to be removed from the application */
-    public boolean removable() { return removable; }
+    public boolean isRemovable() { return removable; }
 
     /** Returns a copy of this with the current restart generation set to generation */
-    public Allocation setRestart(Generation generation) {
+    public Allocation withRestart(Generation generation) {
         return new Allocation(owner, clusterMembership, generation, removable);
     }
 
     /** Returns a copy of this allocation where removable is set to true */
-    public Allocation makeRemovable() {
+    public Allocation removable() {
         return new Allocation(owner, clusterMembership, restartGeneration, true);
     }
 
-    public Allocation changeMembership(ClusterMembership newMembership) {
+    public Allocation with(ClusterMembership newMembership) {
         return new Allocation(owner, newMembership, restartGeneration, removable);
     }
 

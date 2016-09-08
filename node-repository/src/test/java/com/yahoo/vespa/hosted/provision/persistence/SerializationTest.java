@@ -59,13 +59,13 @@ public class SerializationTest {
                              ClusterMembership.from("content/myId/0/0", Optional.empty()),
                              clock.instant());
         assertEquals(1, node.history().events().size());
-        node = node.setRestart(new Generation(1, 2));
-        node = node.setReboot(new Generation(3, 4));
-        node = node.setFlavor(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
-        node = node.setStatus(node.status().setVespaVersion(Version.fromString("1.2.3")));
-        node = node.setStatus(node.status().increaseFailCount().increaseFailCount());
-        node = node.setStatus(node.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
-        node = node.setType(Node.Type.tenant);
+        node = node.withRestart(new Generation(1, 2));
+        node = node.withReboot(new Generation(3, 4));
+        node = node.with(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
+        node = node.with(node.status().withVespaVersion(Version.fromString("1.2.3")));
+        node = node.with(node.status().withIncreasedFailCount().withIncreasedFailCount());
+        node = node.with(node.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
+        node = node.with(Node.Type.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(node.id(), copy.id());
@@ -81,7 +81,7 @@ public class SerializationTest {
         assertEquals(Status.HardwareFailureType.memory_mcelog, copy.status().hardwareFailure().get());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
-        assertEquals(node.allocation().get().removable(), copy.allocation().get().removable());
+        assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
         assertEquals(1, copy.history().events().size());
         assertEquals(clock.instant(), copy.history().event(History.Event.Type.reserved).get().at());
         assertEquals(Node.Type.tenant, copy.type());
@@ -119,7 +119,7 @@ public class SerializationTest {
                 "      \"instanceId\" : \"myInstance\",\n" +
                 "      \"serviceId\" : \"content/myId/0\",\n" +
                 "      \"restartGeneration\" : 0,\n" +
-                "      \"removable\" : false\n" +
+                "      \"isRemovable\" : false\n" +
                 "   },\n" +
                 "   \"openStackId\" : \"myId\",\n" +
                 "   \"hostname\" : \"myHostname\"\n" +
@@ -156,7 +156,7 @@ public class SerializationTest {
                 "      \"instanceId\" : \"myInstance\",\n" +
                 "      \"serviceId\" : \"content/myId/0\",\n" +
                 "      \"restartGeneration\" : 0,\n" +
-                "      \"removable\" : false\n" +
+                "      \"isRemovable\" : false\n" +
                 "   },\n" +
                 "   \"openStackId\" : \"myId\",\n" +
                 "   \"hostname\" : \"myHostname\",\n" +
@@ -189,7 +189,7 @@ public class SerializationTest {
                         "      \"instanceId\" : \"myInstance\",\n" +
                         "      \"serviceId\" : \"content/myId/0\",\n" +
                         "      \"restartGeneration\" : 0,\n" +
-                        "      \"removable\" : false\n" +
+                        "      \"isRemovable\" : false\n" +
                         "   },\n" +
                         "   \"openStackId\" : \"myId\",\n" +
                         "   \"hostname\" : \"myHostname\",\n" +
@@ -221,9 +221,9 @@ public class SerializationTest {
                      ((History.RetiredEvent) copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
-        Node removable = copy.setAllocation(node.allocation().get().makeRemovable());
+        Node removable = copy.with(node.allocation().get().removable());
         Node removableCopy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(removable));
-        assertTrue(removableCopy.allocation().get().removable());
+        assertTrue(removableCopy.allocation().get().isRemovable());
     }
 
     @Test
@@ -247,7 +247,7 @@ public class SerializationTest {
                 ClusterMembership.from("content/myId/0/0", Optional.empty()),
                 clock.instant());
 
-        node = node.setStatus(node.status().setFailCount(0));
+        node = node.with(node.status().setFailCount(0));
         Node copy2 = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(0, copy2.status().failCount());
@@ -260,7 +260,7 @@ public class SerializationTest {
         Optional<String> dockerImage = Optional.of("my-docker-image");
         ClusterMembership clusterMembership = ClusterMembership.from("content/myId/0", dockerImage);
 
-        Node nodeWithAllocation = node.setAllocation(
+        Node nodeWithAllocation = node.with(
                 new Allocation(
                         ApplicationId.from(TenantName.from("myTenant"),
                                 ApplicationName.from("myApplication"),

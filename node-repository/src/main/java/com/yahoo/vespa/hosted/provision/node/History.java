@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -43,14 +41,14 @@ public class History {
     public Collection<Event> events() { return events.values(); }
 
     /** Returns a copy of this history with the given event added */
-    public History record(Event event) {
+    public History with(Event event) {
         ImmutableMap.Builder<Event.Type, Event> builder = builderWithout(event.type());
         builder.put(event.type(), event);
         return new History(builder.build());
     }
 
     /** Returns a copy of this history with the given event type removed (or an identical if it was not present) */
-    public History clear(Event.Type type) {
+    public History without(Event.Type type) {
         return new History(builderWithout(type).build());
     }
 
@@ -66,12 +64,12 @@ public class History {
     public History recordStateTransition(Node.State from, Node.State to, Instant at) {
         if (from == to) return this;
         switch (to) {
-            case ready:    return record(new Event(Event.Type.readied, at));
-            case active:   return record(new Event(Event.Type.activated, at));
-            case inactive: return record(new Event(Event.Type.deactivated, at));
-            case reserved: return record(new Event(Event.Type.reserved, at));
-            case failed:   return record(new Event(Event.Type.failed, at));
-            case dirty:    return record(new Event(Event.Type.deallocated, at));
+            case ready:    return this.with(new Event(Event.Type.readied, at));
+            case active:   return this.with(new Event(Event.Type.activated, at));
+            case inactive: return this.with(new Event(Event.Type.deactivated, at));
+            case reserved: return this.with(new Event(Event.Type.reserved, at));
+            case failed:   return this.with(new Event(Event.Type.failed, at));
+            case dirty:    return this.with(new Event(Event.Type.deallocated, at));
             default:       return this;
         }
     }

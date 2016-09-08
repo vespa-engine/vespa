@@ -96,7 +96,7 @@ class Activator {
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retireByApplication(clock.instant()) : node.unretire();
-            node = node.setAllocation(node.allocation().get().changeMembership(hostSpec.membership().get()));
+            node = node.with(node.allocation().get().with(hostSpec.membership().get()));
             updated.add(node);
         }
         return updated;

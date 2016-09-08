@@ -114,84 +114,84 @@ public final class Node {
      */
     public Node retireByApplication(Instant retiredAt) {
         if (allocation().get().membership().retired()) return this;
-        return setAllocation(allocation.get().retire())
-               .setHistory(history.record(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.application)));
+        return with(allocation.get().retire())
+               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.application)));
     }
 
     /** Returns a copy of this node which is retired by the system */
     // We will use this when we support operators retiring a flavor completely from hosted Vespa
     public Node retireBySystem(Instant retiredAt) {
-        return setAllocation(allocation.get().retire())
-               .setHistory(history.record(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
+        return with(allocation.get().retire())
+               .with(history.with(new History.RetiredEvent(retiredAt, History.RetiredEvent.Agent.system)));
     }
 
     /** Returns a copy of this node which is not retired */
     public Node unretire() {
-        return setAllocation(allocation.get().unretire());
+        return with(allocation.get().unretire());
     }
 
     /** Returns a copy of this with the current generation set to generation */
-    public Node setRestart(Generation generation) {
+    public Node withRestart(Generation generation) {
         final Optional<Allocation> allocation = this.allocation;
         if ( ! allocation.isPresent())
             throw new IllegalArgumentException("Cannot set restart generation for  " + hostname() + ": The node is unallocated");
 
-        return setAllocation(allocation.get().setRestart(generation));
+        return with(allocation.get().withRestart(generation));
     }
 
     /** Returns a node with the status assigned to the given value */
-    public Node setStatus(Status status) {
+    public Node with(Status status) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the type assigned to the given value */
-    public Node setType(Type type) {
+    public Node with(Type type) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the flavor assigned to the given value */
-    public Node setFlavor(Flavor flavor) {
+    public Node with(Flavor flavor) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the current generation set to generation */
-    public Node setReboot(Generation generation) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status.setReboot(generation), state,
+    public Node withReboot(Generation generation) {
+        return new Node(openStackId, hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
-    public Node setDown(Instant instant) {
-        return setHistory(history.record(new History.Event(History.Event.Type.down, instant)));
+    public Node downAt(Instant instant) {
+        return with(history.with(new History.Event(History.Event.Type.down, instant)));
     }
 
     /** Returns a copy of this with any history record saying it has been detected down removed */
-    public Node setUp() {
-        return setHistory(history.clear(History.Event.Type.down));
+    public Node up() {
+        return with(history.without(History.Event.Type.down));
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, Instant at) {
-        return setAllocation(new Allocation(owner, membership, new Generation(0, 0), false))
-               .setHistory(history.record(new History.Event(History.Event.Type.reserved, at)));
+        return this.with(new Allocation(owner, membership, new Generation(0, 0), false))
+                   .with(history.with(new History.Event(History.Event.Type.reserved, at)));
     }
 
     /**
      * Returns a copy of this node with the allocation assigned to the given allocation.
      * Do not use this to allocate a node.
      */
-    public Node setAllocation(Allocation allocation) {
+    public Node with(Allocation allocation) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
-    public Node setParentHostname(String parentHostname) {
+    public Node withParentHostname(String parentHostname) {
         return new Node(openStackId, hostname, Optional.of(parentHostname), flavor, status, state, 
                         allocation, history, type);
     }
 
     /** Returns a copy of this node with the given history. */
-    public Node setHistory(History history) {
+    public Node with(History history) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 

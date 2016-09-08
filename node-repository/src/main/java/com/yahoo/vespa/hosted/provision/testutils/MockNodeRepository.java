@@ -53,11 +53,11 @@ public class MockNodeRepository extends NodeRepository {
 
         // TODO: Use docker flavor
         Node node4 = createNode("node4", "host4.yahoo.com", Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
-        node4 = node4.setStatus(node4.status().setDockerImage("image-12"));
+        node4 = node4.with(node4.status().withDockerImage("image-12"));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
-        nodes.add(node5.setStatus(node5.status().setDockerImage("image-123").setVespaVersion(new Version("1.2.3"))));
+        nodes.add(node5.with(node5.status().withDockerImage("image-123").withVespaVersion(new Version("1.2.3"))));
 
         nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
@@ -65,10 +65,10 @@ public class MockNodeRepository extends NodeRepository {
         Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent.yahoo.com"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
-                .setVespaVersion(Version.fromString("5.104.142"))
-                .setHostedVersion(Version.fromString("2.1.2408"))
-                .setStateVersion("5.104.142-2.1.2408");
-        node10 = node10.setStatus(node10newStatus);
+                .withVespaVersion(Version.fromString("5.104.142"))
+                .withHostedVersion(Version.fromString("2.1.2408"))
+                .withStateVersion("5.104.142-2.1.2408");
+        node10 = node10.with(node10newStatus);
         nodes.add(node10);
 
         nodes.add(createNode("node55", "host55.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));

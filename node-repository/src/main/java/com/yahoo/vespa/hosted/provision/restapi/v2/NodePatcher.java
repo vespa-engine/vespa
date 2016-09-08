@@ -57,27 +57,27 @@ public class NodePatcher {
     private Node applyField(String name, Inspector value) {
         switch (name) {
             case "convergedStateVersion" :
-                return node.setStatus(node.status().setStateVersion(asString(value)));
+                return node.with(node.status().withStateVersion(asString(value)));
             case "currentRebootGeneration" :
-                return node.setStatus(node.status().setReboot(node.status().reboot().setCurrent(asLong(value))));
+                return node.with(node.status().withReboot(node.status().reboot().withCurrent(asLong(value))));
             case "currentRestartGeneration" :
                 return patchCurrentRestartGeneration(asLong(value));
             case "currentDockerImage" :
-                return node.setStatus(node.status().setDockerImage(asString(value)));
+                return node.with(node.status().withDockerImage(asString(value)));
             case "currentVespaVersion" :
-                return node.setStatus(node.status().setVespaVersion(Version.fromString(asString(value))));
+                return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "currentHostedVersion" :
-                return node.setStatus(node.status().setHostedVersion(Version.fromString(asString(value))));
+                return node.with(node.status().withHostedVersion(Version.fromString(asString(value))));
             case "failCount" :
-                return node.setStatus(node.status().setFailCount(asLong(value).intValue()));
+                return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
-                return node.setFlavor(nodeFlavors.getFlavorOrThrow(asString(value)));
+                return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case "hardwareFailure" : // TODO (Aug 2016): Remove support for this when mpolden says ok
-                return node.setStatus(node.status().setHardwareFailure(toHardwareFailureType(asBoolean(value))));
+                return node.with(node.status().withHardwareFailure(toHardwareFailureType(asBoolean(value))));
             case "hardwareFailureType" :
-                return node.setStatus(node.status().setHardwareFailure(toHardwareFailureType(asString(value))));
+                return node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(value))));
             case "parentHostname" :
-                return node.setParentHostname(asString(value));
+                return node.withParentHostname(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -86,7 +86,7 @@ public class NodePatcher {
     private Node patchCurrentRestartGeneration(Long value) {
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent())
-            return node.setAllocation(allocation.get().setRestart(allocation.get().restartGeneration().setCurrent(value)));
+            return node.with(allocation.get().withRestart(allocation.get().restartGeneration().withCurrent(value)));
         else
             throw new IllegalArgumentException("Node is not allocated");
     }

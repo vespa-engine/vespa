@@ -79,15 +79,15 @@ public class FailedExpirerTest {
 
         // Set node1 to have failed 4 times before
         Node node1 = nodeRepository.getNode("node1").get();
-        node1 = node1.setStatus(node1.status().increaseFailCount());
-        node1 = node1.setStatus(node1.status().increaseFailCount());
-        node1 = node1.setStatus(node1.status().increaseFailCount());
-        node1 = node1.setStatus(node1.status().increaseFailCount());
+        node1 = node1.with(node1.status().withIncreasedFailCount());
+        node1 = node1.with(node1.status().withIncreasedFailCount());
+        node1 = node1.with(node1.status().withIncreasedFailCount());
+        node1 = node1.with(node1.status().withIncreasedFailCount());
         nodeRepository.write(node1);
 
         // Set node2 to have a detected hardware failure
         Node node2 = nodeRepository.getNode("node2").get();
-        node2 = node2.setStatus(node2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
+        node2 = node2.with(node2.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
         nodeRepository.write(node2);
 
         // Allocate the nodes

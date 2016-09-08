@@ -53,25 +53,25 @@ public class Status {
     }
 
     /** Returns a copy of this with the reboot generation changed */
-    public Status setReboot(Generation reboot) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
+    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
 
     /** Returns the reboot generation of this node */
     public Generation reboot() { return reboot; }
 
     /** Returns a copy of this with the vespa version changed */
-    public Status setVespaVersion(Version version) { return new Status(reboot, Optional.of(version), hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
+    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     /** Returns a copy of this with the hosted version changed */
-    public Status setHostedVersion(Version version) { return new Status(reboot, vespaVersion, Optional.of(version), stateVersion, dockerImage, failCount, hardwareFailure); }
+    public Status withHostedVersion(Version version) { return new Status(reboot, vespaVersion, Optional.of(version), stateVersion, dockerImage, failCount, hardwareFailure); }
 
     /** Returns the hosted version installed on the node, if known */
     public Optional<Version> hostedVersion() { return hostedVersion; }
 
     /** Returns a copy of this with the state version changed */
-    public Status setStateVersion(String version) { return new Status(reboot, vespaVersion, hostedVersion, Optional.of(version), dockerImage, failCount, hardwareFailure); }
+    public Status withStateVersion(String version) { return new Status(reboot, vespaVersion, hostedVersion, Optional.of(version), dockerImage, failCount, hardwareFailure); }
 
     /**
      * Returns the state version the node last successfully converged with.
@@ -82,24 +82,24 @@ public class Status {
     public Optional<String> stateVersion() { return stateVersion; }
 
     /** Returns a copy of this with the docker image changed */
-    public Status setDockerImage(String dockerImage) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, Optional.of(dockerImage), failCount, hardwareFailure); }
+    public Status withDockerImage(String dockerImage) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, Optional.of(dockerImage), failCount, hardwareFailure); }
 
     /** Returns the current docker image the node is running, if known. */
     public Optional<String> dockerImage() { return dockerImage; }
 
-    public Status increaseFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount+1, hardwareFailure); }
+    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount + 1, hardwareFailure); }
 
-    public Status decreaseFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount-1, hardwareFailure); }
+    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount - 1, hardwareFailure); }
 
     public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, value, hardwareFailure); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
+    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
+
     /** Returns the type of the last hardware failure detected on this node, or empty if none */
     public Optional<HardwareFailureType> hardwareFailure() { return hardwareFailure; }
-
-    public Status setHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, dockerImage, failCount, hardwareFailure); }
 
     /** Returns the initial status of a newly provisioned node */
     public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty()); }
