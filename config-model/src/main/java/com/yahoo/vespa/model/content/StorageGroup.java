@@ -37,6 +37,10 @@ public class StorageGroup {
     private final ContentCluster owner;
     private final Optional<Long> mmapNoCoreLimit;
     private final Optional<Boolean> coreOnOOM;
+    private final Optional<String> noVespaMalloc;
+    private final Optional<String> vespaMalloc;
+    private final Optional<String> vespaMallocDebug;
+    private final Optional<String> vespaMallocDebugStackTrace;
 
     private final List<StorageGroup> subgroups = new ArrayList<>();
     private final List<StorageNode> nodes = new ArrayList<>();
@@ -53,7 +57,9 @@ public class StorageGroup {
      * @param useCpuSocketAffinity whether processes should be started with socket affinity
      */
     private StorageGroup(ContentCluster owner, String name, String index, Optional<String> partitions,
-                         boolean useCpuSocketAffinity, Optional<Long> mmapNoCoreLimit, Optional<Boolean> coreOnOOM)
+                         boolean useCpuSocketAffinity, Optional<Long> mmapNoCoreLimit, Optional<Boolean> coreOnOOM,
+                         Optional<String> noVespaMalloc, Optional<String> vespaMalloc,
+                         Optional<String> vespaMallocDebug, Optional<String> vespaMallocDebugStackTrace)
     {
         this.owner = owner;
         this.index = index;
@@ -62,6 +68,14 @@ public class StorageGroup {
         this.useCpuSocketAffinity = useCpuSocketAffinity;
         this.mmapNoCoreLimit = mmapNoCoreLimit;
         this.coreOnOOM = coreOnOOM;
+        this.noVespaMalloc = noVespaMalloc;
+        this.vespaMalloc = vespaMalloc;
+        this.vespaMallocDebug = vespaMallocDebug;
+        this.vespaMallocDebugStackTrace = vespaMallocDebugStackTrace;
+    }
+    private StorageGroup(ContentCluster owner, String name, String index) {
+        this(owner, name, index, Optional.empty(), false, Optional.empty(),Optional.empty(), Optional.empty(),
+             Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** Returns the name of this group, or null if it is the root group */
@@ -82,6 +96,10 @@ public class StorageGroup {
     public boolean useCpuSocketAffinity() { return useCpuSocketAffinity; }
     public Optional<Long> getMmapNoCoreLimit() { return mmapNoCoreLimit; }
     public Optional<Boolean> getCoreOnOOM() { return coreOnOOM; }
+    public Optional<String> getNoVespaMalloc() { return noVespaMalloc; }
+    public Optional<String> getVespaMalloc() { return vespaMalloc; }
+    public Optional<String> getVespaMallocDebug() { return vespaMallocDebug; }
+    public Optional<String> getVespaMallocDebugStackTrace() { return vespaMallocDebugStackTrace; }
 
     /** Returns all the nodes below this group */
     public List<StorageNode> recursiveGetNodes() {
@@ -272,8 +290,7 @@ public class StorageGroup {
                     // create subgroups as returned from allocation
                     for (Map.Entry<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
                         String groupIndex = String.valueOf(hostGroup.getKey().get().index());
-                        StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex, Optional.empty(),
-                                                                 false, Optional.empty(),Optional.empty());
+                        StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex);
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
                             subgroup.nodes.add(createStorageNode(owner, host.getKey(), subgroup, host.getValue()));
                         }
@@ -350,11 +367,16 @@ public class StorageGroup {
          * </ul>
          */
         private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
-            StorageGroup group = new StorageGroup(owner, name, index,
-                                                  childAsString(groupElement, "distribution.partitions"),
-                                                  booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
-                                                  childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
-                                                  childAsBoolean(groupElement, VespaDomBuilder.CORE_ON_OOM));
+            StorageGroup group = new StorageGroup(
+                    owner, name, index,
+                    childAsString(groupElement, "distribution.partitions"),
+                    booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
+                    childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
+                    childAsBoolean(groupElement, VespaDomBuilder.CORE_ON_OOM),
+                    childAsString(groupElement, VespaDomBuilder.NO_VESPAMALLOC),
+                    childAsString(groupElement, VespaDomBuilder.VESPAMALLOC),
+                    childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
+                    childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
             List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(group, groupElement.get()) : Collections.emptyList();
 

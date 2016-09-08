@@ -456,15 +456,15 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void canConfigureMmapNoCoreLimit() throws Exception {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                        "    <redundancy>2</redundancy>" +
-                        "      <documents>" +
-                        "        <document type='music' mode='index'/>" +
-                        "      </documents>" +
-                        "    <group mmap-core-limit=\"200000\">" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                        "    </group>" +
-                        "</content>");
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group mmap-core-limit=\"200000\">" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                "    </group>" +
+                "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -485,15 +485,15 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void canConfigureCoreOnOOM() throws Exception {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                        "    <redundancy>2</redundancy>" +
-                        "      <documents>" +
-                        "        <document type='music' mode='index'/>" +
-                        "      </documents>" +
-                        "    <group core-on-oom=\"true\">" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                        "    </group>" +
-                        "</content>");
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group core-on-oom=\"true\">" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                "    </group>" +
+                "</content>");
         ContentSearchCluster s;
 
         s = b.getSearch();
@@ -514,15 +514,15 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void defaultCoreOnOOMIsFalse() throws Exception {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                        "    <redundancy>2</redundancy>" +
-                        "      <documents>" +
-                        "        <document type='music' mode='index'/>" +
-                        "      </documents>" +
-                        "    <group>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                        "    </group>" +
-                        "</content>");
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                "    </group>" +
+                "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -540,15 +540,15 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void canConfigureMmapNoCoreLimitPerHost() throws Exception {
         ContentCluster b = createContent(
                 "<content version =\"1.0\" id=\"b\">" +
-                        "    <redundancy>2</redundancy>" +
-                        "      <documents>" +
-                        "        <document type='music' mode='index'/>" +
-                        "      </documents>" +
-                        "    <group>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-core-limit=\"200000\"/>" +
-                        "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
-                        "    </group>" +
-                        "</content>");
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\"  mmap-core-limit=\"200000\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" />" +
+                "    </group>" +
+                "</content>");
         ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
@@ -586,6 +586,79 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
         assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
         assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+    }
+
+    @Test
+    public void canConfigureVespaMalloc() throws Exception {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group no-vespamalloc=\"proton\" vespamalloc-debug=\"distributord\" vespamalloc-debug-stacktrace=\"all\" vespamalloc=\"storaged\">" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"2\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"3\"/>" +
+                "    </group>" +
+                "</content>");
+        ContentSearchCluster s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(4, b.getStorageNodes().getChildren().size());
+        assertTrue(b.getRootGroup().getNoVespaMalloc().isPresent());
+        assertEquals("proton", b.getRootGroup().getNoVespaMalloc().get());
+        assertTrue(b.getRootGroup().getVespaMalloc().isPresent());
+        assertEquals("storaged", b.getRootGroup().getVespaMalloc().get());
+        assertTrue(b.getRootGroup().getVespaMallocDebug().isPresent());
+        assertEquals("distributord", b.getRootGroup().getVespaMallocDebug().get());
+        assertTrue(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
+        assertEquals("all", b.getRootGroup().getVespaMallocDebugStackTrace().get());
+
+        assertThat(s.getSearchNodes().size(), is(4));
+        for (SearchNode n : s.getSearchNodes()) {
+            assertEquals("proton", n.getNoVespaMalloc());
+            assertEquals("VESPA_USE_NO_VESPAMALLOC=\"proton\" ", n.getNoVespaMallocEnvVariable());
+            assertEquals("distributord", n.getVespaMallocDebug());
+            assertEquals("VESPA_USE_VESPAMALLOC=\"storaged\" ", n.getVespaMallocEnvVariable());
+            assertEquals("all", n.getVespaMallocDebugStackTrace());
+            assertEquals("VESPA_USE_VESPAMALLOC_D=\"distributord\" ", n.getVespaMallocDebugEnvVariable());
+            assertEquals("storaged", n.getVespaMalloc());
+            assertEquals("VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getVespaMallocDebugStackTraceEnvVariable());
+            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
+        }
+    }
+
+    @Test
+    public void canConfigureVespaMallocPerHost() throws Exception {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                "    <redundancy>2</redundancy>" +
+                "      <documents>" +
+                "        <document type='music' mode='index'/>" +
+                "      </documents>" +
+                "    <group>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"0\" no-vespamalloc=\"proton\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"1\" vespamalloc-debug=\"distributord\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"2\" vespamalloc-debug-stacktrace=\"all\"/>" +
+                "      <node hostalias=\"mockhost\" distribution-key=\"3\" vespamalloc=\"storaged\"/>" +
+                "    </group>" +
+                "</content>");
+        ContentSearchCluster s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(4, b.getStorageNodes().getChildren().size());
+        assertFalse(b.getRootGroup().getNoVespaMalloc().isPresent());
+        assertFalse(b.getRootGroup().getVespaMalloc().isPresent());
+        assertFalse(b.getRootGroup().getVespaMallocDebug().isPresent());
+        assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
+
+        assertThat(s.getSearchNodes().size(), is(4));
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
+        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
     }
 
     @Test
@@ -839,15 +912,16 @@ public class ContentBuilderTest extends DomBuilderTest {
     @Test
     public void ensurePruneRemovedDocumentsAgeForHostedVespa() throws Exception {
         {
-            ContentCluster contentNonHosted = createContent("<content version='1.0' id='search'>" +
-                                                                           "  <redundancy>1</redundancy>" +
-                                                                           "  <documents>" +
-                                                                           "    <document type='music' mode='index'/>" +
-                                                                           "  </documents>" +
-                                                                           "  <nodes>" +
-                                                                           "    <node hostalias='mockhost' distribution-key='0'/>" +
-                                                                           "  </nodes>" +
-                                                                           "</content>");
+            ContentCluster contentNonHosted = createContent(
+                    "<content version='1.0' id='search'>" +
+                    "  <redundancy>1</redundancy>" +
+                    "  <documents>" +
+                    "    <document type='music' mode='index'/>" +
+                    "  </documents>" +
+                    "  <nodes>" +
+                    "    <node hostalias='mockhost' distribution-key='0'/>" +
+                    "  </nodes>" +
+                    "</content>");
             ProtonConfig configNonHosted = getProtonConfig(contentNonHosted);
             ProtonConfig defaultConfig = new ProtonConfig(new ProtonConfig.Builder());
             assertEquals(defaultConfig.pruneremoveddocumentsage(), configNonHosted.pruneremoveddocumentsage(), 0.001);

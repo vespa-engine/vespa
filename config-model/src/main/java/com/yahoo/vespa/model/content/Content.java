@@ -171,6 +171,26 @@ public class Content extends ConfigModel {
                 s.setCoreOnOOM(cluster.getRootGroup().getCoreOnOOM().get());
             }
         }
+        if (cluster.getRootGroup().getNoVespaMalloc().isPresent()) {
+            for (AbstractService s : cluster.getSearch().getSearchNodes()) {
+                s.setNoVespaMalloc(cluster.getRootGroup().getNoVespaMalloc().get());
+            }
+        }
+        if (cluster.getRootGroup().getVespaMalloc().isPresent()) {
+            for (AbstractService s : cluster.getSearch().getSearchNodes()) {
+                s.setVespaMalloc(cluster.getRootGroup().getVespaMalloc().get());
+            }
+        }
+        if (cluster.getRootGroup().getVespaMallocDebug().isPresent()) {
+            for (AbstractService s : cluster.getSearch().getSearchNodes()) {
+                s.setVespaMallocDebug(cluster.getRootGroup().getVespaMallocDebug().get());
+            }
+        }
+        if (cluster.getRootGroup().getVespaMallocDebugStackTrace().isPresent()) {
+            for (AbstractService s : cluster.getSearch().getSearchNodes()) {
+                s.setVespaMallocDebugStackTrace(cluster.getRootGroup().getVespaMallocDebugStackTrace().get());
+            }
+        }
         cluster.prepare();
     }
 
