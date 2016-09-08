@@ -8,7 +8,7 @@
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
-#include <vespa/vespalib/time/time_boxer.h>
+#include <vespa/vespalib/time/time_box.h>
 
 using namespace config;
 using namespace vespa::config::search::core;
@@ -189,13 +189,16 @@ DocumentDBConfigManager::update(const ConfigSnapshot & snapshot)
         RankingConstants::Vector constants;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(spec);
-            vespalib::TimeBoxer timeBox(5*60, 5);
+            vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
                 vespalib::string filePath;
                 LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')",
                     rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
                 while (timeBox.hasTimeLeft() && (filePath == "")) {
                     filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
+                    if (filePath == "") {
+                        FastOS_Thread::Sleep(100);
+                    }
                 }
                 LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",
                     filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());

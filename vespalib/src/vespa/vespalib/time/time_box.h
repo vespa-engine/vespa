@@ -11,14 +11,14 @@ namespace vespalib {
  * <pre>
  * Example:
  *
- * TimeBoxer timebox(5.0);
+ * TimeBox timebox(5.0);
  * while (timebox.hasTimeLeft()) {
  *   ... do stuff
  *   ... do stuff with timeout(timebox.timeLeft())
  * }
  * </pre>
  **/
-class TimeBoxer
+class TimeBox
 {
 private:
     using clock = std::conditional<std::chrono::high_resolution_clock::is_steady,
@@ -40,21 +40,21 @@ private:
 
 public:
     /**
-     * Construct a TimeBoxer with a given budget from now
+     * Construct a TimeBox with a given budget from now
      * @param budget amount of time in seconds
      **/
-    explicit TimeBoxer(double budget)
+    explicit TimeBox(double budget)
         : _end_time(clock::now() + to_internal(budget)),
           _min_time(to_internal(0))
     {
     }
 
     /**
-     * Construct a TimeBoxer with a given budget from now
+     * Construct a TimeBox with a given budget from now
      * @param budget amount of time in seconds
      * @param min_time a minimum to be returned from timeLeft()
      **/
-    TimeBoxer(double budget, double min_time)
+    TimeBox(double budget, double min_time)
         : _end_time(clock::now() + to_internal(budget)),
           _min_time(to_internal(min_time))
     {
