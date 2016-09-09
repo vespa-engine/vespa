@@ -60,9 +60,10 @@ private:
         uint32_t _chunkId;
         uint32_t _lid;
     };
+    using IndexVector = vespalib::Array<Index, vespalib::DefaultAlloc>;
     uint64_t                                     _chunkSerial;
     Chunk::UP                                    _current;
-    std::map<uint64_t, std::vector<Index>>       _where;
+    std::map<uint64_t, IndexVector>              _where;
     MemoryDataStore                            & _backingMemory;
     ThreadExecutor                             & _executor;
     vespalib::Lock                               _lock;
