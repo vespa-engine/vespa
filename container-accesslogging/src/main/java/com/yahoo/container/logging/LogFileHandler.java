@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -38,7 +39,7 @@ public class LogFileHandler extends StreamHandler {
     private OutputStream currentOutputStream = null;
     private String fileName;
     private String symlinkName = null;
-    private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(1000);
+    private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
 
     static private class LogThread extends Thread {
@@ -61,12 +62,21 @@ public class LogFileHandler extends StreamHandler {
         }
 
         private void storeLogRecords() throws InterruptedException {
+            long lastFlush = 0;
             while (!isInterrupted()) {
-                LogRecord r = logFileHandler.logQueue.take();
-                if (r == logFileHandler.rotateCmd) {
-                    logFileHandler.internalRotateNow();
-                } else {
-                    logFileHandler.internalPublish(r);
+                LogRecord r = logFileHandler.logQueue.poll(100, TimeUnit.MILLISECONDS);
+                long now = System.nanoTime();
+                if (r != null) {
+                    if (r == logFileHandler.rotateCmd) {
+                        logFileHandler.internalRotateNow();
+                        lastFlush = now;
+                    } else {
+                        logFileHandler.internalPublish(r);
+                    }
+                }
+                if (TimeUnit.NANOSECONDS.toSeconds(now - lastFlush) > 5) {
+                    logFileHandler.flush();
+                    lastFlush = now;
                 }
             }
         }
