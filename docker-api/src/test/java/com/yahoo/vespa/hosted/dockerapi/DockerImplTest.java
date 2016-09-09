@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -186,8 +185,8 @@ public class DockerImplTest {
         ImageGcTester
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
-                        ImageBuilder.forId("image-1").withParentId("parent-image").withTag("latest"),
-                        ImageBuilder.forId("image-2").withParentId("parent-image").withTag("1.24"))
+                        ImageBuilder.forId("image-1").withParentId("parent-image").withTags("latest"),
+                        ImageBuilder.forId("image-2").withParentId("parent-image").withTags("1.24"))
                 .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImageId("image-1"))
                 .expectUnusedImages("1.24");
     }
@@ -198,14 +197,14 @@ public class DockerImplTest {
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image")
-                                .withTag("vespa-6").withTag("vespa-6.28").withTag("vespa:latest"))
+                                .withTags("vespa-6", "vespa-6.28", "vespa:latest"))
                 .expectUnusedImages("vespa-6", "vespa-6.28", "vespa:latest", "parent-image");
     }
 
     @Test
     public void taggedImageWithNoContainersIsUnused() throws Exception {
         ImageGcTester
-                .withExistingImages(ImageBuilder.forId("image-1").withTag("vespa-6"))
+                .withExistingImages(ImageBuilder.forId("image-1").withTags("vespa-6"))
                 .expectUnusedImages("vespa-6");
     }
 
@@ -215,7 +214,7 @@ public class DockerImplTest {
                 .withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image")
-                                .withTag("vespa-6").withTag("vespa-6.28").withTag("vespa:latest"))
+                                .withTags("vespa-6", "vespa-6.28", "vespa:latest"))
                 .andExceptImages("vespa-6.28")
                 .expectUnusedImages("vespa-6", "vespa:latest");
     }
@@ -225,10 +224,10 @@ public class DockerImplTest {
         ImageGcTester
                 .withExistingImages(
                         ImageBuilder.forId("parent-1"),
-                        ImageBuilder.forId("parent-2").withTag("p-tag:1"),
-                        ImageBuilder.forId("image-1-1").withParentId("parent-1").withTag("i-tag:1").withTag("i-tag:2").withTag("i-tag-3"),
+                        ImageBuilder.forId("parent-2").withTags("p-tag:1"),
+                        ImageBuilder.forId("image-1-1").withParentId("parent-1").withTags("i-tag:1", "i-tag:2", "i-tag-3"),
                         ImageBuilder.forId("image-1-2").withParentId("parent-1"),
-                        ImageBuilder.forId("image-2-1").withParentId("parent-2").withTag("i-tag:4"))
+                        ImageBuilder.forId("image-2-1").withParentId("parent-2").withTags("i-tag:4"))
                 .andExceptImages("image-1-2")
                 .andExistingContainers(
                         ContainerBuilder.forId("cont-1").withImageId("image-1-1"))
@@ -317,16 +316,16 @@ public class DockerImplTest {
         private final String id;
 
         @JsonProperty("ParentId")
-        private String parentId;
+        private String parentId = ""; // docker-java returns empty string and not null if the parent is not present
 
         @JsonProperty("RepoTags")
-        private final List<String> repoTags = new LinkedList<>();
+        private String[] repoTags = null;
 
         private ImageBuilder(String id) { this.id = id; }
 
         private static ImageBuilder forId(String id) { return new ImageBuilder(id); }
         private ImageBuilder withParentId(String parentId) { this.parentId = parentId; return this; }
-        private ImageBuilder withTag(String tag) { this.repoTags.add(tag); return this; }
+        private ImageBuilder withTags(String... tags) { this.repoTags = tags; return this; }
 
         private Image toImage() { return createFrom(Image.class, this); }
     }
