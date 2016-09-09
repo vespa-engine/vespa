@@ -78,9 +78,9 @@ public class ZooKeeperClient {
             }
         } catch (Exception e) {
             throw new IllegalStateException("Unable to initialize vespa model writing to config server(s) " +
-                    System.getProperty("configsources") + "\n" +
-                    "Please ensure that cloudconfig_server is started on the config server node(s), " +
-                    "and check the vespa log for configserver errors. ", e);
+                                            System.getProperty("configsources") + "\n" +
+                                            "Please ensure that cloudconfig_server is started on the config server node(s), " +
+                                            "and check the vespa log for configserver errors. ", e);
         }
     }
 
@@ -103,7 +103,7 @@ public class ZooKeeperClient {
     /**
      * Feeds def files and user config into ZK.
      *
-     * @param app                  the application package to feed to zookeeper
+     * @param app the application package to feed to zookeeper
      */
     void feedZooKeeper(ApplicationPackage app) {
         trace("Feeding application config into ZooKeeper");
