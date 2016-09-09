@@ -99,13 +99,52 @@ public class SerializationTest {
     }
 
     @Test
-    public void testRebootAndRestartandTypeNoCurrentValuesSerialization() {
+    public void testRebootAndRestartAndTypeNoCurrentValuesSerialization() {
         String nodeData = 
+                "{\n" +
+                "   \"type\" : \"tenant\",\n" +
+                "   \"rebootGeneration\" : 1,\n" +
+                "   \"currentRebootGeneration\" : 2,\n" +
+                "   \"flavor\" : \"large\",\n" +
+                "   \"history\" : [\n" +
+                "      {\n" +
+                "         \"type\" : \"reserved\",\n" +
+                "         \"at\" : 1444391402611\n" +
+                "      }\n" +
+                "   ],\n" +
+                "   \"instance\" : {\n" +
+                "      \"applicationId\" : \"myApplication\",\n" +
+                "      \"tenantId\" : \"myTenant\",\n" +
+                "      \"instanceId\" : \"myInstance\",\n" +
+                "      \"serviceId\" : \"content/myId/0\",\n" +
+                "      \"restartGeneration\" : 3,\n" +
+                "      \"currentRestartGeneration\" : 4,\n" +
+                "      \"removable\" : true\n" +
+                "   },\n" +
+                "   \"openStackId\" : \"myId\",\n" +
+                "   \"hostname\" : \"myHostname\"\n" +
+                "}";
+
+        Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
+
+        assertEquals("large", node.flavor().canonicalName());
+        assertEquals(1, node.status().reboot().wanted());
+        assertEquals(2, node.status().reboot().current());
+        assertEquals(3, node.allocation().get().restartGeneration().wanted());
+        assertEquals(4, node.allocation().get().restartGeneration().current());
+        assertTrue(node.allocation().get().isRemovable());
+        assertEquals(Node.Type.tenant, node.type());
+    }
+
+    // TODO: Remove when 6.31 is deployed everywhere
+    @Test
+    public void testLegacyFlavor() {
+        String nodeData =
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
                 "   \"rebootGeneration\" : 0,\n" +
                 "   \"configuration\" : {\n" +
-                "      \"flavor\" : \"default\"\n" +
+                "      \"flavor\" : \"large\"\n" +
                 "   },\n" +
                 "   \"history\" : [\n" +
                 "      {\n" +
@@ -119,19 +158,15 @@ public class SerializationTest {
                 "      \"instanceId\" : \"myInstance\",\n" +
                 "      \"serviceId\" : \"content/myId/0\",\n" +
                 "      \"restartGeneration\" : 0,\n" +
-                "      \"isRemovable\" : false\n" +
+                "      \"removable\" : false\n" +
                 "   },\n" +
                 "   \"openStackId\" : \"myId\",\n" +
-                "   \"hostname\" : \"myHostname\"\n" +
+                "   \"hostname\" : \"myHostname\",\n" +
+                "   \"hardwareFailure\" : true\n" +
                 "}";
 
         Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
-
-        assertEquals(0, node.status().reboot().wanted());
-        assertEquals(0, node.status().reboot().current());
-        assertEquals(0, node.allocation().get().restartGeneration().wanted());
-        assertEquals(0, node.allocation().get().restartGeneration().current());
-        assertEquals(Node.Type.tenant, node.type());
+        assertEquals("large", node.flavor().canonicalName());
     }
 
     // TODO: Remove when 6.28 is deployed everywhere
@@ -156,7 +191,7 @@ public class SerializationTest {
                 "      \"instanceId\" : \"myInstance\",\n" +
                 "      \"serviceId\" : \"content/myId/0\",\n" +
                 "      \"restartGeneration\" : 0,\n" +
-                "      \"isRemovable\" : false\n" +
+                "      \"removable\" : false\n" +
                 "   },\n" +
                 "   \"openStackId\" : \"myId\",\n" +
                 "   \"hostname\" : \"myHostname\",\n" +
@@ -189,7 +224,7 @@ public class SerializationTest {
                         "      \"instanceId\" : \"myInstance\",\n" +
                         "      \"serviceId\" : \"content/myId/0\",\n" +
                         "      \"restartGeneration\" : 0,\n" +
-                        "      \"isRemovable\" : false\n" +
+                        "      \"removable\" : false\n" +
                         "   },\n" +
                         "   \"openStackId\" : \"myId\",\n" +
                         "   \"hostname\" : \"myHostname\",\n" +
@@ -228,7 +263,7 @@ public class SerializationTest {
 
     @Test
     public void testAssimilatedDeserialization() {
-        Node node = nodeSerializer.fromJson(Node.State.active, "{\"type\":\"tenant\",\"hostname\":\"assimilate2.vespahosted.corp.bf1.yahoo.com\",\"openStackId\":\"\",\"configuration\":{\"flavor\":\"ugccloud-container\"},\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
+        Node node = nodeSerializer.fromJson(Node.State.active, "{\"type\":\"tenant\",\"hostname\":\"assimilate2.vespahosted.corp.bf1.yahoo.com\",\"openStackId\":\"\",\"flavor\":\"ugccloud-container\",\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
         assertEquals(0, node.history().events().size());
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
@@ -242,10 +277,10 @@ public class SerializationTest {
     public void testSetFailCount() {
         Node node = createNode();
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
-                        ApplicationName.from("myApplication"),
-                        InstanceName.from("myInstance")),
-                ClusterMembership.from("content/myId/0/0", Optional.empty()),
-                clock.instant());
+                             ApplicationName.from("myApplication"),
+                             InstanceName.from("myInstance")),
+                             ClusterMembership.from("content/myId/0/0", Optional.empty()),
+                             clock.instant());
 
         node = node.with(node.status().setFailCount(0));
         Node copy2 = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
@@ -261,13 +296,12 @@ public class SerializationTest {
         ClusterMembership clusterMembership = ClusterMembership.from("content/myId/0", dockerImage);
 
         Node nodeWithAllocation = node.with(
-                new Allocation(
-                        ApplicationId.from(TenantName.from("myTenant"),
-                                ApplicationName.from("myApplication"),
-                                InstanceName.from("myInstance")),
-                        clusterMembership,
-                        new Generation(0, 0),
-                        false));
+                new Allocation(ApplicationId.from(TenantName.from("myTenant"),
+                                                  ApplicationName.from("myApplication"),
+                                                  InstanceName.from("myInstance")),
+                               clusterMembership,
+                               new Generation(0, 0),
+                               false));
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(nodeWithAllocation));
         assertEquals(dockerImage, deserializedNode.allocation().get().membership().cluster().dockerImage());

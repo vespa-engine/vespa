@@ -44,7 +44,7 @@ public class NodeSerializer {
     private static final String hostnameKey = "hostname";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
-    private static final String configurationKey ="configuration";
+    private static final String configurationKey ="configuration"; // TODO: Remove when 6.31 is deployed everywhere
     private static final String historyKey = "history";
     private static final String instanceKey = "instance"; // legacy name, TODO: change to allocation with backwards compat
     private static final String rebootGenerationKey = "rebootGeneration";
@@ -118,8 +118,8 @@ public class NodeSerializer {
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
-        allocation.membership().cluster().dockerImage().ifPresent( dockerImage ->
-                object.setString(dockerImageKey, dockerImage));
+        allocation.membership().cluster().dockerImage()
+                .ifPresent( dockerImage -> object.setString(dockerImageKey, dockerImage));
     }
 
     private void toSlime(History history, Cursor array) {
