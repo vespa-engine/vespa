@@ -135,7 +135,6 @@ public class LogFileHandler extends StreamHandler {
         // count records, and publish
         numberOfRecords++;
         super.publish(r);
-        flush();
     }
 
     /**
