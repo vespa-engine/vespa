@@ -566,7 +566,7 @@ public:
         vespalib::string _l7Word;
         StartOffset      _l7StartOffset;	// Offsets in data files
         uint64_t _l7WordNum;
-        uint32_t _l6Offset;	// Offset in L6+overflow stream
+        uint64_t _l6Offset;	// Offset in L6+overflow stream
         uint32_t _sparsePageNum;// page number for sparse file
         uint64_t _pageNum;	// page number in full file
         uint32_t _l7Ref;	// L7 entry before overflow, or self-ref if L6
@@ -585,7 +585,7 @@ public:
         L7Entry(const vespalib::stringref &l7Word,
                 const StartOffset         &l7StartOffset,
                 uint64_t l7WordNum,
-                uint32_t l6Offset,
+                uint64_t l6Offset,
                 uint32_t sparsePageNum,
                 uint64_t pageNum,
                 uint32_t l7Ref)
