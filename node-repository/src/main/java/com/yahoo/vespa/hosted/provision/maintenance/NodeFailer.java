@@ -10,6 +10,7 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -74,8 +75,11 @@ public class NodeFailer extends Maintainer {
     protected void maintain() {
         // Ready nodes
         updateNodeLivenessEventsForReadyNodes();
-        for (Node node : readyNodesWhichAreDead())
+        for (Node node : readyNodesWhichAreDead( )) {
+            // ready docker containers do not run Vespa, so skip those
+            if (node.flavor().getEnvironment().equals(Flavor.ENVIRONMENT_DOCKER_CONTAINER)) continue;
             nodeRepository().fail(node.hostname());
+        }
         for (Node node : readyNodesWithHardwareFailure())
             nodeRepository().fail(node.hostname());
 

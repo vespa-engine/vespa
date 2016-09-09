@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -15,6 +14,9 @@ import java.util.List;
  * @author bratseth
  */
 public class Flavor {
+    public static final String ENVIRONMENT_BARE_METAL = "BARE_METAL";
+    public static final String ENVIRONMENT_VIRTUAL_MACHINE = "VIRTUAL_MACHINE";
+    public static final String ENVIRONMENT_DOCKER_CONTAINER = "DOCKER_CONTAINER";
 
     private final String name;
     private final int cost;
@@ -79,7 +81,7 @@ public class Flavor {
      *
      * The logic is that we can use this to capture the gritty details of configurations in exact flavor names
      * but also encourage users to refer to them by a common name by letting such flavor variants declare that they
-     * replace the caninical name we want. However, if a node replaces multiple names, it means that a former
+     * replace the canonical name we want. However, if a node replaces multiple names, it means that a former
      * flavor distinction has become obsolete so this name becomes one of the canonical names users should refer to.
      */
     public String canonicalName() {
