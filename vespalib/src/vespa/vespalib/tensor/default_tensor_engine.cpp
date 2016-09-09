@@ -36,6 +36,14 @@ DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
     return my_a.equals(my_b);
 }
 
+vespalib::string
+DefaultTensorEngine::to_string(const Tensor &tensor) const
+{
+    assert(&tensor.engine() == this);
+    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
+    return my_tensor.toString();
+}
+
 struct IsAddOperation : public eval::DefaultOperationVisitor {
     bool result = false;
     void visitDefault(const eval::Operation &) override {}
