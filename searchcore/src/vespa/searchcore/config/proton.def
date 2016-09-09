@@ -225,10 +225,10 @@ summary.log.chunk.skipcrconread bool default=false restart
 summary.log.compact2activefile bool default=true restart
 
 ## Max size per summary file.
-summary.log.maxfilesize long default=20000000 restart
+summary.log.maxfilesize long default=1000000000 restart
 
 ## Max number of removes per summary file.
-summary.log.maxremovesperfile long default=1000000000 restart
+summary.log.maxremovesperfile long default=20000000 restart
 
 ## Max disk bloat factor. This will trigger compacting.
 summary.log.maxdiskbloatfactor double default=0.1 restart
