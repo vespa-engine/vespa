@@ -273,7 +273,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
         String fullPath = ConfigCurator.USERAPP_ZK_SUBPATH + "/" + dirName;
         if (!liveApp.exists(fullPath)) {
             throw new IllegalArgumentException("Cannot include directory '" + dirName +
-                    "', as it does not exist in ZooKeeper!");
+                                               "', as it does not exist in ZooKeeper!");
         }
     }
 

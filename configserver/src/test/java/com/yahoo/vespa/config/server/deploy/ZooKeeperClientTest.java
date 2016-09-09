@@ -114,12 +114,6 @@ public class ZooKeeperClientTest extends TestWithCurator {
     }
 
     @Test
-    public void testFeedUserDefinedFiles() {
-        assertEquals(zk.getData(appPath+ ConfigCurator.USERAPP_ZK_SUBPATH + "/files", "foo.json"), "foo : foo\n");
-        assertEquals(zk.getData(appPath+ ConfigCurator.USERAPP_ZK_SUBPATH + "/files/sub", "bar.json"), "bar : bar\n");
-    }
-
-    @Test
     public void testFeedAppMetaDataToZooKeeper() {
         assertTrue(zk.exists(appPath, ConfigCurator.META_ZK_PATH));
         ApplicationMetaData metaData = ApplicationMetaData.fromJsonString(zk.getData(appPath, ConfigCurator.META_ZK_PATH));
