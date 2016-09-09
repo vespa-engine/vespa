@@ -228,6 +228,7 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _nameId(nameId),
       _name(nameId.createName(baseName)),
       _skipCrcOnRead(skipCrcOnRead),
+      _entriesCount(0),
       _erasedCount(0),
       _erasedBytes(0),
       _diskFootprint(0),
@@ -391,6 +392,7 @@ FileChunk::updateLidMap(ISetLid & ds, uint64_t serialNum)
                             globalBucketMap.recordLid(bucketId);
                         }
                         ds.setLid(lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                        incEntries();
                         _addedBytes += adjustSize(lidMeta.size());
                     }
                     serialNum = chunkMeta.getLastSerial();
@@ -587,10 +589,8 @@ FileChunk::verify(bool reportOnly) const
 {
     (void) reportOnly;
     LOG(info,
-        "Verifying file '%s' with fileid '%u'. "
-        "erased-count='%u' and erased-bytes='%lu'. diskFootprint='%lu'",
-        _name.c_str(), _fileId.getId(),
-        _erasedCount, _erasedBytes, _diskFootprint);
+        "Verifying file '%s' with fileid '%u'. erased-count='%zu' and erased-bytes='%zu'. diskFootprint='%zu'",
+        _name.c_str(), _fileId.getId(), _erasedCount, _erasedBytes, _diskFootprint);
     size_t lastSerial(0);
     size_t chunkId(0);
     bool errorInPrev(false);
