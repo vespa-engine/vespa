@@ -197,9 +197,6 @@ public class ZooKeeperClient {
         feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
                          getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
                          xmlFilter, true);
-        feedDirZooKeeper(app.getFile(Path.fromString(ApplicationPackage.FILES_DIR)),
-                         getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.FILES_DIR),
-                         true);
     }
 
     private void feedDirZooKeeper(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
