@@ -39,7 +39,7 @@ public class DockerProvisioningTest {
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(7, nodes.size());
-        assertEquals(dockerFlavor, nodes.asList().get(0).configuration().flavor().canonicalName());
+        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
     }
 
     // In dev, test and staging you get nodes with default flavor, but we should get specified flavor for docker nodes
@@ -54,7 +54,7 @@ public class DockerProvisioningTest {
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals(dockerFlavor, nodes.asList().get(0).configuration().flavor().canonicalName());
+        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
     }
 
 }

@@ -207,9 +207,8 @@ public class StemmingSearcher extends Searcher {
         return composite;
     }
 
-    private void phraseSegmentConnectivity(BlockItem current,
-            Map<Item, TaggableItem> reverseConnectivity,
-            PhraseSegmentItem replacement) {
+    private void phraseSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity,
+                                           PhraseSegmentItem replacement) {
         Connectivity c = getConnectivity(current);
         if (c != null) {
             replacement.setConnectivity(c.word, c.value);
@@ -324,12 +323,10 @@ public class StemmingSearcher extends Searcher {
         }
     }
 
-    private CompositeItem chooseCompositeForCJK(BlockItem current,
-            CompositeItem parent, String indexName) {
+    private CompositeItem chooseCompositeForCJK(BlockItem current, CompositeItem parent, String indexName) {
         CompositeItem composite;
         if (current.getSegmentingRule() == SegmentingRule.LANGUAGE_DEFAULT) {
-            if (parent instanceof PhraseItem
-                    || current instanceof PhraseSegmentItem) {
+            if (parent instanceof PhraseItem || current instanceof PhraseSegmentItem) {
                 composite = phraseSegment(current, indexName);
             } else
                 composite = createAndSegment(current);

@@ -123,7 +123,7 @@ public class VirtualNodeProvisioningTest {
         assertDistinctParentHosts(nodes, ClusterSpec.Type.content, contentNodeCount);
 
         for (Node n : nodes) {
-          tester.patchNode(n.setParentHostname("clashing"));
+          tester.patchNode(n.withParentHostname("clashing"));
         }
         containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
         contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
@@ -154,7 +154,7 @@ public class VirtualNodeProvisioningTest {
         assertDistinctParentHosts(nodes, ClusterSpec.Type.content, contentNodeCount);
 
         for (Node n : nodes) {
-          tester.patchNode(n.setParentHostname("clashing"));
+          tester.patchNode(n.withParentHostname("clashing"));
         }
         OutOfCapacityException expected = null;
         try {
@@ -210,9 +210,9 @@ public class VirtualNodeProvisioningTest {
         assertEquals(3, nodes.size());
 
         // Set indistinct parents
-        tester.patchNode(nodes.get(0).setParentHostname("parentHost1"));
-        tester.patchNode(nodes.get(1).setParentHostname("parentHost1"));
-        tester.patchNode(nodes.get(2).setParentHostname("parentHost2"));
+        tester.patchNode(nodes.get(0).withParentHostname("parentHost1"));
+        tester.patchNode(nodes.get(1).withParentHostname("parentHost1"));
+        tester.patchNode(nodes.get(2).withParentHostname("parentHost2"));
         nodes = getNodes(applicationId);
         assertEquals(3, nodes.stream().filter(n -> n.parentHostname().isPresent()).count());
 

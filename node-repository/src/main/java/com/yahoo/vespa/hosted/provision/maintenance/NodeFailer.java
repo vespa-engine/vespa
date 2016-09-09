@@ -97,9 +97,9 @@ public class NodeFailer extends Maintainer {
 
                 Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
                 if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
-                    History updatedHistory = node.history().record(new History.Event(History.Event.Type.requested, 
-                                                                                     lastLocalRequest.get()));
-                    nodeRepository().write(node.setHistory(updatedHistory));
+                    History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
+                                                                                   lastLocalRequest.get()));
+                    nodeRepository().write(node.with(updatedHistory));
                 }
             }
         }
@@ -183,7 +183,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.setDown(clock.instant()));
+            return nodeRepository().write(node.downAt(clock.instant()));
         }
     }
 
@@ -192,7 +192,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            nodeRepository().write(node.setUp());
+            nodeRepository().write(node.up());
         }
     }
 

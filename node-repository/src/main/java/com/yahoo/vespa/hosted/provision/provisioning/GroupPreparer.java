@@ -105,7 +105,7 @@ class GroupPreparer {
     /** Sort nodes according to their cost, and if the cost is equal, sort by hostname (to get stable tests) */
     private List<Node> sortNodeListByCost(List<Node> nodeList) {
         Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                .compare(n1.configuration().flavor().cost(), n2.configuration().flavor().cost())
+                .compare(n1.flavor().cost(), n2.flavor().cost())
                 .compare(n1.hostname(), n2.hostname())
                 .result()
         );
@@ -211,7 +211,7 @@ class GroupPreparer {
                     if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                     if ( ! membership.cluster().equalsIgnoringGroup(cluster)) continue; // wrong cluster id/type
                     if ( (! canChangeGroup || satisfied()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
-                    if ( offered.allocation().get().removable()) continue; // don't accept; causes removal
+                    if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                     if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
                     // conditions on which we want to retire nodes that were allocated previously
@@ -268,7 +268,7 @@ class GroupPreparer {
         }
 
         private boolean hasCompatibleFlavor(Node node) {
-            return node.configuration().flavor().satisfies(requestedFlavor);
+            return node.flavor().satisfies(requestedFlavor);
         }
 
         /** Updates the state of some existing nodes in this list by replacing them by id with the given instances. */
@@ -302,7 +302,7 @@ class GroupPreparer {
 
         private Node setCluster(ClusterSpec cluster, Node node) {
             ClusterMembership membership = node.allocation().get().membership().changeCluster(cluster);
-            return node.setAllocation(node.allocation().get().changeMembership(membership));
+            return node.with(node.allocation().get().with(membership));
         }
 
         /** Returns true if we have accepted at least the requested number of nodes of the requested flavor */

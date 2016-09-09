@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -30,7 +29,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -160,8 +158,8 @@ public class NodeFailerTest {
         // Failures are detected on two ready nodes, which are then failed
         Node readyFail1 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(2);
         Node readyFail2 = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(3);
-        nodeRepository.write(readyFail1.setStatus(readyFail1.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog))));
-        nodeRepository.write(readyFail2.setStatus(readyFail2.status().setHardwareFailure(Optional.of(Status.HardwareFailureType.disk_smart))));
+        nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog))));
+        nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.disk_smart))));
         assertEquals(4, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         failer.run();
         assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
@@ -292,7 +290,7 @@ public class NodeFailerTest {
     private void createReadyNodes(int count, int startIndex, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
@@ -300,7 +298,7 @@ public class NodeFailerTest {
     private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host));
+            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }

@@ -6,7 +6,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
@@ -28,9 +27,9 @@ public class ProvisionMetricsTest {
         final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         final Curator curator = new MockCurator();
         final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator);
-        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant);
+        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
-        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.host);
+        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host);
         nodeRepository.addNodes(Collections.singletonList(hostNode));
 
         final Map<String, Number> expectedMetrics = new HashMap<>();

@@ -67,4 +67,5 @@ public class NodeFlavors {
         }
         return flavors.values();
     }
+
 }

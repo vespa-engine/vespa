@@ -14,7 +14,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -56,14 +55,14 @@ public class ProvisionResourceTest {
         List<Node> readyNodes = new ArrayList<>();
         for (HostInfo hostInfo : createHostInfos(readyCount, 0))
             readyNodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname,
-                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+                           Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
         readyNodes = nodeRepository.addNodes(readyNodes);
         nodeRepository.setReady(readyNodes);
 
         List<Node> provisionedNodes = new ArrayList<>();
         for (HostInfo hostInfo : createHostInfos(provisionedCount, readyCount))
             provisionedNodes.add(nodeRepository.createNode(hostInfo.openStackId, hostInfo.hostname,
-                    Optional.empty(), new Configuration(nodeFlavors.getFlavorOrThrow("default")), Node.Type.tenant));
+                                 Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
         nodeRepository.addNodes(provisionedNodes);
     }
 

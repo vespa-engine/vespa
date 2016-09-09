@@ -84,7 +84,7 @@ public class PopulateClientTest {
             final String clusterId = allocation.membership().cluster().id().value();
             assertThat("Cluster id must match", clusterId, is(clusterIds.get(index)));
 
-            assertThat("Flavor must match", node.configuration().flavor().name(), is(flavorSpec.get(clusterType + "." + clusterId)));
+            assertThat("Flavor must match", node.flavor().name(), is(flavorSpec.get(clusterType + "." + clusterId)));
             assertThat("Node index must match", node.allocation().get().membership().index(), is(nodeIndices.get(index)));
         });
     }

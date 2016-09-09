@@ -1,20 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node.filter;
 
-import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A node filter adaption of a host filter
@@ -34,7 +26,7 @@ public class NodeHostFilter extends NodeFilter {
 
     @Override
     public boolean matches(Node node) {
-        if ( ! filter.matches(node.hostname(), node.configuration().flavor().name(), membership(node))) return false;
+        if ( ! filter.matches(node.hostname(), node.flavor().name(), membership(node))) return false;
         return nextMatches(node);
     }
 

@@ -6,11 +6,11 @@
   "hostname": "host2.yahoo.com",
   "openStackId": "node2",
   "flavor": "default",
+  "canonicalFlavor": "default",
   "minDiskAvailableGb":400.0,
   "minMainMemoryAvailableGb":16.0,
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
-  "canonicalFlavor": "default",
   "environment":"env",
   "owner": {
     "tenant": "tenant2",

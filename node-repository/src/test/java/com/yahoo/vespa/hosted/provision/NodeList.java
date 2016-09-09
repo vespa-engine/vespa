@@ -32,12 +32,12 @@ public class NodeList {
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
-        return new NodeList(nodes.stream().filter(node -> node.configuration().flavor().name().equals(flavor)).collect(Collectors.toList()));
+        return new NodeList(nodes.stream().filter(node -> node.flavor().name().equals(flavor)).collect(Collectors.toList()));
     }
 
     /** Returns the subset of nodes which does not have the given flavor */
     public NodeList notFlavor(String flavor) {
-        return new NodeList(nodes.stream().filter(node ->  ! node.configuration().flavor().name().equals(flavor)).collect(Collectors.toList()));
+        return new NodeList(nodes.stream().filter(node ->  ! node.flavor().name().equals(flavor)).collect(Collectors.toList()));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */

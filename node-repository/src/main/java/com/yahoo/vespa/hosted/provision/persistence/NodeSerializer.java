@@ -15,7 +15,7 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
@@ -44,7 +44,7 @@ public class NodeSerializer {
     private static final String hostnameKey = "hostname";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
-    private static final String configurationKey ="configuration";
+    private static final String configurationKey ="configuration"; // TODO: Remove when 6.31 is deployed everywhere
     private static final String historyKey = "history";
     private static final String instanceKey = "instance"; // legacy name, TODO: change to allocation with backwards compat
     private static final String rebootGenerationKey = "rebootGeneration";
@@ -96,7 +96,7 @@ public class NodeSerializer {
         object.setString(hostnameKey, node.hostname());
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
-        toSlime(node.configuration(), object.setObject(configurationKey));
+        object.setString(flavorKey, node.flavor().name());
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
@@ -110,10 +110,6 @@ public class NodeSerializer {
         object.setString(nodeTypeKey, toString(node.type()));
     }
 
-    private void toSlime(Configuration configuration, Cursor object) {
-        object.setString(flavorKey, configuration.flavor().name());
-    }
-
     private void toSlime(Allocation allocation, Cursor object) {
         object.setString(tenantIdKey, allocation.owner().tenant().value());
         object.setString(applicationIdKey, allocation.owner().application().value());
@@ -121,9 +117,9 @@ public class NodeSerializer {
         object.setString(serviceIdKey, allocation.membership().stringValue());
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
-        object.setBool(removableKey, allocation.removable());
-        allocation.membership().cluster().dockerImage().ifPresent( dockerImage ->
-                object.setString(dockerImageKey, dockerImage));
+        object.setBool(removableKey, allocation.isRemovable());
+        allocation.membership().cluster().dockerImage()
+                .ifPresent( dockerImage -> object.setString(dockerImageKey, dockerImage));
     }
 
     private void toSlime(History history, Cursor array) {
@@ -148,7 +144,7 @@ public class NodeSerializer {
         return new Node(object.field(openStackIdKey).asString(),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
-                        configurationFromSlime(object.field(configurationKey)),
+                        flavorFromSlime(object),
                         statusFromSlime(object),
                         state,
                         allocationFromSlime(object.field(instanceKey)),
@@ -166,8 +162,9 @@ public class NodeSerializer {
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)));
     }
 
-    private Configuration configurationFromSlime(Inspector object) {
-        return new Configuration(flavors.getFlavorOrThrow(object.field(flavorKey).asString()));
+    private Flavor flavorFromSlime(Inspector object) {
+        if (object.field(configurationKey).valid()) object = object.field(configurationKey); // TODO: Remove this line when 6.31 is deployed everywhere
+        return flavors.getFlavorOrThrow(object.field(flavorKey).asString());
     }
 
     private Optional<Allocation> allocationFromSlime(Inspector object) {

@@ -526,8 +526,7 @@ public class VespaSerializer {
             return serialize(destination, item, true);
         }
 
-        static boolean serialize(StringBuilder destination, Item item,
-                boolean includeField) {
+        static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
             PhraseSegmentItem phrase = (PhraseSegmentItem) item;
             Substring origin = phrase.getOrigin();
             String image;

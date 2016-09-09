@@ -19,7 +19,6 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Configuration;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
@@ -86,12 +85,12 @@ public class RestApiTest {
 
             NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
             List<Node> nodes = new ArrayList<>();
-            nodes.add(createNode("node1", "host1.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
-            nodes.add(createNode("node2", "host2.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
-            nodes.add(createNode("node3", "host3.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
-            nodes.add(createNode("node4", "host4.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
-            nodes.add(createNode("node5", "host5.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
-            nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), new Configuration(flavors.getFlavorOrThrow("default")), Node.Type.tenant));
+            nodes.add(createNode("node1", "host1.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(createNode("node2", "host2.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(createNode("node3", "host3.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(createNode("node4", "host4.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(createNode("node5", "host5.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
             nodes = addNodes(nodes);
             nodes.remove(5);
             setReady(nodes);

@@ -29,11 +29,11 @@ public class Generation {
         return current;
     }
 
-    public Generation increaseWanted() {
+    public Generation withIncreasedWanted() {
         return new Generation(wanted + 1, current);
     }
 
-    public Generation setCurrent(long newValue) {
+    public Generation withCurrent(long newValue) {
         return new Generation(wanted, newValue);
     }
 
