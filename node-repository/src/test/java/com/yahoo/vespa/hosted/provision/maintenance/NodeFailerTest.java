@@ -29,6 +29,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -72,7 +74,7 @@ public class NodeFailerTest {
 
     // Immutable components
     private static final Zone ZONE = new Zone(Environment.prod, RegionName.from("us-east"));
-    private static final NodeFlavors NODE_FLAVORS = FlavorConfigBuilder.createDummies("default");
+    private static final NodeFlavors NODE_FLAVORS = FlavorConfigBuilder.createDummies("default", "docker");
     private static final ApplicationId APP_1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     private static final ApplicationId APP_2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
     private static final Duration DOWNTIME_LIMIT_ONE_HOUR = Duration.ofMinutes(60);
@@ -249,28 +251,36 @@ public class NodeFailerTest {
     
     @Test
     public void testFailingReadyNodes() {
+        // Add ready docker node
+        createReadyNodes(1, 16, nodeRepository, NODE_FLAVORS.getFlavorOrThrow("docker"));
+
         // For a day all nodes work so nothing happens
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
             clock.advance(Duration.ofMinutes(5));
             allNodesMakeAConfigRequestExcept();
             failer.run();
-            assertEquals( 4, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+            assertEquals( 5, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         }
         
         List<Node> ready = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready);
 
-        // Two ready nodes die
+        // Two ready nodes die and a ready docker node "dies" (Vespa does not run when in ready state for docker node, so
+        // it does not mae config requests)
         clock.advance(Duration.ofMinutes(180));
-        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2));
+        Node dockerNode = ready.stream().filter(node -> node.flavor() == NODE_FLAVORS.getFlavorOrThrow("docker")).findFirst().get();
+        List<Node> otherNodes = ready.stream()
+                               .filter(node -> node.flavor() != NODE_FLAVORS.getFlavorOrThrow("docker"))
+                               .collect(Collectors.toList());
+        allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         failer.run();
-        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals( 3, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
 
         // Another ready node die
         clock.advance(Duration.ofMinutes(180));
-        allNodesMakeAConfigRequestExcept(ready.get(0), ready.get(2), ready.get(3));
+        allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode, otherNodes.get(3));
         failer.run();
-        assertEquals( 1, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals( 2, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
         assertEquals(ready.get(1), nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).get(0));
         assertEquals( 3, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
     }
@@ -278,7 +288,7 @@ public class NodeFailerTest {
     private void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
         Set<Node> deadNodes = new HashSet<>(Arrays.asList(deadNodeArray));
         for (Node node : nodeRepository.getNodes(Node.Type.tenant)) {
-            if ( ! deadNodes.contains(node))
+            if ( ! deadNodes.contains(node) && ! node.flavor().getEnvironment().equals(Flavor.ENVIRONMENT_DOCKER_CONTAINER))
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
     }
@@ -288,9 +298,13 @@ public class NodeFailerTest {
     }
 
     private void createReadyNodes(int count, int startIndex, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
+        createReadyNodes(count, startIndex, nodeRepository, nodeFlavors.getFlavorOrThrow("default"));
+    }
+
+    private void createReadyNodes(int count, int startIndex, NodeRepository nodeRepository, Flavor flavor) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, Node.Type.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }

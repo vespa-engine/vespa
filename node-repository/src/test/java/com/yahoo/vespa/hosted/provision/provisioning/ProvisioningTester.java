@@ -73,18 +73,18 @@ public class ProvisioningTester implements AutoCloseable {
 
     private NodeRepositoryConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 4., 100, "BARE_METAL").cost(3);
-        b.addFlavor("small", 1., 2., 50, "BARE_METAL").cost(2);
-        b.addFlavor("docker1", 1., 1., 10, "DOCKER_CONTAINER").cost(1);
-        b.addFlavor("v-4-8-100", 4., 8., 100, "VIRTUAL_MACHINE").cost(4);
-        b.addFlavor("old-large1", 2., 4., 100, "BARE_METAL").cost(6);
-        b.addFlavor("old-large2", 2., 5., 100, "BARE_METAL").cost(8);
-        NodeRepositoryConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, "BARE_METAL").cost(10);
+        b.addFlavor("default", 2., 4., 100, Flavor.ENVIRONMENT_BARE_METAL).cost(3);
+        b.addFlavor("small", 1., 2., 50, Flavor.ENVIRONMENT_BARE_METAL).cost(2);
+        b.addFlavor("docker1", 1., 1., 10, Flavor.ENVIRONMENT_DOCKER_CONTAINER).cost(1);
+        b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.ENVIRONMENT_VIRTUAL_MACHINE).cost(4);
+        b.addFlavor("old-large1", 2., 4., 100, Flavor.ENVIRONMENT_BARE_METAL).cost(6);
+        b.addFlavor("old-large2", 2., 5., 100, Flavor.ENVIRONMENT_BARE_METAL).cost(8);
+        NodeRepositoryConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.ENVIRONMENT_BARE_METAL).cost(10);
         b.addReplaces("old-large1", large);
         b.addReplaces("old-large2", large);
-        NodeRepositoryConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, "BARE_METAL").cost(9);
+        NodeRepositoryConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.ENVIRONMENT_BARE_METAL).cost(9);
         b.addReplaces("large", largeVariant);
-        NodeRepositoryConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, "BARE_METAL").cost(11);
+        NodeRepositoryConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.ENVIRONMENT_BARE_METAL).cost(11);
         b.addReplaces("large-variant", largeVariantVariant);
         return b.build();
     }

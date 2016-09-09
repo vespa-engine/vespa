@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 
 /**
@@ -40,12 +41,19 @@ public class FlavorConfigBuilder {
         flavor.cost(cost);
     }
 
+    public void addEnvironment(String environment, NodeRepositoryConfig.Flavor.Builder flavor) {
+        flavor.environment(environment);
+    }
+
     /** Convenience method which creates a node flavors instance from a list of flavor names */
     public static NodeFlavors createDummies(String... flavors) {
 
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (String flavorName : flavors) {
-            flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/ , 3. /* mem GB*/, 2. /*disk GB*/, "foo" /* env*/);
+            if (flavorName.equals("docker"))
+                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.ENVIRONMENT_DOCKER_CONTAINER);
+            else
+                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, "env");
         }
         return new NodeFlavors(flavorConfigBuilder.build());
     }

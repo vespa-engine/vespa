@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 
@@ -45,8 +46,8 @@ public class NodeRepositoryTester {
 
     private NodeRepositoryConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 4., 100, "BARE_METAL").cost(3);
-        b.addFlavor("small", 1., 2., 50, "BARE_METAL").cost(2);
+        b.addFlavor("default", 2., 4., 100, Flavor.ENVIRONMENT_BARE_METAL).cost(3);
+        b.addFlavor("small", 1., 2., 50, Flavor.ENVIRONMENT_BARE_METAL).cost(2);
         return b.build();
     }
 
