@@ -99,14 +99,19 @@ class ComponentNode(componentId: ComponentId,
       constructor.newInstance(actualArguments: _*)
     } catch {
       case e: InvocationTargetException =>
-        throw removeStackTrace(new RuntimeException(s"An exception occurred while constructing $idAndType",
-          cutStackTraceAtConstructor(e.getCause)))
-
+        throw removeStackTrace(constructThrowable(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
     }
 
     initId(instance)
   }
-
+  
+  private def constructThrowable(cause: Throwable, message: String) : Throwable = {
+    if (cause != null && cause.isInstanceOf[Error]) // don't convert Errors to RuntimeExceptions
+      new Error(message, cause)
+    else
+      new RuntimeException(message, cause)
+  }
+  
   private def initId(component: AnyRef) = {
     def checkAndSetId(c: AbstractComponent) {
       if (c.hasInitializedId && c.getId != componentId )
