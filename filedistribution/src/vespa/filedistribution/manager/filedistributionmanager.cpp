@@ -46,6 +46,8 @@ void deleteField(FIELD& field, jobject self, JNIEnv* env)
     field.set(self, 0, env);
 }
 
+std::unique_ptr<ZKLogging> _G_zkLogging;
+
 } //anonymous namespace
 
 
@@ -55,7 +57,7 @@ void deleteField(FIELD& field, jobject self, JNIEnv* env)
         /*might fail, therefore also uses stderror message*/   \
         throwRuntimeException("Out of memory", env);           \
         returnStatement;                                       \
-    } catch(const filedistribution::ZKException& e) {          \
+    } catch(const ZKException& e) {                            \
         std::stringstream ss;                                  \
         ss << "In" << __FUNCTION__ << ": ";                    \
         ss << diagnosticUserLevelMessage(e);                   \
@@ -72,7 +74,7 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_setup(
         JNIEnv *env, jclass self)
 {
     try {
-        filedistribution::setupZooKeeperLogging();
+        _G_zkLogging = std::make_unique<ZKLogging>();
         nativeFileDistributionManagerField = LongField<NativeFileDistributionManager*>(self, "nativeFileDistributionManager", env);
     } STANDARDCATCH()
 }
@@ -228,7 +230,7 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_getProgressImpl(
         JNIString fileReference(fileReferenceArg, env);
         JNIArray<JNIString> hostNames(hostNamesArg, env);
 
-        const filedistribution::FileDBModel::Progress progress =
+        const FileDBModel::Progress progress =
             nativeFileDistributionManagerField.get(self, env)->_fileDBModel->
             getProgress(fileReference._value, hostNames._value);
 

@@ -129,7 +129,15 @@ private:
     WatchersMap _watchers;
 };
 
-void setupZooKeeperLogging();
+class ZKLogging {
+public:
+    ZKLogging();
+    ~ZKLogging();
+    ZKLogging(const ZKLogging &) = delete;
+    ZKLogging & operator = (const ZKLogging &) = delete;
+private:
+    FILE * _file;
+};
 
 } //namespace filedistribution
 
