@@ -404,7 +404,7 @@ main(int argc, char** argv) {
     initSignals();
 
     std::srand(std::time(0));
-    filedistribution::setupZooKeeperLogging();
+    filedistribution::ZKLogging loggingGuard;
 
     return executeApplication(argc, argv);
 }

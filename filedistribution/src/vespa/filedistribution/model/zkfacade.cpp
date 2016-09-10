@@ -25,6 +25,7 @@ using filedistribution::ZKFacade;
 using filedistribution::Move;
 using filedistribution::Buffer;
 using filedistribution::ZKGenericException;
+using filedistribution::ZKLogging;
 
 typedef ZKFacade::Path Path;
 
@@ -568,18 +569,28 @@ ZKFacade::disableRetries() {
     _retriesEnabled = false;
 }
 
-void
-filedistribution::setupZooKeeperLogging() {
+ZKLogging::ZKLogging() :
+    _file(nullptr)
+{
     std::string filename(vespa::Defaults::vespaHome());
     filename.append("/tmp/zookeeper.log");
-    FILE* file = std::fopen(filename.c_str(), "w");
-    if (file == NULL) {
+    _file = std::fopen(filename.c_str(), "w");
+    if (_file == nullptr) {
          std::cerr <<"Could not open file " <<filename << std::endl;
     } else {
-         zoo_set_log_stream(file);
+         zoo_set_log_stream(_file);
     }
 
     zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
+}
+
+ZKLogging::~ZKLogging()
+{
+    zoo_set_log_stream(nullptr);
+    if (_file != nullptr) {
+        std::fclose(_file);
+        _file = nullptr;
+    }
 }
 
 const char*
