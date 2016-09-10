@@ -405,7 +405,7 @@ public:
     InitSignals() { initSignals(); }
 };
 
-InitSignals _G_initSignals;
+InitSignals _G_initSignals __attribute__ ((init_priority (101)));
 
 }
 
