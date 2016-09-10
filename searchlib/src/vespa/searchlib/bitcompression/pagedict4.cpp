@@ -1293,7 +1293,7 @@ PageDict4SSReader::setup(DC &ssd)
     uint32_t l7StrideCheck = 0;
     uint32_t l7Ref = noL7Ref();	// Last L6 entry not after this L7 entry
 
-    uint32_t l6Offset = dL6.getReadOffset();
+    uint64_t l6Offset = dL6.getReadOffset();
     uint64_t l6WordNum = 1;
     bool forceL7Entry = false;
     bool overflow = false;
@@ -1416,7 +1416,7 @@ lookup(const vespalib::stringref &key)
     StartOffset startOffset;
     uint64_t pageNum = _pFirstPageNum;
     uint32_t sparsePageNum = _spFirstPageNum;
-    uint32_t l6Offset = _ssStartOffset;
+    uint64_t l6Offset = _ssStartOffset;
     uint64_t l6WordNum = 1;
     uint64_t wordNum = l6WordNum;
 
@@ -2357,7 +2357,7 @@ PageDict4Reader::decodeSPWord(vespalib::string &word)
 void
 PageDict4Reader::decodeSSWord(vespalib::string &word)
 {
-    uint32_t l6Offset = _ssd.getReadOffset();
+    uint64_t l6Offset = _ssd.getReadOffset();
 
     while (l6Offset < _ssReader._ssFileBitLen) {
         UC64_DECODECONTEXT(o);
