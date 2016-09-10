@@ -398,19 +398,12 @@ executeApplication(int argc, char** argv) {
     }
 }
 
-void terminate() {
-    std::cerr <<"Terminate called: " <<std::endl;
-    Backtrace backtrace;
-    std::cerr <<backtrace <<std::endl;
-}
-
 int
 main(int argc, char** argv) {
     EV_STARTED(programName);
     initSignals();
 
     std::srand(std::time(0));
-    std::set_terminate(terminate);
     filedistribution::setupZooKeeperLogging();
 
     return executeApplication(argc, argv);
