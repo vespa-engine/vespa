@@ -398,10 +398,21 @@ executeApplication(int argc, char** argv) {
     }
 }
 
+namespace {
+
+class InitSignals {
+public:
+    InitSignals() { initSignals(); }
+};
+
+InitSignals _G_initSignals __attribute__ ((init_priority (101)));
+
+}
+
 int
 main(int argc, char** argv) {
+    if (askedToShutDown()) { return 0; }
     EV_STARTED(programName);
-    initSignals();
 
     std::srand(std::time(0));
     filedistribution::ZKLogging loggingGuard;
