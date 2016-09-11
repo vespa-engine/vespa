@@ -7,6 +7,7 @@ vespa_add_library(vespalib_vespalib_eval_llvm
     gbdt.cpp
     llvm_wrapper.cpp
     vm_forest.cpp
+    INSTALL lib64
     DEPENDS
     LLVM-3.4
 )
