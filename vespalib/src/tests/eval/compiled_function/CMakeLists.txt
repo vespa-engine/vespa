@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_compiled_function_test_app TEST
     compiled_function_test.cpp
     DEPENDS
     vespalib
+    vespalib_vespalib_eval_llvm
 )
 vespa_add_test(NAME vespalib_compiled_function_test_app COMMAND vespalib_compiled_function_test_app)

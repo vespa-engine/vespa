@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "function.h"
+#include <vespa/vespalib/eval/function.h>
 #include "gbdt.h"
 
 #include <llvm/IR/LLVMContext.h>

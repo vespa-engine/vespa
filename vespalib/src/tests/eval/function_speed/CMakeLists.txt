@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_function_speed_test_app TEST
     function_speed_test.cpp
     DEPENDS
     vespalib
+    vespalib_vespalib_eval_llvm
 )
 vespa_add_test(NAME vespalib_function_speed_test_app NO_VALGRIND COMMAND vespalib_function_speed_test_app)

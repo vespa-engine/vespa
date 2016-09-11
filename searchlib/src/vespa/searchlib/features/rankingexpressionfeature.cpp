@@ -8,8 +8,9 @@ LOG_SETUP(".features.rankingexpression");
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/eval/compiled_function.h>
-#include <vespa/vespalib/eval/compile_cache.h>
+#include <vespa/vespalib/eval/interpreted_function.h>
+#include <vespa/vespalib/eval/llvm/compiled_function.h>
+#include <vespa/vespalib/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/eval/node_types.h>
 #include "rankingexpressionfeature.h"
 #include "utils.h"
@@ -33,14 +34,47 @@ namespace features {
 
 //-----------------------------------------------------------------------------
 
-CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const vespalib::eval::CompiledFunction &compiled_function)
+/**
+ * Implements the executor for compiled ranking expressions
+ **/
+class CompiledRankingExpressionExecutor : public fef::FeatureExecutor
+{
+private:
+    typedef double (*arr_function)(const double *);
+    arr_function _ranking_function;
+    std::vector<double> _params;
+
+public:
+    CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
+    void execute(fef::MatchData &data) override;
+};
+
+//-----------------------------------------------------------------------------
+
+/**
+ * Implements the executor for interpreted ranking expressions (with tensor support)
+ **/
+class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
+{
+private:
+    InterpretedFunction::Context _context;
+    const InterpretedFunction   &_function;
+
+public:
+    InterpretedRankingExpressionExecutor(const InterpretedFunction &function);
+    void execute(fef::MatchData &data) override;
+};
+
+//-----------------------------------------------------------------------------
+
+CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
     : _ranking_function(compiled_function.get_function()),
       _params(compiled_function.num_params(), 0.0)
 {
 }
 
 void
-CompiledRankingExpressionExecutor::execute(search::fef::MatchData &data)
+CompiledRankingExpressionExecutor::execute(fef::MatchData &data)
 {
     for (size_t i = 0; i < _params.size(); ++i) {
         _params[i] = *data.resolveFeature(inputs()[i]);
@@ -50,14 +84,14 @@ CompiledRankingExpressionExecutor::execute(search::fef::MatchData &data)
 
 //-----------------------------------------------------------------------------
 
-InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const vespalib::eval::InterpretedFunction &function)
+InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function)
     : _context(),
       _function(function)
 {
 }
 
 void
-InterpretedRankingExpressionExecutor::execute(search::fef::MatchData &data)
+InterpretedRankingExpressionExecutor::execute(fef::MatchData &data)
 {
     _context.clear_params();
     for (size_t i = 0; i < _function.num_params(); ++i) {
@@ -73,26 +107,26 @@ InterpretedRankingExpressionExecutor::execute(search::fef::MatchData &data)
 //-----------------------------------------------------------------------------
 
 RankingExpressionBlueprint::RankingExpressionBlueprint()
-    : search::fef::Blueprint("rankingExpression"),
+    : fef::Blueprint("rankingExpression"),
       _interpreted_function(),
       _compile_token()
 {
 }
 
 void
-RankingExpressionBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                              search::fef::IDumpFeatureVisitor &) const
+RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
+                                              fef::IDumpFeatureVisitor &) const
 {
     // empty
 }
 
 bool
-RankingExpressionBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                                  const search::fef::ParameterList &params)
+RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
+                                  const fef::ParameterList &params)
 {
     // Retrieve and concatenate whatever config is available.
     vespalib::string script = "";
-    search::fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
+    fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
     if (property.size() > 0) {
         for (uint32_t i = 0; i < property.size(); ++i) {
             script.append(property.getAt(i));
@@ -148,20 +182,20 @@ RankingExpressionBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 RankingExpressionBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new RankingExpressionBlueprint());
+    return fef::Blueprint::UP(new RankingExpressionBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-RankingExpressionBlueprint::createExecutor(const search::fef::IQueryEnvironment &) const
+fef::FeatureExecutor::LP
+RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &) const
 {
     if (_interpreted_function) {
-        return search::fef::FeatureExecutor::LP(new InterpretedRankingExpressionExecutor(*_interpreted_function));
+        return fef::FeatureExecutor::LP(new InterpretedRankingExpressionExecutor(*_interpreted_function));
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
-    return search::fef::FeatureExecutor::LP(new CompiledRankingExpressionExecutor(_compile_token->get()));
+    return fef::FeatureExecutor::LP(new CompiledRankingExpressionExecutor(_compile_token->get()));
 }
 
 //-----------------------------------------------------------------------------

@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include "function.h"
+#include <vespa/vespalib/eval/function.h>
 #include "gbdt.h"
 #include "llvm_wrapper.h"
 
 namespace vespalib {
 namespace eval {
-
-enum class PassParams { SEPARATE, ARRAY };
 
 /**
  * A Function that has been compiled to machine code using LLVM. Note

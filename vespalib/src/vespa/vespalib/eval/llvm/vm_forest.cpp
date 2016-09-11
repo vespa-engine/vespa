@@ -3,9 +3,9 @@
 #include <vespa/fastos/fastos.h>
 #include "gbdt.h"
 #include "vm_forest.h"
-#include "basic_nodes.h"
-#include "call_nodes.h"
-#include "operator_nodes.h"
+#include <vespa/vespalib/eval/basic_nodes.h>
+#include <vespa/vespalib/eval/call_nodes.h>
+#include <vespa/vespalib/eval/operator_nodes.h>
 
 namespace vespalib {
 namespace eval {

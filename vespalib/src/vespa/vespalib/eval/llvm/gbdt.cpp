@@ -2,9 +2,9 @@
 
 #include <vespa/fastos/fastos.h>
 #include "gbdt.h"
-#include "basic_nodes.h"
-#include "call_nodes.h"
-#include "operator_nodes.h"
+#include <vespa/vespalib/eval/basic_nodes.h>
+#include <vespa/vespalib/eval/call_nodes.h>
+#include <vespa/vespalib/eval/operator_nodes.h>
 #include "vm_forest.h"
 #include "deinline_forest.h"
 

@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_compact_tensor_builder_test_app TEST
     compact_tensor_builder_test.cpp
     DEPENDS
     vespalib
+    vespalib_vespalib_tensor
 )
 vespa_add_test(NAME vespalib_compact_tensor_builder_test_app COMMAND vespalib_compact_tensor_builder_test_app)

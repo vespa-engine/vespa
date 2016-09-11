@@ -19,6 +19,7 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     Judy
+    rt
 
     LIBS
     src/vespa/storage

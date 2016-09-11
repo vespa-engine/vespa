@@ -21,6 +21,5 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_xxhash>
     INSTALL lib64
     DEPENDS
-    vespalib_vespalib_tensor
     vespalib_vespalib_test
 )

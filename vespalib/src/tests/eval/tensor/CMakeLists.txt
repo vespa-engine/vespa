@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_eval_tensor_test_app TEST
     eval_tensor_test.cpp
     DEPENDS
     vespalib
+    vespalib_vespalib_tensor
 )
 vespa_add_test(NAME vespalib_eval_tensor_test_app COMMAND vespalib_eval_tensor_test_app)

@@ -4,16 +4,16 @@
 #include <map>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
 #include <vector>
-#include <vespa/vespalib/eval/compiled_function.h>
+#include <vespa/vespalib/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/eval/function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/eval/basic_nodes.h>
 #include <vespa/vespalib/eval/call_nodes.h>
 #include <vespa/vespalib/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/vespalib/eval/gbdt.h>
-#include <vespa/vespalib/eval/vm_forest.h>
-#include <vespa/vespalib/eval/deinline_forest.h>
+#include <vespa/vespalib/eval/llvm/gbdt.h>
+#include <vespa/vespalib/eval/llvm/vm_forest.h>
+#include <vespa/vespalib/eval/llvm/deinline_forest.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <cmath>
 
