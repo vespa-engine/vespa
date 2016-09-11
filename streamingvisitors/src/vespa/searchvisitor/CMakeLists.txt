@@ -12,4 +12,5 @@ vespa_add_library(streamingvisitors_searchvisitor
     searchvisitor.cpp
     INSTALL lib64
     DEPENDS
+    searchlib_searchlib_uca
 )
