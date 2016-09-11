@@ -4,6 +4,7 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
+    vespalib_vespalib_eval_llvm
     staging_vespalib
     fnet
     configdefinitions
@@ -16,6 +17,7 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     icui18n
+    rt
 
     LIBS
     src/vespa/searchlib

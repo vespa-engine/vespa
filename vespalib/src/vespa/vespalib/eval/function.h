@@ -14,6 +14,8 @@
 namespace vespalib {
 namespace eval {
 
+enum class PassParams { SEPARATE, ARRAY };
+
 /**
  * Interface used to perform custom symbol extraction. This is
  * typically used by the ranking framework to extend what will be

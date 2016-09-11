@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_join_tensor_addresses_test_app TEST
     join_tensor_addresses_test.cpp
     DEPENDS
     vespalib
+    vespalib_vespalib_tensor
 )
 vespa_add_test(NAME vespalib_join_tensor_addresses_test_app COMMAND vespalib_join_tensor_addresses_test_app)

@@ -4,7 +4,7 @@
 #include "key_gen.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
-#include "compiled_function.h"
+#include "function.h"
 
 namespace vespalib {
 namespace eval {

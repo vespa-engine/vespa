@@ -73,8 +73,8 @@ public:
 
     eval::ValueType as_value_type() const;
 
-    static TensorType invalid();
-    static TensorType number();
+    static TensorType invalid() { return TensorType(Type::INVALID); }
+    static TensorType number() { return TensorType(Type::NUMBER); }
     static TensorType sparse(const std::vector<vespalib::string> &dimensions_in);
     static TensorType dense(std::vector<Dimension> dimensions_in);
     static TensorType fromSpec(const vespalib::string &str);

@@ -4,9 +4,6 @@ vespa_define_module(
     fastos
     vespalog
 
-    EXTERNAL_DEPENDS
-    LLVM-3.4
-
     APPS
     src/apps/eval_expr
     src/apps/make_fixture_macros
@@ -129,6 +126,7 @@ vespa_define_module(
     src/vespa/vespalib/eval
     src/vespa/vespalib/eval/test
     src/vespa/vespalib/eval/value_cache
+    src/vespa/vespalib/eval/llvm
     src/vespa/vespalib/geo
     src/vespa/vespalib/io
     src/vespa/vespalib/net

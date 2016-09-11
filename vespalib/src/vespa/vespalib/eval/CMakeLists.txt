@@ -3,15 +3,10 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     SOURCES
     basic_nodes.cpp
     call_nodes.cpp
-    compile_cache.cpp
-    compiled_function.cpp
-    deinline_forest.cpp
     delete_node.cpp
     function.cpp
-    gbdt.cpp
     interpreted_function.cpp
     key_gen.cpp
-    llvm_wrapper.cpp
     node_types.cpp
     operation.cpp
     operator_nodes.cpp
@@ -24,6 +19,4 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     value.cpp
     value_type.cpp
     value_type_spec.cpp
-    vm_forest.cpp
-    DEPENDS
 )

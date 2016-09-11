@@ -3,8 +3,8 @@
 #include <vespa/fastos/fastos.h>
 #include <cmath>
 #include "llvm_wrapper.h"
-#include "node_visitor.h"
-#include "node_traverser.h"
+#include <vespa/vespalib/eval/node_visitor.h>
+#include <vespa/vespalib/eval/node_traverser.h>
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Intrinsics.h>
@@ -15,7 +15,7 @@
 #include <llvm/LinkAllPasses.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include "gbdt.h"
-#include "check_type.h"
+#include <vespa/vespalib/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
 

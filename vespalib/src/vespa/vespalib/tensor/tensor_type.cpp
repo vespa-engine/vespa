@@ -127,18 +127,6 @@ TensorType::as_value_type() const
 }
 
 TensorType
-TensorType::invalid()
-{
-    return TensorType(Type::INVALID);
-}
-
-TensorType
-TensorType::number()
-{
-    return TensorType(Type::NUMBER);
-}
-
-TensorType
 TensorType::sparse(const std::vector<vespalib::string> &dimensions_in)
 {
     std::vector<Dimension> dimensions;

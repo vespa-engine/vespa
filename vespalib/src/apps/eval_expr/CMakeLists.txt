@@ -5,4 +5,5 @@ vespa_add_executable(vespalib_eval_expr_app
     INSTALL bin
     DEPENDS
     vespalib
+#    vespalib_vespalib_eval
 )
