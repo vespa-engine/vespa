@@ -25,4 +25,5 @@ vespa_add_executable(searchcore_proton_app
     searchcore_proton_metrics
     searchcore_fconfig
     searchcore_util
+    storageserver_storageapp
 )

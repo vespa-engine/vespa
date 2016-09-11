@@ -17,7 +17,6 @@ vespa_define_module(
     persistence
     searchcorespi
     searchsummary
-    storageserver_storageapp
     fileacquirer
 
     LIBS
