@@ -15,6 +15,7 @@
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/common/sortspec.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/fastlib/text/wordfolder.h>
@@ -306,8 +307,10 @@ void SearchVisitor::init(const Parameters & params)
         _vsmAdapter = _env.getVSMAdapter(searchCluster);
 
         if ( params.get("sort", valueRef) ) {
+            search::uca::UcaConverterFactory ucaFactory;
             _sortSpec = search::common::SortSpec(vespalib::string(static_cast<const char *>(valueRef.data()),
-                                                            static_cast<unsigned>(valueRef.size())));
+                                                            static_cast<unsigned>(valueRef.size())),
+                                                 ucaFactory);
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 

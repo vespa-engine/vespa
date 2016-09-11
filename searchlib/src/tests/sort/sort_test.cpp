@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/common/converters.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/util/array.h>
 #include <vector>
 #include <fstream>
@@ -17,6 +18,7 @@ LOG_SETUP("sort_test");
 
 using vespalib::Array;
 using namespace search::common;
+using namespace search::uca;
 using vespalib::ConstBufferRef;
 
 class Test : public vespalib::TestApp
@@ -154,8 +156,9 @@ void Test::testStringCaseInsensitiveSort()
 
 void Test::testSortSpec()
 {
+    UcaConverterFactory ucaFactory;
     {
-        SortSpec sortspec("-name");
+        SortSpec sortspec("-name", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -163,7 +166,7 @@ void Test::testSortSpec()
     }
 
     {
-        SortSpec sortspec("-lowercase(name)");
+        SortSpec sortspec("-lowercase(name)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -172,7 +175,7 @@ void Test::testSortSpec()
     }
 
     {
-        SortSpec sortspec("-uca(name,nn_no)");
+        SortSpec sortspec("-uca(name,nn_no)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -180,7 +183,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,nn_no,PRIMARY)");
+        SortSpec sortspec("-uca(name,nn_no,PRIMARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -188,7 +191,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,nn_no,SECONDARY)");
+        SortSpec sortspec("-uca(name,nn_no,SECONDARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -196,7 +199,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,nn_no,TERTIARY)");
+        SortSpec sortspec("-uca(name,nn_no,TERTIARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -204,7 +207,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,nn_no,QUATERNARY)");
+        SortSpec sortspec("-uca(name,nn_no,QUATERNARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -212,7 +215,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,nn_no,IDENTICAL)");
+        SortSpec sortspec("-uca(name,nn_no,IDENTICAL)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -220,7 +223,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,zh)");
+        SortSpec sortspec("-uca(name,zh)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -228,7 +231,7 @@ void Test::testSortSpec()
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
     }
     {
-        SortSpec sortspec("-uca(name,finnes_ikke)");
+        SortSpec sortspec("-uca(name,finnes_ikke)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
@@ -237,7 +240,7 @@ void Test::testSortSpec()
     }
     {
         try {
-            SortSpec sortspec("-uca(name,nn_no,NTERTIARY)");
+            SortSpec sortspec("-uca(name,nn_no,NTERTIARY)", ucaFactory);
             EXPECT_TRUE(false);
         } catch (const std::runtime_error & e) {
             EXPECT_TRUE(true);
@@ -258,7 +261,7 @@ void Test::testSameAsJavaOrder()
         }
     }
     EXPECT_EQUAL(158u, javaOrder.size());
-    search::common::UcaConverter uca("zh", "PRIMARY");
+    UcaConverter uca("zh", "PRIMARY");
     vespalib::ConstBufferRef fkey = uca.convert(vespalib::ConstBufferRef(javaOrder[0].c_str(), javaOrder[0].size()));
     vespalib::string prev(fkey.c_str(), fkey.size());
     for (size_t i(1); i < javaOrder.size(); i++) {

@@ -11,6 +11,7 @@
 #include <vector>
 #include <stdexcept>
 #include <unicode/ustring.h>
+#include <unicode/coll.h>
 
 LOG_SETUP("uca_stress");
 

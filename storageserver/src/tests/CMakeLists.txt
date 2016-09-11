@@ -8,5 +8,6 @@ vespa_add_executable(storageserver_testrunner_app TEST
     DEPENDS
     storageserver_storageapp
     vdstestlib
+    searchlib_searchlib_uca
 )
 vespa_add_test(NAME storageserver_testrunner_app COMMAND storageserver_testrunner_app)

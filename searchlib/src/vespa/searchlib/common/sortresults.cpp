@@ -302,8 +302,9 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 }
 
 
-FastS_SortSpec::FastS_SortSpec(const vespalib::Doom & doom, int method) :
+FastS_SortSpec::FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method) :
     _doom(doom),
+    _ucaFactory(ucaFactory),
     _method(method),
     _sortSpec(),
     _vectors()
@@ -323,7 +324,7 @@ FastS_SortSpec::Init(const vespalib::string & sortStr, IAttributeContext & vecMa
     LOG(spam, "sortStr = %s", sortStr.c_str());
     bool retval(true);
     try {
-        _sortSpec = SortSpec(sortStr);
+        _sortSpec = SortSpec(sortStr, _ucaFactory);
         for (SortSpec::const_iterator it(_sortSpec.begin()), mt(_sortSpec.end()); retval && (it < mt); it++) {
             retval = Add(vecMan, *it);
         }

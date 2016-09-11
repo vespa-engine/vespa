@@ -11,12 +11,14 @@ namespace common {
 class BlobConverter
 {
 public:
-    typedef std::shared_ptr<BlobConverter> SP;
-    typedef vespalib::LinkedPtr<BlobConverter> LP;
+    using SP = std::shared_ptr<BlobConverter>;
+    using LP = vespalib::LinkedPtr<BlobConverter>;
+    using UP = std::unique_ptr<BlobConverter>;
+    using ConstBufferRef = vespalib::ConstBufferRef;
     virtual ~BlobConverter() { }
-    vespalib::ConstBufferRef convert(const vespalib::ConstBufferRef & src) const { return onConvert(src); }
+    ConstBufferRef convert(const ConstBufferRef & src) const { return onConvert(src); }
 private:
-    virtual vespalib::ConstBufferRef onConvert(const vespalib::ConstBufferRef & src) const = 0;
+    virtual ConstBufferRef onConvert(const ConstBufferRef & src) const = 0;
 };
 
 }

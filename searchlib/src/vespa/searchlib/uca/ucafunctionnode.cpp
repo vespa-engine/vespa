@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/ucafunctionnode.h>
-#include <vespa/searchlib/common/converters.h>
+#include <vespa/searchlib/uca/ucafunctionnode.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 
 namespace search {
 namespace expression {
@@ -24,7 +24,7 @@ UcaFunctionNode::UcaFunctionNode(const ExpressionNode::CP & arg, const vespalib:
     UnaryFunctionNode(arg),
     _locale(locale),
     _strength(strength),
-    _collator(new common::UcaConverter(locale, strength))
+    _collator(new uca::UcaConverter(locale, strength))
 {
 }
 
@@ -104,7 +104,7 @@ Deserializer & UcaFunctionNode::onDeserialize(Deserializer & is)
 {
     UnaryFunctionNode::onDeserialize(is);
     is >> _locale >> _strength;
-    _collator.reset(new common::UcaConverter(_locale, _strength));
+    _collator.reset(new uca::UcaConverter(_locale, _strength));
     return is;
 }
 

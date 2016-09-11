@@ -7,4 +7,5 @@ vespa_add_executable(storageserver_storaged_app
     INSTALL sbin
     DEPENDS
     storageserver_storageapp
+    searchlib_searchlib_uca
 )

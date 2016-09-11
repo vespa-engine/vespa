@@ -29,15 +29,9 @@ public:
     struct Sort : vespalib::noncopyable {
         typedef std::unique_ptr<Sort> UP;
         FastS_IResultSorter *sorter;
+        std::unique_ptr<search::common::ConverterFactory> _ucaFactory;
         FastS_SortSpec       sortSpec;
-        Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss)
-            : sorter(FastS_DefaultResultSorter::instance()),
-              sortSpec(doom)
-        {
-            if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
-                sorter = &sortSpec;
-            }
-        }
+        Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss);
         bool hasSortData() const {
             return (sorter == (const FastS_IResultSorter *) &sortSpec);
         }

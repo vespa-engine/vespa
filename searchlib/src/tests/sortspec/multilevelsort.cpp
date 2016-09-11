@@ -10,6 +10,7 @@ LOG_SETUP("multilevelsort_test");
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <map>
 #include <sstream>
@@ -251,7 +252,8 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
 
     vespalib::Clock clock;
     vespalib::Doom doom(clock, std::numeric_limits<long>::max());
-    FastS_SortSpec sorter(doom, _sortMethod);
+    search::uca::UcaConverterFactory ucaFactory;
+    FastS_SortSpec sorter(doom, ucaFactory, _sortMethod);
     // init sorter with sort data
     for(uint32_t i = 0; i < spec.size(); ++i) {
         AttributeGuard ag;

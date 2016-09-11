@@ -122,19 +122,21 @@ private:
     typedef vespalib::AutoAlloc<0x800000> Alloc;
     typedef vespalib::Array<uint8_t, Alloc> BinarySortData;
     typedef vespalib::Array<SortData, Alloc> SortDataArray;
-    vespalib::Doom _doom;
-    int            _method;
+    using ConverterFactory = search::common::ConverterFactory;
+    vespalib::Doom           _doom;
+    const ConverterFactory & _ucaFactory;
+    int                      _method;
     search::common::SortSpec _sortSpec;
-    VectorRefList  _vectors;
-    BinarySortData _binarySortData;
-    SortDataArray  _sortDataArray;
+    VectorRefList            _vectors;
+    BinarySortData           _binarySortData;
+    SortDataArray            _sortDataArray;
 
     bool Add(search::attribute::IAttributeContext & vecMan, const search::common::SortInfo & sInfo);
     void initSortData(const search::RankedHit *a, uint32_t n);
     uint8_t * realloc(uint32_t n, size_t & variableWidth, uint32_t & available, uint32_t & dataSize, uint8_t *mySortData);
 
 public:
-    FastS_SortSpec(const vespalib::Doom & doom, int method=2);
+    FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
     virtual ~FastS_SortSpec();
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
