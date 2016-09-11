@@ -6,9 +6,20 @@ LOG_SETUP(".proton.matching.result_processor");
 #include "result_processor.h"
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/common/docstamp.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 
 namespace proton {
 namespace matching {
+
+ResultProcessor::Sort::Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss)
+    : sorter(FastS_DefaultResultSorter::instance()),
+      _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
+      sortSpec(doom, *_ucaFactory)
+{
+    if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
+        sorter = &sortSpec;
+    }
+}
 
 ResultProcessor::ResultProcessor(search::attribute::IAttributeContext &attrContext,
                                  const search::IDocumentMetaStore &metaStore,

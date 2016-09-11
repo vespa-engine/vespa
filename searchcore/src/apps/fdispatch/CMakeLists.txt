@@ -11,4 +11,5 @@ vespa_add_executable(searchcore_fdispatch_app
     searchcore_fdcommon
     searchcore_util
     searchcore_fconfig
+    searchlib_searchlib_uca
 )

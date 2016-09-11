@@ -16,7 +16,6 @@ vespa_define_module(
     searchcommon
 
     EXTERNAL_DEPENDS
-    icui18n
     rt
 
     LIBS
@@ -52,6 +51,7 @@ vespa_define_module(
     src/vespa/searchlib/test/fakedata
     src/vespa/searchlib/test/memoryindex
     src/vespa/searchlib/transactionlog
+    src/vespa/searchlib/uca
     src/vespa/searchlib/util
 
     APPS

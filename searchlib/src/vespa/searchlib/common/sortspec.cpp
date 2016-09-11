@@ -41,78 +41,7 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef & src) const
     return ConstBufferRef(_buffer.begin(), _buffer.size());
 }
 
-namespace {
-    vespalib::Lock _GlobalDirtyICUThreadSafeLock;
-}
-
-UcaConverter::UcaConverter(const vespalib::string & locale, const vespalib::string & strength) :
-    _buffer(),
-    _u16Buffer(128),
-    _collator()
-{
-    UErrorCode status = U_ZERO_ERROR;
-    Collator *coll(NULL);
-    {
-        vespalib::LockGuard guard(_GlobalDirtyICUThreadSafeLock);
-        coll = Collator::createInstance(icu::Locale(locale.c_str()), status);
-    }
-    if(U_SUCCESS(status)) {
-        _collator.reset(coll);
-        if (strength.empty()) {
-            _collator->setStrength(Collator::PRIMARY);
-        } else if (strength == "PRIMARY") {
-            _collator->setStrength(Collator::PRIMARY);
-        } else if (strength == "SECONDARY") {
-            _collator->setStrength(Collator::SECONDARY);
-        } else if (strength == "TERTIARY") {
-            _collator->setStrength(Collator::TERTIARY);
-        } else if (strength == "QUATERNARY") {
-            _collator->setStrength(Collator::QUATERNARY);
-        } else if (strength == "IDENTICAL") {
-            _collator->setStrength(Collator::IDENTICAL);
-        } else {
-            throw std::runtime_error("Illegal uca collation strength : " + strength);
-        }
-    } else {
-        delete coll;
-        throw std::runtime_error("Failed Collator::createInstance(Locale(locale.c_str()), status) with locale : " + locale);
-    }
-}
-
-int UcaConverter::utf8ToUtf16(const ConstBufferRef & src) const
-{
-    UErrorCode status = U_ZERO_ERROR;
-    int32_t u16Wanted(0);
-    u_strFromUTF8(&_u16Buffer[0], _u16Buffer.size(), &u16Wanted, static_cast<const char *>(src.data()), -1, &status);
-    if (U_SUCCESS(status)) {
-    } else if (status == U_INVALID_CHAR_FOUND) {
-        LOG(warning, "ICU was not able to convert the %ld alleged utf8 characters'%s' to utf16", src.size(), src.c_str());
-    } else if (status == U_BUFFER_OVERFLOW_ERROR) {
-        //Ignore as this is handled on the outside.
-    } else {
-        LOG(warning, "ICU made a undefined complaint(%d) about the %ld alleged utf8 characters'%s' to utf16", status, src.size(), src.c_str());
-    }
-    return u16Wanted;
-}
-
-ConstBufferRef UcaConverter::onConvert(const ConstBufferRef & src) const
-{
-    int32_t u16Wanted(utf8ToUtf16(src));
-    if (u16Wanted > (int)_u16Buffer.size()) {
-        _u16Buffer.resize(u16Wanted);
-        u16Wanted = utf8ToUtf16(src);
-    }
-    int wanted = _collator->getSortKey(&_u16Buffer[0], u16Wanted, _buffer.ptr(), _buffer.siz());
-    _buffer.check();
-    if (wanted > _buffer.siz()) {
-        _buffer.reserve(wanted);
-        wanted = _collator->getSortKey(&_u16Buffer[0], u16Wanted, _buffer.ptr(), _buffer.siz());
-        _buffer.check();
-    }
-    return ConstBufferRef(_buffer.ptr(), wanted);
-}
-
-SortSpec::SortSpec(const vespalib::string & spec) :
+SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFactory) :
     _spec(spec)
 {
     for (const char *pt(spec.c_str()), *mt(spec.c_str() + spec.size()); pt < mt;) {
@@ -143,13 +72,13 @@ SortSpec::SortSpec(const vespalib::string & spec) :
                             for(; (p < e) && (*p != ')'); p++);
                             if (*p == ')') {
                                 vespalib::string strength(strengthName, p - strengthName);
-                                push_back(SortInfo(attr, ascending, BlobConverter::SP(new UcaConverter(locale, strength))));
+                                push_back(SortInfo(attr, ascending, BlobConverter::SP(ucaFactory.create(locale, strength))));
                             } else {
                                 throw std::runtime_error(make_string("Missing ')' at %s attr=%s locale=%s strength=%s", p, attr.c_str(), localeName, strengthName));
                             }
                         } else if (*p == ')') {
                             vespalib::string locale(localeName, p-localeName);
-                            push_back(SortInfo(attr, ascending, BlobConverter::SP(new UcaConverter(locale, ""))));
+                            push_back(SortInfo(attr, ascending, BlobConverter::SP(ucaFactory.create(locale, ""))));
                         } else {
                             throw std::runtime_error(make_string("Missing ')' or ',' at %s attr=%s locale=%s", p, attr.c_str(), localeName));
                         }

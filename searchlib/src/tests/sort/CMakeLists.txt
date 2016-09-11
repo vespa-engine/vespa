@@ -11,6 +11,7 @@ vespa_add_executable(searchlib_sort_test_app
     sort_test.cpp
     DEPENDS
     searchlib
+    searchlib_searchlib_uca
 )
 #vespa_add_test(NAME searchlib_sort_test_app COMMAND searchlib_sort_test_app)
 vespa_add_executable(searchlib_uca_stress_app
@@ -18,5 +19,6 @@ vespa_add_executable(searchlib_uca_stress_app
     uca.cpp
     DEPENDS
     searchlib
+    searchlib_searchlib_uca
 )
 vespa_add_test(NAME searchlib_uca_stress_app COMMAND searchlib_uca_stress_app BENCHMARK)

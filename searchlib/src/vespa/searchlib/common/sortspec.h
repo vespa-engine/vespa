@@ -9,6 +9,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <vespa/searchlib/common/converters.h>
 
 namespace search {
 namespace common {
@@ -24,7 +25,7 @@ class SortSpec : public std::vector<SortInfo>
 {
 public:
     SortSpec() : _spec() { }
-    SortSpec(const vespalib::string & spec);
+    SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFactory);
     const vespalib::string & getSpec() const { return _spec; }
 private:
     vespalib::string _spec;

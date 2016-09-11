@@ -20,5 +20,6 @@ vespa_add_executable(searchcore_document_subdbs_test_app TEST
     searchcore_proton_metrics
     searchcore_util
     searchcore_fconfig
+    searchlib_searchlib_uca
 )
 vespa_add_test(NAME searchcore_document_subdbs_test_app COMMAND searchcore_document_subdbs_test_app)

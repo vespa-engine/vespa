@@ -17,7 +17,6 @@ vespa_add_library(searchlib_expression OBJECT
     documentfieldnode.cpp
     attributenode.cpp
     zcurve.cpp
-    ucafunctionnode.cpp
     debugwaitfunctionnode.cpp
     mathfunctionnode.cpp
     numericfunctionnode.cpp
