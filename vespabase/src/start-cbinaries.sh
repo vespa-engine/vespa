@@ -232,6 +232,8 @@ else
     else
         export LD_PRELOAD=""
     fi
+    # ignore signal until shared libraries have loaded, etc:
+    trap "" SIGTERM
     log_debug_message "Starting : " \
          valgrind $VESPA_VALGRIND_OPT --log-file=/home/y/tmp/valgrind.$bname.log.$$ $0-bin "$@"
     exec valgrind $VESPA_VALGRIND_OPT --log-file=/home/y/tmp/valgrind.$bname.log.$$ $0-bin "$@"
