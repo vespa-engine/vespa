@@ -146,7 +146,7 @@ public:
 
 class FileDistributorRPC::Server : public FRT_Invokable {
   public:
-    boost::shared_ptr<FileProvider> _fileProvider;
+    std::shared_ptr<FileProvider> _fileProvider;
     std::unique_ptr<FRT_Supervisor> _supervisor;
 
     QueuedRequests _queuedRequests;
@@ -159,8 +159,8 @@ class FileDistributorRPC::Server : public FRT_Invokable {
 
     Server(const Server &) = delete;
     Server & operator = (const Server &) = delete;
-    Server(int listen_port, const boost::shared_ptr<FileProvider>& provider);
-    void start(const boost::shared_ptr<FileDistributorRPC> parent);
+    Server(int listen_port, const std::shared_ptr<FileProvider>& provider);
+    void start(const FileDistributorRPC::SP & parent);
     ~Server();
 
     void waitFor(FRT_RPCRequest*);
@@ -168,7 +168,7 @@ class FileDistributorRPC::Server : public FRT_Invokable {
 
 FileDistributorRPC::
 Server::Server(int listen_port,
-               const boost::shared_ptr<filedistribution::FileProvider>& provider)
+               const std::shared_ptr<filedistribution::FileProvider>& provider)
     :_fileProvider(provider),
      _supervisor(new FRT_Supervisor())
 {
@@ -178,8 +178,7 @@ Server::Server(int listen_port,
 }
 
 
-FileDistributorRPC::
-Server::~Server() {
+FileDistributorRPC::Server::~Server() {
     _queuedRequests.shutdown();
 
     const bool waitForFinished = true;
@@ -187,7 +186,7 @@ Server::~Server() {
 }
 
 void
-FileDistributorRPC::Server::start(const boost::shared_ptr<FileDistributorRPC> parent) {
+FileDistributorRPC::Server::start(const FileDistributorRPC::SP & parent) {
     _downloadCompletedConnection =
         _fileProvider->downloadCompleted().connect(FileProvider::DownloadCompletedSignal::slot_type(
                         ll::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ll::_1, ll::_2)).
@@ -214,8 +213,7 @@ Server::queueRequest(const std::string& fileReference, FRT_RPCRequest* request) 
 }
 
 void
-FileDistributorRPC::
-Server::defineMethods() {
+FileDistributorRPC::Server::defineMethods() {
     const bool instant = true;
     FRT_ReflectionBuilder builder(_supervisor.get());
     builder.DefineMethod("waitFor", "s", "s", instant,
@@ -223,8 +221,7 @@ Server::defineMethods() {
 }
 
 void
-FileDistributorRPC::
-Server::waitFor(FRT_RPCRequest* request) {
+FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
     try {
         frtstream::FrtServerStream requestHandler(request);
         std::string fileReference;
@@ -253,7 +250,7 @@ Server::waitFor(FRT_RPCRequest* request) {
 }
 
 FileDistributorRPC::FileDistributorRPC(const std::string& connectionSpec,
-                                       const boost::shared_ptr<filedistribution::FileProvider>& provider)
+                                       const std::shared_ptr<filedistribution::FileProvider>& provider)
     :_server(new Server(get_port(connectionSpec), provider))
 {}
 

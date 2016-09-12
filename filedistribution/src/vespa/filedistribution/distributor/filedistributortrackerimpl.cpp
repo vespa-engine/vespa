@@ -16,6 +16,7 @@ using filedistribution::FileDownloader;
 using filedistribution::FileDistributionModel;
 using filedistribution::Scheduler;
 using filedistribution::ExceptionRethrower;
+using filedistribution::TorrentSP;
 
 typedef FileDistributionModel::PeerEntries PeerEntries;
 
@@ -60,14 +61,14 @@ struct TrackingTask : public Scheduler::Task {
 
     libtorrent::tracker_request _trackerRequest;
     boost::weak_ptr<libtorrent::torrent> _torrent;
-    boost::weak_ptr<FileDownloader> _downloader;
-    boost::shared_ptr<FileDistributionModel> _model;
+    std::weak_ptr<FileDownloader> _downloader;
+    std::shared_ptr<FileDistributionModel> _model;
 
     TrackingTask(Scheduler& scheduler,
                  const libtorrent::tracker_request& trackerRequest,
-                 const boost::shared_ptr<libtorrent::torrent>& torrent,
-                 const boost::weak_ptr<FileDownloader>& downloader,
-                 const boost::shared_ptr<FileDistributionModel>& model)
+                 const TorrentSP & torrent,
+                 const std::weak_ptr<FileDownloader>& downloader,
+                 const std::shared_ptr<FileDistributionModel>& model)
         : Task(scheduler),
           _numTimesRescheduled(0),
           _trackerRequest(trackerRequest),
@@ -78,12 +79,12 @@ struct TrackingTask : public Scheduler::Task {
 
     //TODO: refactor
     void doHandle() {
-        if (boost::shared_ptr<FileDownloader> downloader = _downloader.lock()) {
+        if (std::shared_ptr<FileDownloader> downloader = _downloader.lock()) {
             //All torrents must be destructed before the session is destructed.
             //It's okay to prevent the torrent from expiring here
             //since the session can't be destructed while
             //we hold a shared_ptr to the downloader.
-            if (boost::shared_ptr<libtorrent::torrent> torrent = _torrent.lock()) {
+            if (TorrentSP torrent = _torrent.lock()) {
                 PeerEntries peers = getPeers(downloader);
 
                 if (!peers.empty()) {
@@ -108,7 +109,7 @@ struct TrackingTask : public Scheduler::Task {
         }
     }
 
-    PeerEntries getPeers(const boost::shared_ptr<FileDownloader>& downloader) {
+    PeerEntries getPeers(const std::shared_ptr<FileDownloader>& downloader) {
         std::string fileReference = downloader->infoHash2FileReference(_trackerRequest.info_hash);
 
         const size_t recommendedMaxNumberOfPeers = 30;
@@ -136,7 +137,7 @@ struct TrackingTask : public Scheduler::Task {
 
 
 void
-workerFunction(boost::shared_ptr<ExceptionRethrower> exceptionRethrower, asio::io_service& ioService)
+workerFunction(std::shared_ptr<ExceptionRethrower> exceptionRethrower, asio::io_service& ioService)
 {
     while (!boost::this_thread::interruption_requested()) {
         try {
@@ -155,8 +156,8 @@ workerFunction(boost::shared_ptr<ExceptionRethrower> exceptionRethrower, asio::i
 
 
 FileDistributorTrackerImpl::FileDistributorTrackerImpl(
-        const boost::shared_ptr<FileDistributionModel>& model,
-        const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+        const std::shared_ptr<FileDistributionModel>& model,
+        const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
     :_exceptionRethrower(exceptionRethrower),
      _model(model)
 {}
@@ -173,12 +174,12 @@ FileDistributorTrackerImpl::~FileDistributorTrackerImpl() {
 void
 FileDistributorTrackerImpl::trackingRequest(
         libtorrent::tracker_request& request,
-        const boost::shared_ptr<libtorrent::torrent> & torrent)
+        const TorrentSP & torrent)
 {
     LockGuard guard(_mutex);
 
-    if (torrent != boost::shared_ptr<libtorrent::torrent>()) {
-        boost::shared_ptr<TrackingTask> trackingTask(new TrackingTask(
+    if (torrent != TorrentSP()) {
+        std::shared_ptr<TrackingTask> trackingTask(new TrackingTask(
                         *_scheduler.get(), request, torrent, _downloader, _model));
 
         trackingTask->scheduleNow();
@@ -187,7 +188,7 @@ FileDistributorTrackerImpl::trackingRequest(
 
 
 void
-FileDistributorTrackerImpl::setDownloader(const boost::shared_ptr<FileDownloader>& downloader)
+FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>& downloader)
 {
     LockGuard guard(_mutex);
 

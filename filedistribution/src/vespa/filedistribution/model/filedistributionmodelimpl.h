@@ -16,21 +16,21 @@ namespace filedistribution {
 
 class FileDistributionModelImpl : public FileDistributionModel,
                                   public config::IFetcherCallback<FilereferencesConfig>,
-                                  public boost::enable_shared_from_this<FileDistributionModelImpl>
+                                  public std::enable_shared_from_this<FileDistributionModelImpl>
 {
     struct DeployedFilesChangedCallback;
 
     const std::string _hostName;
     const int _port;
 
-    const boost::shared_ptr<ZKFacade> _zk;
+    const std::shared_ptr<ZKFacade> _zk;
     ZKFileDBModel _fileDBModel;
 
     boost::mutex _activeFileReferencesMutex;
     typedef boost::lock_guard<boost::mutex> LockGuard;
     std::vector<vespalib::string> _activeFileReferences;
 
-    const boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    const std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
 
     bool /*changed*/
     updateActiveFileReferences(const std::vector<vespalib::string>& fileReferences);
@@ -38,8 +38,8 @@ class FileDistributionModelImpl : public FileDistributionModel,
     ZKFacade::Path getPeerEntryPath(const std::string& fileReference);
 public:
     FileDistributionModelImpl(const std::string& hostName, int port,
-                              const boost::shared_ptr<ZKFacade>& zk,
-                              const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+                              const std::shared_ptr<ZKFacade>& zk,
+                              const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
         :_hostName(hostName),
          _port(port),
          _zk(zk),

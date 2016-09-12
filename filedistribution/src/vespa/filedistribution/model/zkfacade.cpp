@@ -136,11 +136,11 @@ setDataForExistingFile(ZKFacade& zk, const Path& path, const char* buffer, int l
 
 /********** Active watchers *******************************************/
 struct ZKFacade::ZKWatcher {
-    const boost::weak_ptr<ZKFacade> _owner;
+    const std::weak_ptr<ZKFacade> _owner;
     const NodeChangedWatcherSP _nodeChangedWatcher;
 
     ZKWatcher(
-        const boost::shared_ptr<ZKFacade> &owner,
+        const std::shared_ptr<ZKFacade> &owner,
         const NodeChangedWatcherSP& nodeChangedWatcher )
     :_owner(owner),
     _nodeChangedWatcher(nodeChangedWatcher)
@@ -170,7 +170,7 @@ struct ZKFacade::ZKWatcher {
         //this will cause infinite waiting.
         //To avoid this, a custom shared_ptr deleter using a separate deleter thread must be used.
 
-        if (boost::shared_ptr<ZKFacade> zk = self->_owner.lock()) {
+        if (std::shared_ptr<ZKFacade> zk = self->_owner.lock()) {
             zk->invokeWatcher(watcherContext);
         }
 
@@ -201,21 +201,21 @@ void* /* watcherContext */
 ZKFacade::registerWatcher(const NodeChangedWatcherSP& watcher) {
 
     UniqueLock lock(_watchersMutex);
-    boost::shared_ptr<ZKWatcher> zkWatcher(new ZKWatcher(shared_from_this(), watcher));
+    std::shared_ptr<ZKWatcher> zkWatcher(new ZKWatcher(shared_from_this(), watcher));
     _watchers[zkWatcher.get()] = zkWatcher;
     return zkWatcher.get();
 }
 
 
-boost::shared_ptr<ZKFacade::ZKWatcher>
+std::shared_ptr<ZKFacade::ZKWatcher>
 ZKFacade::unregisterWatcher(void* watcherContext) {
     UniqueLock lock(_watchersMutex);
 
     WatchersMap::iterator i = _watchers.find(watcherContext);
     if (i == _watchers.end()) {
-        return boost::shared_ptr<ZKWatcher>();
+        return std::shared_ptr<ZKWatcher>();
     } else {
-        boost::shared_ptr<ZKWatcher> result = i->second;
+        std::shared_ptr<ZKWatcher> result = i->second;
         _watchers.erase(i);
         return result;
     }
@@ -224,7 +224,7 @@ ZKFacade::unregisterWatcher(void* watcherContext) {
 void
 ZKFacade::invokeWatcher(void* watcherContext) {
     try {
-        boost::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
+        std::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
 
         if (!_watchersEnabled)
             return;
@@ -243,7 +243,7 @@ ZKFacade::invokeWatcher(void* watcherContext) {
 
 
 ZKFacade::ZKFacade(const std::string& zkservers,
-        const boost::shared_ptr<ExceptionRethrower> &exceptionRethrower)
+        const std::shared_ptr<ExceptionRethrower> &exceptionRethrower)
     :_retriesEnabled(true),
      _watchersEnabled(true),
      _exceptionRethrower(exceptionRethrower),

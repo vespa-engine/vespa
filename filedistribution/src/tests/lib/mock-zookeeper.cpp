@@ -55,7 +55,7 @@ struct Node {
     void triggerWatches(zhandle_t* zh, const std::string& path);
 };
 
-boost::shared_ptr<Node> sharedRoot;
+std::shared_ptr<Node> sharedRoot;
 
 struct ZHandle {
     struct Worker {
@@ -68,7 +68,7 @@ struct ZHandle {
 
     int sequence;
 
-    boost::shared_ptr<Node> root;
+    std::shared_ptr<Node> root;
     boost::thread _watchersThread;
     vector<string> ephemeralNodes;
 

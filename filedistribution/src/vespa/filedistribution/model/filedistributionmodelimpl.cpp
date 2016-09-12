@@ -74,18 +74,18 @@ using filedistribution::FileDistributionModelImpl;
 struct FileDistributionModelImpl::DeployedFilesChangedCallback :
     public ZKFacade::NodeChangedWatcher
 {
-    typedef boost::shared_ptr<DeployedFilesChangedCallback> SP;
+    typedef std::shared_ptr<DeployedFilesChangedCallback> SP;
 
-    boost::weak_ptr<FileDistributionModelImpl> _parent;
+    std::weak_ptr<FileDistributionModelImpl> _parent;
 
     DeployedFilesChangedCallback(
-            const boost::shared_ptr<FileDistributionModelImpl> & parent)
+            const std::shared_ptr<FileDistributionModelImpl> & parent)
         :_parent(parent)
     {}
 
     //override
     void operator()() {
-        if (boost::shared_ptr<FileDistributionModelImpl> model = _parent.lock()) {
+        if (std::shared_ptr<FileDistributionModelImpl> model = _parent.lock()) {
             model->_filesToDownloadChanged();
         }
     }

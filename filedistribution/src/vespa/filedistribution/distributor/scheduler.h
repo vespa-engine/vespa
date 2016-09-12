@@ -14,7 +14,7 @@ public:
     class Task : public boost::enable_shared_from_this<Task> {
         boost::asio::deadline_timer _timer;
     public:
-        typedef boost::shared_ptr<Task> SP;
+        typedef std::shared_ptr<Task> SP;
 
         Task(Scheduler& scheduler);
 

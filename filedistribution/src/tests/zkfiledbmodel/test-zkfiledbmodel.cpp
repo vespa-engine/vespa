@@ -26,10 +26,10 @@ namespace {
 
 
 struct Fixture {
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
-    boost::shared_ptr<ZKFacade> zk;
-    boost::shared_ptr<ZKFileDBModel> model;
+    std::shared_ptr<ZKFacade> zk;
+    std::shared_ptr<ZKFileDBModel> model;
 
     Fixture() {
         _exceptionRethrower.reset(new ExceptionRethrower());

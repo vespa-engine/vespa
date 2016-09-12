@@ -12,9 +12,10 @@ class FileDistributorRPC : public boost::enable_shared_from_this<FileDistributor
 {
     class Server;
 public:
+    using SP = boost::shared_ptr<FileDistributorRPC>;
     FileDistributorRPC(const FileDistributorRPC &) = delete;
     FileDistributorRPC & operator = (const FileDistributorRPC &) = delete;
-    FileDistributorRPC(const std::string& connectSpec, const boost::shared_ptr<FileProvider>& provider);
+    FileDistributorRPC(const std::string& connectSpec, const std::shared_ptr<FileProvider>& provider);
 
     void start();
 

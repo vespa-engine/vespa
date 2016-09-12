@@ -53,29 +53,33 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
     class Components {
         ComponentsDeleter _componentsDeleter;
     public:
-        const boost::shared_ptr<ZKFacade> _zk;
-        const boost::shared_ptr<FileDistributionModelImpl> _model;
-        const boost::shared_ptr<FileDistributorTrackerImpl> _tracker;
-        const boost::shared_ptr<FileDownloader> _downloader;
-        const boost::shared_ptr<FileDownloaderManager> _manager;
-        const boost::shared_ptr<FileDistributorRPC> _rpcHandler;
-        const boost::shared_ptr<StateServerImpl> _stateServer;
+        const std::shared_ptr<ZKFacade> _zk;
+        const std::shared_ptr<FileDistributionModelImpl> _model;
+        const std::shared_ptr<FileDistributorTrackerImpl> _tracker;
+        const std::shared_ptr<FileDownloader> _downloader;
+        const std::shared_ptr<FileDownloaderManager> _manager;
+        const FileDistributorRPC::SP _rpcHandler;
+        const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
         boost::thread _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
+        template <class T>
+        typename std::shared_ptr<T> track(T* component) {
+            return _componentsDeleter.track(component);
+        }
 
         template <class T>
-        typename boost::shared_ptr<T> track(T* component) {
-            return _componentsDeleter.track(component);
+        typename boost::shared_ptr<T> track_boost(T* component) {
+            return _componentsDeleter.track_boost(component);
         }
 
     public:
         Components(const Components &) = delete;
         Components & operator = (const Components &) = delete;
 
-        Components(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower,
+        Components(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower,
                    const config::ConfigUri & configUri,
                    const ZookeepersConfig& zooKeepersConfig,
                    const FiledistributorConfig& fileDistributorConfig,
@@ -94,10 +98,9 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                                      boost::filesystem::path(fileDistributorConfig.filedbpath),
                                      exceptionRethrower))),
              _manager(track(new FileDownloaderManager(_downloader, _model))),
-             _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
+             _rpcHandler(track_boost(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread(
-                    ll::bind(&FileDownloader::runEventLoop, _downloader.get())),
+             _downloaderEventLoopThread( ll::bind(&FileDownloader::runEventLoop, _downloader.get())),
              _configFetcher(configUri.getContext())
 
         {
@@ -134,7 +137,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
     std::unique_ptr<FiledistributorConfig> _fileDistributorConfig;
     std::unique_ptr<FiledistributorrpcConfig> _rpcConfig;
 
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     std::unique_ptr<Components> _components;
 public:
     FileDistributor(const FileDistributor &) = delete;
@@ -195,7 +198,7 @@ public:
         }
     }
 
-    static void ensureExceptionsStored(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
+    static void ensureExceptionsStored(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
         //TODO: this is somewhat hackish, refactor to eliminate this later.
         LOG(debug, "Waiting for shutdown");
         for (int i=0;
@@ -211,7 +214,7 @@ public:
         }
     }
 
-    void createComponents(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower, const config::ConfigUri & configUri) {
+    void createComponents(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower, const config::ConfigUri & configUri) {
         LockGuard guard(_configMutex);
         _components.reset(
                 new Components(exceptionRethrower,

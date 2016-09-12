@@ -60,10 +60,10 @@ printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 //TODO:refactor
 int printStatus(const std::string& zkservers)
 {
-    boost::shared_ptr<ExceptionRethrower> exceptionRethrower;
-    boost::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
+    std::shared_ptr<ExceptionRethrower> exceptionRethrower;
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
 
-    boost::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
+    std::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
 
     std::vector<std::string> hosts = model->getHosts();
 
