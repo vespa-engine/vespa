@@ -22,8 +22,8 @@ class FileDistributorTrackerImpl : public FileDistributionTracker  {
     const std::shared_ptr<ExceptionRethrower>  _exceptionRethrower;
     const std::shared_ptr<FileDistributionModel> _model;
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _mutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _mutex;
     std::weak_ptr<FileDownloader> _downloader;
 
     //Use separate worker thread to avoid potential deadlock

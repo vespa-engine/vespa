@@ -3,7 +3,6 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/thread.hpp>
 
 
@@ -11,7 +10,7 @@ namespace filedistribution {
 
 class Scheduler {
 public:
-    class Task : public boost::enable_shared_from_this<Task> {
+    class Task : public std::enable_shared_from_this<Task> {
         boost::asio::deadline_timer _timer;
     public:
         typedef std::shared_ptr<Task> SP;

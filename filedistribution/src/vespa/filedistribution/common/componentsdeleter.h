@@ -4,11 +4,11 @@
 #include <map>
 #include <typeinfo>
 #include <string>
+#include <mutex>
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/checked_delete.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/thread.hpp>
 
 #include "concurrentqueue.h"
@@ -22,9 +22,9 @@ namespace filedistribution {
  */
 class ComponentsDeleter {
     class Worker;
-    typedef boost::lock_guard<boost::mutex> LockGuard;
+    typedef std::lock_guard<std::mutex> LockGuard;
 
-    boost::mutex _trackedComponentsMutex;
+    std::mutex _trackedComponentsMutex;
     typedef std::map<void*, std::string> TrackedComponentsMap;
     TrackedComponentsMap _trackedComponents;
 

@@ -3,8 +3,6 @@
 #include "filedistributorrpc.h"
 
 #include <boost/optional.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/locks.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/exception/diagnostic_information.hpp>
@@ -23,7 +21,7 @@ using filedistribution::FileDistributorRPC;
 namespace ll = boost::lambda;
 
 namespace {
-typedef boost::lock_guard<boost::mutex> LockGuard;
+typedef std::lock_guard<std::mutex> LockGuard;
 
 struct RPCErrorCodes {
     const static uint32_t baseErrorCode = 0x10000;
@@ -35,7 +33,7 @@ struct RPCErrorCodes {
 class QueuedRequests {
     bool _shuttingDown;
 
-    boost::mutex _mutex;
+    std::mutex _mutex;
     typedef std::multimap<std::string, FRT_RPCRequest*> Map;
     Map _queuedRequests;
 

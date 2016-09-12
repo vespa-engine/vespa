@@ -10,8 +10,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/locks.hpp>
 #include <zookeeper/zookeeper.h>
 
 #include <vespa/log/log.h>
