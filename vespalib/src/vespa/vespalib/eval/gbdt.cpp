@@ -6,7 +6,6 @@
 #include <vespa/vespalib/eval/call_nodes.h>
 #include <vespa/vespalib/eval/operator_nodes.h>
 #include "vm_forest.h"
-#include "deinline_forest.h"
 
 namespace vespalib {
 namespace eval {

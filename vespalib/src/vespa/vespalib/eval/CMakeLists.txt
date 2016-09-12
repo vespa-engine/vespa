@@ -5,6 +5,7 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     call_nodes.cpp
     delete_node.cpp
     function.cpp
+    gbdt.cpp
     interpreted_function.cpp
     key_gen.cpp
     node_types.cpp
@@ -19,4 +20,5 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     value.cpp
     value_type.cpp
     value_type_spec.cpp
+    vm_forest.cpp
 )

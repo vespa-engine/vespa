@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/eval/function.h>
-#include "gbdt.h"
+#include <vespa/vespalib/eval/gbdt.h>
 #include "llvm_wrapper.h"
 
 namespace vespalib {
