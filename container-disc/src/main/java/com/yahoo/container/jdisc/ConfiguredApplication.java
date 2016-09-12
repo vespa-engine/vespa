@@ -158,17 +158,20 @@ public final class ConfiguredApplication implements Application {
 
     private void startReconfigurerThread() {
         reconfigurerThread = new Thread(() -> {
-            while (!Thread.interrupted()) {
+            while ( ! Thread.interrupted()) {
                 try {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
                     configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
                     intitializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
-                } catch (Exception e) {
+                } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
                     log.log(Level.SEVERE,
                             "Reconfiguration failed, your application package must be fixed, unless this is a " +
                             "JNI reload issue: " + Exceptions.toMessageString(e), e);
+                } catch (Error e) {
+                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " + 
+                                                        "a bad state and will terminate", e);
                 }
             }
             log.fine("Shutting down HandlersConfigurerDi");

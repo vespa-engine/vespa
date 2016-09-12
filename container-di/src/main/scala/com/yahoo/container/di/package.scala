@@ -28,7 +28,7 @@ package object di {
     clazz.asInstanceOf[Class[SUPER]]
   }
 
-  def removeStackTrace(exception: RuntimeException): RuntimeException = {
+  def removeStackTrace(exception: Throwable): Throwable = {
     if (preserveStackTrace) exception
     else {
       exception.setStackTrace(Array())
