@@ -12,7 +12,7 @@
   "minMainMemoryAvailableGb":16.0,
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
-  "environment":"env",
+  "environment":"BARE_METAL",
   "owner": {
     "tenant": "tenant1",
     "application": "application1",
