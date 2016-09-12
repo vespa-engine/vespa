@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/enable_shared_from_this.hpp>
-
 #include "filedistributionmodel.h"
 #include <vespa/filedistribution/model/config-filereferences.h>
 #include "zkfacade.h"
@@ -26,8 +24,8 @@ class FileDistributionModelImpl : public FileDistributionModel,
     const std::shared_ptr<ZKFacade> _zk;
     ZKFileDBModel _fileDBModel;
 
-    boost::mutex _activeFileReferencesMutex;
-    typedef boost::lock_guard<boost::mutex> LockGuard;
+    std::mutex _activeFileReferencesMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
     std::vector<vespalib::string> _activeFileReferences;
 
     const std::shared_ptr<ExceptionRethrower> _exceptionRethrower;

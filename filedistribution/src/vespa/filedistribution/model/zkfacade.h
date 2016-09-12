@@ -5,7 +5,6 @@
 #include <vector>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
-#include <boost/enable_shared_from_this.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
@@ -128,7 +127,7 @@ private:
     std::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
     void invokeWatcher(void* watcherContext);
 
-    boost::mutex _watchersMutex;
+    std::mutex _watchersMutex;
     typedef std::map<void*, std::shared_ptr<ZKWatcher> > WatchersMap;
     WatchersMap _watchers;
 };

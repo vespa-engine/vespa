@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vector>
-#include <boost/thread/mutex.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 #include <boost/multi_index_container.hpp>
@@ -42,8 +41,8 @@ class FileDownloader
     size_t _outstanding_SRD_requests;
     std::shared_ptr<FileDistributionTracker> _tracker;
 
-    boost::mutex _modifyTorrentsDownloadingMutex;
-    typedef boost::lock_guard<boost::mutex> LockGuard;
+    std::mutex _modifyTorrentsDownloadingMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
 
     LogSessionDeconstructed _logSessionDeconstructed;
     //session is safe to use from multiple threads.

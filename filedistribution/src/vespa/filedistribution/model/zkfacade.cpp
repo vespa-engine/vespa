@@ -19,7 +19,7 @@
 #include <vespa/filedistribution/common/logfwd.h>
 #include <vespa/defaults.h>
 
-typedef boost::unique_lock<boost::mutex> UniqueLock;
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 using filedistribution::ZKFacade;
 using filedistribution::Move;

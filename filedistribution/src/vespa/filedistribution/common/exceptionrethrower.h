@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/locks.hpp>
+#include <mutex>
 #include <boost/exception_ptr.hpp>
 #include <boost/type_traits/is_polymorphic.hpp>
 
@@ -12,8 +11,8 @@ namespace filedistribution {
 class ExceptionRethrower {
     boost::exception_ptr _exceptionPtr; //not a pod, default constructed to null value
 
-    mutable boost::mutex _exceptionMutex;
-    typedef boost::lock_guard<boost::mutex> LockGuard;
+    mutable std::mutex _exceptionMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
 
 public:
     void rethrow() const {

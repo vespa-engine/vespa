@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/thread/mutex.hpp>
 #include <boost/signals2/signal.hpp>
-#include <boost/enable_shared_from_this.hpp>
 
 #include <vespa/filedistribution/rpc/fileprovider.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
+#include <boost/enable_shared_from_this.hpp>
 #include "filedownloader.h"
 
 namespace filedistribution {
@@ -29,8 +28,8 @@ class FileDownloaderManager : public FileProvider,
         SetFinishedDownloadingStatus(FileDownloaderManager*);
     };
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _updateFilesToDownloadMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _updateFilesToDownloadMutex;
 
     std::shared_ptr<FileDownloader> _fileDownloader;
     std::shared_ptr<FileDistributionModel> _fileDistributionModel;

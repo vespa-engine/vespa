@@ -8,7 +8,6 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/scope_exit.hpp>
@@ -129,8 +128,8 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
 
     };
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _configMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _configMutex;
 
     bool _completeReconfigurationNeeded;
     std::unique_ptr<ZookeepersConfig> _zooKeepersConfig;
