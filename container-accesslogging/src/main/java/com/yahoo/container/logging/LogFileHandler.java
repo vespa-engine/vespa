@@ -44,6 +44,7 @@ public class LogFileHandler extends StreamHandler {
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
+        long lastFlush = 0;
         public LogThread(LogFileHandler logFile) {
             super("Logger");
             setDaemon(true);
@@ -62,22 +63,27 @@ public class LogFileHandler extends StreamHandler {
         }
 
         private void storeLogRecords() throws InterruptedException {
-            long lastFlush = 0;
             while (!isInterrupted()) {
                 LogRecord r = logFileHandler.logQueue.poll(100, TimeUnit.MILLISECONDS);
-                long now = System.nanoTime();
                 if (r != null) {
                     if (r == logFileHandler.rotateCmd) {
                         logFileHandler.internalRotateNow();
-                        lastFlush = now;
+                        lastFlush = System.nanoTime();
                     } else {
                         logFileHandler.internalPublish(r);
                     }
+                    flushIfOld(3, TimeUnit.SECONDS);
+                } else {
+                    flushIfOld(100, TimeUnit.MILLISECONDS);
                 }
-                if (TimeUnit.NANOSECONDS.toSeconds(now - lastFlush) > 5) {
-                    logFileHandler.flush();
-                    lastFlush = now;
-                }
+            }
+        }
+
+        private void flushIfOld(long age, TimeUnit unit) {
+            long now = System.nanoTime();
+            if (TimeUnit.NANOSECONDS.toMillis(now - lastFlush) > unit.toMillis(age)) {
+                logFileHandler.flush();
+                lastFlush = now;
             }
         }
     }
