@@ -242,7 +242,7 @@ ZKFileDBModel::cleanFiles(
     _zk->retainOnly(_fileDBPath, filesToPreserve);
 }
 
-ZKFileDBModel::ZKFileDBModel(const boost::shared_ptr<ZKFacade>& zk)
+ZKFileDBModel::ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk)
     : _zk(zk)
 {
     createNode(_root, *_zk);

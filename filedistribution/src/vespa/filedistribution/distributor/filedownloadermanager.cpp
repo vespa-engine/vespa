@@ -26,8 +26,8 @@ void logStartDownload(const std::set<std::string> & filesToDownload) {
 } //anonymous namespace
 
 FileDownloaderManager::FileDownloaderManager(
-    const boost::shared_ptr<FileDownloader>& downloader,
-    const boost::shared_ptr<FileDistributionModel>& model)
+    const std::shared_ptr<FileDownloader>& downloader,
+    const std::shared_ptr<FileDistributionModel>& model)
 
     :_fileDownloader(downloader),
      _fileDistributionModel(model),

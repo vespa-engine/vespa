@@ -209,10 +209,10 @@ FileDownloader::LogSessionDeconstructed::~LogSessionDeconstructed()
     LOG(debug, "Libtorrent session closed successfully.");
 }
 
-FileDownloader::FileDownloader(const boost::shared_ptr<FileDistributionTracker>& tracker,
+FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                                const std::string& hostName, int port,
                                const fs::path& dbPath,
-                               const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+                               const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
    : _outstanding_SRD_requests(0),
      _tracker(tracker),
      _session(tracker.get(), libtorrent::fingerprint("vp", 0, 0, 0, 0), 0),

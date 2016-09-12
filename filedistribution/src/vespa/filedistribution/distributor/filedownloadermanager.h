@@ -32,8 +32,8 @@ class FileDownloaderManager : public FileProvider,
     typedef boost::lock_guard<boost::mutex> LockGuard;
     boost::mutex _updateFilesToDownloadMutex;
 
-    boost::shared_ptr<FileDownloader> _fileDownloader;
-    boost::shared_ptr<FileDistributionModel> _fileDistributionModel;
+    std::shared_ptr<FileDownloader> _fileDownloader;
+    std::shared_ptr<FileDistributionModel> _fileDistributionModel;
     StartDownloads _startDownloads;
     SetFinishedDownloadingStatus _setFinishedDownloadingStatus;
 
@@ -45,8 +45,8 @@ class FileDownloaderManager : public FileProvider,
 public:
     FileDownloaderManager(const FileDownloaderManager &) = delete;
     FileDownloaderManager & operator = (const FileDownloaderManager &) = delete;
-    FileDownloaderManager(const boost::shared_ptr<FileDownloader>&,
-            const boost::shared_ptr<FileDistributionModel>& model);
+    FileDownloaderManager(const std::shared_ptr<FileDownloader>&,
+            const std::shared_ptr<FileDistributionModel>& model);
     ~FileDownloaderManager();
     void start();
 

@@ -40,7 +40,7 @@ class FileDownloader
     };
 
     size_t _outstanding_SRD_requests;
-    boost::shared_ptr<FileDistributionTracker> _tracker;
+    std::shared_ptr<FileDistributionTracker> _tracker;
 
     boost::mutex _modifyTorrentsDownloadingMutex;
     typedef boost::lock_guard<boost::mutex> LockGuard;
@@ -65,10 +65,10 @@ public:
     typedef FileProvider::DownloadCompletedSignal DownloadCompletedSignal;
     typedef FileProvider::DownloadFailedSignal DownloadFailedSignal;
 
-    FileDownloader(const boost::shared_ptr<FileDistributionTracker>& tracker,
+    FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                    const std::string& hostName, int port,
                    const boost::filesystem::path& dbPath,
-                   const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower);
+                   const std::shared_ptr<ExceptionRethrower>& exceptionRethrower);
     ~FileDownloader();
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
@@ -84,7 +84,7 @@ public:
     void setMaxDownloadSpeed(double MBPerSec);
     void setMaxUploadSpeed(double MBPerSec);
 
-    const boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    const std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
 
     const std::string _hostName;
     const int _port;
