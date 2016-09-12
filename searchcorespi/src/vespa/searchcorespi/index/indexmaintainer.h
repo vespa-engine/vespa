@@ -11,7 +11,6 @@
 #include "imemoryindex.h"
 #include "warmupindexcollection.h"
 #include "ithreadingservice.h"
-#include <boost/noncopyable.hpp>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
@@ -42,8 +41,7 @@ namespace index {
  * across all indexes, and manages the set of indexes through flushing
  * of memory indexes and fusion of disk indexes.
  */
-class IndexMaintainer : public boost::noncopyable,
-                        public IIndexManager,
+class IndexMaintainer : public IIndexManager,
                         public IWarmupDone
 {
     /**
@@ -313,6 +311,8 @@ class IndexMaintainer : public boost::noncopyable,
     void commit();
 
 public:
+    IndexMaintainer(const IndexMaintainer &) = delete;
+    IndexMaintainer & operator = (const IndexMaintainer &) = delete;
     IndexMaintainer(const IndexMaintainerConfig &config,
                     const IndexMaintainerContext &context,
                     IIndexMaintainerOperations &operations);

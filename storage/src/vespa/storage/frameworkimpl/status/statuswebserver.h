@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/fastlib/net/httpserver.h>
 #include <list>
@@ -21,8 +20,7 @@
 
 namespace storage {
 
-class StatusWebServer : private boost::noncopyable,
-                        private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>,
+class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>,
                         private framework::Runnable
 {
     class WebServer : public Fast_HTTPServer {
@@ -63,6 +61,8 @@ class StatusWebServer : private boost::noncopyable,
     framework::Thread::UP _thread;
 
 public:
+    StatusWebServer(const StatusWebServer &) = delete;
+    StatusWebServer & operator = (const StatusWebServer &) = delete;
     StatusWebServer(framework::ComponentRegister&,
                     framework::StatusReporterMap&,
                     const config::ConfigUri & configUri);

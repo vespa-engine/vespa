@@ -15,12 +15,13 @@ namespace distributor {
 namespace {
 
 class StoredResultImpl
-    : public StateChecker::ResultImpl,
-      boost::noncopyable
+    : public StateChecker::ResultImpl
 {
     mutable IdealStateOperation::UP _operation;
     MaintenancePriority _priority;
 public:
+    StoredResultImpl(const StoredResultImpl &) = delete;
+    StoredResultImpl & operator = (const StoredResultImpl &) = delete;
     StoredResultImpl()
         : _operation(),
           _priority(MaintenancePriority::NO_MAINTENANCE_NEEDED)

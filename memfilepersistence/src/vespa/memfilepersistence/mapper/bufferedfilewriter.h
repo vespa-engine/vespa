@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/fastos/types.h>
 #include <vector>
 
@@ -28,7 +27,7 @@ namespace storage {
 
 namespace memfile {
 
-class BufferedFileWriter : public boost::noncopyable {
+class BufferedFileWriter {
 public:
     struct Cache {
         virtual ~Cache() {}
@@ -55,6 +54,8 @@ private:
     bool _writing;
 
 public:
+    BufferedFileWriter(const BufferedFileWriter &) = delete;
+    BufferedFileWriter & operator = (const BufferedFileWriter &) = delete;
     /**
      * Create a new buffered file writer.
      *

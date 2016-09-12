@@ -2,7 +2,6 @@
 #pragma once
 
 #include "i_thread_service.h"
-#include <boost/noncopyable.hpp>
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/syncable.h>
@@ -48,9 +47,11 @@ namespace index {
  * to sync index field inverter executor before syncing index field
  * writer executor.
  */
-struct IThreadingService : public boost::noncopyable,
-                           public vespalib::Syncable
+struct IThreadingService : public vespalib::Syncable
 {
+    IThreadingService(const IThreadingService &) = delete;
+    IThreadingService & operator = (const IThreadingService &) = delete;
+    IThreadingService() = default;
     virtual ~IThreadingService() {}
 
     /**

@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <list>
 #include <map>
 #include <vespa/storage/bucketmover/move.h>
@@ -33,7 +32,7 @@ class Clock;
 
 namespace bucketmover {
 
-class Run : public document::Printable, boost::noncopyable {
+class Run : public document::Printable {
     StorBucketDatabase& _bucketDatabase;
     lib::Distribution::SP _distribution;
     lib::NodeState _nodeState;
@@ -47,6 +46,8 @@ class Run : public document::Printable, boost::noncopyable {
     std::map<uint16_t, bool> _diskDisabled;
 
 public:
+    Run(const Run &) = delete;
+    Run & operator = (const Run &) = delete;
     Run(StorBucketDatabase&,
         lib::Distribution::SP,
         const lib::NodeState&,
