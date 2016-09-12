@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/vespalib/util/printable.h>
@@ -21,11 +20,13 @@ namespace storage {
 namespace framework {
 namespace defaultimplementation {
 
-class SimpleMemoryTokenImpl : public MemoryToken, public boost::noncopyable
+class SimpleMemoryTokenImpl : public MemoryToken
 {
     uint64_t _allocated;
 
 public:
+    SimpleMemoryTokenImpl(const SimpleMemoryTokenImpl &) = delete;
+    SimpleMemoryTokenImpl & operator = (const SimpleMemoryTokenImpl &) = delete;
     SimpleMemoryTokenImpl(uint64_t allocated) : _allocated(allocated) {}
 
     virtual uint64_t getSize() const { return _allocated; }

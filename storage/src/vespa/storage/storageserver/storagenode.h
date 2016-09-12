@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/fastos/fastos.h>
 #include <memory>
@@ -57,8 +56,7 @@ class FileStorManager;
 class HostInfo;
 class StateManager;
 
-class StorageNode : private boost::noncopyable,
-                    private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
+class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::StorPrioritymappingConfig>,
@@ -69,6 +67,8 @@ class StorageNode : private boost::noncopyable,
 public:
     enum RunMode { NORMAL, SINGLE_THREADED_TEST_MODE };
 
+    StorageNode(const StorageNode &) = delete;
+    StorageNode & operator = (const StorageNode &) = delete;
     /**
      * @param excludeStorageChain With this option set, no chain will be set
      * up. This can be useful in unit testing if you need a storage server

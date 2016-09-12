@@ -51,7 +51,7 @@ public:
         {}
     };
 private:
-    class Entry : boost::noncopyable {
+    class Entry {
     public:
         typedef vespalib::LinkedPtr<Entry> LP;
 
@@ -61,6 +61,8 @@ private:
         bool _inUse;
         bool _returnToCacheWhenFinished;
 
+        Entry(const Entry &) = delete;
+        Entry & operator = (const Entry &) = delete;
         Entry(FileSpecification& file, Environment& env,
               bool returnToCacheWhenFinished = true)
             : _file(file, env), _env(env), _inUse(true),
