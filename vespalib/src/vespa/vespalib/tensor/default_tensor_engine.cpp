@@ -33,6 +33,9 @@ DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
     assert(&b.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
+    if (my_a.getType().type() != my_b.getType().type()) {
+        return false;
+    }
     return my_a.equals(my_b);
 }
 
@@ -64,12 +67,9 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
             is_dense = true;
         }
     }
-    if (type.dimensions().empty()) {
-        // XXX: should be number instead, but need to match empty sparse tensors elsewhere
-        is_sparse = true;
-    }
-    assert(is_dense != is_sparse);
-    if (is_dense) {
+    if (is_dense && is_sparse) {
+        return DefaultTensor::builder().build();
+    } else if (is_dense) {
         DenseTensorBuilder builder;
         std::map<vespalib::string,DenseTensorBuilder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
@@ -178,6 +178,9 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     assert(&b.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
+    if (my_a.getType().type() != my_b.getType().type()) {
+        return stash.create<ErrorValue>();
+    }
     TensorOperationOverride tensor_override(my_a, my_b);
     op.accept(tensor_override);
     if (tensor_override.result) {
