@@ -11,8 +11,8 @@
 #include <vespa/vespalib/eval/call_nodes.h>
 #include <vespa/vespalib/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/vespalib/eval/llvm/gbdt.h>
-#include <vespa/vespalib/eval/llvm/vm_forest.h>
+#include <vespa/vespalib/eval/gbdt.h>
+#include <vespa/vespalib/eval/vm_forest.h>
 #include <vespa/vespalib/eval/llvm/deinline_forest.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <cmath>

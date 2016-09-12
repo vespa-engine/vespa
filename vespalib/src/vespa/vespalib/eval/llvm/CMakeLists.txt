@@ -4,9 +4,7 @@ vespa_add_library(vespalib_vespalib_eval_llvm
     compile_cache.cpp
     compiled_function.cpp
     deinline_forest.cpp
-    gbdt.cpp
     llvm_wrapper.cpp
-    vm_forest.cpp
     INSTALL lib64
     DEPENDS
     LLVM-3.4

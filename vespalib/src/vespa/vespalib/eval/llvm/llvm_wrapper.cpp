@@ -14,7 +14,6 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/LinkAllPasses.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
-#include "gbdt.h"
 #include <vespa/vespalib/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
