@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/noncopyable.hpp>
 #include <algorithm>
 
 namespace filedistribution {
@@ -37,7 +36,7 @@ inline Move<T> move(T& t) {
     return Move<T>(t);
 }
 
-class Buffer : boost::noncopyable {
+class Buffer {
     size_t _capacity;
     char* _buf;
     size_t _size;
@@ -47,6 +46,8 @@ public:
     typedef char* iterator;
     typedef const char* const_iterator;
 
+    Buffer(const Buffer &) = delete;
+    Buffer & operator = (const Buffer &) = delete;
     explicit Buffer(size_t capacityArg)
         :_capacity(capacityArg),
          _buf( new char[_capacity] ),

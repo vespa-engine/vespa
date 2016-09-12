@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <boost/noncopyable.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -60,7 +59,7 @@ diagnosticUserLevelMessage(const ZKException& zk);
 
 
 
-class ZKFacade : boost::noncopyable, public boost::enable_shared_from_this<ZKFacade> {
+class ZKFacade : public boost::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;
     volatile bool _watchersEnabled;
 
@@ -78,15 +77,20 @@ public:
        Derived classes should only contain weak_ptrs to other objects
        to avoid linking their lifetime to the ZKFacade lifetime.
      */
-    class NodeChangedWatcher : boost::noncopyable {
+    class NodeChangedWatcher {
       public:
-        virtual void operator()() = 0;
+        NodeChangedWatcher(const NodeChangedWatcher &) = delete;
+        NodeChangedWatcher & operator = (const NodeChangedWatcher &) = delete;
+        NodeChangedWatcher() = default;
         virtual ~NodeChangedWatcher() {};
+        virtual void operator()() = 0;
     };
 
     typedef boost::shared_ptr<NodeChangedWatcher> NodeChangedWatcherSP;
     typedef boost::filesystem::path Path;
 
+    ZKFacade(const ZKFacade &) = delete;
+    ZKFacade & operator = (const ZKFacade &) = delete;
     ZKFacade(const std::string& zkservers, const boost::shared_ptr<ExceptionRethrower> &);
     ~ZKFacade();
 

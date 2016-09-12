@@ -25,7 +25,7 @@ struct InvalidProgressException : public Exception {
 
 struct FileDoesNotExistException : public Exception {};
 
-class FileDBModel : boost::noncopyable {
+class FileDBModel {
 public:
     class InvalidHostStatusException : public Exception {};
     struct HostStatus {
@@ -36,6 +36,9 @@ public:
         size_t _numFilesFinished;
     };
 
+    FileDBModel(const FileDBModel &) = delete;
+    FileDBModel & operator = (const FileDBModel &) = delete;
+    FileDBModel() = default;
     virtual ~FileDBModel();
 
     virtual bool hasFile(const std::string& fileReference) = 0;

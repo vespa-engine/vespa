@@ -6,7 +6,6 @@
 #include <string>
 #include <set>
 
-#include <boost/noncopyable.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 
@@ -17,7 +16,7 @@
 
 namespace filedistribution {
 
-class FileDistributionModel : boost::noncopyable {
+class FileDistributionModel {
 public:
     class NotPeer : public Exception {};
 
@@ -33,6 +32,9 @@ public:
     virtual void removePeer(const std::string& fileReference) = 0;
     virtual void peerFinished(const std::string& fileReference) = 0; //throws NotPeer
 
+    FileDistributionModel(const FileDistributionModel &) = delete;
+    FileDistributionModel & operator = (const FileDistributionModel &) = delete;
+    FileDistributionModel() = default;
     virtual ~FileDistributionModel() {}
 
     FilesToDownloadChangedSignal _filesToDownloadChanged;

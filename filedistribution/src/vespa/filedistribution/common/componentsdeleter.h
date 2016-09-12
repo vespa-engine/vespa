@@ -9,7 +9,6 @@
 #include <boost/bind.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 
 #include "concurrentqueue.h"
@@ -21,7 +20,7 @@ namespace filedistribution {
  *
  * This prevents situations as e.g. deleting ZKFacade from a zookeeper watcher thread.
  */
-class ComponentsDeleter : boost::noncopyable {
+class ComponentsDeleter {
     class Worker;
     typedef boost::lock_guard<boost::mutex> LockGuard;
 
@@ -51,6 +50,8 @@ class ComponentsDeleter : boost::noncopyable {
     bool allComponentsDeleted();
     void logNotDeletedComponents();
   public:
+    ComponentsDeleter(const ComponentsDeleter &) = delete;
+    ComponentsDeleter & operator = (const ComponentsDeleter &) = delete;
     ComponentsDeleter();
 
     /*
