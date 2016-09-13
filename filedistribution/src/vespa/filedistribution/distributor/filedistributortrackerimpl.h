@@ -4,7 +4,6 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent.hpp>
 
-#include <boost/thread.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
 

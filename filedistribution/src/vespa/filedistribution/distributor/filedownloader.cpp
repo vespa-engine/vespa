@@ -13,7 +13,6 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/function_output_iterator.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread.hpp>
 
 #include <libtorrent/alert.hpp>
 #include <libtorrent/alert_types.hpp>

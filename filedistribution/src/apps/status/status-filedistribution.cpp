@@ -9,7 +9,6 @@ LOG_SETUP("status-filedistribution");
 
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread.hpp>
 
 #include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/model/zkfacade.h>

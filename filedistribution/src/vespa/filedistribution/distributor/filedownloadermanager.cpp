@@ -9,7 +9,6 @@ LOG_SETUP(".filedownloadermanager");
 #include <sstream>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
-#include <boost/thread.hpp>
 #include <thread>
 
 using namespace std::literals;
