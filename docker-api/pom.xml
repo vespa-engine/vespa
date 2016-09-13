@@ -82,18 +82,18 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
+            <!-- We explicitly specify the version of httpcore to be used by 
+            docker-java so the dependency is declared closer to the root of maven and 
+            more likely be the version that is finally being used. -->
             <version>4.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+             <!-- We explicitly specify the version of httpclient to be used by 
+            docker-java so the dependency is declared closer to the root of maven and 
+            more likely be the version that is finally being used. -->
             <version>4.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>orchestrator-restapi</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -132,7 +132,6 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>airline</artifactId>
-            <version>0.7</version>
         </dependency>
     </dependencies>
 
