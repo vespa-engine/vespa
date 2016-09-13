@@ -86,52 +86,66 @@ CompactTensorV2::sum() const
 Tensor::UP
 CompactTensorV2::add(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const CompactTensorV2 &rhs = static_cast<const CompactTensorV2 &>(arg);
-    return joinCompactTensorsV2(*this, rhs,
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinCompactTensorsV2(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
 CompactTensorV2::subtract(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const CompactTensorV2 &rhs = static_cast<const CompactTensorV2 &>(arg);
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
     // Note that -rhsCell.second is passed to the lambda function, that is why we do addition.
-    return joinCompactTensorsV2Negated(*this, rhs,
+    return joinCompactTensorsV2Negated(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
 CompactTensorV2::multiply(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    return CompactTensorV2Product(*this, static_cast<const CompactTensorV2 &>(arg)).result();
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return CompactTensorV2Product(*this, *rhs).result();
 }
 
 Tensor::UP
 CompactTensorV2::min(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const CompactTensorV2 &rhs = static_cast<const CompactTensorV2 &>(arg);
-    return joinCompactTensorsV2(*this, rhs,
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinCompactTensorsV2(*this, *rhs,
             [](double lhsValue, double rhsValue) { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
 CompactTensorV2::max(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const CompactTensorV2 &rhs = static_cast<const CompactTensorV2 &>(arg);
-    return joinCompactTensorsV2(*this, rhs,
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinCompactTensorsV2(*this, *rhs,
             [](double lhsValue, double rhsValue) { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
 CompactTensorV2::match(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    return CompactTensorV2Match(*this, static_cast<const CompactTensorV2 &>(arg)).result();
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return CompactTensorV2Match(*this, *rhs).result();
 }
 
 Tensor::UP
@@ -149,7 +163,11 @@ CompactTensorV2::sum(const vespalib::string &dimension) const
 bool
 CompactTensorV2::equals(const Tensor &arg) const
 {
-    return *this == static_cast<const CompactTensorV2 &>(arg);
+    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    if (!rhs) {
+        return false;
+    }
+    return *this == *rhs;
 }
 
 vespalib::string

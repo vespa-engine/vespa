@@ -59,56 +59,69 @@ SimpleTensor::sum() const
 Tensor::UP
 SimpleTensor::add(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const SimpleTensor &rhs = static_cast<const SimpleTensor &>(arg);
-    return joinTensors(*this, rhs,
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinTensors(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
 SimpleTensor::subtract(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const SimpleTensor &rhs = static_cast<const SimpleTensor &>(arg);
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
     // Note that -rhsCell.second is passed to the lambda function, that is why we do addition.
-    return joinTensorsNegated(*this, rhs,
+    return joinTensorsNegated(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
 SimpleTensor::multiply(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    return SimpleTensorProduct(*this, static_cast<const SimpleTensor &>(arg)).result();
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return SimpleTensorProduct(*this, *rhs).result();
 }
 
 Tensor::UP
 SimpleTensor::min(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const SimpleTensor &rhs = static_cast<const SimpleTensor &>(arg);
-    return joinTensors(*this, rhs,
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinTensors(*this, *rhs,
             [](double lhsValue, double rhsValue){ return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
 SimpleTensor::max(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const SimpleTensor &rhs = static_cast<const SimpleTensor &>(arg);
-    return joinTensors(*this, rhs,
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return joinTensors(*this, *rhs,
             [](double lhsValue, double rhsValue){ return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
 SimpleTensor::match(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const SimpleTensor &rhs = static_cast<const SimpleTensor &>(arg);
-    DirectTensorBuilder<SimpleTensor> builder(combineDimensionsWith(rhs));
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    DirectTensorBuilder<SimpleTensor> builder(combineDimensionsWith(*rhs));
     for (const auto &lhsCell : cells()) {
-        auto rhsItr = rhs.cells().find(lhsCell.first);
-        if (rhsItr != rhs.cells().end()) {
+        auto rhsItr = rhs->cells().find(lhsCell.first);
+        if (rhsItr != rhs->cells().end()) {
             builder.insertCell(lhsCell.first, lhsCell.second * rhsItr->second);
         }
     }
@@ -130,8 +143,11 @@ SimpleTensor::sum(const vespalib::string &dimension) const
 bool
 SimpleTensor::equals(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    return *this == static_cast<const SimpleTensor &>(arg);
+    const SimpleTensor *rhs = dynamic_cast<const SimpleTensor *>(&arg);
+    if (!rhs) {
+        return false;
+    }
+    return *this == *rhs;
 }
 
 vespalib::string

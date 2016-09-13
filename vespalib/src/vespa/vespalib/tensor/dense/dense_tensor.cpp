@@ -202,10 +202,12 @@ DenseTensor::sum() const
 Tensor::UP
 DenseTensor::add(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
-    checkDimensions(*this, rhs, "add");
-    return joinDenseTensors(*this, rhs,
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    checkDimensions(*this, *rhs, "add");
+    return joinDenseTensors(*this, *rhs,
                             [](double lhsValue, double rhsValue)
                             { return lhsValue + rhsValue; });
 }
@@ -213,11 +215,13 @@ DenseTensor::add(const Tensor &arg) const
 Tensor::UP
 DenseTensor::subtract(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
     // Note that - *rhsCellItr is passed to the lambda function, that is why we do addition.
-    checkDimensions(*this, rhs, "subtract");
-    return joinDenseTensorsNegated(*this, rhs,
+    checkDimensions(*this, *rhs, "subtract");
+    return joinDenseTensorsNegated(*this, *rhs,
                                    [](double lhsValue, double rhsValue)
                                    { return lhsValue + rhsValue; });
 }
@@ -225,18 +229,22 @@ DenseTensor::subtract(const Tensor &arg) const
 Tensor::UP
 DenseTensor::multiply(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
-    return DenseTensorProduct(*this, rhs).result();
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return DenseTensorProduct(*this, *rhs).result();
 }
 
 Tensor::UP
 DenseTensor::min(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
-    checkDimensions(*this, rhs, "min");
-    return joinDenseTensors(*this, rhs,
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    checkDimensions(*this, *rhs, "min");
+    return joinDenseTensors(*this, *rhs,
                             [](double lhsValue, double rhsValue)
                             { return std::min(lhsValue, rhsValue); });
 }
@@ -244,10 +252,12 @@ DenseTensor::min(const Tensor &arg) const
 Tensor::UP
 DenseTensor::max(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
-    checkDimensions(*this, rhs, "max");
-    return joinDenseTensors(*this, rhs,
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    checkDimensions(*this, *rhs, "max");
+    return joinDenseTensors(*this, *rhs,
                             [](double lhsValue, double rhsValue)
                             { return std::max(lhsValue,rhsValue); });
 }
@@ -255,10 +265,12 @@ DenseTensor::max(const Tensor &arg) const
 Tensor::UP
 DenseTensor::match(const Tensor &arg) const
 {
-    // TODO (geirst): Better type handling when multiple implementations are available.
-    const DenseTensor &rhs = static_cast<const DenseTensor &>(arg);
-    checkDimensions(*this, rhs, "match");
-    return joinDenseTensors(*this, rhs,
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    checkDimensions(*this, *rhs, "match");
+    return joinDenseTensors(*this, *rhs,
                             [](double lhsValue, double rhsValue)
                             { return (lhsValue * rhsValue); });
 }
@@ -286,7 +298,11 @@ DenseTensor::sum(const vespalib::string &dimension) const
 bool
 DenseTensor::equals(const Tensor &arg) const
 {
-    return *this == static_cast<const DenseTensor &>(arg);
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return false;
+    }
+    return *this == *rhs;
 }
 
 vespalib::string
