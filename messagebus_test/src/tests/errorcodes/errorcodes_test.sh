@@ -7,7 +7,7 @@ fi
 
 . ../../binref/env.sh
 
-$BINREF/compilejava DumpCodes.java
+$BINREF/compilejava $SOURCE_DIRECTORY/DumpCodes.java
 
 ./messagebus_test_dumpcodes_app > cpp-dump.txt
 $BINREF/runjava DumpCodes > java-dump.txt

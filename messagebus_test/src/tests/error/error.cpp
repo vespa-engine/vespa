@@ -37,7 +37,7 @@ Test::Main()
     }
     { // JAVA SERVER
         { // Make routing config
-            EXPECT_TRUE(system("cat " + routing_tesmplate + " | sed 's#session#java/session#' > routing.cfg").c_str()) == 0);
+            EXPECT_TRUE(system(("cat " + routing_template + " | sed 's#session#java/session#' > routing.cfg").c_str()) == 0);
         }
         fprintf(stderr, "STARTING JAVA-SERVER\n");
         EXPECT_TRUE(system((ctl_script + " start server java").c_str()) == 0);

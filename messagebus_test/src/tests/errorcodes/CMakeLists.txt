@@ -5,5 +5,5 @@ vespa_add_executable(messagebus_test_dumpcodes_app TEST
     DEPENDS
     messagebus
 )
-vespa_add_test(NAME messagebus_test_dumpcodes_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIRECTORY}/errorcodes_test.sh
+vespa_add_test(NAME messagebus_test_dumpcodes_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/errorcodes_test.sh
    DEPENDS messagebus_test_dumpcodes_app)

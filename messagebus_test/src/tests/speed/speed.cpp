@@ -37,7 +37,7 @@ Test::Main()
         fprintf(stderr, "STARTING JAVA-CLIENT\n");
         EXPECT_EQUAL(system("../../binref/runjava JavaClient"), 0);
         fprintf(stderr, "STOPPING\n");
-        EXPECT_EQUAL(system((ctl_script + " stop server cpp"), 0);
+        EXPECT_EQUAL(system((ctl_script + " stop server cpp").c_str()), 0);
     }
     { // JAVA SERVER
         { // Make routing config

@@ -1,1 +1,1 @@
-../../../../vespalib/src/vespa/vespalib/testkit/testrun.sh
+../../../vespalib/src/vespa/vespalib/testkit/testrun.sh
