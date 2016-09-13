@@ -9,8 +9,10 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
+#include <thread>
 
 using filedistribution::Scheduler;
+using namespace std::literals;
 
 namespace asio = boost::asio;
 
@@ -101,7 +103,7 @@ BOOST_AUTO_TEST_CASE(require_exception_from_tasks_can_be_caught) {
     task->scheduleNow();
 
     for (int i=0; i<200 && !callRun._caughtException; ++i)  {
-        boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
     }
 
     BOOST_CHECK(callRun._caughtException);

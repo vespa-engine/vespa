@@ -17,7 +17,7 @@
 #include <zookeeper/zookeeper.h>
 
 
-
+using namespace std::literals;
 using namespace filedistribution;
 
 namespace {
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(hasNodeNotification)
 
     //after the notification has returned, the watcher must no longer reside in watchers map.
     for (int i=0; i<20 && !watcher.unique(); ++i)  {
-        boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
     }
     BOOST_CHECK(watcher.unique());
 }
