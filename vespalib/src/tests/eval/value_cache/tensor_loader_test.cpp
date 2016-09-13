@@ -39,11 +39,6 @@ std::unique_ptr<Tensor> make_mixed_tensor() {
                 .add({{"x", "foo"}, {"y", 1}}, 2.0));
 }
 
-void verify_error(ConstantValue::UP actual) {
-    EXPECT_TRUE(actual->type().is_error());
-    EXPECT_TRUE(actual->value().is_error());
-}
-
 void verify_tensor(std::unique_ptr<Tensor> expect, ConstantValue::UP actual) {
     const auto &engine = expect->engine();
     ASSERT_EQUAL(engine.type_of(*expect), actual->type());
