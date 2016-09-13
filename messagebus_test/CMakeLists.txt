@@ -7,7 +7,6 @@ vespa_define_module(
   src/binref
 
   TESTS
-  src/binref
   src/tests/compile-cpp
   src/tests/compile-java
   src/tests/error
