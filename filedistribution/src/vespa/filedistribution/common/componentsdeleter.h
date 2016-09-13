@@ -31,8 +31,8 @@ class ComponentsDeleter {
 
     typedef boost::function<void (void)> CallDeleteFun;
     ConcurrentQueue<CallDeleteFun> _deleteRequests;
-
-    boost::thread _deleterThread;
+    bool _closed;
+    std::thread _deleterThread;
 
     void removeFromTrackedComponents(void* component);
 
@@ -50,6 +50,7 @@ class ComponentsDeleter {
     void waitForAllComponentsDeleted();
     bool allComponentsDeleted();
     void logNotDeletedComponents();
+    void close();
   public:
     ComponentsDeleter(const ComponentsDeleter &) = delete;
     ComponentsDeleter & operator = (const ComponentsDeleter &) = delete;
@@ -64,6 +65,9 @@ class ComponentsDeleter {
     template <class T>
     boost::shared_ptr<T> track_boost(T* t) {
         LockGuard guard(_trackedComponentsMutex);
+        if (_closed) {
+            return boost::shared_ptr<T>(t);
+        }
 
         _trackedComponents[t] = typeid(t).name();
         return boost::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));
@@ -72,6 +76,9 @@ class ComponentsDeleter {
     template <class T>
     std::shared_ptr<T> track(T* t) {
         LockGuard guard(_trackedComponentsMutex);
+        if (_closed) {
+            return std::shared_ptr<T>(t);
+        }
 
         _trackedComponents[t] = typeid(t).name();
         return std::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));

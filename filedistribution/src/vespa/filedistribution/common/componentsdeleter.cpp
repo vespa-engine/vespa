@@ -23,25 +23,21 @@ struct ComponentsDeleter::Worker {
 void
 ComponentsDeleter::Worker::operator()()
 {
-    while (!boost::this_thread::interruption_requested()) {
-        try {
-            CallDeleteFun deleteFun = _parent._deleteRequests.pop();
-            boost::this_thread::disable_interruption di;
-            deleteFun();
-        } catch(const std::exception& e) {
-            LOG(error, e.what());
-        }
+    while ( ! _parent.allComponentsDeleted() ) {
+        CallDeleteFun deleteFun = _parent._deleteRequests.pop();
+        deleteFun();
     }
 }
 
-ComponentsDeleter::ComponentsDeleter()
-    :_deleterThread(Worker(this))
+ComponentsDeleter::ComponentsDeleter() :
+    _closed(false),
+    _deleterThread(Worker(this))
 {}
 
 ComponentsDeleter::~ComponentsDeleter()
 {
+    close();
     waitForAllComponentsDeleted();
-    _deleterThread.interrupt();
     _deleterThread.join();
 }
 
@@ -60,12 +56,19 @@ ComponentsDeleter::waitForAllComponentsDeleted()
     if (!allComponentsDeleted())
         kill(getpid(), SIGKILL);
 }
+ 
+void
+ComponentsDeleter::close()
+{
+    LockGuard guard(_trackedComponentsMutex);
+    _closed = true;
+}
 
 bool
 ComponentsDeleter::allComponentsDeleted()
 {
     LockGuard guard(_trackedComponentsMutex);
-    return _trackedComponents.empty();
+    return _trackedComponents.empty() && _deleteRequests.empty();
 }
 
 void
