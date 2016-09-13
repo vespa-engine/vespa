@@ -211,13 +211,12 @@ FileDownloader::LogSessionDeconstructed::~LogSessionDeconstructed()
 
 FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                                const std::string& hostName, int port,
-                               const fs::path& dbPath,
-                               const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+                               const fs::path& dbPath)
    : _outstanding_SRD_requests(0),
      _tracker(tracker),
      _session(tracker.get(), libtorrent::fingerprint("vp", 0, 0, 0, 0), 0),
+     _closed(false),
      _dbPath(dbPath),
-     _exceptionRethrower(exceptionRethrower),
      _hostName(hostName),
      _port(port)
 {
@@ -382,18 +381,24 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
 
 void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
-    try {
-        while (!boost::this_thread::interruption_requested()) {
-            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
-                std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
-                eventHandler.handle(std::move(alert));
-            }
+    while ( ! closed() ) {
+        if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+            std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
+            eventHandler.handle(std::move(alert));
         }
-    } catch(const boost::thread_interrupted&) {
-        LOG(spam, "The FileDownloader thread was interrupted.");
-    } catch(...) {
-        _exceptionRethrower->store(boost::current_exception());
     }
+}
+
+bool
+FileDownloader::closed() const
+{
+    return _closed.load();
+}
+
+void
+FileDownloader::close()
+{
+    _closed.store(true);
 }
 
 void

@@ -47,6 +47,7 @@ class FileDownloader
     LogSessionDeconstructed _logSessionDeconstructed;
     //session is safe to use from multiple threads.
     libtorrent::session _session;
+    std::atomic<bool> _closed;
 
     const boost::filesystem::path _dbPath;
     typedef std::vector<char> ResumeDataBuffer;
@@ -66,8 +67,7 @@ public:
 
     FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                    const std::string& hostName, int port,
-                   const boost::filesystem::path& dbPath,
-                   const std::shared_ptr<ExceptionRethrower>& exceptionRethrower);
+                   const boost::filesystem::path& dbPath);
     ~FileDownloader();
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
@@ -82,8 +82,8 @@ public:
     std::string infoHash2FileReference(const libtorrent::sha1_hash& hash);
     void setMaxDownloadSpeed(double MBPerSec);
     void setMaxUploadSpeed(double MBPerSec);
-
-    const std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    void close();
+    bool closed() const;
 
     const std::string _hostName;
     const int _port;
