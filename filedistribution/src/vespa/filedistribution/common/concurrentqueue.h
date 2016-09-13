@@ -46,6 +46,10 @@ public:
             _queue.pop();
         }
     }
+    bool empty() {
+        UniqueLock guard(_queueMutex);
+        return _queue.empty();
+    }
 };
 
 } //namespace filedistribution
