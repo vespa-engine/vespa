@@ -45,6 +45,7 @@ Test::Main()
 {
     TEST_INIT("trace_test");
     Slobrok slobrok;
+    const std::string routing_template = TEST_PATH("routing-template.cfg");
     const std::string ctl_script = TEST_PATH("ctl.sh");
     
     { // Make slobrok config
@@ -52,6 +53,10 @@ Test::Main()
         EXPECT_TRUE(system(make_string("echo 'slobrok[0].connectionspec tcp/localhost:%d' "
                                       ">> slobrok.cfg", slobrok.port()).c_str()) == 0);
     }
+    { // Make routing config
+        EXPECT_TRUE(system(("cat " + routing_template + " > routing.cfg").c_str()) == 0);
+    }
+    
     EXPECT_TRUE(system((ctl_script + " start all").c_str()) == 0);
     RPCMessageBus mb(ProtocolSet().add(IProtocol::SP(new SimpleProtocol())),
                      RPCNetworkParams().setSlobrokConfig("file:slobrok.cfg"),
