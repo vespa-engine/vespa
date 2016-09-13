@@ -3,19 +3,19 @@
 
 #include <memory>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/noncopyable.hpp>
 
 #include "fileprovider.h"
 
 namespace filedistribution {
 
-class FileDistributorRPC : boost::noncopyable,
-                           public boost::enable_shared_from_this<FileDistributorRPC>
+class FileDistributorRPC : public std::enable_shared_from_this<FileDistributorRPC>
 {
     class Server;
 public:
-    FileDistributorRPC(const std::string& connectSpec,
-                       const boost::shared_ptr<FileProvider>& provider);
+    using SP = std::shared_ptr<FileDistributorRPC>;
+    FileDistributorRPC(const FileDistributorRPC &) = delete;
+    FileDistributorRPC & operator = (const FileDistributorRPC &) = delete;
+    FileDistributorRPC(const std::string& connectSpec, const FileProvider::SP & provider);
 
     void start();
 

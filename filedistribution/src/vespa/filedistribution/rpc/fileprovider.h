@@ -10,6 +10,7 @@ namespace filedistribution {
 class FileProvider
 {
 public:
+    using SP = std::shared_ptr<FileProvider>;
     typedef boost::signals2::signal<void (const std::string& /* fileReference */,
             const boost::filesystem::path&)>
         DownloadCompletedSignal;

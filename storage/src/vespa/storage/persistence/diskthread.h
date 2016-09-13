@@ -12,7 +12,6 @@
  */
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storageframework/storageframework.h>
@@ -27,12 +26,14 @@ class Directory;
 class SlotFileOptions;
 struct FileStorThreadMetrics;
 
-class DiskThread : public framework::Runnable,
-                   private boost::noncopyable
+class DiskThread : public framework::Runnable
 {
 public:
     typedef std::shared_ptr<DiskThread> SP;
 
+    DiskThread(const DiskThread &) = delete;
+    DiskThread & operator = (const DiskThread &) = delete;
+    DiskThread() = default;
     virtual ~DiskThread() {}
 
     /**

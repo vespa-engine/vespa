@@ -7,7 +7,7 @@ LOG_SETUP(".componentsdeleter");
 
 #include <boost/foreach.hpp>
 
-
+using namespace std::literals;
 using namespace filedistribution;
 
 struct ComponentsDeleter::Worker {
@@ -23,25 +23,21 @@ struct ComponentsDeleter::Worker {
 void
 ComponentsDeleter::Worker::operator()()
 {
-    while (!boost::this_thread::interruption_requested()) {
-        try {
-            CallDeleteFun deleteFun = _parent._deleteRequests.pop();
-            boost::this_thread::disable_interruption di;
-            deleteFun();
-        } catch(const std::exception& e) {
-            LOG(error, e.what());
-        }
+    while ( ! _parent.allComponentsDeleted() ) {
+        CallDeleteFun deleteFun = _parent._deleteRequests.pop();
+        deleteFun();
     }
 }
 
-ComponentsDeleter::ComponentsDeleter()
-    :_deleterThread(Worker(this))
+ComponentsDeleter::ComponentsDeleter() :
+    _closed(false),
+    _deleterThread(Worker(this))
 {}
 
 ComponentsDeleter::~ComponentsDeleter()
 {
+    close();
     waitForAllComponentsDeleted();
-    _deleterThread.interrupt();
     _deleterThread.join();
 }
 
@@ -51,7 +47,7 @@ ComponentsDeleter::waitForAllComponentsDeleted()
     LOG(debug, "Waiting for all components to be deleted");
 
     for (int i=0; i<600 && !allComponentsDeleted(); ++i) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(100ms);
     }
     LOG(debug, "Done waiting for all components to be deleted");
 
@@ -60,12 +56,19 @@ ComponentsDeleter::waitForAllComponentsDeleted()
     if (!allComponentsDeleted())
         kill(getpid(), SIGKILL);
 }
+ 
+void
+ComponentsDeleter::close()
+{
+    LockGuard guard(_trackedComponentsMutex);
+    _closed = true;
+}
 
 bool
 ComponentsDeleter::allComponentsDeleted()
 {
     LockGuard guard(_trackedComponentsMutex);
-    return _trackedComponents.empty();
+    return _trackedComponents.empty() && _deleteRequests.empty();
 }
 
 void

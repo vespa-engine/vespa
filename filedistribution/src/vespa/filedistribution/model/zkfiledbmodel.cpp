@@ -4,15 +4,13 @@
 
 #include <ostream>
 #include <algorithm>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/foreach.hpp>
 
 #include "zkfacade.h"
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
 #include <sys/file.h>
+#include <boost/foreach.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -242,7 +240,7 @@ ZKFileDBModel::cleanFiles(
     _zk->retainOnly(_fileDBPath, filesToPreserve);
 }
 
-ZKFileDBModel::ZKFileDBModel(const boost::shared_ptr<ZKFacade>& zk)
+ZKFileDBModel::ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk)
     : _zk(zk)
 {
     createNode(_root, *_zk);

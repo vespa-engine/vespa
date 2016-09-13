@@ -9,8 +9,10 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
+#include <thread>
 
 using filedistribution::Scheduler;
+using namespace std::literals;
 
 namespace asio = boost::asio;
 
@@ -19,19 +21,19 @@ class TestException {};
 
 struct CallRun {
     volatile bool _caughtException;
+    std::atomic<bool> _closed;
 
     CallRun()
-        :_caughtException(false)
+        :_caughtException(false),
+         _closed(false)
     {}
 
     void operator()(asio::io_service& ioService) {
-        while (!boost::this_thread::interruption_requested()) {
-            try {
-                //No reset needed after handling exceptions.
-                ioService.run();
-            } catch(const TestException& e ) {
-                _caughtException = true;
-            }
+        try {
+            //No reset needed after handling exceptions.
+            ioService.run();
+        } catch(const TestException& e ) {
+            _caughtException = true;
         }
     }
 };
@@ -41,7 +43,7 @@ struct Fixture {
     Scheduler scheduler;
 
     Fixture()
-        : scheduler(boost::ref(callRun))
+        : scheduler(std::ref(callRun))
     {}
 };
 
@@ -101,7 +103,7 @@ BOOST_AUTO_TEST_CASE(require_exception_from_tasks_can_be_caught) {
     task->scheduleNow();
 
     for (int i=0; i<200 && !callRun._caughtException; ++i)  {
-        boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
     }
 
     BOOST_CHECK(callRun._caughtException);

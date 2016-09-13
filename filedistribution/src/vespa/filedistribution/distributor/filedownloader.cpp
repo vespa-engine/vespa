@@ -9,11 +9,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/function_output_iterator.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread.hpp>
 
 #include <libtorrent/alert.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -209,15 +206,14 @@ FileDownloader::LogSessionDeconstructed::~LogSessionDeconstructed()
     LOG(debug, "Libtorrent session closed successfully.");
 }
 
-FileDownloader::FileDownloader(const boost::shared_ptr<FileDistributionTracker>& tracker,
+FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                                const std::string& hostName, int port,
-                               const fs::path& dbPath,
-                               const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+                               const fs::path& dbPath)
    : _outstanding_SRD_requests(0),
      _tracker(tracker),
      _session(tracker.get(), libtorrent::fingerprint("vp", 0, 0, 0, 0), 0),
+     _closed(false),
      _dbPath(dbPath),
-     _exceptionRethrower(exceptionRethrower),
      _hostName(hostName),
      _port(port)
 {
@@ -358,8 +354,6 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
     LockGuard guard(_modifyTorrentsDownloadingMutex);
 
     std::set<std::string> currentFiles;
-    namespace ll = boost::lambda;
-
     std::set<sha1_hash> infoHashesToRetain;
     BOOST_FOREACH(const std::string& fileReference, filesToRetain) {
         infoHashesToRetain.insert(toInfoHash(fileReference));
@@ -382,18 +376,24 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
 
 void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
-    try {
-        while (!boost::this_thread::interruption_requested()) {
-            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
-                std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
-                eventHandler.handle(std::move(alert));
-            }
+    while ( ! closed() ) {
+        if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+            std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
+            eventHandler.handle(std::move(alert));
         }
-    } catch(const boost::thread_interrupted&) {
-        LOG(spam, "The FileDownloader thread was interrupted.");
-    } catch(...) {
-        _exceptionRethrower->store(boost::current_exception());
     }
+}
+
+bool
+FileDownloader::closed() const
+{
+    return _closed.load();
+}
+
+void
+FileDownloader::close()
+{
+    _closed.store(true);
 }
 
 void

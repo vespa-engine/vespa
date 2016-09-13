@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/noncopyable.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/signals2/signal.hpp>
-#include <boost/enable_shared_from_this.hpp>
 
 #include <vespa/filedistribution/rpc/fileprovider.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
@@ -13,8 +10,7 @@
 namespace filedistribution {
 
 class FileDownloaderManager : public FileProvider,
-                              boost::noncopyable,
-                              public boost::enable_shared_from_this<FileDownloaderManager> {
+                              public std::enable_shared_from_this<FileDownloaderManager> {
 
     class StartDownloads {
         FileDownloaderManager& _parent;
@@ -31,11 +27,11 @@ class FileDownloaderManager : public FileProvider,
         SetFinishedDownloadingStatus(FileDownloaderManager*);
     };
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _updateFilesToDownloadMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _updateFilesToDownloadMutex;
 
-    boost::shared_ptr<FileDownloader> _fileDownloader;
-    boost::shared_ptr<FileDistributionModel> _fileDistributionModel;
+    std::shared_ptr<FileDownloader> _fileDownloader;
+    std::shared_ptr<FileDistributionModel> _fileDistributionModel;
     StartDownloads _startDownloads;
     SetFinishedDownloadingStatus _setFinishedDownloadingStatus;
 
@@ -45,8 +41,11 @@ class FileDownloaderManager : public FileProvider,
 
     void removePeerStatus(const std::string& fileReference);
 public:
-    FileDownloaderManager(const boost::shared_ptr<FileDownloader>&,
-            const boost::shared_ptr<FileDistributionModel>& model);
+    using SP = std::shared_ptr<FileDownloaderManager>;
+    FileDownloaderManager(const FileDownloaderManager &) = delete;
+    FileDownloaderManager & operator = (const FileDownloaderManager &) = delete;
+    FileDownloaderManager(const std::shared_ptr<FileDownloader>&,
+            const std::shared_ptr<FileDistributionModel>& model);
     ~FileDownloaderManager();
     void start();
 

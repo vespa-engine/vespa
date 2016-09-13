@@ -10,8 +10,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/filesystem/fstream.hpp>
 
 #include <libtorrent/session.hpp>
@@ -33,14 +31,14 @@ const int uploaderPort = 9113;
 const int downloaderPort = 9112;
 
 #if 0
-boost::shared_ptr<FileDownloader>
+std::shared_ptr<FileDownloader>
 createDownloader(ComponentsDeleter& deleter,
                  int port, const fs::path& downloaderPath,
-                 const boost::shared_ptr<FileDistributionModel>& model,
-                 const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
+                 const std::shared_ptr<FileDistributionModel>& model,
+                 const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
 {
-    boost::shared_ptr<FileDistributorTrackerImpl> tracker(deleter.track(new FileDistributorTrackerImpl(model, exceptionRethrower)));
-    boost::shared_ptr<FileDownloader> downloader(deleter.track(new FileDownloader(tracker,
+    std::shared_ptr<FileDistributorTrackerImpl> tracker(deleter.track(new FileDistributorTrackerImpl(model, exceptionRethrower)));
+    std::shared_ptr<FileDownloader> downloader(deleter.track(new FileDownloader(tracker,
                             localHost, port, downloaderPath, exceptionRethrower)));
 
     tracker->setDownloader(downloader);
@@ -101,13 +99,13 @@ BOOST_AUTO_TEST_CASE(fileDownloaderTest) {
     Buffer buffer(createTorrent.bencode());
 
     ComponentsDeleter deleter;
-    boost::shared_ptr<ExceptionRethrower> exceptionRethrower(new ExceptionRethrower());
+    std::shared_ptr<ExceptionRethrower> exceptionRethrower(new ExceptionRethrower());
 
-    boost::shared_ptr<FileDistributionModel> model(deleter.track(new MockFileDistributionModel()));
-    boost::shared_ptr<FileDownloader> downloader =
+    std::shared_ptr<FileDistributionModel> model(deleter.track(new MockFileDistributionModel()));
+    std::shared_ptr<FileDownloader> downloader =
         createDownloader(deleter, downloaderPort, downloaderPath, model, exceptionRethrower);
 
-    boost::shared_ptr<FileDownloader> uploader =
+    std::shared_ptr<FileDownloader> uploader =
         createDownloader(deleter, uploaderPort, uploaderPath, model, exceptionRethrower);
 
     boost::thread uploaderThread(

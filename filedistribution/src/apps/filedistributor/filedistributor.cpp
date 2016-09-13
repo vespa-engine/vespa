@@ -5,12 +5,6 @@
 #include <cstdlib>
 
 #include <boost/program_options.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/scope_exit.hpp>
 
@@ -39,7 +33,7 @@ const char* programName = "filedistributor";
 #include <vespa/log/log.h>
 LOG_SETUP(programName);
 
-namespace ll = boost::lambda;
+using namespace std::literals;
 
 using namespace filedistribution;
 using cloud::config::ZookeepersConfig;
@@ -49,33 +43,33 @@ using cloud::config::filedistribution::FiledistributorrpcConfig;
 class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                         public config::IFetcherCallback<FiledistributorConfig>,
                         public config::IFetcherCallback<FiledistributorrpcConfig>,
-                        public config::IGenerationCallback,
-                        boost::noncopyable
+                        public config::IGenerationCallback
 {
-    class Components : boost::noncopyable {
+    class Components {
         ComponentsDeleter _componentsDeleter;
     public:
-        const boost::shared_ptr<ZKFacade> _zk;
-        const boost::shared_ptr<FileDistributionModelImpl> _model;
-        const boost::shared_ptr<FileDistributorTrackerImpl> _tracker;
-        const boost::shared_ptr<FileDownloader> _downloader;
-        const boost::shared_ptr<FileDownloaderManager> _manager;
-        const boost::shared_ptr<FileDistributorRPC> _rpcHandler;
-        const boost::shared_ptr<StateServerImpl> _stateServer;
+        const std::shared_ptr<ZKFacade> _zk;
+        const std::shared_ptr<FileDistributionModelImpl> _model;
+        const std::shared_ptr<FileDistributorTrackerImpl> _tracker;
+        const std::shared_ptr<FileDownloader> _downloader;
+        const FileDownloaderManager::SP _manager;
+        const FileDistributorRPC::SP _rpcHandler;
+        const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
-        boost::thread _downloaderEventLoopThread;
+        std::thread _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
-
         template <class T>
-        typename boost::shared_ptr<T> track(T* component) {
+        typename std::shared_ptr<T> track(T* component) {
             return _componentsDeleter.track(component);
         }
 
     public:
+        Components(const Components &) = delete;
+        Components & operator = (const Components &) = delete;
 
-        Components(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower,
+        Components(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower,
                    const config::ConfigUri & configUri,
                    const ZookeepersConfig& zooKeepersConfig,
                    const FiledistributorConfig& fileDistributorConfig,
@@ -86,18 +80,15 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                                      fileDistributorConfig.torrentport,
                                      _zk,
                                      exceptionRethrower))),
-             _tracker(track(new FileDistributorTrackerImpl(_model, exceptionRethrower))),
-             _downloader(track(new FileDownloader(
-                                     _tracker,
-                                     fileDistributorConfig.hostname,
-                                     fileDistributorConfig.torrentport,
-                                     boost::filesystem::path(fileDistributorConfig.filedbpath),
-                                     exceptionRethrower))),
+             _tracker(track(new FileDistributorTrackerImpl(_model))),
+             _downloader(track(new FileDownloader(_tracker,
+                                                  fileDistributorConfig.hostname,
+                                                  fileDistributorConfig.torrentport,
+                                                  boost::filesystem::path(fileDistributorConfig.filedbpath)))),
              _manager(track(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread(
-                    ll::bind(&FileDownloader::runEventLoop, _downloader.get())),
+             _downloaderEventLoopThread(std::bind(&FileDownloader::runEventLoop, _downloader.get())),
              _configFetcher(configUri.getContext())
 
         {
@@ -120,23 +111,25 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             //Do not waste time retrying zookeeper operations when going down.
             _zk->disableRetries();
 
-            _downloaderEventLoopThread.interrupt();
+            _downloader->close();
             _downloaderEventLoopThread.join();
         }
 
     };
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _configMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _configMutex;
 
     bool _completeReconfigurationNeeded;
     std::unique_ptr<ZookeepersConfig> _zooKeepersConfig;
     std::unique_ptr<FiledistributorConfig> _fileDistributorConfig;
     std::unique_ptr<FiledistributorrpcConfig> _rpcConfig;
 
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     std::unique_ptr<Components> _components;
 public:
+    FileDistributor(const FileDistributor &) = delete;
+    FileDistributor & operator = (const FileDistributor &) = delete;
     FileDistributor()
         : _configMutex(),
           _completeReconfigurationNeeded(false),
@@ -193,13 +186,11 @@ public:
         }
     }
 
-    static void ensureExceptionsStored(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
+    static void ensureExceptionsStored(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
         //TODO: this is somewhat hackish, refactor to eliminate this later.
         LOG(debug, "Waiting for shutdown");
-        for (int i=0;
-             i<50 && !exceptionRethrower.unique();
-                ++i) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        for (int i=0; i<50 && !exceptionRethrower.unique(); ++i) {
+            std::this_thread::sleep_for(100ms);
         }
         LOG(debug, "Done waiting for shutdown");
 
@@ -209,7 +200,7 @@ public:
         }
     }
 
-    void createComponents(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower, const config::ConfigUri & configUri) {
+    void createComponents(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower, const config::ConfigUri & configUri) {
         LockGuard guard(_configMutex);
         _components.reset(
                 new Components(exceptionRethrower,
@@ -257,7 +248,7 @@ public:
 	       !completeReconfigurationNeeded() &&
 	       !_exceptionRethrower->exceptionStored()) {
 	  postPoneAskedToReinitializedSecs--;
-	  boost::this_thread::sleep(boost::posix_time::seconds(1));
+	  std::this_thread::sleep_for(1s);
         }
     }
 };

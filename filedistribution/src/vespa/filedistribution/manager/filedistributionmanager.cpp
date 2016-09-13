@@ -3,8 +3,6 @@
 #include <vespa/filedistribution/manager/com_yahoo_vespa_filedistribution_FileDistributionManager.h>
 
 #include <memory>
-#include <boost/lambda/lambda.hpp>
-
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/zkfiledbmodel.h>
 #include <vespa/filedistribution/model/mockfiledistributionmodel.h>
@@ -89,8 +87,8 @@ void initMockFileDBModel(NativeFileDistributionManager& manager)
 void initFileDBModel(NativeFileDistributionManager& manager, const std::string& zkServers)
 {
     //Ignored for now, since we're not installing any watchers.
-    boost::shared_ptr<ExceptionRethrower> ignoredRethrower(new ExceptionRethrower());
-    boost::shared_ptr<ZKFacade> zk(new ZKFacade(zkServers, ignoredRethrower));
+    std::shared_ptr<ExceptionRethrower> ignoredRethrower(new ExceptionRethrower());
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkServers, ignoredRethrower));
     manager._fileDBModel.reset(new ZKFileDBModel(zk));
 }
 } //end anonymous namespace

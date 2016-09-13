@@ -5,10 +5,10 @@ LOG_SETUP("status-filedistribution");
 
 #include <iostream>
 #include <map>
+#include <thread>
 
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread.hpp>
 
 #include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/model/zkfacade.h>
@@ -17,6 +17,7 @@ LOG_SETUP("status-filedistribution");
 #include <zookeeper/zookeeper.h>
 
 using namespace filedistribution;
+using namespace std::literals;
 
 std::string
 plural(size_t size)
@@ -60,10 +61,10 @@ printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 //TODO:refactor
 int printStatus(const std::string& zkservers)
 {
-    boost::shared_ptr<ExceptionRethrower> exceptionRethrower;
-    boost::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
+    std::shared_ptr<ExceptionRethrower> exceptionRethrower;
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
 
-    boost::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
+    std::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
 
     std::vector<std::string> hosts = model->getHosts();
 
@@ -118,7 +119,7 @@ printStatusRetryIfZKProblem(const std::string& zkservers, const std::string& zkL
         } catch (ZKSessionExpired& e) {
             LOG(debug, "Session expired.");
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        std::this_thread::sleep_for(500ms);
     }
     return 4;
 }

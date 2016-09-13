@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/fastos/fastos.h>
 #include <memory>
@@ -35,7 +34,6 @@ class FileStorManagerTest;
 
 class StorageLink : public document::Printable,
                     public ChainedMessageSender,
-                    private boost::noncopyable,
                     protected api::MessageHandler
 {
 public:
@@ -44,15 +42,14 @@ public:
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 
 private:
-    StorageLink(const StorageLink&);
-    StorageLink& operator=(const StorageLink&);
-
     std::string _name;
     StorageLink* _up;
     std::unique_ptr<StorageLink> _down;
     State _state;
 
 public:
+    StorageLink(const StorageLink &) = delete;
+    StorageLink & operator = (const StorageLink &) = delete;
     StorageLink(const std::string& name)
         : _name(name), _up(0), _down(), _state(CREATED) {}
     virtual ~StorageLink();

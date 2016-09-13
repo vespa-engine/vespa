@@ -2,11 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include "filedistributorrpc.h"
 
-#include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
@@ -21,10 +17,12 @@ LOG_SETUP(".filedistributorrpc");
 #include <vespa/filedistribution/model/filedbmodel.h>
 
 using filedistribution::FileDistributorRPC;
-namespace ll = boost::lambda;
+using filedistribution::FileProvider;
+
+namespace ph = std::placeholders;
 
 namespace {
-typedef boost::lock_guard<boost::mutex> LockGuard;
+typedef std::lock_guard<std::mutex> LockGuard;
 
 struct RPCErrorCodes {
     const static uint32_t baseErrorCode = 0x10000;
@@ -36,7 +34,7 @@ struct RPCErrorCodes {
 class QueuedRequests {
     bool _shuttingDown;
 
-    boost::mutex _mutex;
+    std::mutex _mutex;
     typedef std::multimap<std::string, FRT_RPCRequest*> Map;
     Map _queuedRequests;
 
@@ -71,14 +69,14 @@ class QueuedRequests {
     };
 
     struct DownloadFailed {
-        filedistribution::FileProvider::FailedDownloadReason _reason;
+        FileProvider::FailedDownloadReason _reason;
 
         void operator()(FRT_RPCRequest& request) {
             LOG(info, "Download failed: '%d'", _reason);
             request.SetError(RPCErrorCodes::baseFileProviderErrorCode + _reason, "Download failed");
         }
 
-        DownloadFailed(filedistribution::FileProvider::FailedDownloadReason reason)
+        DownloadFailed(FileProvider::FailedDownloadReason reason)
             :_reason(reason)
         {}
     };
@@ -125,7 +123,7 @@ public:
     }
 
     void downloadFailed(const std::string& fileReference,
-                        filedistribution::FileProvider::FailedDownloadReason reason) {
+                        FileProvider::FailedDownloadReason reason) {
 
         DownloadFailed handler(reason);
         returnAnswer(fileReference, handler);
@@ -145,9 +143,9 @@ public:
 
 } //anonymous namespace
 
-class FileDistributorRPC::Server : public FRT_Invokable, boost::noncopyable {
+class FileDistributorRPC::Server : public FRT_Invokable {
   public:
-    boost::shared_ptr<FileProvider> _fileProvider;
+    FileProvider::SP                _fileProvider;
     std::unique_ptr<FRT_Supervisor> _supervisor;
 
     QueuedRequests _queuedRequests;
@@ -158,17 +156,17 @@ class FileDistributorRPC::Server : public FRT_Invokable, boost::noncopyable {
     void queueRequest(const std::string& fileReference, FRT_RPCRequest* request);
     void defineMethods();
 
-    Server(int listen_port,
-           const boost::shared_ptr<FileProvider>& provider);
-    void start(const boost::shared_ptr<FileDistributorRPC> parent);
+    Server(const Server &) = delete;
+    Server & operator = (const Server &) = delete;
+    Server(int listen_port, const FileProvider::SP & provider);
+    void start(const FileDistributorRPC::SP & parent);
     ~Server();
 
     void waitFor(FRT_RPCRequest*);
 };
 
 FileDistributorRPC::
-Server::Server(int listen_port,
-               const boost::shared_ptr<filedistribution::FileProvider>& provider)
+Server::Server(int listen_port, const FileProvider::SP & provider)
     :_fileProvider(provider),
      _supervisor(new FRT_Supervisor())
 {
@@ -178,8 +176,7 @@ Server::Server(int listen_port,
 }
 
 
-FileDistributorRPC::
-Server::~Server() {
+FileDistributorRPC::Server::~Server() {
     _queuedRequests.shutdown();
 
     const bool waitForFinished = true;
@@ -187,16 +184,16 @@ Server::~Server() {
 }
 
 void
-FileDistributorRPC::Server::start(const boost::shared_ptr<FileDistributorRPC> parent) {
+FileDistributorRPC::Server::start(const FileDistributorRPC::SP & parent) {
     _downloadCompletedConnection =
         _fileProvider->downloadCompleted().connect(FileProvider::DownloadCompletedSignal::slot_type(
-                        ll::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ll::_1, ll::_2)).
-                track(parent));
+                        std::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ph::_1, ph::_2)).
+                track_foreign(parent));
 
     _downloadFailedConnection =
         _fileProvider->downloadFailed().connect(FileProvider::DownloadFailedSignal::slot_type(
-                        ll::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ll::_1, ll::_2)).
-                track(parent));
+                        std::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ph::_1, ph::_2)).
+                track_foreign(parent));
 
 
 }
@@ -214,8 +211,7 @@ Server::queueRequest(const std::string& fileReference, FRT_RPCRequest* request) 
 }
 
 void
-FileDistributorRPC::
-Server::defineMethods() {
+FileDistributorRPC::Server::defineMethods() {
     const bool instant = true;
     FRT_ReflectionBuilder builder(_supervisor.get());
     builder.DefineMethod("waitFor", "s", "s", instant,
@@ -223,8 +219,7 @@ Server::defineMethods() {
 }
 
 void
-FileDistributorRPC::
-Server::waitFor(FRT_RPCRequest* request) {
+FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
     try {
         frtstream::FrtServerStream requestHandler(request);
         std::string fileReference;
@@ -253,7 +248,7 @@ Server::waitFor(FRT_RPCRequest* request) {
 }
 
 FileDistributorRPC::FileDistributorRPC(const std::string& connectionSpec,
-                                       const boost::shared_ptr<filedistribution::FileProvider>& provider)
+                                       const FileProvider::SP & provider)
     :_server(new Server(get_port(connectionSpec), provider))
 {}
 

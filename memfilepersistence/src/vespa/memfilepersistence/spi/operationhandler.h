@@ -10,7 +10,6 @@
  */
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/memfilepersistence/common/filespecification.h>
 #include <vespa/memfilepersistence/common/types.h>
@@ -25,8 +24,7 @@
 namespace storage {
 namespace memfile {
 
-class OperationHandler : protected Types,
-                         private boost::noncopyable
+class OperationHandler : protected Types
 {
 protected:
     Environment& _env;
@@ -34,6 +32,8 @@ protected:
 public:
     typedef std::unique_ptr<OperationHandler> UP;
 
+    OperationHandler(const OperationHandler &) = delete;
+    OperationHandler & operator = (const OperationHandler &) = delete;
     OperationHandler(Environment&);
     virtual ~OperationHandler() {}
 
