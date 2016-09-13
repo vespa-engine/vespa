@@ -13,7 +13,6 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
-#include <boost/thread.hpp>
 
 #include <zookeeper/zookeeper.h>
 #include <vespa/filedistribution/common/logfwd.h>
