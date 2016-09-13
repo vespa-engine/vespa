@@ -7,4 +7,4 @@ fi
 
 . ../../binref/env.sh
 
-exec $BINREF/progctl.sh $SOURCE_DIRECTORY/progdefs.sh "$@"
+exec $SOURCE_DIRECTORY/../../binref/progctl.sh $SOURCE_DIRECTORY/progdefs.sh "$@"
