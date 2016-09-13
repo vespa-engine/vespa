@@ -5,6 +5,7 @@
 #include <typeinfo>
 #include <string>
 #include <mutex>
+#include <thread>
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
