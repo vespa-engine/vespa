@@ -183,6 +183,6 @@ FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>&
     _downloader = downloader;
 
     if (downloader) {
-        _scheduler.reset(new Scheduler(boost::bind(&workerFunction, _1)));
+        _scheduler.reset(new Scheduler(std::bind(&workerFunction, std::placeholders::_1)));
     }
 }
