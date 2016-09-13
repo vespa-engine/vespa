@@ -3,7 +3,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 
 
 namespace filedistribution {
@@ -33,12 +33,12 @@ private:
     //keeps io_service.run() from exiting until it has been destructed,
     //see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/io_service.html
     boost::asio::io_service::work _keepAliveWork;
-    boost::thread _workerThread;
+    std::thread _workerThread;
 
 public:
     Scheduler(const Scheduler &) = delete;
     Scheduler & operator = (const Scheduler &) = delete;
-    Scheduler(boost::function<void (boost::asio::io_service&)> callRun) ;
+    Scheduler(std::function<void (boost::asio::io_service&)> callRun) ;
     ~Scheduler();
 };
 

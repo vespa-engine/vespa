@@ -137,28 +137,15 @@ struct TrackingTask : public Scheduler::Task {
 
 
 void
-workerFunction(std::shared_ptr<ExceptionRethrower> exceptionRethrower, asio::io_service& ioService)
+workerFunction(asio::io_service& ioService)
 {
-    while (!boost::this_thread::interruption_requested()) {
-        try {
-            //No reset needed after handling exceptions.
-            ioService.run();
-        } catch(const boost::thread_interrupted&) {
-            LOG(debug, "Tracker worker thread interrupted.");
-            throw;
-        } catch(...) {
-            exceptionRethrower->store(boost::current_exception());
-        }
-    }
+    ioService.run();
 }
 
 } //anonymous namespace
 
 
-FileDistributorTrackerImpl::FileDistributorTrackerImpl(
-        const std::shared_ptr<FileDistributionModel>& model,
-        const std::shared_ptr<ExceptionRethrower>& exceptionRethrower)
-    :_exceptionRethrower(exceptionRethrower),
+FileDistributorTrackerImpl::FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model) :
      _model(model)
 {}
 
@@ -196,6 +183,6 @@ FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>&
     _downloader = downloader;
 
     if (downloader) {
-        _scheduler.reset(new Scheduler(boost::bind(&workerFunction, _exceptionRethrower, _1)));
+        _scheduler.reset(new Scheduler(boost::bind(&workerFunction, _1)));
     }
 }
