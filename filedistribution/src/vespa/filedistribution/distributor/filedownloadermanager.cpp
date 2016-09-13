@@ -7,15 +7,12 @@ LOG_SETUP(".filedownloadermanager");
 
 #include <iterator>
 #include <sstream>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <thread>
 
 using namespace std::literals;
+namespace ph = std::placeholders;
 
 using filedistribution::FileDownloaderManager;
-
-namespace lambda = boost::lambda;
 
 namespace {
 void logStartDownload(const std::set<std::string> & filesToDownload) {
@@ -46,7 +43,7 @@ FileDownloaderManager::start()
 {
     _downloadFailedConnection =
         downloadFailed().connect(
-                DownloadFailedSignal::slot_type(lambda::bind(&FileDownloaderManager::removePeerStatus, this, lambda::_1)).
+                DownloadFailedSignal::slot_type(std::bind(&FileDownloaderManager::removePeerStatus, this, ph::_1)).
                 track(shared_from_this()));
 
     _downloadCompletedConnection =
@@ -56,7 +53,7 @@ FileDownloaderManager::start()
 
     _filesToDownloadChangedConnection =
         _fileDistributionModel->_filesToDownloadChanged.connect(
-                FileDistributionModel::FilesToDownloadChangedSignal::slot_type(boost::ref(_startDownloads)).
+                FileDistributionModel::FilesToDownloadChangedSignal::slot_type(std::ref(_startDownloads)).
                 track(shared_from_this()));
 }
 
@@ -101,7 +98,6 @@ FileDownloaderManager::StartDownloads::downloadFile(const std::string& fileRefer
 
 void
 FileDownloaderManager::StartDownloads::operator()() {
-    namespace ll = boost::lambda;
 
     DirectoryGuard::UP guard = _parent._fileDownloader->getGuard();
     LockGuard updateFilesToDownloadGuard(_parent._updateFilesToDownloadMutex);
@@ -110,7 +106,7 @@ FileDownloaderManager::StartDownloads::operator()() {
     logStartDownload(filesToDownload);
 
     std::for_each(filesToDownload.begin(), filesToDownload.end(),
-        ll::bind(&StartDownloads::downloadFile, this, ll::_1));
+        std::bind(&StartDownloads::downloadFile, this, ph::_1));
 
     _parent._fileDownloader->removeAllTorrentsBut(filesToDownload);
 }

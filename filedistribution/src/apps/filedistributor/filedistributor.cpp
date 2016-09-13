@@ -5,9 +5,6 @@
 #include <cstdlib>
 
 #include <boost/program_options.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/scope_exit.hpp>
 
@@ -36,7 +33,6 @@ const char* programName = "filedistributor";
 #include <vespa/log/log.h>
 LOG_SETUP(programName);
 
-namespace ll = boost::lambda;
 using namespace std::literals;
 
 using namespace filedistribution;
@@ -97,7 +93,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
              _manager(track_boost(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track_boost(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread( ll::bind(&FileDownloader::runEventLoop, _downloader.get())),
+             _downloaderEventLoopThread(std::bind(&FileDownloader::runEventLoop, _downloader.get())),
              _configFetcher(configUri.getContext())
 
         {

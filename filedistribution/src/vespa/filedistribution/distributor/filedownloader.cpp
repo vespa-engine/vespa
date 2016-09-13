@@ -9,8 +9,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/function_output_iterator.hpp>
 #include <boost/foreach.hpp>
 
@@ -356,8 +354,6 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
     LockGuard guard(_modifyTorrentsDownloadingMutex);
 
     std::set<std::string> currentFiles;
-    namespace ll = boost::lambda;
-
     std::set<sha1_hash> infoHashesToRetain;
     BOOST_FOREACH(const std::string& fileReference, filesToRetain) {
         infoHashesToRetain.insert(toInfoHash(fileReference));

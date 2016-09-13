@@ -38,7 +38,7 @@ Task::handle(const boost::system::error_code& code) {
 
 Scheduler::Scheduler(std::function<void (asio::io_service&)> callRun)
     :_keepAliveWork(ioService),
-     _workerThread(boost::bind(callRun, boost::ref(ioService)))
+     _workerThread(std::bind(callRun, std::ref(ioService)))
 {}
 
 Scheduler::~Scheduler() {
