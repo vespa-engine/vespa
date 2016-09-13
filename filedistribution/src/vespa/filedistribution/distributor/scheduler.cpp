@@ -19,7 +19,8 @@ void
 Task::schedule(asio::deadline_timer::duration_type delay)
 {
     _timer.expires_from_now(delay);
-    _timer.async_wait(boost::bind(&Task::handle, shared_from_this(), _1));
+    std::shared_ptr<Task> self = shared_from_this();;
+    _timer.async_wait([self](const auto & e) { self->handle(e); });
 }
 
 void
