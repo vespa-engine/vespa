@@ -10,7 +10,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/filesystem/fstream.hpp>
 
 #include <libtorrent/session.hpp>

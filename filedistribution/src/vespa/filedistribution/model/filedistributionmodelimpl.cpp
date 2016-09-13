@@ -8,8 +8,6 @@
 #include <cstdlib>
 
 #include <boost/filesystem.hpp>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <zookeeper/zookeeper.h>
 
 #include <vespa/log/log.h>
@@ -109,9 +107,7 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
         PeerEntries result;
         result.reserve(end - peers.begin());
 
-        namespace ll=boost::lambda;
-        std::for_each(peers.begin(), end,
-            ll::bind(&addPeerEntry, boost::lambda::_1, boost::ref(result)));
+        std::for_each(peers.begin(), end, [&] (const std::string & s) { addPeerEntry(s, result); });
 
         LOG(debug, "Found %zu peers for path '%s'", result.size(), path.string().c_str());
         return result;
