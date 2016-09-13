@@ -7,7 +7,7 @@ LOG_SETUP(".componentsdeleter");
 
 #include <boost/foreach.hpp>
 
-
+using namespace std::literals;
 using namespace filedistribution;
 
 struct ComponentsDeleter::Worker {
@@ -51,7 +51,7 @@ ComponentsDeleter::waitForAllComponentsDeleted()
     LOG(debug, "Waiting for all components to be deleted");
 
     for (int i=0; i<600 && !allComponentsDeleted(); ++i) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(100ms);
     }
     LOG(debug, "Done waiting for all components to be deleted");
 

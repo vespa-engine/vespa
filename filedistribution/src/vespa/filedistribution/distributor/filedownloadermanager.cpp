@@ -10,6 +10,9 @@ LOG_SETUP(".filedownloadermanager");
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/thread.hpp>
+#include <thread>
+
+using namespace std::literals;
 
 using filedistribution::FileDownloaderManager;
 
@@ -135,7 +138,7 @@ FileDownloaderManager::SetFinishedDownloadingStatus::operator()(
     } catch(const FileDistributionModel::NotPeer&) {  //Probably a concurrent removal of the torrent.
 
         //improve chance of libtorrent session being updated.
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
         if (_parent._fileDownloader->hasTorrent(fileReference)) {
 
             _parent._fileDistributionModel->addPeer(fileReference);

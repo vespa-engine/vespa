@@ -38,6 +38,7 @@ const char* programName = "filedistributor";
 LOG_SETUP(programName);
 
 namespace ll = boost::lambda;
+using namespace std::literals;
 
 using namespace filedistribution;
 using cloud::config::ZookeepersConfig;
@@ -200,10 +201,8 @@ public:
     static void ensureExceptionsStored(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
         //TODO: this is somewhat hackish, refactor to eliminate this later.
         LOG(debug, "Waiting for shutdown");
-        for (int i=0;
-             i<50 && !exceptionRethrower.unique();
-                ++i) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        for (int i=0; i<50 && !exceptionRethrower.unique(); ++i) {
+            std::this_thread::sleep_for(100ms);
         }
         LOG(debug, "Done waiting for shutdown");
 
@@ -261,7 +260,7 @@ public:
 	       !completeReconfigurationNeeded() &&
 	       !_exceptionRethrower->exceptionStored()) {
 	  postPoneAskedToReinitializedSecs--;
-	  boost::this_thread::sleep(boost::posix_time::seconds(1));
+	  std::this_thread::sleep_for(1s);
         }
     }
 };

@@ -5,6 +5,7 @@ LOG_SETUP("status-filedistribution");
 
 #include <iostream>
 #include <map>
+#include <thread>
 
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
@@ -17,6 +18,7 @@ LOG_SETUP("status-filedistribution");
 #include <zookeeper/zookeeper.h>
 
 using namespace filedistribution;
+using namespace std::literals;
 
 std::string
 plural(size_t size)
@@ -118,7 +120,7 @@ printStatusRetryIfZKProblem(const std::string& zkservers, const std::string& zkL
         } catch (ZKSessionExpired& e) {
             LOG(debug, "Session expired.");
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        std::this_thread::sleep_for(500ms);
     }
     return 4;
 }
