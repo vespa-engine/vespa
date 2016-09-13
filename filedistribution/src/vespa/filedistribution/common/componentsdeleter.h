@@ -7,8 +7,6 @@
 #include <mutex>
 #include <thread>
 
-#include <boost/function.hpp>
-#include <boost/checked_delete.hpp>
 #include <boost/smart_ptr.hpp>
 
 #include "concurrentqueue.h"
@@ -28,7 +26,7 @@ class ComponentsDeleter {
     typedef std::map<void*, std::string> TrackedComponentsMap;
     TrackedComponentsMap _trackedComponents;
 
-    typedef boost::function<void (void)> CallDeleteFun;
+    typedef std::function<void (void)> CallDeleteFun;
     ConcurrentQueue<CallDeleteFun> _deleteRequests;
     bool _closed;
     std::thread _deleterThread;

@@ -7,9 +7,6 @@
 
 #include <iostream>
 
-#include <boost/thread/barrier.hpp>
-#include <boost/checked_delete.hpp>
-
 #include <vespa/filedistribution/common/componentsdeleter.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/zkfiledbmodel.h>
