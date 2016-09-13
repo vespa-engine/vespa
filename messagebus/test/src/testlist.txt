@@ -1,0 +1,6 @@
+tests/compile-java
+tests/compile-cpp
+tests/trace
+tests/error
+tests/errorcodes
+tests/speed
