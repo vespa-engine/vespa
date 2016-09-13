@@ -21,19 +21,19 @@ class TestException {};
 
 struct CallRun {
     volatile bool _caughtException;
+    std::atomic<bool> _closed;
 
     CallRun()
-        :_caughtException(false)
+        :_caughtException(false),
+         _closed(false)
     {}
 
     void operator()(asio::io_service& ioService) {
-        while (!boost::this_thread::interruption_requested()) {
-            try {
-                //No reset needed after handling exceptions.
-                ioService.run();
-            } catch(const TestException& e ) {
-                _caughtException = true;
-            }
+        try {
+            //No reset needed after handling exceptions.
+            ioService.run();
+        } catch(const TestException& e ) {
+            _caughtException = true;
         }
     }
 };
@@ -43,7 +43,7 @@ struct Fixture {
     Scheduler scheduler;
 
     Fixture()
-        : scheduler(boost::ref(callRun))
+        : scheduler(std::ref(callRun))
     {}
 };
 
