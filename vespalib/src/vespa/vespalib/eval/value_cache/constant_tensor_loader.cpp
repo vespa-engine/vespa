@@ -79,15 +79,12 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         LOG(warning, "invalid type specification: %s", type.c_str());
         return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
+    Slime slime;
     File file(path);
     if (!file.valid()) {
         LOG(warning, "could not read file: %s", path.c_str());
-        return std::make_unique<ErrorConstant>(ValueType::error_type());
-    }
-    Slime slime;
-    if (slime::JsonFormat::decode(Memory(file.data, file.size), slime) == 0) {
+    } else if (slime::JsonFormat::decode(Memory(file.data, file.size), slime) == 0) {
         LOG(warning, "file contains invalid json: %s", path.c_str());
-        return std::make_unique<ErrorConstant>(ValueType::error_type());
     }
     std::set<vespalib::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {

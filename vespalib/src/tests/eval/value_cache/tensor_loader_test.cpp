@@ -6,6 +6,11 @@
 
 using namespace vespalib::eval;
 
+std::unique_ptr<Tensor> make_empty_tensor() {
+    return SimpleTensorEngine::ref()
+        .create(TensorSpec("tensor(x[2],y[2])"));
+}
+
 std::unique_ptr<Tensor> make_dense_tensor() {
     return SimpleTensorEngine::ref()
         .create(TensorSpec("tensor(x[2],y[2])")
@@ -45,12 +50,12 @@ TEST_F("require that load fails for invalid types", ConstantTensorLoader(SimpleT
     TEST_DO(verify_error(f1.create(TEST_PATH("dense.json"), "invalid type spec")));
 }
 
-TEST_F("require that load fails for invalid file name", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(TEST_PATH("missing_file.json"), "tensor(x[2],y[2])")));
+TEST_F("require that invalid file name loads an empty tensor", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_empty_tensor(), f1.create(TEST_PATH("missing_file.json"), "tensor(x[2],y[2])")));
 }
 
-TEST_F("require that load fails for invalid json", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(TEST_PATH("invalid.json"), "tensor(x[2],y[2])")));
+TEST_F("require that invalid json loads an empty tensor", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_empty_tensor(), f1.create(TEST_PATH("invalid.json"), "tensor(x[2],y[2])")));
 }
 
 TEST_F("require that dense tensors can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
