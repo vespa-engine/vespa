@@ -3,8 +3,6 @@
 #include <vespa/filedistribution/manager/com_yahoo_vespa_filedistribution_FileDistributionManager.h>
 
 #include <memory>
-#include <boost/lambda/lambda.hpp>
-
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/zkfiledbmodel.h>
 #include <vespa/filedistribution/model/mockfiledistributionmodel.h>
