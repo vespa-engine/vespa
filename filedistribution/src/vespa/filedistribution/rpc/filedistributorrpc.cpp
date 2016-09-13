@@ -188,12 +188,12 @@ FileDistributorRPC::Server::start(const FileDistributorRPC::SP & parent) {
     _downloadCompletedConnection =
         _fileProvider->downloadCompleted().connect(FileProvider::DownloadCompletedSignal::slot_type(
                         std::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ph::_1, ph::_2)).
-                track(parent));
+                track_foreign(parent));
 
     _downloadFailedConnection =
         _fileProvider->downloadFailed().connect(FileProvider::DownloadFailedSignal::slot_type(
                         std::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ph::_1, ph::_2)).
-                track(parent));
+                track_foreign(parent));
 
 
 }
