@@ -11,6 +11,11 @@ std::unique_ptr<Tensor> make_empty_tensor() {
         .create(TensorSpec("tensor(x[2],y[2])"));
 }
 
+std::unique_ptr<Tensor> make_double_tensor() {
+    return SimpleTensorEngine::ref()
+        .create(TensorSpec("double"));
+}
+
 std::unique_ptr<Tensor> make_dense_tensor() {
     return SimpleTensorEngine::ref()
         .create(TensorSpec("tensor(x[2],y[2])")
@@ -46,8 +51,8 @@ void verify_tensor(std::unique_ptr<Tensor> expect, ConstantValue::UP actual) {
     EXPECT_TRUE(engine.equal(*expect, *actual->value().as_tensor()));
 }
 
-TEST_F("require that load fails for invalid types", ConstantTensorLoader(SimpleTensorEngine::ref())) {
-    TEST_DO(verify_error(f1.create(TEST_PATH("dense.json"), "invalid type spec")));
+TEST_F("require that invalid types loads an empty double", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_double_tensor(), f1.create(TEST_PATH("dense.json"), "invalid type spec")));
 }
 
 TEST_F("require that invalid file name loads an empty tensor", ConstantTensorLoader(SimpleTensorEngine::ref())) {
