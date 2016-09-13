@@ -62,7 +62,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
-        boost::thread _downloaderEventLoopThread;
+        std::thread _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
         template <class T>
@@ -95,8 +95,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                                      _tracker,
                                      fileDistributorConfig.hostname,
                                      fileDistributorConfig.torrentport,
-                                     boost::filesystem::path(fileDistributorConfig.filedbpath),
-                                     exceptionRethrower))),
+                                     boost::filesystem::path(fileDistributorConfig.filedbpath)))),
              _manager(track_boost(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track_boost(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
@@ -123,7 +122,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             //Do not waste time retrying zookeeper operations when going down.
             _zk->disableRetries();
 
-            _downloaderEventLoopThread.interrupt();
+            _downloader->close();
             _downloaderEventLoopThread.join();
         }
 
