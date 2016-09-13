@@ -262,14 +262,8 @@ ZKFacade::ZKFacade(const std::string& zkservers,
 ZKFacade::~ZKFacade() {
     disableRetries();
     _watchersEnabled = false;
-
-    boost::thread shutdownCaller(zookeeper_close, _zhandle);
-    if (shutdownCaller.timed_join(boost::posix_time::seconds(120))) {
-        LOGFWD(debug, "Zookeeper connection closed successfully.");
-    } else {
-        LOGFWD(info, "Timed out waiting for the zookeeper connection to shut down.");
-        abort();
-    }
+    zookeeper_close(_zhandle);
+    LOGFWD(debug, "Zookeeper connection closed successfully.");
 }
 
 const std::string
