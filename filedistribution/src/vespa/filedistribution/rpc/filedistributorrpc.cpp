@@ -18,6 +18,8 @@ LOG_SETUP(".filedistributorrpc");
 #include <vespa/filedistribution/model/filedbmodel.h>
 
 using filedistribution::FileDistributorRPC;
+using filedistribution::FileProvider;
+
 namespace ll = boost::lambda;
 
 namespace {
@@ -68,14 +70,14 @@ class QueuedRequests {
     };
 
     struct DownloadFailed {
-        filedistribution::FileProvider::FailedDownloadReason _reason;
+        FileProvider::FailedDownloadReason _reason;
 
         void operator()(FRT_RPCRequest& request) {
             LOG(info, "Download failed: '%d'", _reason);
             request.SetError(RPCErrorCodes::baseFileProviderErrorCode + _reason, "Download failed");
         }
 
-        DownloadFailed(filedistribution::FileProvider::FailedDownloadReason reason)
+        DownloadFailed(FileProvider::FailedDownloadReason reason)
             :_reason(reason)
         {}
     };
@@ -122,7 +124,7 @@ public:
     }
 
     void downloadFailed(const std::string& fileReference,
-                        filedistribution::FileProvider::FailedDownloadReason reason) {
+                        FileProvider::FailedDownloadReason reason) {
 
         DownloadFailed handler(reason);
         returnAnswer(fileReference, handler);
@@ -144,7 +146,7 @@ public:
 
 class FileDistributorRPC::Server : public FRT_Invokable {
   public:
-    std::shared_ptr<FileProvider> _fileProvider;
+    FileProvider::SP                _fileProvider;
     std::unique_ptr<FRT_Supervisor> _supervisor;
 
     QueuedRequests _queuedRequests;
@@ -157,7 +159,7 @@ class FileDistributorRPC::Server : public FRT_Invokable {
 
     Server(const Server &) = delete;
     Server & operator = (const Server &) = delete;
-    Server(int listen_port, const std::shared_ptr<FileProvider>& provider);
+    Server(int listen_port, const FileProvider::SP & provider);
     void start(const FileDistributorRPC::SP & parent);
     ~Server();
 
@@ -165,8 +167,7 @@ class FileDistributorRPC::Server : public FRT_Invokable {
 };
 
 FileDistributorRPC::
-Server::Server(int listen_port,
-               const std::shared_ptr<filedistribution::FileProvider>& provider)
+Server::Server(int listen_port, const FileProvider::SP & provider)
     :_fileProvider(provider),
      _supervisor(new FRT_Supervisor())
 {
@@ -248,7 +249,7 @@ FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
 }
 
 FileDistributorRPC::FileDistributorRPC(const std::string& connectionSpec,
-                                       const std::shared_ptr<filedistribution::FileProvider>& provider)
+                                       const FileProvider::SP & provider)
     :_server(new Server(get_port(connectionSpec), provider))
 {}
 

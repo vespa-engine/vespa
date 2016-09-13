@@ -17,7 +17,7 @@ const std::string MockFileProvider::_queueForeverFileReference("queue-forever");
 
 BOOST_AUTO_TEST_CASE(fileDistributionRPCTest) {
     const std::string spec("tcp/localhost:9111");
-    std::shared_ptr<fd::MockFileProvider> provider(new fd::MockFileProvider());
+    fd::FileProvider::SP provider(new fd::MockFileProvider());
     fd::FileDistributorRPC::SP fileDistributorRPC(new fd::FileDistributorRPC(spec, provider));
     fileDistributorRPC->start();
 
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(fileDistributionRPCTest) {
 //must be run through valgrind
 BOOST_AUTO_TEST_CASE(require_that_queued_requests_does_not_leak_memory) {
     const std::string spec("tcp/localhost:9111");
-    std::shared_ptr<MockFileProvider> provider(new MockFileProvider());
+    fd::FileProvider::SP provider(new fd::MockFileProvider());
     fd::FileDistributorRPC::SP fileDistributorRPC(new fd::FileDistributorRPC(spec, provider));
     fileDistributorRPC->start();
 
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(require_that_queued_requests_does_not_leak_memory) {
     request->GetParams()->AddString(MockFileProvider::_queueForeverFileReference.c_str());
     target->InvokeVoid(request);
 
-    provider->_queueForeverBarrier.wait(); //the request has been enqueued.
+    static_cast<fd::MockFileProvider &>(*provider)._queueForeverBarrier.wait(); //the request has been enqueued.
     fileDistributorRPC.reset();
 
     target->SubRef();

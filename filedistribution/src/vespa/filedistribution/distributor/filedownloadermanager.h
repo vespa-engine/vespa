@@ -42,6 +42,7 @@ class FileDownloaderManager : public FileProvider,
 
     void removePeerStatus(const std::string& fileReference);
 public:
+    using SP = boost::shared_ptr<FileDownloaderManager>;
     FileDownloaderManager(const FileDownloaderManager &) = delete;
     FileDownloaderManager & operator = (const FileDownloaderManager &) = delete;
     FileDownloaderManager(const std::shared_ptr<FileDownloader>&,
