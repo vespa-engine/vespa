@@ -67,24 +67,24 @@ public class SystemStateGenerator {
         maxTransitionTime.put(NodeType.STORAGE, 5000);
     }
 
-    public void handleAllDistributorsInSync(DatabaseHandler database,
+    public void handleAllDistributorsInSync(final ClusterState currentState,
+                                            DatabaseHandler database,
                                             DatabaseHandler.Context dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
+        log.log(LogLevel.INFO, "handleAllDistributorsInSync"); // TODO debugging only
         for (NodeType nodeType : NodeType.getTypes()) {
             for (ConfiguredNode configuredNode : nodes) {
-                Node node = new Node(nodeType, configuredNode.index());
-                NodeInfo nodeInfo = dbContext.getCluster().getNodeInfo(node);
-                NodeState nodeState = nextClusterStateView.getClusterState().getNodeState(node);
+                final Node node = new Node(nodeType, configuredNode.index());
+                final NodeInfo nodeInfo = dbContext.getCluster().getNodeInfo(node);
+                final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        log.log(LogLevel.INFO, String.format("Storing away new start timestamp for node %s (%d)",
+                        log.log(LogLevel.INFO, String.format("Storing away new start timestamp for node %s (%d)", // TODO not INFO
                                 node, nodeState.getStartTimestamp()));
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        log.log(LogLevel.INFO, "Resetting timestamp in cluster state for node " + node);
-                        nodeState.setStartTimestamp(0);
-                        nextClusterStateView.getClusterState().setNodeState(node, nodeState);
+                        log.log(LogLevel.INFO, "Resetting timestamp in cluster state for node " + node); // TODO not INFO
                         ++startTimestampsReset;
                     }
                 } else {
@@ -96,7 +96,8 @@ public class SystemStateGenerator {
         }
         if (startTimestampsReset > 0) {
             eventLog.add(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE, "Reset " + startTimestampsReset +
-                    " start timestamps as all available distributors have seen newest cluster state.", timer.getCurrentTimeInMillis()));
+                    " start timestamps as all available distributors have seen newest cluster state.",
+                    timer.getCurrentTimeInMillis()));
             nextStateViewChanged = true;
             database.saveStartTimestamps(dbContext);
         } else {
@@ -142,7 +143,7 @@ public class SystemStateGenerator {
     public void setNodes(ClusterInfo newClusterInfo) {
         this.nodes = new HashSet<>(newClusterInfo.getConfiguredNodes().values());
 
-        for (ConfiguredNode node : this.nodes) {
+        /*for (ConfiguredNode node : this.nodes) {
             NodeInfo newNodeInfo = newClusterInfo.getStorageNodeInfo(node.index());
             NodeState currentState = currentClusterStateView.getClusterState().getNodeState(new Node(NodeType.STORAGE, node.index()));
             if (currentState.getState() == State.RETIRED || currentState.getState() == State.UP) { // then correct to configured state
@@ -152,7 +153,7 @@ public class SystemStateGenerator {
 
         // Ensure that any nodes that have been removed from the config are also
         // promptly removed from the next (and subsequent) generated cluster states.
-        pruneAllNodesNotContainedInConfig();
+        pruneAllNodesNotContainedInConfig();*/
 
         nextStateViewChanged = true;
     }
@@ -174,6 +175,7 @@ public class SystemStateGenerator {
     }
     public void setMaxSlobrokDisconnectGracePeriod(int millisecs) { maxSlobrokDisconnectGracePeriod = millisecs; }
 
+    // TODO safe to remove
     public void setDistributionBits(int bits) {
         if (bits == idealDistributionBits) return;
         idealDistributionBits = bits;
@@ -485,6 +487,7 @@ public class SystemStateGenerator {
         }
     }
 
+    // TODO safe to remove
     public boolean notifyIfNewSystemState(ContentCluster cluster, SystemStateListener stateListener) {
         if ( ! nextStateViewChanged) return false;
 
@@ -569,17 +572,22 @@ public class SystemStateGenerator {
 
     // TODO nodeListener is only used via decideNodeStateGivenReportedState -> handlePrematureCrash
     // TODO this will recursively invoke proposeNewNodeState, which will presumably (i.e. hopefully) be a no-op...
-    public void handleNewReportedNodeState(NodeInfo node, NodeState reportedState, NodeStateOrHostInfoChangeHandler nodeListener) {
-        ClusterState nextState = nextClusterStateView.getClusterState();
-        NodeState currentState = nextState.getNodeState(node.getNode());
+    public void handleNewReportedNodeState(final ClusterState currentClusterState,
+                                           final NodeInfo node,
+                                           final NodeState reportedState,
+                                           final NodeStateOrHostInfoChangeHandler nodeListener)
+    {
+        final NodeState currentState = currentClusterState.getNodeState(node.getNode());
         log.log(currentState.equals(reportedState) && node.getVersion() == 0 ? LogLevel.SPAM : LogLevel.DEBUG,
                 "Got nodestate reply from " + node + ": "
                 + node.getReportedState().getTextualDifference(reportedState) + " (Current state is " + currentState.toString(true) + ")");
-        long currentTime = timer.getCurrentTimeInMillis();
+        final long currentTime = timer.getCurrentTimeInMillis();
 
         if (reportedState.getState().equals(State.DOWN)) {
             node.setTimeOfFirstFailingConnectionAttempt(currentTime);
         }
+        // FIXME only set if reported state has actually changed...
+        nextStateViewChanged = true;
 
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
@@ -594,76 +602,20 @@ public class SystemStateGenerator {
             return;
         }
 
-        // FIXME comparison against current cluster state view no longer makes sense!
-        NodeState alteredState = decideNodeStateGivenReportedState(node, currentState, reportedState, nodeListener);
+        final NodeState alteredState = decideNodeStateGivenReportedState(node, currentState, reportedState, nodeListener);
         if (alteredState != null) {
-            ClusterState clusterState = currentClusterStateView.getClusterState();
-
-
-            if (alteredState.above(node.getWantedState())) {
-                log.log(LogLevel.DEBUG, "Cannot set node in state " + alteredState.getState() + " when wanted state is " + node.getWantedState());
-                alteredState.setState(node.getWantedState().getState());
-            }
-
-
-            // TODO handle in baseline
-            if (reportedState.getStartTimestamp() > node.getStartTimestamp()) {
-                log.log(LogLevel.INFO, String.format("Reported TS %d > info TS %d",
-                        reportedState.getStartTimestamp(), node.getStartTimestamp()));
-                alteredState.setStartTimestamp(reportedState.getStartTimestamp());
+            // TODO figure out what to do with init progress vs. new states.
+            // TODO .. simply don't include init progress in generated states? are they used anywhere? it's already in reported state
+            if (alteredState.getMinUsedBits() != currentState.getMinUsedBits()) {
+                log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count has changed from "
+                                        + currentState.getMinUsedBits() + " to " + alteredState.getMinUsedBits());
+                int oldCount = currentState.getMinUsedBits();
+                eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
+                                        + " to " + alteredState.getMinUsedBits(), NodeEvent.Type.CURRENT, currentTime), isMaster);
+                nextStateViewChanged = true;
             } else {
-                alteredState.setStartTimestamp(0);
-            }
-
-
-            if (!alteredState.similarTo(currentState)) {
-                setNodeState(node, alteredState);
-            } else if (!alteredState.equals(currentState)) {
-
-
-                // TODO figure out what to do with init progress vs. new states.
-                // TODO .. simply don't include init progress in generated states? are they used anywhere? it's already in reported state
-                // TODO why is this an else-if branch? can't multiple of these happen at the same time?!
-                if (currentState.getState().equals(State.INITIALIZING) && alteredState.getState().equals(State.INITIALIZING) &&
-                    Math.abs(currentState.getInitProgress() - alteredState.getInitProgress()) > 0.000000001)
-                {
-                    log.log(LogLevel.DEBUG, "Only silently updating init progress for " + node + " in cluster state because new "
-                            + "state is too similar to tag new version: " + currentState.getTextualDifference(alteredState));
-                    currentState.setInitProgress(alteredState.getInitProgress());
-                    nextState.setNodeState(node.getNode(), currentState);
-
-                    NodeState currentNodeState = clusterState.getNodeState(node.getNode());
-                    if (currentNodeState.getState().equals(State.INITIALIZING)) {
-                        currentNodeState.setInitProgress(alteredState.getInitProgress());
-                        clusterState.setNodeState(node.getNode(), currentNodeState);
-                    }
-
-
-                    // TODO handle in baseline
-                } else if (alteredState.getMinUsedBits() != currentState.getMinUsedBits()) {
-                    log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count has changed from "
-                                            + currentState.getMinUsedBits() + " to " + alteredState.getMinUsedBits());
-                    int oldCount = currentState.getMinUsedBits();
-                    currentState.setMinUsedBits(alteredState.getMinUsedBits());
-                    nextState.setNodeState(node.getNode(), currentState);
-                    eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
-                                            + " to " + currentState.getMinUsedBits(), NodeEvent.Type.CURRENT, currentTime), isMaster);
-                    nextStateViewChanged = true;
-                } else {
-                    log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
-                            + currentState.getTextualDifference(alteredState));
-                }
-
-
-            } else if (alteredState.getDescription().contains("Listing buckets")) {
-
-
-                // TODO figure out why this is handled specially and the desired semantics of this
-                currentState.setDescription(alteredState.getDescription());
-                nextState.setNodeState(node.getNode(), currentState);
-                NodeState currentNodeState = clusterState.getNodeState(node.getNode());
-                currentNodeState.setDescription(alteredState.getDescription());
-                clusterState.setNodeState(node.getNode(), currentNodeState);
+                log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
+                        + currentState.getTextualDifference(alteredState));
             }
         }
     }
@@ -676,10 +628,14 @@ public class SystemStateGenerator {
 
 
     // TODO move to node state change handler
-    public void handleMissingNode(NodeInfo node, NodeStateOrHostInfoChangeHandler nodeListener) {
+    // TODO what about nextStateViewChanged here??
+    public void handleMissingNode(final ClusterState currentClusterState,
+                                  final NodeInfo node,
+                                  final NodeStateOrHostInfoChangeHandler nodeListener)
+    {
         removeHostName(node);
 
-        long timeNow = timer.getCurrentTimeInMillis();
+        final long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
             eventLog.add(new NodeEvent(node, "Node is no longer in slobrok, but we still have a pending state request.", NodeEvent.Type.REPORTED, timeNow), isMaster);
@@ -691,31 +647,32 @@ public class SystemStateGenerator {
             log.log(LogLevel.DEBUG, "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
             NodeState ns = node.getReportedState().clone();
             ns.setState(State.DOWN);
-            handleNewReportedNodeState(node, ns.clone(), nodeListener);
-            node.setReportedState(ns, timer.getCurrentTimeInMillis()); // Must reset it to null to get connection attempts counted
+            handleNewReportedNodeState(currentClusterState, node, ns.clone(), nodeListener);
         } else {
             log.log(LogLevel.DEBUG, "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
         }
+
+        nextStateViewChanged = true;
     }
 
-
-    // TODO handle to baseline
     /**
      * Propose a new state for a node. This may happen due to an administrator action, orchestration, or
      * a configuration change.
+     *
+     * TODO this is currently really just to trigger (event) logging and state re-gen
      */
-    public void proposeNewNodeState(NodeInfo node, NodeState proposedState) {
-        NodeState currentState = nextClusterStateView.getClusterState().getNodeState(node.getNode());
-        NodeState currentReported = node.getReportedState(); // TODO: Is there a reason to have both of this and the above?
+    public void proposeNewNodeState(final ClusterState currentClusterState, final NodeInfo node, final NodeState proposedState) {
+        final NodeState currentState = currentClusterState.getNodeState(node.getNode());
+        final NodeState currentReported = node.getReportedState(); // TODO: Is there a reason to have both of this and the above?
 
-        NodeState newCurrentState = currentReported.clone();
+        final NodeState newCurrentState = currentReported.clone();
 
         newCurrentState.setState(proposedState.getState()).setDescription(proposedState.getDescription());
-        if (newCurrentState.getStartTimestamp() == node.getStartTimestamp()) {
-            newCurrentState.setStartTimestamp(0); // Already observed FIXME deprecated, only for getting tests to pass
-        }
 
-        if (currentState.getState().equals(newCurrentState.getState())) return;
+        if (currentState.getState().equals(newCurrentState.getState())) {
+            return;
+        }
+        nextStateViewChanged = true;
 
         log.log(LogLevel.DEBUG, "Got new wanted nodestate for " + node + ": " + currentState.getTextualDifference(proposedState));
         // Should be checked earlier before state was set in cluster
@@ -728,7 +685,6 @@ public class SystemStateGenerator {
         if ( ! newCurrentState.similarTo(currentState)) {
             eventLog.add(new NodeEvent(node, "Node state set to " + newCurrentState + ".", NodeEvent.Type.WANTED, timeNow), isMaster);
         }
-        setNodeState(node, newCurrentState);
     }
 
     public void handleNewRpcAddress(NodeInfo node) {
@@ -763,12 +719,16 @@ public class SystemStateGenerator {
     }
 
 
-    public boolean watchTimers(ContentCluster cluster, NodeStateOrHostInfoChangeHandler nodeListener) {
+    // TODO refactor like a boss
+    public boolean watchTimers(final ContentCluster cluster,
+                               final ClusterState currentClusterState,
+                               final NodeStateOrHostInfoChangeHandler nodeListener)
+    {
         boolean triggeredAnyTimers = false;
-        long currentTime = timer.getCurrentTimeInMillis();
+        final long currentTime = timer.getCurrentTimeInMillis();
         for(NodeInfo node : cluster.getNodeInfo()) {
-            NodeState currentStateInSystem = nextClusterStateView.getClusterState().getNodeState(node.getNode());
-            NodeState lastReportedState = node.getReportedState();
+            final NodeState currentStateInSystem = currentClusterState.getNodeState(node.getNode());
+            final NodeState lastReportedState = node.getReportedState();
 
 
             // TODO move to own node event listener class
@@ -786,28 +746,19 @@ public class SystemStateGenerator {
                 state.setState(State.DOWN);
                 if (!state.hasDescription()) state.setDescription(sb.toString());
                 eventLog.add(new NodeEvent(node, sb.toString(), NodeEvent.Type.CURRENT, currentTime), isMaster);
-                handleNewReportedNodeState(node, state.clone(), nodeListener);
+                handleNewReportedNodeState(currentClusterState, node, state.clone(), nodeListener);
                 node.setReportedState(state, currentTime);
                 triggeredAnyTimers = true;
             }
 
-
-
-            // TODO handle in baseline (temporal state transition)
-            // If node is still unavailable after transition time, mark it down
+            // If node is still unavailable after transition time, trigger state regeneration to mark it down
             if (currentStateInSystem.getState().equals(State.MAINTENANCE)
-                && ( ! nextStateViewChanged || ! this.nextClusterStateView.getClusterState().getNodeState(node.getNode()).getState().equals(State.DOWN))
                 && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
                 && (lastReportedState.getState().equals(State.DOWN) || node.isRpcAddressOutdated())
                 && node.getTransitionTime() + maxTransitionTime.get(node.getNode().getType()) < currentTime)
             {
                 eventLog.add(new NodeEvent(node, (currentTime - node.getTransitionTime())
                         + " milliseconds without contact. Marking node down.", NodeEvent.Type.CURRENT, currentTime), isMaster);
-                NodeState newState = new NodeState(node.getNode().getType(), State.DOWN).setDescription(
-                        (currentTime - node.getTransitionTime()) + " ms without contact. Too long to keep in maintenance. Marking node down");
-                    // Keep old description if there is one as it is likely closer to the cause of the problem
-                if (currentStateInSystem.hasDescription()) newState.setDescription(currentStateInSystem.getDescription());
-                setNodeState(node, newState);
                 triggeredAnyTimers = true;
             }
 
@@ -825,9 +776,6 @@ public class SystemStateGenerator {
                 eventLog.add(new NodeEvent(node, (currentTime - node.getInitProgressTime()) + " milliseconds "
                         + "without initialize progress. Marking node down."
                         + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".", NodeEvent.Type.CURRENT, currentTime), isMaster);
-                NodeState newState = new NodeState(node.getNode().getType(), State.DOWN).setDescription(
-                        (currentTime - node.getInitProgressTime()) + " ms without initialize progress. Assuming node has deadlocked.");
-                setNodeState(node, newState);
                 handlePrematureCrash(node, nodeListener);
                 triggeredAnyTimers = true;
             }
@@ -853,13 +801,16 @@ public class SystemStateGenerator {
             }
         }
 
-        // TODO must ensure state generator is called if this returns true
+        if (triggeredAnyTimers) {
+            nextStateViewChanged = true;
+        }
         return triggeredAnyTimers;
     }
 
     private boolean isControlledShutdown(NodeState state) {
-        return (state.getState() == State.STOPPING && (state.getDescription().contains("Received signal 15 (SIGTERM - Termination signal)")
-                                                       || state.getDescription().contains("controlled shutdown")));
+        return (state.getState() == State.STOPPING
+                && (state.getDescription().contains("Received signal 15 (SIGTERM - Termination signal)")
+                    || state.getDescription().contains("controlled shutdown")));
     }
 
 
@@ -876,10 +827,9 @@ public class SystemStateGenerator {
      */
     private NodeState decideNodeStateGivenReportedState(NodeInfo node, NodeState currentState, NodeState reportedState,
                                                         NodeStateOrHostInfoChangeHandler nodeListener) {
-        long timeNow = timer.getCurrentTimeInMillis();
+        final long timeNow = timer.getCurrentTimeInMillis();
 
         log.log(LogLevel.DEBUG, "Finding new cluster state entry for " + node + " switching state " + currentState.getTextualDifference(reportedState));
-
 
         // Set nodes in maintenance if 1) down, or 2) initializing but set retired, to avoid migrating data
         // to the retired node while it is initializing
@@ -888,20 +838,16 @@ public class SystemStateGenerator {
         if (currentState.getState().oneOf("ur") && reportedState.getState().oneOf("dis")
             && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING)))
         {
-            long currentTime = timer.getCurrentTimeInMillis(); // FIXME pointless dupe of timeNow
-            node.setTransitionTime(currentTime);
-            if (node.getUpStableStateTime() + stableStateTimePeriod > currentTime && !isControlledShutdown(reportedState)) {
-                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + currentTime);
+            node.setTransitionTime(timeNow);
+            if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
+                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
                 eventLog.add(new NodeEvent(node,
-                        "Stopped or possibly crashed after " + (currentTime - node.getUpStableStateTime())
+                        "Stopped or possibly crashed after " + (timeNow - node.getUpStableStateTime())
                         + " ms, which is before stable state time period."
                         + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".",
                         NodeEvent.Type.CURRENT,
                         timeNow), isMaster);
                 if (handlePrematureCrash(node, nodeListener)) return null;
-            }
-            if (maxTransitionTime.get(node.getNode().getType()) != 0) {
-                return new NodeState(node.getNode().getType(), State.MAINTENANCE).setDescription(reportedState.getDescription());
             }
         }
 

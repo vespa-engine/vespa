@@ -103,7 +103,7 @@ public class EventDiffCalculator {
                 final NodeState nodeCurr = currentState.getNodeState(n);
                 if (!nodeCurr.equals(nodePrev)) {
                     final NodeInfo info = cluster.getNodeInfo(n);
-                    events.add(createNodeEvent(info, String.format("Altered node state in cluster from '%s' to '%s'",
+                    events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
                                     nodePrev.toString(true), nodeCurr.toString(true)), params));
 
                     // TODO refactor!

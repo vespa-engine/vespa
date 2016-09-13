@@ -18,7 +18,8 @@ import java.util.TreeMap;
  * cluster state given the state of the content cluster, a set of cluster controller
  * configuration parameters and the current time.
  *
- * Cluster state version is _not_ set here; its incrementing must be handled by the
+ * State version tracking is considered orthogonal to state generation. Therefore,
+ * cluster state version is _not_ set here; its incrementing must be handled by the
  * caller.
  */
 public class ClusterStateGenerator {
@@ -200,6 +201,7 @@ public class ClusterStateGenerator {
         }
     }
 
+    // TODO remove notion of init timeout progress? Seems redundant when we've already got RPC timeouts
     private static boolean timedOutWithoutNewInitProgress(final NodeState reported, final NodeInfo nodeInfo, final Params params) {
         if (reported.getState() != State.INITIALIZING) {
             return false;
@@ -255,7 +257,10 @@ public class ClusterStateGenerator {
         return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
     }
 
-    private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState, Map<Node, NodeStateReason> nodeStateReasons, final Params params) {
+    private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState,
+                                                             Map<Node, NodeStateReason> nodeStateReasons,
+                                                             final Params params)
+    {
         final GroupAvailabilityCalculator calc = new GroupAvailabilityCalculator.Builder()
                 .withMinNodeRatioPerGroup(params.minNodeRatioPerGroup)
                 .withDistribution(params.cluster.getDistribution())

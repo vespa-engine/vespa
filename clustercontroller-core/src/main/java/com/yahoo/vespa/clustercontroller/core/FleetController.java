@@ -302,14 +302,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void handleNewNodeState(NodeInfo node, NodeState newState) {
         verifyInControllerThread();
-        systemStateGenerator.handleNewReportedNodeState(node, newState, this);
+        systemStateGenerator.handleNewReportedNodeState(stateVersionTracker.getVersionedClusterState(), node, newState, this);
     }
 
     @Override
     public void handleNewWantedNodeState(NodeInfo node, NodeState newState) {
         verifyInControllerThread();
         wantedStateChanged = true;
-        systemStateGenerator.proposeNewNodeState(node, newState);
+        systemStateGenerator.proposeNewNodeState(stateVersionTracker.getVersionedClusterState(), node, newState);
     }
 
     @Override
@@ -326,7 +326,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void handleMissingNode(NodeInfo node) {
         verifyInControllerThread();
-        systemStateGenerator.handleMissingNode(node, this);
+        systemStateGenerator.handleMissingNode(stateVersionTracker.getVersionedClusterState(), node, this);
     }
     @Override
     public void handleNewRpcAddress(NodeInfo node) {
@@ -373,7 +373,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     /** Called when all distributors have acked newest cluster state version. */
     public void handleAllDistributorsInSync(DatabaseHandler database, DatabaseHandler.Context context) throws InterruptedException {
-        systemStateGenerator.handleAllDistributorsInSync(database, context);
+        systemStateGenerator.handleAllDistributorsInSync(stateVersionTracker.getVersionedClusterState(), database, context);
     }
 
     private boolean changesConfiguredNodeSet(Collection<ConfiguredNode> newNodes) {
@@ -642,7 +642,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
         // Send getNodeState requests to zero or more nodes.
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
-        didWork |= systemStateGenerator.watchTimers(cluster, this);
+        // TODO: have any semantics changed from us going from nextClusterStateView -> tracked state?
+        didWork |= systemStateGenerator.watchTimers(cluster, stateVersionTracker.getVersionedClusterState(), this);
 
         // TODO move out, doesn't belong in a function with this name
         if (mustRecomputeCandidateClusterState()) {
@@ -655,7 +656,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
             if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
-                //emitEventsForAlteredStateEdges(state);
+                emitEventsForAlteredStateEdges(candidate);
                 stateVersionTracker.applyAndVersionNewState(candidate);
                 // TODO needs to invoke analogue of SystemStateGenerator.recordNewClusterStateHasBeenChosen
                 log.log(LogLevel.INFO, String.format("Controller %d: new cluster state: %s",
@@ -675,6 +676,18 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
         isStateGatherer = true;
         return didWork;
+    }
+
+    private void emitEventsForAlteredStateEdges(final AnnotatedClusterState newState) {
+        final List<Event> deltaEvents = EventDiffCalculator.computeEventDiff(
+                EventDiffCalculator.params()
+                        .cluster(cluster)
+                        .previousClusterState(stateVersionTracker.getAnnotatedClusterState())
+                        .currentClusterState(newState)
+                        .currentTimeMs(timer.getCurrentTimeInMillis()));
+        for (Event event : deltaEvents) {
+            eventLog.add(event, isMaster);
+        }
     }
 
     private boolean mustRecomputeCandidateClusterState() {

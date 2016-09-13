@@ -178,7 +178,8 @@ public class GroupAutoTakedownTest {
         // However, once grace period expires the group should be taken down.
         fixture.timer.advanceTime(1001);
         NodeStateOrHostInfoChangeHandler changeListener = mock(NodeStateOrHostInfoChangeHandler.class);
-        fixture.nodeStateChangeHandler.watchTimers(fixture.cluster, changeListener);
+        fixture.nodeStateChangeHandler.watchTimers(
+                fixture.cluster, fixture.annotatedGeneratedClusterState().getClusterState(), changeListener);
 
         assertEquals("distributor:9 storage:9 .3.s:d .4.s:d .5.s:d", fixture.generatedClusterState());
     }
@@ -324,7 +325,8 @@ public class GroupAutoTakedownTest {
         DatabaseHandler.Context context = mock(DatabaseHandler.Context.class);
         when(context.getCluster()).thenReturn(fixture.cluster);
 
-        fixture.nodeStateChangeHandler.handleAllDistributorsInSync(handler, context);
+        fixture.nodeStateChangeHandler.handleAllDistributorsInSync(
+                fixture.annotatedGeneratedClusterState().getClusterState(), handler, context);
 
         // Timestamp should now be cleared from state
         assertEquals("distributor:6 storage:6", fixture.generatedClusterState());

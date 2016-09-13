@@ -123,7 +123,7 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
-                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'D'"))));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(distributorNode(1)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
-                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'D'"))));
     }
 
     @Test
@@ -162,13 +162,13 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(3));
         assertThat(events, hasItem(allOf(
                 eventForNode(distributorNode(2)),
-                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'D'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
-                nodeEventWithDescription("Altered node state in cluster from 'U' to 'R'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'R'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
-                nodeEventWithDescription("Altered node state in cluster from 'D' to 'U'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'D' to 'U'"))));
     }
 
     @Test
@@ -194,7 +194,7 @@ public class EventDiffCalculatorTest {
         // Both the regular edge event and the group down event is emitted
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
-                nodeEventWithDescription("Altered node state in cluster from 'U' to 'D'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'D'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
@@ -215,7 +215,7 @@ public class EventDiffCalculatorTest {
         // Should not get a group availability event since nothing has changed in this regard
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
-                nodeEventWithDescription("Altered node state in cluster from 'D' to 'M'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'D' to 'M'"))));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(2));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(2)),
-                nodeEventWithDescription("Altered node state in cluster from 'D' to 'U'"))));
+                nodeEventWithDescription("Altered node state in cluster state from 'D' to 'U'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(2)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
