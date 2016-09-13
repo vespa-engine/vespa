@@ -3,7 +3,6 @@
 #include "filedistributorrpc.h"
 
 #include <boost/optional.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
@@ -20,7 +19,7 @@ LOG_SETUP(".filedistributorrpc");
 using filedistribution::FileDistributorRPC;
 using filedistribution::FileProvider;
 
-namespace ll = boost::lambda;
+namespace ph = std::placeholders;
 
 namespace {
 typedef std::lock_guard<std::mutex> LockGuard;
@@ -188,12 +187,12 @@ void
 FileDistributorRPC::Server::start(const FileDistributorRPC::SP & parent) {
     _downloadCompletedConnection =
         _fileProvider->downloadCompleted().connect(FileProvider::DownloadCompletedSignal::slot_type(
-                        ll::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ll::_1, ll::_2)).
+                        std::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ph::_1, ph::_2)).
                 track(parent));
 
     _downloadFailedConnection =
         _fileProvider->downloadFailed().connect(FileProvider::DownloadFailedSignal::slot_type(
-                        ll::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ll::_1, ll::_2)).
+                        std::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ph::_1, ph::_2)).
                 track(parent));
 
 

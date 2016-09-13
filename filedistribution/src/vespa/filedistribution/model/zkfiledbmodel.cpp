@@ -4,15 +4,13 @@
 
 #include <ostream>
 #include <algorithm>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/foreach.hpp>
 
 #include "zkfacade.h"
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
 #include <sys/file.h>
+#include <boost/foreach.hpp>
 
 namespace fs = boost::filesystem;
 
