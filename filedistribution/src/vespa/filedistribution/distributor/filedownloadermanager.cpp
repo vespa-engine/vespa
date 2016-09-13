@@ -44,17 +44,17 @@ FileDownloaderManager::start()
     _downloadFailedConnection =
         downloadFailed().connect(
                 DownloadFailedSignal::slot_type(std::bind(&FileDownloaderManager::removePeerStatus, this, ph::_1)).
-                track(shared_from_this()));
+                track_foreign(shared_from_this()));
 
     _downloadCompletedConnection =
         downloadCompleted().connect(
                 DownloadCompletedSignal::slot_type(_setFinishedDownloadingStatus).
-                track(shared_from_this()));
+                track_foreign(shared_from_this()));
 
     _filesToDownloadChangedConnection =
         _fileDistributionModel->_filesToDownloadChanged.connect(
                 FileDistributionModel::FilesToDownloadChangedSignal::slot_type(std::ref(_startDownloads)).
-                track(shared_from_this()));
+                track_foreign(shared_from_this()));
 }
 
 boost::optional< boost::filesystem::path >

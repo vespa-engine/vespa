@@ -5,13 +5,12 @@
 
 #include <vespa/filedistribution/rpc/fileprovider.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
-#include <boost/enable_shared_from_this.hpp>
 #include "filedownloader.h"
 
 namespace filedistribution {
 
 class FileDownloaderManager : public FileProvider,
-                              public boost::enable_shared_from_this<FileDownloaderManager> {
+                              public std::enable_shared_from_this<FileDownloaderManager> {
 
     class StartDownloads {
         FileDownloaderManager& _parent;
@@ -42,7 +41,7 @@ class FileDownloaderManager : public FileProvider,
 
     void removePeerStatus(const std::string& fileReference);
 public:
-    using SP = boost::shared_ptr<FileDownloaderManager>;
+    using SP = std::shared_ptr<FileDownloaderManager>;
     FileDownloaderManager(const FileDownloaderManager &) = delete;
     FileDownloaderManager & operator = (const FileDownloaderManager &) = delete;
     FileDownloaderManager(const std::shared_ptr<FileDownloader>&,

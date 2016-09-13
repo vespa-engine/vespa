@@ -7,8 +7,6 @@
 #include <mutex>
 #include <thread>
 
-#include <boost/smart_ptr.hpp>
-
 #include "concurrentqueue.h"
 
 namespace filedistribution {
@@ -58,17 +56,6 @@ class ComponentsDeleter {
      *  If it fails, the application is killed.
      */
     ~ComponentsDeleter();
-
-    template <class T>
-    boost::shared_ptr<T> track_boost(T* t) {
-        LockGuard guard(_trackedComponentsMutex);
-        if (_closed) {
-            return boost::shared_ptr<T>(t);
-        }
-
-        _trackedComponents[t] = typeid(t).name();
-        return boost::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));
-    }
 
     template <class T>
     std::shared_ptr<T> track(T* t) {

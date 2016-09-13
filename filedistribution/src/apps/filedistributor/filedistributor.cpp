@@ -65,11 +65,6 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             return _componentsDeleter.track(component);
         }
 
-        template <class T>
-        typename boost::shared_ptr<T> track_boost(T* component) {
-            return _componentsDeleter.track_boost(component);
-        }
-
     public:
         Components(const Components &) = delete;
         Components & operator = (const Components &) = delete;
@@ -90,8 +85,8 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                                                   fileDistributorConfig.hostname,
                                                   fileDistributorConfig.torrentport,
                                                   boost::filesystem::path(fileDistributorConfig.filedbpath)))),
-             _manager(track_boost(new FileDownloaderManager(_downloader, _model))),
-             _rpcHandler(track_boost(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
+             _manager(track(new FileDownloaderManager(_downloader, _model))),
+             _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
              _downloaderEventLoopThread(std::bind(&FileDownloader::runEventLoop, _downloader.get())),
              _configFetcher(configUri.getContext())
