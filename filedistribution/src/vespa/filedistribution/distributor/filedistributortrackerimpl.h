@@ -19,7 +19,6 @@ class FileDownloader;
 using TorrentSP = boost::shared_ptr<libtorrent::torrent>;
 
 class FileDistributorTrackerImpl : public FileDistributionTracker  {
-    const std::shared_ptr<ExceptionRethrower>  _exceptionRethrower;
     const std::shared_ptr<FileDistributionModel> _model;
 
     typedef std::lock_guard<std::mutex> LockGuard;
@@ -30,8 +29,7 @@ class FileDistributorTrackerImpl : public FileDistributionTracker  {
     //between tracker requests and files to download changed requests.
     boost::scoped_ptr<Scheduler> _scheduler;
 public:
-    FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model,
-                               const std::shared_ptr<ExceptionRethrower>& exceptionRethrower);
+    FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model);
 
     virtual ~FileDistributorTrackerImpl();
 
