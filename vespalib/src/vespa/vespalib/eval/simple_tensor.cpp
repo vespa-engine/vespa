@@ -378,6 +378,8 @@ SimpleTensor::SimpleTensor(const ValueType &type_in, Cells &&cells_in)
     for (const auto &cell: _cells) {
         assert_address(cell.address, _type);
     }
+    std::sort(_cells.begin(), _cells.end(),
+              [](const auto &a, const auto &b){ return (a.address < b.address); });
 }
 
 std::unique_ptr<SimpleTensor>
