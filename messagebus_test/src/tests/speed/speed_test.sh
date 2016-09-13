@@ -6,4 +6,4 @@ set -e
 $BINREF/compilejava JavaServer.java
 $BINREF/compilejava JavaClient.java
 
-(ulimit -c; ulimit -H -c; ulimit -c unlimited; ./messagebus_test_speed_test_app)
+(ulimit -c; ulimit -H -c; ulimit -c unlimited; $VALGRIND ./messagebus_test_speed_test_app)

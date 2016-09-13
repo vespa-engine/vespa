@@ -5,4 +5,4 @@ set -e
 
 $BINREF/compilejava JavaServer.java
 
-./messagebus_test_trace_test_app
+$VALGRIND ./messagebus_test_trace_test_app
