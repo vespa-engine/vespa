@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+// TODO rename once SystemStateGenerator has been renamed
 public class SystemStateGeneratorTest extends TestCase {
     private static final Logger log = Logger.getLogger(SystemStateGeneratorTest.class.getName());
     class Config {
@@ -75,9 +76,9 @@ public class SystemStateGeneratorTest extends TestCase {
     private Set<ConfiguredNode> configuredNodes = new TreeSet<>();
     private Config config;
     private ContentCluster cluster;
-    private SystemStateGenerator generator;
-    private TestSystemStateListener systemStateListener;
+    private SystemStateGenerator nodeStateChangeHandler;
     private TestNodeStateOrHostInfoChangeHandler nodeStateUpdateListener;
+    private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
     public void setUp() {
         LogFormatter.initializeLogging();
@@ -88,20 +89,22 @@ public class SystemStateGeneratorTest extends TestCase {
         this.config = config;
         for (int i=0; i<config.nodeCount; ++i) configuredNodes.add(new ConfiguredNode(i, false));
         cluster = new ContentCluster("testcluster", configuredNodes, distribution, 0, 0.0);
-        generator = new SystemStateGenerator(clock, eventLog, null);
-        generator.setNodes(cluster.clusterInfo());
-        generator.setStableStateTimePeriod(config.stableStateTime);
-        generator.setMaxPrematureCrashes(config.maxPrematureCrashes);
-        generator.setMaxSlobrokDisconnectGracePeriod(config.maxSlobrokDisconnectPeriod);
-        generator.setMinNodesUp(1, 1, 0, 0);
-        systemStateListener = new TestSystemStateListener();
+        nodeStateChangeHandler = new SystemStateGenerator(clock, eventLog, null);
+        nodeStateChangeHandler.setNodes(cluster.clusterInfo());
+        nodeStateChangeHandler.setStableStateTimePeriod(config.stableStateTime);
+        nodeStateChangeHandler.setMaxPrematureCrashes(config.maxPrematureCrashes);
+        nodeStateChangeHandler.setMaxSlobrokDisconnectGracePeriod(config.maxSlobrokDisconnectPeriod);
+        nodeStateChangeHandler.setMinNodesUp(1, 1, 0, 0);
+        params.minStorageNodesUp(1).minDistributorNodesUp(1)
+                .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)
+                .maxPrematureCrashes(config.maxPrematureCrashes)
+                .cluster(cluster);
         nodeStateUpdateListener = new TestNodeStateOrHostInfoChangeHandler();
     }
 
-    private void assertNewClusterStateReceived() {
-        assertTrue(generator.notifyIfNewSystemState(cluster, systemStateListener));
-        assertTrue(systemStateListener.toString(), systemStateListener.states.size() == 1);
-        systemStateListener.states.clear();
+    private ClusterState currentClusterState() {
+        params.currentTimeInMilllis(clock.getCurrentTimeInMillis());
+        return ClusterStateGenerator.generatedStateFrom(params).getClusterState();
     }
 
     private void startWithStableStateClusterWithNodesUp() {
@@ -109,61 +112,55 @@ public class SystemStateGeneratorTest extends TestCase {
             for (ConfiguredNode i : configuredNodes) {
                 NodeInfo nodeInfo = cluster.clusterInfo().setRpcAddress(new Node(type, i.index()), null);
                 nodeInfo.markRpcAddressLive();
-                generator.handleNewReportedNodeState(nodeInfo, new NodeState(type, State.UP), null);
+                nodeStateChangeHandler.handleNewReportedNodeState(
+                        currentClusterState(), nodeInfo, new NodeState(type, State.UP), null);
                 nodeInfo.setReportedState(new NodeState(type, State.UP), clock.getCurrentTimeInMillis());
             }
         }
-        assertNewClusterStateReceived();
         for (NodeType type : NodeType.getTypes()) {
             for (ConfiguredNode i : configuredNodes) {
                 Node n = new Node(type, i.index());
-                assertEquals(State.UP, generator.getClusterState().getNodeState(n).getState());
+                assertEquals(State.UP, currentClusterState().getNodeState(n).getState());
             }
         }
         clock.advanceTime(config.stableStateTime);
     }
 
     private void markNodeOutOfSlobrok(Node node) {
+        final ClusterState stateBefore = currentClusterState();
         log.info("Marking " + node + " out of slobrok");
         cluster.getNodeInfo(node).markRpcAddressOutdated(clock);
-        generator.handleMissingNode(cluster.getNodeInfo(node), nodeStateUpdateListener);
-        assertTrue(nodeStateUpdateListener.toString(), nodeStateUpdateListener.events.isEmpty());
-        nodeStateUpdateListener.events.clear();
+        nodeStateChangeHandler.handleMissingNode(stateBefore, cluster.getNodeInfo(node), nodeStateUpdateListener);
         assertTrue(eventLog.toString(), eventLog.toString().contains("Node is no longer in slobrok"));
         eventLog.clear();
     }
 
     private void markNodeBackIntoSlobrok(Node node, State state) {
+        final ClusterState stateBefore = currentClusterState();
         log.info("Marking " + node + " back in slobrok");
         cluster.getNodeInfo(node).markRpcAddressLive();
-        generator.handleReturnedRpcAddress(cluster.getNodeInfo(node));
-        assertEquals(0, nodeStateUpdateListener.events.size());
-        assertEquals(0, systemStateListener.states.size());
-        generator.handleNewReportedNodeState(cluster.getNodeInfo(node), new NodeState(node.getType(), state), nodeStateUpdateListener);
+        nodeStateChangeHandler.handleReturnedRpcAddress(cluster.getNodeInfo(node));
+        nodeStateChangeHandler.handleNewReportedNodeState(
+                stateBefore, cluster.getNodeInfo(node),
+                new NodeState(node.getType(), state), nodeStateUpdateListener);
         cluster.getNodeInfo(node).setReportedState(new NodeState(node.getType(), state), clock.getCurrentTimeInMillis());
-        assertEquals(0, nodeStateUpdateListener.events.size());
-        assertEquals(0, systemStateListener.states.size());
     }
 
     private void verifyClusterStateChanged(Node node, State state) {
         log.info("Verifying cluster state has been updated for " + node + " to " + state);
-        assertTrue(generator.notifyIfNewSystemState(cluster, systemStateListener));
-        assertEquals(1, systemStateListener.states.size());
-        assertEquals(state, systemStateListener.states.get(0).getNodeState(node).getState());
-        systemStateListener.states.clear();
-        assertEquals(state, generator.getClusterState().getNodeState(node).getState());
+        assertTrue(nodeStateChangeHandler.stateMayHaveChanged());
+        assertEquals(state, currentClusterState().getNodeState(node).getState());
     }
 
     private void verifyNodeStateAfterTimerWatch(Node node, State state) {
         log.info("Verifying state of node after timer watch.");
-        generator.watchTimers(cluster, nodeStateUpdateListener);
+        nodeStateChangeHandler.watchTimers(cluster, currentClusterState(), nodeStateUpdateListener);
         assertEquals(0, nodeStateUpdateListener.events.size());
         verifyClusterStateChanged(node, state);
     }
 
     private void verifyPrematureCrashCountCleared(Node node) {
-        assertTrue(generator.watchTimers(cluster, nodeStateUpdateListener));
-        assertEquals(0, nodeStateUpdateListener.events.size());
+        assertTrue(nodeStateChangeHandler.watchTimers(cluster, currentClusterState(), nodeStateUpdateListener));
         assertEquals(0, cluster.getNodeInfo(node).getPrematureCrashCount());
     }
 
@@ -175,15 +172,15 @@ public class SystemStateGeneratorTest extends TestCase {
             log.info("Iteration " + j);
             assertEquals(0, cluster.getNodeInfo(node).getPrematureCrashCount());
             assertEquals(State.UP, cluster.getNodeInfo(node).getWantedState().getState());
-            assertEquals(State.UP, generator.getClusterState().getNodeState(node).getState());
+            assertEquals(State.UP, currentClusterState().getNodeState(node).getState());
             for (int k=0; k<config.maxPrematureCrashes; ++k) {
                 log.info("Premature iteration " + k);
                 markNodeOutOfSlobrok(node);
 
                 log.info("Passing max disconnect time period. Watching timers");
                 clock.advanceTime(config.maxSlobrokDisconnectPeriod);
+                verifyNodeStateAfterTimerWatch(node, State.MAINTENANCE); // FIXME: actually DOWN now..!
 
-                verifyNodeStateAfterTimerWatch(node, State.MAINTENANCE);
                 cluster.getNodeInfo(node).setReportedState(new NodeState(node.getType(), State.DOWN), clock.getCurrentTimeInMillis());
 
                 assertEquals(k, cluster.getNodeInfo(node).getPrematureCrashCount());

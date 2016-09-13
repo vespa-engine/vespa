@@ -212,23 +212,24 @@ public class StateChangeTest extends FleetControllerTest {
 
         verifyNodeEvents(new Node(NodeType.DISTRIBUTOR, 0),
                 "Event: distributor.0: Now reporting state U\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: distributor.0: Failed to get node state: D: Closed at other end\n" +
                 "Event: distributor.0: Stopped or possibly crashed after 0 ms, which is before stable state time period. Premature crash count is now 1.\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'U' to 'D: Closed at other end'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'U' to 'D: Closed at other end'\n" +
                 "Event: distributor.0: Now reporting state U, t 12345678\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'D: Closed at other end' to 'U, t 12345678'.\n");
+                "Event: distributor.0: Altered node state in cluster state from 'D: Closed at other end' to 'U, t 12345678'\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'U, t 12345678' to 'U'\n");
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 0),
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.0: Failed to get node state: D: Closed at other end\n" +
                 "Event: storage.0: Stopped or possibly crashed after 1000 ms, which is before stable state time period. Premature crash count is now 1.\n" +
-                "Event: storage.0: Altered node state in cluster state from 'U' to 'M: Closed at other end'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'U' to 'M: Closed at other end'\n" +
                 "Event: storage.0: 5001 milliseconds without contact. Marking node down.\n" +
-                "Event: storage.0: Altered node state in cluster state from 'M: Closed at other end' to 'D: Closed at other end'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'M: Closed at other end' to 'D: Closed at other end'\n" +
                 "Event: storage.0: Now reporting state U, t 12345679\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D: Closed at other end' to 'U, t 12345679'.\n");
+                "Event: storage.0: Altered node state in cluster state from 'D: Closed at other end' to 'U, t 12345679'\n");
 
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.DISTRIBUTOR, 0)).getPrematureCrashCount());
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.STORAGE, 0)).getPrematureCrashCount());
@@ -293,21 +294,21 @@ public class StateChangeTest extends FleetControllerTest {
 
         verifyNodeEvents(new Node(NodeType.DISTRIBUTOR, 0),
                 "Event: distributor.0: Now reporting state U\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: distributor.0: Failed to get node state: D: controlled shutdown\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'U' to 'D: controlled shutdown'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'U' to 'D: controlled shutdown'\n" +
                 "Event: distributor.0: Now reporting state U\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'D: controlled shutdown' to 'U'.\n");
+                "Event: distributor.0: Altered node state in cluster state from 'D: controlled shutdown' to 'U'\n");
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 0),
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.0: Failed to get node state: D: controlled shutdown\n" +
-                "Event: storage.0: Altered node state in cluster state from 'U' to 'M: controlled shutdown'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'U' to 'M: controlled shutdown'\n" +
                 "Event: storage.0: 5001 milliseconds without contact. Marking node down.\n" +
-                "Event: storage.0: Altered node state in cluster state from 'M: controlled shutdown' to 'D: controlled shutdown'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'M: controlled shutdown' to 'D: controlled shutdown'\n" +
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D: controlled shutdown' to 'U'.\n");
+                "Event: storage.0: Altered node state in cluster state from 'D: controlled shutdown' to 'U'\n");
 
     }
 
@@ -348,7 +349,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 0),
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.0: Node is no longer in slobrok, but we still have a pending state request.\n");
     }
 
@@ -375,14 +376,15 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
-        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        // FIXME(?): version bump due to internal init progress change -> NodeState.similarTo(previous) == false
+        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
 
         ctrl.tick();
 
         // Now it's OK
-        assertEquals("version:5 distributor:10 storage:10 .6.s:i .6.i:0.6", ctrl.getSystemState().toString());
+        assertEquals("version:6 distributor:10 storage:10 .6.s:i .6.i:0.6", ctrl.getSystemState().toString());
 
         tick(1000);
 
@@ -390,20 +392,22 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        assertEquals("version:6 distributor:10 storage:10", ctrl.getSystemState().toString());
+        assertEquals("version:7 distributor:10 storage:10", ctrl.getSystemState().toString());
         assert(!ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6)).hasDescription());
 
+        // FIXME(?) due to NodeState.similarTo peculiarities for progress 1.0 -> 0.0, we emit an intermediate state here
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Stopped or possibly crashed after 0 ms, which is before stable state time period. Premature crash count is now 1.\n" +
-                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00 (ls)\n" +
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'M'\n" +
                 "Event: storage.6: Now reporting state I, i 0.600 (read)\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'I, i 0.600 (read)'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'M' to 'I, i 0.600 (read)'\n" +
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'I, i 0.600 (read)' to 'U'.\n");
+                "Event: storage.6: Altered node state in cluster state from 'I, i 0.600 (read)' to 'U'\n");
     }
 
     @Test
@@ -435,14 +439,15 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
-        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        // FIXME(?) version bump due to init progress changed in node state
+        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
 
         ctrl.tick();
 
         // Still maintenance since configured.
-        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         tick(1000);
 
@@ -450,19 +455,19 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        assertEquals("version:5 distributor:10 storage:10 .6.s:r", ctrl.getSystemState().toString());
+        assertEquals("version:6 distributor:10 storage:10 .6.s:r", ctrl.getSystemState().toString());
         assert(!ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6)).hasDescription());
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D' to 'R'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok' to 'R'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Stopped or possibly crashed after 0 ms, which is before stable state time period. Premature crash count is now 1.\n" +
-                "Event: storage.6: Altered node state in cluster state from 'R' to 'M: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'R' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00 (ls)\n" +
                 "Event: storage.6: Now reporting state I, i 0.600 (read)\n" +
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'R: Connection error: Closed at other end'.\n");
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'R: Connection error: Closed at other end'\n");
     }
 
     @Test
@@ -546,16 +551,16 @@ public class StateChangeTest extends FleetControllerTest {
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
-                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: 100000 milliseconds without contact. Marking node down.\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00100 (ls)\n" +
                 "Event: storage.6: Now reporting state I, i 0.100 (read)\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D: Listing buckets. Progress 0.1 %.' to 'I, i 0.100 (read)'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Connection error: Closed at other end' to 'I, i 0.100 (read)'\n" +
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'I, i 0.100 (read)' to 'U'.\n");
+                "Event: storage.6: Altered node state in cluster state from 'I, i 0.100 (read)' to 'U'\n");
     }
 
     @Test
@@ -631,20 +636,20 @@ public class StateChangeTest extends FleetControllerTest {
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
-                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: 1000000 milliseconds without contact. Marking node down.\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.100 (read)\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D: Connection error: Closed at other end' to 'I, i 0.100 (read)'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Connection error: Closed at other end' to 'I, i 0.100 (read)'\n" +
                 "Event: storage.6: 5001 milliseconds without initialize progress. Marking node down. Premature crash count is now 1.\n" +
-                "Event: storage.6: Altered node state in cluster state from 'I, i 0.100 (read)' to 'D: 5001 ms without initialize progress. Assuming node has deadlocked.'.\n" +
+                "Event: storage.6: Altered node state in cluster state from 'I, i 0.100 (read)' to 'D'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Now reporting state I, i 0.00 (ls)\n" +
                 "Event: storage.6: Now reporting state I, i 0.100 (read)\n" +
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D: 5001 ms without initialize progress. Assuming node has deadlocked.' to 'U'.\n");
+                "Event: storage.6: Altered node state in cluster state from 'D' to 'U'\n");
 
     }
 

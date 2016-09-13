@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
+import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -28,7 +29,6 @@ class ClusterFixture {
     ClusterFixture(ContentCluster cluster, Distribution distribution) {
         this.cluster = cluster;
         this.distribution = distribution;
-        //this.cluster.setDistribution(distribution);
         this.timer = new FakeTimer();
         this.eventLog = mock(EventLogInterface.class);
         this.nodeStateChangeHandler = createNodeStateChangeHandlerForCluster();
@@ -61,10 +61,12 @@ class ClusterFixture {
     }
 
     private void doReportNodeState(final Node node, final NodeState nodeState) {
+        final ClusterState stateBefore = rawGeneratedClusterState();
+
         NodeStateOrHostInfoChangeHandler handler = mock(NodeStateOrHostInfoChangeHandler.class);
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
 
-        nodeStateChangeHandler.handleNewReportedNodeState(nodeInfo, nodeState, handler);
+        nodeStateChangeHandler.handleNewReportedNodeState(stateBefore, nodeInfo, nodeState, handler);
         nodeInfo.setReportedState(nodeState, timer.getCurrentTimeInMillis());
     }
 
@@ -98,11 +100,13 @@ class ClusterFixture {
     }
 
     private void doProposeWantedState(final Node node, final NodeState nodeState, String description) {
+        final ClusterState stateBefore = rawGeneratedClusterState();
+
         nodeState.setDescription(description);
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
         nodeInfo.setWantedState(nodeState);
 
-        nodeStateChangeHandler.proposeNewNodeState(nodeInfo, nodeState);
+        nodeStateChangeHandler.proposeNewNodeState(stateBefore, nodeInfo, nodeState);
     }
 
     ClusterFixture proposeStorageNodeWantedState(final int index, State state, String description) {
@@ -118,13 +122,14 @@ class ClusterFixture {
 
     // TODO de-dupe
     ClusterFixture proposeDistributorWantedState(final int index, State state) {
+        final ClusterState stateBefore = rawGeneratedClusterState();
         final Node node = new Node(NodeType.DISTRIBUTOR, index);
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, state);
         nodeState.setDescription("mockdesc");
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
         nodeInfo.setWantedState(nodeState);
 
-        nodeStateChangeHandler.proposeNewNodeState(nodeInfo, nodeState);
+        nodeStateChangeHandler.proposeNewNodeState(stateBefore, nodeInfo, nodeState);
         return this;
     }
 
@@ -164,6 +169,10 @@ class ClusterFixture {
     AnnotatedClusterState annotatedGeneratedClusterState() {
         params.currentTimeInMilllis(timer.getCurrentTimeInMillis());
         return ClusterStateGenerator.generatedStateFrom(params);
+    }
+
+    ClusterState rawGeneratedClusterState() {
+        return annotatedGeneratedClusterState().getClusterState();
     }
 
     String generatedClusterState() {

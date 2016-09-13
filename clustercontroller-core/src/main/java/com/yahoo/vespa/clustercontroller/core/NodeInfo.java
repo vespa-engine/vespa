@@ -236,6 +236,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public ContentCluster getCluster() { return cluster; }
 
     /** Returns true if the node is currentl registered in slobrok */
+    // FIXME why is this called "isRpcAddressOutdated" then???
     public boolean isRpcAddressOutdated() { return lastSeenInSlobrok != null; }
 
     public Long getRpcAddressOutdatedTimestamp() { return lastSeenInSlobrok; }
