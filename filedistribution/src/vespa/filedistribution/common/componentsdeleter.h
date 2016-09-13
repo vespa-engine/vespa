@@ -43,7 +43,7 @@ class ComponentsDeleter {
 
     template <class T>
     void requestDelete(T* component) {
-        _deleteRequests.push(boost::bind(&ComponentsDeleter::deleteComponent<T>, this, component));
+        _deleteRequests.push(std::bind(&ComponentsDeleter::deleteComponent<T>, this, component));
     }
 
     void waitForAllComponentsDeleted();
@@ -65,7 +65,7 @@ class ComponentsDeleter {
         LockGuard guard(_trackedComponentsMutex);
 
         _trackedComponents[t] = typeid(t).name();
-        return boost::shared_ptr<T>(t, boost::bind(&ComponentsDeleter::requestDelete<T>, this, t));
+        return boost::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));
     }
 
     template <class T>
@@ -73,7 +73,7 @@ class ComponentsDeleter {
         LockGuard guard(_trackedComponentsMutex);
 
         _trackedComponents[t] = typeid(t).name();
-        return std::shared_ptr<T>(t, boost::bind(&ComponentsDeleter::requestDelete<T>, this, t));
+        return std::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));
     }
 };
 }
