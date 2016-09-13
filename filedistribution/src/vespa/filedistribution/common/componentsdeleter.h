@@ -8,7 +8,6 @@
 #include <thread>
 
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/smart_ptr.hpp>
 
