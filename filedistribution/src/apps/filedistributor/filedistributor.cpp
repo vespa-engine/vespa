@@ -7,7 +7,6 @@
 #include <boost/program_options.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/scope_exit.hpp>

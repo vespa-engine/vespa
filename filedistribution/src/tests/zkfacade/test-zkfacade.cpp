@@ -8,7 +8,6 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/checked_delete.hpp>
 
 #include <vespa/filedistribution/common/componentsdeleter.h>
