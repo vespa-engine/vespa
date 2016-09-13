@@ -9,8 +9,6 @@
 #include <cassert>
 #include <cstdio>
 #include <sstream>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
 
@@ -438,13 +436,9 @@ ZKFacade::addEphemeralNode(const Path& path) {
 
 void
 ZKFacade::remove(const Path& path) {
-    namespace ll = boost::lambda;
-
     std::vector< std::string > children = getChildren(path);
     if (!children.empty()) {
-        std::for_each(children.begin(), children.end(),
-                      ll::bind(&ZKFacade::remove, this,
-                              ll::ret<Path>(path / ll::_1)));
+        std::for_each(children.begin(), children.end(), [&](const std::string & s){ remove(path / s); });
     }
 
     try {
@@ -486,12 +480,9 @@ ZKFacade::retainOnly(const Path& path, const std::vector<std::string>& childrenT
     Children toPreserveSorted(childrenToPreserve);
     std::sort(toPreserveSorted.begin(), toPreserveSorted.end());
 
-    namespace ll = boost::lambda;
     std::set_difference(current.begin(), current.end(),
                         toPreserveSorted.begin(), toPreserveSorted.end(),
-                        boost::make_function_output_iterator(
-                                ll::bind(&ZKFacade::remove, this,
-                                        ll::ret<Path>(path / ll::_1))));
+                        boost::make_function_output_iterator([&](const std::string & s){ remove(path / s); }));
 }
 
 std::vector< std::string >
