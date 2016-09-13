@@ -17,6 +17,7 @@ vespa_define_module(
 
     APPS
     src/apps/printversion
+    src/binref
 
     TESTS
     src/tests
