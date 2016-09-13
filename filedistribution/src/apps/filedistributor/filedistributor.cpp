@@ -56,7 +56,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         const std::shared_ptr<FileDistributionModelImpl> _model;
         const std::shared_ptr<FileDistributorTrackerImpl> _tracker;
         const std::shared_ptr<FileDownloader> _downloader;
-        const std::shared_ptr<FileDownloaderManager> _manager;
+        const FileDownloaderManager::SP _manager;
         const FileDistributorRPC::SP _rpcHandler;
         const std::shared_ptr<StateServerImpl> _stateServer;
 
@@ -96,7 +96,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                                      fileDistributorConfig.torrentport,
                                      boost::filesystem::path(fileDistributorConfig.filedbpath),
                                      exceptionRethrower))),
-             _manager(track(new FileDownloaderManager(_downloader, _model))),
+             _manager(track_boost(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track_boost(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
              _downloaderEventLoopThread( ll::bind(&FileDownloader::runEventLoop, _downloader.get())),
