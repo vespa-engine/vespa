@@ -43,7 +43,7 @@ class ComponentsDeleter {
     }
 
     void waitForAllComponentsDeleted();
-    bool allComponentsDeleted();
+    bool areWeDone();
     void logNotDeletedComponents();
     void close();
   public:

@@ -23,7 +23,7 @@ struct ComponentsDeleter::Worker {
 void
 ComponentsDeleter::Worker::operator()()
 {
-    while ( ! _parent.allComponentsDeleted() ) {
+    while ( ! _parent.areWeDone() ) {
         CallDeleteFun deleteFun = _parent._deleteRequests.pop();
         deleteFun();
     }
@@ -46,15 +46,12 @@ ComponentsDeleter::waitForAllComponentsDeleted()
 {
     LOG(debug, "Waiting for all components to be deleted");
 
-    for (int i=0; i<600 && !allComponentsDeleted(); ++i) {
+    for (int i=0; i<600 && !areWeDone(); ++i) {
             std::this_thread::sleep_for(100ms);
     }
     LOG(debug, "Done waiting for all components to be deleted");
 
     logNotDeletedComponents();
-
-    if (!allComponentsDeleted())
-        kill(getpid(), SIGKILL);
 }
  
 void
@@ -68,7 +65,7 @@ ComponentsDeleter::close()
 }
 
 bool
-ComponentsDeleter::allComponentsDeleted()
+ComponentsDeleter::areWeDone()
 {
     LockGuard guard(_trackedComponentsMutex);
     return _closed && _trackedComponents.empty() && _deleteRequests.empty();
