@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
@@ -70,11 +71,11 @@ public class DockerTest {
         HostName hostName2 = new HostName("docker11.test.yahoo.com");
         ContainerName containerName1 = new ContainerName("test-container-1");
         ContainerName containerName2 = new ContainerName("test-container-2");
-        String inetAddress1 = Inet6Address.getByName("fe80::10").getHostAddress();
-        String inetAddress2 = Inet6Address.getByName("fe80::11").getHostAddress();
+        InetAddress inetAddress1 = Inet6Address.getByName("fe80::10");
+        InetAddress inetAddress2 = Inet6Address.getByName("fe80::11");
 
-         docker.createStartContainerCommand(dockerImage, containerName1, hostName1).withIpv6Address(inetAddress1).start();
-         docker.createStartContainerCommand(dockerImage, containerName2, hostName2).withIpv6Address(inetAddress2).start();
+         docker.createContainerCommand(dockerImage, containerName1, hostName1).withIpAddress(inetAddress1).create();
+         docker.createContainerCommand(dockerImage, containerName2, hostName2).withIpAddress(inetAddress2).create();
 
         try {
             testReachabilityFromHost(containerName1, inetAddress1);
@@ -96,8 +97,8 @@ public class DockerTest {
         }
     }
 
-    private void testReachabilityFromHost(ContainerName containerName, String target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target + "%" + getInterfaceName() + "]/ping"};
+    private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
+        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target.getHostAddress() + "%" + getInterfaceName() + "]/ping"};
         while (!exec(curlNodeFromHost).equals("pong\n")) {
             Thread.sleep(20);
         }
