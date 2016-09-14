@@ -17,14 +17,17 @@ namespace proton {
  * operations to the appropriate db.
  */
 class IPersistenceHandler {
+protected:
+    IPersistenceHandler() = default;
 public:
     /**
      * Convenience typedefs.
      */
     typedef std::unique_ptr<IPersistenceHandler> UP;
     typedef std::shared_ptr<IPersistenceHandler> SP;
-    typedef std::shared_ptr<
-        std::vector<IDocumentRetriever::SP> > RetrieversSP;
+    typedef std::shared_ptr<std::vector<IDocumentRetriever::SP> > RetrieversSP;
+    IPersistenceHandler(const IPersistenceHandler &) = delete;
+    IPersistenceHandler & operator = (const IPersistenceHandler &) = delete;
 
     /**
      * Virtual destructor to allow inheritance.

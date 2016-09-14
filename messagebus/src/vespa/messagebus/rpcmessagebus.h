@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/messagebus/network/rpcnetwork.h>
 #include <string>
 #include <vespa/config/helper/legacysubscriber.h>
@@ -18,7 +17,7 @@ namespace mbus {
  * note that according to the object delete order, you must delete all sessions
  * before deleting the underlying MessageBus object.
  */
-class RPCMessageBus : public boost::noncopyable {
+class RPCMessageBus {
 private:
     RPCNetwork  _net;
     MessageBus  _bus;
@@ -31,6 +30,8 @@ public:
      */
     typedef std::unique_ptr<RPCMessageBus> UP;
     typedef std::shared_ptr<RPCMessageBus> SP;
+    RPCMessageBus(const RPCMessageBus &) = delete;
+    RPCMessageBus & operator = (const RPCMessageBus &) = delete;
 
     /**
      * Constructs a new instance of this class.

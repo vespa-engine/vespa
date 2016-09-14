@@ -21,8 +21,7 @@ namespace mbus {
  * Network implementation based on RPC. This class is responsible for
  * keeping track of services and for sending messages to services.
  **/
-class RPCNetwork : public boost::noncopyable,
-                   public INetwork,
+class RPCNetwork : public INetwork,
                    public FRT_Invokable {
 private:
     struct SendContext : public RPCTarget::IVersionHandler {

@@ -13,7 +13,11 @@ namespace mbus {
  **/
 class IReplyHandler
 {
+protected:
+    IReplyHandler() = default;
 public:
+    IReplyHandler(const IReplyHandler &) = delete;
+    IReplyHandler & operator = (const IReplyHandler &) = delete;
     virtual ~IReplyHandler() {}
 
     /**

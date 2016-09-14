@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <memory>
 #include <string>
 #include "destinationsessionparams.h"
@@ -16,12 +15,12 @@ class MessageBus;
  * A DestinationSession is used to receive Message objects and reply
  * with Reply objects.
  */
-class DestinationSession : public boost::noncopyable, public IMessageHandler {
+class DestinationSession : public IMessageHandler {
 private:
     friend class MessageBus;
 
     MessageBus      &_mbus;
-    string      _name;
+    string           _name;
     IMessageHandler &_msgHandler;
 
     /**

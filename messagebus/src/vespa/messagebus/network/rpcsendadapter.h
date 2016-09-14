@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <memory>
 #include <vespa/vespalib/util/referencecounter.h>
 
@@ -15,9 +14,13 @@ class RPCNetwork;
  * outgoing RPC sends. The {@link RPCNetwork} maintains a list of supported RPC
  * signatures, and dispatches sends to the corresponding adapter.
  */
-class RPCSendAdapter : public boost::noncopyable
+class RPCSendAdapter
 {
+protected:
+    RPCSendAdapter() = default;
 public:
+    RPCSendAdapter(const RPCSendAdapter &) = delete;
+    RPCSendAdapter & operator = (const RPCSendAdapter &) = delete;
     /**
      * Required for inheritance.
      */

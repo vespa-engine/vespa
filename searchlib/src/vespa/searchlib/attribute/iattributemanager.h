@@ -13,6 +13,8 @@ namespace search {
  **/
 class IAttributeManager {
 public:
+    IAttributeManager(const IAttributeManager &) = delete;
+    IAttributeManager & operator = (const IAttributeManager &) = delete;
     typedef std::shared_ptr<IAttributeManager> SP;
     typedef vespalib::string string;
 
@@ -51,6 +53,8 @@ public:
      * Virtual destructor to allow safe subclassing.
      **/
     virtual ~IAttributeManager() {}
+protected:
+    IAttributeManager() = default;
 };
 
 } // namespace search

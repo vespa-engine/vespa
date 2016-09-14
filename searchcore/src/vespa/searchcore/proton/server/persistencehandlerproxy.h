@@ -7,8 +7,7 @@
 
 namespace proton {
 
-class PersistenceHandlerProxy : public boost::noncopyable,
-                                public IPersistenceHandler
+class PersistenceHandlerProxy : public IPersistenceHandler
 {
 private:
     DocumentDB::SP       _documentDB;

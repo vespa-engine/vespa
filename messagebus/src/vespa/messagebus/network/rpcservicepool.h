@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include "rpcservice.h"
 #include <vespa/vespalib/stllike/lrucache_map.h>
 
@@ -13,7 +12,7 @@ class RPCNetwork;
  * Class used to reuse services for the same pattern when sending messages over
  * the rpc network.
  */
-class RPCServicePool : public boost::noncopyable {
+class RPCServicePool {
 private:
     typedef vespalib::lrucache_map< vespalib::LruParam<string, RPCService::LP> > ServiceCache;
 
@@ -21,6 +20,8 @@ private:
     ServiceCache   _lru;
 
 public:
+    RPCServicePool(const RPCServicePool &) = delete;
+    RPCServicePool & operator = (const RPCServicePool &) = delete;
     /**
      * Create a new service pool for the given network.
      *

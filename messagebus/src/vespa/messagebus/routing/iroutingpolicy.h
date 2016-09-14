@@ -22,13 +22,13 @@ public:
     typedef std::unique_ptr<IRoutingPolicy> UP;
     typedef std::shared_ptr<IRoutingPolicy> SP;
 
-public:
+    IRoutingPolicy(const IRoutingPolicy &) = delete;
+    IRoutingPolicy & operator = (const IRoutingPolicy &) = delete;
+
     /**
      * Destructor. Frees any allocated resources.
      */
-    virtual ~IRoutingPolicy() {
-        // empty
-    }
+    virtual ~IRoutingPolicy() { }
 
     /**
      * This function must choose a set of services that is to receive the given message from a list of possible
@@ -47,6 +47,9 @@ public:
      * @param context The complete context for the invokation of this policy. Contains all available data.
      */
     virtual void merge(RoutingContext &context) = 0;
+
+protected:
+    IRoutingPolicy() = default;
 };
 
 } // namespace mbus

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vector>
 #include "context.h"
 
@@ -21,7 +20,7 @@ class Reply;
  * copied when copying a Routable, as it is not part of the object
  * value. This class is intended for internal messagebus use only.
  **/
-class CallStack : public boost::noncopyable
+class CallStack
 {
 private:
     struct Frame {
@@ -35,6 +34,8 @@ private:
     Stack _stack;
 
 public:
+    CallStack(const CallStack &) = delete;
+    CallStack & operator = (const CallStack &) = delete;
     /**
      * Create a new empty CallStack.
      **/

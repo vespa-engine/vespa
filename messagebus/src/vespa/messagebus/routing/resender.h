@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/messagebus/queue.h>
 #include <vespa/messagebus/reply.h>
 #include <queue>
@@ -20,7 +19,7 @@ class RoutingNode;
  * internal thread, it depends on message bus to keep polling it whenever it has
  * time.
  */
-class Resender : public boost::noncopyable
+class Resender
 {
 private:
     typedef std::pair<uint64_t, RoutingNode*> Entry;
@@ -40,6 +39,8 @@ public:
      * Convenience typedefs.
      */
     typedef std::unique_ptr<Resender> UP;
+    Resender(const Resender &) = delete;
+    Resender & operator = (const Resender &) = delete;
 
     /**
      * Constructs a new resender.

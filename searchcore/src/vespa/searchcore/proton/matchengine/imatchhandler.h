@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/searchcore/proton/matching/isearchcontext.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -16,7 +15,11 @@ namespace proton {
  * operations to the appropriate db.
  */
 class IMatchHandler {
+protected:
+    IMatchHandler() = default;
 public:
+    IMatchHandler(const IMatchHandler &) = delete;
+    IMatchHandler & operator = (const IMatchHandler &) = delete;
     /**
      * Convenience typedefs.
      */

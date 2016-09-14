@@ -14,7 +14,7 @@
 
 namespace proton {
 
-class MatchView : public boost::noncopyable {
+class MatchView {
     Matchers::SP                         _matchers;
     searchcorespi::IndexSearchable::SP   _indexSearchable;
     IAttributeManager::SP                _attrMgr;
@@ -28,6 +28,8 @@ class MatchView : public boost::noncopyable {
 
 public:
     typedef std::shared_ptr<MatchView> SP;
+    MatchView(const MatchView &) = delete;
+    MatchView & operator = (const MatchView &) = delete;
 
     MatchView(const Matchers::SP &matchers,
               const searchcorespi::IndexSearchable::SP &indexSearchable,
@@ -36,49 +38,18 @@ public:
               const IDocumentMetaStoreContext::SP &metaStore,
               DocIdLimit &docIdLimit);
 
-    const Matchers::SP &
-    getMatchers() const
-    {
-        return _matchers;
-    }
-
-    const searchcorespi::IndexSearchable::SP &
-    getIndexSearchable() const
-    {
-        return _indexSearchable;
-    }
-
-    const IAttributeManager::SP &
-    getAttributeManager() const
-    {
-        return _attrMgr;
-    }
-
-    const matching::SessionManager::SP &
-    getSessionManager() const
-    {
-        return _sessionMgr;
-    }
-
-    const IDocumentMetaStoreContext::SP &
-    getDocumentMetaStore() const
-    {
-        return _metaStore;
-    }
-
-    DocIdLimit &
-    getDocIdLimit(void) const
-    {
-        return _docIdLimit;
-    }
+    const Matchers::SP & getMatchers() const { return _matchers; }
+    const searchcorespi::IndexSearchable::SP & getIndexSearchable() const { return _indexSearchable; }
+    const IAttributeManager::SP & getAttributeManager() const { return _attrMgr; }
+    const matching::SessionManager::SP & getSessionManager() const { return _sessionMgr; }
+    const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _metaStore; }
+    DocIdLimit & getDocIdLimit(void) const { return _docIdLimit; }
 
     // Throws on error.
-    matching::Matcher::SP
-    getMatcher(const vespalib::string & rankProfile) const;
+    matching::Matcher::SP getMatcher(const vespalib::string & rankProfile) const;
 
     matching::MatchingStats
-    getMatcherStats(const vespalib::string &rankProfile) const
-    {
+    getMatcherStats(const vespalib::string &rankProfile) const {
         return _matchers->getStats(rankProfile);
     }
 

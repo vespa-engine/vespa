@@ -29,7 +29,7 @@ namespace proton {
 /**
  * Class used to reconfig the feed view and search view used in a searchable sub database.
  */
-class SearchableDocSubDBConfigurer : public boost::noncopyable
+class SearchableDocSubDBConfigurer
 {
 private:
     typedef vespalib::VarHolder<SearchView::SP> SearchViewHolder;
@@ -70,6 +70,8 @@ private:
                            const MatchView::SP &matchView);
 
 public:
+    SearchableDocSubDBConfigurer(const SearchableDocSubDBConfigurer &) = delete;
+    SearchableDocSubDBConfigurer & operator = (const SearchableDocSubDBConfigurer &) = delete;
     SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
                                  SearchViewHolder &searchView,
                                  FeedViewHolder &feedView,

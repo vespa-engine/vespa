@@ -9,8 +9,7 @@
 
 namespace proton {
 
-class SummaryEngine : public boost::noncopyable,
-                      public search::engine::DocsumServer
+class SummaryEngine : public search::engine::DocsumServer
 {
 private:
     using DocsumReply = search::engine::DocsumReply;
@@ -28,6 +27,8 @@ public:
      */
     typedef std::unique_ptr<SummaryEngine> UP;
     typedef std::shared_ptr<SummaryEngine> SP;
+    SummaryEngine(const SummaryEngine &) = delete;
+    SummaryEngine & operator = (const SummaryEngine &) = delete;
 
     /**
      * Constructs a new summary engine. This does the necessary setup of the

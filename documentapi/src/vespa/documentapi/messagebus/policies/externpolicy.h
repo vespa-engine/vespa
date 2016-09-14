@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
@@ -16,7 +15,7 @@ namespace documentapi {
  * This policy implements the necessary logic to communicate with an external Vespa application and resolve its list of
  * recipients using that other application's slobrok servers.
  */
-class ExternPolicy : public boost::noncopyable, public mbus::IRoutingPolicy {
+class ExternPolicy : public mbus::IRoutingPolicy {
 private:
     vespalib::Lock                         _lock;
     FRT_Supervisor                         _orb;

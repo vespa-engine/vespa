@@ -14,9 +14,8 @@ using search::engine::SearchRequest;
 namespace proton
 {
 
-EmptySearchView::EmptySearchView(void)
-    : boost::noncopyable(),
-      ISearchHandler()
+EmptySearchView::EmptySearchView()
+    : ISearchHandler()
 {
 }
 

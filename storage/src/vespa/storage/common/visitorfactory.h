@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include <boost/shared_ptr.hpp>
 #include <vespa/vdslib/container/parameters.h>
 
 namespace storage {

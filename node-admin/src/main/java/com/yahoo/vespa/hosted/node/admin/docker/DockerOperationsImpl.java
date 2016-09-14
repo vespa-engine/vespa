@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
@@ -206,15 +207,16 @@ public class DockerOperationsImpl implements DockerOperations {
         logger.info("Starting container " + nodeSpec.containerName);
         try {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname.s());
-            String nodeIpAddress = nodeInetAddress.getHostAddress();
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             String configServers = environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
-            Docker.StartContainerCommand command = docker.createStartContainerCommand(
+            Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
-                    nodeSpec.hostname);
-            command.withEnvironment("CONFIG_SERVER_ADDRESS", configServers);
+                    nodeSpec.hostname)
+                    .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
+                    .withIpAddress(nodeInetAddress)
+                    .withEnvironment("CONFIG_SERVER_ADDRESS", configServers);
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT) {
@@ -232,37 +234,22 @@ public class DockerOperationsImpl implements DockerOperations {
                 }
             }
 
-            //If container's IP address is IPv6, use our custom network mode and let docker handle networking.
-            //If container's IP address is IPv4, set up networking manually as before. In the future docker should
-            //set up the IPv4 network as well.
-            if (isIPv6) {
-                // TODO: What's "habla"? Can we change to anything here, or it seems "none" is reserved.
-                command.withNetworkMode("habla").withIpv6Address(nodeIpAddress);
-            } else {
-                command.withNetworkMode("none");
-            }
-
             logger.info("Starting new container with args: " + command);
-            command.start();
-
-            //TODO: Temporary fix to get the tests running, will be removed once IPv4 networking is set up by docker instead of script
-            if (nodeIpAddress.equals("0:0:0:0:0:0:0:1")) return;
+            command.create();
 
             if (isIPv6) {
-                docker.connectContainerToNetwork(nodeSpec.containerName, "babla");
-                setupContainerNetworkingWithScript(nodeSpec.containerName, nodeSpec.hostname, null);
+                docker.connectContainerToNetwork(nodeSpec.containerName, "bridge");
+                docker.startContainer(nodeSpec.containerName);
+                setupContainerNetworkingWithScript(nodeSpec.containerName, nodeSpec.hostname);
             } else {
-                setupContainerNetworkingWithScript(nodeSpec.containerName, nodeSpec.hostname, nodeIpAddress);
+                docker.startContainer(nodeSpec.containerName);
             }
         } catch (UnknownHostException e) {
-            throw new RuntimeException("Failed to start container " + nodeSpec.containerName.asString(), e);
+            throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
         }
     }
 
-    private void setupContainerNetworkingWithScript(
-            ContainerName containerName,
-            HostName hostName,
-            String ipAddress) {
+    private void setupContainerNetworkingWithScript(ContainerName containerName, HostName hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);
@@ -275,19 +262,8 @@ public class DockerOperationsImpl implements DockerOperations {
         final List<String> command = new LinkedList<>();
         command.add("sudo");
         command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
-
-        //TODO: Temporary fix to run script in old mode for IPv4 and run only fix-gateway with IPv6
-        if (ipAddress != null) {
-            Environment.NetworkType networkType = environment.networkType();
-            if (networkType != Environment.NetworkType.normal) {
-                command.add("--" + networkType);
-            }
-            command.add(containerPid.get().toString());
-            command.add(ipAddress);
-        } else {
-            command.add("--fix-docker-gateway");
-            command.add(containerPid.get().toString());
-        }
+        command.add("--fix-docker-gateway");
+        command.add(containerPid.get().toString());
 
         for (int retry = 0; retry < 30; ++retry) {
             try {

@@ -461,15 +461,13 @@ public:
  */
 class FastOS_Runnable
 {
-private:
-    FastOS_Runnable(const FastOS_Runnable&);
-    FastOS_Runnable& operator=(const FastOS_Runnable&);
-
 protected:
     friend class FastOS_ThreadInterface;
     FastOS_ThreadInterface *_thread;
 
 public:
+    FastOS_Runnable(const FastOS_Runnable&) = delete;
+    FastOS_Runnable& operator=(const FastOS_Runnable&) = delete;
     FastOS_Runnable();
     virtual ~FastOS_Runnable();
 

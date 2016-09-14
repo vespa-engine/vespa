@@ -9,8 +9,7 @@ namespace proton {
  * This class decorates a task returned by initFlush() in IFlushTarget so that
  * the appropriate callback is invoked on the running FlushEngine.
  */
-class FlushTask : public boost::noncopyable,
-                  public vespalib::Executor::Task
+class FlushTask : public vespalib::Executor::Task
 {
 private:
     uint32_t                          _taskId;
@@ -19,6 +18,8 @@ private:
     search::SerialNum _serial;
 
 public:
+    FlushTask(const FlushTask &) = delete;
+    FlushTask & operator = (const FlushTask &) = delete;
     /**
      * Constructs a new instance of this class.
      *
@@ -26,9 +27,7 @@ public:
      * @param engine The running flush engine.
      * @param ctx    The context of the flush to perform.
      */
-    FlushTask(uint32_t taskId,
-              FlushEngine &engine,
-              const FlushContext::SP &ctx);
+    FlushTask(uint32_t taskId, FlushEngine &engine, const FlushContext::SP &ctx);
 
     /**
      * Destructor. Notifies the engine that the flush is done to prevent the

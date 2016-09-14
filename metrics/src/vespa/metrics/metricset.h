@@ -10,7 +10,6 @@
  */
 #pragma once
 
-#include <boost/weak_ptr.hpp>
 #include <map>
 #include <vespa/metrics/metric.h>
 

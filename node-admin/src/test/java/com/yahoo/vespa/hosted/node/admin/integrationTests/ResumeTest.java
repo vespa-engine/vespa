@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.junit.Test;
 
-import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Optional;
@@ -44,7 +44,7 @@ public class ResumeTest {
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
-        when(environment.getInetAddressForHost(any(String.class))).thenReturn(Inet6Address.getByName("::1"));
+        when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
 
         Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
@@ -70,7 +70,7 @@ public class ResumeTest {
 
         // Check that the container is started and NodeRepo has received the PATCH update
          assertTrue(callOrder.verifyInOrder(1000,
-                "createStartContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
                 "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"));
 
         // Force orchestrator to reject the suspend

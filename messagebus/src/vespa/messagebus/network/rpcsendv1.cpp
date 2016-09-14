@@ -19,7 +19,7 @@ namespace {
  * Implements a helper class to hold the necessary context to create a reply from
  * an rpc return value. This object is held as the context of an FRT_RPCRequest.
  */
-class SendContext : public boost::noncopyable {
+class SendContext {
 private:
     mbus::RoutingNode &_recipient;
     mbus::Trace        _trace;
@@ -27,7 +27,8 @@ private:
 
 public:
     typedef std::unique_ptr<SendContext> UP;
-
+    SendContext(const SendContext &) = delete;
+    SendContext & operator = (const SendContext &) = delete;
     SendContext(mbus::RoutingNode &recipient, uint64_t timeRemaining)
         : _recipient(recipient),
           _trace(recipient.getTrace().getLevel()),
@@ -41,13 +42,15 @@ public:
  * Implements a helper class to hold the necessary context to send a reply as an
  * rpc return value. This object is held in the callstack of the reply.
  */
-class ReplyContext : public boost::noncopyable {
+class ReplyContext {
 private:
     FRT_RPCRequest   &_request;
     vespalib::Version _version;
 
 public:
     typedef std::unique_ptr<ReplyContext> UP;
+    ReplyContext(const ReplyContext &) = delete;
+    ReplyContext & operator = (const ReplyContext &) = delete;
 
     ReplyContext(FRT_RPCRequest &request, const vespalib::Version &version)
         : _request(request), _version(version) { }

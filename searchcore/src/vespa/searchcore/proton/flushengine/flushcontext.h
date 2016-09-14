@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/searchcore/proton/flushengine/iflushhandler.h>
 #include <vespa/vespalib/util/executor.h>
 
@@ -13,7 +12,7 @@ using searchcorespi::IFlushTarget;
  * This class is used by FlushEngine to hold the necessary context for flushing
  * a single IFlushTarget.
  */
-class FlushContext : public boost::noncopyable {
+class FlushContext {
 private:
     vespalib::string                  _name;
     IFlushHandler::SP                 _handler;
@@ -24,6 +23,8 @@ private:
 public:
     typedef std::shared_ptr<FlushContext> SP;
     typedef std::vector<SP> List;
+    FlushContext(const FlushContext &) = delete;
+    FlushContext & operator = (const FlushContext &) = delete;
 
     /**
      * Create a name of the handler and the target.

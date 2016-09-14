@@ -17,9 +17,11 @@ namespace proton {
 /**
  * Interface for a summary manager.
  */
-class ISummaryManager : public boost::noncopyable
+class ISummaryManager
 {
 public:
+    ISummaryManager(const ISummaryManager &) = delete;
+    ISummaryManager & operator = (const ISummaryManager &) = delete;
     /**
      * Interface for a summary setup.
      */
@@ -53,7 +55,8 @@ public:
                        const std::shared_ptr<search::IAttributeManager> &attributeMgr) = 0;
 
     virtual search::IDocumentStore &getBackingStore() = 0;
-
+protected:
+    ISummaryManager() = default;
 };
 
 } // namespace proton
