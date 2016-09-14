@@ -189,6 +189,8 @@ public class RestApi extends LoggingRequestHandler {
 
         return new HttpResponse(getDocument.isPresent() ? 200 : 404) {
             @Override
+            public String getContentType() { return "application/json"; }
+            @Override
             public void render(OutputStream outputStream) throws IOException {
                 outputStream.write(resultNode.toString().getBytes(StandardCharsets.UTF_8.name()));
             }
@@ -215,6 +217,8 @@ public class RestApi extends LoggingRequestHandler {
         resultNode.put(PATH_NAME, restUri.getRawPath());
 
         HttpResponse httpResponse = new HttpResponse(200) {
+            @Override
+            public String getContentType() { return "application/json"; }
             @Override
             public void render(OutputStream outputStream) throws IOException {
                 try {
