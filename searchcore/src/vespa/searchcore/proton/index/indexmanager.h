@@ -17,7 +17,7 @@ using searchcorespi::IIndexManager;
  * across all indexes, and manages the set of indexes through flushing
  * of memory indexes and fusion of disk indexes.
  */
-class IndexManager : public boost::noncopyable, public IIndexManager
+class IndexManager : public IIndexManager
 {
 public:
     class MaintainerOperations : public searchcorespi::index::IIndexMaintainerOperations {
@@ -53,6 +53,8 @@ private:
     searchcorespi::index::IndexMaintainer _maintainer;
 
 public:
+    IndexManager(const IndexManager &) = delete;
+    IndexManager & operator = (const IndexManager &) = delete;
     IndexManager(const vespalib::string &baseDir,
                  const searchcorespi::index::WarmupConfig & warmup,
                  size_t maxFlushed,

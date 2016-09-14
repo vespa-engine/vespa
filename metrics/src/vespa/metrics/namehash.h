@@ -20,18 +20,19 @@
  */
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/metrics/memoryconsumption.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace metrics {
 
-class NameHash : private boost::noncopyable {
+class NameHash {
     vespalib::hash_set<std::string> _hash;
     uint32_t _unifiedCounter;
     uint32_t _checkedCounter;
 
 public:
+    NameHash(const NameHash &) = delete;
+    NameHash & operator = (const NameHash &) = delete;
     NameHash() : _unifiedCounter(0), _checkedCounter(0) {}
 
     void updateName(std::string& name) {

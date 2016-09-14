@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/vespalib/util/printable.h>
@@ -36,8 +35,7 @@ class AllocationLogic;
 class MemoryState;
 
 class MemoryTokenImpl : public vespalib::Printable,
-                        public MemoryToken,
-                        public boost::noncopyable
+                        public MemoryToken
 {
     friend class AllocationLogic;
 
@@ -51,6 +49,8 @@ class MemoryTokenImpl : public vespalib::Printable,
 public:
     typedef std::unique_ptr<MemoryTokenImpl> UP;
 
+    MemoryTokenImpl(const MemoryTokenImpl &) = delete;
+    MemoryTokenImpl & operator = (const MemoryTokenImpl &) = delete;
     MemoryTokenImpl(AllocationLogic& logic,
                     const MemoryAllocationType& type,
                     uint64_t allocated,

@@ -9,7 +9,6 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/scope_exit.hpp>
@@ -49,10 +48,9 @@ using cloud::config::filedistribution::FiledistributorrpcConfig;
 class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                         public config::IFetcherCallback<FiledistributorConfig>,
                         public config::IFetcherCallback<FiledistributorrpcConfig>,
-                        public config::IGenerationCallback,
-                        boost::noncopyable
+                        public config::IGenerationCallback
 {
-    class Components : boost::noncopyable {
+    class Components {
         ComponentsDeleter _componentsDeleter;
     public:
         const boost::shared_ptr<ZKFacade> _zk;
@@ -74,6 +72,8 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         }
 
     public:
+        Components(const Components &) = delete;
+        Components & operator = (const Components &) = delete;
 
         Components(const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower,
                    const config::ConfigUri & configUri,
@@ -137,6 +137,8 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
     boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     std::unique_ptr<Components> _components;
 public:
+    FileDistributor(const FileDistributor &) = delete;
+    FileDistributor & operator = (const FileDistributor &) = delete;
     FileDistributor()
         : _configMutex(),
           _completeReconfigurationNeeded(false),

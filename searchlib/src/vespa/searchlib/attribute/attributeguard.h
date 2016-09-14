@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <boost/noncopyable.hpp>
 
 namespace search {
 
@@ -64,9 +63,11 @@ public:
 /**
  * This class makes sure that the attribute vector is not updated with enum changes while the guard is held.
  **/
-class AttributeEnumGuard : public AttributeGuard, public boost::noncopyable
+class AttributeEnumGuard : public AttributeGuard
 {
 public:
+    AttributeEnumGuard(const AttributeEnumGuard &) = delete;
+    AttributeEnumGuard & operator = (const AttributeEnumGuard &) = delete;
     explicit AttributeEnumGuard(const AttributeVector::SP & attribute);
     explicit AttributeEnumGuard(const AttributeGuard & attribute);
 private:

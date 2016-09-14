@@ -2,7 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include "filedistributorrpc.h"
 
-#include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -145,7 +144,7 @@ public:
 
 } //anonymous namespace
 
-class FileDistributorRPC::Server : public FRT_Invokable, boost::noncopyable {
+class FileDistributorRPC::Server : public FRT_Invokable {
   public:
     boost::shared_ptr<FileProvider> _fileProvider;
     std::unique_ptr<FRT_Supervisor> _supervisor;
@@ -158,8 +157,9 @@ class FileDistributorRPC::Server : public FRT_Invokable, boost::noncopyable {
     void queueRequest(const std::string& fileReference, FRT_RPCRequest* request);
     void defineMethods();
 
-    Server(int listen_port,
-           const boost::shared_ptr<FileProvider>& provider);
+    Server(const Server &) = delete;
+    Server & operator = (const Server &) = delete;
+    Server(int listen_port, const boost::shared_ptr<FileProvider>& provider);
     void start(const boost::shared_ptr<FileDistributorRPC> parent);
     ~Server();
 
