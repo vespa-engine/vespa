@@ -19,7 +19,7 @@ LOG_SETUP(".filedistributorrpc");
 using filedistribution::FileDistributorRPC;
 using filedistribution::FileProvider;
 
-namespace ph = std::placeholders;
+namespace fs = boost::filesystem;
 
 namespace {
 typedef std::lock_guard<std::mutex> LockGuard;
@@ -115,15 +115,13 @@ public:
             _queuedRequests.erase(candidate);
     }
 
-    void downloadFinished(const std::string& fileReference,
-        const boost::filesystem::path& path) {
+    void downloadFinished(const std::string& fileReference, const fs::path& path) {
 
         DownloadFinished handler(path.string());
         returnAnswer(fileReference, handler);
     }
 
-    void downloadFailed(const std::string& fileReference,
-                        FileProvider::FailedDownloadReason reason) {
+    void downloadFailed(const std::string& fileReference, FileProvider::FailedDownloadReason reason) {
 
         DownloadFailed handler(reason);
         returnAnswer(fileReference, handler);
@@ -187,13 +185,13 @@ void
 FileDistributorRPC::Server::start(const FileDistributorRPC::SP & parent) {
     _downloadCompletedConnection =
         _fileProvider->downloadCompleted().connect(FileProvider::DownloadCompletedSignal::slot_type(
-                        std::bind(&QueuedRequests::downloadFinished, &_queuedRequests, ph::_1, ph::_2)).
-                track_foreign(parent));
+                        [&] (const std::string &file, const fs::path& path) { _queuedRequests.downloadFinished(file, path); })
+                .track_foreign(parent));
 
     _downloadFailedConnection =
         _fileProvider->downloadFailed().connect(FileProvider::DownloadFailedSignal::slot_type(
-                        std::bind(&QueuedRequests::downloadFailed, &_queuedRequests, ph::_1, ph::_2)).
-                track_foreign(parent));
+                        [&] (const std::string& file, FileProvider::FailedDownloadReason reason) { _queuedRequests.downloadFailed(file, reason); })
+                .track_foreign(parent));
 
 
 }
@@ -224,7 +222,7 @@ FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
         frtstream::FrtServerStream requestHandler(request);
         std::string fileReference;
         requestHandler >> fileReference;
-        boost::optional<boost::filesystem::path> path
+        boost::optional<fs::path> path
             = _fileProvider->getPath(fileReference);
         if (path) {
             LOG(debug, "Returning request for file reference '%s'.", fileReference.c_str());
