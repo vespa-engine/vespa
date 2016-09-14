@@ -336,23 +336,23 @@ String tensorFunctionName() :
 
 Function unaryFunctionName() : { }
 {
-    <COS>   { return Function.cos;   } |
-    <SIN>   { return Function.sin;   } |
-    <TAN>   { return Function.tan;   } |
-    <COSH>  { return Function.cosh;  } |
-    <SINH>  { return Function.sinh;  } |
-    <TANH>  { return Function.tanh;  } |
-    <ACOS>  { return Function.acos;  } |
-    <ASIN>  { return Function.asin;  } |
-    <ATAN>  { return Function.atan;  } |
-    <EXP>   { return Function.exp;   } |
-    <LOG10> { return Function.log10; } |
-    <LOG>   { return Function.log;   } |
-    <SQRT>  { return Function.sqrt;  } |
-    <CEIL>  { return Function.ceil;  } |
-    <FABS>  { return Function.fabs;  } |
-    <FLOOR> { return Function.floor; } |
-    <ISNAN> { return Function.isNan; }
+    <COS>     { return Function.cos;     } |
+    <SIN>     { return Function.sin;     } |
+    <TAN>     { return Function.tan;     } |
+    <COSH>    { return Function.cosh;    } |
+    <SINH>    { return Function.sinh;    } |
+    <TANH>    { return Function.tanh;    } |
+    <ACOS>    { return Function.acos;    } |
+    <ASIN>    { return Function.asin;    } |
+    <ATAN>    { return Function.atan;    } |
+    <EXP>     { return Function.exp;     } |
+    <LOG10>   { return Function.log10;   } |
+    <LOG>     { return Function.log;     } |
+    <SQRT>    { return Function.sqrt;    } |
+    <CEIL>    { return Function.ceil;    } |
+    <FABS>    { return Function.fabs;    } |
+    <FLOOR>   { return Function.floor;   } |
+    <ISNAN>   { return Function.isNan;   }
 }
 
 Function binaryFunctionName() : { }
