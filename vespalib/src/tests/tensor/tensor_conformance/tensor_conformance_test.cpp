@@ -8,16 +8,12 @@ using vespalib::eval::SimpleTensorEngine;
 using vespalib::eval::test::TensorConformance;
 using vespalib::tensor::DefaultTensorEngine;
 
-TEST_F("require that reference tensor implementation passes conformance test",
-       TensorConformance(SimpleTensorEngine::ref()))
-{
-    TEST_DO(f1.run_all_tests());
+TEST("require that reference tensor implementation passes conformance test") {
+    TEST_DO(TensorConformance::run_tests(SimpleTensorEngine::ref()));
 }
 
-IGNORE_TEST_F("require that production tensor implementation passes conformance test",
-       TensorConformance(DefaultTensorEngine::ref()))
-{
-    TEST_DO(f1.run_all_tests());
+IGNORE_TEST("require that production tensor implementation passes conformance test") {
+    TEST_DO(TensorConformance::run_tests(DefaultTensorEngine::ref()));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
