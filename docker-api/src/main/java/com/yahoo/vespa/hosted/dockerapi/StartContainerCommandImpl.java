@@ -8,11 +8,13 @@ import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 class StartContainerCommandImpl implements Docker.StartContainerCommand {
@@ -41,7 +43,7 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
 
     @Override
     public Docker.StartContainerCommand withLabel(String name, String value) {
-        assert name.indexOf("=") == -1;
+        assert !name.contains("=");
         labels.put(name, value);
         return this;
     }
@@ -97,6 +99,7 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
                 .createContainerCmd(dockerImage.asString())
                 .withName(containerName.asString())
                 .withHostName(hostName.s())
+                .withMacAddress(generateRandomMACAddress())
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds);
@@ -111,7 +114,7 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
     /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C ". */
     private String toRepeatedOption(String option, List<String> optionValues) {
         StringBuilder builder = new StringBuilder();
-        optionValues.stream().forEach(optionValue -> builder.append(option + " " + optionValue + " "));
+        optionValues.stream().forEach(optionValue -> builder.append(option).append(" ").append(optionValue).append(" "));
         return builder.toString();
     }
 
@@ -135,5 +138,20 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip6", ipv6Address)
                 + dockerImage;
+    }
+
+    private String generateRandomMACAddress() {
+        Random rand = new SecureRandom();
+        byte[] macAddr = new byte[6];
+        rand.nextBytes(macAddr);
+
+        // Set second-last bit (locally administered MAC address), unset last bit (unicast)
+        macAddr[0] = (byte) ((macAddr[0] | 2) & 254);
+        StringBuilder sb = new StringBuilder(18);
+        for (byte b : macAddr) {
+            sb.append(":").append(String.format("%02x", b));
+        }
+
+        return sb.substring(1);
     }
 }

@@ -29,6 +29,8 @@ public interface Docker {
             ContainerName containerName,
             HostName hostName);
 
+    void connectContainerToNetwork(ContainerName containerName, String networkName);
+
     void stopContainer(ContainerName containerName);
 
     void deleteContainer(ContainerName containerName);
