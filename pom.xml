@@ -1161,6 +1161,7 @@
         <module>container-test-jars</module>
         <module>defaults</module>
         <module>docker-api</module>
+        <module>docker-tools</module>
         <module>docproc</module>
         <module>docprocs</module>
         <module>documentapi</module>
