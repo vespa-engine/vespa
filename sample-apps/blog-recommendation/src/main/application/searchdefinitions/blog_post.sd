@@ -65,7 +65,7 @@ search blog_post {
 
     constant W_hidden {
         file: constants/W_hidden.json
-        type: tensor(user_item_cf[20],hidden[40]) # user_item_cf
+        type: tensor(input[20],hidden[40]) # user_item_cf
     }
 
     constant b_hidden {
@@ -75,17 +75,26 @@ search blog_post {
 
     constant W_final {
         file: constants/W_final.json
-        type: tensor(hidden[40],prob_success[1])
+        type: tensor(hidden[40], final[1])
     }
 
     constant b_final {
         file: constants/b_final.json
-        type: tensor(prob_success[1])
+        type: tensor(final[1])
     }
 
-    # Temporary hack: requires x and y to be 0 padded
-    macro concat(x, y) {
-        expression: x + y
+    constant input_transform_1 {
+        file: constants/input_transform_1.json
+        type: tensor(user_item_cf[10], input[20])
+    }
+
+    constant input_transform_2 {
+        file: constants/input_transform_2.json
+        type: tensor(user_item_cf[10], input[20])
+    }
+
+    macro matmul(x, y, dim) {
+        expression: sum(x * y, dim)
     }
 
     # Not valid. Needs to be a predefined function.
@@ -98,17 +107,17 @@ search blog_post {
         expression: 1 / (1 + exp(-x))
     }
 
-    macro matmul(x, y, dim) {
-        expression: sum(x * y, dim)
-    }
-
-    # The input to the neural network is the concatenation of the query and document vectors
+    # The input to the neural network is the concatenation of the document and query vectors
     macro nn_input() {
-        expression: concat(attribute(user_item_cf), query(user_item_cf))
+        expression {
+            matmul(attribute(user_item_cf), constant(input_transform_1), "user_item_cf")
+            +
+            matmul(query(user_item_cf), constant(input_transform_2), "user_item_cf")
+        }
     }
 
     macro hidden_layer() {
-        expression: relu(matmul(nn_input, constant(W_hidden), "user_item_cf") + constant(b_hidden))
+        expression: relu(matmul(nn_input, constant(W_hidden), "input") + constant(b_hidden))
     }
 
     macro final_layer() {
