@@ -9,6 +9,7 @@
   "canonicalFlavor":"default",
   "description":"Flavor-name-is-expensive",
   "cost":200,
+  "environment":"BARE_METAL",
   "owner": {
     "tenant": "tenant3",
     "application": "application3",
