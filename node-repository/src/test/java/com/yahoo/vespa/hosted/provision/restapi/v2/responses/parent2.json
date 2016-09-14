@@ -11,7 +11,7 @@
   "minMainMemoryAvailableGb": 128.0,
   "description": "Flavor-name-is-large-variant",
   "minCpuCores": 64.0,
-  "environment": "env",
+  "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "failCount": 0,

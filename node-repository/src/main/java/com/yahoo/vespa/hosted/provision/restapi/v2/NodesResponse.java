@@ -10,7 +10,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -154,8 +153,7 @@ class NodesResponse extends HttpResponse {
             object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
-        if (node.flavor().getEnvironment() != null && ! node.flavor().getEnvironment().isEmpty())
-            object.setString("environment", node.flavor().getEnvironment());
+        object.setString("environment", node.flavor().getType().name());
         if (node.allocation().isPresent()) {
             toSlime(node.allocation().get().owner(), object.setObject("owner"));
             toSlime(node.allocation().get().membership(), object.setObject("membership"));

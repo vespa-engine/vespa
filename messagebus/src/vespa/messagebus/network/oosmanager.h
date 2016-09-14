@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/fnet/fnet.h>
 #include <set>
 #include <vespa/slobrok/sbmirror.h>
@@ -18,7 +17,7 @@ class RPCNetwork;
  * service pattern in the slobrok. These servers are then polled for information. The information is compiled into a
  * local repository for fast lookup.
  */
-class OOSManager : public boost::noncopyable, public FNET_Task {
+class OOSManager : public FNET_Task {
 public:
     /**
      * Convenience typedefs.

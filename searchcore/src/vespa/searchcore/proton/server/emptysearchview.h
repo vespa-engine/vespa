@@ -6,8 +6,7 @@
 
 namespace proton {
 
-class EmptySearchView : public boost::noncopyable,
-                         public ISearchHandler
+class EmptySearchView : public ISearchHandler
 {
 public:
     typedef std::shared_ptr<EmptySearchView> SP;

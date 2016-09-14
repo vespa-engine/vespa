@@ -13,6 +13,7 @@ vespa_add_library(vespalib_vespalib_eval OBJECT
     operator_nodes.cpp
     simple_tensor.cpp
     simple_tensor_engine.cpp
+    tensor.cpp
     tensor_engine.cpp
     tensor_function.cpp
     tensor_nodes.cpp

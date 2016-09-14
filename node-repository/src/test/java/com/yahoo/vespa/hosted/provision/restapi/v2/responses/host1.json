@@ -11,7 +11,7 @@
   "minMainMemoryAvailableGb":16.0,
   "description":"Host node",
   "minCpuCores":2.0,
-  "environment":"env",
+  "environment":"BARE_METAL",
   "owner": {
     "tenant": "tenant3",
     "application": "application3",

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -13,7 +12,6 @@
 namespace filedistribution {
 
 class FileDownloaderManager : public FileProvider,
-                              boost::noncopyable,
                               public boost::enable_shared_from_this<FileDownloaderManager> {
 
     class StartDownloads {
@@ -45,6 +43,8 @@ class FileDownloaderManager : public FileProvider,
 
     void removePeerStatus(const std::string& fileReference);
 public:
+    FileDownloaderManager(const FileDownloaderManager &) = delete;
+    FileDownloaderManager & operator = (const FileDownloaderManager &) = delete;
     FileDownloaderManager(const boost::shared_ptr<FileDownloader>&,
             const boost::shared_ptr<FileDistributionModel>& model);
     ~FileDownloaderManager();

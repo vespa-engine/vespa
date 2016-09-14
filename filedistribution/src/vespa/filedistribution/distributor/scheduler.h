@@ -9,7 +9,7 @@
 
 namespace filedistribution {
 
-class Scheduler : boost::noncopyable {
+class Scheduler {
 public:
     class Task : public boost::enable_shared_from_this<Task> {
         boost::asio::deadline_timer _timer;
@@ -37,6 +37,8 @@ private:
     boost::thread _workerThread;
 
 public:
+    Scheduler(const Scheduler &) = delete;
+    Scheduler & operator = (const Scheduler &) = delete;
     Scheduler(boost::function<void (boost::asio::io_service&)> callRun) ;
     ~Scheduler();
 };

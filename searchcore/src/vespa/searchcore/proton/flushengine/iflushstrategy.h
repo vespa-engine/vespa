@@ -19,6 +19,8 @@ public:
      */
     typedef std::shared_ptr<IFlushStrategy> SP;
 
+    IFlushStrategy(const IFlushStrategy &) = delete;
+    IFlushStrategy & operator = (const IFlushStrategy &) = delete;
     /**
      * Virtual destructor required for inheritance.
      */
@@ -34,6 +36,8 @@ public:
     virtual FlushContext::List getFlushTargets(const FlushContext::List & targetList,
                                                const flushengine::TlsStatsMap &
                                                tlsStatsMap) const = 0;
+protected:
+    IFlushStrategy() = default;
 };
 
 } // namespace proton

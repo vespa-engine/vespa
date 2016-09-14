@@ -23,7 +23,8 @@ public:
      * Convenience typedefs.
      */
     typedef std::shared_ptr<IFlushHandler> SP;
-
+    IFlushHandler(const IFlushHandler &) = delete;
+    IFlushHandler & operator = (const IFlushHandler &) = delete;
     /**
      * Constructs a new instance of this class.
      *
@@ -38,21 +39,14 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushHandler()
-    {
-        // empty
-    }
+    virtual ~IFlushHandler() { }
 
     /**
      * Returns the unique name of this handler.
      *
      * @return The name of this.
      */
-    const vespalib::string &
-    getName() const
-    {
-        return _name;
-    }
+    const vespalib::string & getName() const { return _name; }
 
     /**
      * Returns a list of the flush targets that belong to this handler. This
@@ -60,8 +54,7 @@ public:
      *
      * @return The list of targets.
      */
-    virtual std::vector<IFlushTarget::SP>
-    getFlushTargets() = 0;
+    virtual std::vector<IFlushTarget::SP> getFlushTargets() = 0;
 
     /**
      * Returns the current serial number of this handler. This is the head of
@@ -88,8 +81,7 @@ public:
      * @param syncTo The last serial number that has to be persisted to stable
      *               media.
      */
-    virtual void
-    syncTls(SerialNum syncTo) = 0;
+    virtual void syncTls(SerialNum syncTo) = 0;
 };
 
 } // namespace proton

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <string>
 #include <vespa/vespalib/util/sync.h>
@@ -9,7 +8,7 @@
 
 namespace documentapi {
 
-class RoutingPolicyRepository : public boost::noncopyable {
+class RoutingPolicyRepository {
 private:
     typedef std::map<string, IRoutingPolicyFactory::SP> FactoryMap;
 
@@ -17,6 +16,8 @@ private:
     FactoryMap           _factories;
 
 public:
+    RoutingPolicyRepository(const RoutingPolicyRepository &) = delete;
+    RoutingPolicyRepository & operator = (const RoutingPolicyRepository &) = delete;
     /**
      * Constructs a new routing policy repository.
      */

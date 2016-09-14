@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/noncopyable.hpp>
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
@@ -11,9 +10,11 @@ namespace index {
 /**
  * Interface for a single thread used for write tasks.
  */
-struct IThreadService : public boost::noncopyable,
-                        public vespalib::ThreadExecutor
+struct IThreadService : public vespalib::ThreadExecutor
 {
+    IThreadService(const IThreadService &) = delete;
+    IThreadService & operator = (const IThreadService &) = delete;
+    IThreadService() = default;
     virtual ~IThreadService() {}
 
     /**

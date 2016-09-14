@@ -7,7 +7,6 @@
 #include "i_attribute_manager.h"
 #include "i_attribute_initializer_registry.h"
 #include <set>
-#include <boost/utility.hpp>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -32,8 +31,7 @@ namespace proton
 /**
  * Specialized attribute manager for proton.
  */
-class AttributeManager : public boost::noncopyable,
-                         public proton::IAttributeManager
+class AttributeManager : public proton::IAttributeManager
 {
 private:
     typedef search::attribute::Config Config;

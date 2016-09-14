@@ -14,13 +14,10 @@ import java.util.List;
  * @author bratseth
  */
 public class Flavor {
-    public static final String ENVIRONMENT_BARE_METAL = "BARE_METAL";
-    public static final String ENVIRONMENT_VIRTUAL_MACHINE = "VIRTUAL_MACHINE";
-    public static final String ENVIRONMENT_DOCKER_CONTAINER = "DOCKER_CONTAINER";
 
     private final String name;
     private final int cost;
-    private final String environment;
+    private final Type type;
     private final double minCpuCores;
     private final double minMainMemoryAvailableGb;
     private final double minDiskAvailableGb;
@@ -35,7 +32,7 @@ public class Flavor {
         this.name = flavorConfig.name();
         this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
-        this.environment = flavorConfig.environment();
+        this.type = Type.valueOf(flavorConfig.environment());
         this.minCpuCores = flavorConfig.minCpuCores();
         this.minMainMemoryAvailableGb = flavorConfig.minMainMemoryAvailableGb();
         this.minDiskAvailableGb = flavorConfig.minDiskAvailableGb();
@@ -67,8 +64,8 @@ public class Flavor {
         return description;
     }
 
-    public String getEnvironment() {
-        return environment;
+    public Type getType() {
+        return type;
     }
 
     /**
@@ -123,4 +120,12 @@ public class Flavor {
 
     @Override
     public String toString() { return "flavor '" + name + "'"; }
+
+    public enum Type {
+        undefined, // Deafult value in config (node-repository.def)
+        BARE_METAL,
+        VIRTUAL_MACHINE,
+        DOCKER_CONTAINER
+    }
+
 }

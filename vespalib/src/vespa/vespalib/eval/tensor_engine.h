@@ -40,6 +40,7 @@ struct TensorEngine
 
     virtual ValueType type_of(const Tensor &tensor) const = 0;
     virtual bool equal(const Tensor &a, const Tensor &b) const = 0;
+    virtual vespalib::string to_string(const Tensor &tensor) const = 0;
 
     virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
 

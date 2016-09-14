@@ -288,7 +288,7 @@ public class NodeFailerTest {
     private void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
         Set<Node> deadNodes = new HashSet<>(Arrays.asList(deadNodeArray));
         for (Node node : nodeRepository.getNodes(Node.Type.tenant)) {
-            if ( ! deadNodes.contains(node) && ! node.flavor().getEnvironment().equals(Flavor.ENVIRONMENT_DOCKER_CONTAINER))
+            if ( ! deadNodes.contains(node) && node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
     }

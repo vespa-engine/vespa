@@ -17,7 +17,11 @@ namespace mbus {
  * sure it outlives the MessageBus object.
  */
 class INetwork {
+protected:
+    INetwork() = default;
 public:
+    INetwork(const INetwork &) = delete;
+    INetwork & operator = (const INetwork &) = delete;
     /**
      * Destructor. Frees any allocated resources.
      */

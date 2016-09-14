@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vdslib/bucketdistribution.h>
@@ -15,7 +14,7 @@ namespace documentapi {
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  * @version $Id$
  */
-class SearchColumnPolicy : public boost::noncopyable, public mbus::IRoutingPolicy {
+class SearchColumnPolicy : public mbus::IRoutingPolicy {
 private:
     typedef std::map<uint32_t, vdslib::BucketDistribution> DistributionCache;
 

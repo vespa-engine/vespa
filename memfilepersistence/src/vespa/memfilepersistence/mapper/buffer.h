@@ -11,14 +11,13 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace memfile {
 
-class Buffer : boost::noncopyable // Ensure no accidental copying of a buffer
+class Buffer
 {
     // Use AutoAlloc to transparently use mmap for large buffers.
     // It is crucial that any backing buffer type returns an address that is
@@ -33,6 +32,8 @@ class Buffer : boost::noncopyable // Ensure no accidental copying of a buffer
 public:
     typedef vespalib::LinkedPtr<Buffer> LP;
 
+    Buffer(const Buffer &) = delete;
+    Buffer & operator = (const Buffer &) = delete;
     Buffer(size_t size);
 
     /**

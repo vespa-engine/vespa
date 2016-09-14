@@ -3,14 +3,13 @@
 #pragma once
 
 #include <vespa/searchlib/transactionlog/translogclient.h>
-#include <boost/noncopyable.hpp>
 
 namespace proton {
 
 /**
  * Base class managing the initialization and replay of a transaction log.
  **/
-class TransactionLogManagerBase : public boost::noncopyable {
+class TransactionLogManagerBase {
 
     search::transactionlog::TransLogClient _tlc;
     search::transactionlog::TransLogClient::Session::UP _tlcSession;
@@ -38,6 +37,8 @@ protected:
                                      int64_t elapsedTime) const = 0;
 
 public:
+    TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;
+    TransactionLogManagerBase & operator = (const TransactionLogManagerBase &) = delete;
     /**
      * Create a new manager.
      *

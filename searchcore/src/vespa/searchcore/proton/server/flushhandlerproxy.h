@@ -7,31 +7,22 @@
 
 namespace proton {
 
-class FlushHandlerProxy : public boost::noncopyable,
-                          public IFlushHandler
+class FlushHandlerProxy : public IFlushHandler
 {
 private:
     DocumentDB::SP _documentDB;
 public:
     FlushHandlerProxy(const DocumentDB::SP &documentDB);
 
-    virtual
-    ~FlushHandlerProxy(void);
+    virtual ~FlushHandlerProxy();
 
     /**
      * Implements IFlushHandler.
      */
-    virtual std::vector<IFlushTarget::SP>
-    getFlushTargets(void);
-
-    virtual SerialNum
-    getCurrentSerialNumber(void) const;
-
-    virtual void
-    flushDone(SerialNum flushedSerial);
-
-    virtual void
-    syncTls(SerialNum syncTo);
+    std::vector<IFlushTarget::SP> getFlushTargets() override;
+    SerialNum getCurrentSerialNumber() const override;
+    void flushDone(SerialNum flushedSerial) override;
+    void syncTls(SerialNum syncTo) override;
 };
 
 } // namespace proton

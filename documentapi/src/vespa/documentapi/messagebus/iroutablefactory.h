@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/shared_ptr.hpp>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/vespalib/component/version.h>
@@ -22,7 +21,9 @@ class LoadTypeSet;
  * factory across multiple routable types. To share serialization logic between factory use a common
  * superclass or composition with a common serialization utility.
  */
-class IRoutableFactory : public boost::noncopyable {
+class IRoutableFactory {
+protected:
+    IRoutableFactory() = default;
 public:
     /**
      * Convenience typedefs.
@@ -30,6 +31,8 @@ public:
     typedef std::unique_ptr<IRoutableFactory> UP;
     typedef std::shared_ptr<IRoutableFactory> SP;
 
+    IRoutableFactory(const IRoutableFactory &) = delete;
+    IRoutableFactory & operator = (const IRoutableFactory &) = delete;
     /**
      * Virtual destructor required for inheritance.
      */
