@@ -136,10 +136,7 @@ ZHandle::getParent(const string& childPath)
 void
 Node::triggerWatches(zhandle_t* zh, const std::string& path) {
     for (auto i = watchers.begin(); i != watchers.end(); ++i) {
-        ((ZHandle*)zh)->watcherInvocations.push(std::bind(i->first, zh, \
-                        /*TODO: type, state*/ 0, 0,
-                        std::bind(&string::c_str, path),
-                        i->second));
+        ((ZHandle*)zh)->watcherInvocations.push([zh, i, path] () { i->first(zh, 0, 0, path.c_str(), i->second); });
     }
     watchers.clear();
 }
