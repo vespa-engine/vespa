@@ -17,15 +17,17 @@ namespace mbus {
  * tasks. Tasks are enqueued using the synchronized {@link #enqueue(Task)}
  * method, and are run in the order they were enqueued.
  */
-class Messenger : public boost::noncopyable,
-                  public FastOS_Runnable {
+class Messenger : public FastOS_Runnable {
 public:
     /**
      * Defines the required interface for tasks to be posted to this worker.
      */
-    class ITask : public boost::noncopyable,
-                  public vespalib::Executor::Task {
+    class ITask : public vespalib::Executor::Task {
+    protected:
+        ITask() = default;
     public:
+        ITask(const ITask &) = delete;
+        ITask & operator = (const ITask &) = delete;
         /**
          * Convenience typedefs.
          */

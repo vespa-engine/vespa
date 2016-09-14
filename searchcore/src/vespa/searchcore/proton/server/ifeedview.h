@@ -23,14 +23,17 @@ class MoveOperation;
 /**
  * Interface for a feed view as seen from a feed handler.
  */
-class IFeedView : public boost::noncopyable
+class IFeedView
 {
 protected:
     typedef search::transactionlog::Packet Packet;
+    IFeedView() = default;
 public:
     typedef std::shared_ptr<IFeedView> SP;
 
-    virtual~IFeedView() { }
+    IFeedView(const IFeedView &) = delete;
+    IFeedView & operator = (const IFeedView &) = delete;
+    virtual ~IFeedView() { }
 
     virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const = 0;
 

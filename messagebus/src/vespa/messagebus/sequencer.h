@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <vespa/vespalib/util/sync.h>
 #include "imessagehandler.h"
@@ -18,8 +17,7 @@ namespace mbus {
  * object implementing the IMessageHandler API to use for sending messages. This class is used by the
  * SourceSession class and is not intended for external use.
  */
-class Sequencer : public boost::noncopyable,
-                  public IMessageHandler,
+class Sequencer : public IMessageHandler,
                   public IReplyHandler
 {
 private:

@@ -7,8 +7,7 @@
 
 namespace proton {
 
-class SearchHandlerProxy : public boost::noncopyable,
-                           public ISearchHandler
+class SearchHandlerProxy : public ISearchHandler
 {
 private:
     DocumentDB::SP _documentDB;

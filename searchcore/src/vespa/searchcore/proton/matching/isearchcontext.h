@@ -21,11 +21,15 @@ namespace matching {
  **/
 class ISearchContext
 {
+protected:
+    ISearchContext() = default;
 public:
     /**
      * Convenience typedef for an auto pointer to this interface.
      **/
     typedef std::unique_ptr<ISearchContext> UP;
+    ISearchContext(const ISearchContext &) = delete;
+    ISearchContext & operator = (const ISearchContext &) = delete;
 
     typedef search::queryeval::Searchable      Searchable;
 

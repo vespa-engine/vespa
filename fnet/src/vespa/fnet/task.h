@@ -20,10 +20,9 @@ private:
     FNET_Task      *_task_prev;
     bool            _killed;
 
-    FNET_Task(const FNET_Task &);
-    FNET_Task &operator=(const FNET_Task &);
-
 public:
+    FNET_Task(const FNET_Task &) = delete;
+    FNET_Task &operator=(const FNET_Task &) = delete;
 
     /**
      * Construct a task that may be scheduled by the given scheduler.

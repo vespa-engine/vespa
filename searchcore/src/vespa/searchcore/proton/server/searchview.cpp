@@ -91,8 +91,7 @@ createEmptyReply(const DocsumRequest & request)
 SearchView::SearchView(const ISummaryManager::ISummarySetup::SP &
                        summarySetup,
                        const MatchView::SP & matchView)
-    : boost::noncopyable(),
-      ISearchHandler(),
+    : ISearchHandler(),
       _summarySetup(summarySetup),
       _matchView(matchView)
 {

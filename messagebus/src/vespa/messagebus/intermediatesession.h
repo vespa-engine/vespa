@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <memory>
 #include <string>
 #include "reply.h"
@@ -17,15 +16,14 @@ class ReplyGate;
  * An IntermediateSession is used to process Message and Reply objects
  * on the way along a route.
  **/
-class IntermediateSession : public boost::noncopyable,
-                            public IMessageHandler,
+class IntermediateSession : public IMessageHandler,
                             public IReplyHandler
 {
 private:
     friend class MessageBus;
 
     MessageBus      &_mbus;
-    string      _name;
+    string           _name;
     IMessageHandler &_msgHandler;
     IReplyHandler   &_replyHandler;
     ReplyGate       *_gate;

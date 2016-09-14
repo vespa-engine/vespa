@@ -11,7 +11,7 @@ namespace mbus {
  * Implements a thread-safe repository for protocols and their routing policies. This manages an internal cache of
  * routing policies so that similarly referenced policy directives share the same instance of a policy.
  */
-class ProtocolRepository : public boost::noncopyable {
+class ProtocolRepository {
 private:
     typedef std::map<string, IProtocol::SP> ProtocolMap;
     typedef std::map<string, IRoutingPolicy::SP> RoutingPolicyCache;
@@ -21,7 +21,9 @@ private:
     RoutingPolicyCache _routingPolicyCache;
 
 public:
-
+    ProtocolRepository(const ProtocolRepository &) = delete;
+    ProtocolRepository & operator = (const ProtocolRepository &) = delete;
+    ProtocolRepository() = default;
     /**
      * Registers a protocol with this repository. This will overwrite any protocol that was registered earlier
      * that has the same name. If this method detects a protocol replacement, it will clear its internal

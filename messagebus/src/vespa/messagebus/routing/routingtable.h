@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <string>
 #include "hopblueprint.h"
@@ -22,7 +21,7 @@ class Message;
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  * @version $Id$
  */
-class RoutingTable : public boost::noncopyable {
+class RoutingTable {
 private:
     string                         _name;
     std::map<string, HopBlueprint> _hops;
@@ -65,6 +64,8 @@ public:
      * Convenience typedef for a shared pointer to a RoutingTable object.
      */
     typedef std::shared_ptr<RoutingTable> SP;
+    RoutingTable(const RoutingTable &) = delete;
+    RoutingTable & operator = (const RoutingTable &) = delete;
 
     /**
      * Creates a new routing table based on a given specification. This also verifies the integrity of the table.

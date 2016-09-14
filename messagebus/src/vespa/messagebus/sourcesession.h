@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/vespalib/util/sync.h>
 #include "ireplyhandler.h"
 #include "result.h"
@@ -18,7 +17,7 @@ class ReplyGate;
  * objects back. A source session does not have a service name and can only receive replies to the messages
  * sent on it.
  **/
-class SourceSession : public boost::noncopyable, public IReplyHandler {
+class SourceSession : public IReplyHandler {
 private:
     friend class MessageBus;
 

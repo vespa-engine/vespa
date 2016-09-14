@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <vespa/messagebus/itimer.h>
 #include <vespa/vespalib/util/sync.h>
@@ -16,7 +15,7 @@ namespace mbus {
  * Class used to reuse targets for the same address when sending messages over
  * the rpc network.
  */
-class RPCTargetPool : public boost::noncopyable {
+class RPCTargetPool {
 private:
     /**
      * Implements a helper class holds the necessary reference and token counter
@@ -37,6 +36,8 @@ private:
     uint64_t       _expireMillis;
 
 public:
+    RPCTargetPool(const RPCTargetPool &) = delete;
+    RPCTargetPool & operator = (const RPCTargetPool &) = delete;
     /**
      * Constructs a new instance of this class, and registers the {@link
      * SystemTimer} for detecting and closing connections that have expired

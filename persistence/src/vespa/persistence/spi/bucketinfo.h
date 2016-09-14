@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <persistence/spi/types.h>
 
 namespace storage {

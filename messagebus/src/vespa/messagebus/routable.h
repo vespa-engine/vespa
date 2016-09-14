@@ -2,7 +2,6 @@
 #pragma once
 
 #include <memory>
-#include <boost/utility.hpp>
 #include <vespa/messagebus/blob.h>
 #include <vespa/messagebus/callstack.h>
 #include <vespa/messagebus/context.h>
@@ -25,7 +24,7 @@ namespace mbus {
  * transfer the state from a message to the corresponding reply, or to a
  * different message if the application decides to replace it.
  */
-class Routable : public boost::noncopyable {
+class Routable {
 private:
     Context   _context;
     CallStack _stack;
@@ -36,6 +35,8 @@ public:
      * Convenience typedef for an auto pointer to a Routable object.
      */
     typedef std::unique_ptr<Routable> UP;
+    Routable(const Routable &) = delete;
+    Routable & operator = (const Routable &) = delete;
 
     /**
      * Constructs a new instance of this class.

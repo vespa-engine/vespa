@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <string>
@@ -16,7 +15,7 @@ namespace documentapi {
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  * @version $Id$
  */
-class LocalServicePolicy : public boost::noncopyable, public mbus::IRoutingPolicy {
+class LocalServicePolicy : public mbus::IRoutingPolicy {
 private:
     struct CacheEntry {
         uint32_t               _offset;

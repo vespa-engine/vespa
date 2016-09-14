@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/vespalib/util/referencecounter.h>
 #include "idiscardhandler.h"
 #include "imessagehandler.h"
@@ -21,8 +20,7 @@ namespace mbus {
  * is handled outside this class. Note that this class is only intended for
  * internal use.
  */
-class ReplyGate : public boost::noncopyable,
-                  public vespalib::ReferenceCounter,
+class ReplyGate : public vespalib::ReferenceCounter,
                   public IDiscardHandler,
                   public IMessageHandler,
                   public IReplyHandler

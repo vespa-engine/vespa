@@ -8,8 +8,7 @@
 
 namespace proton {
 
-class SearchView : public boost::noncopyable,
-                   public ISearchHandler
+class SearchView : public ISearchHandler
 {
 private:
     ISummaryManager::ISummarySetup::SP _summarySetup;

@@ -32,18 +32,18 @@ public:
     };
 
 private:
-    class State : public boost::noncopyable {
+    class State {
     public:
+        State(const State &) = delete;
+        State & operator = (const State &) = delete;
         State(ITransport & transport, mbus::Reply::UP reply, uint32_t numAcksRequired);
         ~State();
         void setNumAcksRequired(uint32_t numAcksRequired) { _unAckedCount = numAcksRequired; }
         void ack();
 
-        void
-        ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics);
+        void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics);
 
-        void
-        incNeededAcks(void);
+        void incNeededAcks(void);
 
         void fail(uint32_t errNum, const vespalib::string &errMsg);
         void trace(uint32_t traceLevel, const vespalib::string &traceMsg);
