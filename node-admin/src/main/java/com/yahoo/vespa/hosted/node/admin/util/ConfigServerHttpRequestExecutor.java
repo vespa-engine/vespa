@@ -19,7 +19,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
@@ -41,7 +40,7 @@ public class ConfigServerHttpRequestExecutor {
 
     public static ConfigServerHttpRequestExecutor create(Set<HostName> configServerHosts) {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        // Increase max total connection to 200 which should be enough
+        // Increase max total connections to 200, which should be enough
         cm.setMaxTotal(200);
         return new ConfigServerHttpRequestExecutor(configServerHosts, HttpClientBuilder.create()
                 .setConnectionManager(cm).build());
@@ -63,7 +62,7 @@ public class ConfigServerHttpRequestExecutor {
         }
     }
 
-    public <T extends Object> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
+    public <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
             for (HostName configServer : configServerHosts) {
@@ -72,7 +71,7 @@ public class ConfigServerHttpRequestExecutor {
                     response = client.execute(requestFactory.createRequest(configServer));
                 } catch (Exception e) {
                     lastException = e;
-                    NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + "(will try all config servers)", e);
+                    NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + " (will try all config servers):" + e.getMessage());
                     continue;
                 }
                 if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
@@ -80,8 +79,8 @@ public class ConfigServerHttpRequestExecutor {
                 }
                 if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
                     String entity = read(response.getEntity());
-                    NODE_ADMIN_LOGGER.info("Non 200 received:\n" + entity);
-                    throw new RuntimeException("Did not get 200, but " + response.getStatusLine().getStatusCode() +
+                    NODE_ADMIN_LOGGER.info("Non-200 HTTP response code received:\n" + entity);
+                    throw new RuntimeException("Did not get response code 200, but " + response.getStatusLine().getStatusCode() +
                             entity);
                 }
                 try {
@@ -91,10 +90,10 @@ public class ConfigServerHttpRequestExecutor {
                 }
             }
         }
-        throw new RuntimeException("Failed executing request, last exception:", lastException);
+        throw new RuntimeException("Failed executing request, last exception: ", lastException);
     }
 
-    public <T extends Object> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut("http://" + configServer + ":" + port + path);
             if (bodyJsonPojo.isPresent()) {
@@ -104,7 +103,7 @@ public class ConfigServerHttpRequestExecutor {
         }, wantedReturnType);
     }
 
-    public <T extends Object> T patch(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T patch(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch("http://" + configServer + ":" + port + path);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
@@ -112,13 +111,13 @@ public class ConfigServerHttpRequestExecutor {
         }, wantedReturnType);
     }
 
-    public <T extends Object> T delete(String path, int port, Class<T> wantedReturnType) {
+    public <T> T delete(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             return new HttpDelete("http://" + configServer + ":" + port + path);
         }, wantedReturnType);
     }
 
-    public <T extends Object> T get(String path, int port, Class<T> wantedReturnType) {
+    public <T> T get(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             return new HttpGet("http://" + configServer + ":" + port + path);
         }, wantedReturnType);
