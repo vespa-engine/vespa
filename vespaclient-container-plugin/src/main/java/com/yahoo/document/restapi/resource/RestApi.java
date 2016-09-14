@@ -48,6 +48,7 @@ public class RestApi extends LoggingRequestHandler {
     private static final String SELECTION = "selection";
     private static final String CLUSTER = "cluster";
     private static final String CONTINUATION = "continuation";
+    private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
     private ObjectMapper mapper = new ObjectMapper();
@@ -189,7 +190,7 @@ public class RestApi extends LoggingRequestHandler {
 
         return new HttpResponse(getDocument.isPresent() ? 200 : 404) {
             @Override
-            public String getContentType() { return "application/json"; }
+            public String getContentType() { return APPLICATION_JSON; }
             @Override
             public void render(OutputStream outputStream) throws IOException {
                 outputStream.write(resultNode.toString().getBytes(StandardCharsets.UTF_8.name()));
@@ -218,7 +219,7 @@ public class RestApi extends LoggingRequestHandler {
 
         HttpResponse httpResponse = new HttpResponse(200) {
             @Override
-            public String getContentType() { return "application/json"; }
+            public String getContentType() { return APPLICATION_JSON; }
             @Override
             public void render(OutputStream outputStream) throws IOException {
                 try {
