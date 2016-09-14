@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include "scheduler.h"
-
-#include <boost/bind.hpp>
-
 #include <iostream>
 
 namespace asio = boost::asio;
@@ -39,7 +36,7 @@ Task::handle(const boost::system::error_code& code) {
 
 Scheduler::Scheduler(std::function<void (asio::io_service&)> callRun)
     :_keepAliveWork(ioService),
-     _workerThread(std::bind(callRun, std::ref(ioService)))
+     _workerThread([&, callRun]() { callRun(ioService); })
 {}
 
 Scheduler::~Scheduler() {

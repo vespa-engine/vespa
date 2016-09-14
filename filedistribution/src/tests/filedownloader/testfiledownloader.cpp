@@ -108,11 +108,8 @@ BOOST_AUTO_TEST_CASE(fileDownloaderTest) {
     std::shared_ptr<FileDownloader> uploader =
         createDownloader(deleter, uploaderPort, uploaderPath, model, exceptionRethrower);
 
-    boost::thread uploaderThread(
-            boost::lambda::bind(&FileDownloader::runEventLoop, uploader.get()));
-
-    boost::thread downloaderThread(
-            boost::lambda::bind(&FileDownloader::runEventLoop, downloader.get()));
+    std::thread uploaderThread( [&] () { uploader->runEventLoop(); });
+    std::thread downloaderThread( [&] () { downloader->runEventLoop(); });
 
     uploader->addTorrent(fileReference, buffer);
     downloader->addTorrent(fileReference, buffer);
