@@ -12,7 +12,7 @@
 
 namespace {
 
-const char *defaultHome = "/opt/vespa/";
+const char *defaultHome = "/opt/yahoo/vespa/";
 char computedHome[PATH_MAX];
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;

@@ -91,19 +91,19 @@ public class MultiDockerTest {
 
         assertTrue(callOrder.verifyInOrder(1000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
-                "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/vespa/bin/vespa-nodectl, resume]",
+                "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
 
                 "createContainerCommand with DockerImage: DockerImage { imageId=image2 }, HostName: host2, ContainerName: ContainerName { name=container2 }",
-                "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/opt/vespa/bin/vespa-nodectl, resume]",
+                "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
 
                 "stopContainer with ContainerName: ContainerName { name=container2 }",
                 "deleteContainer with ContainerName: ContainerName { name=container2 }",
 
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }",
-                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
 
         assertTrue("Maintainer did not receive call to delete application storage", callOrder.verifyInOrder(1000,
                         "deleteContainer with ContainerName: ContainerName { name=container2 }",
@@ -136,8 +136,8 @@ public class MultiDockerTest {
 
         assert callOrder.verifyInOrder(1000,
                 "createContainerCommand with DockerImage: " + dockerImage.get() + ", HostName: " + hostName + ", ContainerName: " + containerName,
-                "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: " + containerName + ", args: [/opt/vespa/bin/vespa-nodectl, resume]");
+                "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: " + containerName + ", args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
 
         return containerNodeSpec;
     }

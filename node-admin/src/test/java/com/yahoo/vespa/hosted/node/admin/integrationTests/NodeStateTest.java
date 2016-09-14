@@ -81,8 +81,8 @@ public class NodeStateTest {
 
         assert callOrder.verifyInOrder(5000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]");
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
     }
 
     @After
@@ -156,7 +156,7 @@ public class NodeStateTest {
         assertTrue("Node not started again after being put to active state", callOrder.verifyInOrder(1000,
                 "deleteContainer with ContainerName: ContainerName { name=container }",
                 "createContainerCommand with DockerImage: DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
     }
 }
