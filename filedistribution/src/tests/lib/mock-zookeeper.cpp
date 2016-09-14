@@ -58,7 +58,7 @@ struct Node {
 
 std::shared_ptr<Node> sharedRoot;
 
-void wakeUp() { }
+void doNothing() { }
 
 struct ZHandle {
     struct Worker {
@@ -96,11 +96,13 @@ struct ZHandle {
 
     ~ZHandle() {
         std::for_each(ephemeralNodes.begin(), ephemeralNodes.end(),
-                      [&] (const string & s) { zoo_delete((zhandle_t*)this, s.c_str(), 0); });
-
-        _closed.store(true);
-        watcherInvocations.push(std::ref(wakeUp));
+                      [this] (const string & s) { zoo_delete((zhandle_t*)this, s.c_str(), 0); });
+        close();
         _watchersThread.join();
+    }
+    void close() {
+        _closed.store(true);
+        watcherInvocations.push(std::ref(doNothing));
     }
 };
 
