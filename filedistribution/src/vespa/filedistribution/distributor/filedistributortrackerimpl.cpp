@@ -15,7 +15,6 @@ using filedistribution::FileDistributorTrackerImpl;
 using filedistribution::FileDownloader;
 using filedistribution::FileDistributionModel;
 using filedistribution::Scheduler;
-using filedistribution::ExceptionRethrower;
 using filedistribution::TorrentSP;
 
 typedef FileDistributionModel::PeerEntries PeerEntries;

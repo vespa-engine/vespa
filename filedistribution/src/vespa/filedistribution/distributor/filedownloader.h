@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vector>
+#include <mutex>
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 #include <boost/multi_index_container.hpp>
@@ -14,7 +15,6 @@
 #include <vespa/filedistribution/rpc/fileprovider.h>
 #include "hostname.h"
 #include <vespa/filedistribution/common/buffer.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/common/exception.h>
 #include <vespa/filedistribution/model/filedbmodel.h>
 

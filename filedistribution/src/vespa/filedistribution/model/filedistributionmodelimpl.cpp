@@ -223,11 +223,8 @@ FileDistributionModelImpl::addConfigServersAsPeers(
 
 void
 FileDistributionModelImpl::configure(std::unique_ptr<FilereferencesConfig> config) {
-    try {
-        const bool changed = updateActiveFileReferences(config->filereferences);
-        if (changed)
-            _filesToDownloadChanged();
-    } catch(...) {
-        _exceptionRethrower->store(boost::current_exception());
+    const bool changed = updateActiveFileReferences(config->filereferences);
+    if (changed) {
+        _filesToDownloadChanged();
     }
 }

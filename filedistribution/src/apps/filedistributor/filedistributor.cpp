@@ -69,17 +69,15 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         Components(const Components &) = delete;
         Components & operator = (const Components &) = delete;
 
-        Components(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower,
-                   const config::ConfigUri & configUri,
+        Components(const config::ConfigUri & configUri,
                    const ZookeepersConfig& zooKeepersConfig,
                    const FiledistributorConfig& fileDistributorConfig,
                    const FiledistributorrpcConfig& rpcConfig)
-            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist, exceptionRethrower))),
+            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist))),
              _model(track(new FileDistributionModelImpl(
                                      fileDistributorConfig.hostname,
                                      fileDistributorConfig.torrentport,
-                                     _zk,
-                                     exceptionRethrower))),
+                                     _zk))),
              _tracker(track(new FileDistributorTrackerImpl(_model))),
              _downloader(track(new FileDownloader(_tracker,
                                                   fileDistributorConfig.hostname,
@@ -125,7 +123,6 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
     std::unique_ptr<FiledistributorConfig> _fileDistributorConfig;
     std::unique_ptr<FiledistributorrpcConfig> _rpcConfig;
 
-    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     std::unique_ptr<Components> _components;
 public:
     FileDistributor(const FileDistributor &) = delete;
@@ -136,7 +133,6 @@ public:
           _zooKeepersConfig(),
           _fileDistributorConfig(),
           _rpcConfig(),
-          _exceptionRethrower(),
           _components()
     { }
 
@@ -178,33 +174,14 @@ public:
     void run(const config::ConfigUri & configUri) {
         while (!askedToShutDown()) {
             clearReinitializeFlag();
-            _exceptionRethrower.reset(new ExceptionRethrower());
             runImpl(configUri);
-
-            if (_exceptionRethrower->exceptionStored())
-                _exceptionRethrower->rethrow();
         }
     }
 
-    static void ensureExceptionsStored(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower) {
-        //TODO: this is somewhat hackish, refactor to eliminate this later.
-        LOG(debug, "Waiting for shutdown");
-        for (int i=0; i<50 && !exceptionRethrower.unique(); ++i) {
-            std::this_thread::sleep_for(100ms);
-        }
-        LOG(debug, "Done waiting for shutdown");
-
-        if (!exceptionRethrower.unique()) {
-            EV_STOPPING(programName, "Forced termination");
-            kill(getpid(), SIGKILL);
-        }
-    }
-
-    void createComponents(const std::shared_ptr<ExceptionRethrower>& exceptionRethrower, const config::ConfigUri & configUri) {
+    void createComponents(const config::ConfigUri & configUri) {
         LockGuard guard(_configMutex);
         _components.reset(
-                new Components(exceptionRethrower,
-                        configUri,
+                new Components(configUri,
                         *_zooKeepersConfig,
                         *_fileDistributorConfig,
                         *_rpcConfig));
@@ -231,13 +208,9 @@ public:
 #pragma GCC diagnostic ignored "-Wshadow"
     void runImpl(const config::ConfigUri & configUri) {
 
-        BOOST_SCOPE_EXIT((&_components)(&_exceptionRethrower)) {
-            _components.reset();
-            //Ensures that any exception stored during destruction will be available when returning.
-            ensureExceptionsStored(_exceptionRethrower);
-        } BOOST_SCOPE_EXIT_END
+        _components.reset();
 
-        createComponents(_exceptionRethrower, configUri);
+        createComponents(configUri);
 
         // We do not want back to back reinitializing as it gives zero time for serving
         // some torrents.
@@ -245,8 +218,7 @@ public:
 
         while (!askedToShutDown() &&
 	       (postPoneAskedToReinitializedSecs > 0 || !askedToReinitialize()) &&
-	       !completeReconfigurationNeeded() &&
-	       !_exceptionRethrower->exceptionStored()) {
+	       !completeReconfigurationNeeded()) {
 	  postPoneAskedToReinitializedSecs--;
 	  std::this_thread::sleep_for(1s);
         }

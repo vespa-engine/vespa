@@ -8,8 +8,8 @@
 #include <boost/asio/deadline_timer.hpp>
 
 #include <vespa/filedistribution/model/filedistributionmodel.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include "scheduler.h"
+#include <mutex>
 
 namespace filedistribution {
 class FileDistributionModel;

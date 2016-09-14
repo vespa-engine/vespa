@@ -178,15 +178,15 @@ struct ZKFacade::ZKWatcher {
 void
 ZKFacade::stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context) {
     (void)path;
+    (void)context;
 
     //The ZKFacade won't expire before zookeeper_close has finished.
-    ZKFacade* self = (ZKFacade*)context;
     if (type == ZOO_SESSION_EVENT) {
         LOGFWD(debug, "Zookeeper session event: %d", state);
         if (state == ZOO_EXPIRED_SESSION_STATE) {
-            self->_exceptionRethrower->store(ZKSessionExpired());
+            throw ZKSessionExpired();
         } else if (state == ZOO_AUTH_FAILED_STATE) {
-            self->_exceptionRethrower->store(ZKGenericException(ZNOAUTH));
+            throw ZKGenericException(ZNOAUTH);
         }
     } else {
         LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
@@ -220,30 +220,24 @@ ZKFacade::unregisterWatcher(void* watcherContext) {
 
 void
 ZKFacade::invokeWatcher(void* watcherContext) {
-    try {
-        std::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
+    std::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
 
-        if (!_watchersEnabled)
-            return;
+    if (!_watchersEnabled)
+        return;
 
-        if (watcher) {
-            (*watcher->_nodeChangedWatcher)();
-        } else {
-            LOGFWD(error, "Invoke called on expired watcher.");
-        }
-    } catch(...) {
-        _exceptionRethrower->store(boost::current_exception());
+    if (watcher) {
+        (*watcher->_nodeChangedWatcher)();
+    } else {
+        LOGFWD(error, "Invoke called on expired watcher.");
     }
 }
 
 /********** End live watchers ***************************************/
 
 
-ZKFacade::ZKFacade(const std::string& zkservers,
-        const std::shared_ptr<ExceptionRethrower> &exceptionRethrower)
+ZKFacade::ZKFacade(const std::string& zkservers)
     :_retriesEnabled(true),
      _watchersEnabled(true),
-     _exceptionRethrower(exceptionRethrower),
      _zhandle(zookeeper_init(zkservers.c_str(),
                              &ZKFacade::stateWatchingFun,
                              _zkSessionTimeOut,

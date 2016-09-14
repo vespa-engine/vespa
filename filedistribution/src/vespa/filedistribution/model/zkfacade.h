@@ -3,12 +3,12 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
@@ -62,7 +62,6 @@ class ZKFacade : public std::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;
     volatile bool _watchersEnabled;
 
-    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     zhandle_t* _zhandle;
     const static int _zkSessionTimeOut = 30 * 1000;
     const static size_t _maxDataSize = 1024 * 1024;
@@ -90,7 +89,7 @@ public:
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;
-    ZKFacade(const std::string& zkservers, const std::shared_ptr<ExceptionRethrower> &);
+    ZKFacade(const std::string& zkservers);
     ~ZKFacade();
 
     bool hasNode(const Path&);

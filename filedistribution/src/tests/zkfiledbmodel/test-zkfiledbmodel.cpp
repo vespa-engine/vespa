@@ -22,16 +22,13 @@ namespace {
 
 
 struct Fixture {
-    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
     std::shared_ptr<ZKFacade> zk;
     std::shared_ptr<ZKFileDBModel> model;
 
     Fixture() {
-        _exceptionRethrower.reset(new ExceptionRethrower());
-
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", _exceptionRethrower));
+        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));
         zk->setData("/vespa", "", 0);
 
         model = _componentsDeleter.track(new ZKFileDBModel(zk));

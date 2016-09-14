@@ -10,7 +10,6 @@ LOG_SETUP("status-filedistribution");
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
 
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/filedistributionmodelimpl.h>
@@ -61,8 +60,7 @@ printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 //TODO:refactor
 int printStatus(const std::string& zkservers)
 {
-    std::shared_ptr<ExceptionRethrower> exceptionRethrower;
-    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
+    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers));
 
     std::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
 

@@ -34,16 +34,13 @@ struct Watcher : public ZKFacade::NodeChangedWatcher {
 };
 
 struct Fixture {
-    std::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
     std::shared_ptr<ZKFacade> zk;
     ZKFacade::Path testNode;
 
     Fixture() {
-        _exceptionRethrower.reset(new ExceptionRethrower());
-
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", _exceptionRethrower));
+        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));
 
         testNode = "/test-node";
         zk->removeIfExists(testNode);
@@ -155,8 +152,7 @@ BOOST_AUTO_TEST_CASE(addEphemeralNode)
     zk->removeIfExists(ephemeralNode);
 
     //Checked deleter is ok here since we're not installing any watchers
-    ZKFacade::SP zk2(new ZKFacade("test1-tonyv:2181", _exceptionRethrower),
-                     boost::checked_deleter<ZKFacade>());
+    ZKFacade::SP zk2(new ZKFacade("test1-tonyv:2181"), boost::checked_deleter<ZKFacade>());
     zk2->addEphemeralNode(ephemeralNode);
 
     BOOST_CHECK(zk->hasNode(ephemeralNode));
