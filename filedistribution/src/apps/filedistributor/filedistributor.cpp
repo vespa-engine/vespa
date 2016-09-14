@@ -88,7 +88,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
              _manager(track(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread(std::bind(&FileDownloader::runEventLoop, _downloader.get())),
+             _downloaderEventLoopThread([&] () { _downloader->runEventLoop(); }),
              _configFetcher(configUri.getContext())
 
         {
