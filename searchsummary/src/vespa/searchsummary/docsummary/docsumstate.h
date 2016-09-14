@@ -28,6 +28,10 @@ public:
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void ParseLocation(GetDocsumsState * state) = 0;
     virtual ~GetDocsumsStateCallback(void) { }
+    GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
+    GetDocsumsStateCallback & operator = (const GetDocsumsStateCallback &) = delete;
+protected:
+    GetDocsumsStateCallback() = default;
 };
 
 /**

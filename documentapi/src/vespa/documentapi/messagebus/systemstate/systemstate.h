@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <string>
 #include <vespa/vespalib/util/sync.h>
 #include "nodestate.h"
@@ -13,7 +12,7 @@ namespace documentapi {
  * string. The naming of this class is intended to capture the fact that this annotated service tree actually
  * contains the state of each service in the system.
  */
-class SystemState : public boost::noncopyable {
+class SystemState {
 private:
     static vespalib::Lock _parseLock;
 
@@ -31,6 +30,8 @@ private:
     SystemState(NodeState::UP root);
 
 public:
+    SystemState(const SystemState &) = delete;
+    SystemState & operator = (const SystemState &) = delete;
     /**
      * Convenience typedefs.
      */

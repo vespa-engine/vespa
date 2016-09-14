@@ -13,8 +13,7 @@ namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
 
-class FlushEngine : public boost::noncopyable,
-                    public FastOS_Runnable
+class FlushEngine : public FastOS_Runnable
 {
 public:
     class FlushMeta {

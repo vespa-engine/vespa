@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -23,6 +22,8 @@ public:
     typedef std::unique_ptr<ISearchHandler> UP;
     typedef std::shared_ptr<ISearchHandler> SP;
 
+    ISearchHandler(const ISearchHandler &) = delete;
+    ISearchHandler & operator = (const ISearchHandler &) = delete;
     /**
      * Virtual destructor to allow inheritance.
      */
@@ -37,6 +38,8 @@ public:
             const ISearchHandler::SP &self,
             const search::engine::SearchRequest &req,
             vespalib::ThreadBundle &threadBundle) const = 0;
+protected:
+    ISearchHandler() = default;
 };
 
 } // namespace proton

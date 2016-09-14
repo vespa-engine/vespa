@@ -7,8 +7,7 @@
 
 namespace proton {
 
-class MatchHandlerProxy : public boost::noncopyable,
-                          public IMatchHandler
+class MatchHandlerProxy : public IMatchHandler
 {
 private:
     DocumentDB::SP _documentDB;

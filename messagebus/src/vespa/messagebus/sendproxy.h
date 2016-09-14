@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/routingnode.h>
 
@@ -14,8 +13,7 @@ class MessageBus;
  * attached to it and returned to the application. After the reply has been propagated upwards, this object
  * deletes itself. This also implements the discard policy of {@link RoutingNode}.
  */
-class SendProxy : public boost::noncopyable,
-                  public IDiscardHandler,
+class SendProxy : public IDiscardHandler,
                   public IMessageHandler,
                   public IReplyHandler {
 private:

@@ -14,8 +14,7 @@ namespace proton {
  * The DocsumContext class is responsible for performing a docsum request and
  * creating a docsum reply.
  **/
-class DocsumContext : public boost::noncopyable,
-                      public search::docsummary::GetDocsumsStateCallback {
+class DocsumContext : public search::docsummary::GetDocsumsStateCallback {
 private:
     const search::engine::DocsumRequest  & _request;
     search::docsummary::IDocsumWriter    & _docsumWriter;

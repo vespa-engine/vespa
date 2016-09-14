@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <memory>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
@@ -27,9 +26,11 @@ public:
     void setVersion(const vespalib::Version &version);
 };
 
-class TestServer : public boost::noncopyable {
+class TestServer {
 public:
     typedef std::unique_ptr<TestServer> UP;
+    TestServer(const TestServer &) = delete;
+    TestServer & operator = (const TestServer &) = delete;
 
     VersionedRPCNetwork net;
     MessageBus mb;

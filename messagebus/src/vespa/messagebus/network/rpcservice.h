@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/linkedptr.h>
@@ -16,7 +15,7 @@ class RPCNetwork;
  * The sessions are monitored using the slobrok. If multiple sessions are
  * available, round robin is used to balance load between them.
  */
-class RPCService : public boost::noncopyable {
+class RPCService {
 private:
     typedef slobrok::api::IMirrorAPI          Mirror;
     typedef slobrok::api::MirrorAPI::SpecList AddressList;
@@ -29,6 +28,8 @@ private:
 
 public:
     typedef vespalib::LinkedPtr<RPCService> LP;
+    RPCService(const RPCService &) = delete;
+    RPCService & operator = (const RPCService &) = delete;
     /**
      * Create a new RPCService backed by the given network and using
      * the given service pattern.

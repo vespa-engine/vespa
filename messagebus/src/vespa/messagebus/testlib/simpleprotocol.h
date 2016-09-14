@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <boost/utility.hpp>
 #include <map>
 #include <string>
 #include <vespa/messagebus/iprotocol.h>
 
 namespace mbus {
 
-class SimpleProtocol : public boost::noncopyable, public IProtocol {
+class SimpleProtocol : public IProtocol {
 public:
     /**
      * Defines a policy factory interface that tests can use to register arbitrary policies with this protocol.

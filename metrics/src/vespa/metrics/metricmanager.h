@@ -44,7 +44,6 @@
 #pragma once
 
 #include <string>
-#include <boost/weak_ptr.hpp>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/metrics/metricset.h>

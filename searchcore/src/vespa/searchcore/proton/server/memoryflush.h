@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/utility.hpp>
 #include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -9,8 +8,7 @@
 
 namespace proton {
 
-class MemoryFlush : public boost::noncopyable,
-                    public IFlushStrategy
+class MemoryFlush : public IFlushStrategy
 {
 public:
     struct Config

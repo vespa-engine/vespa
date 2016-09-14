@@ -10,8 +10,7 @@
 
 namespace documentapi {
 
-class StoragePolicy : public boost::noncopyable,
-                      public ExternSlobrokPolicy,
+class StoragePolicy : public ExternSlobrokPolicy,
                       public config::IFetcherCallback<vespa::config::content::StorDistributionConfig>
 {
 private:
@@ -41,8 +40,7 @@ public:
      * @return a pointer to the system state registered with this policy. If
      * we haven't received a system state yet, returns NULL.
      */
-    const storage::lib::ClusterState* getSystemState() const
-        { return _state.get(); }
+    const storage::lib::ClusterState* getSystemState() const { return _state.get(); }
 
     void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config);
 

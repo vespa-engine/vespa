@@ -18,7 +18,11 @@ namespace mbus {
  * also have support for the same set of routing policies.
  */
 class IProtocol {
+protected:
+    IProtocol() = default;
 public:
+    IProtocol(const IProtocol &) = delete;
+    IProtocol & operator = (const IProtocol &) = delete;
     virtual ~IProtocol() {}
 
     /**

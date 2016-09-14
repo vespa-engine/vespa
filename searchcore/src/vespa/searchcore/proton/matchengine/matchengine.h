@@ -12,8 +12,7 @@
 
 namespace proton {
 
-class MatchEngine : public boost::noncopyable,
-                    public search::engine::SearchServer,
+class MatchEngine : public search::engine::SearchServer,
                     public vespalib::StateExplorer
 {
 private:
@@ -33,6 +32,8 @@ public:
      */
     typedef std::unique_ptr<MatchEngine> UP;
     typedef std::shared_ptr<MatchEngine> SP;
+    MatchEngine(const MatchEngine &) = delete;
+    MatchEngine & operator = (const MatchEngine &) = delete;
 
     /**
      * Constructs a new match engine. This does the necessary setup of the

@@ -37,9 +37,7 @@ class IBucketDBHandler;
  * Class handling all aspects of feeding for a document database.
  * In addition to regular feeding this also includes handling the transaction log.
  */
-class FeedHandler: public boost::noncopyable,
-                   private search::transactionlog::
-                   TransLogClient::Session::Callback,
+class FeedHandler: private search::transactionlog::TransLogClient::Session::Callback,
                    public IDocumentMoveHandler,
                    public IPruneRemovedDocumentsHandler,
                    public IHeartBeatHandler,
@@ -138,48 +136,39 @@ private:
     void performDeleteBucket(FeedToken::UP token, DeleteBucketOperation &op);
     void performSplit(FeedToken::UP token, SplitBucketOperation &op);
     void performJoin(FeedToken::UP token, JoinBucketsOperation &op);
-    void performSync(void);
+    void performSync();
 
     /**
      * Used during callback from transaction log.
      */
-    void
-    handleTransactionLogEntry(const Packet::Entry &entry);
-
-    void
-    performEof(void);
+    void handleTransactionLogEntry(const Packet::Entry &entry);
+    void performEof();
 
     /**
      * Used when flushing is done
      */
-    void
-    performFlushDone(SerialNum flushedSerial);
-
-    void
-    performPrune(SerialNum flushedSerial);
+    void performFlushDone(SerialNum flushedSerial);
+    void performPrune(SerialNum flushedSerial);
 
 public:
-    void
-    considerDelayedPrune(void);
+    void considerDelayedPrune();
 
 private:
     /**
      * Returns the current feed state of this feed handler.
      */
-    FeedState::SP
-    getFeedState() const;
+    FeedState::SP getFeedState() const;
 
     /**
      * Used to handle feed state transitions.
      */
-    void
-    changeFeedState(FeedState::SP newState);
+    void changeFeedState(FeedState::SP newState);
 
-    void
-    changeFeedState(FeedState::SP newState,
-                    const vespalib::LockGuard &feedGuard);
+    void changeFeedState(FeedState::SP newState, const vespalib::LockGuard &feedGuard);
 
 public:
+    FeedHandler(const FeedHandler &) = delete;
+    FeedHandler & operator = (const FeedHandler &) = delete;
     /**
      * Create a new feed handler.
      *

@@ -17,7 +17,7 @@ class LoadTypeSet;
  * factory cache to reduce the latency of matching version specifications to actual versions when resolving
  * factories.
  */
-class RoutableRepository : public boost::noncopyable {
+class RoutableRepository {
 private:
     /**
      * Internal helper class that implements a map from {@link VersionSpecification} to {@link
@@ -43,6 +43,8 @@ private:
     const LoadTypeSet&   _loadTypes;
 
 public:
+    RoutableRepository(const RoutableRepository &) = delete;
+    RoutableRepository & operator = (const RoutableRepository &) = delete;
     /**
      * Constructs a new routable repository.
      */
