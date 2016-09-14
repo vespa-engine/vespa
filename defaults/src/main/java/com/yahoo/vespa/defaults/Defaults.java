@@ -29,8 +29,8 @@ public class Defaults {
     private String findVespaHome() {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
-            log.info("VESPA_HOME not set, using /opt/vespa/");
-            return "/opt/vespa/";
+            log.info("VESPA_HOME not set, using /opt/yahoo/vespa/");
+            return "/opt/yahoo/vespa/";
         }
         String vespaHome = vespaHomeEnv.get();
         if ( ! vespaHome.endsWith("/"))
