@@ -23,6 +23,7 @@ double vespalib_eval_min(double a, double b) { return std::min(a, b); }
 double vespalib_eval_max(double a, double b) { return std::max(a, b); }
 double vespalib_eval_isnan(double a) { return (std::isnan(a) ? 1.0 : 0.0); }
 double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal(a, b) ? 1.0 : 0.0); }
+double vespalib_eval_relu(double a) { return std::max(a, 0); }
 
 namespace vespalib {
 namespace eval {
@@ -530,6 +531,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     virtual void visit(const IsNan &) {
         make_call_1("vespalib_eval_isnan");
+    }
+    virtual void visit(const Relu &) {
+        make_call_1("vespalib_eval_relu");
     }
 };
 

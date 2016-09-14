@@ -183,7 +183,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         const ValueType &child = state.peek(0);
         if (node.dimension().empty()) {
             if (child.is_any()) {
-                bind_type(ValueType::any_type(), node);                
+                bind_type(ValueType::any_type(), node);
             } else {
                 bind_type(ValueType::double_type(), node);
             }
@@ -193,7 +193,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     }
     virtual void visit(const TensorMatch &node) {
         if (state.peek(1).is_any() || state.peek(0).is_any()) {
-            bind_type(ValueType::any_type(), node);            
+            bind_type(ValueType::any_type(), node);
         } else if ((state.peek(1) == state.peek(0)) &&
                    (!state.peek(1).unknown_dimensions() && !state.peek(0).unknown_dimensions()))
         {
@@ -246,6 +246,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Min &node) { resolve_op2_union(node); }
     virtual void visit(const Max &node) { resolve_op2_union(node); }
     virtual void visit(const IsNan &node) { resolve_op1(node); }
+    virtual void visit(const Relu &node) { resolve_op1(node); }
 
     //-------------------------------------------------------------------------
 

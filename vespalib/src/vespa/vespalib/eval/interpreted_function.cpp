@@ -86,7 +86,7 @@ void op_evict_let(State &state, uint64_t) {
 //-----------------------------------------------------------------------------
 
 // compare lhs with a set member, short-circuit if found
-void op_check_member(State &state, uint64_t param) {    
+void op_check_member(State &state, uint64_t param) {
     if (state.peek(1).equal(state.peek(0))) {
         state.replace(2, state.stash.create<DoubleValue>(1.0));
         state.program_offset += param;
@@ -345,6 +345,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     }
     virtual void visit(const IsNan &) {
         program.emplace_back(op_unary<operation::IsNan>);
+    }
+    virtual void visit(const Relu &) {
+        program.emplace_back(op_unary<operation::Relu>);
     }
 
     //-------------------------------------------------------------------------

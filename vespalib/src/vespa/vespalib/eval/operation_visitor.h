@@ -50,6 +50,7 @@ struct OperationVisitor {
     virtual void visit(const operation::Min          &) = 0;
     virtual void visit(const operation::Max          &) = 0;
     virtual void visit(const operation::IsNan        &) = 0;
+    virtual void visit(const operation::Relu         &) = 0;
     virtual void visit(const CustomUnaryOperation    &) = 0;
     virtual ~OperationVisitor() {}
 };
@@ -98,6 +99,7 @@ struct DefaultOperationVisitor : OperationVisitor {
     virtual void visit(const operation::Min          &op) override { visitDefault(op); }
     virtual void visit(const operation::Max          &op) override { visitDefault(op); }
     virtual void visit(const operation::IsNan        &op) override { visitDefault(op); }
+    virtual void visit(const operation::Relu         &op) override { visitDefault(op); }
     virtual void visit(const CustomUnaryOperation    &op) override { visitDefault(op); }
 };
 

@@ -17,6 +17,7 @@ extern "C" {
     double vespalib_eval_max(double a, double b);
     double vespalib_eval_isnan(double a);
     double vespalib_eval_approx(double a, double b);
+    double vespalib_eval_relu(double a);
 };
 
 namespace vespalib {
