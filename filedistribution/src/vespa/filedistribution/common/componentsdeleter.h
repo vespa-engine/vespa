@@ -39,7 +39,7 @@ class ComponentsDeleter {
 
     template <class T>
     void requestDelete(T* component) {
-        _deleteRequests.push(std::bind(&ComponentsDeleter::deleteComponent<T>, this, component));
+        _deleteRequests.push([&, component]() { deleteComponent<T>(component); });
     }
 
     void waitForAllComponentsDeleted();
@@ -65,7 +65,7 @@ class ComponentsDeleter {
         }
 
         _trackedComponents[t] = typeid(t).name();
-        return std::shared_ptr<T>(t, std::bind(&ComponentsDeleter::requestDelete<T>, this, t));
+        return std::shared_ptr<T>(t, [&](T * p) { requestDelete<T>(p); });
     }
 };
 }
