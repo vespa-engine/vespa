@@ -8,9 +8,9 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,12 +32,12 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public StartContainerCommand createStartContainerCommand(
+    public CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerName containerName,
             HostName hostName) {
         synchronized (monitor) {
-            callOrder.add("createStartContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
+            callOrder.add("createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
                     ", ContainerName: " + containerName);
             containers.add(new Container(hostName, dockerImage, containerName, true));
         }
@@ -47,12 +47,21 @@ public class DockerMock implements Docker {
 
     @Override
     public void connectContainerToNetwork(ContainerName containerName, String networkName) {
-
+        synchronized (monitor) {
+            callOrder.add("Connecting " + containerName + " to network: " + networkName);
+        }
     }
 
     @Override
     public ContainerInfo inspectContainer(ContainerName containerName) {
         return () -> Optional.of(2);
+    }
+
+    @Override
+    public void startContainer(ContainerName containerName) {
+        synchronized (monitor) {
+            callOrder.add("startContainer with ContainerName: " + containerName);
+        }
     }
 
     @Override
@@ -135,39 +144,39 @@ public class DockerMock implements Docker {
     }
 
 
-    public static class StartContainerCommandMock implements StartContainerCommand {
+    public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override
-        public StartContainerCommand withLabel(String name, String value) {
+        public CreateContainerCommand withLabel(String name, String value) {
             return this;
         }
 
         @Override
-        public StartContainerCommand withEnvironment(String name, String value) {
+        public CreateContainerCommand withEnvironment(String name, String value) {
             return this;
         }
 
         @Override
-        public StartContainerCommand withVolume(String path, String volumePath) {
+        public CreateContainerCommand withVolume(String path, String volumePath) {
             return this;
         }
 
         @Override
-        public StartContainerCommand withMemoryInMb(long megaBytes) {
+        public CreateContainerCommand withMemoryInMb(long megaBytes) {
             return this;
         }
 
         @Override
-        public StartContainerCommand withNetworkMode(String mode) {
+        public CreateContainerCommand withNetworkMode(String mode) {
             return this;
         }
 
         @Override
-        public StartContainerCommand withIpv6Address(String address) {
+        public CreateContainerCommand withIpAddress(InetAddress address) {
             return this;
         }
 
         @Override
-        public void start() {
+        public void create() {
 
         }
     }

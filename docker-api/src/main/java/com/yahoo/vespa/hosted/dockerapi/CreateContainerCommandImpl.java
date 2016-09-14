@@ -3,11 +3,12 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
 import com.yahoo.vespa.applicationmodel.HostName;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,8 +18,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-class StartContainerCommandImpl implements Docker.StartContainerCommand {
-
+class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final DockerClient docker;
     private final DockerImage dockerImage;
     private final ContainerName containerName;
@@ -29,12 +29,13 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
 
     private Optional<Long> memoryInB = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
+    private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
 
-    StartContainerCommandImpl(DockerClient docker,
-                              DockerImage dockerImage,
-                              ContainerName containerName,
-                              HostName hostName) {
+    CreateContainerCommandImpl(DockerClient docker,
+                               DockerImage dockerImage,
+                               ContainerName containerName,
+                               HostName hostName) {
         this.docker = docker;
         this.dockerImage = dockerImage;
         this.containerName = containerName;
@@ -42,53 +43,54 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
     }
 
     @Override
-    public Docker.StartContainerCommand withLabel(String name, String value) {
+    public Docker.CreateContainerCommand withLabel(String name, String value) {
         assert !name.contains("=");
         labels.put(name, value);
         return this;
     }
 
     @Override
-    public Docker.StartContainerCommand withEnvironment(String name, String value) {
+    public Docker.CreateContainerCommand withEnvironment(String name, String value) {
         assert name.indexOf('=') == -1;
         environmentAssignments.add(name + "=" + value);
         return this;
     }
 
     @Override
-    public Docker.StartContainerCommand withVolume(String path, String volumePath) {
+    public Docker.CreateContainerCommand withVolume(String path, String volumePath) {
         assert path.indexOf(':') == -1;
         volumeBindSpecs.add(path + ":" + volumePath);
         return this;
     }
 
     @Override
-    public Docker.StartContainerCommand withMemoryInMb(long megaBytes) {
+    public Docker.CreateContainerCommand withMemoryInMb(long megaBytes) {
         memoryInB = Optional.of(megaBytes * 1024 * 1024);
         return this;
     }
 
     @Override
-    public Docker.StartContainerCommand withNetworkMode(String mode) {
+    public Docker.CreateContainerCommand withNetworkMode(String mode) {
         networkMode = Optional.of(mode);
         return this;
     }
 
     @Override
-    public Docker.StartContainerCommand withIpv6Address(String address) {
-        ipv6Address = Optional.of(address);
+    public Docker.CreateContainerCommand withIpAddress(InetAddress address) {
+        if (address instanceof Inet6Address) {
+            ipv6Address = Optional.of(address.getHostAddress());
+        } else {
+            ipv4Address = Optional.of(address.getHostAddress());
+        }
         return this;
     }
 
     @Override
-    public void start() {
-        CreateContainerCmd command = createCreateContainerCmd();
-
+    public void create() {
         try {
-            CreateContainerResponse response = command.exec();
-            docker.startContainerCmd(response.getId()).exec();
+            createCreateContainerCmd().exec();
         } catch (DockerException e) {
-            throw new RuntimeException("Failed to start container " + containerName.asString(), e);
+            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
     }
 
@@ -106,6 +108,7 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
 
         if (memoryInB.isPresent()) containerCmd = containerCmd.withMemory(memoryInB.get());
         if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
+        if (ipv4Address.isPresent()) containerCmd = containerCmd.withIpv4Address(ipv4Address.get());
         if (ipv6Address.isPresent()) containerCmd = containerCmd.withIpv6Address(ipv6Address.get());
 
         return containerCmd;
@@ -125,7 +128,6 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
     /** Make toString() print the equivalent arguments to 'docker run' */
     @Override
     public String toString() {
-
         List<String> labelList = labels.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.toList());
 
@@ -136,6 +138,7 @@ class StartContainerCommandImpl implements Docker.StartContainerCommand {
                 + toRepeatedOption("--volume", volumeBindSpecs)
                 + toOptionalOption("--memory", memoryInB)
                 + toOptionalOption("--net", networkMode)
+                + toOptionalOption("--ip", ipv4Address)
                 + toOptionalOption("--ip6", ipv6Address)
                 + dockerImage;
     }

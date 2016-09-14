@@ -14,26 +14,35 @@ import java.util.concurrent.CompletableFuture;
  * and to avoid OSGi exporting those classes.
  */
 public interface Docker {
-    interface StartContainerCommand {
-        StartContainerCommand withLabel(String name, String value);
-        StartContainerCommand withEnvironment(String name, String value);
-        StartContainerCommand withVolume(String path, String volumePath);
-        StartContainerCommand withMemoryInMb(long megaBytes);
-        StartContainerCommand withNetworkMode(String mode);
-        StartContainerCommand withIpv6Address(String address);
-        void start();
+    interface CreateContainerCommand {
+        CreateContainerCommand withLabel(String name, String value);
+        CreateContainerCommand withEnvironment(String name, String value);
+        CreateContainerCommand withVolume(String path, String volumePath);
+        CreateContainerCommand withMemoryInMb(long megaBytes);
+        CreateContainerCommand withNetworkMode(String mode);
+        CreateContainerCommand withIpAddress(InetAddress address);
+        void create();
     }
 
-    StartContainerCommand createStartContainerCommand(
+    CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerName containerName,
             HostName hostName);
 
-    void connectContainerToNetwork(ContainerName containerName, String networkName);
+    interface ContainerInfo {
+        /** returns Optional.empty() if not running. */
+        Optional<Integer> getPid();
+    }
+
+    ContainerInfo inspectContainer(ContainerName containerName);
+
+    void startContainer(ContainerName containerName);
 
     void stopContainer(ContainerName containerName);
 
     void deleteContainer(ContainerName containerName);
+
+    void connectContainerToNetwork(ContainerName containerName, String networkName);
 
     List<Container> getAllManagedContainers();
 
@@ -57,11 +66,4 @@ public interface Docker {
      * @throws RuntimeException  (or some subclass thereof) on failure, including docker failure, command failure
      */
     ProcessResult executeInContainer(ContainerName containerName, String... args);
-
-    interface ContainerInfo {
-        /** returns Optional.empty() if not running. */
-        Optional<Integer> getPid();
-    }
-
-    ContainerInfo inspectContainer(ContainerName containerName);
 }
