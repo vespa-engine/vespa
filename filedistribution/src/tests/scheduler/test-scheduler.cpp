@@ -21,11 +21,9 @@ class TestException {};
 
 struct CallRun {
     volatile bool _caughtException;
-    std::atomic<bool> _closed;
 
     CallRun()
-        :_caughtException(false),
-         _closed(false)
+        :_caughtException(false)
     {}
 
     void operator()(asio::io_service& ioService) {
