@@ -204,12 +204,7 @@ public:
         downloader.setMaxUploadSpeed(config.maxuploadspeed);
     }
 
-    //avoid warning due to scope exit macro
-#pragma GCC diagnostic ignored "-Wshadow"
     void runImpl(const config::ConfigUri & configUri) {
-
-        _components.reset();
-
         createComponents(configUri);
 
         // We do not want back to back reinitializing as it gives zero time for serving
@@ -218,15 +213,14 @@ public:
 
         while (!askedToShutDown() &&
 	       (postPoneAskedToReinitializedSecs > 0 || !askedToReinitialize()) &&
-	       !completeReconfigurationNeeded()) {
-	  postPoneAskedToReinitializedSecs--;
-	  std::this_thread::sleep_for(1s);
+	       !completeReconfigurationNeeded())
+        {
+	    postPoneAskedToReinitializedSecs--;
+	    std::this_thread::sleep_for(1s);
         }
+        _components.reset();
     }
 };
-
-//TODO: use pop in gcc 4.6
-#pragma GCC diagnostic warning "-Wshadow"
 
 class FileDistributorApplication : public FastOS_Application {
     const config::ConfigUri _configUri;
