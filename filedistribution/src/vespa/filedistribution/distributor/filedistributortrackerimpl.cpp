@@ -135,20 +135,11 @@ struct TrackingTask : public Scheduler::Task {
     }
 };
 
-
-void
-workerFunction(asio::io_service& ioService)
-{
-    ioService.run();
-}
-
 } //anonymous namespace
-
 
 FileDistributorTrackerImpl::FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model) :
      _model(model)
 {}
-
 
 FileDistributorTrackerImpl::~FileDistributorTrackerImpl() {
     LOG(debug, "Deconstructing FileDistributorTrackerImpl");
@@ -156,7 +147,6 @@ FileDistributorTrackerImpl::~FileDistributorTrackerImpl() {
     LockGuard guard(_mutex);
     _scheduler.reset();
 }
-
 
 void
 FileDistributorTrackerImpl::trackingRequest(
@@ -173,7 +163,6 @@ FileDistributorTrackerImpl::trackingRequest(
     }
 }
 
-
 void
 FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>& downloader)
 {
@@ -183,6 +172,6 @@ FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>&
     _downloader = downloader;
 
     if (downloader) {
-        _scheduler.reset(new Scheduler(std::bind(&workerFunction, std::placeholders::_1)));
+        _scheduler.reset(new Scheduler([] (asio::io_service& ioService) { ioService.run(); }));
     }
 }

@@ -41,20 +41,14 @@ FileDownloaderManager::~FileDownloaderManager()  {
 void
 FileDownloaderManager::start()
 {
-    _downloadFailedConnection =
-        downloadFailed().connect(
-                DownloadFailedSignal::slot_type(std::bind(&FileDownloaderManager::removePeerStatus, this, ph::_1)).
-                track_foreign(shared_from_this()));
+    _downloadFailedConnection = downloadFailed().connect(
+        DownloadFailedSignal::slot_type([&] (const std::string & peer, FileProvider::FailedDownloadReason reason) { (void) reason; removePeerStatus(peer); }).track_foreign(shared_from_this()));
 
-    _downloadCompletedConnection =
-        downloadCompleted().connect(
-                DownloadCompletedSignal::slot_type(_setFinishedDownloadingStatus).
-                track_foreign(shared_from_this()));
+    _downloadCompletedConnection = downloadCompleted().connect(
+        DownloadCompletedSignal::slot_type(_setFinishedDownloadingStatus).track_foreign(shared_from_this()));
 
-    _filesToDownloadChangedConnection =
-        _fileDistributionModel->_filesToDownloadChanged.connect(
-                FileDistributionModel::FilesToDownloadChangedSignal::slot_type(std::ref(_startDownloads)).
-                track_foreign(shared_from_this()));
+    _filesToDownloadChangedConnection = _fileDistributionModel->_filesToDownloadChanged.connect(
+        FileDistributionModel::FilesToDownloadChangedSignal::slot_type(std::ref(_startDownloads)).track_foreign(shared_from_this()));
 }
 
 boost::optional< boost::filesystem::path >
@@ -106,7 +100,7 @@ FileDownloaderManager::StartDownloads::operator()() {
     logStartDownload(filesToDownload);
 
     std::for_each(filesToDownload.begin(), filesToDownload.end(),
-        std::bind(&StartDownloads::downloadFile, this, ph::_1));
+        [&] (const std::string& file) { downloadFile(file); });
 
     _parent._fileDownloader->removeAllTorrentsBut(filesToDownload);
 }
