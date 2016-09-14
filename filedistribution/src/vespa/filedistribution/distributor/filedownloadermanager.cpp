@@ -10,7 +10,6 @@ LOG_SETUP(".filedownloadermanager");
 #include <thread>
 
 using namespace std::literals;
-namespace ph = std::placeholders;
 
 using filedistribution::FileDownloaderManager;
 

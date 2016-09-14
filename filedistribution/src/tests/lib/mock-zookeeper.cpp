@@ -21,7 +21,6 @@ using std::vector;
 using std::pair;
 using std::make_pair;
 using filedistribution::ConcurrentQueue;
-using namespace std::placeholders;
 
 namespace {
 std::pair<string, string> parentPathAndChildName(const string& childPath)
@@ -97,9 +96,7 @@ struct ZHandle {
 
     ~ZHandle() {
         std::for_each(ephemeralNodes.begin(), ephemeralNodes.end(),
-                      std::bind(&zoo_delete, (zhandle_t*)this,
-                              std::bind(&string::c_str, _1),
-                              0));
+                      [&] (const string & s) { zoo_delete((zhandle_t*)this, s.c_str(), 0); });
 
         _closed.store(true);
         watcherInvocations.push(std::ref(wakeUp));
