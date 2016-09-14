@@ -60,15 +60,18 @@ ComponentsDeleter::waitForAllComponentsDeleted()
 void
 ComponentsDeleter::close()
 {
-    LockGuard guard(_trackedComponentsMutex);
-    _closed = true;
+    {
+        LockGuard guard(_trackedComponentsMutex);
+        _closed = true;
+    }
+    _deleteRequests.push([]() { LOG(debug, "I am the last one, hurry up and shutdown"); });
 }
 
 bool
 ComponentsDeleter::allComponentsDeleted()
 {
     LockGuard guard(_trackedComponentsMutex);
-    return _trackedComponents.empty() && _deleteRequests.empty();
+    return _closed && _trackedComponents.empty() && _deleteRequests.empty();
 }
 
 void
