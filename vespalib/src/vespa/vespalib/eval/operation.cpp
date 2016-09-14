@@ -89,6 +89,7 @@ double Min::eval(double a, double b) const { return std::min(a, b); }
 double Max::eval(double a, double b) const { return std::max(a, b); }
 double IsNan::eval(double a) const { return std::isnan(a) ? 1.0 : 0.0; }
 double Relu::eval(double a) const { return std::max(a, 0); }
+double Sigmoid::eval(double a) const { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 } // namespace vespalib::eval::operation
 
 } // namespace vespalib::eval

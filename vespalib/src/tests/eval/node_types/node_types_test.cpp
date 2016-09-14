@@ -237,6 +237,7 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op2_union("max(%s,%s)"));     // max
     TEST_DO(verify_op1("isNan(%s)"));            // IsNan
     TEST_DO(verify_op1("relu(%s)"));             // Relu
+    TEST_DO(verify_op1("sigmoid(%s)"));          // Sigmoid
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

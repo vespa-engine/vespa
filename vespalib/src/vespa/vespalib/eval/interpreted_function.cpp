@@ -349,6 +349,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Relu &) {
         program.emplace_back(op_unary<operation::Relu>);
     }
+    virtual void visit(const Sigmoid &) {
+        program.emplace_back(op_unary<operation::Sigmoid>);
+    }
 
     //-------------------------------------------------------------------------
 

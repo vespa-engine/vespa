@@ -247,6 +247,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Max &node) { resolve_op2_union(node); }
     virtual void visit(const IsNan &node) { resolve_op1(node); }
     virtual void visit(const Relu &node) { resolve_op1(node); }
+    virtual void visit(const Sigmoid &node) { resolve_op1(node); }
 
     //-------------------------------------------------------------------------
 

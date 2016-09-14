@@ -104,6 +104,7 @@ TOKEN :
     <SUM: "sum"> |
     <MATCH: "match"> |
     <RELU: "relu"> |
+    <SIGMOID: "sigmoid"> |
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
 

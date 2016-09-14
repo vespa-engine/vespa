@@ -135,6 +135,7 @@ struct Min : CallHelper<Min> { Min() : Helper("min", 2) {} };
 struct Max : CallHelper<Max> { Max() : Helper("max", 2) {} };
 struct IsNan : CallHelper<IsNan> { IsNan() : Helper("isNan", 1) {} };
 struct Relu : CallHelper<Relu> { Relu() : Helper("relu", 1) {} };
+struct Sigmoid : CallHelper<Sigmoid> { Sigmoid() : Helper("sigmoid", 1) {} };
 
 //-----------------------------------------------------------------------------
 

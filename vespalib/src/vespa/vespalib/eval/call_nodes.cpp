@@ -38,6 +38,7 @@ CallRepo::CallRepo() : _map() {
     add(nodes::Max());
     add(nodes::IsNan());
     add(nodes::Relu());
+    add(nodes::Sigmoid());
 }
 
 } // namespace vespalib::eval::nodes
