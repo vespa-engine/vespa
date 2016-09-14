@@ -24,7 +24,7 @@ double vespalib_eval_max(double a, double b) { return std::max(a, b); }
 double vespalib_eval_isnan(double a) { return (std::isnan(a) ? 1.0 : 0.0); }
 double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal(a, b) ? 1.0 : 0.0); }
 double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
-double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * x)); }
+double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 
 namespace vespalib {
 namespace eval {
