@@ -152,6 +152,15 @@ public class DockerImpl implements Docker {
     }
 
     @Override
+    public void connectContainerToNetwork(ContainerName containerName, String networkName) {
+        // TODO: Modify split up start container into create container and start container
+        // so we wont have to stop it here to connect secondary network
+        dockerClient.stopContainerCmd(containerName.asString()).exec();
+        dockerClient.connectToNetworkCmd().withContainerId(containerName.asString()).withNetworkId(networkName).exec();
+        dockerClient.startContainerCmd(containerName.asString()).exec();
+    }
+
+    @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         assert args.length >= 1;
         try {
