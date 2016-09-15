@@ -106,7 +106,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         this.stateGatherer = nodeStateGatherer;
         this.systemStateGenerator = systemStateGenerator;
         this.systemStateBroadcaster = systemStateBroadcaster;
-        this.stateVersionTracker = new StateVersionTracker();
+        this.stateVersionTracker = new StateVersionTracker(metricUpdater);
         this.metricUpdater = metricUpdater;
 
         this.statusPageServer = statusPage;
@@ -127,7 +127,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 "^/$",
                 new LegacyIndexPageRequestHandler(
                     timer, options.showLocalSystemStatesInEventLog, cluster,
-                    masterElectionHandler, systemStateGenerator,
+                    masterElectionHandler, stateVersionTracker,
                     eventLog, timer.getCurrentTimeInMillis(), dataExtractor));
 
         propagateOptions();
@@ -248,7 +248,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public com.yahoo.vdslib.state.ClusterState getSystemState() {
         synchronized(monitor) {
-            //return systemStateGenerator.getClusterState();
             return stateVersionTracker.getVersionedClusterState();
         }
     }
@@ -315,7 +314,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void handleUpdatedHostInfo(NodeInfo nodeInfo, HostInfo newHostInfo) {
         verifyInControllerThread();
-        systemStateGenerator.handleUpdatedHostInfo(nodeInfo, newHostInfo);
+        stateVersionTracker.handleUpdatedHostInfo(systemStateGenerator.getHostnames(), nodeInfo, newHostInfo);
     }
 
     @Override
@@ -657,7 +656,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
                 emitEventsForAlteredStateEdges(candidate);
-                stateVersionTracker.applyAndVersionNewState(candidate);
+                stateVersionTracker.applyAndVersionNewState(candidate, timer.getCurrentTimeInMillis());
                 // TODO needs to invoke analogue of SystemStateGenerator.recordNewClusterStateHasBeenChosen
                 log.log(LogLevel.INFO, String.format("Controller %d: new cluster state: %s",
                         options.fleetControllerIndex,
