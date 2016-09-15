@@ -4,8 +4,12 @@
 #include <map>
 #include <typeinfo>
 #include <string>
-#include <mutex>
-#include <thread>
+
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+#include <boost/checked_delete.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread.hpp>
 
 #include "concurrentqueue.h"
 
@@ -18,16 +22,16 @@ namespace filedistribution {
  */
 class ComponentsDeleter {
     class Worker;
-    typedef std::lock_guard<std::mutex> LockGuard;
+    typedef boost::lock_guard<boost::mutex> LockGuard;
 
-    std::mutex _trackedComponentsMutex;
+    boost::mutex _trackedComponentsMutex;
     typedef std::map<void*, std::string> TrackedComponentsMap;
     TrackedComponentsMap _trackedComponents;
 
-    typedef std::function<void (void)> CallDeleteFun;
+    typedef boost::function<void (void)> CallDeleteFun;
     ConcurrentQueue<CallDeleteFun> _deleteRequests;
-    bool _closed;
-    std::thread _deleterThread;
+
+    boost::thread _deleterThread;
 
     void removeFromTrackedComponents(void* component);
 
@@ -39,12 +43,12 @@ class ComponentsDeleter {
 
     template <class T>
     void requestDelete(T* component) {
-        _deleteRequests.push([this, component]() { deleteComponent<T>(component); });
+        _deleteRequests.push(boost::bind(&ComponentsDeleter::deleteComponent<T>, this, component));
     }
 
     void waitForAllComponentsDeleted();
-    bool areWeDone();
-    void close();
+    bool allComponentsDeleted();
+    void logNotDeletedComponents();
   public:
     ComponentsDeleter(const ComponentsDeleter &) = delete;
     ComponentsDeleter & operator = (const ComponentsDeleter &) = delete;
@@ -57,14 +61,11 @@ class ComponentsDeleter {
     ~ComponentsDeleter();
 
     template <class T>
-    std::shared_ptr<T> track(T* t) {
+    boost::shared_ptr<T> track(T* t) {
         LockGuard guard(_trackedComponentsMutex);
-        if (_closed) {
-            return std::shared_ptr<T>(t);
-        }
 
         _trackedComponents[t] = typeid(t).name();
-        return std::shared_ptr<T>(t, [this](T * p) { requestDelete<T>(p); });
+        return boost::shared_ptr<T>(t, boost::bind(&ComponentsDeleter::requestDelete<T>, this, t));
     }
 };
 }

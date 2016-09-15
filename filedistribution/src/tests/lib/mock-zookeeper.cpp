@@ -7,8 +7,7 @@
 #include <cstring>
 #include <vector>
 
-#include <thread>
-#include <atomic>
+#include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
@@ -56,9 +55,7 @@ struct Node {
     void triggerWatches(zhandle_t* zh, const std::string& path);
 };
 
-std::shared_ptr<Node> sharedRoot;
-
-void doNothing() { }
+boost::shared_ptr<Node> sharedRoot;
 
 struct ZHandle {
     struct Worker {
@@ -71,12 +68,11 @@ struct ZHandle {
 
     int sequence;
 
-    std::shared_ptr<Node> root;
-    std::atomic<bool> _closed;
-    std::thread _watchersThread;
+    boost::shared_ptr<Node> root;
+    boost::thread _watchersThread;
     vector<string> ephemeralNodes;
 
-    typedef std::function<void (void)> InvokeWatcherFun;
+    typedef boost::function<void (void)> InvokeWatcherFun;
     ConcurrentQueue<InvokeWatcherFun> watcherInvocations;
 
     Node& getNode(const string& path);
@@ -87,7 +83,7 @@ struct ZHandle {
         ephemeralNodes.push_back(path);
     }
 
-    ZHandle() : sequence(0), _closed(false), _watchersThread(Worker(this)) {
+    ZHandle() : sequence(0), _watchersThread(Worker(this)) {
         if (!sharedRoot)
             sharedRoot.reset(new Node());
 
@@ -96,21 +92,21 @@ struct ZHandle {
 
     ~ZHandle() {
         std::for_each(ephemeralNodes.begin(), ephemeralNodes.end(),
-                      [this] (const string & s) { zoo_delete((zhandle_t*)this, s.c_str(), 0); });
-        close();
+                      boost::bind(&zoo_delete, (zhandle_t*)this,
+                              boost::bind(&string::c_str, _1),
+                              0));
+
+        _watchersThread.interrupt();
         _watchersThread.join();
-    }
-    void close() {
-        _closed.store(true);
-        watcherInvocations.push(std::ref(doNothing));
     }
 };
 
 void
 ZHandle::Worker::operator()()
 {
-    while (! zhandle._closed.load()) {
+    while (!boost::this_thread::interruption_requested()) {
         InvokeWatcherFun fun = zhandle.watcherInvocations.pop();
+        boost::this_thread::disable_interruption di;
         fun();
     }
 }
@@ -138,7 +134,10 @@ ZHandle::getParent(const string& childPath)
 void
 Node::triggerWatches(zhandle_t* zh, const std::string& path) {
     for (auto i = watchers.begin(); i != watchers.end(); ++i) {
-        ((ZHandle*)zh)->watcherInvocations.push([zh, i, path] () { i->first(zh, 0, 0, path.c_str(), i->second); });
+        ((ZHandle*)zh)->watcherInvocations.push(boost::bind(i->first, zh, \
+                        /*TODO: type, state*/ 0, 0,
+                        boost::bind(&string::c_str, path),
+                        i->second));
     }
     watchers.clear();
 }

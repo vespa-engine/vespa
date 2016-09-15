@@ -10,6 +10,8 @@
 #include <string>
 
 #include <boost/filesystem/convenience.hpp>
+#include <boost/lambda/lambda.hpp>
+
 #include "libtorrent/torrent_info.hpp"
 
 namespace fs = boost::filesystem;

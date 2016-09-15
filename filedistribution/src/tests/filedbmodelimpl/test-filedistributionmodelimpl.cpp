@@ -20,12 +20,14 @@ namespace {
 
 
 struct Fixture {
+    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
-    std::shared_ptr<ZKFacade> _zk;
-    std::shared_ptr<FileDistributionModelImpl> _distModel;
+    boost::shared_ptr<ZKFacade> _zk;
+    boost::shared_ptr<FileDistributionModelImpl> _distModel;
     Fixture() {
-        _zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));  
-        _distModel.reset(new FileDistributionModelImpl("hostname", 12345, _zk));       
+        _exceptionRethrower.reset(new ExceptionRethrower());
+        _zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", _exceptionRethrower));  
+        _distModel.reset(new FileDistributionModelImpl("hostname", 12345, _zk, _exceptionRethrower));       
      }
     ~Fixture() { }
 };

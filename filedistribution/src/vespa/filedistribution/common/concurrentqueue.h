@@ -3,8 +3,9 @@
 
 #include <queue>
 
-#include <mutex>
-#include <condition_variable>
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 namespace filedistribution {
 
@@ -13,10 +14,10 @@ class ConcurrentQueue {
 public:
     typedef T value_type;
 private:
-    std::condition_variable _nonEmpty;
+    boost::condition_variable _nonEmpty;
 
-    mutable std::mutex _queueMutex;
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    mutable boost::mutex _queueMutex;
+    typedef boost::unique_lock<boost::mutex> UniqueLock;
 
     std::queue<value_type> _queue;
 
@@ -45,10 +46,6 @@ public:
         while (!_queue.empty()) {
             _queue.pop();
         }
-    }
-    bool empty() {
-        UniqueLock guard(_queueMutex);
-        return _queue.empty();
     }
 };
 

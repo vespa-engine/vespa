@@ -9,10 +9,8 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
-#include <thread>
 
 using filedistribution::Scheduler;
-using namespace std::literals;
 
 namespace asio = boost::asio;
 
@@ -27,11 +25,13 @@ struct CallRun {
     {}
 
     void operator()(asio::io_service& ioService) {
-        try {
-            //No reset needed after handling exceptions.
-            ioService.run();
-        } catch(const TestException& e ) {
-            _caughtException = true;
+        while (!boost::this_thread::interruption_requested()) {
+            try {
+                //No reset needed after handling exceptions.
+                ioService.run();
+            } catch(const TestException& e ) {
+                _caughtException = true;
+            }
         }
     }
 };
@@ -41,7 +41,7 @@ struct Fixture {
     Scheduler scheduler;
 
     Fixture()
-        : scheduler(std::ref(callRun))
+        : scheduler(boost::ref(callRun))
     {}
 };
 
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(require_exception_from_tasks_can_be_caught) {
     task->scheduleNow();
 
     for (int i=0; i<200 && !callRun._caughtException; ++i)  {
-        std::this_thread::sleep_for(100ms);
+        boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(100));
     }
 
     BOOST_CHECK(callRun._caughtException);

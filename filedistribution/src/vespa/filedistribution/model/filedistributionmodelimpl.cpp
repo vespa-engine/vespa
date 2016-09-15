@@ -8,6 +8,10 @@
 #include <cstdlib>
 
 #include <boost/filesystem.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/bind.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 #include <zookeeper/zookeeper.h>
 
 #include <vespa/log/log.h>
@@ -70,18 +74,18 @@ using filedistribution::FileDistributionModelImpl;
 struct FileDistributionModelImpl::DeployedFilesChangedCallback :
     public ZKFacade::NodeChangedWatcher
 {
-    typedef std::shared_ptr<DeployedFilesChangedCallback> SP;
+    typedef boost::shared_ptr<DeployedFilesChangedCallback> SP;
 
-    std::weak_ptr<FileDistributionModelImpl> _parent;
+    boost::weak_ptr<FileDistributionModelImpl> _parent;
 
     DeployedFilesChangedCallback(
-            const std::shared_ptr<FileDistributionModelImpl> & parent)
+            const boost::shared_ptr<FileDistributionModelImpl> & parent)
         :_parent(parent)
     {}
 
     //override
     void operator()() {
-        if (std::shared_ptr<FileDistributionModelImpl> model = _parent.lock()) {
+        if (boost::shared_ptr<FileDistributionModelImpl> model = _parent.lock()) {
             model->_filesToDownloadChanged();
         }
     }
@@ -107,7 +111,9 @@ FileDistributionModelImpl::getPeers(const std::string& fileReference, size_t max
         PeerEntries result;
         result.reserve(end - peers.begin());
 
-        std::for_each(peers.begin(), end, [&] (const std::string & s) { addPeerEntry(s, result); });
+        namespace ll=boost::lambda;
+        std::for_each(peers.begin(), end,
+            ll::bind(&addPeerEntry, boost::lambda::_1, boost::ref(result)));
 
         LOG(debug, "Found %zu peers for path '%s'", result.size(), path.string().c_str());
         return result;
@@ -223,8 +229,11 @@ FileDistributionModelImpl::addConfigServersAsPeers(
 
 void
 FileDistributionModelImpl::configure(std::unique_ptr<FilereferencesConfig> config) {
-    const bool changed = updateActiveFileReferences(config->filereferences);
-    if (changed) {
-        _filesToDownloadChanged();
+    try {
+        const bool changed = updateActiveFileReferences(config->filereferences);
+        if (changed)
+            _filesToDownloadChanged();
+    } catch(...) {
+        _exceptionRethrower->store(boost::current_exception());
     }
 }

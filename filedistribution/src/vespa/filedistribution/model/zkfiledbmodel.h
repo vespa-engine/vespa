@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <boost/shared_ptr.hpp>
+
 #include "filedistributionmodel.h"
 #include "zkfacade.h"
 
@@ -10,7 +12,7 @@ class ZKFileDBModel : public FileDBModel {
 public:
     typedef boost::filesystem::path Path;
 private:
-    const std::shared_ptr<ZKFacade> _zk;
+    const boost::shared_ptr<ZKFacade> _zk;
     char getProgress(const Path& path);
     void removeDeployFileNodes(const Path& hostPath, const std::string& appId);
     void removeLegacyDeployFileNodes(const Path& hostPath);
@@ -47,7 +49,7 @@ public:
     std::vector<std::string> getHosts();
     HostStatus getHostStatus(const std::string& hostName);
 
-    ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk);
+    ZKFileDBModel(const boost::shared_ptr<ZKFacade>& zk);
 
     Progress getProgress(const std::string& fileReference,
                          const std::vector<std::string>& hostsSortedAscending);
