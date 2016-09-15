@@ -257,7 +257,7 @@ ZKFacade::~ZKFacade() {
     _watchersEnabled = false;
     vespalib::Gate done;
     std::thread closer([&done, zhandle=_zhandle] () { zookeeper_close(zhandle); done.countDown(); });
-    if ( ! done.await(50*1000) ) {
+    if ( done.await(50*1000) ) {
         LOGFWD(debug, "Zookeeper connection closed successfully.");
     } else {
         LOGFWD(error, "Not able to close down zookeeper. Dumping core so you can figure out what is wrong");
