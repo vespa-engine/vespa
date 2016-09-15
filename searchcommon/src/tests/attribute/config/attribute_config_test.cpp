@@ -7,7 +7,7 @@
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
-using vespalib::tensor::TensorType;
+using vespalib::eval::ValueType;
 
 
 struct Fixture
@@ -38,7 +38,7 @@ TEST_F("test default attribute config", Fixture)
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());
-    EXPECT_TRUE(!f._config.tensorType().is_valid());
+    EXPECT_TRUE(f._config.tensorType().is_error());
 }
 
 TEST_F("test integer weightedset attribute config",
@@ -54,7 +54,7 @@ TEST_F("test integer weightedset attribute config",
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());
-    EXPECT_TRUE(!f._config.tensorType().is_valid());
+    EXPECT_TRUE(f._config.tensorType().is_error());
 }
 
 
@@ -76,21 +76,20 @@ TEST("test operator== on attribute config for tensor type")
     Config cfg2(BasicType::Type::TENSOR);
     Config cfg3(BasicType::Type::TENSOR);
 
-    TensorType dense_x = TensorType::fromSpec("tensor(x[10])");
-    TensorType sparse_x = TensorType::fromSpec("tensor(x{})");
+    ValueType dense_x = ValueType::from_spec("tensor(x[10])");
+    ValueType sparse_x = ValueType::from_spec("tensor(x{})");
 
-    // invalid tensors are not equal
-    EXPECT_TRUE(cfg1 != cfg2);
-    EXPECT_TRUE(cfg2 != cfg3);
-    EXPECT_TRUE(cfg1 != cfg3);
+    EXPECT_TRUE(cfg1 == cfg2);
+    EXPECT_TRUE(cfg2 == cfg3);
+    EXPECT_TRUE(cfg1 == cfg3);
 
     cfg1.setTensorType(dense_x);
     cfg3.setTensorType(dense_x);
     EXPECT_EQUAL(dense_x, cfg1.tensorType());
     EXPECT_EQUAL(dense_x, cfg3.tensorType());
-    EXPECT_TRUE(cfg1.tensorType().is_valid());
-    EXPECT_TRUE(!cfg2.tensorType().is_valid());
-    EXPECT_TRUE(cfg3.tensorType().is_valid());
+    EXPECT_TRUE(!cfg1.tensorType().is_error());
+    EXPECT_TRUE(cfg2.tensorType().is_error());
+    EXPECT_TRUE(!cfg3.tensorType().is_error());
 
     EXPECT_TRUE(cfg1 != cfg2);
     EXPECT_TRUE(cfg2 != cfg3);
@@ -98,7 +97,7 @@ TEST("test operator== on attribute config for tensor type")
 
     cfg3.setTensorType(sparse_x);
     EXPECT_EQUAL(sparse_x, cfg3.tensorType());
-    EXPECT_TRUE(cfg3.tensorType().is_valid());
+    EXPECT_TRUE(!cfg3.tensorType().is_error());
     EXPECT_TRUE(cfg1 != cfg3);
 }
 

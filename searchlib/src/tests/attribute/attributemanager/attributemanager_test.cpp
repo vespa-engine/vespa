@@ -17,7 +17,6 @@ using namespace config;
 using namespace vespa::config::search;
 using namespace search;
 using namespace search::attribute;
-using vespalib::tensor::TensorType;
 using std::shared_ptr;
 
 typedef BasicType      BT;
@@ -298,7 +297,7 @@ AttributeManagerTest::testConfigConvert()
         a.datatype = CACA::TENSOR;
         a.tensortype = "tensor(x[5])";
         AttributeVector::Config out = ConfigConverter::convert(a);
-        EXPECT_EQUAL("tensor(x[5])", out.tensorType().toSpec());
+        EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());
     }
 }
 

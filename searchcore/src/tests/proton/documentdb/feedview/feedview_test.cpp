@@ -32,29 +32,30 @@ LOG_SETUP("feedview_test");
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <mutex>
 
-using documentapi::RemoveDocumentReply;
-using namespace proton;
+
 using document::BucketId;
 using document::DataType;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
 using documentapi::DocumentProtocol;
+using documentapi::RemoveDocumentReply;
+using fastos::TimeStamp;
+using namespace proton;
 using proton::matching::SessionManager;
-using search::index::DocBuilder;
-using search::index::Schema;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
 using search::SearchableStats;
+using search::index::DocBuilder;
+using search::index::Schema;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
 using storage::spi::PartitionId;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
-using vespalib::tensor::TensorType;
-using fastos::TimeStamp;
+using vespalib::eval::ValueType;
 
 typedef SearchableFeedView::SerialNum SerialNum;
 typedef search::DocumentIdT DocumentIdT;
@@ -294,7 +295,7 @@ struct MyAttributeWriter : public IAttributeWriter
         _attrMap["a2"] = search::AttributeFactory::createAttribute("test2",
                                                                    cfg2);
         search::attribute::Config cfg3(search::attribute::BasicType::TENSOR);
-        cfg3.setTensorType(TensorType::fromSpec("tensor(x[10])"));
+        cfg3.setTensorType(ValueType::from_spec("tensor(x[10])"));
         _attrMap["a3"] = search::AttributeFactory::createAttribute("test3",
                                                                    cfg3);
     }

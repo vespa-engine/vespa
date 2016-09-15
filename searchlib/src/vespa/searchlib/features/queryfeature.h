@@ -19,7 +19,7 @@ private:
     vespalib::string _key;  // 'foo'
     vespalib::string _key2; // '$foo'
     feature_t _defaultValue;
-    vespalib::tensor::TensorType _tensorType;
+    vespalib::eval::ValueType _valueType;
 
 public:
     /**

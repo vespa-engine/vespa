@@ -4,9 +4,9 @@
 
 #include "cell_function.h"
 #include "tensor_address.h"
-#include "tensor_type.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/eval/tensor.h>
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {
@@ -27,7 +27,7 @@ struct Tensor : public eval::Tensor
 
     Tensor();
     virtual ~Tensor() {}
-    virtual TensorType getType() const = 0;
+    virtual eval::ValueType getType() const = 0;
     virtual double sum() const = 0;
     virtual Tensor::UP add(const Tensor &arg) const = 0;
     virtual Tensor::UP subtract(const Tensor &arg) const = 0;

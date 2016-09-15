@@ -617,7 +617,7 @@ AttributeVector::createSaveTargetConfig() const
                                    getConfig().collectionType().asString(),
                                    getConfig().basicType().type() ==
                                    BasicType::Type::TENSOR ?
-                                   getConfig().tensorType().toSpec() :
+                                   getConfig().tensorType().to_spec() :
                                    "",
                                    hasMultiValue(),
                                    hasWeightedSetType(),

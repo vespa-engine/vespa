@@ -39,7 +39,7 @@ public:
     bool operator==(const SimpleTensor &rhs) const;
     Dimensions combineDimensionsWith(const SimpleTensor &rhs) const;
 
-    virtual TensorType getType() const override;
+    virtual eval::ValueType getType() const override;
     virtual double sum() const override;
     virtual Tensor::UP add(const Tensor &arg) const override;
     virtual Tensor::UP subtract(const Tensor &arg) const override;

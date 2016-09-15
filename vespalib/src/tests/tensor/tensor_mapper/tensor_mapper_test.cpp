@@ -18,6 +18,7 @@
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <ostream>
 
+using vespalib::eval::ValueType;
 using namespace vespalib::tensor;
 
 namespace vespalib {
@@ -58,6 +59,28 @@ struct TensorTFromBuilder<CompactTensorV2Builder> {
 template <typename BuilderType>
 using TensorTFromBuilder_t = typename TensorTFromBuilder<BuilderType>::TensorT;
 
+bool
+hasOnlyMappedDimensions(const ValueType &type)
+{
+    for (const auto &dim : type.dimensions()) {
+        if (!dim.is_mapped()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
+hasOnlyIndexedDimensions(const ValueType &type)
+{
+    for (const auto &dim : type.dimensions()) {
+        if (!dim.is_indexed()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 struct FixtureBase
 {
     Tensor::UP createDenseTensor(const DenseTensorCells &cells) {
@@ -78,10 +101,10 @@ struct Fixture : public FixtureBase
     }
 
     void assertSparseMapImpl(const Tensor &exp,
-                             const TensorType &tensorType,
+                             const ValueType &tensorType,
                              const Tensor &rhs, bool isDefaultBuilder)
     {
-        EXPECT_TRUE(tensorType.type() == TensorType::Type::SPARSE);
+        EXPECT_TRUE(hasOnlyMappedDimensions(tensorType));
         if (isDefaultBuilder) {
             TensorMapper mapper(tensorType);
             std::unique_ptr<Tensor> mapped = mapper.map(rhs);
@@ -95,10 +118,10 @@ struct Fixture : public FixtureBase
     }
 
     void assertDenseMapImpl(const Tensor &exp,
-                            const TensorType &tensorType,
+                            const ValueType &tensorType,
                             const Tensor &rhs)
     {
-        EXPECT_TRUE(tensorType.type() == TensorType::Type::DENSE);
+        EXPECT_TRUE(hasOnlyIndexedDimensions(tensorType));
         TensorMapper mapper(tensorType);
         std::unique_ptr<Tensor> mapped = mapper.map(rhs);
         EXPECT_TRUE(!!mapped);
@@ -113,7 +136,7 @@ struct Fixture : public FixtureBase
                     const TensorDimensions &rhsDimensions)
     {
         assertSparseMapImpl(*createTensor(expTensor, expDimensions),
-                            TensorType::fromSpec(typeSpec),
+                            ValueType::from_spec(typeSpec),
                             *createTensor(rhsTensor, rhsDimensions),
                             defaultBuilder<BuilderType>());
     }
@@ -125,7 +148,7 @@ struct Fixture : public FixtureBase
                    const TensorDimensions &rhsDimensions)
     {
         assertDenseMapImpl(*createDenseTensor(expTensor),
-                           TensorType::fromSpec(typeSpec),
+                           ValueType::from_spec(typeSpec),
                            *createTensor(rhsTensor, rhsDimensions));
     }
 };

@@ -30,7 +30,6 @@ using search::attribute::WeightedIntegerContent;
 using search::attribute::WeightedFloatContent;
 using search::fef::FeatureExecutor;
 using search::features::util::ConstCharPtr;
-using vespalib::tensor::TensorType;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -281,7 +280,7 @@ AttributeBlueprint::AttributeBlueprint() :
     search::fef::Blueprint("attribute"),
     _attrName(),
     _extra(),
-    _tensorType(TensorType::number())
+    _tensorType(ValueType::double_type())
 {
 }
 
@@ -303,10 +302,10 @@ AttributeBlueprint::setup(const search::fef::IIndexEnvironment & env,
     }
     vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
     if (!attrType.empty()) {
-        _tensorType = TensorType::fromSpec(attrType);
+        _tensorType = ValueType::from_spec(attrType);
     }
     FeatureType output_type = _tensorType.is_tensor()
-                              ? FeatureType::object(_tensorType.as_value_type())
+                              ? FeatureType::object(_tensorType)
                               : FeatureType::number();
     describeOutput("value", "The value of a single value attribute, "
                    "the value at the given index of an array attribute, "
@@ -386,7 +385,7 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
 
 search::fef::FeatureExecutor::LP
 createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
-                              const TensorType &tensorType)
+                              const ValueType &tensorType)
 {
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
@@ -409,8 +408,8 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
         LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
                 " while the feature executor expects type '%s'. Returning empty tensor.",
                 tensorAttribute->getName().c_str(),
-                tensorAttribute->getConfig().tensorType().toSpec().c_str(),
-                tensorType.toSpec().c_str());
+                tensorAttribute->getConfig().tensorType().to_spec().c_str(),
+                tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType);
     }
     return FeatureExecutor::LP(new TensorFromTensorAttributeExecutor(tensorAttribute));

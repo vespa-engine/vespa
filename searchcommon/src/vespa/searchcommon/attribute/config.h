@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/common/growstrategy.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
 namespace attribute {
@@ -31,7 +31,7 @@ public:
     int64_t lower_bound()                 const { return _lower_bound; }
     int64_t upper_bound()                 const { return _upper_bound; }
     double dense_posting_list_threshold() const { return _dense_posting_list_threshold; }
-    vespalib::tensor::TensorType tensorType() const { return _tensorType; }
+    vespalib::eval::ValueType tensorType() const { return _tensorType; }
 
     /**
      * Check if attribute posting list can consist of a bitvector in
@@ -73,7 +73,7 @@ public:
     void setBounds(int64_t lower, int64_t upper) { _lower_bound = lower;
                                                    _upper_bound = upper; }
     void setDensePostingListThreshold(double v)  { _dense_posting_list_threshold = v; }
-    void setTensorType(const vespalib::tensor::TensorType &tensorType_in) {
+    void setTensorType(const vespalib::eval::ValueType &tensorType_in) {
         _tensorType = tensorType_in;
     }
 
@@ -148,7 +148,7 @@ private:
     int64_t        _lower_bound;
     int64_t        _upper_bound;
     double         _dense_posting_list_threshold;
-    vespalib::tensor::TensorType _tensorType;
+    vespalib::eval::ValueType _tensorType;
 };
 }  // namespace attribute
 }  // namespace search

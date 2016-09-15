@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tensor_function.h"
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {
@@ -16,10 +17,10 @@ namespace {
 class FunctionBase : public Node
 {
 private:
-    TensorType _type;
+    eval::ValueType _type;
 protected:
-    explicit FunctionBase(const TensorType &type_in) : _type(type_in) {}
-    const TensorType &type() const override { return _type; }
+    explicit FunctionBase(const eval::ValueType &type_in) : _type(type_in) {}
+    const eval::ValueType &type() const override { return _type; }
 
     // helper function used to unwrap tensor value from eval result
     static const Tensor &eval_tensor(Node &node, const Input &input) {
@@ -37,7 +38,7 @@ class TensorCache : public FunctionBase
 private:
     Tensor::UP _my_result;
 protected:
-    explicit TensorCache(const TensorType &type_in)
+    explicit TensorCache(const eval::ValueType &type_in)
         : FunctionBase(type_in), _my_result() {}
     const Tensor &store_tensor(Tensor::UP result) {
         _my_result = std::move(result);
@@ -55,16 +56,16 @@ class InputTensor : public FunctionBase
 private:
     size_t _tensor_id;
 
-    static TensorType infer_type(const TensorType &type_in) {
+    static eval::ValueType infer_type(const eval::ValueType &type_in) {
         if (type_in.is_tensor()) {
             return type_in;
         } else {
-            return TensorType::invalid();
+            return eval::ValueType::error_type();
         }
     }
 
 public:
-    InputTensor(const TensorType &type_in, size_t tensor_id)
+    InputTensor(const eval::ValueType &type_in, size_t tensor_id)
         : FunctionBase(infer_type(type_in)), _tensor_id(tensor_id) {}
     Result eval(const Input &input) override {
         return input.get_tensor(_tensor_id);
@@ -81,11 +82,11 @@ class Sum : public FunctionBase
 private:
     Node_UP _child;
 
-    static TensorType infer_type(const TensorType &child_type) {
+    static eval::ValueType infer_type(const eval::ValueType &child_type) {
         if (child_type.is_tensor()) {
-            return TensorType::number();
+            return eval::ValueType::double_type();
         } else {
-            return TensorType::invalid();
+            return eval::ValueType::error_type();
         }
     }
 
@@ -110,7 +111,7 @@ private:
     Node_UP          _child;
     vespalib::string _dimension;
 
-    static TensorType infer_type(const TensorType &child_type, const vespalib::string &dimension) {
+    static eval::ValueType infer_type(const eval::ValueType &child_type, const vespalib::string &dimension) {
         return child_type.remove_dimensions({dimension});
     }
 
@@ -135,11 +136,11 @@ private:
     Node_UP _child;
     size_t  _cell_function_id;
 
-    static TensorType infer_type(const TensorType &child_type) {
+    static eval::ValueType infer_type(const eval::ValueType &child_type) {
         if (child_type.is_tensor()) {
             return child_type;
         } else {
-            return TensorType::invalid();
+            return eval::ValueType::error_type();
         }
     }
 
@@ -165,7 +166,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.add_dimensions_from(rhs_type);
     }
 
@@ -191,7 +192,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.add_dimensions_from(rhs_type);
     }
 
@@ -217,7 +218,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.add_dimensions_from(rhs_type);
     }
 
@@ -243,7 +244,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.add_dimensions_from(rhs_type);
     }
 
@@ -269,7 +270,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.add_dimensions_from(rhs_type);
     }
 
@@ -295,7 +296,7 @@ private:
     Node_UP _lhs;
     Node_UP _rhs;
 
-    static TensorType infer_type(const TensorType &lhs_type, const TensorType &rhs_type) {
+    static eval::ValueType infer_type(const eval::ValueType &lhs_type, const eval::ValueType &rhs_type) {
         return lhs_type.keep_dimensions_in(rhs_type);
     }
 
@@ -314,7 +315,7 @@ public:
 
 } // namespace vespalib::tensor::function::<unnamed>
 
-Node_UP input(const TensorType &type, size_t tensor_id) {
+Node_UP input(const eval::ValueType &type, size_t tensor_id) {
     return std::make_unique<InputTensor>(type, tensor_id);
 }
 
