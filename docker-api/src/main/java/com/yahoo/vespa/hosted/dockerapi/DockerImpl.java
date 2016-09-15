@@ -102,7 +102,7 @@ public class DockerImpl implements Docker {
         try {
             setupDockerNetworkIfNeeded();
         } catch (Exception e) {
-            throw new RuntimeException("Could not setup docker network");
+            throw new RuntimeException("Could not setup docker network", e);
         }
     }
 
@@ -143,7 +143,7 @@ public class DockerImpl implements Docker {
         dockerClient.createNetworkCmd()
                 .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withDriver("macvlan")
-                .withEnableIpv6(true)
+                .withEnableIpv6(isIPv6)
                 .withIpam(ipam)
                 .withOptions(dockerNetworkOptions)
                 .exec();
