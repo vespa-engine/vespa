@@ -2,38 +2,75 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Keeps track of the active cluster state and handles the transition edges between
+ * one state to the next. In particular, it ensures that states have strictly increasing
+ * version numbers.
+ *
+ * Wraps ClusterStateView to ensure its knowledge of available nodes stays up to date.
+ */
 public class StateVersionTracker {
+
     // We always increment the version _before_ publishing, so the effective first cluster
     // state version when starting from 1 will be 2. This matches legacy behavior and a bunch
     // of existing tests expect it.
     private int currentVersion = 1;
     private int lastZooKeeperVersion = 0;
+
     // The lowest published distribution bit count for the lifetime of this controller.
     // TODO this mirrors legacy behavior, but should be moved into stable ZK state.
     private int lowestObservedDistributionBits = 16;
-    // TODO ClusterStateView integration; how/where?
+
     private ClusterState currentUnversionedState = ClusterStateUtil.emptyState();
     private AnnotatedClusterState currentClusterState = AnnotatedClusterState.emptyState();
 
-    public void setVersionRetrievedFromZooKeeper(int version) {
+    private final MetricUpdater metricUpdater;
+    private ClusterStateView clusterStateView;
+
+    private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
+    private int maxHistoryEntryCount = 50;
+
+    StateVersionTracker(final MetricUpdater metricUpdater) {
+        this.metricUpdater = metricUpdater;
+        clusterStateView = ClusterStateView.create(currentUnversionedState, metricUpdater);
+    }
+
+    void setVersionRetrievedFromZooKeeper(final int version) {
         this.currentVersion = Math.max(1, version);
         this.lastZooKeeperVersion = this.currentVersion;
     }
 
-    public int getCurrentVersion() {
+    /**
+     * Sets limit on how many cluster states can be kept in the in-memory queue. Once
+     * the list exceeds this limit, the oldest state is repeatedly removed until the limit
+     * is no longer exceeded.
+     *
+     * Takes effect upon the next invocation of applyAndVersionNewState().
+     */
+    void setMaxHistoryEntryCount(final int maxHistoryEntryCount) {
+        this.maxHistoryEntryCount = maxHistoryEntryCount;
+    }
+
+    int getCurrentVersion() {
         return this.currentVersion;
     }
 
-    public boolean hasReceivedNewVersionFromZooKeeper() {
+    boolean hasReceivedNewVersionFromZooKeeper() {
         return currentVersion <= lastZooKeeperVersion;
     }
 
-    public int getLowestObservedDistributionBits() {
+    int getLowestObservedDistributionBits() {
         return lowestObservedDistributionBits;
     }
 
-    public AnnotatedClusterState getAnnotatedClusterState() {
+    AnnotatedClusterState getAnnotatedClusterState() {
         return currentClusterState;
     }
 
@@ -41,14 +78,25 @@ public class StateVersionTracker {
         return currentClusterState.getClusterState();
     }
 
-    public boolean changedEnoughFromCurrentToWarrantBroadcast(final AnnotatedClusterState candidate) {
+    public List<ClusterStateHistoryEntry> getClusterStateHistory() {
+        return Collections.unmodifiableList(clusterStateHistory);
+    }
+
+    boolean changedEnoughFromCurrentToWarrantBroadcast(final AnnotatedClusterState candidate) {
         return !currentUnversionedState.similarTo(candidate.getClusterState());
     }
 
-    public void applyAndVersionNewState(final AnnotatedClusterState newState) {
+    void applyAndVersionNewState(final AnnotatedClusterState newState, final long currentTimeMs) {
         assert newState.getClusterState().getVersion() == 0; // Should not be explicitly set
 
         final int newVersion = currentVersion + 1;
+        updateStatesForNewVersion(newState, newVersion);
+        currentVersion = newVersion;
+
+        recordCurrentStateInHistoryAtTime(currentTimeMs);
+    }
+
+    private void updateStatesForNewVersion(final AnnotatedClusterState newState, final int newVersion) {
         currentClusterState = new AnnotatedClusterState(
                 newState.getClusterState().clone(), // Because we mutate version below
                 newState.getClusterStateReason(),
@@ -58,7 +106,20 @@ public class StateVersionTracker {
         lowestObservedDistributionBits = Math.min(
                 lowestObservedDistributionBits,
                 newState.getClusterState().getDistributionBitCount());
-
-        currentVersion = newVersion;
+        clusterStateView = ClusterStateView.create(currentClusterState.getClusterState(), metricUpdater);
     }
+
+    private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
+        clusterStateHistory.addFirst(new ClusterStateHistoryEntry(
+                currentClusterState.getClusterState(), currentTimeMs));
+        while (clusterStateHistory.size() > maxHistoryEntryCount) {
+            clusterStateHistory.removeLast();
+        }
+    }
+
+    void handleUpdatedHostInfo(final Map<Integer, String> hostnames, final NodeInfo node, final HostInfo hostInfo) {
+        // TODO the wiring here isn't unit tested. Need mockable integration points.
+        clusterStateView.handleUpdatedHostInfo(hostnames, node, hostInfo);
+    }
+
 }

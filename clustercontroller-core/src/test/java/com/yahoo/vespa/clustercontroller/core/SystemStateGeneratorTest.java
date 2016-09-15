@@ -98,6 +98,7 @@ public class SystemStateGeneratorTest extends TestCase {
         params.minStorageNodesUp(1).minDistributorNodesUp(1)
                 .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)
                 .maxPrematureCrashes(config.maxPrematureCrashes)
+                .transitionTimes(5000)
                 .cluster(cluster);
         nodeStateUpdateListener = new TestNodeStateOrHostInfoChangeHandler();
     }
@@ -179,7 +180,7 @@ public class SystemStateGeneratorTest extends TestCase {
 
                 log.info("Passing max disconnect time period. Watching timers");
                 clock.advanceTime(config.maxSlobrokDisconnectPeriod);
-                verifyNodeStateAfterTimerWatch(node, State.MAINTENANCE); // FIXME: actually DOWN now..!
+                verifyNodeStateAfterTimerWatch(node, State.MAINTENANCE);
 
                 cluster.getNodeInfo(node).setReportedState(new NodeState(node.getType(), State.DOWN), clock.getCurrentTimeInMillis());
 

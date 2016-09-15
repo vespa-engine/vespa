@@ -15,11 +15,14 @@ import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescr
 import org.junit.Test;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
@@ -62,6 +65,11 @@ public class GroupAutoTakedownTest {
 
     private void transitionStorageNodeToState(ClusterFixture fixture, int index, State state) {
         fixture.reportStorageNodeState(index, state);
+    }
+
+    private AnnotatedClusterState annotatedStateAfterStorageTransition(ClusterFixture fixture, final int index, final State state) {
+        transitionStorageNodeToState(fixture, index, state);
+        return fixture.annotatedGeneratedClusterState();
     }
 
     /**
@@ -188,22 +196,22 @@ public class GroupAutoTakedownTest {
         return new Node(NodeType.STORAGE, index);
     }
 
-    // FIXME event handling moved out!
     @Test
     public void taking_down_node_adds_node_specific_event() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
-        assertEquals("distributor:6 storage:4",
-                stateAfterStorageTransition(fixture, 5, State.DOWN));
+        final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
+                .cluster(fixture.cluster)
+                .previousClusterState(fixture.annotatedGeneratedClusterState())
+                .currentClusterState(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN)));
 
-        verify(fixture.eventLog).addNodeOnlyEvent(argThat(allOf(
+        assertThat(events, hasItem(allOf(
                 nodeEventWithDescription("Setting node down as the total availability of its group is " +
                         "below the configured threshold"),
-                eventForNode(contentNode(4)))), any());
+                eventForNode(contentNode(4)))));
     }
 
-    // FIXME event handling moved out!
     @Test
     public void bringing_node_back_up_adds_node_specific_event() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
@@ -211,12 +219,15 @@ public class GroupAutoTakedownTest {
 
         assertEquals("distributor:6 storage:4",
                 stateAfterStorageTransition(fixture, 5, State.DOWN));
-        assertEquals("distributor:6 storage:6",
-                stateAfterStorageTransition(fixture, 5, State.UP));
 
-        verify(fixture.eventLog).addNodeOnlyEvent(argThat(allOf(
-                nodeEventWithDescription("Group availability restored; taking node back up"),
-                eventForNode(contentNode(4)))), any());
+        final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
+                .cluster(fixture.cluster)
+                .previousClusterState(fixture.annotatedGeneratedClusterState())
+                .currentClusterState(annotatedStateAfterStorageTransition(fixture, 5, State.UP)));
+
+        assertThat(events, hasItem(allOf(
+                nodeEventWithDescription("Group node availability restored; taking node back up"),
+                eventForNode(contentNode(4)))));
     }
 
     @Test

@@ -8,12 +8,16 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import org.junit.Test;
 
+import java.util.Arrays;
+
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class StateVersionTrackerTest {
 
@@ -22,66 +26,69 @@ public class StateVersionTrackerTest {
         return new AnnotatedClusterState(state, null/*TODO*/, AnnotatedClusterState.emptyNodeStateReasons());
     }
 
+    private static StateVersionTracker createWithMockedMetrics() {
+        return new StateVersionTracker(mock(MetricUpdater.class));
+    }
+
     @Test
     public void version_is_incremented_when_new_state_is_applied() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         versionTracker.setVersionRetrievedFromZooKeeper(100);
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"));
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"), 123);
         assertThat(versionTracker.getCurrentVersion(), equalTo(101));
         assertThat(versionTracker.getVersionedClusterState().toString(), equalTo("version:101 distributor:2 storage:2"));
     }
 
     @Test
     public void version_is_1_upon_construction() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.getCurrentVersion(), equalTo(1));
     }
 
     @Test
     public void set_current_version_caps_lowest_version_to_1() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         versionTracker.setVersionRetrievedFromZooKeeper(0);
         assertThat(versionTracker.getCurrentVersion(), equalTo(1));
     }
 
-    // TODO or should it be initially true?
     @Test
     public void new_version_from_zk_predicate_initially_false() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(false));
     }
 
     @Test
     public void new_version_from_zk_predicate_true_after_setting_zk_version() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         versionTracker.setVersionRetrievedFromZooKeeper(5);
         assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(true));
     }
 
     @Test
     public void new_version_from_zk_predicate_false_after_applying_higher_version() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         versionTracker.setVersionRetrievedFromZooKeeper(5);
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"));
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2"), 123);
         assertThat(versionTracker.hasReceivedNewVersionFromZooKeeper(), is(false));
     }
 
     @Test
     public void exposed_states_are_empty_upon_construction() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.getVersionedClusterState().toString(), equalTo(""));
         assertThat(versionTracker.getAnnotatedClusterState().getClusterState().toString(), equalTo(""));
     }
 
     @Test
     public void diff_from_initial_state_implies_changed_state() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertTrue(versionTracker.changedEnoughFromCurrentToWarrantBroadcast(stateWithoutAnnotations("cluster:d")));
     }
 
     private static boolean stateChangedBetween(String fromState, String toState) {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations(fromState));
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations(fromState), 123);
         return versionTracker.changedEnoughFromCurrentToWarrantBroadcast(stateWithoutAnnotations(toState));
     }
 
@@ -116,18 +123,18 @@ public class StateVersionTrackerTest {
 
     @Test
     public void lowest_observed_distribution_bit_is_initially_16() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.getLowestObservedDistributionBits(), equalTo(16));
     }
 
     @Test
     public void lowest_observed_distribution_bit_is_tracked_across_states() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:15 distributor:2 storage:2"));
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:15 distributor:2 storage:2"), 100);
         assertThat(versionTracker.getLowestObservedDistributionBits(), equalTo(15));
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:17 distributor:2 storage:2"));
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:17 distributor:2 storage:2"), 200);
         assertThat(versionTracker.getLowestObservedDistributionBits(), equalTo(15));
-        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:14 distributor:2 storage:2"));
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("bits:14 distributor:2 storage:2"), 300);
         assertThat(versionTracker.getLowestObservedDistributionBits(), equalTo(14));
     }
 
@@ -136,14 +143,61 @@ public class StateVersionTrackerTest {
     // published state (but _is_ visible in the internal ClusterState structures).
     @Test
     public void per_node_min_bits_changes_are_not_considered_different() {
-        final StateVersionTracker versionTracker = new StateVersionTracker();
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
         final AnnotatedClusterState stateWithMinBits = stateWithoutAnnotations("distributor:2 storage:2");
         stateWithMinBits.getClusterState().setNodeState(
                 new Node(NodeType.STORAGE, 0),
                 new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(15));
-        versionTracker.applyAndVersionNewState(stateWithMinBits);
+        versionTracker.applyAndVersionNewState(stateWithMinBits, 123);
         assertFalse(versionTracker.changedEnoughFromCurrentToWarrantBroadcast(
                 stateWithoutAnnotations("distributor:2 storage:2")));
+    }
+
+    @Test
+    public void state_history_is_initially_empty() {
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        assertTrue(versionTracker.getClusterStateHistory().isEmpty());
+    }
+
+    private static ClusterStateHistoryEntry historyEntry(final String state, final long time) {
+        return new ClusterStateHistoryEntry(ClusterStateUtil.stateFromString(state), time);
+    }
+
+    @Test
+    public void applying_state_adds_to_cluster_state_history() {
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2") ,100);
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:3 storage:3"), 200);
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:4 storage:4"), 300);
+
+        // Note: newest entry first
+        assertThat(versionTracker.getClusterStateHistory(),
+                equalTo(Arrays.asList(
+                         historyEntry("version:4 distributor:4 storage:4", 300),
+                         historyEntry("version:3 distributor:3 storage:3", 200),
+                         historyEntry("version:2 distributor:2 storage:2", 100))));
+    }
+
+    @Test
+    public void old_states_pruned_when_state_history_limit_reached() {
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+        versionTracker.setMaxHistoryEntryCount(2);
+
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:2 storage:2") ,100);
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:3 storage:3"), 200);
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:4 storage:4"), 300);
+
+        assertThat(versionTracker.getClusterStateHistory(),
+                equalTo(Arrays.asList(
+                        historyEntry("version:4 distributor:4 storage:4", 300),
+                        historyEntry("version:3 distributor:3 storage:3", 200))));
+
+        versionTracker.applyAndVersionNewState(stateWithoutAnnotations("distributor:5 storage:5"), 400);
+
+        assertThat(versionTracker.getClusterStateHistory(),
+                equalTo(Arrays.asList(
+                        historyEntry("version:5 distributor:5 storage:5", 400),
+                        historyEntry("version:4 distributor:4 storage:4", 300))));
     }
 
 }

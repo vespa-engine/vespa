@@ -111,7 +111,10 @@ public class StateChangeTest extends FleetControllerTest {
 
         // FIXME: test does NOT test last published state; this is WIP state!
         // Is this intentional or just a byproduct of non-TDD testing of legacy code?
-        assertEquals("version:6 distributor:10 .0.s:i .0.i:0.0 .1.s:i .1.i:0.0 .2.s:i .2.i:0.0 .3.s:i .3.i:0.0 .4.s:i .4.i:0.0 .5.s:i .5.i:0.0 .6.s:i .6.i:0.0 .7.s:i .7.i:0.0 .8.s:i .8.i:0.0 .9.s:i .9.i:0.0 storage:10 .0.s:i .0.i:0.9 .1.s:i .1.i:0.9 .2.s:i .2.i:0.9 .3.s:i .3.i:0.9 .4.s:i .4.i:0.9 .5.s:i .5.i:0.9 .6.s:i .6.i:0.9 .7.s:i .7.i:0.9 .8.s:i .8.i:0.9 .9.s:i .9.i:0.9",
+        assertEquals("version:6 distributor:10 .0.s:i .0.i:0.0 .1.s:i .1.i:0.0 .2.s:i .2.i:0.0 .3.s:i .3.i:0.0 " +
+                        ".4.s:i .4.i:0.0 .5.s:i .5.i:0.0 .6.s:i .6.i:0.0 .7.s:i .7.i:0.0 .8.s:i .8.i:0.0 " +
+                        ".9.s:i .9.i:0.0 storage:10 .0.s:i .0.i:0.9 .1.s:i .1.i:0.9 .2.s:i .2.i:0.9 .3.s:i .3.i:0.9 " +
+                        ".4.s:i .4.i:0.9 .5.s:i .5.i:0.9 .6.s:i .6.i:0.9 .7.s:i .7.i:0.9 .8.s:i .8.i:0.9 .9.s:i .9.i:0.9",
                      ctrl.getSystemState().toString());
 
         timer.advanceTime(options.maxInitProgressTime / 20);
