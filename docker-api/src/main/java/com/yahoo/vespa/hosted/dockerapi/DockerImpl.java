@@ -17,8 +17,11 @@ import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
+import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.defaults.Defaults;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
@@ -160,8 +163,33 @@ public class DockerImpl implements Docker {
             completionListener = new CompletableFuture<>();
             scheduledPulls.put(image, completionListener);
         }
-        dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+        //dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+        // TODO: Need to call out to a command-line tool due to conflicting jackson dependencies between
+        // docker-java and pre-installed bundles in jdisc container
+        pullImageWithCommandTool(image, new ImagePullCallback(image), completionListener);
         return completionListener;
+    }
+
+    private void pullImageWithCommandTool(DockerImage image, ImagePullCallback callback, CompletableFuture<DockerImage> completionListener) {
+        String jarFile = Defaults.getDefaults().vespaHome() + "lib/jars/docker-tools-jar-with-dependencies.jar";
+        Pair<Integer, String> result = null;
+        try {
+            result = new ProcessExecuter().exec(String.format(
+                    "java -cp %s com.yahoo.vespa.hosted.dockerapi.tool.PullImageCommand pull-image %s",
+                    jarFile,
+                    image.asString()));
+        } catch (IOException e) {
+            logger.log(LogLevel.ERROR, "Failed pulling image " + image.asString(), e);
+            callback.onError(e);
+        }
+        if (result != null && result.getFirst() != 0) {
+            logger.log(LogLevel.WARNING, "Failed pulling image " + image.asString() +
+                    ", exit code " + result.getFirst() + ", output: " + result.getSecond());
+        } else {
+            logger.log(LogLevel.INFO, "Successfully pulled image " + image.asString());
+        }
+        callback.onComplete();
+        completionListener.complete(image);
     }
 
     private CompletableFuture<DockerImage> removeScheduledPoll(final DockerImage image) {

@@ -299,11 +299,11 @@ public class DockerOperationsImpl implements DockerOperations {
     public void scheduleDownloadOfImage(final ContainerNodeSpec nodeSpec, Runnable callback) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
 
-        logger.info("Schedule async download of Docker image " + nodeSpec.wantedDockerImage.get());
+        logger.info("Schedule async download of " + nodeSpec.wantedDockerImage.get());
         final CompletableFuture<DockerImage> asyncPullResult = docker.pullImageAsync(nodeSpec.wantedDockerImage.get());
         asyncPullResult.whenComplete((dockerImage, throwable) -> {
             if (throwable != null) {
-                logger.warning("Failed to pull docker image " + nodeSpec.wantedDockerImage, throwable);
+                logger.warning("Failed to pull " + nodeSpec.wantedDockerImage, throwable);
                 return;
             }
             assert nodeSpec.wantedDockerImage.get().equals(dockerImage);
