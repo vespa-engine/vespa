@@ -26,15 +26,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Command to pull a Docker image
+ * Command to pull a Docker image from NodeAdmin. Needed due to issues with dependencies
+ * in Node Admin where the command to pull images with docker-java does not work
  */
 public class PullImageCommand {
-    static final String dockerDaemonUri = "unix:///host/var/run/docker.sock";
+    static final String dockerDaemonUriSeenFromNodeAdmin = "unix:///host/var/run/docker.sock";
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("pull-image")
-                                              .withDescription("tool to pull a Docker image from a Docker repo")
+                                              .withDescription("tool for Node Admin to pull a Docker image from a Docker repo")
                                               .withDefaultCommand(Help.class)
                                               .withCommands(PullImage.class);
         Cli<Runnable> gitParser = builder.build();
@@ -53,12 +54,12 @@ public class PullImageCommand {
         public String image;
 
         public void run() {
-            System.out.println("\nPulling Docker image " + image);
+            System.out.println("\nPulling " + image);
             final CompletableFuture<String> pullResult = pullImage(image);
             try {
                 pullResult.get(30, TimeUnit.MINUTES);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                System.out.println("Failed to pull Docker image " + image + ": " + e);
+                System.out.println("Failed to pull " + image + ": " + e);
                 System.out.println(e.getMessage());
                 System.exit(1);
             }
@@ -82,11 +83,13 @@ public class PullImageCommand {
 
             @Override
             public void onError(Throwable throwable) {
+                System.out.println("Failed pulling " + dockerImage);
+                completableFuture.completeExceptionally(throwable);
             }
 
             @Override
             public void onComplete() {
-                System.out.println("Finished pulling Docker image " + dockerImage);
+                System.out.println("Finished pulling " + dockerImage);
                 completableFuture.complete(dockerImage);
             }
         }
@@ -95,7 +98,7 @@ public class PullImageCommand {
             DockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory();
             RemoteApiVersion remoteApiVersion;
             DefaultDockerClientConfig.Builder dockerConfigBuilder = new DefaultDockerClientConfig.Builder()
-                    .withDockerHost(dockerDaemonUri);
+                    .withDockerHost(dockerDaemonUriSeenFromNodeAdmin);
             DockerClientConfig dockerClientConfig;
             try {
                 dockerClientConfig = dockerConfigBuilder.build();
