@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "tensor_type.h"
 #include "tensor.h"
+#include <vespa/vespalib/eval/value_type.h>
 #include <memory>
 
 namespace vespalib {

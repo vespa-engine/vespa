@@ -7,7 +7,6 @@
 #include <vespa/vespalib/eval/value.h>
 #include <vespa/vespalib/eval/value_type.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
 #include <memory>
 
 namespace search {
@@ -39,9 +38,6 @@ public:
     }
     static fef::FeatureExecutor::LP createEmpty() {
         return createEmpty(vespalib::eval::ValueType::double_type());
-    }
-    static fef::FeatureExecutor::LP createEmpty(const vespalib::tensor::TensorType &tensorType) {
-        return createEmpty(tensorType.as_value_type());
     }
 };
 

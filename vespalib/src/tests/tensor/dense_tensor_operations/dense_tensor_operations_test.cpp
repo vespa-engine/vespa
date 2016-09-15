@@ -6,7 +6,6 @@
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_function.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
 #include <iostream>
 
 using namespace vespalib::tensor;

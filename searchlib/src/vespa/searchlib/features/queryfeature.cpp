@@ -9,7 +9,6 @@ LOG_SETUP(".features.queryfeature");
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_mapper.h>

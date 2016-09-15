@@ -88,7 +88,6 @@ vespa_define_module(
     src/tests/tensor/tensor_performance
     src/tests/tensor/tensor_serialization
     src/tests/tensor/tensor_slime_serialization
-    src/tests/tensor/tensor_type
     src/tests/testapp-debug
     src/tests/testapp-generic
     src/tests/testapp-main

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
 namespace features {
