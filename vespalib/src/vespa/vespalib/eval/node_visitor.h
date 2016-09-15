@@ -75,8 +75,6 @@ struct NodeVisitor {
     virtual void visit(const nodes::Min          &) = 0;
     virtual void visit(const nodes::Max          &) = 0;
     virtual void visit(const nodes::IsNan        &) = 0;
-    virtual void visit(const nodes::Relu         &) = 0;
-    virtual void visit(const nodes::Sigmoid      &) = 0;
 
     virtual ~NodeVisitor() {}
 };
@@ -136,8 +134,6 @@ struct EmptyNodeVisitor : NodeVisitor {
     virtual void visit(const nodes::Min          &) {}
     virtual void visit(const nodes::Max          &) {}
     virtual void visit(const nodes::IsNan        &) {}
-    virtual void visit(const nodes::Relu         &) {}
-    virtual void visit(const nodes::Sigmoid      &) {}
 };
 
 } // namespace vespalib::eval
