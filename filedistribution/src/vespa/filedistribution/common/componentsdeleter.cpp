@@ -5,8 +5,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".componentsdeleter");
 
-#include <boost/foreach.hpp>
-
 using namespace std::literals;
 using namespace filedistribution;
 
@@ -75,7 +73,7 @@ void
 ComponentsDeleter::logNotDeletedComponents()
 {
     LockGuard guard(_trackedComponentsMutex);
-    BOOST_FOREACH(TrackedComponentsMap::value_type component, _trackedComponents) {
+    for (const auto & component : _trackedComponents) {
         LOG(info, "Timed out waiting for component '%s' to be deleted", component.second.c_str());
     }
 }

@@ -10,7 +10,6 @@
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
 #include <sys/file.h>
-#include <boost/foreach.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -205,7 +204,7 @@ ZKFileDBModel::getHostStatus(const std::string& hostName) {
     hostStatus._numFilesToDownload = filesToDownload.size();
     hostStatus._numFilesFinished = 0;
 
-    BOOST_FOREACH(std::string file, filesToDownload) {
+    for (const std::string & file : filesToDownload) {
         Path path = getPeersPath(file);
 
         const PeerEntries peerEntries = getSortedChildren(*_zk, path);
@@ -258,8 +257,7 @@ ZKFileDBModel::getProgress(const Path& path) {
         else if (buffer.size() == 0)
             return 0;
         else {
-            throw boost::enable_current_exception(InvalidProgressException())
-                <<errorinfo::Path(path);
+            throw boost::enable_current_exception(InvalidProgressException()) <<errorinfo::Path(path);
         }
     } catch (ZKNodeDoesNotExistsException& e) {
         //progress information deleted
@@ -279,7 +277,7 @@ ZKFileDBModel::getProgress(const std::string& fileReference,
     const PeerEntries peerEntries = getSortedChildren(*_zk, path);
 
     PeerEntries::const_iterator current = peerEntries.begin();
-    BOOST_FOREACH(const std::string& host, hostsSortedAscending) {
+    for (const std::string& host : hostsSortedAscending) {
         PeerEntries::const_iterator candidate =
             std::lower_bound(current, peerEntries.end(), host);
 

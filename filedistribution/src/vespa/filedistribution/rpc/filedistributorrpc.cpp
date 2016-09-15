@@ -3,7 +3,6 @@
 #include "filedistributorrpc.h"
 
 #include <boost/optional.hpp>
-#include <boost/foreach.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
 #include <vespa/log/log.h>
@@ -45,7 +44,8 @@ class QueuedRequests {
         typedef Map::iterator iterator;
         std::pair<iterator, iterator> range = _queuedRequests.equal_range(fileReference);
 
-        BOOST_FOREACH( const Map::value_type& request, range) {
+        for (iterator it(range.first); it != range.second; it++) {
+            const Map::value_type & request(*it);
             LOG(info, "Returning earlier enqueued request for file reference '%s'.", request.first.c_str());
             func(*request.second);
             request.second->Return();
@@ -131,7 +131,7 @@ public:
         LockGuard guard(_mutex);
         _shuttingDown = true;
 
-        BOOST_FOREACH( const Map::value_type& request, _queuedRequests) {
+        for (const Map::value_type& request : _queuedRequests) {
             LOG(info, "Shutdown: Aborting earlier enqueued request for file reference '%s'.", request.first.c_str());
             abort(request.second);
         }

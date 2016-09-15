@@ -10,7 +10,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/function_output_iterator.hpp>
-#include <boost/foreach.hpp>
 
 #include <libtorrent/alert.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -173,11 +172,9 @@ struct FileDownloader::EventHandler
     void operator()(const libtorrent::save_resume_data_alert& alert) const {
         defaultHandler(alert);
 
-        fs::ofstream resumeFile(resumeDataPathTemp(alert.handle),
-            std::ios_base::binary);
+        fs::ofstream resumeFile(resumeDataPathTemp(alert.handle), std::ios_base::binary);
         resumeFile.unsetf(std::ios_base::skipws);
-        libtorrent::bencode(std::ostream_iterator<char>(resumeFile),
-            *alert.resume_data);
+        libtorrent::bencode(std::ostream_iterator<char>(resumeFile), *alert.resume_data);
         resumeFile.close();
         fs::rename(resumeDataPathTemp(alert.handle), resumeDataPath(alert.handle));
         _fileDownloader.didReceiveSRD();
@@ -355,17 +352,16 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
 
     std::set<std::string> currentFiles;
     std::set<sha1_hash> infoHashesToRetain;
-    BOOST_FOREACH(const std::string& fileReference, filesToRetain) {
+    for (const std::string& fileReference : filesToRetain) {
         infoHashesToRetain.insert(toInfoHash(fileReference));
     }
 
     std::vector<torrent_handle> torrents = _session.get_torrents();
 
-    BOOST_FOREACH(torrent_handle torrent, torrents) {
+    for (torrent_handle torrent : torrents) {
         if (!infoHashesToRetain.count(torrent.info_hash())) {
             LOG(info, "Removing torrent: '%s' with file reference '%s'",
-                getMainName(torrent).c_str(),
-                fileReferenceToString(torrent.info_hash()).c_str());
+                getMainName(torrent).c_str(), fileReferenceToString(torrent.info_hash()).c_str());
 
             deleteTorrentData(torrent, guard);
             _session.remove_torrent(torrent);
