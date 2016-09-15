@@ -23,7 +23,7 @@ DefaultTensorEngine::type_of(const Tensor &tensor) const
 {
     assert(&tensor.engine() == this);
     const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
-    return my_tensor.getType().as_value_type();
+    return my_tensor.getType();
 }
 
 bool

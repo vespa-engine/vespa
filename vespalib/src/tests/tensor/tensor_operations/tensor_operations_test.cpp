@@ -54,7 +54,7 @@ public:
     }
 };
 
-const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Input &input) {
+const Tensor &eval_tensor_checked(function::Node &function_ir, const TensorFunction::Input &input) {
     ASSERT_TRUE(function_ir.type().is_tensor());
     TensorFunction &function = function_ir; // compile step
     const Tensor &result = function.eval(input).as_tensor;
@@ -63,13 +63,20 @@ const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Inp
 }
 
 const Tensor &eval_tensor_unchecked(function::Node &function_ir, const TensorFunction::Input &input) {
-    ASSERT_TRUE(function_ir.type().is_tensor());
     TensorFunction &function = function_ir; // compile step
     return function.eval(input).as_tensor;
 }
 
+const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Input &input, bool check_types) {
+    if (check_types) {
+        return eval_tensor_checked(function_ir, input);
+    } else {
+        return eval_tensor_unchecked(function_ir, input);
+    }
+}
+
 double eval_number(function::Node &function_ir, const TensorFunction::Input &input) {
-    ASSERT_TRUE(function_ir.type().is_number());
+    ASSERT_TRUE(function_ir.type().is_double());
     TensorFunction &function = function_ir; // compile step    
     return function.eval(input).as_double;
 }
@@ -108,41 +115,41 @@ struct Fixture
         EXPECT_NOT_EQUAL(*createTensor(lhs, lhsDimensions),
                          *createTensor(rhs, rhsDimensions));
     }
-    void assertAddImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertAddImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::add(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
-    void assertAdd(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs) {
-        assertAddImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+    void assertAdd(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertAddImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertSubtractImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertSubtractImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::subtract(function::input(lhs.getType(), input.add(lhs)),
                                                   function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
-    void assertSubtract(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs) {
-        assertSubtractImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+    void assertSubtract(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertSubtractImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertMinImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMinImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::min(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
-    void assertMin(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs) {
-        assertMinImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+    void assertMin(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertMinImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertMaxImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMaxImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::max(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
-    void assertMax(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs) {
-        assertMaxImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+    void assertMax(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertMaxImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertSumImpl(double exp, const Tensor &tensor) {
         MyInput input;
@@ -170,18 +177,18 @@ struct Fixture
                      const TensorCells &lhs, const TensorCells &rhs) {
         assertMatchImpl(*createTensor(expTensor, expDimensions), *createTensor(lhs), *createTensor(rhs));
     }
-    void assertMultiplyImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMultiplyImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::multiply(function::input(lhs.getType(), input.add(lhs)),
                                                   function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
-    void assertMultiply(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs) {
-        assertMultiplyImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+    void assertMultiply(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertMultiplyImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertMultiply(const TensorCells &expTensor, const TensorDimensions &expDimensions,
                         const TensorCells &lhs, const TensorCells &rhs) {
-        assertMultiplyImpl(*createTensor(expTensor, expDimensions), *createTensor(lhs), *createTensor(rhs));
+        assertMultiplyImpl(*createTensor(expTensor, expDimensions), *createTensor(lhs), *createTensor(rhs), true);
     }
     void assertMultiplyImpl(const Tensor &exp, const Tensor &arg1, const Tensor &arg2, const Tensor &arg3) {
         MyInput input;
@@ -189,7 +196,7 @@ struct Fixture
                 function::multiply(function::input(arg1.getType(), input.add(arg1)),
                                    function::input(arg2.getType(), input.add(arg2))),
                 function::input(arg3.getType(), input.add(arg3)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor_checked(*ir, input));
     }
     void assertMultiply(const TensorCells &expTensor, const TensorDimensions &expDimensions,
                         const TensorCells &arg1, const TensorCells &arg2, const TensorCells &arg3) {
@@ -198,7 +205,7 @@ struct Fixture
     void assertApplyImpl(const Tensor &exp, const Tensor &tensor, const CellFunction &func) {
         MyInput input;
         function::Node_UP ir = function::apply(function::input(tensor.getType(), input.add(tensor)), input.add(func));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor_checked(*ir, input));
     }
     void assertApply(const TensorCells &exp, const TensorCells &arg, const CellFunction &func) {
         assertApplyImpl(*createTensor(exp), *createTensor(arg), func);
@@ -206,7 +213,7 @@ struct Fixture
     void assertDimensionSumImpl(const Tensor &exp, const Tensor &tensor, const vespalib::string &dimension) {
         MyInput input;
         function::Node_UP ir = function::dimension_sum(function::input(tensor.getType(), input.add(tensor)), dimension);
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor_checked(*ir, input));
     }
     void assertDimensionSum(const TensorCells &exp, const TensorCells &arg,
                             const vespalib::string &dimension) {
@@ -250,7 +257,7 @@ template <typename FixtureType>
 void
 testTensorAdd(FixtureType &f)
 {
-    f.assertAdd({},{},{});
+    f.assertAdd({},{},{}, false);
     f.assertAdd({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
                 { {{{"x","1"}}, 3} },
                 { {{{"x","2"}}, 5} });
@@ -293,7 +300,7 @@ template <typename FixtureType>
 void
 testTensorSubtract(FixtureType &f)
 {
-    f.assertSubtract({},{},{});
+    f.assertSubtract({},{},{}, false);
     f.assertSubtract({ {{{"x","1"}}, 3}, {{{"x","2"}}, -5} },
                      { {{{"x","1"}}, 3} },
                      { {{{"x","2"}}, 5} });
@@ -336,7 +343,7 @@ template <typename FixtureType>
 void
 testTensorMin(FixtureType &f)
 {
-    f.assertMin({},{},{});
+    f.assertMin({},{},{}, false);
     f.assertMin({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
                 { {{{"x","1"}}, 3} },
                 { {{{"x","2"}}, 5} });
@@ -379,7 +386,7 @@ template <typename FixtureType>
 void
 testTensorMax(FixtureType &f)
 {
-    f.assertMax({},{},{});
+    f.assertMax({},{},{}, false);
     f.assertMax({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
                 { {{{"x","1"}}, 3} },
                 { {{{"x","2"}}, 5} });
@@ -488,7 +495,7 @@ template <typename FixtureType>
 void
 testTensorMultiply(FixtureType &f)
 {
-    f.assertMultiply({}, {}, {});
+    f.assertMultiply({}, {}, {}, false);
     f.assertMultiply({}, {"x"},
                      { {{{"x","1"}}, 3} },
                      { {{{"x","2"}}, 5} });

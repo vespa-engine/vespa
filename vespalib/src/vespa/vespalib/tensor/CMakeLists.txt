@@ -8,8 +8,6 @@ vespa_add_library(vespalib_vespalib_tensor
     tensor_factory.cpp
     tensor_function.cpp
     tensor_mapper.cpp
-    tensor_type.cpp
-    tensor_type_spec.cpp
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_compact>
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_dense>
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_serialization>

@@ -74,7 +74,7 @@ struct ExecFixture
                    const TensorDimensions &dimensions)
     {
         Tensor::UP tensor = createTensor(cells, dimensions);
-        ValueType type(tensor->getType().as_value_type());
+        ValueType type(tensor->getType());
         test.getIndexEnv().addConstantValue(name,
                                             std::move(type),
                                             std::make_unique<TensorValue>(std::move(tensor)));

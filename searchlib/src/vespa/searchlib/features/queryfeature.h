@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
 namespace features {
@@ -19,7 +19,7 @@ private:
     vespalib::string _key;  // 'foo'
     vespalib::string _key2; // '$foo'
     feature_t _defaultValue;
-    vespalib::tensor::TensorType _tensorType;
+    vespalib::eval::ValueType _valueType;
 
 public:
     /**

@@ -13,7 +13,7 @@ namespace {
 
 using search::attribute::CollectionType;
 using search::attribute::BasicType;
-using vespalib::tensor::TensorType;
+using vespalib::eval::ValueType;
 
 typedef std::map<AttributesConfig::Attribute::Datatype, BasicType::Type> DataTypeMap;
 typedef std::map<AttributesConfig::Attribute::Collectiontype, CollectionType::Type> CollectionTypeMap;
@@ -74,7 +74,11 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setBounds(cfg.lowerbound, cfg.upperbound);
     retval.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
-        retval.setTensorType(TensorType::fromSpec(cfg.tensortype));
+        if (!cfg.tensortype.empty()) {
+            retval.setTensorType(ValueType::from_spec(cfg.tensortype));
+        } else {
+            retval.setTensorType(ValueType::tensor_type({}));
+        }
     }
     return retval;
 }

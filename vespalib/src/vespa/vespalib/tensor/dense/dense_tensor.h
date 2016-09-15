@@ -89,7 +89,7 @@ public:
     bool operator==(const DenseTensor &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_dimensionsMeta, _cells); }
 
-    virtual TensorType getType() const override;
+    virtual eval::ValueType getType() const override;
     virtual double sum() const override;
     virtual Tensor::UP add(const Tensor &arg) const override;
     virtual Tensor::UP subtract(const Tensor &arg) const override;

@@ -77,7 +77,6 @@ tests/tensor/tensor_operations
 tests/tensor/tensor_performance
 tests/tensor/tensor_serialization
 tests/tensor/tensor_slime_serialization
-tests/tensor/tensor_type
 tests/testapp-debug
 tests/testapp-generic
 tests/testapp-main

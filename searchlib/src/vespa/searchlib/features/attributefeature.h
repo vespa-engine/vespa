@@ -4,8 +4,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
-
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
 namespace features {
@@ -21,7 +20,7 @@ class AttributeBlueprint : public search::fef::Blueprint {
 private:
     vespalib::string _attrName; // the name of the attribute vector
     vespalib::string _extra;    // the index or key
-    vespalib::tensor::TensorType _tensorType;
+    vespalib::eval::ValueType _tensorType;
 
 public:
     /**

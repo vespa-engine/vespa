@@ -9,7 +9,6 @@ LOG_SETUP(".features.queryfeature");
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_mapper.h>
@@ -24,7 +23,6 @@ using namespace search::fef;
 using namespace search::fef::indexproperties;
 using vespalib::tensor::DefaultTensor;
 using vespalib::tensor::TensorBuilder;
-using vespalib::tensor::TensorType;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -64,7 +62,7 @@ QueryBlueprint::QueryBlueprint() :
     _key(),
     _key2(),
     _defaultValue(0),
-    _tensorType(TensorType::number())
+    _valueType(ValueType::double_type())
 {
 }
 
@@ -101,10 +99,10 @@ QueryBlueprint::setup(const IIndexEnvironment &env,
     }
     vespalib::string queryFeatureType = type::QueryFeature::lookup(env.getProperties(), _key);
     if (!queryFeatureType.empty()) {
-        _tensorType = TensorType::fromSpec(queryFeatureType);
+        _valueType = ValueType::from_spec(queryFeatureType);
     }
-    FeatureType output_type = _tensorType.is_tensor()
-                              ? FeatureType::object(_tensorType.as_value_type())
+    FeatureType output_type = _valueType.is_tensor()
+                              ? FeatureType::object(_valueType)
                               : FeatureType::number();
     describeOutput("out", "The value looked up in query properties using the given key.",
                    output_type);
@@ -116,7 +114,7 @@ namespace {
 FeatureExecutor::LP
 createTensorExecutor(const search::fef::IQueryEnvironment &env,
                      const vespalib::string &queryKey,
-                     const TensorType &tensorType)
+                     const ValueType &valueType)
 {
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
@@ -125,14 +123,14 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
         vespalib::nbostream stream(value.data(), value.size());
         vespalib::tensor::TypedBinaryFormat::deserialize(stream, tensorBuilder);
         vespalib::tensor::Tensor::UP tensor = tensorBuilder.build();
-        if (tensor->getType() != tensorType) {
-            vespalib::tensor::TensorMapper mapper(tensorType);
+        if (tensor->getType() != valueType) {
+            vespalib::tensor::TensorMapper mapper(valueType);
             vespalib::tensor::Tensor::UP mappedTensor = mapper.map(*tensor);
             tensor = std::move(mappedTensor);
         }
         return ConstantTensorExecutor::create(std::move(tensor));
     }
-    return ConstantTensorExecutor::createEmpty(tensorType);
+    return ConstantTensorExecutor::createEmpty(valueType);
 }
 
 }
@@ -140,8 +138,8 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
 FeatureExecutor::LP
 QueryBlueprint::createExecutor(const IQueryEnvironment &env) const
 {
-    if (_tensorType.is_tensor()) {
-        return createTensorExecutor(env, _key, _tensorType);
+    if (_valueType.is_tensor()) {
+        return createTensorExecutor(env, _key, _valueType);
     } else {
         std::vector<feature_t> values;
         Property p = env.getProperties().lookup(_key);

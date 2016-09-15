@@ -51,8 +51,8 @@ using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;
 using search::predicate::PredicateHash;
+using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorType;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 
@@ -573,7 +573,7 @@ createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
 AttributeVector::SP
 createTensorAttribute(Fixture &f) {
     AVConfig cfg(AVBasicType::TENSOR);
-    cfg.setTensorType(TensorType::fromSpec("tensor(x{},y{})"));
+    cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
     return f._m->addAttribute("a1", cfg, createSerialNum);
 }
 

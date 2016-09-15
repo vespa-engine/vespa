@@ -21,7 +21,7 @@ Config::Config() :
     _lower_bound(LLONG_MIN),
     _upper_bound(LLONG_MAX),
     _dense_posting_list_threshold(0.4),
-    _tensorType(vespalib::tensor::TensorType::invalid())
+    _tensorType(vespalib::eval::ValueType::error_type())
 {
 }
 
@@ -42,7 +42,7 @@ Config::Config(BasicType bt,
       _lower_bound(LLONG_MIN),
       _upper_bound(LLONG_MAX),
       _dense_posting_list_threshold(0.4),
-      _tensorType(vespalib::tensor::TensorType::invalid())
+      _tensorType(vespalib::eval::ValueType::error_type())
 {
 }
 

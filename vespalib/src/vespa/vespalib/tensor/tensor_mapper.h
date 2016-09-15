@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "tensor_type.h"
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {
@@ -23,17 +23,17 @@ class Tensor;
  */
 class TensorMapper
 {
-    TensorType _type;
+    eval::ValueType _type;
 public:
-    TensorMapper(const TensorType &type);
+    TensorMapper(const eval::ValueType &type);
     ~TensorMapper();
 
     template <typename TensorT>
     static std::unique_ptr<Tensor>
-    mapToSparse(const Tensor &tensor, const TensorType &type);
+    mapToSparse(const Tensor &tensor, const eval::ValueType &type);
 
     static std::unique_ptr<Tensor>
-    mapToDense(const Tensor &tensor, const TensorType &type);
+    mapToDense(const Tensor &tensor, const eval::ValueType &type);
 
     std::unique_ptr<Tensor> map(const Tensor &tensor) const;
 };

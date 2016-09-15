@@ -3,11 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
-#include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_function.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
-#include <vespa/vespalib/tensor/tensor_type.h>
-#include <iostream>
 
 using namespace vespalib::tensor;
 
@@ -52,7 +49,7 @@ public:
     }
 };
 
-const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Input &input) {
+const Tensor &eval_tensor_checked(function::Node &function_ir, const TensorFunction::Input &input) {
     ASSERT_TRUE(function_ir.type().is_tensor());
     TensorFunction &function = function_ir; // compile step
     const Tensor &result = function.eval(input).as_tensor;
@@ -61,18 +58,20 @@ const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Inp
 }
 
 const Tensor &eval_tensor_unchecked(function::Node &function_ir, const TensorFunction::Input &input) {
-    ASSERT_TRUE(function_ir.type().is_tensor());
     TensorFunction &function = function_ir; // compile step
     return function.eval(input).as_tensor;
 }
 
-const Tensor &eval_tensor_unchecked_allow_invalid(function::Node &function_ir, const TensorFunction::Input &input) {
-    TensorFunction &function = function_ir; // compile step
-    return function.eval(input).as_tensor;
+const Tensor &eval_tensor(function::Node &function_ir, const TensorFunction::Input &input, bool check_types) {
+    if (check_types) {
+        return eval_tensor_checked(function_ir, input);
+    } else {
+        return eval_tensor_unchecked(function_ir, input);
+    }
 }
 
 double eval_number(function::Node &function_ir, const TensorFunction::Input &input) {
-    ASSERT_TRUE(function_ir.type().is_number());
+    ASSERT_TRUE(function_ir.type().is_double());
     TensorFunction &function = function_ir; // compile step    
     return function.eval(input).as_double;
 }
@@ -108,46 +107,46 @@ struct Fixture
         }
         return _builder.build();
     }
-    void assertAddImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertAddImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::add(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertAdd(const DenseTensorCells &exp,
-                   const DenseTensorCells &lhs, const DenseTensorCells &rhs) {
-        assertAddImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                   const DenseTensorCells &lhs, const DenseTensorCells &rhs, bool check_types = true) {
+        assertAddImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertSubtractImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertSubtractImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::subtract(function::input(lhs.getType(), input.add(lhs)),
                                                   function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertSubtract(const DenseTensorCells &exp,
                         const DenseTensorCells &lhs,
-                        const DenseTensorCells &rhs) {
-        assertSubtractImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                        const DenseTensorCells &rhs, bool check_types = true) {
+        assertSubtractImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertMinImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMinImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::min(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertMin(const DenseTensorCells &exp, const DenseTensorCells &lhs,
-                   const DenseTensorCells &rhs) {
-        assertMinImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                   const DenseTensorCells &rhs, bool check_types = true) {
+        assertMinImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
-    void assertMaxImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMaxImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::max(function::input(lhs.getType(), input.add(lhs)),
                                              function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertMax(const DenseTensorCells &exp, const DenseTensorCells &lhs,
-                   const DenseTensorCells &rhs) {
-        assertMaxImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                   const DenseTensorCells &rhs, bool check_types = true) {
+        assertMaxImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertSumImpl(double exp, const Tensor &tensor) {
         MyInput input;
@@ -157,52 +156,52 @@ struct Fixture
     void assertSum(double exp, const DenseTensorCells &cells) {
         assertSumImpl(exp, *createTensor(cells));
     }
-    void assertMatchImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMatchImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::match(function::input(lhs.getType(), input.add(lhs)),
                                                function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertMatch(const DenseTensorCells &exp, const DenseTensorCells &lhs,
-                     const DenseTensorCells &rhs) {
-        assertMatchImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                     const DenseTensorCells &rhs, bool check_types = true) {
+        assertMatchImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertApplyImpl(const Tensor &exp, const Tensor &tensor, const CellFunction &func) {
         MyInput input;
         function::Node_UP ir = function::apply(function::input(tensor.getType(), input.add(tensor)), input.add(func));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor_checked(*ir, input));
     }
     void assertApply(const DenseTensorCells &exp, const DenseTensorCells &arg,
                      const CellFunction &func) {
         assertApplyImpl(*createTensor(exp), *createTensor(arg), func);
     }
-    void assertDimensionSumImpl(const Tensor &exp, const Tensor &tensor, const vespalib::string &dimension) {
+    void assertDimensionSumImpl(const Tensor &exp, const Tensor &tensor, const vespalib::string &dimension, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::dimension_sum(function::input(tensor.getType(), input.add(tensor)), dimension);
-        if (!ir->type().is_valid()) {
+        if (ir->type().is_error()) {
             // According to the ir, it is not allowed to sum over a
             // non-existing dimension.  The current implementation
             // allows this, resulting in a tensor with no cells and
             // with all dimensions not sliced.
-            EXPECT_EQUAL(exp, eval_tensor_unchecked_allow_invalid(*ir, input)); // UNCHECKED_ALLOW_INVALID
+            EXPECT_EQUAL(exp, eval_tensor_unchecked(*ir, input));
         } else {
-            EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+            EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
         }
     }
     void assertDimensionSum(const DenseTensorCells &exp,
                             const DenseTensorCells &arg,
-                            const vespalib::string &dimension) {
-        assertDimensionSumImpl(*createTensor(exp), *createTensor(arg), dimension);
+                            const vespalib::string &dimension, bool check_types = true) {
+        assertDimensionSumImpl(*createTensor(exp), *createTensor(arg), dimension, check_types);
     }
-    void assertMultiplyImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs) {
+    void assertMultiplyImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::multiply(function::input(lhs.getType(), input.add(lhs)),
                                                   function::input(rhs.getType(), input.add(rhs)));
-        EXPECT_EQUAL(exp, eval_tensor(*ir, input));
+        EXPECT_EQUAL(exp, eval_tensor(*ir, input, check_types));
     }
     void assertMultiply(const DenseTensorCells &exp,
-                        const DenseTensorCells &lhs, const DenseTensorCells &rhs) {
-        assertMultiplyImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs));
+                        const DenseTensorCells &lhs, const DenseTensorCells &rhs, bool check_types = true) {
+        assertMultiplyImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
 };
 
@@ -213,7 +212,7 @@ template <typename FixtureType>
 void
 testTensorAdd(FixtureType &f)
 {
-    f.assertAdd({},{},{});
+    f.assertAdd({},{},{}, false);
     f.assertAdd({ {{{"x",0}}, 8} },
                 { {{{"x",0}}, 3} },
                 { {{{"x",0}}, 5} });
@@ -232,7 +231,7 @@ template <typename FixtureType>
 void
 testTensorSubtract(FixtureType &f)
 {
-    f.assertSubtract({},{},{});
+    f.assertSubtract({},{},{}, false);
     f.assertSubtract({ {{{"x",0}}, -2} },
                      { {{{"x",0}}, 3} },
                      { {{{"x",0}}, 5} });
@@ -251,7 +250,7 @@ template <typename FixtureType>
 void
 testTensorMin(FixtureType &f)
 {
-    f.assertMin({},{},{});
+    f.assertMin({},{},{}, false);
     f.assertMin({ {{{"x",0}}, 3} },
                 { {{{"x",0}}, 3} },
                 { {{{"x",0}}, 5} });
@@ -270,7 +269,7 @@ template <typename FixtureType>
 void
 testTensorMax(FixtureType &f)
 {
-    f.assertMax({},{},{});
+    f.assertMax({},{},{}, false);
     f.assertMax({ {{{"x",0}}, 5} },
                 { {{{"x",0}}, 3} },
                 { {{{"x",0}}, 5} });
@@ -289,18 +288,18 @@ template <typename FixtureType>
 void
 testTensorSum(FixtureType &f)
 {
-    f.assertSum(0.0, {});
-    f.assertSum(0.0, { {{{"x",0}}, 0} });
-    f.assertSum(3.0, { {{{"x",0}}, 3} });
-    f.assertSum(8.0, { {{{"x",0}}, 3}, {{{"x",1}}, 5} });
-    f.assertSum(-2.0, { {{{"x",0}}, 3}, {{{"x",1}}, -5} });
+    TEST_DO(f.assertSum(0.0, {}));
+    TEST_DO(f.assertSum(0.0, { {{{"x",0}}, 0} }));
+    TEST_DO(f.assertSum(3.0, { {{{"x",0}}, 3} }));
+    TEST_DO(f.assertSum(8.0, { {{{"x",0}}, 3}, {{{"x",1}}, 5} }));
+    TEST_DO(f.assertSum(-2.0, { {{{"x",0}}, 3}, {{{"x",1}}, -5} }));
 }
 
 template <typename FixtureType>
 void
 testTensorMatch(FixtureType &f)
 {
-    f.assertMatch({}, {}, {});
+    f.assertMatch({}, {}, {}, false);
     f.assertMatch({ {{{"x",0}}, 15} },
                   { {{{"x",0}}, 3} },
                   { {{{"x",0}}, 5} });
@@ -328,7 +327,7 @@ template <typename FixtureType>
 void
 testTensorMultiply(FixtureType &f)
 {
-    f.assertMultiply({}, {}, {});
+    f.assertMultiply({}, {}, {}, false);
     f.assertMultiply({ {{{"x",0}}, 15} },
                      { {{{"x",0}}, 3} },
                      { {{{"x",0}}, 5} });
@@ -446,7 +445,7 @@ testTensorSumDimension(FixtureType &f)
                          "y");
     f.assertDimensionSum({ {{}, 3} },
                          { {{{"x",0}}, 3} },
-                         "x");
+                         "x", false);
 }
 
 template <typename FixtureType>

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "tensor_type.h"
 #include "tensor.h"
+#include <vespa/vespalib/eval/value_type.h>
 #include <memory>
 
 namespace vespalib {
@@ -86,12 +86,12 @@ struct Node : public TensorFunction
      *
      * @return tensor operation result type.
      **/
-    virtual const TensorType &type() const = 0;
+    virtual const eval::ValueType &type() const = 0;
 };
 
 using Node_UP = std::unique_ptr<Node>;
 
-Node_UP input(const TensorType &type, size_t tensor_id);
+Node_UP input(const eval::ValueType &type, size_t tensor_id);
 Node_UP sum(Node_UP child);
 Node_UP dimension_sum(Node_UP child, const vespalib::string &dimension);
 Node_UP apply(Node_UP child, size_t cell_function_id);

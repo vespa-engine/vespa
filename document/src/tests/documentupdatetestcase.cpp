@@ -27,7 +27,6 @@
 
 using namespace document::config_builder;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorType;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 

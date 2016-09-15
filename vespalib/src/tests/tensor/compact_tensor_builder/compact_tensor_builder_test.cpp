@@ -52,7 +52,7 @@ TEST("require that dimensions are extracted")
     EXPECT_EQUAL("a", dims[0]);
     EXPECT_EQUAL("b", dims[1]);
     EXPECT_EQUAL("c", dims[2]);
-    EXPECT_EQUAL("tensor(a{},b{},c{})", compactTensor.getType().toSpec());
+    EXPECT_EQUAL("tensor(a{},b{},c{})", compactTensor.getType().to_spec());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

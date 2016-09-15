@@ -177,16 +177,19 @@ DenseTensor::operator==(const DenseTensor &rhs) const
             (_cells == rhs._cells);
 }
 
-TensorType
+eval::ValueType
 DenseTensor::getType() const
 {
-    std::vector<TensorType::Dimension> dimensions;
+    if (_dimensionsMeta.empty()) {
+        return eval::ValueType::double_type();
+    }
+    std::vector<eval::ValueType::Dimension> dimensions;
     dimensions.reserve(_dimensionsMeta.size());
     for (const auto &dimensionMeta : _dimensionsMeta) {
         dimensions.emplace_back(dimensionMeta.dimension(),
                                 dimensionMeta.size());
     }
-    return TensorType::dense(dimensions);
+    return eval::ValueType::tensor_type(dimensions);
 }
 
 double

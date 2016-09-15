@@ -1,16 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
+
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
 #include <vespa/vespalib/tensor/simple/direct_simple_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_address_ref.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
+
+using vespalib::eval::ValueType;
 
 namespace vespalib {
 namespace tensor {
@@ -20,11 +22,11 @@ namespace {
 class SparseTensorMapperBase
 {
 protected:
-    static TensorDimensions mapDimensions(const TensorType &type);
+    static TensorDimensions mapDimensions(const ValueType &type);
 };
 
 TensorDimensions
-SparseTensorMapperBase::mapDimensions(const TensorType &type)
+SparseTensorMapperBase::mapDimensions(const ValueType &type)
 {
     TensorDimensions dimensions;
     dimensions.reserve(type.dimensions().size());
@@ -46,19 +48,19 @@ class SparseTensorMapper : public TensorVisitor, public SparseTensorMapperBase
     void mapAddress(const TensorAddress &address);
     virtual void visit(const TensorAddress &address, double value) override;
 
-    SparseTensorMapper(const TensorType &type);
+    SparseTensorMapper(const ValueType &type);
 
     ~SparseTensorMapper();
 
     std::unique_ptr<Tensor> build();
 public:
     static std::unique_ptr<Tensor>
-    map(const Tensor &tensor, const TensorType &type);
+    map(const Tensor &tensor, const ValueType &type);
 };
 
 template <class TensorT>
 SparseTensorMapper<TensorT>::
-SparseTensorMapper(const TensorType &type)
+SparseTensorMapper(const ValueType &type)
     : TensorVisitor(),
       SparseTensorMapperBase(),
       _builder(mapDimensions(type)),
@@ -125,7 +127,7 @@ SparseTensorMapper<TensorT>::visit(const TensorAddress &address, double value)
 template <class TensorT>
 std::unique_ptr<Tensor>
 SparseTensorMapper<TensorT>::map(const Tensor &tensor,
-                                 const TensorType &type)
+                                 const ValueType &type)
 {
     SparseTensorMapper<TensorT> mapper(type);
     tensor.accept(mapper);
@@ -144,16 +146,16 @@ class DenseTensorMapper : public TensorVisitor
     uint32_t mapAddressToIndex(const TensorAddress &address);
     virtual void visit(const TensorAddress &address, double value) override;
 
-    DenseTensorMapper(const TensorType &type);
+    DenseTensorMapper(const ValueType &type);
     ~DenseTensorMapper();
 
     std::unique_ptr<Tensor> build();
 public:
     static std::unique_ptr<Tensor>
-    map(const Tensor &tensor, const TensorType &type);
+    map(const Tensor &tensor, const ValueType &type);
 };
 
-DenseTensorMapper::DenseTensorMapper(const TensorType &type)
+DenseTensorMapper::DenseTensorMapper(const ValueType &type)
     : _dimensionsMeta(),
       _cells()
 {
@@ -225,7 +227,7 @@ DenseTensorMapper::visit(const TensorAddress &address, double value)
 }
 
 std::unique_ptr<Tensor>
-DenseTensorMapper::map(const Tensor &tensor, const TensorType &type)
+DenseTensorMapper::map(const Tensor &tensor, const ValueType &type)
 {
     DenseTensorMapper mapper(type);
     tensor.accept(mapper);
@@ -234,7 +236,7 @@ DenseTensorMapper::map(const Tensor &tensor, const TensorType &type)
 
 } // namespace vespalib::tensor::<anonymous>
 
-TensorMapper::TensorMapper(const TensorType &type)
+TensorMapper::TensorMapper(const ValueType &type)
       : _type(type)
 {
 }
@@ -245,48 +247,45 @@ TensorMapper::~TensorMapper()
 
 template <typename TensorT>
 std::unique_ptr<Tensor>
-TensorMapper::mapToSparse(const Tensor &tensor, const TensorType &type)
+TensorMapper::mapToSparse(const Tensor &tensor, const ValueType &type)
 {
-    assert(type.type() == TensorType::Type::SPARSE);
+    assert(type.is_sparse());
     return SparseTensorMapper<TensorT>::map(tensor, type);
 }
 
 std::unique_ptr<Tensor>
-TensorMapper::mapToDense(const Tensor &tensor, const TensorType &type)
+TensorMapper::mapToDense(const Tensor &tensor, const ValueType &type)
 {
-    assert(type.type() == TensorType::Type::DENSE);
+    assert(type.is_dense());
     return DenseTensorMapper::map(tensor, type);
 }
 
 std::unique_ptr<Tensor>
 TensorMapper::map(const Tensor &tensor) const
 {
-    switch (_type.type()) {
-    case TensorType::Type::INVALID:
-    case TensorType::Type::NUMBER:
-        return std::unique_ptr<Tensor>();
-    case TensorType::Type::SPARSE:
+    if (_type.is_sparse()) {
         return mapToSparse<DefaultTensor::type>(tensor, _type);
-    case TensorType::Type::DENSE:
+    } else if (_type.is_dense()) {
         return mapToDense(tensor, _type);
+    } else {
+        return std::unique_ptr<Tensor>();
     }
-    abort();
 }
 
 template
 std::unique_ptr<Tensor>
 TensorMapper::mapToSparse<SimpleTensor>(const Tensor &tensor,
-                                        const TensorType &type);
+                                        const ValueType &type);
 
 template
 std::unique_ptr<Tensor>
 TensorMapper::mapToSparse<CompactTensor>(const Tensor &tensor,
-                                         const TensorType &type);
+                                         const ValueType &type);
 
 template
 std::unique_ptr<Tensor>
 TensorMapper::mapToSparse<CompactTensorV2>(const Tensor &tensor,
-                                           const TensorType &type);
+                                           const ValueType &type);
 
 } // namespace vespalib::tensor
 } // namespace vespalib

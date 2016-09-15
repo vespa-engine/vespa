@@ -28,12 +28,12 @@ using search::attribute::TensorAttribute;
 using search::AttributeVector;
 using vespalib::eval::Function;
 using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
-using vespalib::tensor::TensorType;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -75,7 +75,7 @@ struct ExecFixture
     AttributeVector::SP createTensorAttribute(const vespalib::string &attrName, const vespalib::string &type) {
         addAttributeField(attrName);
         AVC config(AVBT::TENSOR, AVCT::SINGLE);
-        config.setTensorType(TensorType::fromSpec(type));
+        config.setTensorType(ValueType::from_spec(type));
         return AttributeFactory::createAttribute(attrName, config);
     }
     void setAttributeTensorType(const vespalib::string &attrName, const vespalib::string &type) {

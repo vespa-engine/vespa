@@ -12,11 +12,11 @@ LOG_SETUP("tensorattribute_test");
 using search::attribute::TensorAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
+using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
-using vespalib::tensor::TensorType;
 using vespalib::tensor::SimpleTensorBuilder;
 
 namespace vespalib {
@@ -49,7 +49,7 @@ struct Fixture
           _tensorAttr(),
           _attr()
     {
-        _cfg.setTensorType(TensorType::fromSpec(typeSpec));
+        _cfg.setTensorType(ValueType::from_spec(typeSpec));
         _tensorAttr = std::make_shared<TensorAttribute>(_name, _cfg);
         _attr = _tensorAttr;
         _attr->addReservedDoc();
@@ -219,7 +219,7 @@ TEST_F("Require that tensor attribute can provide empty tensor of correct type",
     const TensorAttribute &tensorAttr = *f._tensorAttr;
     Tensor::UP emptyTensor = tensorAttr.getEmptyTensor();
     EXPECT_EQUAL(emptyTensor->getType(), tensorAttr.getConfig().tensorType());
-    EXPECT_EQUAL(emptyTensor->getType(), TensorType::fromSpec("tensor(x[10])"));
+    EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec("tensor(x[10])"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

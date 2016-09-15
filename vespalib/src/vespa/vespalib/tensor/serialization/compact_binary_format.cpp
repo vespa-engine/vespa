@@ -22,7 +22,7 @@ vespalib::string undefinedLabel("");
 
 void
 writeTensorAddress(nbostream &output,
-                   const TensorType &type,
+                   const eval::ValueType &type,
                    const TensorAddress &value)
 {
     auto elemItr = value.elements().cbegin();
@@ -44,7 +44,7 @@ class CompactBinaryFormatSerializer : public TensorVisitor
 {
     uint32_t _numCells;
     nbostream _cells;
-    TensorType _type;
+    eval::ValueType _type;
 
 public:
     CompactBinaryFormatSerializer();
@@ -56,7 +56,7 @@ public:
 CompactBinaryFormatSerializer::CompactBinaryFormatSerializer()
     : _numCells(0u),
       _cells(),
-      _type(TensorType::invalid())
+      _type(eval::ValueType::error_type())
 {
 }
 

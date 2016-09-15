@@ -10,8 +10,8 @@
 #include <iostream>
 
 using vespalib::eval::Function;
+using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::TensorType;
 using vespalib::tensor::TensorMapper;
 
 namespace search {
@@ -35,7 +35,7 @@ bool AsTensor::operator==(const Tensor &rhs) const {
 
 AsEmptyTensor::AsEmptyTensor(const vespalib::string &type)
     : AsTensor("{ }"),
-      mappedTensor(TensorMapper(TensorType::fromSpec(type)).map(*tensor))
+      mappedTensor(TensorMapper(ValueType::from_spec(type)).map(*tensor))
 {
 }
 
