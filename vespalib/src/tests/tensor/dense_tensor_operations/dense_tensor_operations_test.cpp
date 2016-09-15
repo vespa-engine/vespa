@@ -3,10 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
-#include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_function.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
-#include <iostream>
 
 using namespace vespalib::tensor;
 
@@ -290,11 +288,11 @@ template <typename FixtureType>
 void
 testTensorSum(FixtureType &f)
 {
-    f.assertSum(0.0, {});
-    f.assertSum(0.0, { {{{"x",0}}, 0} });
-    f.assertSum(3.0, { {{{"x",0}}, 3} });
-    f.assertSum(8.0, { {{{"x",0}}, 3}, {{{"x",1}}, 5} });
-    f.assertSum(-2.0, { {{{"x",0}}, 3}, {{{"x",1}}, -5} });
+    TEST_DO(f.assertSum(0.0, {}));
+    TEST_DO(f.assertSum(0.0, { {{{"x",0}}, 0} }));
+    TEST_DO(f.assertSum(3.0, { {{{"x",0}}, 3} }));
+    TEST_DO(f.assertSum(8.0, { {{{"x",0}}, 3}, {{{"x",1}}, 5} }));
+    TEST_DO(f.assertSum(-2.0, { {{{"x",0}}, 3}, {{{"x",1}}, -5} }));
 }
 
 template <typename FixtureType>

@@ -180,6 +180,9 @@ DenseTensor::operator==(const DenseTensor &rhs) const
 eval::ValueType
 DenseTensor::getType() const
 {
+    if (_dimensionsMeta.empty()) {
+        return eval::ValueType::double_type();
+    }
     std::vector<eval::ValueType::Dimension> dimensions;
     dimensions.reserve(_dimensionsMeta.size());
     for (const auto &dimensionMeta : _dimensionsMeta) {

@@ -57,7 +57,7 @@ private:
     size_t _tensor_id;
 
     static eval::ValueType infer_type(const eval::ValueType &type_in) {
-        if (type_in.is_tensor()) {
+        if (type_in.is_tensor() || type_in.is_double()) {
             return type_in;
         } else {
             return eval::ValueType::error_type();
@@ -83,7 +83,7 @@ private:
     Node_UP _child;
 
     static eval::ValueType infer_type(const eval::ValueType &child_type) {
-        if (child_type.is_tensor()) {
+        if (child_type.is_tensor() || child_type.is_double()) {
             return eval::ValueType::double_type();
         } else {
             return eval::ValueType::error_type();

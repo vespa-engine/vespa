@@ -70,6 +70,9 @@ CompactTensorV2::combineDimensionsWith(const CompactTensorV2 &rhs) const
 eval::ValueType
 CompactTensorV2::getType() const
 {
+    if (_dimensions.empty()) {
+        return eval::ValueType::double_type();
+    }
     std::vector<eval::ValueType::Dimension> dimensions;
     std::copy(_dimensions.begin(), _dimensions.end(), std::back_inserter(dimensions));
     return eval::ValueType::tensor_type(dimensions);

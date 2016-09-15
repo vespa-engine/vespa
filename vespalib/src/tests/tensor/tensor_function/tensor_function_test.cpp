@@ -22,20 +22,6 @@ function::Node_UP number_value() {
     return function::sum(function::input(ValueType::tensor_type({}), 0));
 }
 
-function::Node_UP sparse_value(const std::vector<vespalib::string> &arg) {
-    std::vector<ValueType::Dimension> dimensions;
-    std::copy(arg.begin(), arg.end(), std::back_inserter(dimensions));
-    return function::input(ValueType::tensor_type(dimensions), 0);
-}
-
-function::Node_UP dense_value(std::vector<ValueType::Dimension> arg) {
-    return function::input(ValueType::tensor_type(std::move(arg)), 0);
-}
-
-TensorAddress address(const TensorAddress::Elements &elems) {
-    return TensorAddress(elems);
-}
-
 ValueType sparse_type(const std::vector<vespalib::string> &dimensions_in) {
     std::vector<ValueType::Dimension> dimensions;
     std::copy(dimensions_in.begin(), dimensions_in.end(), std::back_inserter(dimensions));
@@ -45,6 +31,19 @@ ValueType sparse_type(const std::vector<vespalib::string> &dimensions_in) {
 ValueType dense_type(const std::vector<ValueType::Dimension> &dimensions_in) {
     return ValueType::tensor_type(dimensions_in);
 }
+
+function::Node_UP sparse_value(const std::vector<vespalib::string> &arg) {
+    return function::input(sparse_type(arg), 0);
+}
+
+function::Node_UP dense_value(std::vector<ValueType::Dimension> arg) {
+    return function::input(dense_type(arg), 0);
+}
+
+TensorAddress address(const TensorAddress::Elements &elems) {
+    return TensorAddress(elems);
+}
+
 
 TEST("require that helper functions produce appropriate types") {
     EXPECT_TRUE(invalid_value()->type().is_error());
@@ -67,6 +66,10 @@ TEST("require that input tensors with non-tensor types are invalid") {
 TEST("require that sum of tensor gives number as result") {
     EXPECT_EQUAL(ValueType::double_type(), function::sum(sparse_value({}))->type());
     EXPECT_EQUAL(ValueType::double_type(), function::sum(dense_value({}))->type());
+}
+
+TEST("require that sum of number gives number as result") {
+    EXPECT_EQUAL(ValueType::double_type(), function::sum(number_value())->type());
 }
 
 TEST("require that dimension sum removes the summed dimension") {
@@ -144,7 +147,6 @@ TEST("require that tensor match result has intersection of input dimensions") {
 
 TEST("require that tensor operations on non-tensor types are invalid") {
     EXPECT_TRUE(function::sum(invalid_value())->type().is_error());
-    EXPECT_TRUE(function::sum(number_value())->type().is_error());
     EXPECT_TRUE(function::dimension_sum(invalid_value(), "x")->type().is_error());
     EXPECT_TRUE(function::dimension_sum(number_value(), "x")->type().is_error());
     EXPECT_TRUE(function::apply(invalid_value(), 0)->type().is_error());
