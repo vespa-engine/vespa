@@ -5,9 +5,6 @@
 #include <sstream>
 #include <iterator>
 
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
-
 #include <vespa/filedistribution/common/logfwd.h>
 
 using filedistribution::DeployedFilesToDownload;
@@ -37,8 +34,7 @@ DeployedFilesToDownload::addNewDeployNode(Path parentPath, const FileReferences&
     std::ostringstream filesStream;
     if (!files.empty()) {
         filesStream << files[0];
-        std::for_each(files.begin() +1, files.end(),
-                      filesStream <<boost::lambda::constant('\n') <<boost::lambda::_1);
+        std::for_each(files.begin() +1, files.end(), [&](const auto & v) { filesStream << '\n' << v; });
     }
     Path retPath = _zk.createSequenceNode(path, filesStream.str().c_str(), filesStream.str().length());
     return retPath;
@@ -74,8 +70,7 @@ DeployedFilesToDownload::deleteExpiredDeployNodes(Path parentPath, StringVector 
 
         size_t numberOfNodesToDelete = children.size() - numberOfDeploysToKeepFiles;
         std::for_each(children.begin(), children.begin() + numberOfNodesToDelete,
-                        boost::lambda::bind(&ZKFacade::remove, &_zk,
-                                boost::lambda::ret<Path>(parentPath / boost::lambda::_1)));
+                     [&](const std::string & s) {_zk.remove(parentPath / s); });
     }
 }
 

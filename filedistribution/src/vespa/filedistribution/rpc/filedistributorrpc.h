@@ -8,13 +8,14 @@
 
 namespace filedistribution {
 
-class FileDistributorRPC : public boost::enable_shared_from_this<FileDistributorRPC>
+class FileDistributorRPC : public std::enable_shared_from_this<FileDistributorRPC>
 {
     class Server;
 public:
+    using SP = std::shared_ptr<FileDistributorRPC>;
     FileDistributorRPC(const FileDistributorRPC &) = delete;
     FileDistributorRPC & operator = (const FileDistributorRPC &) = delete;
-    FileDistributorRPC(const std::string& connectSpec, const boost::shared_ptr<FileProvider>& provider);
+    FileDistributorRPC(const std::string& connectSpec, const FileProvider::SP & provider);
 
     void start();
 
