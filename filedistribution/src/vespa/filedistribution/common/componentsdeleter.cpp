@@ -5,7 +5,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".componentsdeleter");
 
-using namespace std::literals;
+#include <boost/foreach.hpp>
+
+
 using namespace filedistribution;
 
 struct ComponentsDeleter::Worker {
@@ -21,21 +23,25 @@ struct ComponentsDeleter::Worker {
 void
 ComponentsDeleter::Worker::operator()()
 {
-    while ( ! _parent.areWeDone() ) {
-        CallDeleteFun deleteFun = _parent._deleteRequests.pop();
-        deleteFun();
+    while (!boost::this_thread::interruption_requested()) {
+        try {
+            CallDeleteFun deleteFun = _parent._deleteRequests.pop();
+            boost::this_thread::disable_interruption di;
+            deleteFun();
+        } catch(const std::exception& e) {
+            LOG(error, e.what());
+        }
     }
 }
 
-ComponentsDeleter::ComponentsDeleter() :
-    _closed(false),
-    _deleterThread(Worker(this))
+ComponentsDeleter::ComponentsDeleter()
+    :_deleterThread(Worker(this))
 {}
 
 ComponentsDeleter::~ComponentsDeleter()
 {
-    close();
     waitForAllComponentsDeleted();
+    _deleterThread.interrupt();
     _deleterThread.join();
 }
 
@@ -44,29 +50,31 @@ ComponentsDeleter::waitForAllComponentsDeleted()
 {
     LOG(debug, "Waiting for all components to be deleted");
 
-    for (int i=0; i<600 && !areWeDone(); ++i) {
-            std::this_thread::sleep_for(100ms);
+    for (int i=0; i<600 && !allComponentsDeleted(); ++i) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     }
     LOG(debug, "Done waiting for all components to be deleted");
-    assert(_trackedComponents.empty());
-    assert(_deleteRequests.empty());
-}
- 
-void
-ComponentsDeleter::close()
-{
-    {
-        LockGuard guard(_trackedComponentsMutex);
-        _closed = true;
-    }
-    _deleteRequests.push([]() { LOG(debug, "I am the last one, hurry up and shutdown"); });
+
+    logNotDeletedComponents();
+
+    if (!allComponentsDeleted())
+        kill(getpid(), SIGKILL);
 }
 
 bool
-ComponentsDeleter::areWeDone()
+ComponentsDeleter::allComponentsDeleted()
 {
     LockGuard guard(_trackedComponentsMutex);
-    return _closed && _trackedComponents.empty() && _deleteRequests.empty();
+    return _trackedComponents.empty();
+}
+
+void
+ComponentsDeleter::logNotDeletedComponents()
+{
+    LockGuard guard(_trackedComponentsMutex);
+    BOOST_FOREACH(TrackedComponentsMap::value_type component, _trackedComponents) {
+        LOG(info, "Timed out waiting for component '%s' to be deleted", component.second.c_str());
+    }
 }
 
 void

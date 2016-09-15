@@ -10,6 +10,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
+#include <boost/lambda/bind.hpp>
 #include <boost/filesystem/fstream.hpp>
 
 #include <libtorrent/session.hpp>
@@ -18,6 +20,7 @@
 
 #include <vespa/filedistribution/manager/createtorrent.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
+#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/common/componentsdeleter.h>
 
 namespace fs = boost::filesystem;
@@ -30,14 +33,15 @@ const int uploaderPort = 9113;
 const int downloaderPort = 9112;
 
 #if 0
-std::shared_ptr<FileDownloader>
+boost::shared_ptr<FileDownloader>
 createDownloader(ComponentsDeleter& deleter,
                  int port, const fs::path& downloaderPath,
-                 const std::shared_ptr<FileDistributionModel>& model)
+                 const boost::shared_ptr<FileDistributionModel>& model,
+                 const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
 {
-    std::shared_ptr<FileDistributorTrackerImpl> tracker(deleter.track(new FileDistributorTrackerImpl(model)));
-    std::shared_ptr<FileDownloader> downloader(deleter.track(new FileDownloader(tracker,
-                            localHost, port, downloaderPath)));
+    boost::shared_ptr<FileDistributorTrackerImpl> tracker(deleter.track(new FileDistributorTrackerImpl(model, exceptionRethrower)));
+    boost::shared_ptr<FileDownloader> downloader(deleter.track(new FileDownloader(tracker,
+                            localHost, port, downloaderPath, exceptionRethrower)));
 
     tracker->setDownloader(downloader);
     return downloader;
@@ -97,22 +101,27 @@ BOOST_AUTO_TEST_CASE(fileDownloaderTest) {
     Buffer buffer(createTorrent.bencode());
 
     ComponentsDeleter deleter;
+    boost::shared_ptr<ExceptionRethrower> exceptionRethrower(new ExceptionRethrower());
 
-    std::shared_ptr<FileDistributionModel> model(deleter.track(new MockFileDistributionModel()));
-    std::shared_ptr<FileDownloader> downloader =
-        createDownloader(deleter, downloaderPort, downloaderPath, model);
+    boost::shared_ptr<FileDistributionModel> model(deleter.track(new MockFileDistributionModel()));
+    boost::shared_ptr<FileDownloader> downloader =
+        createDownloader(deleter, downloaderPort, downloaderPath, model, exceptionRethrower);
 
-    std::shared_ptr<FileDownloader> uploader =
-        createDownloader(deleter, uploaderPort, uploaderPath, model);
+    boost::shared_ptr<FileDownloader> uploader =
+        createDownloader(deleter, uploaderPort, uploaderPath, model, exceptionRethrower);
 
-    std::thread uploaderThread( [uploader] () { uploader->runEventLoop(); });
-    std::thread downloaderThread( [downloader] () { downloader->runEventLoop(); });
+    boost::thread uploaderThread(
+            boost::lambda::bind(&FileDownloader::runEventLoop, uploader.get()));
+
+    boost::thread downloaderThread(
+            boost::lambda::bind(&FileDownloader::runEventLoop, downloader.get()));
 
     uploader->addTorrent(fileReference, buffer);
     downloader->addTorrent(fileReference, buffer);
 
     sleep(5);
     BOOST_CHECK(fs::exists(downloaderPath / fileReference / fileToSend));
+    BOOST_CHECK(!exceptionRethrower->exceptionStored());
 
     uploaderThread.interrupt();
     uploaderThread.join();

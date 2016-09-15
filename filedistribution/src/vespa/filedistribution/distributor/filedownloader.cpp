@@ -9,7 +9,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/convenience.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/bind.hpp>
 #include <boost/function_output_iterator.hpp>
+#include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 
 #include <libtorrent/alert.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -172,9 +176,11 @@ struct FileDownloader::EventHandler
     void operator()(const libtorrent::save_resume_data_alert& alert) const {
         defaultHandler(alert);
 
-        fs::ofstream resumeFile(resumeDataPathTemp(alert.handle), std::ios_base::binary);
+        fs::ofstream resumeFile(resumeDataPathTemp(alert.handle),
+            std::ios_base::binary);
         resumeFile.unsetf(std::ios_base::skipws);
-        libtorrent::bencode(std::ostream_iterator<char>(resumeFile), *alert.resume_data);
+        libtorrent::bencode(std::ostream_iterator<char>(resumeFile),
+            *alert.resume_data);
         resumeFile.close();
         fs::rename(resumeDataPathTemp(alert.handle), resumeDataPath(alert.handle));
         _fileDownloader.didReceiveSRD();
@@ -203,14 +209,15 @@ FileDownloader::LogSessionDeconstructed::~LogSessionDeconstructed()
     LOG(debug, "Libtorrent session closed successfully.");
 }
 
-FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
+FileDownloader::FileDownloader(const boost::shared_ptr<FileDistributionTracker>& tracker,
                                const std::string& hostName, int port,
-                               const fs::path& dbPath)
+                               const fs::path& dbPath,
+                               const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower)
    : _outstanding_SRD_requests(0),
      _tracker(tracker),
      _session(tracker.get(), libtorrent::fingerprint("vp", 0, 0, 0, 0), 0),
-     _closed(false),
      _dbPath(dbPath),
+     _exceptionRethrower(exceptionRethrower),
      _hostName(hostName),
      _port(port)
 {
@@ -351,17 +358,20 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
     LockGuard guard(_modifyTorrentsDownloadingMutex);
 
     std::set<std::string> currentFiles;
+    namespace ll = boost::lambda;
+
     std::set<sha1_hash> infoHashesToRetain;
-    for (const std::string& fileReference : filesToRetain) {
+    BOOST_FOREACH(const std::string& fileReference, filesToRetain) {
         infoHashesToRetain.insert(toInfoHash(fileReference));
     }
 
     std::vector<torrent_handle> torrents = _session.get_torrents();
 
-    for (torrent_handle torrent : torrents) {
+    BOOST_FOREACH(torrent_handle torrent, torrents) {
         if (!infoHashesToRetain.count(torrent.info_hash())) {
             LOG(info, "Removing torrent: '%s' with file reference '%s'",
-                getMainName(torrent).c_str(), fileReferenceToString(torrent.info_hash()).c_str());
+                getMainName(torrent).c_str(),
+                fileReferenceToString(torrent.info_hash()).c_str());
 
             deleteTorrentData(torrent, guard);
             _session.remove_torrent(torrent);
@@ -372,24 +382,18 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
 
 void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
-    while ( ! closed() ) {
-        if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
-            std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
-            eventHandler.handle(std::move(alert));
+    try {
+        while (!boost::this_thread::interruption_requested()) {
+            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+                std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
+                eventHandler.handle(std::move(alert));
+            }
         }
+    } catch(const boost::thread_interrupted&) {
+        LOG(spam, "The FileDownloader thread was interrupted.");
+    } catch(...) {
+        _exceptionRethrower->store(boost::current_exception());
     }
-}
-
-bool
-FileDownloader::closed() const
-{
-    return _closed.load();
-}
-
-void
-FileDownloader::close()
-{
-    _closed.store(true);
 }
 
 void

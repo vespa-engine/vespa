@@ -5,18 +5,18 @@ LOG_SETUP("status-filedistribution");
 
 #include <iostream>
 #include <map>
-#include <thread>
 
 #include <boost/program_options.hpp>
+#include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 
+#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/filedistributionmodelimpl.h>
 #include <zookeeper/zookeeper.h>
 
 using namespace filedistribution;
-using namespace std::literals;
-namespace po = boost::program_options;
 
 std::string
 plural(size_t size)
@@ -42,7 +42,7 @@ void
 printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 {
     std::cout <<"Waiting for the following host" <<plural(notFinishedHosts) <<":" <<std::endl;
-    for (const StatusByHostName::value_type & hostNameAndStatus : notFinishedHosts) {
+    BOOST_FOREACH(const StatusByHostName::value_type hostNameAndStatus, notFinishedHosts) {
         std::cout <<hostNameAndStatus.first <<"  (";
 
         const HostStatus& hostStatus = hostNameAndStatus.second;
@@ -60,9 +60,10 @@ printWaitingForHosts(const StatusByHostName& notFinishedHosts)
 //TODO:refactor
 int printStatus(const std::string& zkservers)
 {
-    std::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers));
+    boost::shared_ptr<ExceptionRethrower> exceptionRethrower;
+    boost::shared_ptr<ZKFacade> zk(new ZKFacade(zkservers, exceptionRethrower));
 
-    std::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
+    boost::shared_ptr<FileDBModel> model(new ZKFileDBModel(zk));
 
     std::vector<std::string> hosts = model->getHosts();
 
@@ -70,7 +71,7 @@ int printStatus(const std::string& zkservers)
     StatusByHostName finishedHosts;
     bool hasStarted = false;
 
-    for (const std::string & host : hosts) {
+    BOOST_FOREACH(std::string host, hosts) {
         HostStatus hostStatus = model->getHostStatus(host);
         switch (hostStatus._state) {
           case HostStatus::finished:
@@ -117,7 +118,7 @@ printStatusRetryIfZKProblem(const std::string& zkservers, const std::string& zkL
         } catch (ZKSessionExpired& e) {
             LOG(debug, "Session expired.");
         }
-        std::this_thread::sleep_for(500ms);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
     }
     return 4;
 }
@@ -131,11 +132,12 @@ struct ProgramOptionException {
     {}
 };
 
-bool exists(const std::string& optionName, const po::variables_map& map) {
+bool exists(const std::string& optionName, const boost::program_options::variables_map& map) {
     return map.find(optionName) != map.end();
 }
 
-void ensureExists(const std::string& optionName, const po::variables_map& map) {
+void ensureExists(const std::string& optionName, const boost::program_options::variables_map& map \
+                  ) {
     if (!exists(optionName, map)) {
         throw ProgramOptionException("Error: Missing option " + optionName);
     }
@@ -150,15 +152,18 @@ main(int argc, char** argv) {
         *zkLogFile = "zkLogFile",
         *help = "help";
 
-    po::options_description description;
+    namespace po = boost::program_options;
+    boost::program_options::options_description description;
     description.add_options()
         (zkstring, po::value<std::string > (), "The zookeeper servers to connect to, separated by comma")
         (zkLogFile, po::value<std::string >() -> default_value("/dev/null"), "Zookeeper log file")
         (help, "help");
 
     try {
-        po::variables_map values;
-        po::store(po::parse_command_line(argc, argv, description), values);
+        boost::program_options::variables_map values;
+        po::store(
+                boost::program_options::parse_command_line(argc, argv, description),
+                values);
 
         if (exists(help, values)) {
             std::cout <<description;
