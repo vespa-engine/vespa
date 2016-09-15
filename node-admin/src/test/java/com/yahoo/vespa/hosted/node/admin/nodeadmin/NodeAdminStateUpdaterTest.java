@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class NodeAdminStateUpdaterTest {
+    @Ignore
     @Test
     @SuppressWarnings("unchecked")
     public void testExceptionIsCaughtAndDataIsPassedAndFreeze() throws Exception {
