@@ -136,6 +136,8 @@ struct Fmod : Op2<Fmod> { double eval(double a, double b) const override; };
 struct Min : Op2<Min> { double eval(double a, double b) const override; };
 struct Max : Op2<Max> { double eval(double a, double b) const override; };
 struct IsNan : Op1<IsNan> { double eval(double a) const override; };
+struct Relu : Op1<Relu> { double eval(double a) const override; };
+struct Sigmoid : Op1<Sigmoid> { double eval(double a) const override; };
 } // namespace vespalib::eval::operation
 
 } // namespace vespalib::eval
