@@ -79,6 +79,12 @@ class MyAttributeManager : public IAttributeManager {
     AttributeVector::SP _other;
 
 public:
+    MyAttributeManager(MyAttributeManager && rhs) :
+        IAttributeManager(),
+        _attribute_vector(std::move(rhs._attribute_vector)),
+        _other(std::move(rhs._other))
+    {
+    }
     explicit MyAttributeManager(AttributeVector *attr)
         : _attribute_vector(attr), _other() {}
 
@@ -89,7 +95,7 @@ public:
         _other = attr;
     }
 
-    virtual AttributeGuard::UP getAttribute(const string &name) const {
+    AttributeGuard::UP getAttribute(const string &name) const override {
         if (name == field) {
             return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
         } else if (name == other) {
@@ -99,8 +105,7 @@ public:
         }
     }
 
-    virtual AttributeGuard::UP
-    getAttributeStableEnum(const string &name) const {
+    AttributeGuard::UP getAttributeStableEnum(const string &name) const override {
         if (name == field) {
             return AttributeGuard::UP(new AttributeEnumGuard(_attribute_vector));
         } else if (name == other) {
@@ -110,10 +115,10 @@ public:
         }
     }
 
-    virtual void getAttributeList(vector<AttributeGuard> &) const {
+    void getAttributeList(vector<AttributeGuard> &) const override {
         assert(!"Not implemented");
     }
-    virtual IAttributeContext::UP createContext() const {
+    IAttributeContext::UP createContext() const override {
         assert(!"Not implemented");
         return IAttributeContext::UP();
     }
@@ -246,8 +251,7 @@ MyAttributeManager makeAttributeManager(T value) {
     AttributeVectorType *attr = new AttributeVectorType(field);
     add_docs(attr, num_docs);
     AT::add(*attr, value);
-    MyAttributeManager attribute_manager(attr);
-    return attribute_manager;
+    return MyAttributeManager(attr);
 }
 
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
@@ -258,8 +262,7 @@ MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
     add_docs(attr, num_docs);
     attr->update(num_docs - 1, value);
     attr->commit();
-    MyAttributeManager attribute_manager(attr_ptr);
-    return attribute_manager;
+    return MyAttributeManager(attr_ptr);
 }
 
 TEST("requireThatIteratorsCanBeCreated") {

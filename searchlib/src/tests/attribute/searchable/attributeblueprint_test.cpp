@@ -87,22 +87,27 @@ class MyAttributeManager : public IAttributeManager {
     AttributeVector::DocId _docid;
 
 public:
+    MyAttributeManager(MyAttributeManager && rhs) :
+        IAttributeManager(),
+        _attribute_vector(std::move(rhs._attribute_vector)),
+        _docid(std::move(rhs._docid))
+    {
+    }
     MyAttributeManager(AttributeVector *attr)
         : _attribute_vector(attr) {}
 
-    virtual AttributeGuard::UP getAttribute(const string &) const {
+    AttributeGuard::UP getAttribute(const string &) const override {
         return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
     }
 
-    virtual AttributeGuard::UP
-    getAttributeStableEnum(const string &) const {
+    AttributeGuard::UP getAttributeStableEnum(const string &) const override {
         return AttributeGuard::UP(new AttributeEnumGuard(_attribute_vector));
     }
 
-    virtual void getAttributeList(vector<AttributeGuard> &) const {
+    void getAttributeList(vector<AttributeGuard> &) const override {
         assert(!"Not implemented");
     }
-    virtual IAttributeContext::UP createContext() const {
+    IAttributeContext::UP createContext() const override {
         assert(!"Not implemented");
         return IAttributeContext::UP();
     }
@@ -154,8 +159,7 @@ MyAttributeManager fill(typename AT::Type * attr, T value) {
     attr->addDoc(docid);
     assert(2u == docid);
     AT::add(*attr, value);
-    MyAttributeManager attribute_manager(attr);
-    return attribute_manager;
+    return MyAttributeManager(attr);
 }
 
 template <typename T>
