@@ -334,4 +334,26 @@ TEST("require that 'error' is the valid representation of the error type") {
     EXPECT_TRUE(invalid.after == nullptr); // parse not ok
 }
 
+TEST("require that a sparse type must be a tensor with dimensions that all are mapped") {
+    EXPECT_TRUE(ValueType::from_spec("tensor(x{})").is_sparse());
+    EXPECT_TRUE(ValueType::from_spec("tensor(x{},y{})").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("tensor()").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("tensor(x[])").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("tensor(x{},y[])").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("double").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("any").is_sparse());
+    EXPECT_FALSE(ValueType::from_spec("error").is_sparse());
+}
+
+TEST("require that a dense type must be a tensor with dimensions that all are indexed") {
+    EXPECT_TRUE(ValueType::from_spec("tensor(x[])").is_dense());
+    EXPECT_TRUE(ValueType::from_spec("tensor(x[],y[])").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("tensor()").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("tensor(x{})").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("tensor(x[],y{})").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("double").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("any").is_dense());
+    EXPECT_FALSE(ValueType::from_spec("error").is_dense());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -81,6 +81,34 @@ DimensionResult intersect(const DimensionList &lhs, const DimensionList &rhs) {
 
 constexpr size_t ValueType::Dimension::npos;
 
+bool
+ValueType::is_sparse() const
+{
+    if (!is_tensor() || dimensions().empty()) {
+        return false;
+    }
+    for (const auto &dim : dimensions()) {
+        if (!dim.is_mapped()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
+ValueType::is_dense() const
+{
+    if (!is_tensor() || dimensions().empty()) {
+        return false;
+    }
+    for (const auto &dim : dimensions()) {
+        if (!dim.is_indexed()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::vector<vespalib::string>
 ValueType::dimension_names() const
 {

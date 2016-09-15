@@ -58,28 +58,6 @@ struct TensorTFromBuilder<CompactTensorV2Builder> {
 template <typename BuilderType>
 using TensorTFromBuilder_t = typename TensorTFromBuilder<BuilderType>::TensorT;
 
-bool
-hasOnlyMappedDimensions(const ValueType &type)
-{
-    for (const auto &dim : type.dimensions()) {
-        if (!dim.is_mapped()) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool
-hasOnlyIndexedDimensions(const ValueType &type)
-{
-    for (const auto &dim : type.dimensions()) {
-        if (!dim.is_indexed()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 struct FixtureBase
 {
     Tensor::UP createDenseTensor(const DenseTensorCells &cells) {
@@ -103,7 +81,7 @@ struct Fixture : public FixtureBase
                              const ValueType &tensorType,
                              const Tensor &rhs, bool isDefaultBuilder)
     {
-        EXPECT_TRUE(hasOnlyMappedDimensions(tensorType));
+        EXPECT_TRUE(tensorType.is_sparse());
         if (isDefaultBuilder) {
             TensorMapper mapper(tensorType);
             std::unique_ptr<Tensor> mapped = mapper.map(rhs);
@@ -120,7 +98,7 @@ struct Fixture : public FixtureBase
                             const ValueType &tensorType,
                             const Tensor &rhs)
     {
-        EXPECT_TRUE(hasOnlyIndexedDimensions(tensorType));
+        EXPECT_TRUE(tensorType.is_dense());
         TensorMapper mapper(tensorType);
         std::unique_ptr<Tensor> mapped = mapper.map(rhs);
         EXPECT_TRUE(!!mapped);

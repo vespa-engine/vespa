@@ -234,28 +234,6 @@ DenseTensorMapper::map(const Tensor &tensor, const ValueType &type)
     return mapper.build();
 }
 
-bool
-hasOnlyMappedDimensions(const ValueType &type)
-{
-    for (const auto &dim : type.dimensions()) {
-        if (!dim.is_mapped()) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool
-hasOnlyIndexedDimensions(const ValueType &type)
-{
-    for (const auto &dim : type.dimensions()) {
-        if (!dim.is_indexed()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 } // namespace vespalib::tensor::<anonymous>
 
 TensorMapper::TensorMapper(const ValueType &type)
@@ -271,30 +249,27 @@ template <typename TensorT>
 std::unique_ptr<Tensor>
 TensorMapper::mapToSparse(const Tensor &tensor, const ValueType &type)
 {
-    assert(hasOnlyMappedDimensions(type));
+    assert(type.is_sparse());
     return SparseTensorMapper<TensorT>::map(tensor, type);
 }
 
 std::unique_ptr<Tensor>
 TensorMapper::mapToDense(const Tensor &tensor, const ValueType &type)
 {
-    assert(hasOnlyIndexedDimensions(type));
+    assert(type.is_dense());
     return DenseTensorMapper::map(tensor, type);
 }
 
 std::unique_ptr<Tensor>
 TensorMapper::map(const Tensor &tensor) const
 {
-    if (_type.is_tensor()) {
-        if (hasOnlyMappedDimensions(_type)) {
-            return mapToSparse<DefaultTensor::type>(tensor, _type);
-        } else if (hasOnlyIndexedDimensions(_type)) {
-            return mapToDense(tensor, _type);
-        }
+    if (_type.is_sparse()) {
+        return mapToSparse<DefaultTensor::type>(tensor, _type);
+    } else if (_type.is_dense()) {
+        return mapToDense(tensor, _type);
     } else {
         return std::unique_ptr<Tensor>();
     }
-    abort();
 }
 
 template

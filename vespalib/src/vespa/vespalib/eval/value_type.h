@@ -50,6 +50,8 @@ public:
     bool is_error() const { return (_type == Type::ERROR); }
     bool is_double() const { return (_type == Type::DOUBLE); }
     bool is_tensor() const { return (_type == Type::TENSOR); }
+    bool is_sparse() const;
+    bool is_dense() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
     std::vector<vespalib::string> dimension_names() const;
     bool maybe_tensor() const { return (is_any() || is_tensor()); }
