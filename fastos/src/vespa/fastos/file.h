@@ -107,7 +107,6 @@ protected:
     bool          _directIOEnabled;
     bool          _syncWritesEnabled;
     static FailedHandler _failedHandler;
-;
 
 public:
     static int getDefaultFAdviseOptions()             { return _defaultFAdviseOptions; }
@@ -518,6 +517,7 @@ public:
      * Set the write chunk size used in WriteBuf.
      */
     void SetWriteChunkSize(size_t writeChunkSize);
+    size_t getWriteChunkSize() const { return _writeChunkSize; }
 
     /**
      * Get restrictions for direct disk I/O. The file should be opened
