@@ -76,13 +76,7 @@ FastOS_FileInterface::ReadBuf(void *buffer, size_t length)
 void
 FastOS_FileInterface::WriteBuf(const void *buffer, size_t length)
 {
-    const char * data = static_cast<const char *>(buffer);
-    while (length > 0) {
-        size_t len = std::min(_writeChunkSize, length);
-        WriteBufInternal(data, len);
-        data += len;
-        length -= len;
-    }
+    WriteBufInternal(buffer, length);
 }
 
 void

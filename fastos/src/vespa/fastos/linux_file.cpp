@@ -189,9 +189,24 @@ FastOS_Linux_File::Read(void *buffer, size_t len)
 ssize_t
 FastOS_Linux_File::Write2(const void *buffer, size_t length)
 {
-    if (length == 0) { return 0; }
-    ssize_t writeRes;
+    const char * data = static_cast<const char *>(buffer);
+    ssize_t written(0);
+    while (written < ssize_t(length)) {
+        size_t lenNow = std::min(getWriteChunkSize(), length - written);
+        ssize_t writtenNow = internalWrite2(data + written, lenNow);
+        if (writtenNow > 0) {
+            written += writtenNow;
+        } else {
+            return (written > 0) ? written : writtenNow;;
+        }
+    }
+    return written;
+}
 
+ssize_t
+FastOS_Linux_File::internalWrite2(const void *buffer, size_t length)
+{
+    ssize_t writeRes;
     if (_directIOEnabled) {
         if (DIRECTIOPOSSIBLE(buffer, length, _filePointer)) {
             writeRes = writeInternal(_filedes, buffer, length, _filePointer);

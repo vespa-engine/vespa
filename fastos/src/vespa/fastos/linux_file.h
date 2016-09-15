@@ -46,6 +46,7 @@ public:
     static size_t getMaxDirectIOMemAlign();
     static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
 private:
+    ssize_t internalWrite2(const void *buffer, size_t len);
     ssize_t readUnalignedEnd(void *buffer, size_t length, int64_t readOffset);
     ssize_t writeUnalignedEnd(const void *buffer, size_t length, int64_t readOffset);
     ssize_t ReadBufInternal(void *buffer, size_t length, int64_t readOffset);
