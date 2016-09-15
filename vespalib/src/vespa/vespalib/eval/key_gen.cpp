@@ -75,12 +75,10 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Min          &) { add_byte(45); }
     virtual void visit(const Max          &) { add_byte(46); }
     virtual void visit(const IsNan        &) { add_byte(47); }
-    virtual void visit(const Relu         &) { add_byte(48); }
-    virtual void visit(const Sigmoid      &) { add_byte(49); }
 
     // traverse
     virtual bool open(const Node &node) { node.accept(*this); return true; }
-    virtual void close(const Node &) {}
+    virtual void close(const Node &) {} 
 };
 
 } // namespace vespalib::eval::<unnamed>

@@ -63,7 +63,7 @@ EvalSpec::add_terminal_cases() {
     add_rule({"a", -5.0, 5.0}, "a", [](double a){ return a; });
     add_expression({}, "[]").add_case({}, 0.0);
     add_expression({}, "[1]").add_case({}, 1.0);
-    add_expression({}, "[1,2]").add_case({}, 2.0);
+    add_expression({}, "[1,2]").add_case({}, 2.0);    
     add_expression({}, "[1,2,3]").add_case({}, 3.0);
     add_expression({}, "[3,2,1]").add_case({}, 3.0);
     add_expression({}, "[1,1,1,1,1]").add_case({}, 5.0);
@@ -110,8 +110,6 @@ EvalSpec::add_function_call_cases() {
     add_expression({"a"}, "isNan(a)")
         .add_case({-1.0}, 0.0).add_case({-0.5}, 0.0).add_case({0.0}, 0.0).add_case({0.5}, 0.0).add_case({1.0}, 0.0)
         .add_case({my_nan}, 1.0).add_case({my_inf}, 0.0).add_case({-my_inf}, 0.0);
-    add_rule({"a", -1.0, 1.0}, "relu(a)", [](double a){ return std::max(a, 0.0); });
-    add_rule({"a", -1.0, 1.0}, "sigmoid(a)", [](double a){ return 1.0 / (1.0 + std::exp(-1.0 * a)); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "atan2(a,b)", [](double a, double b){ return std::atan2(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "ldexp(a,b)", [](double a, double b){ return std::ldexp(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "pow(a,b)", [](double a, double b){ return std::pow(a, b); });
