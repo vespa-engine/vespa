@@ -55,7 +55,7 @@ search blog_post {
 
     }
 
-    rank-profile tensor {
+    rank-profile default {
         first-phase {
             expression {
                 sum(query(user_item_cf) * attribute(user_item_cf))
@@ -65,7 +65,7 @@ search blog_post {
 
     constant W_hidden {
         file: constants/W_hidden.json
-        type: tensor(input[20],hidden[40]) # user_item_cf
+        type: tensor(input[20],hidden[40])
     }
 
     constant b_hidden {
@@ -95,16 +95,6 @@ search blog_post {
 
     macro matmul(x, y, dim) {
         expression: sum(x * y, dim)
-    }
-
-    # Not valid. Needs to be a predefined function.
-    macro relu(x) {
-        expression: max(0, x) # 0 should be a constant tensor with 0 values
-    }
-
-    # Not valid. Needs to be predefined function.
-    macro sigmoid(x) {
-        expression: 1 / (1 + exp(-x))
     }
 
     # The input to the neural network is the concatenation of the document and query vectors
