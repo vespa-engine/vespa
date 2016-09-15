@@ -29,6 +29,8 @@ public enum Function implements Serializable {
     fabs      { public double evaluate(double x, double y) { return abs(x); } },
     floor     { public double evaluate(double x, double y) { return floor(x); } },
     isNan     { public double evaluate(double x, double y) { return Double.isNaN(x) ? 1.0 : 0.0; } },
+    relu      { public double evaluate(double x, double y) { return max(x,0); } },
+    sigmoid   { public double evaluate(double x, double y) { return 1.0 / (1.0 + exp(-1.0 * x)); } },
     atan2(2)  { public double evaluate(double x, double y) { return atan2(x,y); } },
     pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } },
     ldexp(2)  { public double evaluate(double x, double y) { return x*pow(2,y); } },

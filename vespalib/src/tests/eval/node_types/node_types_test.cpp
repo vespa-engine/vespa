@@ -94,7 +94,7 @@ TEST("require that let expressions propagate type correctly") {
     TEST_DO(verify("let(a,tensor,let(b,a,b))", "tensor"));
 }
 
-TEST("require that set membership resolves to double unless error") {    
+TEST("require that set membership resolves to double unless error") {
     TEST_DO(verify("1 in [1,2,3]", "double"));
     TEST_DO(verify("1 in [tensor,tensor,tensor]", "double"));
     TEST_DO(verify("1 in tensor", "double"));
@@ -236,6 +236,8 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op2_union("min(%s,%s)"));     // min
     TEST_DO(verify_op2_union("max(%s,%s)"));     // max
     TEST_DO(verify_op1("isNan(%s)"));            // IsNan
+    TEST_DO(verify_op1("relu(%s)"));             // Relu
+    TEST_DO(verify_op1("sigmoid(%s)"));          // Sigmoid
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
