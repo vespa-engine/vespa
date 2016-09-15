@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,10 +73,14 @@ public class NodeAdminStateUpdaterTest {
                 is(Optional.of("Not all node agents are frozen.")));
         assertTrue(numberOfElements > 4);
         assertThat(accumulatedArgumentList.get(0), is(createSample()));
-        Thread.sleep(10);
 
         when(nodeAdmin.isFrozen()).thenReturn(false);
-        assertThat(accumulatedArgumentList.size(), is(numberOfElements));
+        Instant end = Instant.now().plus(Duration.ofSeconds(30));
+        while (Instant.now().isBefore(end)) {
+            if (accumulatedArgumentList.size() >= numberOfElements) break;
+            Thread.sleep(10);
+        }
+        assertTrue(accumulatedArgumentList.size() >= numberOfElements);
         assertThat(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED),
                 is(Optional.empty()));
         while (accumulatedArgumentList.size() == numberOfElements) {
