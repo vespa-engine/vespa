@@ -192,12 +192,12 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
     const char * data = static_cast<const char *>(buffer);
     ssize_t written(0);
     while (written < ssize_t(length)) {
-        size_t len = std::min(getWriteChunkSize(), length - written);
-        ssize_t writtenNow = internalWrite2(data + written, len);
+        size_t lenNow = std::min(getWriteChunkSize(), length - written);
+        ssize_t writtenNow = internalWrite2(data + written, lenNow);
         if (writtenNow > 0) {
             written += writtenNow;
         } else {
-            return written;
+            return (written > 0) ? written : writtenNow;;
         }
     }
     return written;
