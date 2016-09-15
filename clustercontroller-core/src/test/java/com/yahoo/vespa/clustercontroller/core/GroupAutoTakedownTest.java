@@ -9,7 +9,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
+
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import org.junit.Test;
@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -203,8 +202,8 @@ public class GroupAutoTakedownTest {
 
         final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
                 .cluster(fixture.cluster)
-                .previousClusterState(fixture.annotatedGeneratedClusterState())
-                .currentClusterState(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN)));
+                .fromState(fixture.annotatedGeneratedClusterState())
+                .toState(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN)));
 
         assertThat(events, hasItem(allOf(
                 nodeEventWithDescription("Setting node down as the total availability of its group is " +
@@ -222,8 +221,8 @@ public class GroupAutoTakedownTest {
 
         final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
                 .cluster(fixture.cluster)
-                .previousClusterState(fixture.annotatedGeneratedClusterState())
-                .currentClusterState(annotatedStateAfterStorageTransition(fixture, 5, State.UP)));
+                .fromState(fixture.annotatedGeneratedClusterState())
+                .toState(annotatedStateAfterStorageTransition(fixture, 5, State.UP)));
 
         assertThat(events, hasItem(allOf(
                 nodeEventWithDescription("Group node availability restored; taking node back up"),
@@ -336,8 +335,9 @@ public class GroupAutoTakedownTest {
         DatabaseHandler.Context context = mock(DatabaseHandler.Context.class);
         when(context.getCluster()).thenReturn(fixture.cluster);
 
+        Set<ConfiguredNode> nodes = new HashSet<>(fixture.cluster.clusterInfo().getConfiguredNodes().values());
         fixture.nodeStateChangeHandler.handleAllDistributorsInSync(
-                fixture.annotatedGeneratedClusterState().getClusterState(), handler, context);
+                fixture.annotatedGeneratedClusterState().getClusterState(), nodes, handler, context);
 
         // Timestamp should now be cleared from state
         assertEquals("distributor:6 storage:6", fixture.generatedClusterState());

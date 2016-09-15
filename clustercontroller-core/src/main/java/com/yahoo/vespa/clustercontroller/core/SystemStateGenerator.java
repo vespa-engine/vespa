@@ -8,7 +8,6 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -18,48 +17,27 @@ import java.util.stream.Collectors;
 /**
  * This class get node state updates and uses them to decide the cluster state.
  */
-// TODO: Remove all current state from this and make it rely on state from ClusterInfo instead
-// TODO: Do this ASAP! SystemStateGenerator should ideally behave as a pure function!
 public class SystemStateGenerator {
 
     private static Logger log = Logger.getLogger(SystemStateGenerator.class.getName());
 
     private final Timer timer;
     private final EventLogInterface eventLog;
-    private ClusterStateView currentClusterStateView;
-    private ClusterStateView nextClusterStateView;
-    private Distribution distribution;
-    private boolean mustRecomputeClusterState = false;
+    private boolean stateMayHaveChanged = false;
     private boolean isMaster = false;
 
     private Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
     private int maxInitProgressTime = 5000;
     private int maxPrematureCrashes = 4;
     private long stableStateTimePeriod = 60 * 60 * 1000;
-    private static final int maxHistorySize = 50;
-    private Set<ConfiguredNode> nodes;
     private Map<Integer, String> hostnames = new HashMap<>();
-    private int minDistributorNodesUp = 1;
-    private int minStorageNodesUp = 1;
-    private double minRatioOfDistributorNodesUp = 0.50;
-    private double minRatioOfStorageNodesUp = 0.50;
-    private double minNodeRatioPerGroup = 0.0;
     private int maxSlobrokDisconnectGracePeriod = 1000;
-    private int idealDistributionBits = 16;
     private static final boolean disableUnstableNodes = true;
-
-    private final LinkedList<SystemStateHistoryEntry> systemStateHistory = new LinkedList<>();
 
     /**
      * @param metricUpdater may be null, in which case no metrics will be recorded.
      */
     public SystemStateGenerator(Timer timer, EventLogInterface eventLog, MetricUpdater metricUpdater) {
-        try {
-            currentClusterStateView = ClusterStateView.create("", metricUpdater);
-            nextClusterStateView = ClusterStateView.create("", metricUpdater);
-        } catch (ParseException e) {
-            throw new RuntimeException("Parsing empty string should always work");
-        }
         this.timer = timer;
         this.eventLog = eventLog;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 5000);
@@ -67,10 +45,11 @@ public class SystemStateGenerator {
     }
 
     public void handleAllDistributorsInSync(final ClusterState currentState,
-                                            DatabaseHandler database,
-                                            DatabaseHandler.Context dbContext) throws InterruptedException {
+                                            final Set<ConfiguredNode> nodes,
+                                            final DatabaseHandler database,
+                                            final DatabaseHandler.Context dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
-        log.log(LogLevel.INFO, "handleAllDistributorsInSync"); // TODO debugging only
+        log.log(LogLevel.DEBUG, String.format("handleAllDistributorsInSync invoked for state version %d", currentState.getVersion()));
         for (NodeType nodeType : NodeType.getTypes()) {
             for (ConfiguredNode configuredNode : nodes) {
                 final Node node = new Node(nodeType, configuredNode.index());
@@ -78,12 +57,12 @@ public class SystemStateGenerator {
                 final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        log.log(LogLevel.INFO, String.format("Storing away new start timestamp for node %s (%d)", // TODO not INFO
+                        log.log(LogLevel.DEBUG, String.format("Storing away new start timestamp for node %s (%d)",
                                 node, nodeState.getStartTimestamp()));
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        log.log(LogLevel.INFO, "Resetting timestamp in cluster state for node " + node); // TODO not INFO
+                        log.log(LogLevel.DEBUG, String.format("Resetting timestamp in cluster state for node %s", node));
                         ++startTimestampsReset;
                     }
                 } else {
@@ -97,478 +76,33 @@ public class SystemStateGenerator {
             eventLog.add(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE, "Reset " + startTimestampsReset +
                     " start timestamps as all available distributors have seen newest cluster state.",
                     timer.getCurrentTimeInMillis()));
-            mustRecomputeClusterState = true;
+            stateMayHaveChanged = true;
             database.saveStartTimestamps(dbContext);
         } else {
             log.log(LogLevel.DEBUG, "Found no start timestamps to reset in cluster state.");
         }
     }
 
-    public void setMaxTransitionTime(Map<NodeType, Integer> map) { maxTransitionTime = map; }
-    public void setMaxInitProgressTime(int millisecs) { maxInitProgressTime = millisecs; }
-    public void setMaxPrematureCrashes(int count) { maxPrematureCrashes = count; }
-    public void setStableStateTimePeriod(long millisecs) { stableStateTimePeriod = millisecs; }
-
-    public ClusterStateView currentClusterStateView() { return currentClusterStateView; }
-
-    /** Returns an immutable list of the historical states this has generated */
-    public List<SystemStateHistoryEntry> systemStateHistory() {
-        return Collections.unmodifiableList(systemStateHistory);
-    }
-
     public boolean stateMayHaveChanged() {
-        return mustRecomputeClusterState;
+        return stateMayHaveChanged;
     }
 
+    public void setStateChangedFlag() { stateMayHaveChanged = true; }
     public void unsetStateChangedFlag() {
-        mustRecomputeClusterState = false;
-    }
-
-    public void setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
-        minDistributorNodesUp = minDistNodes;
-        minStorageNodesUp = minStorNodes;
-        minRatioOfDistributorNodesUp = minDistRatio;
-        minRatioOfStorageNodesUp = minStorRatio;
-        mustRecomputeClusterState = true;
-    }
-
-    public void setMinNodeRatioPerGroup(double upRatio) {
-        this.minNodeRatioPerGroup = upRatio;
-        mustRecomputeClusterState = true;
-    }
-
-    // TODO deprecate
-    /** Sets the nodes of this and attempts to keep the node state in sync */
-    public void setNodes(ClusterInfo newClusterInfo) {
-        this.nodes = new HashSet<>(newClusterInfo.getConfiguredNodes().values());
-
-        /*for (ConfiguredNode node : this.nodes) {
-            NodeInfo newNodeInfo = newClusterInfo.getStorageNodeInfo(node.index());
-            NodeState currentState = currentClusterStateView.getClusterState().getNodeState(new Node(NodeType.STORAGE, node.index()));
-            if (currentState.getState() == State.RETIRED || currentState.getState() == State.UP) { // then correct to configured state
-                proposeNewNodeState(newNodeInfo, new NodeState(NodeType.STORAGE, node.retired() ? State.RETIRED : State.UP));
-            }
-        }
-
-        // Ensure that any nodes that have been removed from the config are also
-        // promptly removed from the next (and subsequent) generated cluster states.
-        pruneAllNodesNotContainedInConfig();*/
-
-        mustRecomputeClusterState = true;
-    }
-
-    private void pruneAllNodesNotContainedInConfig() {
-        Set<Integer> configuredIndices = this.nodes.stream().map(ConfiguredNode::index).collect(Collectors.toSet());
-        final ClusterState candidateNextState = nextClusterStateView.getClusterState();
-        pruneNodesNotContainedInConfig(candidateNextState, configuredIndices, NodeType.DISTRIBUTOR);
-        pruneNodesNotContainedInConfig(candidateNextState, configuredIndices, NodeType.STORAGE);
-    }
-
-    public void setDistribution(Distribution distribution) {
-        this.distribution = distribution;
-        mustRecomputeClusterState = true;
+        stateMayHaveChanged = false;
     }
 
     public void setMaster(boolean isMaster) {
         this.isMaster = isMaster;
     }
-    public void setMaxSlobrokDisconnectGracePeriod(int millisecs) { maxSlobrokDisconnectGracePeriod = millisecs; }
 
-    // TODO safe to remove
-    public void setDistributionBits(int bits) {
-        if (bits == idealDistributionBits) return;
-        idealDistributionBits = bits;
-        int currentDistributionBits = calculateMinDistributionBitCount();
-        if (currentDistributionBits != nextClusterStateView.getClusterState().getDistributionBitCount()) {
-            nextClusterStateView.getClusterState().setDistributionBits(currentDistributionBits);
-            mustRecomputeClusterState = true;
-        }
+    public void setMaxSlobrokDisconnectGracePeriod(int millisecs) {
+        maxSlobrokDisconnectGracePeriod = millisecs;
     }
 
-    public int getDistributionBits() { return idealDistributionBits; }
-
-    public int calculateMinDistributionBitCount() {
-        int currentDistributionBits = idealDistributionBits;
-        int minNode = -1;
-        for (ConfiguredNode node : nodes) {
-            NodeState ns = nextClusterStateView.getClusterState().getNodeState(new Node(NodeType.STORAGE, node.index()));
-            if (ns.getState().oneOf("iur")) {
-                if (ns.getMinUsedBits() < currentDistributionBits) {
-                    currentDistributionBits = ns.getMinUsedBits();
-                    minNode = node.index();
-                }
-            }
-        }
-        if (minNode == -1) {
-            log.log(LogLevel.DEBUG, "Distribution bit count should still be default as all available nodes have at least split to " + idealDistributionBits + " bits");
-        } else {
-            log.log(LogLevel.DEBUG, "Distribution bit count is limited to " + currentDistributionBits + " due to storage node " + minNode);
-        }
-        return currentDistributionBits;
+    public void setStableStateTimePeriod(long millisecs) {
+        stableStateTimePeriod = millisecs;
     }
-
-    public ClusterState getClusterState() { return currentClusterStateView.getClusterState(); }
-
-    /**
-     * Return the current cluster state, but if the cluster is down, modify the node states with the
-     * actual node states from the temporary next state.
-     */
-    public ClusterState getConsolidatedClusterState() {
-        ClusterState currentState = currentClusterStateView.getClusterState();
-        if (currentState.getClusterState().equals(State.UP)) {
-            return currentState;
-        }
-
-        ClusterState nextState = nextClusterStateView.getClusterState();
-        if (!currentState.getClusterState().equals(nextState.getClusterState())) {
-            log.warning("Expected current cluster state object to have same global state as the under creation instance.");
-        }
-        ClusterState state = nextState.clone();
-        state.setVersion(currentState.getVersion());
-        state.setOfficial(false);
-        return state;
-    }
-
-    private Optional<Event> getDownDueToTooFewNodesEvent(ClusterState nextClusterState) {
-        int upStorageCount = 0, upDistributorCount = 0;
-        int dcount = nodes.size();
-        int scount = nodes.size();
-        for (NodeType type : NodeType.getTypes()) {
-            for (ConfiguredNode node : nodes) {
-                NodeState ns = nextClusterState.getNodeState(new Node(type, node.index()));
-                if (ns.getState() == State.UP || ns.getState() == State.RETIRED || ns.getState() == State.INITIALIZING) {
-                    if (type.equals(NodeType.STORAGE))
-                        ++upStorageCount;
-                    else
-                        ++upDistributorCount;
-                }
-            }
-        }
-
-        long timeNow = timer.getCurrentTimeInMillis();
-        if (upStorageCount < minStorageNodesUp) {
-            return Optional.of(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE,
-                    "Less than " + minStorageNodesUp + " storage nodes available (" + upStorageCount + "). Setting cluster state down.",
-                    timeNow));
-        }
-        if (upDistributorCount < minDistributorNodesUp) {
-            return Optional.of(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE,
-                    "Less than " + minDistributorNodesUp + " distributor nodes available (" + upDistributorCount + "). Setting cluster state down.",
-                    timeNow));
-        }
-        if (minRatioOfStorageNodesUp * scount > upStorageCount) {
-            return Optional.of(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE,
-                    "Less than " + (100 * minRatioOfStorageNodesUp) + " % of storage nodes are available ("
-                            + upStorageCount + "/" + scount + "). Setting cluster state down.",
-                    timeNow));
-        }
-        if (minRatioOfDistributorNodesUp * dcount > upDistributorCount) {
-            return Optional.of(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE,
-                    "Less than " + (100 * minRatioOfDistributorNodesUp) + " % of distributor nodes are available ("
-                            + upDistributorCount + "/" + dcount + "). Setting cluster state down.",
-                    timeNow));
-        }
-        return Optional.empty();
-    }
-
-    private static Node storageNode(int index) {
-        return new Node(NodeType.STORAGE, index);
-    }
-
-    private void performImplicitStorageNodeStateTransitions(ClusterState candidateState, ContentCluster cluster) {
-        if (distribution == null) {
-            return; // FIXME due to tests that don't bother setting distr config! Never happens in prod.
-        }
-        // First clear the states of any nodes that according to reported/wanted state alone
-        // should have their states cleared. We might still take these down again based on the
-        // decisions of the group availability calculator, but this way we ensure that groups
-        // that no longer should be down will have their nodes implicitly made available again.
-        // TODO this will be void once SystemStateGenerator has been rewritten to be stateless.
-        final Set<Integer> clearedNodes = clearDownStateForStorageNodesThatCanBeUp(candidateState, cluster);
-
-        final GroupAvailabilityCalculator calc = new GroupAvailabilityCalculator.Builder()
-                .withMinNodeRatioPerGroup(minNodeRatioPerGroup)
-                .withDistribution(distribution)
-                .build();
-        final Set<Integer> nodesToTakeDown = calc.nodesThatShouldBeDown(candidateState);
-        markNodesAsDownDueToGroupUnavailability(cluster, candidateState, nodesToTakeDown, clearedNodes);
-
-        clearedNodes.removeAll(nodesToTakeDown);
-        logEventsForNodesThatWereTakenUp(clearedNodes, cluster);
-    }
-
-    private void logEventsForNodesThatWereTakenUp(Set<Integer> newlyUpNodes, ContentCluster cluster) {
-        newlyUpNodes.forEach(i -> {
-            final NodeInfo info = cluster.getNodeInfo(storageNode(i)); // Should always be non-null here.
-            // TODO the fact that this only happens for group up events is implementation specific
-            // should generalize this if we get other such events.
-            eventLog.addNodeOnlyEvent(new NodeEvent(info,
-                    "Group availability restored; taking node back up",
-                    NodeEvent.Type.CURRENT, timer.getCurrentTimeInMillis()), LogLevel.INFO);
-        });
-    }
-
-    private void markNodesAsDownDueToGroupUnavailability(ContentCluster cluster,
-                                                         ClusterState candidateState,
-                                                         Set<Integer> nodesToTakeDown,
-                                                         Set<Integer> clearedNodes)
-    {
-        for (Integer idx : nodesToTakeDown) {
-            final Node node = storageNode(idx);
-            NodeState newState = new NodeState(NodeType.STORAGE, State.DOWN);
-            newState.setDescription("group node availability below configured threshold");
-            candidateState.setNodeState(node, newState);
-
-            logNodeGroupDownEdgeEventOnce(clearedNodes, node, cluster);
-        }
-    }
-
-    private void logNodeGroupDownEdgeEventOnce(Set<Integer> clearedNodes, Node node, ContentCluster cluster) {
-        final NodeInfo nodeInfo = cluster.getNodeInfo(node);
-        // If clearedNodes contains the index it means we're just re-downing a node
-        // that was previously down. If this is the case, we'd cause a duplicate
-        // event if we logged it now as well.
-        if (nodeInfo != null && !clearedNodes.contains(node.getIndex())) {
-            eventLog.addNodeOnlyEvent(new NodeEvent(nodeInfo,
-                    "Setting node down as the total availability of its group is " +
-                    "below the configured threshold",
-                    NodeEvent.Type.CURRENT, timer.getCurrentTimeInMillis()), LogLevel.INFO);
-        }
-    }
-
-    private NodeState baselineNodeState(NodeInfo info) {
-        NodeState reported = info.getReportedState();
-        NodeState wanted = info.getWantedState();
-
-        final NodeState baseline = reported.clone();
-        if (wanted.getState() != State.UP) {
-            baseline.setDescription(wanted.getDescription());
-            if (reported.above(wanted)) {
-                baseline.setState(wanted.getState());
-            }
-        }
-        // Don't reintroduce start timestamp to the node's state if it has already been
-        // observed by all distributors. This matches how handleNewReportedNodeState() sets timestamps.
-        // TODO make timestamp semantics clearer. Non-obvious what the two different timestamp stores imply.
-        // For posterity: reported.getStartTimestamp() is the start timestamp the node itself has stated.
-        // info.getStartTimestamp() is the timestamp written as having been observed by all distributors
-        // (which is done in handleAllDistributorsInSync()).
-        if (reported.getStartTimestamp() <= info.getStartTimestamp()) {
-            baseline.setStartTimestamp(0);
-        }
-
-        return baseline;
-    }
-
-    // Returns set of nodes whose state was cleared
-    private Set<Integer> clearDownStateForStorageNodesThatCanBeUp(
-            ClusterState candidateState, ContentCluster cluster)
-    {
-        final int nodeCount = candidateState.getNodeCount(NodeType.STORAGE);
-        final Set<Integer> clearedNodes = new HashSet<>();
-        for (int i = 0; i < nodeCount; ++i) {
-            final Node node = storageNode(i);
-            final NodeInfo info = cluster.getNodeInfo(node);
-            final NodeState currentState = candidateState.getNodeState(node);
-            if (mayClearCurrentNodeState(currentState, info)) {
-                candidateState.setNodeState(node, baselineNodeState(info));
-                clearedNodes.add(i);
-            }
-        }
-        return clearedNodes;
-    }
-
-    private boolean mayClearCurrentNodeState(NodeState currentState, NodeInfo info) {
-        if (currentState.getState() != State.DOWN) {
-            return false;
-        }
-        if (info == null) {
-            // Nothing known about node in cluster info; we definitely don't want it
-            // to be taken up at this point.
-            return false;
-        }
-        // There exists an edge in watchTimers where a node in Maintenance is implicitly
-        // transitioned into Down without being Down in either reported or wanted states
-        // iff isRpcAddressOutdated() is true. To avoid getting into an edge where we
-        // inadvertently clear this state because its reported/wanted states seem fine,
-        // we must also check if that particular edge could have happened. I.e. whether
-        // the node's RPC address is marked as outdated.
-        // It also makes sense in general to not allow taking a node back up automatically
-        // if its RPC connectivity appears to be bad.
-        if (info.isRpcAddressOutdated()) {
-            return false;
-        }
-        // Rationale: we can only enter this statement if the _current_ (generated) state
-        // of the node is Down. Aside from the group take-down logic, there should not exist
-        // any other edges in the cluster controller state transition logic where a node
-        // may be set Down while both its reported state and wanted state imply that a better
-        // state should already have been chosen. Consequently we allow the node to have its
-        // Down-state cleared.
-        return (info.getReportedState().getState() != State.DOWN
-                && !info.getWantedState().getState().oneOf("d"));
-    }
-
-    private ClusterStateView createNextVersionOfClusterStateView(ContentCluster cluster) {
-        // If you change this method, see *) in notifyIfNewSystemState
-        ClusterStateView candidateClusterStateView = nextClusterStateView.cloneForNewState();
-        ClusterState candidateClusterState = candidateClusterStateView.getClusterState();
-
-        int currentDistributionBits = calculateMinDistributionBitCount();
-        if (currentDistributionBits != nextClusterStateView.getClusterState().getDistributionBitCount()) {
-            candidateClusterState.setDistributionBits(currentDistributionBits);
-        }
-        performImplicitStorageNodeStateTransitions(candidateClusterState, cluster);
-
-        return candidateClusterStateView;
-    }
-
-    private void pruneNodesNotContainedInConfig(ClusterState candidateClusterState,
-                                                Set<Integer> configuredIndices,
-                                                NodeType nodeType)
-    {
-        final int nodeCount = candidateClusterState.getNodeCount(nodeType);
-        for (int i = 0; i < nodeCount; ++i) {
-            final Node node = new Node(nodeType, i);
-            final NodeState currentState = candidateClusterState.getNodeState(node);
-            if (!configuredIndices.contains(i) && !currentState.getState().equals(State.DOWN)) {
-                log.log(LogLevel.INFO, "Removing node " + node + " from state as it is no longer present in config");
-                candidateClusterState.setNodeState(node, new NodeState(nodeType, State.DOWN));
-            }
-        }
-    }
-
-    private void recordNewClusterStateHasBeenChosen(
-            ClusterState currentClusterState, ClusterState newClusterState, Event clusterEvent) {
-        long timeNow = timer.getCurrentTimeInMillis();
-
-        if (!currentClusterState.getClusterState().equals(State.UP) &&
-                newClusterState.getClusterState().equals(State.UP)) {
-            eventLog.add(new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE,
-                                          "Enough nodes available for system to become up.", timeNow), isMaster);
-        } else if (currentClusterState.getClusterState().equals(State.UP) &&
-                   ! newClusterState.getClusterState().equals(State.UP)) {
-            assert(clusterEvent != null);
-            eventLog.add(clusterEvent, isMaster);
-        }
-
-        if (newClusterState.getDistributionBitCount() != currentClusterState.getDistributionBitCount()) {
-            eventLog.add(new ClusterEvent(
-                    ClusterEvent.Type.SYSTEMSTATE,
-                    "Altering distribution bits in system from "
-                            + currentClusterState.getDistributionBitCount() + " to " +
-                            newClusterState.getDistributionBitCount(),
-                    timeNow), isMaster);
-        }
-
-        eventLog.add(new ClusterEvent(
-                ClusterEvent.Type.SYSTEMSTATE,
-                "New cluster state version " + newClusterState.getVersion() + ". Change from last: " +
-                        currentClusterState.getTextualDifference(newClusterState),
-                timeNow), isMaster);
-
-        // FIXME legacy, must handle in new code as well
-        log.log(LogLevel.DEBUG, "Created new cluster state version: " + newClusterState.toString(true));
-        systemStateHistory.addFirst(new SystemStateHistoryEntry(newClusterState, timeNow));
-        if (systemStateHistory.size() > maxHistorySize) {
-            systemStateHistory.removeLast();
-        }
-    }
-
-    private void mergeIntoNextClusterState(ClusterState sourceState) {
-        final ClusterState nextState = nextClusterStateView.getClusterState();
-        final int nodeCount = sourceState.getNodeCount(NodeType.STORAGE);
-        for (int i = 0; i < nodeCount; ++i) {
-            final Node node = storageNode(i);
-            final NodeState stateInSource = sourceState.getNodeState(node);
-            final NodeState stateInTarget = nextState.getNodeState(node);
-            if (stateInSource.getState() != stateInTarget.getState()) {
-                nextState.setNodeState(node, stateInSource);
-            }
-        }
-    }
-
-    // TODO safe to remove
-    public boolean notifyIfNewSystemState(ContentCluster cluster, SystemStateListener stateListener) {
-        if ( !mustRecomputeClusterState) return false;
-
-        ClusterStateView newClusterStateView = createNextVersionOfClusterStateView(cluster);
-
-        ClusterState newClusterState = newClusterStateView.getClusterState();
-        // Creating the next version of the state may implicitly take down nodes, so our checks
-        // for taking the entire cluster down must happen _after_ this
-        Optional<Event> clusterDown = getDownDueToTooFewNodesEvent(newClusterState);
-        newClusterState.setClusterState(clusterDown.isPresent() ? State.DOWN : State.UP);
-
-        if (newClusterState.similarTo(currentClusterStateView.getClusterState())) {
-            log.log(LogLevel.DEBUG,
-                    "State hasn't changed enough to warrant new cluster state. Not creating new state: " +
-                            currentClusterStateView.getClusterState().getTextualDifference(newClusterState));
-            log.log(LogLevel.DEBUG, String.format("Not publishing state! newClusterState='%s', currentClusterState='%s'",
-                    newClusterState.toString(), currentClusterStateView.getClusterState().toString()));
-            return false;
-        }
-
-        // Update the version of newClusterState now. This cannot be done prior to similarTo(),
-        // since it makes the cluster states different. From now on, the new cluster state is immutable.
-        newClusterState.setVersion(currentClusterStateView.getClusterState().getVersion() + 1);
-
-        recordNewClusterStateHasBeenChosen(currentClusterStateView.getClusterState(),
-                                           newClusterStateView.getClusterState(), clusterDown.orElse(null));
-
-        // *) Ensure next state is still up to date.
-        // This should make nextClusterStateView a deep-copy of currentClusterStateView.
-        // If more than the distribution bits and state are deep-copied in
-        // createNextVersionOfClusterStateView(), we need to add corresponding statements here.
-        // This seems like a hack...
-        nextClusterStateView.getClusterState().setDistributionBits(newClusterState.getDistributionBitCount());
-        nextClusterStateView.getClusterState().setClusterState(newClusterState.getClusterState());
-        mergeIntoNextClusterState(newClusterState);
-
-        currentClusterStateView = newClusterStateView;
-        mustRecomputeClusterState = false;
-
-        stateListener.handleNewSystemState(currentClusterStateView.getClusterState());
-
-        return true;
-    }
-
-    public void setLatestSystemStateVersion(int version) {
-        currentClusterStateView.getClusterState().setVersion(Math.max(1, version));
-        mustRecomputeClusterState = true;
-    }
-
-
-    // TODO deprecated once we have a baseline state function
-    private void setNodeState(NodeInfo node, NodeState newState) {
-        NodeState oldState = nextClusterStateView.getClusterState().getNodeState(node.getNode());
-
-        // Correct UP to RETIRED if the node wants to be retired
-        if (newState.above(node.getWantedState()))
-            newState.setState(node.getWantedState().getState());
-
-        // Keep old description if a new one is not set and we're not going up or in initializing mode
-        if ( ! newState.getState().oneOf("ui") && oldState.hasDescription()) {
-            newState.setDescription(oldState.getDescription());
-        }
-
-        // Keep disk information if not set in new state
-        if (newState.getDiskCount() == 0 && oldState.getDiskCount() != 0) {
-            newState.setDiskCount(oldState.getDiskCount());
-            for (int i=0; i<oldState.getDiskCount(); ++i) {
-                newState.setDiskState(i, oldState.getDiskState(i));
-            }
-        }
-        if (newState.equals(oldState)) {
-            return;
-        }
-
-        eventLog.add(new NodeEvent(node, "Altered node state in cluster state from '" + oldState.toString(true)
-                                   + "' to '" + newState.toString(true) + "'.",
-                                   NodeEvent.Type.CURRENT, timer.getCurrentTimeInMillis()), isMaster);
-        nextClusterStateView.getClusterState().setNodeState(node.getNode(), newState);
-        mustRecomputeClusterState = true;
-    }
-
 
     // TODO nodeListener is only used via decideNodeStateGivenReportedState -> handlePrematureCrash
     // TODO this will recursively invoke proposeNewNodeState, which will presumably (i.e. hopefully) be a no-op...
@@ -587,7 +121,7 @@ public class SystemStateGenerator {
             node.setTimeOfFirstFailingConnectionAttempt(currentTime);
         }
         // FIXME only set if reported state has actually changed...
-        mustRecomputeClusterState = true;
+        stateMayHaveChanged = true;
 
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
@@ -612,7 +146,7 @@ public class SystemStateGenerator {
                 int oldCount = currentState.getMinUsedBits();
                 eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
                                         + " to " + alteredState.getMinUsedBits(), NodeEvent.Type.CURRENT, currentTime), isMaster);
-                mustRecomputeClusterState = true;
+                stateMayHaveChanged = true;
             } else {
                 log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
                         + currentState.getTextualDifference(alteredState));
@@ -651,7 +185,7 @@ public class SystemStateGenerator {
             log.log(LogLevel.DEBUG, "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
         }
 
-        mustRecomputeClusterState = true;
+        stateMayHaveChanged = true;
     }
 
     /**
@@ -671,7 +205,7 @@ public class SystemStateGenerator {
         if (currentState.getState().equals(newCurrentState.getState())) {
             return;
         }
-        mustRecomputeClusterState = true;
+        stateMayHaveChanged = true;
 
         log.log(LogLevel.DEBUG, "Got new wanted nodestate for " + node + ": " + currentState.getTextualDifference(proposedState));
         // Should be checked earlier before state was set in cluster
@@ -803,7 +337,7 @@ public class SystemStateGenerator {
         }
 
         if (triggeredAnyTimers) {
-            mustRecomputeClusterState = true;
+            stateMayHaveChanged = true;
         }
         return triggeredAnyTimers;
     }
@@ -931,8 +465,6 @@ public class SystemStateGenerator {
         return reportedState.clone();
     }
 
-
-
     // TODO move somewhere appropriate
     public boolean handlePrematureCrash(NodeInfo node, NodeStateOrHostInfoChangeHandler changeListener) {
         node.setPrematureCrashCount(node.getPrematureCrashCount() + 1);
@@ -947,23 +479,6 @@ public class SystemStateGenerator {
             return true;
         }
         return false;
-    }
-
-    // TODO move this out of here. get to da choppa!!!
-    public class SystemStateHistoryEntry {
-
-        private final ClusterState state;
-        private final long time;
-
-        SystemStateHistoryEntry(ClusterState state, long time) {
-            this.state = state;
-            this.time = time;
-        }
-
-        public ClusterState state() { return state; }
-
-        public long time() { return time; }
-
     }
 
 }
