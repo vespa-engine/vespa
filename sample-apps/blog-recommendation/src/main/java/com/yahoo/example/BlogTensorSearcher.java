@@ -35,7 +35,12 @@ public class BlogTensorSearcher extends Searcher {
             }
             QueryTreeUtil.andQueryItemWithRoot(query, notItem);
 
-            // Send the user profile to the ranking framework.
+            // Modify the ranking by using the 'tensor' rank-profile (as defined in blog_post.sd)...		 +            // Send the user profile to the ranking framework.
+            if (query.properties().get("ranking") == null) {
+                query.properties().set(new CompoundName("ranking"), "tensor");
+            }
+
+            // ... and setting 'query(user_item_cf)' used in that rank-profile
             query.getRanking().getFeatures().put("query(user_item_cf)", toTensor(userItemCfProperty));
         }
 

@@ -55,7 +55,7 @@ search blog_post {
 
     }
 
-    rank-profile default {
+    rank-profile tensor {
         first-phase {
             expression {
                 sum(query(user_item_cf) * attribute(user_item_cf))
