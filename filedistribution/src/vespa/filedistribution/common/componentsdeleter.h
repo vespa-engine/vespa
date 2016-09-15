@@ -44,7 +44,6 @@ class ComponentsDeleter {
 
     void waitForAllComponentsDeleted();
     bool areWeDone();
-    void logNotDeletedComponents();
     void close();
   public:
     ComponentsDeleter(const ComponentsDeleter &) = delete;

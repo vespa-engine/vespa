@@ -48,8 +48,8 @@ ComponentsDeleter::waitForAllComponentsDeleted()
             std::this_thread::sleep_for(100ms);
     }
     LOG(debug, "Done waiting for all components to be deleted");
-
-    logNotDeletedComponents();
+    assert(_trackedComponents.empty());
+    assert(_deleteRequests.empty());
 }
  
 void
@@ -67,15 +67,6 @@ ComponentsDeleter::areWeDone()
 {
     LockGuard guard(_trackedComponentsMutex);
     return _closed && _trackedComponents.empty() && _deleteRequests.empty();
-}
-
-void
-ComponentsDeleter::logNotDeletedComponents()
-{
-    LockGuard guard(_trackedComponentsMutex);
-    for (const auto & component : _trackedComponents) {
-        LOG(info, "Timed out waiting for component '%s' to be deleted", component.second.c_str());
-    }
 }
 
 void
