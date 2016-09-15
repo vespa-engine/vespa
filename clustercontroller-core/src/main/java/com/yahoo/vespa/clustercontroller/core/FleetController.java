@@ -70,7 +70,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private final RunDataExtractor dataExtractor = new RunDataExtractor() {
         @Override
-        public com.yahoo.vdslib.state.ClusterState getLatestClusterState() { return systemStateGenerator.getClusterState(); }
+        public com.yahoo.vdslib.state.ClusterState getLatestClusterState() { return stateVersionTracker.getVersionedClusterState(); }
         @Override
         public FleetControllerOptions getOptions() { return options; }
         @Override
@@ -372,7 +372,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     /** Called when all distributors have acked newest cluster state version. */
     public void handleAllDistributorsInSync(DatabaseHandler database, DatabaseHandler.Context context) throws InterruptedException {
-        systemStateGenerator.handleAllDistributorsInSync(stateVersionTracker.getVersionedClusterState(), database, context);
+        Set<ConfiguredNode> nodes = new HashSet<>(cluster.clusterInfo().getConfiguredNodes().values());
+        systemStateGenerator.handleAllDistributorsInSync(
+                stateVersionTracker.getVersionedClusterState(), nodes, database, context);
     }
 
     private boolean changesConfiguredNodeSet(Collection<ConfiguredNode> newNodes) {
@@ -411,17 +413,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout);
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         stateGatherer.setNodeStateRequestTimeout(options.nodeStateRequestTimeoutMS);
-        systemStateGenerator.setNodes(cluster.clusterInfo());
-        systemStateGenerator.setMaxTransitionTime(options.maxTransitionTime);
-        systemStateGenerator.setMaxInitProgressTime(options.maxInitProgressTime);
-        systemStateGenerator.setMaxPrematureCrashes(options.maxPrematureCrashes);
+        // Only temporal parameters apply to the node state event listener
         systemStateGenerator.setStableStateTimePeriod(options.stableStateTimePeriod);
-        systemStateGenerator.setMinNodesUp(options.minDistributorNodesUp, options.minStorageNodesUp,
-                                           options.minRatioOfDistributorNodesUp, options.minRatioOfStorageNodesUp);
-        systemStateGenerator.setMinNodeRatioPerGroup(options.minNodeRatioPerGroup);
         systemStateGenerator.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
-        systemStateGenerator.setDistributionBits(options.distributionBits);
-        systemStateGenerator.setDistribution(options.storageDistribution);
+        systemStateGenerator.setStateChangedFlag(); // Always trigger state recomputation after reconfig
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount);
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod);
 
@@ -655,10 +650,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
             if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
-                emitEventsForAlteredStateEdges(candidate);
-                stateVersionTracker.applyAndVersionNewState(candidate, timer.getCurrentTimeInMillis());
+                final long timeNowMs = timer.getCurrentTimeInMillis();
+                emitEventsForAlteredStateEdges(stateVersionTracker.getAnnotatedClusterState(), candidate, timeNowMs);
+                stateVersionTracker.applyAndVersionNewState(candidate, timeNowMs);
                 // TODO needs to invoke analogue of SystemStateGenerator.recordNewClusterStateHasBeenChosen
-                log.log(LogLevel.INFO, String.format("Controller %d: new cluster state: %s",
+                log.log(LogLevel.DEBUG, String.format("Controller %d: new cluster state: %s", // TODO might not be needed post-event emit
                         options.fleetControllerIndex,
                         stateVersionTracker.getVersionedClusterState()));
                 handleNewSystemState(stateVersionTracker.getVersionedClusterState());
@@ -677,15 +673,37 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         return didWork;
     }
 
-    private void emitEventsForAlteredStateEdges(final AnnotatedClusterState newState) {
+    // FIXME potentially dangerous implicit requirement that this is called before applyAndVersionNewState
+    private void emitEventsForAlteredStateEdges(final AnnotatedClusterState fromState,
+                                                final AnnotatedClusterState toState,
+                                                final long timeNowMs) {
         final List<Event> deltaEvents = EventDiffCalculator.computeEventDiff(
                 EventDiffCalculator.params()
                         .cluster(cluster)
-                        .previousClusterState(stateVersionTracker.getAnnotatedClusterState())
-                        .currentClusterState(newState)
-                        .currentTimeMs(timer.getCurrentTimeInMillis()));
+                        .fromState(fromState)
+                        .toState(toState)
+                        .currentTimeMs(timeNowMs));
         for (Event event : deltaEvents) {
             eventLog.add(event, isMaster);
+        }
+
+        emitStateAppliedEvents(timeNowMs, fromState.getClusterState(), toState.getClusterState());
+    }
+
+    private void emitStateAppliedEvents(long timeNowMs, ClusterState fromClusterState, ClusterState toClusterState) {
+        eventLog.add(new ClusterEvent(
+                ClusterEvent.Type.SYSTEMSTATE,
+                "New cluster state version " + toClusterState.getVersion() + ". Change from last: " +
+                        fromClusterState.getTextualDifference(toClusterState),
+                timeNowMs), isMaster);
+
+        if (toClusterState.getDistributionBitCount() != fromClusterState.getDistributionBitCount()) {
+            eventLog.add(new ClusterEvent(
+                    ClusterEvent.Type.SYSTEMSTATE,
+                    "Altering distribution bits in system from "
+                            + fromClusterState.getDistributionBitCount() + " to " +
+                            toClusterState.getDistributionBitCount(),
+                    timeNowMs), isMaster);
         }
     }
 

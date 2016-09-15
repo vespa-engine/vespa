@@ -38,10 +38,7 @@ class ClusterFixture {
     SystemStateGenerator createNodeStateChangeHandlerForCluster() {
         final int controllerIndex = 0;
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
-        SystemStateGenerator handler = new SystemStateGenerator(timer, eventLog, metricUpdater);
-        handler.setNodes(cluster.clusterInfo());
-        handler.setDistribution(distribution);
-        return handler;
+        return new SystemStateGenerator(timer, eventLog, metricUpdater);
     }
 
     ClusterFixture bringEntireClusterUp() {

@@ -532,9 +532,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        // FIXME; new code does _not_ publish a new state simply because the description changed!
-        // Node is still down in the actual cluster state
-        //assertEquals("Listing buckets. Progress 0.1 %.", ctrl.getSystemState().getNodeState(new Node(NodeType.STORAGE, 6)).getDescription());
+        assertEquals("version:5 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1), "");
 

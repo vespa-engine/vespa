@@ -101,8 +101,8 @@ public class EventDiffCalculatorTest {
             return EventDiffCalculator.computeEventDiff(
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
-                            .previousClusterState(stateBefore)
-                            .currentClusterState(stateAfter)
+                            .fromState(stateBefore)
+                            .toState(stateAfter)
                             .currentTimeMs(currentTimeMs));
         }
 

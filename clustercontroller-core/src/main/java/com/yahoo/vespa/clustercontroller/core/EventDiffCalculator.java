@@ -22,25 +22,24 @@ import java.util.List;
  * in the cluster and are output to the Vespa log as well as kept in a circular history
  * buffer per node and for the cluster as a whole.
  */
-// ... class name is a work in progress
 public class EventDiffCalculator {
 
     static class Params {
         ContentCluster cluster;
-        AnnotatedClusterState previousClusterState;
-        AnnotatedClusterState currentClusterState;
+        AnnotatedClusterState fromState;
+        AnnotatedClusterState toState;
         long currentTime;
 
         public Params cluster(ContentCluster cluster) {
             this.cluster = cluster;
             return this;
         }
-        public Params previousClusterState(AnnotatedClusterState clusterState) {
-            this.previousClusterState = clusterState;
+        public Params fromState(AnnotatedClusterState clusterState) {
+            this.fromState = clusterState;
             return this;
         }
-        public Params currentClusterState(AnnotatedClusterState clusterState) {
-            this.currentClusterState = clusterState;
+        public Params toState(AnnotatedClusterState clusterState) {
+            this.toState = clusterState;
             return this;
         }
         public Params currentTimeMs(long time) {
@@ -62,16 +61,16 @@ public class EventDiffCalculator {
     }
 
     private static boolean clusterDownBecause(final Params params, ClusterStateReason reason) {
-        return params.currentClusterState.getClusterStateReason() == reason;
+        return params.toState.getClusterStateReason() == reason;
     }
 
     private static void emitWholeClusterDiffEvent(final Params params, final List<Event> events) {
-        final ClusterState prevState = params.previousClusterState.getClusterState();
-        final ClusterState currentState = params.currentClusterState.getClusterState();
+        final ClusterState fromState = params.fromState.getClusterState();
+        final ClusterState toState = params.toState.getClusterState();
 
-        if (clusterHasTransitionedToUpState(prevState, currentState)) {
+        if (clusterHasTransitionedToUpState(fromState, toState)) {
             events.add(createClusterEvent("Enough nodes available for system to become up", params));
-        } else if (clusterHasTransitionedToDownState(prevState, currentState)) {
+        } else if (clusterHasTransitionedToDownState(fromState, toState)) {
             if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE)) {
                 events.add(createClusterEvent("Too few storage nodes available in cluster. Setting cluster state down", params));
             } else if (clusterDownBecause(params, ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE)) {
@@ -92,23 +91,23 @@ public class EventDiffCalculator {
 
     private static void emitPerNodeDiffEvents(final Params params, final List<Event> events) {
         final ContentCluster cluster = params.cluster;
-        final ClusterState prevState = params.previousClusterState.getClusterState();
-        final ClusterState currentState = params.currentClusterState.getClusterState();
+        final ClusterState fromState = params.fromState.getClusterState();
+        final ClusterState toState = params.toState.getClusterState();
 
         // TODO refactor!
         for (ConfiguredNode node : cluster.getConfiguredNodes().values()) {
             for (NodeType nodeType : NodeType.getTypes()) {
                 final Node n = new Node(nodeType, node.index());
-                final NodeState nodePrev = prevState.getNodeState(n);
-                final NodeState nodeCurr = currentState.getNodeState(n);
-                if (!nodeCurr.equals(nodePrev)) {
+                final NodeState nodeFrom = fromState.getNodeState(n);
+                final NodeState nodeTo = toState.getNodeState(n);
+                if (!nodeTo.equals(nodeFrom)) {
                     final NodeInfo info = cluster.getNodeInfo(n);
                     events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
-                                    nodePrev.toString(true), nodeCurr.toString(true)), params));
+                                    nodeFrom.toString(true), nodeTo.toString(true)), params));
 
                     // TODO refactor!
-                    NodeStateReason prevReason = params.previousClusterState.getNodeStateReasons().get(n);
-                    NodeStateReason currReason = params.currentClusterState.getNodeStateReasons().get(n);
+                    NodeStateReason prevReason = params.fromState.getNodeStateReasons().get(n);
+                    NodeStateReason currReason = params.toState.getNodeStateReasons().get(n);
                     if (prevReason != NodeStateReason.GROUP_IS_DOWN && currReason == NodeStateReason.GROUP_IS_DOWN) {
                         events.add(createNodeEvent(info, "Setting node down as the total availability of its " +
                                 "group is below the configured threshold", params));

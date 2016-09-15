@@ -90,11 +90,6 @@ public class SystemStateGeneratorTest extends TestCase {
         for (int i=0; i<config.nodeCount; ++i) configuredNodes.add(new ConfiguredNode(i, false));
         cluster = new ContentCluster("testcluster", configuredNodes, distribution, 0, 0.0);
         nodeStateChangeHandler = new SystemStateGenerator(clock, eventLog, null);
-        nodeStateChangeHandler.setNodes(cluster.clusterInfo());
-        nodeStateChangeHandler.setStableStateTimePeriod(config.stableStateTime);
-        nodeStateChangeHandler.setMaxPrematureCrashes(config.maxPrematureCrashes);
-        nodeStateChangeHandler.setMaxSlobrokDisconnectGracePeriod(config.maxSlobrokDisconnectPeriod);
-        nodeStateChangeHandler.setMinNodesUp(1, 1, 0, 0);
         params.minStorageNodesUp(1).minDistributorNodesUp(1)
                 .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)
                 .maxPrematureCrashes(config.maxPrematureCrashes)
