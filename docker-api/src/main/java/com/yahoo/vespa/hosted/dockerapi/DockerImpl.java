@@ -105,7 +105,7 @@ public class DockerImpl implements Docker {
         try {
             setupDockerNetworkIfNeeded();
         } catch (Exception e) {
-            throw new RuntimeException("Could not setup docker network");
+            throw new RuntimeException("Could not setup docker network", e);
         }
     }
 
