@@ -7,10 +7,6 @@
 
 #include <iostream>
 
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/checked_delete.hpp>
-
 #include <vespa/filedistribution/common/componentsdeleter.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/zkfiledbmodel.h>
@@ -26,16 +22,13 @@ namespace {
 
 
 struct Fixture {
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
-    boost::shared_ptr<ZKFacade> zk;
-    boost::shared_ptr<ZKFileDBModel> model;
+    std::shared_ptr<ZKFacade> zk;
+    std::shared_ptr<ZKFileDBModel> model;
 
     Fixture() {
-        _exceptionRethrower.reset(new ExceptionRethrower());
-
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", _exceptionRethrower));
+        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));
         zk->setData("/vespa", "", 0);
 
         model = _componentsDeleter.track(new ZKFileDBModel(zk));

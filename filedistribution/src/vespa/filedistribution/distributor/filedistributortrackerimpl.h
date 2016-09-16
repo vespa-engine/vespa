@@ -4,41 +4,38 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent.hpp>
 
-#include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
 
 #include <vespa/filedistribution/model/filedistributionmodel.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include "scheduler.h"
+#include <mutex>
 
 namespace filedistribution {
 class FileDistributionModel;
 class FileDownloader;
 
-class FileDistributorTrackerImpl : public FileDistributionTracker  {
-    const boost::shared_ptr<ExceptionRethrower>  _exceptionRethrower;
-    const boost::shared_ptr<FileDistributionModel> _model;
+using TorrentSP = boost::shared_ptr<libtorrent::torrent>;
 
-    typedef boost::lock_guard<boost::mutex> LockGuard;
-    boost::mutex _mutex;
-    boost::weak_ptr<FileDownloader> _downloader;
+class FileDistributorTrackerImpl : public FileDistributionTracker  {
+    const std::shared_ptr<FileDistributionModel> _model;
+
+    typedef std::lock_guard<std::mutex> LockGuard;
+    std::mutex _mutex;
+    std::weak_ptr<FileDownloader> _downloader;
 
     //Use separate worker thread to avoid potential deadlock
     //between tracker requests and files to download changed requests.
     boost::scoped_ptr<Scheduler> _scheduler;
 public:
-    FileDistributorTrackerImpl(const boost::shared_ptr<FileDistributionModel>& model,
-                               const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower);
+    FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model);
 
     virtual ~FileDistributorTrackerImpl();
 
     //overrides
-    void trackingRequest(libtorrent::tracker_request& request,
-        const boost::shared_ptr<libtorrent::torrent> & torrent);
+    void trackingRequest(libtorrent::tracker_request& request, const TorrentSP & torrent);
 
-    void setDownloader(const boost::shared_ptr<FileDownloader>& downloader);
+    void setDownloader(const std::shared_ptr<FileDownloader>& downloader);
 };
 
 } //namespace filedistribution

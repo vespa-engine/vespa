@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vector>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 #include <boost/multi_index_container.hpp>
@@ -15,7 +15,6 @@
 #include <vespa/filedistribution/rpc/fileprovider.h>
 #include "hostname.h"
 #include <vespa/filedistribution/common/buffer.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/common/exception.h>
 #include <vespa/filedistribution/model/filedbmodel.h>
 
@@ -40,14 +39,15 @@ class FileDownloader
     };
 
     size_t _outstanding_SRD_requests;
-    boost::shared_ptr<FileDistributionTracker> _tracker;
+    std::shared_ptr<FileDistributionTracker> _tracker;
 
-    boost::mutex _modifyTorrentsDownloadingMutex;
-    typedef boost::lock_guard<boost::mutex> LockGuard;
+    std::mutex _modifyTorrentsDownloadingMutex;
+    typedef std::lock_guard<std::mutex> LockGuard;
 
     LogSessionDeconstructed _logSessionDeconstructed;
     //session is safe to use from multiple threads.
     libtorrent::session _session;
+    std::atomic<bool> _closed;
 
     const boost::filesystem::path _dbPath;
     typedef std::vector<char> ResumeDataBuffer;
@@ -65,10 +65,9 @@ public:
     typedef FileProvider::DownloadCompletedSignal DownloadCompletedSignal;
     typedef FileProvider::DownloadFailedSignal DownloadFailedSignal;
 
-    FileDownloader(const boost::shared_ptr<FileDistributionTracker>& tracker,
+    FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                    const std::string& hostName, int port,
-                   const boost::filesystem::path& dbPath,
-                   const boost::shared_ptr<ExceptionRethrower>& exceptionRethrower);
+                   const boost::filesystem::path& dbPath);
     ~FileDownloader();
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
@@ -83,8 +82,8 @@ public:
     std::string infoHash2FileReference(const libtorrent::sha1_hash& hash);
     void setMaxDownloadSpeed(double MBPerSec);
     void setMaxUploadSpeed(double MBPerSec);
-
-    const boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
+    void close();
+    bool closed() const;
 
     const std::string _hostName;
     const int _port;

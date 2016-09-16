@@ -3,18 +3,17 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 
 
 namespace filedistribution {
 
 class Scheduler {
 public:
-    class Task : public boost::enable_shared_from_this<Task> {
+    class Task : public std::enable_shared_from_this<Task> {
         boost::asio::deadline_timer _timer;
     public:
-        typedef boost::shared_ptr<Task> SP;
+        typedef std::shared_ptr<Task> SP;
 
         Task(Scheduler& scheduler);
 
@@ -34,12 +33,12 @@ private:
     //keeps io_service.run() from exiting until it has been destructed,
     //see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/io_service.html
     boost::asio::io_service::work _keepAliveWork;
-    boost::thread _workerThread;
+    std::thread _workerThread;
 
 public:
     Scheduler(const Scheduler &) = delete;
     Scheduler & operator = (const Scheduler &) = delete;
-    Scheduler(boost::function<void (boost::asio::io_service&)> callRun) ;
+    Scheduler(std::function<void (boost::asio::io_service&)> callRun) ;
     ~Scheduler();
 };
 
