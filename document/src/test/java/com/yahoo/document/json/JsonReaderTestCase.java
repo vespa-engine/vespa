@@ -29,8 +29,14 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.update.*;
+import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
@@ -61,7 +67,6 @@ import static org.junit.Assert.*;
  * Basic test of JSON streams to Vespa document instances.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author vegard
  */
 public class JsonReaderTestCase {
     DocumentTypeManager types;
