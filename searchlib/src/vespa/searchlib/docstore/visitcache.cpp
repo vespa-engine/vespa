@@ -170,11 +170,8 @@ VisitCache::Cache::locateAndInvalidateOtherSubsets(const vespalib::LockGuard & c
     // So for that reason we will just merge this one to get testing started. 
     // The final fix will come in 2 days.
     IdSet otherSubSets = findSetsContaining(cacheGuard, keys);
-    assert(otherSubSets.size() <= 1);
-    if (! otherSubSets.empty()) {
-        K oldKeys = _id2KeySet[*otherSubSets.begin()];
-        assert(keys.contains(oldKeys));
-        invalidate(cacheGuard, oldKeys);
+    for (uint64_t keyId : otherSubSets) {
+        invalidate(cacheGuard, _id2KeySet[keyId]);
     }
 }
 
