@@ -190,4 +190,53 @@ public interface FieldWriter extends Serializer {
      */
     void write(FieldBase field, AnnotationReference value);
 
+    /*
+     * The Serializer interface is not strictly needed when implementing FieldWriter.
+     * Instead of removing the 'extends Serializer', failing default-implementations are given.
+     */
+
+    @Override
+    default Serializer putByte(FieldBase field, byte value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer putShort(FieldBase field, short value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer putInt(FieldBase field, int value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer putLong(FieldBase field, long value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer putFloat(FieldBase field, float value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer putDouble(FieldBase field, double value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer put(FieldBase field, byte[] value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer put(FieldBase field, ByteBuffer value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
+
+    @Override
+    default Serializer put(FieldBase field, String value) {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
 }
