@@ -375,7 +375,7 @@ ZKFacade::getData(const Path& path, const NodeChangedWatcherSP& watcher) {
 
     } catch (const ZKException & e) {
         unregisterWatcher(watcherContext);
-        throw e;
+        throw;
     }
 }
 
@@ -452,7 +452,7 @@ ZKFacade::hasNode(const Path& path, const NodeChangedWatcherSP& watcher) {
 
     } catch (const ZKException &e) {
         unregisterWatcher(watcherContext);
-        throw e;
+        throw;
     }
 }
 
@@ -556,7 +556,7 @@ ZKFacade::getChildren(const Path& path, const NodeChangedWatcherSP& watcher) {
         return result;
     } catch (const ZKException & e) {
         unregisterWatcher(watcherContext);
-        throw e;
+        throw;
     }
 }
 
