@@ -33,7 +33,8 @@ public class HasStateReasonForNode extends ArgumentMatcher<Map<Node, NodeStateRe
 
     @Override
     public void describeMismatch(Object item, Description description) {
-        Map other = (Map)item;
+        @SuppressWarnings("unchecked")
+        Map<Node, NodeStateReason> other = (Map<Node, NodeStateReason>)item;
         if (other.containsKey(node)) {
             description.appendText(String.format("has reason %s", other.get(node).toString()));
         } else {

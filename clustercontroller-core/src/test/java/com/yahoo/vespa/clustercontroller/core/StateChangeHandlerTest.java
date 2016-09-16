@@ -16,9 +16,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-// TODO rename once SystemStateGenerator has been renamed
-public class SystemStateGeneratorTest extends TestCase {
-    private static final Logger log = Logger.getLogger(SystemStateGeneratorTest.class.getName());
+// TODO rename once StateChangeHandler has been renamed
+public class StateChangeHandlerTest extends TestCase {
+    private static final Logger log = Logger.getLogger(StateChangeHandlerTest.class.getName());
     class Config {
         int nodeCount = 3;
         int stableStateTime = 1000 * 60000;
@@ -76,7 +76,7 @@ public class SystemStateGeneratorTest extends TestCase {
     private Set<ConfiguredNode> configuredNodes = new TreeSet<>();
     private Config config;
     private ContentCluster cluster;
-    private SystemStateGenerator nodeStateChangeHandler;
+    private StateChangeHandler nodeStateChangeHandler;
     private TestNodeStateOrHostInfoChangeHandler nodeStateUpdateListener;
     private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
@@ -89,7 +89,7 @@ public class SystemStateGeneratorTest extends TestCase {
         this.config = config;
         for (int i=0; i<config.nodeCount; ++i) configuredNodes.add(new ConfiguredNode(i, false));
         cluster = new ContentCluster("testcluster", configuredNodes, distribution, 0, 0.0);
-        nodeStateChangeHandler = new SystemStateGenerator(clock, eventLog, null);
+        nodeStateChangeHandler = new StateChangeHandler(clock, eventLog, null);
         params.minStorageNodesUp(1).minDistributorNodesUp(1)
                 .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)
                 .maxPrematureCrashes(config.maxPrematureCrashes)
