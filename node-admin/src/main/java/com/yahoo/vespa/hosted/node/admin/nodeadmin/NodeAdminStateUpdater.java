@@ -45,7 +45,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             Orchestrator orchestrator,
             String dockerHostHostName) {
         scheduler.scheduleWithFixedDelay(
-                ()-> fetchContainersToRunFromNodeRepository(nodeRepository),
+                ()-> fetchContainersToRunFromNodeRepository(),
                 initialSchedulerDelayMillis,
                 intervalSchedulerInMillis,
                 MILLISECONDS);
@@ -98,7 +98,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         }
     }
 
-    private void fetchContainersToRunFromNodeRepository(final NodeRepository nodeRepository) {
+    /**
+     * This is exposed public only for testing.
+     */
+    public void fetchContainersToRunFromNodeRepository() {
         synchronized (monitor) {
             if (nodeAdmin.isFrozen()) {
                 logger.info("Frozen, skipping fetching info from node repository");
