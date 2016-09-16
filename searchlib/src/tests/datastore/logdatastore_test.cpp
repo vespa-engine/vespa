@@ -571,6 +571,13 @@ TEST("test that the integrated visit cache works.") {
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19167));
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 19750));
+
+    vcs.verifyVisit({41, 42}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, 20044));
+    vcs.verifyVisit({43, 44}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, 20348));
+    vcs.verifyVisit({41, 42, 43, 44}, true);
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, 20168));
 }
 
 TEST("testWriteRead") {
