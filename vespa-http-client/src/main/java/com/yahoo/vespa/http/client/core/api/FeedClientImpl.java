@@ -11,6 +11,7 @@ import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
@@ -52,7 +53,8 @@ public class FeedClientImpl implements FeedClient {
 
     @Override
     public void close() {
-        while (operationProcessor.getIncompleteResultQueueSize() > 0) {
+        Instant startTime = Instant.now();
+        while (operationProcessor.getIncompleteResultQueueSize() > 0 && startTime.plusSeconds(30).isAfter(Instant.now())) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
