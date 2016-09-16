@@ -528,8 +528,8 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_EQUAL(hits, cs.hits);
     EXPECT_EQUAL(misses, cs.misses);
     EXPECT_EQUAL(elements, cs.elements);
-    EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 10);  // We allow +- 10 as visitorder and hence compressability is non-deterministic.
-    EXPECT_GREATER_EQUAL(memory_used+10,  cs.memory_used);
+    EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 20);  // We allow +- 20 as visitorder and hence compressability is non-deterministic.
+    EXPECT_GREATER_EQUAL(memory_used+20,  cs.memory_used);
 }
 
 TEST("test that the integrated visit cache works.") {
