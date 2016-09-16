@@ -29,8 +29,8 @@ su -c "mkdir -p $DIR/../.ccache" - $USERNAME
 su -c "ln -sf $DIR/../.ccache \$HOME/.ccache" - $USERNAME
 
 su -c "mkdir -p $DIR/../.m2" - $USERNAME
-su -c "ln -sf $DIR/../.m2 $HOME/.m2" - $USERNAME
+su -c "ln -sf $DIR/../.m2 \$HOME/.m2" - $USERNAME
 
 cd $DIR/.. 
-su -c "cd $DIR/.. && /bin/bash" - $USERNAME
+su $USERNAME
 
