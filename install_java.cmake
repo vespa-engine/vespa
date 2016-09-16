@@ -166,7 +166,6 @@ install(FILES
     document/src/vespa/document/config/documenttypes.def
     documentapi/src/main/resources/configdefinitions/documentrouteselectorpolicy.def
     fileacquirer/src/main/resources/configdefinitions/filedistributorrpc.def
-    fileacquirer/src/vespa/fileacquirer/filedistributorrpc.def
     filedistribution/src/vespa/filedistribution/distributor/filedistributor.def
     filedistribution/src/vespa/filedistribution/model/filereferences.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.client.http-client.def
