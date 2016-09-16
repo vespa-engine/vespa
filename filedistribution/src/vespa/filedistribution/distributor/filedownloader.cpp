@@ -214,8 +214,9 @@ FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& t
      _hostName(hostName),
      _port(port)
 {
-    if (!fs::exists(_dbPath))
+    if (!fs::exists(_dbPath)) {
         fs::create_directories(_dbPath);
+    }
     addNewDbFiles(_dbPath);
 
     _session.set_settings(createSessionSettings());
