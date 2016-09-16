@@ -185,13 +185,10 @@ public class ClusterSearcher extends Searcher {
      * Returns false if this host is local.
      */
     boolean isRemote(String host) throws UnknownHostException {
-        InetAddress dispatchHost = InetAddress.getByName(host);
-        if (dispatchHost.isLoopbackAddress()) {
+        if (InetAddress.getByName(host).isLoopbackAddress())
             return false;
-        } else {
-            String localName = HostName.getLocalhost();
-            return !localName.equals(dispatchHost.getCanonicalHostName());
-        }
+        else
+            return !host.equals(HostName.getLocalhost());
     }
 
     private static ClusterParams makeClusterParams(int searchclusterIndex,
