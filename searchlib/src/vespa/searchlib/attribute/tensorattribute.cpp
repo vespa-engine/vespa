@@ -6,6 +6,7 @@
 #include <vespa/vespalib/tensor/tensor.h>
 #include "tensorattributesaver.h"
 
+using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorMapper;
 
@@ -36,10 +37,19 @@ public:
 };
 
 Tensor::UP
-createEmptyTensor(const TensorMapper &mapper)
+createEmptyTensor(const TensorMapper *mapper)
 {
     vespalib::tensor::DefaultTensor::builder builder;
-    return mapper.map(*builder.build());
+    if (mapper != nullptr) {
+        return mapper->map(*builder.build());
+    }
+    return builder.build();
+}
+
+bool
+shouldCreateMapper(const ValueType &tensorType)
+{
+    return tensorType.is_tensor() && !tensorType.dimensions().empty();
 }
 
 }
@@ -52,9 +62,12 @@ TensorAttribute::TensorAttribute(const vespalib::stringref &baseFileName,
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(),
-      _tensorMapper(cfg.tensorType()),
+      _tensorMapper(),
       _compactGeneration(0)
 {
+    if (shouldCreateMapper(cfg.tensorType())) {
+        _tensorMapper = std::make_unique<TensorMapper>(cfg.tensorType());
+    }
 }
 
 
@@ -172,8 +185,7 @@ TensorAttribute::setTensor(DocId docId, const Tensor &tensor)
     updateUncommittedDocIdLimit(docId);
     // TODO: Handle generic tensor attribute in a better way ?
     RefType ref = _tensorStore.setTensor(
-            getConfig().tensorType().is_tensor() ?
-            *_tensorMapper.map(tensor) : tensor);
+            (_tensorMapper ? *_tensorMapper->map(tensor) : tensor));
     // TODO: validate if following fence is sufficient.
     std::atomic_thread_fence(std::memory_order_release);
     // TODO: Check if refVector must consist of std::atomic<RefType>
@@ -197,7 +209,7 @@ TensorAttribute::getTensor(DocId docId) const
 Tensor::UP
 TensorAttribute::getEmptyTensor() const
 {
-    return createEmptyTensor(_tensorMapper);
+    return createEmptyTensor(_tensorMapper.get());
 }
 
 void

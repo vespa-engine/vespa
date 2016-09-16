@@ -24,7 +24,7 @@ private:
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore _tensorStore; // data store for serialized tensors
-    vespalib::tensor::TensorMapper _tensorMapper; // mapper to our tensor type
+    std::unique_ptr<vespalib::tensor::TensorMapper> _tensorMapper; // mapper to our tensor type
     uint64_t    _compactGeneration; // Generation when last compact occurred
 
     void compactWorst();
