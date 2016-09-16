@@ -3,9 +3,7 @@
 #define BOOST_TEST_MAIN
 #include <vespa/fastos/fastos.h>
 #include <boost/test/unit_test.hpp>
-#include <boost/foreach.hpp>
 
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/filedistributionmodelimpl.h>

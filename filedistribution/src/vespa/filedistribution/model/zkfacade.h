@@ -3,13 +3,12 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
-#include <boost/enable_shared_from_this.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
-#include <vespa/filedistribution/common/exceptionrethrower.h>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
@@ -59,11 +58,10 @@ diagnosticUserLevelMessage(const ZKException& zk);
 
 
 
-class ZKFacade : public boost::enable_shared_from_this<ZKFacade> {
+class ZKFacade : public std::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;
     volatile bool _watchersEnabled;
 
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     zhandle_t* _zhandle;
     const static int _zkSessionTimeOut = 30 * 1000;
     const static size_t _maxDataSize = 1024 * 1024;
@@ -71,7 +69,7 @@ class ZKFacade : public boost::enable_shared_from_this<ZKFacade> {
     class ZKWatcher;
     static void stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context);
 public:
-    typedef boost::shared_ptr<ZKFacade> SP;
+    typedef std::shared_ptr<ZKFacade> SP;
 
     /* Lifetime is managed by ZKFacade.
        Derived classes should only contain weak_ptrs to other objects
@@ -86,12 +84,12 @@ public:
         virtual void operator()() = 0;
     };
 
-    typedef boost::shared_ptr<NodeChangedWatcher> NodeChangedWatcherSP;
+    typedef std::shared_ptr<NodeChangedWatcher> NodeChangedWatcherSP;
     typedef boost::filesystem::path Path;
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;
-    ZKFacade(const std::string& zkservers, const boost::shared_ptr<ExceptionRethrower> &);
+    ZKFacade(const std::string& zkservers);
     ~ZKFacade();
 
     bool hasNode(const Path&);
@@ -125,11 +123,11 @@ public:
 
 private:
     void* registerWatcher(const NodeChangedWatcherSP &); //returns watcherContext
-    boost::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
+    std::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
     void invokeWatcher(void* watcherContext);
 
-    boost::mutex _watchersMutex;
-    typedef std::map<void*, boost::shared_ptr<ZKWatcher> > WatchersMap;
+    std::mutex _watchersMutex;
+    typedef std::map<void*, std::shared_ptr<ZKWatcher> > WatchersMap;
     WatchersMap _watchers;
 };
 

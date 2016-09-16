@@ -8,7 +8,6 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/checked_delete.hpp>
 
 #include <vespa/filedistribution/common/componentsdeleter.h>
@@ -17,7 +16,7 @@
 #include <zookeeper/zookeeper.h>
 
 
-
+using namespace std::literals;
 using namespace filedistribution;
 
 namespace {
@@ -35,16 +34,13 @@ struct Watcher : public ZKFacade::NodeChangedWatcher {
 };
 
 struct Fixture {
-    boost::shared_ptr<ExceptionRethrower> _exceptionRethrower;
     ComponentsDeleter _componentsDeleter;
-    boost::shared_ptr<ZKFacade> zk;
+    std::shared_ptr<ZKFacade> zk;
     ZKFacade::Path testNode;
 
     Fixture() {
-        _exceptionRethrower.reset(new ExceptionRethrower());
-
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181", _exceptionRethrower));
+        zk = _componentsDeleter.track(new ZKFacade("test1-tonyv:2181"));
 
         testNode = "/test-node";
         zk->removeIfExists(testNode);
@@ -74,7 +70,7 @@ BOOST_AUTO_TEST_CASE(hasNode)
 
 BOOST_AUTO_TEST_CASE(hasNodeNotification)
 {
-    boost::shared_ptr<Watcher> watcher(new Watcher);
+    std::shared_ptr<Watcher> watcher(new Watcher);
 
     zk->hasNode(testNode, watcher);
     zk->setData(testNode, "", 0);
@@ -82,7 +78,7 @@ BOOST_AUTO_TEST_CASE(hasNodeNotification)
 
     //after the notification has returned, the watcher must no longer reside in watchers map.
     for (int i=0; i<20 && !watcher.unique(); ++i)  {
-        boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
     }
     BOOST_CHECK(watcher.unique());
 }
@@ -156,8 +152,7 @@ BOOST_AUTO_TEST_CASE(addEphemeralNode)
     zk->removeIfExists(ephemeralNode);
 
     //Checked deleter is ok here since we're not installing any watchers
-    ZKFacade::SP zk2(new ZKFacade("test1-tonyv:2181", _exceptionRethrower),
-                     boost::checked_deleter<ZKFacade>());
+    ZKFacade::SP zk2(new ZKFacade("test1-tonyv:2181"), boost::checked_deleter<ZKFacade>());
     zk2->addEphemeralNode(ephemeralNode);
 
     BOOST_CHECK(zk->hasNode(ephemeralNode));
@@ -169,7 +164,7 @@ BOOST_AUTO_TEST_CASE(addEphemeralNode)
 
 BOOST_AUTO_TEST_CASE(dataChangedNotification)
 {
-    boost::shared_ptr<Watcher> watcher(new Watcher);
+    std::shared_ptr<Watcher> watcher(new Watcher);
 
     zk->setData(testNode, "", 0);
     Buffer buffer(zk->getData(testNode, watcher));
@@ -182,7 +177,7 @@ BOOST_AUTO_TEST_CASE(dataChangedNotification)
 
 BOOST_AUTO_TEST_CASE(getChildrenNotification)
 {
-    boost::shared_ptr<Watcher> watcher(new Watcher);
+    std::shared_ptr<Watcher> watcher(new Watcher);
 
     zk->setData(testNode, "", 0);
     zk->getChildren(testNode, watcher);
@@ -194,9 +189,9 @@ BOOST_AUTO_TEST_CASE(getChildrenNotification)
 BOOST_AUTO_TEST_CASE(require_that_zkfacade_can_be_deleted_from_callback)
 {
     struct DeleteZKFacadeWatcher : public Watcher {
-        boost::shared_ptr<ZKFacade> _zk;
+        std::shared_ptr<ZKFacade> _zk;
 
-        DeleteZKFacadeWatcher(const boost::shared_ptr<ZKFacade>& zk)
+        DeleteZKFacadeWatcher(const std::shared_ptr<ZKFacade>& zk)
             :_zk(zk)
         {}
 
@@ -207,7 +202,7 @@ BOOST_AUTO_TEST_CASE(require_that_zkfacade_can_be_deleted_from_callback)
         }
     };
 
-    boost::shared_ptr<Watcher> watcher((Watcher*)new DeleteZKFacadeWatcher(zk));
+    std::shared_ptr<Watcher> watcher((Watcher*)new DeleteZKFacadeWatcher(zk));
 
     zk->setData(testNode, "", 0);
     zk->getData(testNode, watcher);

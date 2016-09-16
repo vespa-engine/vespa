@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include "scheduler.h"
-
-#include <boost/bind.hpp>
-
 #include <iostream>
 
 namespace asio = boost::asio;
@@ -19,7 +16,8 @@ void
 Task::schedule(asio::deadline_timer::duration_type delay)
 {
     _timer.expires_from_now(delay);
-    _timer.async_wait(boost::bind(&Task::handle, shared_from_this(), _1));
+    std::shared_ptr<Task> self = shared_from_this();;
+    _timer.async_wait([self](const auto & e) { self->handle(e); });
 }
 
 void
@@ -36,14 +34,13 @@ Task::handle(const boost::system::error_code& code) {
 }
 
 
-Scheduler::Scheduler(boost::function<void (asio::io_service&)> callRun)
+Scheduler::Scheduler(std::function<void (asio::io_service&)> callRun)
     :_keepAliveWork(ioService),
-     _workerThread(boost::bind(callRun, boost::ref(ioService)))
+     _workerThread([&, callRun]() { callRun(ioService); })
 {}
 
 Scheduler::~Scheduler() {
     ioService.stop();
-    _workerThread.interrupt();
     _workerThread.join();
     ioService.reset();
 }

@@ -9,17 +9,16 @@
 #include <cassert>
 #include <cstdio>
 #include <sstream>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
+#include <thread>
 #include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
-#include <boost/thread.hpp>
 
 #include <zookeeper/zookeeper.h>
 #include <vespa/filedistribution/common/logfwd.h>
 #include <vespa/defaults.h>
+#include <vespa/vespalib/util/sync.h>
 
-typedef boost::unique_lock<boost::mutex> UniqueLock;
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 using filedistribution::ZKFacade;
 using filedistribution::Move;
@@ -136,11 +135,11 @@ setDataForExistingFile(ZKFacade& zk, const Path& path, const char* buffer, int l
 
 /********** Active watchers *******************************************/
 struct ZKFacade::ZKWatcher {
-    const boost::weak_ptr<ZKFacade> _owner;
+    const std::weak_ptr<ZKFacade> _owner;
     const NodeChangedWatcherSP _nodeChangedWatcher;
 
     ZKWatcher(
-        const boost::shared_ptr<ZKFacade> &owner,
+        const std::shared_ptr<ZKFacade> &owner,
         const NodeChangedWatcherSP& nodeChangedWatcher )
     :_owner(owner),
     _nodeChangedWatcher(nodeChangedWatcher)
@@ -170,7 +169,7 @@ struct ZKFacade::ZKWatcher {
         //this will cause infinite waiting.
         //To avoid this, a custom shared_ptr deleter using a separate deleter thread must be used.
 
-        if (boost::shared_ptr<ZKFacade> zk = self->_owner.lock()) {
+        if (std::shared_ptr<ZKFacade> zk = self->_owner.lock()) {
             zk->invokeWatcher(watcherContext);
         }
 
@@ -181,15 +180,15 @@ struct ZKFacade::ZKWatcher {
 void
 ZKFacade::stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context) {
     (void)path;
+    (void)context;
 
     //The ZKFacade won't expire before zookeeper_close has finished.
-    ZKFacade* self = (ZKFacade*)context;
     if (type == ZOO_SESSION_EVENT) {
         LOGFWD(debug, "Zookeeper session event: %d", state);
         if (state == ZOO_EXPIRED_SESSION_STATE) {
-            self->_exceptionRethrower->store(ZKSessionExpired());
+            throw ZKSessionExpired();
         } else if (state == ZOO_AUTH_FAILED_STATE) {
-            self->_exceptionRethrower->store(ZKGenericException(ZNOAUTH));
+            throw ZKGenericException(ZNOAUTH);
         }
     } else {
         LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
@@ -201,21 +200,21 @@ void* /* watcherContext */
 ZKFacade::registerWatcher(const NodeChangedWatcherSP& watcher) {
 
     UniqueLock lock(_watchersMutex);
-    boost::shared_ptr<ZKWatcher> zkWatcher(new ZKWatcher(shared_from_this(), watcher));
+    std::shared_ptr<ZKWatcher> zkWatcher(new ZKWatcher(shared_from_this(), watcher));
     _watchers[zkWatcher.get()] = zkWatcher;
     return zkWatcher.get();
 }
 
 
-boost::shared_ptr<ZKFacade::ZKWatcher>
+std::shared_ptr<ZKFacade::ZKWatcher>
 ZKFacade::unregisterWatcher(void* watcherContext) {
     UniqueLock lock(_watchersMutex);
 
     WatchersMap::iterator i = _watchers.find(watcherContext);
     if (i == _watchers.end()) {
-        return boost::shared_ptr<ZKWatcher>();
+        return std::shared_ptr<ZKWatcher>();
     } else {
-        boost::shared_ptr<ZKWatcher> result = i->second;
+        std::shared_ptr<ZKWatcher> result = i->second;
         _watchers.erase(i);
         return result;
     }
@@ -223,30 +222,24 @@ ZKFacade::unregisterWatcher(void* watcherContext) {
 
 void
 ZKFacade::invokeWatcher(void* watcherContext) {
-    try {
-        boost::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
+    std::shared_ptr<ZKWatcher> watcher = unregisterWatcher(watcherContext);
 
-        if (!_watchersEnabled)
-            return;
+    if (!_watchersEnabled)
+        return;
 
-        if (watcher) {
-            (*watcher->_nodeChangedWatcher)();
-        } else {
-            LOGFWD(error, "Invoke called on expired watcher.");
-        }
-    } catch(...) {
-        _exceptionRethrower->store(boost::current_exception());
+    if (watcher) {
+        (*watcher->_nodeChangedWatcher)();
+    } else {
+        LOGFWD(error, "Invoke called on expired watcher.");
     }
 }
 
 /********** End live watchers ***************************************/
 
 
-ZKFacade::ZKFacade(const std::string& zkservers,
-        const boost::shared_ptr<ExceptionRethrower> &exceptionRethrower)
+ZKFacade::ZKFacade(const std::string& zkservers)
     :_retriesEnabled(true),
      _watchersEnabled(true),
-     _exceptionRethrower(exceptionRethrower),
      _zhandle(zookeeper_init(zkservers.c_str(),
                              &ZKFacade::stateWatchingFun,
                              _zkSessionTimeOut,
@@ -262,14 +255,15 @@ ZKFacade::ZKFacade(const std::string& zkservers,
 ZKFacade::~ZKFacade() {
     disableRetries();
     _watchersEnabled = false;
-
-    boost::thread shutdownCaller(zookeeper_close, _zhandle);
-    if (shutdownCaller.timed_join(boost::posix_time::seconds(120))) {
+    vespalib::Gate done;
+    std::thread closer([&done, zhandle=_zhandle] () { zookeeper_close(zhandle); done.countDown(); });
+    if ( done.await(50*1000) ) {
         LOGFWD(debug, "Zookeeper connection closed successfully.");
     } else {
-        LOGFWD(info, "Timed out waiting for the zookeeper connection to shut down.");
+        LOGFWD(error, "Not able to close down zookeeper. Dumping core so you can figure out what is wrong");
         abort();
     }
+    closer.join();
 }
 
 const std::string
@@ -445,13 +439,9 @@ ZKFacade::addEphemeralNode(const Path& path) {
 
 void
 ZKFacade::remove(const Path& path) {
-    namespace ll = boost::lambda;
-
     std::vector< std::string > children = getChildren(path);
     if (!children.empty()) {
-        std::for_each(children.begin(), children.end(),
-                      ll::bind(&ZKFacade::remove, this,
-                              ll::ret<Path>(path / ll::_1)));
+        std::for_each(children.begin(), children.end(), [&](const std::string & s){ remove(path / s); });
     }
 
     try {
@@ -493,12 +483,9 @@ ZKFacade::retainOnly(const Path& path, const std::vector<std::string>& childrenT
     Children toPreserveSorted(childrenToPreserve);
     std::sort(toPreserveSorted.begin(), toPreserveSorted.end());
 
-    namespace ll = boost::lambda;
     std::set_difference(current.begin(), current.end(),
                         toPreserveSorted.begin(), toPreserveSorted.end(),
-                        boost::make_function_output_iterator(
-                                ll::bind(&ZKFacade::remove, this,
-                                        ll::ret<Path>(path / ll::_1))));
+                        boost::make_function_output_iterator([&](const std::string & s){ remove(path / s); }));
 }
 
 std::vector< std::string >
