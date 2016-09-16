@@ -4,22 +4,24 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.jrt.Spec;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 
 import java.util.*;
 import java.util.logging.Logger;
-import java.text.ParseException;
-import java.util.stream.Collectors;
 
 /**
- * This class get node state updates and uses them to decide the cluster state.
+ * This class gets node state updates and timer events and uses these to decide
+ * whether a new cluster state should be generated.
+ *
+ * TODO refactor logic out into smaller, separate components. Still state duplication
+ * between ClusterStateGenerator and StateChangeHandler, especially for temporal
+ * state transition configuration parameters.
  */
-public class SystemStateGenerator {
+public class StateChangeHandler {
 
-    private static Logger log = Logger.getLogger(SystemStateGenerator.class.getName());
+    private static Logger log = Logger.getLogger(StateChangeHandler.class.getName());
 
     private final Timer timer;
     private final EventLogInterface eventLog;
@@ -37,7 +39,7 @@ public class SystemStateGenerator {
     /**
      * @param metricUpdater may be null, in which case no metrics will be recorded.
      */
-    public SystemStateGenerator(Timer timer, EventLogInterface eventLog, MetricUpdater metricUpdater) {
+    public StateChangeHandler(Timer timer, EventLogInterface eventLog, MetricUpdater metricUpdater) {
         this.timer = timer;
         this.eventLog = eventLog;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 5000);
@@ -96,13 +98,13 @@ public class SystemStateGenerator {
         this.isMaster = isMaster;
     }
 
+    public void setMaxTransitionTime(Map<NodeType, Integer> map) { maxTransitionTime = map; }
+    public void setMaxInitProgressTime(int millisecs) { maxInitProgressTime = millisecs; }
     public void setMaxSlobrokDisconnectGracePeriod(int millisecs) {
         maxSlobrokDisconnectGracePeriod = millisecs;
     }
-
-    public void setStableStateTimePeriod(long millisecs) {
-        stableStateTimePeriod = millisecs;
-    }
+    public void setStableStateTimePeriod(long millisecs) { stableStateTimePeriod = millisecs; }
+    public void setMaxPrematureCrashes(int count) { maxPrematureCrashes = count; }
 
     // TODO nodeListener is only used via decideNodeStateGivenReportedState -> handlePrematureCrash
     // TODO this will recursively invoke proposeNewNodeState, which will presumably (i.e. hopefully) be a no-op...
@@ -112,7 +114,7 @@ public class SystemStateGenerator {
                                            final NodeStateOrHostInfoChangeHandler nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        log.log(currentState.equals(reportedState) && node.getVersion() == 0 ? LogLevel.SPAM : LogLevel.INFO,
+        log.log(currentState.equals(reportedState) && node.getVersion() == 0 ? LogLevel.SPAM : LogLevel.DEBUG,
                 "Got nodestate reply from " + node + ": "
                 + node.getReportedState().getTextualDifference(reportedState) + " (Current state is " + currentState.toString(true) + ")");
         final long currentTime = timer.getCurrentTimeInMillis();
@@ -266,37 +268,17 @@ public class SystemStateGenerator {
             final NodeState currentStateInSystem = currentClusterState.getNodeState(node.getNode());
             final NodeState lastReportedState = node.getReportedState();
 
+            triggeredAnyTimers = reportDownIfOutdatedSlobrokNode(
+                    currentClusterState, nodeListener, currentTime, node, lastReportedState);
 
-            // If we haven't had slobrok contact in a given amount of time and node is still not considered down,
-            // mark it down.
-            if (node.isRpcAddressOutdated()
-                && !lastReportedState.getState().equals(State.DOWN)
-                && node.getRpcAddressOutdatedTimestamp() + maxSlobrokDisconnectGracePeriod <= currentTime)
-            {
-                StringBuilder sb = new StringBuilder().append("Set node down as it has been out of slobrok for ")
-                        .append(currentTime - node.getRpcAddressOutdatedTimestamp()).append(" ms which is more than the max limit of ")
-                        .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
-                node.abortCurrentNodeStateRequests();
-                NodeState state = lastReportedState.clone();
-                state.setState(State.DOWN);
-                if (!state.hasDescription()) state.setDescription(sb.toString());
-                eventLog.add(new NodeEvent(node, sb.toString(), NodeEvent.Type.CURRENT, currentTime), isMaster);
-                handleNewReportedNodeState(currentClusterState, node, state.clone(), nodeListener);
-                node.setReportedState(state, currentTime);
-                triggeredAnyTimers = true;
-            }
-
-            // If node is still unavailable after transition time, trigger state regeneration to mark it down
-            if (currentStateInSystem.getState().equals(State.MAINTENANCE)
-                && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
-                && (lastReportedState.getState().equals(State.DOWN) || node.isRpcAddressOutdated())
-                && node.getTransitionTime() + maxTransitionTime.get(node.getNode().getType()) < currentTime)
+            if (nodeStillUnavailableAfterTransitionTimeExceeded(
+                    currentTime, node, currentStateInSystem, lastReportedState))
             {
                 eventLog.add(new NodeEvent(node, (currentTime - node.getTransitionTime())
-                        + " milliseconds without contact. Marking node down.", NodeEvent.Type.CURRENT, currentTime), isMaster);
+                        + " milliseconds without contact. Marking node down.",
+                        NodeEvent.Type.CURRENT, currentTime), isMaster);
                 triggeredAnyTimers = true;
             }
-
 
             // TODO should we handle in baseline? handlePrematureCrash sets wanted state, so might not be needed
             // TODO ---> yes, always want to set it down/maintenance even if #max crash has not been reached
@@ -315,21 +297,11 @@ public class SystemStateGenerator {
                 triggeredAnyTimers = true;
             }
 
-
-
-            if (node.getUpStableStateTime() + stableStateTimePeriod <= currentTime
-                && lastReportedState.getState().equals(State.UP)
-                && node.getPrematureCrashCount() <= maxPrematureCrashes
-                && node.getPrematureCrashCount() != 0)
-            {
+            if (mayResetCrashCounterOnStableUpNode(currentTime, node, lastReportedState)) {
                 node.setPrematureCrashCount(0);
                 log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been up for a long time.");
                 triggeredAnyTimers = true;
-            } else if (node.getDownStableStateTime() + stableStateTimePeriod <= currentTime
-                && lastReportedState.getState().equals(State.DOWN)
-                && node.getPrematureCrashCount() <= maxPrematureCrashes
-                && node.getPrematureCrashCount() != 0)
-            {
+            } else if (mayResetCrashCounterOnStableDownNode(currentTime, node, lastReportedState)) {
                 node.setPrematureCrashCount(0);
                 log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been down for a long time.");
                 triggeredAnyTimers = true;
@@ -340,6 +312,57 @@ public class SystemStateGenerator {
             stateMayHaveChanged = true;
         }
         return triggeredAnyTimers;
+    }
+
+    private boolean mayResetCrashCounterOnStableDownNode(long currentTime, NodeInfo node, NodeState lastReportedState) {
+        return node.getDownStableStateTime() + stableStateTimePeriod <= currentTime
+            && lastReportedState.getState().equals(State.DOWN)
+            && node.getPrematureCrashCount() <= maxPrematureCrashes
+            && node.getPrematureCrashCount() != 0;
+    }
+
+    private boolean mayResetCrashCounterOnStableUpNode(long currentTime, NodeInfo node, NodeState lastReportedState) {
+        return node.getUpStableStateTime() + stableStateTimePeriod <= currentTime
+            && lastReportedState.getState().equals(State.UP)
+            && node.getPrematureCrashCount() <= maxPrematureCrashes
+            && node.getPrematureCrashCount() != 0;
+    }
+
+    private boolean nodeStillUnavailableAfterTransitionTimeExceeded(
+            long currentTime,
+            NodeInfo node,
+            NodeState currentStateInSystem,
+            NodeState lastReportedState)
+    {
+        return currentStateInSystem.getState().equals(State.MAINTENANCE)
+            && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
+            && (lastReportedState.getState().equals(State.DOWN) || node.isRpcAddressOutdated())
+            && node.getTransitionTime() + maxTransitionTime.get(node.getNode().getType()) < currentTime;
+    }
+
+    private boolean reportDownIfOutdatedSlobrokNode(ClusterState currentClusterState,
+                                                    NodeStateOrHostInfoChangeHandler nodeListener,
+                                                    long currentTime,
+                                                    NodeInfo node,
+                                                    NodeState lastReportedState)
+    {
+        if (node.isRpcAddressOutdated()
+            && !lastReportedState.getState().equals(State.DOWN)
+            && node.getRpcAddressOutdatedTimestamp() + maxSlobrokDisconnectGracePeriod <= currentTime)
+        {
+            StringBuilder sb = new StringBuilder().append("Set node down as it has been out of slobrok for ")
+                    .append(currentTime - node.getRpcAddressOutdatedTimestamp()).append(" ms which is more than the max limit of ")
+                    .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
+            node.abortCurrentNodeStateRequests();
+            NodeState state = lastReportedState.clone();
+            state.setState(State.DOWN);
+            if (!state.hasDescription()) state.setDescription(sb.toString());
+            eventLog.add(new NodeEvent(node, sb.toString(), NodeEvent.Type.CURRENT, currentTime), isMaster);
+            handleNewReportedNodeState(currentClusterState, node, state.clone(), nodeListener);
+            node.setReportedState(state, currentTime);
+            return true;
+        }
+        return false;
     }
 
     private boolean isControlledShutdown(NodeState state) {

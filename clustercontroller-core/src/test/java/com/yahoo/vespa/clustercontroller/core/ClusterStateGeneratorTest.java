@@ -414,6 +414,17 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:m"));
     }
 
+    // Stopping -> Down is expected and does not indicate an unstable node.
+    @Test
+    public void transition_from_controlled_stop_to_down_does_not_add_to_crash_counter() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(2)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(1, State.STOPPING, "controlled shutdown") // urgh, string matching logic
+                .reportStorageNodeState(1, State.DOWN);
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        assertThat(nodeInfo.getPrematureCrashCount(), equalTo(0));
+    }
+
     @Test
     public void non_observed_storage_node_start_timestamp_is_included_in_state() {
         final NodeState nodeState = new NodeState(NodeType.STORAGE, State.UP);

@@ -437,7 +437,7 @@ public class RpcServerTest extends FleetControllerTest {
         { // Configuration change: Remove the previously retired nodes
             /*
             TODO: Verify current result: version:23 distributor:7 .0.s:d .1.s:d .2.s:d .3.s:d .4.s:d storage:7 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:m
-            TODO: Make this work without stopping/disconnecting (see SystemStateGenerator.setNodes
+            TODO: Make this work without stopping/disconnecting (see StateChangeHandler.setNodes
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));

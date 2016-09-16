@@ -23,7 +23,7 @@ class ClusterFixture {
     public final Distribution distribution;
     public final FakeTimer timer;
     public final EventLogInterface eventLog;
-    public final SystemStateGenerator nodeStateChangeHandler;
+    public final StateChangeHandler nodeStateChangeHandler;
     public final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
     ClusterFixture(ContentCluster cluster, Distribution distribution) {
@@ -35,10 +35,10 @@ class ClusterFixture {
         this.params.cluster(this.cluster);
     }
 
-    SystemStateGenerator createNodeStateChangeHandlerForCluster() {
+    StateChangeHandler createNodeStateChangeHandlerForCluster() {
         final int controllerIndex = 0;
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
-        return new SystemStateGenerator(timer, eventLog, metricUpdater);
+        return new StateChangeHandler(timer, eventLog, metricUpdater);
     }
 
     ClusterFixture bringEntireClusterUp() {

@@ -336,6 +336,6 @@ public class EventDiffCalculatorTest {
                 clusterEventWithDescription("Too low ratio of available distributor nodes. Setting cluster state down")));
     }
 
-    // TODO figure out what to do with events that today are emitted in SystemStateGenerator.watchTimer
+    // TODO figure out what to do with events that today are emitted in StateChangeHandler.watchTimer
 
 }

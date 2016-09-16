@@ -36,7 +36,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     /** Whether this node has been configured to be retired and should therefore always return retired as its wanted state */
     private boolean configuredRetired;
     /**
-     * Node has been observed transitioning from Init -> Down at least once during the last "premature crash count"
+     * Node has been observed transitioning from Init to Down at least once during the last "premature crash count"
      * period. Gets reset whenever the crash count is reset to zero after a period of stability.
      *
      * Flag can also be explicitly toggled by external code, such as if a reported node state
