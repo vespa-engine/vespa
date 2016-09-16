@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static com.yahoo.document.json.JsonTestHelper.inputJson;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -1009,15 +1010,6 @@ public class JsonReaderTestCase {
 
     static ByteArrayInputStream jsonToInputStream(String json) {
         return new ByteArrayInputStream(Utf8.toBytes(json));
-    }
-
-    /**
-     * Convenience method to input JSON without escaping double quotes and newlines
-     * Each parameter represents a line of JSON encoded data
-     * The lines are joined with newline and single quotes are replaced with double quotes
-     */
-    static String inputJson(String... lines) {
-        return Joiner.on("\n").join(lines).replaceAll("'", "\"");
     }
 
     @Test
