@@ -72,6 +72,36 @@ install(FILES
 
 install(FILES
     chain/src/main/resources/configdefinitions/chains.def
+    configdefinitions/src/vespa/application-id.def
+    configdefinitions/src/vespa/attributes.def
+    configdefinitions/src/vespa/cluster-info.def
+    configdefinitions/src/vespa/cluster-list.def
+    configdefinitions/src/vespa/configserver.def
+    configdefinitions/src/vespa/fleetcontroller.def
+    configdefinitions/src/vespa/ilscripts.def
+    configdefinitions/src/vespa/indexschema.def
+    configdefinitions/src/vespa/lb-services.def
+    configdefinitions/src/vespa/load-type.def
+    configdefinitions/src/vespa/messagetyperouteselectorpolicy.def
+    configdefinitions/src/vespa/model.def
+    configdefinitions/src/vespa/persistence.def
+    configdefinitions/src/vespa/rank-profiles.def
+    configdefinitions/src/vespa/routing-provider.def
+    configdefinitions/src/vespa/routing.def
+    configdefinitions/src/vespa/sentinel.def
+    configdefinitions/src/vespa/slobroks.def
+    configdefinitions/src/vespa/specialtokens.def
+    configdefinitions/src/vespa/stor-devices.def
+    configdefinitions/src/vespa/stor-distribution.def
+    configdefinitions/src/vespa/stor-filestor.def
+    configdefinitions/src/vespa/stor-memfilepersistence.def
+    configdefinitions/src/vespa/summary.def
+    configdefinitions/src/vespa/summarymap.def
+    configdefinitions/src/vespa/upgrading.def
+    configdefinitions/src/vespa/ymon.def
+    configdefinitions/src/vespa/zookeeper-server.def
+    configdefinitions/src/vespa/zookeepers.def
+    configdefinitions/src/vespa/dispatch.def
     container-accesslogging/src/main/resources/configdefinitions/access-log.def
     container-core/src/main/resources/configdefinitions/application-metadata.def
     container-core/src/main/resources/configdefinitions/container-document.def
@@ -81,25 +111,24 @@ install(FILES
     container-core/src/main/resources/configdefinitions/http-filter.def
     container-core/src/main/resources/configdefinitions/metrics-presentation.def
     container-core/src/main/resources/configdefinitions/mockservice.def
-    container-core/src/main/resources/configdefinitions/qr.def
     container-core/src/main/resources/configdefinitions/qr-logging.def
     container-core/src/main/resources/configdefinitions/qr-searchers.def
     container-core/src/main/resources/configdefinitions/qr-templates.def
+    container-core/src/main/resources/configdefinitions/qr.def
     container-core/src/main/resources/configdefinitions/servlet-config.def
     container-core/src/main/resources/configdefinitions/threadpool.def
     container-core/src/main/resources/configdefinitions/vip-status.def
+    container-di/src/main/resources/configdefinitions/bundles.def
+    container-di/src/main/resources/configdefinitions/components.def
+    container-di/src/main/resources/configdefinitions/jersey-bundles.def
+    container-di/src/main/resources/configdefinitions/jersey-injection.def
     container-disc/src/main/resources/configdefinitions/container.jdisc.config.http-server.def
     container-disc/src/main/resources/configdefinitions/jdisc-bindings.def
     container-disc/src/main/resources/configdefinitions/jersey-connection.def
     container-disc/src/main/resources/configdefinitions/jersey-init.def
     container-disc/src/main/resources/configdefinitions/jersey-web-app-pool.def
     container-disc/src/main/resources/configdefinitions/metric-defaults.def
-    container-disc/src/main/resources/configdefinitions/port-overrides.def
     container-disc/src/main/resources/configdefinitions/score-board.def
-    container-di/src/main/resources/configdefinitions/bundles.def
-    container-di/src/main/resources/configdefinitions/components.def
-    container-di/src/main/resources/configdefinitions/jersey-bundles.def
-    container-di/src/main/resources/configdefinitions/jersey-injection.def
     container-messagebus/src/main/resources/configdefinitions/container-mbus.def
     container-messagebus/src/main/resources/configdefinitions/session.def
     container-search-and-docproc/src/main/resources/configdefinitions/application-userdata.def
@@ -115,8 +144,8 @@ install(FILES
     container-search/src/main/resources/configdefinitions/measure-qps.def
     container-search/src/main/resources/configdefinitions/page-templates.def
     container-search/src/main/resources/configdefinitions/provider.def
-    container-search/src/main/resources/configdefinitions/qr-binary-cache.def
     container-search/src/main/resources/configdefinitions/qr-binary-cache-region.def
+    container-search/src/main/resources/configdefinitions/qr-binary-cache.def
     container-search/src/main/resources/configdefinitions/qr-monitor.def
     container-search/src/main/resources/configdefinitions/qr-quotetable.def
     container-search/src/main/resources/configdefinitions/qr-start.def
@@ -124,23 +153,61 @@ install(FILES
     container-search/src/main/resources/configdefinitions/rate-limiting.def
     container-search/src/main/resources/configdefinitions/resolvers.def
     container-search/src/main/resources/configdefinitions/rewrites.def
-    container-search/src/main/resources/configdefinitions/searchchain-forward.def
     container-search/src/main/resources/configdefinitions/search-nodes.def
     container-search/src/main/resources/configdefinitions/search-with-renderer-handler.def
+    container-search/src/main/resources/configdefinitions/searchchain-forward.def
     container-search/src/main/resources/configdefinitions/semantic-rules.def
     container-search/src/main/resources/configdefinitions/strict-contracts.def
     container-search/src/main/resources/configdefinitions/timing-searcher.def
     docproc/src/main/resources/configdefinitions/docproc.def
     docproc/src/main/resources/configdefinitions/schemamapping.def
     docproc/src/main/resources/configdefinitions/splitter-joiner-document-processor.def
+    document/src/vespa/document/config/documentmanager.def
+    document/src/vespa/document/config/documenttypes.def
+    documentapi/src/main/resources/configdefinitions/documentrouteselectorpolicy.def
+    fileacquirer/src/main/resources/configdefinitions/filedistributorrpc.def
+    fileacquirer/src/vespa/fileacquirer/filedistributorrpc.def
+    filedistribution/src/vespa/filedistribution/distributor/filedistributor.def
+    filedistribution/src/vespa/filedistribution/model/filereferences.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.client.http-client.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.connector.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.server.def
     jdisc_http_service/src/main/resources/configdefinitions/jdisc.http.servlet-paths.def
     jdisc_jmx_metrics/src/main/resources/configdefinitions/jmx-metric.def
+    jdisc_maven_archetype_component/src/main/resources/archetype-resources/src/main/resources/configdefinitions/example.def
+    logd/src/main/resources/configdefinitions/logd.def
+    messagebus/src/main/config/messagebus.def
+    metrics/src/vespa/metrics/metricsmanager.def
+    node-repository/src/main/resources/configdefinitions/node-repository.def
+    orchestrator/src/main/resources/configdefinitions/orchestrator.def
     persistence/src/main/resources/configdefinitions/persistence-rpc.def
+    searchcore/src/vespa/searchcore/config/fdispatchrc.def
+    searchcore/src/vespa/searchcore/config/partitions.def
+    searchcore/src/vespa/searchcore/config/proton.def
+    searchcore/src/vespa/searchcore/config/ranking-constants.def
+    searchlib/src/vespa/searchlib/config/translogserver.def
+    searchsummary/src/vespa/searchsummary/config/juniperrc.def
     simplemetrics/src/main/resources/configdefinitions/manager.def
     statistics/src/main/resources/configdefinitions/statistics.def
+    storage/src/vespa/storage/bucketdb/stor-bucket-init.def
+    storage/src/vespa/storage/bucketdb/stor-bucketdb.def
+    storage/src/vespa/storage/config/rpc-provider.def
+    storage/src/vespa/storage/config/stor-bouncer.def
+    storage/src/vespa/storage/config/stor-bucketmover.def
+    storage/src/vespa/storage/config/stor-communicationmanager.def
+    storage/src/vespa/storage/config/stor-distributormanager.def
+    storage/src/vespa/storage/config/stor-integritychecker.def
+    storage/src/vespa/storage/config/stor-messageforwarder.def
+    storage/src/vespa/storage/config/stor-opslogger.def
+    storage/src/vespa/storage/config/stor-prioritymapping.def
+    storage/src/vespa/storage/config/stor-server.def
+    storage/src/vespa/storage/config/stor-status.def
+    storage/src/vespa/storage/config/stor-visitordispatcher.def
+    storage/src/vespa/storage/visiting/stor-visitor.def
+    vsm/src/vespa/vsm/config/vsm.def
+    vsm/src/vespa/vsm/config/vsmfields.def
+    vsm/src/vespa/vsm/config/vsmsummary.def
     vespaclient-core/src/main/resources/configdefinitions/feeder.def
     vespaclient-core/src/main/resources/configdefinitions/spooler.def
+    docker-api/src/main/resources/configdefinitions/docker.def
     DESTINATION var/db/vespa/config_server/serverdb/classes)
