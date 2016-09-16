@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
+#include <vespa/filedistribution/model/zkfacade.h>
 #include "filedownloader.h"
 #include "hostname.h"
 
@@ -19,7 +20,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".filedownloader");
 
-using filedistribution::FileDownloader;
+using namespace filedistribution;
 namespace fs = boost::filesystem;
 
 using libtorrent::sha1_hash;
@@ -137,7 +138,7 @@ struct FileDownloader::EventHandler
     }
 
     void operator()(const libtorrent::listen_failed_alert& alert) const {
-        BOOST_THROW_EXCEPTION(FailedListeningException(alert.endpoint.address().to_string(), alert.endpoint.port(), alert.message()));
+        throw FailedListeningException(alert.endpoint.address().to_string(), alert.endpoint.port(), alert.message());
     }
     void operator()(const libtorrent::fastresume_rejected_alert& alert) const {
         LOG(debug, "alert %s: %s", alert.what(), alert.message().c_str());
@@ -214,8 +215,9 @@ FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& t
      _hostName(hostName),
      _port(port)
 {
-    if (!fs::exists(_dbPath))
+    if (!fs::exists(_dbPath)) {
         fs::create_directories(_dbPath);
+    }
     addNewDbFiles(_dbPath);
 
     _session.set_settings(createSessionSettings());
@@ -249,7 +251,7 @@ FileDownloader::listen() {
     if (!ec && (_session.listen_port() == _port)) {
         return;
     }
-    BOOST_THROW_EXCEPTION(FailedListeningException(_hostName, _port));
+    throw FailedListeningException(_hostName, _port);
 }
 
 boost::optional< fs::path >
@@ -373,9 +375,13 @@ FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain
 void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
     while ( ! closed() ) {
-        if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
-            std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
-            eventHandler.handle(std::move(alert));
+        try {
+            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+                std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
+                eventHandler.handle(std::move(alert));
+            }
+        } catch (const ZKConnectionLossException & e) {
+            LOG(info, "Connection loss in downloader event loop, resuming. %s", e.what());
         }
     }
 }

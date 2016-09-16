@@ -219,12 +219,14 @@ FileDistributionModelImpl::addConfigServersAsPeers(
     }
 }
 
-
-
 void
 FileDistributionModelImpl::configure(std::unique_ptr<FilereferencesConfig> config) {
     const bool changed = updateActiveFileReferences(config->filereferences);
     if (changed) {
-        _filesToDownloadChanged();
+        try {
+            _filesToDownloadChanged();
+        } catch (const ZKConnectionLossException & e) {
+            LOG(info, "Connection loss in reconfigure of file references, resuming. %s", e.what());
+        }
     }
 }

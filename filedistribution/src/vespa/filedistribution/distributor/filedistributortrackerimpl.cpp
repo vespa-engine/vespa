@@ -5,17 +5,14 @@
 #include <libtorrent/tracker_manager.hpp>
 #include <libtorrent/torrent.hpp>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
+#include <vespa/filedistribution/model/zkfacade.h>
 #include "filedownloader.h"
 #include "hostname.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filedistributiontrackerimpl");
 
-using filedistribution::FileDistributorTrackerImpl;
-using filedistribution::FileDownloader;
-using filedistribution::FileDistributionModel;
-using filedistribution::Scheduler;
-using filedistribution::TorrentSP;
+using namespace filedistribution;
 
 typedef FileDistributionModel::PeerEntries PeerEntries;
 
@@ -162,6 +159,17 @@ FileDistributorTrackerImpl::trackingRequest(
     }
 }
 
+void asioWorker(asio::io_service& ioService)
+{
+    while (!ioService.stopped()) {
+        try {
+            ioService.run();
+        } catch (const ZKConnectionLossException & e) {
+            LOG(info, "Connection loss in asioWorker thread, resuming. %s", e.what());
+        }
+    }
+}
+
 void
 FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>& downloader)
 {
@@ -171,6 +179,6 @@ FileDistributorTrackerImpl::setDownloader(const std::shared_ptr<FileDownloader>&
     _downloader = downloader;
 
     if (downloader) {
-        _scheduler.reset(new Scheduler([] (asio::io_service& ioService) { ioService.run(); }));
+        _scheduler.reset(new Scheduler([] (asio::io_service& ioService) { asioWorker(ioService); }));
     }
 }

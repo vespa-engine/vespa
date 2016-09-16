@@ -9,6 +9,7 @@
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
+#include <vespa/vespalib/util/exception.h>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
@@ -19,39 +20,32 @@ namespace errorinfo {
 typedef boost::error_info<struct tag_Path, boost::filesystem::path> Path;
 }
 
-class ZKException : public Exception {
+class ZKException : public vespalib::Exception {
 protected:
-    ZKException() {}
+    using vespalib::Exception::Exception;
 };
 
-struct ZKNodeDoesNotExistsException : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: The node does not exist(ZNONODE).";
-    }
-};
+VESPA_DEFINE_EXCEPTION(ZKNodeDoesNotExistsException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKConnectionLossException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKNodeExistsException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKFailedConnecting, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKSessionExpired, ZKException);
 
-struct ZKNodeExistsException : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: The node already exists(ZNODEEXISTS).";
-    }
-};
-
-struct ZKGenericException : public ZKException {
+class ZKGenericException : public ZKException {
+public:
+    ZKGenericException(int zkStatus, const vespalib::stringref &msg, const vespalib::stringref &location = "", int skipStack = 0) :
+        ZKException(msg, location, skipStack),
+        _zkStatus(zkStatus)
+    { }
+    ZKGenericException(int zkStatus, const vespalib::Exception &cause, const vespalib::stringref &msg = "",
+                        const vespalib::stringref &location = "", int skipStack = 0) :
+        ZKException(msg, cause, location, skipStack),
+        _zkStatus(zkStatus)
+    { }
+    VESPA_DEFINE_EXCEPTION_SPINE(ZKGenericException);
+private:
     const int _zkStatus;
-    ZKGenericException(int zkStatus)
-        :_zkStatus(zkStatus)
-    {}
-
-    const char* what() const throw();
 };
-
-struct ZKFailedConnecting : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: Failed connecting to the zookeeper servers.";
-    }
-};
-
-class ZKSessionExpired : public ZKException {};
 
 const std::string
 diagnosticUserLevelMessage(const ZKException& zk);
