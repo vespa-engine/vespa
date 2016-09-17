@@ -3,7 +3,6 @@
 #include "filedistributorrpc.h"
 
 #include <boost/optional.hpp>
-#include <boost/exception/diagnostic_information.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filedistributorrpc");
@@ -222,8 +221,7 @@ FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
         frtstream::FrtServerStream requestHandler(request);
         std::string fileReference;
         requestHandler >> fileReference;
-        boost::optional<fs::path> path
-            = _fileProvider->getPath(fileReference);
+        boost::optional<fs::path> path = _fileProvider->getPath(fileReference);
         if (path) {
             LOG(debug, "Returning request for file reference '%s'.", fileReference.c_str());
             requestHandler << path->string();
@@ -238,9 +236,8 @@ FileDistributorRPC::Server::waitFor(FRT_RPCRequest* request) {
                           "No such file reference");
         request->Return();
     } catch (const std::exception& e) {
-        LOG(error, "An exception occurred while calling the rpc method waitFor:%s",
-            boost::diagnostic_information(e).c_str());
-        request->SetError(RPCErrorCodes::unknownError, boost::diagnostic_information(e).c_str());
+        LOG(error, "An exception occurred while calling the rpc method waitFor:%s", e.what());
+        request->SetError(RPCErrorCodes::unknownError, e.what());
         request->Return(); //the request might be detached.
     }
 }

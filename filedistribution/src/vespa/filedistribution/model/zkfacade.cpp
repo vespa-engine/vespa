@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <sstream>
 #include <thread>
-#include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
 
 #include <zookeeper/zookeeper.h>
