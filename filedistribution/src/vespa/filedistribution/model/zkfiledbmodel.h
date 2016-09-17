@@ -29,7 +29,7 @@ public:
     //overrides
     bool hasFile(const std::string& fileReference);
     void addFile(const std::string& fileReference, const Buffer& buffer);
-    Move<Buffer> getFile(const std::string& fileReference);
+    Buffer getFile(const std::string& fileReference) override;
     void cleanFiles(const std::vector<std::string>& filesToPreserve);
 
     void setDeployedFilesToDownload(const std::string& hostName,

@@ -66,14 +66,14 @@ CreateTorrent(const boost::filesystem::path& path)
      _entry(createEntry(_path))
 {}
 
-const filedistribution::Move<filedistribution::Buffer>
+filedistribution::Buffer
 filedistribution::
 CreateTorrent::
 bencode() const
 {
     Buffer buffer(static_cast<int>(targetTorrentSize));
     libtorrent::bencode(std::back_inserter(buffer), _entry);
-    return move(buffer);
+    return buffer;
 }
 
 const std::string

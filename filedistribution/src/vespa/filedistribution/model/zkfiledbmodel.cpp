@@ -58,7 +58,7 @@ ZKFileDBModel::addFile(const std::string& fileReference, const Buffer& buffer) {
     return _zk->setData(createPath(fileReference), buffer);
 }
 
-Move<Buffer>
+Buffer
 ZKFileDBModel::getFile(const std::string& fileReference) {
     try {
         return _zk->getData(createPath(fileReference));

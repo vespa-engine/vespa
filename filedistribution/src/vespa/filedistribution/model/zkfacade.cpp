@@ -21,7 +21,6 @@
 typedef std::unique_lock<std::mutex> UniqueLock;
 
 using filedistribution::ZKFacade;
-using filedistribution::Move;
 using filedistribution::Buffer;
 using filedistribution::ZKGenericException;
 using filedistribution::ZKException;
@@ -333,7 +332,7 @@ ZKFacade::getString(const Path& path) {
     return std::string(buffer.begin(), buffer.end());
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path) {
     RetryController retryController(this);
     Buffer buffer(_maxDataSize);
@@ -349,34 +348,30 @@ ZKFacade::getData(const Path& path) {
 
     retryController.throwIfError(path);
     buffer.resize(bufferSize);
-    return move(buffer);
+    return buffer;
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
     RetryController retryController(this);
 
-    try {
-        Buffer buffer(_maxDataSize);
-        int bufferSize = _maxDataSize;
+    Buffer buffer(_maxDataSize);
+    int bufferSize = _maxDataSize;
 
-        do {
-            Stat stat;
-            bufferSize = _maxDataSize;
+    do {
+        Stat stat;
+        bufferSize = _maxDataSize;
 
-            retryController( zoo_wget(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &*buffer.begin(), &bufferSize, &stat));
-        } while(retryController.shouldRetry());
+        retryController( zoo_wget(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &*buffer.begin(), &bufferSize, &stat));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError(path);
+    retryController.throwIfError(path);
 
-        buffer.resize(bufferSize);
-        return move(buffer);
-
-    } catch (const ZKException & e) {
-        unregisterWatcher(watcherContext);
-        throw;
-    }
+    buffer.resize(bufferSize);
+    unregisterGuard.release();
+    return buffer;
 }
 
 void

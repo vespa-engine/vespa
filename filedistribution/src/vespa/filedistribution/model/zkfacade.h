@@ -90,9 +90,9 @@ public:
     bool hasNode(const Path&, const NodeChangedWatcherSP&);
 
     const std::string getString(const Path&);
-    const Move<Buffer> getData(const Path&);  //throws ZKNodeDoesNotExistsException
+    Buffer getData(const Path&);  //throws ZKNodeDoesNotExistsException
     //if watcher is specified, it will be set even if the node does not exists
-    const Move<Buffer> getData(const Path&, const NodeChangedWatcherSP&);  //throws ZKNodeDoesNotExistsException
+    Buffer getData(const Path&, const NodeChangedWatcherSP&);  //throws ZKNodeDoesNotExistsException
 
     //Parent path must exist
     void setData(const Path&, const Buffer& buffer, bool mustExist = false);
@@ -116,6 +116,22 @@ public:
     }
 
 private:
+    class RegistrationGuard {
+    public:
+        RegistrationGuard & operator = (const RegistrationGuard &) = delete;
+        RegistrationGuard(const RegistrationGuard &) = delete;
+        RegistrationGuard(ZKFacade & zk, const NodeChangedWatcherSP & watcher) : _zk(zk), _watcherContext(_zk.registerWatcher(watcher)) { }
+        ~RegistrationGuard() {
+            if (_watcherContext) {
+                _zk.unregisterWatcher(_watcherContext);
+            }
+        }
+        void * get() { return _watcherContext; }
+        void release() { _watcherContext = nullptr; }
+    private:
+        ZKFacade & _zk;
+        void     * _watcherContext;
+    };
     void* registerWatcher(const NodeChangedWatcherSP &); //returns watcherContext
     std::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
     void invokeWatcher(void* watcherContext);

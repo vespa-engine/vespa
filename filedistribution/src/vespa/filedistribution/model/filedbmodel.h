@@ -43,7 +43,7 @@ public:
 
     virtual bool hasFile(const std::string& fileReference) = 0;
     virtual void addFile(const std::string& fileReference, const Buffer& buffer) = 0;
-    virtual Move<Buffer> getFile(const std::string& fileReference) = 0;
+    virtual Buffer getFile(const std::string& fileReference) = 0;
     virtual void cleanFiles(const std::vector<std::string>& filesToPreserve) = 0;
 
     virtual void setDeployedFilesToDownload(const std::string& hostName,

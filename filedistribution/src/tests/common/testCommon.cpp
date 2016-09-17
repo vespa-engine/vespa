@@ -12,13 +12,13 @@ namespace fd = filedistribution;
 
 const size_t bufferCapacity = 10;
 
-fd::Move<fd::Buffer>
+fd::Buffer
 getBuffer() {
     const char* test = "test";
     fd::Buffer buffer(test, test + strlen(test));
     buffer.reserve(bufferCapacity);
     buffer.push_back(0);
-    return fd::move(buffer);
+    return buffer;
 }
 
 BOOST_AUTO_TEST_CASE(bufferTest) {

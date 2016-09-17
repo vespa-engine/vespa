@@ -15,7 +15,7 @@ class CreateTorrent {
 public:
 
     CreateTorrent(const boost::filesystem::path& path);
-    const Move<Buffer> bencode() const;
+    Buffer bencode() const;
     const std::string fileReference() const;
 };
 
