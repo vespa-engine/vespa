@@ -65,6 +65,12 @@ prunePeers(std::vector<std::string> &peers, size_t maxPeers) {
 
 } //anonymous namespace
 
+namespace filedistribution {
+
+VESPA_IMPLEMENT_EXCEPTION(NotPeer, vespalib::Exception);
+
+}
+
 using filedistribution::FileDistributionModelImpl;
 
 struct FileDistributionModelImpl::DeployedFilesChangedCallback :
@@ -159,8 +165,8 @@ FileDistributionModelImpl::peerFinished(const std::string& fileReference) {
         char progress = 100; //percent
 
         _zk->setData(path, &progress, sizeof(char), mustExist);
-    } catch(ZKNodeDoesNotExistsException&) {
-        BOOST_THROW_EXCEPTION(NotPeer());
+    } catch(ZKNodeDoesNotExistsException & e) {
+        NotPeer(fileReference, e, VESPA_STRLOC);
     }
 }
 

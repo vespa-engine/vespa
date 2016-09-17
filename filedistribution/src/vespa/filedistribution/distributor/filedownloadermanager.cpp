@@ -123,7 +123,7 @@ FileDownloaderManager::SetFinishedDownloadingStatus::operator()(
 
     try {
         _parent._fileDistributionModel->peerFinished(fileReference);
-    } catch(const FileDistributionModel::NotPeer&) {  //Probably a concurrent removal of the torrent.
+    } catch (const NotPeer &) {  //Probably a concurrent removal of the torrent.
 
         //improve chance of libtorrent session being updated.
         std::this_thread::sleep_for(100ms);

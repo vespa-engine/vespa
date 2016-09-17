@@ -16,10 +16,10 @@
 
 namespace filedistribution {
 
+VESPA_DEFINE_EXCEPTION(NotPeer, vespalib::Exception);
+
 class FileDistributionModel {
 public:
-    class NotPeer : public Exception {};
-
     typedef boost::signals2::signal<void ()> FilesToDownloadChangedSignal;
     typedef std::vector<libtorrent::peer_entry> PeerEntries;
 

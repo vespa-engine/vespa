@@ -125,6 +125,10 @@ createSessionSettings() {
 
 } //anonymous namespace
 
+namespace filedistribution {
+    VESPA_IMPLEMENT_EXCEPTION(NoSuchTorrentException, vespalib::Exception);
+}
+
 struct FileDownloader::EventHandler
 {
     FileDownloader& _fileDownloader;
@@ -138,7 +142,7 @@ struct FileDownloader::EventHandler
     }
 
     void operator()(const libtorrent::listen_failed_alert& alert) const {
-        throw FailedListeningException(alert.endpoint.address().to_string(), alert.endpoint.port(), alert.message());
+        throw vespalib::PortListenException(alert.endpoint.port(), alert.endpoint.address().to_string(), alert.message(), VESPA_STRLOC);
     }
     void operator()(const libtorrent::fastresume_rejected_alert& alert) const {
         LOG(debug, "alert %s: %s", alert.what(), alert.message().c_str());
@@ -251,7 +255,7 @@ FileDownloader::listen() {
     if (!ec && (_session.listen_port() == _port)) {
         return;
     }
-    throw FailedListeningException(_hostName, _port);
+    throw vespalib::PortListenException(_port, _hostName, VESPA_STRLOC);
 }
 
 boost::optional< fs::path >

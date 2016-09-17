@@ -579,16 +579,3 @@ ZKLogging::~ZKLogging()
         _file = nullptr;
     }
 }
-
-const std::string
-filedistribution::diagnosticUserLevelMessage(const ZKException& exception) {
-    const char* indent = "    ";
-    std::ostringstream message;
-    message <<exception.what();
-
-    const errorinfo::Path::value_type* path = boost::get_error_info<errorinfo::Path>(exception);
-    if (path) {
-        message <<std::endl <<indent <<"Path: " <<*path;
-    }
-    return message.str();
-}

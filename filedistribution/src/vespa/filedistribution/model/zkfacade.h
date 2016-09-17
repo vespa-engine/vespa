@@ -16,10 +16,6 @@ typedef _zhandle zhandle_t;
 
 namespace filedistribution {
 
-namespace errorinfo {
-typedef boost::error_info<struct tag_Path, boost::filesystem::path> Path;
-}
-
 class ZKException : public vespalib::Exception {
 protected:
     using vespalib::Exception::Exception;
@@ -46,11 +42,6 @@ public:
 private:
     const int _zkStatus;
 };
-
-const std::string
-diagnosticUserLevelMessage(const ZKException& zk);
-
-
 
 class ZKFacade : public std::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;

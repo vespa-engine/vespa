@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/exception/all.hpp>
-#include <boost/current_function.hpp>
-#include <boost/exception/all.hpp>
 #include <boost/array.hpp>
 #include <boost/version.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace filedistribution {
 
@@ -18,34 +16,12 @@ class Backtrace {
     Backtrace();
 };
 
+VESPA_DEFINE_EXCEPTION(FileDoesNotExistException, vespalib::Exception);
+
 
 std::ostream& operator<<(std::ostream& stream, const Backtrace& backtrace);
 
-namespace errorinfo {
-typedef boost::error_info<struct tag_Backtrace, Backtrace> Backtrace;
-typedef boost::error_info<struct tag_UserMessage, Backtrace> ExplanationForUser;
-typedef boost::error_info<struct tag_TorrentMessage, std::string> TorrentMessage;
-}
-
-//Exceptions should inherit virtually from boost and std exception,
-//see http://www.boost.org/doc/libs/1_39_0/libs/exception/doc/using_virtual_inheritance_in_exception_types.html
-struct Exception : virtual boost::exception, virtual std::exception {
-    Exception() {
-        *this << errorinfo::Backtrace(Backtrace());
-    }
-};
-
 } //namespace filedistribution
-
-#if BOOST_VERSION < 103700
-#define BOOST_THROW_EXCEPTION(x)\
-    ::boost::throw_exception( ::boost::enable_error_info(x) <<          \
-                             ::boost::throw_function(BOOST_CURRENT_FUNCTION) << \
-                             ::boost::throw_file(__FILE__) <<           \
-                             ::boost::throw_line((int)__LINE__) )
-
-#endif
-
 
 //********** Begin: Please remove when fixed upstream.
 //boost 1.36 & 1.37 bugfix: allow attaching a boost::filesytem::path to a boost::exception

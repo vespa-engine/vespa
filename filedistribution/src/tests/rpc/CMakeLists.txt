@@ -4,6 +4,7 @@ vespa_add_executable(filedistribution_rpc_test_app TEST
     testfileprovider.cpp
     DEPENDS
     filedistribution_filedistributorrpc
+    filedistribution_common
 )
 target_compile_options(filedistribution_rpc_test_app PRIVATE -DTORRENT_DEBUG -DTORRENT_DISABLE_ENCRYPTION -DTORRENT_DISABLE_DHT -DWITH_SHIPPED_GEOIP_H -DBOOST_ASIO_HASH_MAP_BUCKETS=1021 -DBOOST_EXCEPTION_DISABLE -DBOOST_ASIO_ENABLE_CANCELIO -DBOOST_ASIO_DYN_LINK -DTORRENT_LINKING_SHARED)
 vespa_add_target_system_dependency(filedistribution_rpc_test_app boost boost_system-mt-d)

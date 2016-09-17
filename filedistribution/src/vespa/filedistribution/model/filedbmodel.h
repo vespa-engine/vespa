@@ -17,17 +17,11 @@ private:
     int _fd;
 };
 
-struct InvalidProgressException : public Exception {
-    const char* what() const throw() {
-        return "Invalid progress information reported by one of the filedistributors";
-    }
-};
-
-struct FileDoesNotExistException : public Exception {};
+VESPA_DEFINE_EXCEPTION(InvalidProgressException, vespalib::Exception);
+VESPA_DEFINE_EXCEPTION(InvalidHostStatusException, vespalib::Exception);
 
 class FileDBModel {
 public:
-    class InvalidHostStatusException : public Exception {};
     struct HostStatus {
         enum State { finished, inProgress, notStarted };
 
