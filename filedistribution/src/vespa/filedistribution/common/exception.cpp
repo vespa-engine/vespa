@@ -2,28 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include "exception.h"
 
-#include <execinfo.h>
-
 namespace filedistribution {
 
 VESPA_IMPLEMENT_EXCEPTION(FileDoesNotExistException, vespalib::Exception);
-
-std::ostream&
-operator<<(std::ostream& stream, const Backtrace& backtrace) {
-    char** strings = backtrace_symbols(&*backtrace._frames.begin(), backtrace._size);
-
-    stream <<"Backtrace:" <<std::endl;
-    for (size_t i = 0; i<backtrace._size; ++i) {
-        stream <<strings[i] <<std::endl;
-    }
-
-    free(strings);
-    return stream;
-}
-
-
-Backtrace::Backtrace()
-    :_size(backtrace(&*_frames.begin(), _frames.size()))
-{}
 
 }
