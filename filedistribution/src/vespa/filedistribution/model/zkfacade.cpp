@@ -422,33 +422,31 @@ ZKFacade::hasNode(const Path& path) {
 
 bool
 ZKFacade::hasNode(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
-    try {
-        RetryController retryController(this);
-        do {
-            Stat stat;
-            retryController(
-                    zoo_wexists(_zhandle, path.string().c_str(),
-                            &ZKWatcher::watcherFn, watcherContext,
-                            &stat));
-        } while(retryController.shouldRetry());
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
+    RetryController retryController(this);
+    do {
+        Stat stat;
+        retryController(zoo_wexists(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &stat));
+    } while (retryController.shouldRetry());
 
-        switch(retryController._lastStatus) {
-          case ZNONODE:
-            return false;
-          case ZOK:
-            return true;
-          default:
-            retryController.throwIfError(path);
-            //this should never happen:
-            assert(false);
-            return false;
-        }
-
-    } catch (const ZKException &e) {
-        unregisterWatcher(watcherContext);
-        throw;
+    bool retval(false);
+    switch(retryController._lastStatus) {
+      case ZNONODE:
+        retval = false;
+        break;
+      case ZOK:
+        retval = true;
+        break;
+      default:
+        retryController.throwIfError(path);
+        //this should never happen:
+        assert(false);
+        retval =  false;
+        break;
     }
+    unregisterGuard.release();
+    return retval;
 }
 
 void
@@ -529,30 +527,27 @@ ZKFacade::getChildren(const Path& path) {
 
 std::vector< std::string >
 ZKFacade::getChildren(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
 
-    try {
-        RetryController retryController(this);
-        String_vector children;
-        do {
-            retryController( zoo_wget_children(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &children));
-        } while(retryController.shouldRetry());
+    RetryController retryController(this);
+    String_vector children;
+    do {
+        retryController( zoo_wget_children(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &children));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError(path);
+    retryController.throwIfError(path);
 
-        DeallocateZKStringVectorGuard deallocateGuard(children);
+    DeallocateZKStringVectorGuard deallocateGuard(children);
 
-        typedef std::vector<std::string> ResultType;
-        ResultType result;
-        result.reserve(children.count);
+    typedef std::vector<std::string> ResultType;
+    ResultType result;
+    result.reserve(children.count);
 
-        std::copy(children.data, children.data + children.count, std::back_inserter(result));
+    std::copy(children.data, children.data + children.count, std::back_inserter(result));
 
-        return result;
-    } catch (const ZKException & e) {
-        unregisterWatcher(watcherContext);
-        throw;
-    }
+    unregisterGuard.release();
+    return result;
 }
 
 
