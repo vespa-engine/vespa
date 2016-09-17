@@ -7,8 +7,6 @@
 namespace filedistribution {
 
 class ZKFileDBModel : public FileDBModel {
-public:
-    typedef boost::filesystem::path Path;
 private:
     const std::shared_ptr<ZKFacade> _zk;
     char getProgress(const Path& path);

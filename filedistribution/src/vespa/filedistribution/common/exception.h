@@ -2,8 +2,11 @@
 #pragma once
 
 #include <vespa/vespalib/util/exceptions.h>
+#include <boost/filesystem/path.hpp>
 
 namespace filedistribution {
+
+using Path = boost::filesystem::path;
 
 VESPA_DEFINE_EXCEPTION(FileDoesNotExistException, vespalib::Exception);
 

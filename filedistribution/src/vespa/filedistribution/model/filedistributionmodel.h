@@ -6,7 +6,6 @@
 #include <string>
 #include <set>
 
-#include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 
 #include <libtorrent/peer.hpp>

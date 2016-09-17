@@ -12,6 +12,7 @@ LOG_SETUP(".filedownloadermanager");
 using namespace std::literals;
 
 using filedistribution::FileDownloaderManager;
+using filedistribution::Path;
 
 namespace {
 void logStartDownload(const std::set<std::string> & filesToDownload) {
@@ -50,7 +51,7 @@ FileDownloaderManager::start()
         FileDistributionModel::FilesToDownloadChangedSignal::slot_type(std::ref(_startDownloads)).track_foreign(shared_from_this()));
 }
 
-boost::optional< boost::filesystem::path >
+boost::optional< Path >
 FileDownloaderManager::getPath(const std::string& fileReference) {
     return _fileDownloader->pathToCompletedFile(fileReference);
 }
@@ -116,7 +117,7 @@ FileDownloaderManager::SetFinishedDownloadingStatus::SetFinishedDownloadingStatu
 
 void
 FileDownloaderManager::SetFinishedDownloadingStatus::operator()(
-        const std::string& fileReference, const boost::filesystem::path&) {
+        const std::string& fileReference, const Path&) {
 
     //Prevent concurrent modifications to peer node in zk.
     LockGuard updateFilesToDownloadGuard(_parent._updateFilesToDownloadMutex);

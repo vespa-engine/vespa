@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <mutex>
-#include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
@@ -70,7 +69,6 @@ public:
     };
 
     typedef std::shared_ptr<NodeChangedWatcher> NodeChangedWatcherSP;
-    typedef boost::filesystem::path Path;
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;

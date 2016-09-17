@@ -8,9 +8,9 @@
 namespace filedistribution {
 
 class FileDB {
-    boost::filesystem::path _dbPath;
+    Path _dbPath;
 public:
-    FileDB(boost::filesystem::path dbPath);
+    FileDB(Path dbPath);
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
     /**
      *
@@ -19,7 +19,7 @@ public:
      * @param name The name the file shall have.
      * @return true if it was added, false if it was already present.
      */
-    bool add(const DirectoryGuard & directoryGuard, boost::filesystem::path original, const std::string& name);
+    bool add(const DirectoryGuard & directoryGuard, Path original, const std::string& name);
 };
 
 } //namespace filedistribution

@@ -40,7 +40,7 @@ class FileDownloader
     libtorrent::session _session;
     std::atomic<bool> _closed;
 
-    const boost::filesystem::path _dbPath;
+    const Path _dbPath;
     typedef std::vector<char> ResumeDataBuffer;
     boost::optional<ResumeDataBuffer> getResumeData(const std::string& fileReference);
 
@@ -58,14 +58,14 @@ public:
 
     FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                    const std::string& hostName, int port,
-                   const boost::filesystem::path& dbPath);
+                   const Path& dbPath);
     ~FileDownloader();
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
     void runEventLoop();
     void addTorrent(const std::string& fileReference, const Buffer& buffer);
     bool hasTorrent(const std::string& fileReference) const;
-    boost::optional<boost::filesystem::path> pathToCompletedFile(const std::string& fileReference) const;
+    boost::optional<Path> pathToCompletedFile(const std::string& fileReference) const;
     void removeAllTorrentsBut(const std::set<std::string> & filesToRetain);
 
     void signalIfFinishedDownloading(const std::string& fileReference);

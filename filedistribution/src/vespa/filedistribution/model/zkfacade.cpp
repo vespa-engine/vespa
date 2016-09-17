@@ -24,8 +24,7 @@ using filedistribution::Buffer;
 using filedistribution::ZKGenericException;
 using filedistribution::ZKException;
 using filedistribution::ZKLogging;
-
-typedef ZKFacade::Path Path;
+using filedistribution::Path;
 
 namespace {
 

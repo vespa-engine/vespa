@@ -36,7 +36,7 @@ isEntryForHost(const std::string& host, const std::string& peerEntry) {
 }
 
 std::vector<std::string>
-getSortedChildren(ZKFacade& zk, const ZKFileDBModel::Path& path) {
+getSortedChildren(ZKFacade& zk, const Path& path) {
     std::vector<std::string> children = zk.getChildren(path);
     std::sort(children.begin(), children.end());
     return children;
@@ -47,9 +47,9 @@ getSortedChildren(ZKFacade& zk, const ZKFileDBModel::Path& path) {
 VESPA_IMPLEMENT_EXCEPTION(InvalidProgressException, vespalib::Exception);
 VESPA_IMPLEMENT_EXCEPTION(InvalidHostStatusException, vespalib::Exception);
 
-const ZKFileDBModel::Path ZKFileDBModel::_root = "/vespa/filedistribution";
-const ZKFileDBModel::Path ZKFileDBModel::_fileDBPath = _root / "files";
-const ZKFileDBModel::Path ZKFileDBModel::_hostsPath = _root / "hosts";
+const Path ZKFileDBModel::_root = "/vespa/filedistribution";
+const Path ZKFileDBModel::_fileDBPath = _root / "files";
+const Path ZKFileDBModel::_hostsPath = _root / "hosts";
 
 bool
 ZKFileDBModel::hasFile(const std::string& fileReference) {
@@ -296,7 +296,7 @@ ZKFileDBModel::getProgress(const std::string& fileReference,
 
 FileDBModel::~FileDBModel() {}
 
-DirectoryGuard::DirectoryGuard(boost::filesystem::path path) :
+DirectoryGuard::DirectoryGuard(Path path) :
     _fd(-1)
 {
     _fd = open(path.c_str(), O_RDONLY);
