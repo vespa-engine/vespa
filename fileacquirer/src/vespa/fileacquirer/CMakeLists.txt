@@ -4,4 +4,3 @@ vespa_add_library(fileacquirer STATIC
     DEPENDS
 )
 vespa_generate_config(fileacquirer filedistributorrpc.def)
-install(FILES filedistributorrpc.def DESTINATION var/db/vespa/config_server/serverdb/classes)
