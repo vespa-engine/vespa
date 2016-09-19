@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 public class Environment {
     private static final String ENV_CONFIGSERVERS = "services__addr_configserver";
     private static final String ENV_NETWORK_TYPE = "NETWORK_TYPE";
+    private static final String ENVIRONMENT = "ENVIRONMENT";
+    private static final String REGION = "REGION";
 
     public enum NetworkType { normal, local, vm }
 
@@ -30,8 +32,8 @@ public class Environment {
 
         final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
         return hostNameStrings.stream()
-                .map(HostName::new)
-                .collect(Collectors.toSet());
+                              .map(HostName::new)
+                              .collect(Collectors.toSet());
     }
 
     public NetworkType networkType() throws IllegalArgumentException {
@@ -40,6 +42,24 @@ public class Environment {
             return NetworkType.normal;
         }
         return NetworkType.valueOf(networkTypeInEnvironment);
+    }
+
+    public String getEnvironment() {
+        return getEnvironmentVariable(ENVIRONMENT);
+    }
+
+    public String getRegion() {
+        return getEnvironmentVariable(REGION);
+    }
+
+    private String getEnvironmentVariable(String name) {
+        final String value = System.getenv(name);
+        if (value == null) throw new IllegalStateException(String.format("Environment variable %s not set", name));
+        return value;
+    }
+
+    public String getZone() {
+        return getEnvironment() + "." + getRegion();
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
