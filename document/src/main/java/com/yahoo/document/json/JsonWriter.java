@@ -26,11 +26,13 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.vespa.objects.FieldBase;
+import com.yahoo.vespa.objects.Serializer;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -130,7 +132,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, ByteFieldValue value) {
-        serializeByte(generator, field, value.getByte());
+        serializeByteField(generator, field, value);
     }
 
     @Override
@@ -140,27 +142,27 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, DoubleFieldValue value) {
-        serializeDouble(generator, field, value.getDouble());
+        serializeDoubleField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, FloatFieldValue value) {
-        serializeFloat(generator, field, value.getFloat());
+        serializeFloatField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, IntegerFieldValue value) {
-        serializeInt(generator, field, value.getInteger());
+        serializeIntField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, LongFieldValue value) {
-        serializeLong(generator, field, value.getLong());
+        serializeLongField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, Raw value) {
-        serializeByteBuffer(generator, field, value.getByteBuffer());
+        serializeRawField(generator, field, value);
     }
 
     @Override
@@ -170,7 +172,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, StringFieldValue value) {
-        serializeString(generator, field, value.getString());
+        serializeStringField(generator, field, value);
     }
 
     @Override
@@ -250,5 +252,60 @@ public class JsonWriter implements DocumentWriter {
             throw new RuntimeException(e);
         }
         return out.toByteArray();
+    }
+
+    @Override
+    public Serializer putByte(FieldBase field, byte value) {
+        serializeByte(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putShort(FieldBase field, short value) {
+        serializeShort(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putInt(FieldBase field, int value) {
+        serializeInt(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putLong(FieldBase field, long value) {
+        serializeLong(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putFloat(FieldBase field, float value) {
+        serializeFloat(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putDouble(FieldBase field, double value) {
+        serializeDouble(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer put(FieldBase field, byte[] value) {
+        serializeByteArray(generator, value);
+        return this;
+    }
+
+    @Override
+    public Serializer put(FieldBase field, ByteBuffer value) {
+        serializeByteBuffer(generator, value);
+        return this;
+
+    }
+
+    @Override
+    public Serializer put(FieldBase field, String value) {
+        serializeString(generator, value);
+        return this;
     }
 }

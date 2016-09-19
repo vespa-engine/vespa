@@ -4,10 +4,17 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -99,13 +106,14 @@ public class JsonSerializationHelper {
     }
 
 
-    public static void serializeString(JsonGenerator generator, FieldBase field, String value) {
-        if (value.length() == 0) {
+    public static void serializeStringField(JsonGenerator generator, FieldBase field, StringFieldValue value) {
+        // Hide empty strings
+        if (value.getString().length() == 0) {
             return;
         }
 
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeString(value));
+        serializeString(generator, value.getString());
     }
 
     public static void serializeStructuredField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, StructuredFieldValue value) {
@@ -126,7 +134,8 @@ public class JsonSerializationHelper {
 
     public static void serializeStructField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Struct value) {
         if (value.getDataType() == PositionDataType.INSTANCE) {
-            serializeString(generator, field, PositionDataType.renderAsString(value));
+            fieldNameIfNotNull(generator, field);
+            serializeString(generator, PositionDataType.renderAsString(value));
             return;
         }
 
@@ -196,33 +205,34 @@ public class JsonSerializationHelper {
         });
     }
 
-    public static void serializeDouble(JsonGenerator generator, FieldBase field, double value) {
+    public static void serializeDoubleField(JsonGenerator generator, FieldBase field, DoubleFieldValue value) {
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeNumber(value));
+        serializeDouble(generator, value.getDouble());
     }
 
-    public static void serializeFloat(JsonGenerator generator, FieldBase field, float value) {
+    public static void serializeFloatField(JsonGenerator generator, FieldBase field, FloatFieldValue value) {
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeNumber(value));
+        serializeFloat(generator, value.getFloat());
     }
 
-    public static void serializeInt(JsonGenerator generator, FieldBase field, int value) {
+    public static void serializeIntField(JsonGenerator generator, FieldBase field, IntegerFieldValue value) {
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeNumber(value));
+        serializeInt(generator, value.getInteger());
     }
 
-    public static void serializeLong(JsonGenerator generator, FieldBase field, long value) {
+    public static void serializeLongField(JsonGenerator generator, FieldBase field, LongFieldValue value) {
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeNumber(value));
+        serializeLong(generator, value.getLong());
     }
 
-    public static void serializeByte(JsonGenerator generator, FieldBase field, byte value) {
+    public static void serializeByteField(JsonGenerator generator, FieldBase field, ByteFieldValue value) {
         fieldNameIfNotNull(generator, field);
-        wrapIOException(() -> generator.writeNumber(value));
+        serializeByte(generator, value.getByte());
     }
 
     public static void serializePredicateField(JsonGenerator generator, FieldBase field, PredicateFieldValue value){
-        serializeString(generator, field, value.toString());
+        fieldNameIfNotNull(generator, field);
+        serializeString(generator, value.toString());
     }
 
     public static void fieldNameIfNotNull(JsonGenerator generator, FieldBase field) {
@@ -231,11 +241,45 @@ public class JsonSerializationHelper {
         }
     }
 
-    public static void serializeByteBuffer(JsonGenerator generator, FieldBase field, ByteBuffer raw) {
+    public static void serializeRawField(JsonGenerator generator, FieldBase field, Raw raw) {
+        fieldNameIfNotNull(generator, field);
+        serializeByteBuffer(generator, raw.getByteBuffer());
+    }
+
+    public static void serializeString(JsonGenerator generator, String value) {
+        if (value.length() == 0) {
+            return;
+        }
+        wrapIOException(() -> generator.writeString(value));
+    }
+
+    public static void serializeByte(JsonGenerator generator, byte value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeShort(JsonGenerator generator, short value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeInt(JsonGenerator generator, int value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeLong(JsonGenerator generator, long value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeFloat(JsonGenerator generator, float value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeDouble(JsonGenerator generator, double value) {
+        wrapIOException(() -> generator.writeNumber(value));
+    }
+
+    public static void serializeByteBuffer(JsonGenerator generator, ByteBuffer raw) {
         final byte[] data = new byte[raw.remaining()];
         final int origPosition = raw.position();
-
-        fieldNameIfNotNull(generator, field);
 
         // base64encoder has no encode methods with offset and
         // limit, so no use trying to get at the backing array if
@@ -244,5 +288,10 @@ public class JsonSerializationHelper {
         raw.position(origPosition);
 
         wrapIOException(() -> generator.writeString(base64Encoder.encodeToString(data)));
+    }
+
+
+    public static void serializeByteArray(JsonGenerator generator, byte[] value) {
+        serializeByteBuffer(generator, ByteBuffer.wrap(value));
     }
 }
