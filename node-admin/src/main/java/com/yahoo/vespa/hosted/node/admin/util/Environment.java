@@ -53,9 +53,9 @@ public class Environment {
     }
 
     private String getEnvironmentVariable(String name) {
-        final String region = System.getenv(name);
-        if (region == null) throw new IllegalStateException(String.format("Environment variable %s not set", name));
-        return region;
+        final String value = System.getenv(name);
+        if (value == null) throw new IllegalStateException(String.format("Environment variable %s not set", name));
+        return value;
     }
 
     public String getZone() {
