@@ -68,6 +68,37 @@ public class JsonHelper {
         });
     }
 
+    private static void serializeTensorDimensions(JsonGenerator generator, Set<String> dimensions) throws IOException {
+        generator.writeArrayFieldStart(JsonReader.TENSOR_DIMENSIONS);
+        for (String dimension : dimensions) {
+            generator.writeString(dimension);
+        }
+
+        generator.writeEndArray();
+    }
+
+    private static void serializeTensorCells(JsonGenerator generator, Map<TensorAddress, Double> cells) throws IOException {
+        generator.writeArrayFieldStart(JsonReader.TENSOR_CELLS);
+        for (Map.Entry<TensorAddress, Double> cell : cells.entrySet()) {
+            generator.writeStartObject();
+            serializeTensorAddress(generator, cell.getKey());
+            generator.writeNumberField(JsonReader.TENSOR_VALUE, cell.getValue());
+            generator.writeEndObject();
+        }
+
+        generator.writeEndArray();
+    }
+
+    private static void serializeTensorAddress(JsonGenerator generator, TensorAddress address) throws IOException {
+        generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
+        for (TensorAddress.Element element : address.elements()) {
+            generator.writeStringField(element.dimension(), element.label());
+        }
+
+        generator.writeEndObject();
+    }
+
+
     public static void serializeString(JsonGenerator generator, FieldBase field, String value) {
         if (value.length() == 0) {
             return;
@@ -198,36 +229,6 @@ public class JsonHelper {
         if (field != null) {
             wrapIOException(() -> generator.writeFieldName(field.getName()));
         }
-    }
-
-    public static void serializeTensorDimensions(JsonGenerator generator, Set<String> dimensions) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_DIMENSIONS);
-        for (String dimension : dimensions) {
-            generator.writeString(dimension);
-        }
-
-        generator.writeEndArray();
-    }
-
-    public static void serializeTensorCells(JsonGenerator generator, Map<TensorAddress, Double> cells) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_CELLS);
-        for (Map.Entry<TensorAddress, Double> cell : cells.entrySet()) {
-            generator.writeStartObject();
-            serializeTensorAddress(generator, cell.getKey());
-            generator.writeNumberField(JsonReader.TENSOR_VALUE, cell.getValue());
-            generator.writeEndObject();
-        }
-
-        generator.writeEndArray();
-    }
-
-    public static void serializeTensorAddress(JsonGenerator generator, TensorAddress address) throws IOException {
-        generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
-        for (TensorAddress.Element element : address.elements()) {
-            generator.writeStringField(element.dimension(), element.label());
-        }
-
-        generator.writeEndObject();
     }
 
     public static void serializeByteBuffer(JsonGenerator generator, FieldBase field, ByteBuffer raw) {
