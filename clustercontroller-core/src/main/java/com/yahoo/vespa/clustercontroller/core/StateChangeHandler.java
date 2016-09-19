@@ -276,7 +276,7 @@ public class StateChangeHandler {
             final NodeState currentStateInSystem = currentClusterState.getNodeState(node.getNode());
             final NodeState lastReportedState = node.getReportedState();
 
-            triggeredAnyTimers = reportDownIfOutdatedSlobrokNode(
+            triggeredAnyTimers |= reportDownIfOutdatedSlobrokNode(
                     currentClusterState, nodeListener, currentTime, node, lastReportedState);
 
             if (nodeStillUnavailableAfterTransitionTimeExceeded(
@@ -288,16 +288,7 @@ public class StateChangeHandler {
                 triggeredAnyTimers = true;
             }
 
-            // TODO should we handle in baseline? handlePrematureCrash sets wanted state, so might not be needed
-            // TODO ---> yes, always want to set it down/maintenance even if #max crash has not been reached
-            // If node hasn't increased its initializing progress within initprogresstime, mark it down.
-            if (!currentStateInSystem.getState().equals(State.DOWN)
-                && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
-                && lastReportedState.getState().equals(State.INITIALIZING)
-                && maxInitProgressTime != 0
-                && node.getInitProgressTime() + maxInitProgressTime <= currentTime
-                && node.getNode().getType().equals(NodeType.STORAGE))
-            {
+            if (nodeInitProgressHasTimedOut(currentTime, node, currentStateInSystem, lastReportedState)) {
                 eventLog.add(new NodeEvent(node, (currentTime - node.getInitProgressTime()) + " milliseconds "
                         + "without initialize progress. Marking node down."
                         + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".", NodeEvent.Type.CURRENT, currentTime), isMaster);
@@ -320,6 +311,15 @@ public class StateChangeHandler {
             stateMayHaveChanged = true;
         }
         return triggeredAnyTimers;
+    }
+
+    private boolean nodeInitProgressHasTimedOut(long currentTime, NodeInfo node, NodeState currentStateInSystem, NodeState lastReportedState) {
+        return !currentStateInSystem.getState().equals(State.DOWN)
+            && node.getWantedState().above(new NodeState(node.getNode().getType(), State.DOWN))
+            && lastReportedState.getState().equals(State.INITIALIZING)
+            && maxInitProgressTime != 0
+            && node.getInitProgressTime() + maxInitProgressTime <= currentTime
+            && node.getNode().getType().equals(NodeType.STORAGE);
     }
 
     private boolean mayResetCrashCounterOnStableDownNode(long currentTime, NodeInfo node, NodeState lastReportedState) {
@@ -382,6 +382,7 @@ public class StateChangeHandler {
 
     // TODO refactor this into a function that only alters NodeInfo
     // FIXME urrrgh this function mixes and matches internal state mutations and pure return values
+    // FIXME bless this mess
     /**
      * Decide the state assigned to a new node given the state it reported
      *
@@ -399,11 +400,7 @@ public class StateChangeHandler {
 
         // Set nodes in maintenance if 1) down, or 2) initializing but set retired, to avoid migrating data
         // to the retired node while it is initializing
-        // FIXME case 2 now handled in baseline
-        // FIXME x 2; why is maxTransitionTime used here...?
-        if (currentState.getState().oneOf("ur") && reportedState.getState().oneOf("dis")
-            && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING)))
-        {
+        if (nodeUpToDownEdge(node, currentState, reportedState)) {
             node.setTransitionTime(timeNow);
             if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
                 log.log(LogLevel.INFO, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
@@ -413,7 +410,9 @@ public class StateChangeHandler {
                         + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".",
                         NodeEvent.Type.CURRENT,
                         timeNow), isMaster);
-                if (handlePrematureCrash(node, nodeListener)) return null;
+                if (handlePrematureCrash(node, nodeListener)) {
+                    return null;
+                }
             }
         }
 
@@ -447,9 +446,10 @@ public class StateChangeHandler {
                     "Got reverse initialize progress. Assuming node has prematurely crashed"));
         }
 
-
         // If we go down while initializing, mark node unstable, such that we don't mark it initializing again before it is up.
-        if (currentState.getState().equals(State.INITIALIZING) && reportedState.getState().oneOf("ds") && !isControlledShutdown(reportedState))
+        if (currentState.getState().equals(State.INITIALIZING)
+                && reportedState.getState().oneOf("ds")
+                && !isControlledShutdown(reportedState))
         {
             eventLog.add(new NodeEvent(node, "Stop or crash during initialization."
                     + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".",
@@ -457,12 +457,10 @@ public class StateChangeHandler {
             return (handlePrematureCrash(node, nodeListener) ? null : new NodeState(node.getNode().getType(), State.DOWN).setDescription(reportedState.getDescription()));
         }
 
-
         // TODO what is really the point looking at init progress in this branch...?
         // TODO baseline state generation should make this a no-op if we don't bother to publish init progress in generated state
         // Ignore further unavailable states when node is set in maintenance
-        if (currentState.getState().equals(State.MAINTENANCE) && reportedState.getState().oneOf("dis"))
-        {
+        if (currentState.getState().equals(State.MAINTENANCE) && reportedState.getState().oneOf("dis")) {
             if (node.getWantedState().getState().equals(State.RETIRED)  || !reportedState.getState().equals(State.INITIALIZING)
                     || reportedState.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001) {
                 log.log(LogLevel.DEBUG, "Ignoring down and initializing reports while in maintenance mode on " + node + ".");
@@ -470,22 +468,11 @@ public class StateChangeHandler {
             }
         }
 
-
-
-        // FIXME comment is outdated; distributors are never in init state!
-        // TODO handle premature crash count in baseline
-        // Hide initializing state if node has been unstable. (Not for distributors as these own buckets while initializing)
-        if ((currentState.getState().equals(State.DOWN) || currentState.getState().equals(State.UP)) &&
-            reportedState.getState().equals(State.INITIALIZING) && node.getPrematureCrashCount() > 0 &&
-            !node.isDistributor())
-        {
+        if (nodeHasRecentlyBeenUnstable(node, currentState, reportedState)) {
             log.log(LogLevel.DEBUG, "Not setting " + node + " initializing again as it crashed prematurely earlier.");
             return new NodeState(node.getNode().getType(), State.DOWN).setDescription("Not setting node back up as it failed prematurely at last attempt");
         }
 
-
-
-        // TODO handle implicit down on list buckets in baseline
         // Hide initializing state in cluster state if initialize progress is so low that we haven't listed buckets yet
         if (!node.isDistributor() && reportedState.getState().equals(State.INITIALIZING) &&
             reportedState.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001)
@@ -496,8 +483,18 @@ public class StateChangeHandler {
         return reportedState.clone();
     }
 
-    // TODO move somewhere appropriate
-    public boolean handlePrematureCrash(NodeInfo node, NodeStateOrHostInfoChangeHandler changeListener) {
+    private boolean nodeHasRecentlyBeenUnstable(NodeInfo node, NodeState currentState, NodeState reportedState) {
+        return (currentState.getState().equals(State.DOWN) || currentState.getState().equals(State.UP)) &&
+            reportedState.getState().equals(State.INITIALIZING) && node.getPrematureCrashCount() > 0 &&
+            !node.isDistributor();
+    }
+
+    private boolean nodeUpToDownEdge(NodeInfo node, NodeState currentState, NodeState reportedState) {
+        return currentState.getState().oneOf("ur") && reportedState.getState().oneOf("dis")
+            && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING));
+    }
+
+    private boolean handlePrematureCrash(NodeInfo node, NodeStateOrHostInfoChangeHandler changeListener) {
         node.setPrematureCrashCount(node.getPrematureCrashCount() + 1);
         if (disableUnstableNodes && node.getPrematureCrashCount() > maxPrematureCrashes) {
             NodeState wantedState = new NodeState(node.getNode().getType(), State.DOWN)
