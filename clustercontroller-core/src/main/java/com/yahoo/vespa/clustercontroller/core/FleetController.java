@@ -7,6 +7,7 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.*;
@@ -508,6 +509,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             didWork |= processAnyPendingStatusPageRequest();
 
             if (rpcServer != null) {
+                // TODO consolidatedClusterState() instead?
                 //didWork |= rpcServer.handleRpcRequests(cluster, stateChangeHandler.getClusterState(), this, this);
                 didWork |= rpcServer.handleRpcRequests(cluster, stateVersionTracker.getVersionedClusterState(), this, this);
             }
@@ -609,8 +611,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ( ! remoteTasks.isEmpty()) {
             RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
             context.cluster = cluster;
-            //context.currentState = stateChangeHandler.getConsolidatedClusterState();
-            context.currentState = stateVersionTracker.getVersionedClusterState(); // FIXME must show most current state..!
+            context.currentState = consolidatedClusterState();
             context.masterInfo = masterElectionHandler;
             context.nodeStateOrHostInfoChangeHandler = this;
             context.nodeAddedOrRemovedListener = this;
@@ -623,6 +624,21 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             log.fine("Completed processing remote tasks");
             remoteTasks.clear();
         }
+    }
+
+    /**
+     * A "consolidated" cluster state is guaranteed to have up-to-date information on which nodes are
+     * up or down even when the whole cluster is down. The regular, published cluster state is not
+     * normally updated to reflect node events when the cluster is down.
+     */
+    ClusterState consolidatedClusterState() {
+        final ClusterState publishedState = stateVersionTracker.getVersionedClusterState();
+        if (publishedState.getClusterState() == State.UP) {
+            return publishedState; // Short-circuit; already represents latest node state
+        }
+        final ClusterState current = computeCurrentAnnotatedState().getClusterState();
+        current.setVersion(publishedState.getVersion());
+        return current;
     }
 
     /*
@@ -662,11 +678,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean recomputeClusterStateIfRequired() {
         if (mustRecomputeCandidateClusterState()) {
             stateChangeHandler.unsetStateChangedFlag();
-            ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
-            params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
-                    .cluster(cluster)
-                    .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
-            final AnnotatedClusterState candidate = ClusterStateGenerator.generatedStateFrom(params);
+            final AnnotatedClusterState candidate = computeCurrentAnnotatedState();
 
             if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
@@ -679,6 +691,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             }
         }
         return false;
+    }
+
+    private AnnotatedClusterState computeCurrentAnnotatedState() {
+        ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
+        params.currentTimeInMilllis(timer.getCurrentTimeInMillis())
+                .cluster(cluster)
+                .lowestObservedDistributionBitCount(stateVersionTracker.getLowestObservedDistributionBits());
+        return ClusterStateGenerator.generatedStateFrom(params);
     }
 
     // FIXME potentially dangerous implicit requirement that this is called before applyAndVersionNewState

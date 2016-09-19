@@ -164,7 +164,6 @@ public class ClusterStateGenerator {
         final NodeState wanted   = nodeInfo.getWantedState();
         final NodeState baseline = reported.clone();
 
-        // TODO cleanup, simplify this logic once we have tests for all known edge cases
         // TODO move shouldForceInitToDown into applyStorage...() ?
         if (nodeIsConsideredTooUnstable(nodeInfo, params) || shouldForceInitToDown(nodeInfo, reported)) {
             baseline.setState(State.DOWN);
@@ -296,7 +295,7 @@ public class ClusterStateGenerator {
                 .map(nodeInfo -> nodeInfo.getReportedState().getMinUsedBits())
                 .min(Integer::compare);
 
-        if (minBits.isPresent() && minBits.get() < bitCount) { // TODO simplify?
+        if (minBits.isPresent() && minBits.get() < bitCount) {
             bitCount = minBits.get();
         }
         if (bitCount > params.lowestObservedDistributionBitCount && bitCount < params.idealDistributionBits) {
@@ -373,7 +372,7 @@ public class ClusterStateGenerator {
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)
      *  - reverse init progress(?)
      *  - DONE - mark "listing buckets" stage as down, since node can't receive load yet at that point
-     *  - interaction with ClusterStateView
+     *  - DONE interaction with ClusterStateView
      *
      * Features such as minimum time before/between cluster state broadcasts are handled outside
      * the state generator.

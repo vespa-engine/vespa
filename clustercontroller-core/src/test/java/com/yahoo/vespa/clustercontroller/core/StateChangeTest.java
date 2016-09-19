@@ -9,6 +9,9 @@ import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -1141,6 +1144,37 @@ public class StateChangeTest extends FleetControllerTest {
                 assertTrue(nodeId.toString(), lastState.getNodeState(nodeId).getStartTimestamp() == 0);
             }
         }
+    }
+
+    @Test
+    public void consolidated_cluster_state_reflects_node_changes_when_cluster_is_down() throws Exception {
+        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        options.maxTransitionTime.put(NodeType.STORAGE, 0);
+        options.minStorageNodesUp = 10;
+        options.minDistributorNodesUp = 10;
+        initialize(options);
+
+        ctrl.tick();
+        assertThat(ctrl.consolidatedClusterState().toString(), equalTo("version:3 distributor:10 storage:10"));
+
+        communicator.setNodeState(new Node(NodeType.STORAGE, 2), State.DOWN, "foo");
+        ctrl.tick();
+
+        assertThat(ctrl.consolidatedClusterState().toString(),
+                   equalTo("version:4 cluster:d distributor:10 storage:10 .2.s:d"));
+
+        // After this point, any further node changes while the cluster is still down won't be published.
+        // This is because cluster state similarity checks are short-circuited if both are Down, as no other parts
+        // of the state matter. Despite this, REST API access and similar features need up-to-date information,
+        // and therefore need to get a state which represents the _current_ state rather than the published state.
+        // The consolidated state offers this by selectively generating the current state on-demand if the
+        // cluster is down.
+        communicator.setNodeState(new Node(NodeType.STORAGE, 5), State.DOWN, "bar");
+        ctrl.tick();
+
+        // NOTE: _same_ version, different node state content. Overall cluster down-state is still the same.
+        assertThat(ctrl.consolidatedClusterState().toString(),
+                   equalTo("version:4 cluster:d distributor:10 storage:10 .2.s:d .5.s:d"));
     }
 
 }
