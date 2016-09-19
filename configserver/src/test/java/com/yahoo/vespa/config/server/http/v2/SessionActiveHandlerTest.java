@@ -5,8 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.Optional;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.*;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
@@ -158,13 +159,15 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                 .withRemoteSessionRepo(remoteSessionRepo)
                 .withApplicationRepo(applicationRepo)
                 .build();
-        return new SessionActiveHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(), HostProvisionerProvider.withProvisioner(hostProvisioner), Zone.defaultZone());
+        return new SessionActiveHandler(
+                Runnable::run,
+                AccessLog.voidAccessLog(),
+                testTenantBuilder.createTenants(),
+                Zone.defaultZone(),
+                new ApplicationRepository(testTenantBuilder.createTenants(),
+                                          HostProvisionerProvider.withProvisioner(hostProvisioner),
+                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                          curator));
     }
 
     public static class MockProvisioner implements Provisioner {

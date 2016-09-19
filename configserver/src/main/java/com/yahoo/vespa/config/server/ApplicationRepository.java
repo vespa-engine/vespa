@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;

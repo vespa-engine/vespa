@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
@@ -32,7 +31,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
-import com.yahoo.vespa.curator.Curator;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -59,18 +57,20 @@ public class ApplicationHandler extends HttpHandler {
     private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationRepository applicationRepository;
 
-    public ApplicationHandler(Executor executor, AccessLog accessLog, Tenants tenants,
-                              HostProvisionerProvider hostProvisionerProvider, Zone zone,
+    public ApplicationHandler(Executor executor, AccessLog accessLog,
+                              Tenants tenants,
+                              HostProvisionerProvider hostProvisionerProvider,
+                              Zone zone,
                               ApplicationConvergenceChecker convergeChecker,
                               LogServerLogGrabber logServerLogGrabber,
-                              ConfigserverConfig configserverConfig, Curator curator) {
+                              ApplicationRepository applicationRepository) {
         super(executor, accessLog);
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.convergeChecker = convergeChecker;
         this.logServerLogGrabber = logServerLogGrabber;
-        this.applicationRepository = new ApplicationRepository(tenants, hostProvisionerProvider, configserverConfig, curator);
+        this.applicationRepository = applicationRepository;
     }
 
     @Override

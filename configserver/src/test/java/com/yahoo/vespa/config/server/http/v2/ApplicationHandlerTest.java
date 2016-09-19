@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -15,6 +16,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
@@ -100,8 +102,10 @@ public class ApplicationHandlerTest {
                 Zone.defaultZone(),
                 convergeChecker,
                 logServerLogGrabber,
-                null,
-                null);
+                new ApplicationRepository(tenants,
+                                          HostProvisionerProvider.withProvisioner(provisioner),
+                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                          new MockCurator()));
     }
 
     private ApplicationHandler createApplicationHandler(Tenants tenants) {
@@ -113,8 +117,10 @@ public class ApplicationHandlerTest {
                 Zone.defaultZone(),
                 new ApplicationConvergenceChecker(stateApiFactory),
                 new LogServerLogGrabber(),
-                null,
-                null);
+                new ApplicationRepository(tenants,
+                                          HostProvisionerProvider.withProvisioner(provisioner),
+                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                          new MockCurator()));
     }
 
     @Test
