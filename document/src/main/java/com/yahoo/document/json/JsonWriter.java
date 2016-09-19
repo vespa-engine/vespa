@@ -34,7 +34,7 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.yahoo.document.json.JsonHelper.*;
+import static com.yahoo.document.json.JsonSerializationHelper.*;
 
 /**
  * Serialize Document and other FieldValue instances as JSON.

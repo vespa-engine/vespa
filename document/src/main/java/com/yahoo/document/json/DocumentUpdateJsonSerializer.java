@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import static com.yahoo.document.json.JsonHelper.*;
+import static com.yahoo.document.json.JsonSerializationHelper.*;
 
 /**
  * @author Vegard Sjonfjell
@@ -187,17 +187,17 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public void write(ClearValueUpdate clearValueUpdate, DataType superType) {
-            throw new JsonSerializingException("Serialization of ClearValueUpdate is not supported (use AssignValueUpdate with value null instead)");
+            throw new JsonSerializationException("Serialization of ClearValueUpdate is not supported (use AssignValueUpdate with value null instead)");
         }
 
         @Override
         public void write(FieldBase field, FieldValue value) {
-            throw new JsonSerializingException(String.format("Serialization of field values of type %s is not supported", value.getClass().getName()));
+            throw new JsonSerializationException(String.format("Serialization of field values of type %s is not supported", value.getClass().getName()));
         }
 
         @Override
         public void write(FieldBase field, Document value) {
-            throw new JsonSerializingException("Serialization of 'Document fields' is not supported");
+            throw new JsonSerializationException("Serialization of 'Document fields' is not supported");
         }
 
         @Override

@@ -28,15 +28,15 @@ import java.util.Set;
  * @author Steinar Knutsen
  * @author Vegard Sjonfjell
  */
-public class JsonHelper {
+public class JsonSerializationHelper {
     private final static Base64 base64Encoder = new Base64();
 
-    static class JsonSerializingException extends RuntimeException {
-        public JsonSerializingException(Exception base) {
+    static class JsonSerializationException extends RuntimeException {
+        public JsonSerializationException(Exception base) {
             super(base);
         }
 
-        public JsonSerializingException(String message) {
+        public JsonSerializationException(String message) {
             super(message);
         }
     }
@@ -50,7 +50,7 @@ public class JsonHelper {
         try {
             lambda.invoke();
         } catch (IOException e) {
-            throw new JsonSerializingException(e);
+            throw new JsonSerializationException(e);
         }
     }
 
